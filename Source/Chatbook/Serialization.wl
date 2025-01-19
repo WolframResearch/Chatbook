@@ -1552,6 +1552,17 @@ fasterCellToString0[ TemplateBox[ { label_, { url_String | URL[ url_String ], _ 
         "[" <> fasterCellToString0 @ label <> "](" <> url <> ")"
     ];
 
+fasterCellToString0[ { a___, StyleBox[ ButtonBox[ label_, opts___ ], styles___ ], b___ } ] :=
+    fasterCellToString0 @ { a, ButtonBox[ StyleBox[ label, styles ], opts ], b };
+
+fasterCellToString0[ {
+    a___,
+    btn1: ButtonBox[ label1_, opts1___ ],
+    btn2: ButtonBox[ label2_, opts2___ ],
+    b___
+} /; sameURLQ[ btn1, btn2 ] ] :=
+    fasterCellToString0 @ { a, ButtonBox[ RowBox @ { label1, label2 }, opts1 ], b };
+
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate", ___ ] ] := (
     needsBasePrompt[ "Math" ];
@@ -1605,6 +1616,38 @@ fasterCellToString0[ box: TemplateBox[ args_, name_String, ___ ] ] :=
 
 fasterCellToString0[ OverlayBox[ { a_, ___ }, ___ ] ] :=
     fasterCellToString0 @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*sameURLQ*)
+sameURLQ // beginDefinition;
+
+sameURLQ[ btn1_, btn2_ ] :=
+    Catch @ Module[ { url1, url2 },
+        url1 = getHyperlinkURL @ btn1;
+        If[ ! StringQ @ url1, Throw @ False ];
+        url2 = getHyperlinkURL @ btn2;
+        If[ ! StringQ @ url2, Throw @ False ];
+        url1 === url2
+    ];
+
+sameURLQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*getHyperlinkURL*)
+getHyperlinkURL // beginDefinition;
+
+getHyperlinkURL[ URL[ uri_String ] ] := uri;
+getHyperlinkURL[ uri_String ] := uri;
+getHyperlinkURL[ { uri_, _ } ] := getHyperlinkURL @ uri;
+
+getHyperlinkURL[ ButtonBox[
+    _,
+    OrderlessPatternSequence[ BaseStyle -> "Link"|"Hyperlink", ButtonData -> uri_, ___ ]
+] ] := getHyperlinkURL @ uri;
+
+getHyperlinkURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
