@@ -233,11 +233,17 @@ $graphicsHeads = Alternatives[
     Graphics3DBox
 ];
 
-$$graphicsBox = Alternatives[
+$$ignoredImportImage = Alternatives[
+    FrontEnd`FileName[ { "Documentation", "FooterIcons" }, _ ]
+];
+
+$$graphicsBox = With[ { ignored = $$ignoredImportImage },
+    Alternatives[
     $graphicsHeads[ ___ ],
     TemplateBox[ _, "Legended", ___ ],
-    DynamicBox[ _FEPrivate`ImportImage, ___ ],
+        DynamicBox[ FEPrivate`ImportImage @ Except @ ignored, ___ ],
     DynamicBox[ _Charting`iInteractiveTradingChart, ___ ]
+    ]
 ];
 
 (* Serialize the first argument of these and ignore the rest *)
@@ -265,11 +271,12 @@ $$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
 
 $$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
 
-$ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich },
+$ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$ignoredImportImage },
     Alternatives[
         _PaneSelectorBox,
         StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
-        DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ]
+        DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
+        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ]
     ]
 ];
 
@@ -2212,7 +2219,7 @@ seeAlsoSection // endDefinition;
 relatedLinksSection // beginDefinition;
 
 relatedLinksSection[ grid_, style_, header0_String ] := Enclose[
-    Module[ { header, items },
+    Catch @ Module[ { header, items, string },
 
         header = ConfirmBy[
             FirstCase[
@@ -2232,7 +2239,31 @@ relatedLinksSection[ grid_, style_, header0_String ] := Enclose[
             Infinity
         ];
 
-        If[ items === { }, "", StringRiffle[ Flatten @ { header<>"\n", items }, "\n" ] ]
+        If[ items === { }, Throw[ "" ] ];
+
+        string = StringRiffle[ Flatten @ { header<>"\n", items }, "\n" ];
+
+        StringReplace[
+            string,
+            {
+                Shortest[
+                    StringExpression[
+                        "[",
+                        label1: Except[ "\n" ]...,
+                        "](",
+                        url1: Except[ ")" ]..,
+                        ")\n* [",
+                        label2: Except[ "\n" ]...,
+                        "](",
+                        url2: Except[ ")" ]..,
+                        ")"
+                    ] /; url1 === url2
+                ] :> "["<>label1<>label2<>"]("<>url1<>")",
+
+                "[``" ~~ name: Repeated[ "$"|LetterCharacter|DigitCharacter, { 1, 80 } ] ~~ "``](paclet:" :>
+                    "["<>name<>"](paclet:"
+            }
+        ]
     ],
     throwInternalFailure
 ];
