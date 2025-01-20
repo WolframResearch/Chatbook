@@ -13,12 +13,6 @@ Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
-
-(* FIXME:
-    Serialize strike-through:
-        StyleBox[..., FontVariations -> {"StrikeThrough" -> True}]
-*)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
@@ -908,6 +902,9 @@ fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontWeight -> Bold|"Bold", b___ ] 
 
 fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontSlant -> Italic|"Italic", b___ ] ] :=
     "*" <> fasterCellToString0 @ h[ a, b ] <> "*";
+
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontVariations -> { b___, "StrikeThrough" -> True, c___ }, d___ ] ] :=
+    "~~" <> fasterCellToString0 @ h[ a, FontVariations -> { b, c }, d ] <> "~~";
 
 fasterCellToString0[ (h: Cell|StyleBox)[ a__, ShowStringCharacters -> b: True|False, c___ ] ] :=
     Block[ { $showStringCharacters = b }, fasterCellToString0 @ h[ a, c ] ];

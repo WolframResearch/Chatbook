@@ -15,14 +15,16 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$vectorDatabases = <|
-    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0", "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
-    "DocumentationURIs"      -> <| "Version" -> "1.3.0", "Bias" -> 0.0, "SnippetFunction" -> getSnippets |>,
-    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0", "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
-    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0", "Bias" -> 0.0, "SnippetFunction" -> Identity |>
+$vectorDatabases := $vectorDatabases = <|
+    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
+    "DocumentationURIs"      -> <| "Version" -> $docVersion, "Bias" -> 0.0, "SnippetFunction" -> getSnippets |>,
+    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
+    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0"    , "Bias" -> 0.0, "SnippetFunction" -> Identity    |>
 |>;
 
-$vectorDBNames   = Keys @ $vectorDatabases;
+$docVersion := If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ];
+
+$vectorDBNames  := $vectorDBNames = Keys @ $vectorDatabases;
 $allowDownload   = True;
 $cacheEmbeddings = True;
 
@@ -48,7 +50,7 @@ $maxExtraFiles     = 20;
 (*Remote Content Locations*)
 $baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
-$vectorDBDownloadURLs = AssociationMap[
+$vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
     URLBuild @ { $baseVectorDatabasesURL, #, $vectorDatabases[ #, "Version" ], # <> ".zip" } &,
     $vectorDBNames
 ];
