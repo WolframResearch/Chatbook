@@ -739,8 +739,8 @@ StopChat[ cell0_CellObject ] := Enclose[
         settings = ConfirmMatch[ currentChatSettings @ cell, _Association|_Missing, "ChatNotebookSettings" ];
         If[ MissingQ @ settings, finish[ ] ];
         removeTask @ Lookup[ settings, "Task", None ];
-        container = ConfirmMatch[ Lookup[ settings, "Container", None ], _Association|None, "Container" ];
-        If[ container === None, finish[ ] ];
+        container = ConfirmMatch[ Lookup[ settings, "Container", None ], _Association|_Symbol, "Container" ];
+        If[ MatchQ[ container, _Symbol ], finish[ ] ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|$$progressIndicator, "Content" ];
         FinishDynamic[ ];
         Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
