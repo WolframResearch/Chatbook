@@ -429,8 +429,22 @@ cleanupLegacyVectorDBFiles // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getDownloadSize*)
 getDownloadSize // beginDefinition;
+
 getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
-getDownloadSize[ obj: $$cloudObject ] := FileByteCount @ obj;
+getDownloadSize[ obj: $$cloudObject ] := getDownloadSize[ obj, FileByteCount @ obj ];
+getDownloadSize[ obj_, size_Integer ] := size;
+
+getDownloadSize[ obj_, $Failed ] := throwFailureToChatOutput @ Failure[
+    "CloudDownloadError",
+    <|
+        "MessageTemplate"   :> Chatbook::CloudDownloadError,
+        "MessageParameters" -> { },
+        "CloudObject"       -> obj,
+        "Evaluation"        -> HoldForm @ FileByteCount @ obj,
+        "Results"           -> $Failed
+    |>
+];
+
 getDownloadSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
