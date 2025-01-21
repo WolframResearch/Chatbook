@@ -1328,7 +1328,7 @@ rasterize // endDefinition;
 (*replaceCellContext*)
 replaceCellContext // beginDefinition;
 
-replaceCellContext[ expr_ ] := replaceCellContext[ expr ] = ReplaceAll[
+replaceCellContext[ expr_ ] := replaceCellContext[ Verbatim[ expr ] ] = ReplaceAll[
     expr,
     s_Symbol /; AtomQ @ Unevaluated @ s && Context @ Unevaluated @ s === "$CellContext`" :>
         With[ { new = ToExpression[ $Context <> SymbolName @ Unevaluated @ s, InputForm, $ConditionHold ] },

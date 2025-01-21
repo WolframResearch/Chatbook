@@ -631,7 +631,7 @@ catchMine // endDefinition;
 (* ::Subsection::Closed:: *)
 (*throwTop*)
 throwTop // beginDefinition;
-throwTop[ expr_ ] /; $catching := Throw[ Unevaluated @ expr, $catchTopTag ];
+throwTop[ expr_ ] := If[ TrueQ @ $catching, Throw[ Unevaluated @ expr, $catchTopTag ], expr ];
 throwTop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1340,8 +1340,32 @@ tr // endDefinition;
 (*trRaw*)
 trRaw // beginDefinition;
 trRaw[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
-trRaw[ name_? StringQ ] := FrontEndResource[ "ChatbookStrings", name ];
+trRaw[ name_? StringQ ] := chatbookString @ name;
 trRaw // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbookString*)
+chatbookString // beginDefinition;
+
+chatbookString[ name_String ] := Enclose[
+    Catch @ Module[ { string },
+        string = ConfirmMatch[ usingFrontEnd @ FrontEndResource[ "ChatbookStrings", name ], _String|$Failed, "String" ];
+        If[ StringQ @ string, Throw @ string ];
+        pacletDataRebuild[ ];
+        ConfirmBy[ usingFrontEnd @ FrontEndResource[ "ChatbookStrings", name ], StringQ, "Retry" ]
+    ],
+    throwInternalFailure
+];
+
+chatbookString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*pacletDataRebuild*)
+pacletDataRebuild // beginDefinition;
+pacletDataRebuild[ ] := pacletDataRebuild[ ] = PacletDataRebuild[ ];
+pacletDataRebuild // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

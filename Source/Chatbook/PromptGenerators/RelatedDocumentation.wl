@@ -10,11 +10,11 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$snippetType                 = "Text";
-$documentationSnippetVersion = "14-1-0-10549042";
-$baseURL                     = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL = URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
-$resourceSnippetBaseURL      = URLBuild @ { $baseURL, "Resources", $snippetType };
+$snippetType                  = "Text";
+$documentationSnippetVersion := $snippetVersion;
+$baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
@@ -45,6 +45,11 @@ $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 10;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$snippetVersion*)
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-11168610", "14-1-0-10549042" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -914,14 +919,17 @@ fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
      Module[ { count, text, $results, tasks },
         count = Length @ uris;
 
-        text = ConfirmBy[
-            If[ count === 1,
-                trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
-                trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
-            ],
-            StringQ,
-            "Text"
-        ];
+        text = If[ $EvaluationEnvironment === "Session",
+                   ConfirmBy[
+                       If[ count === 1,
+                           trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
+                           trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
+                       ],
+                       StringQ,
+                       "Text"
+                   ],
+                   ""
+               ];
 
         withApproximateProgress[
             $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
@@ -1010,7 +1018,9 @@ processDocumentationSnippetResult[ base_String, as_Association ] :=
 processDocumentationSnippetResult[ base_String, as_, bytes_ByteArray, 200 ] :=
     processDocumentationSnippetResult[ base, as, Quiet @ Developer`ReadWXFByteArray @ bytes ];
 
-processDocumentationSnippetResult[ base_String, as_Association, bytes_, code: Except[ 200, _Integer ] ] :=
+(* A 401/403 means we're missing a file in the snippet deployment or it has the wrong permissions,
+   so it should trigger an internal failure, otherwise just issue a generic cloud download failure. *)
+processDocumentationSnippetResult[ base_String, as_Association, bytes_, code: Except[ 401|403 ] ] :=
     throwFailureToChatOutput @ Failure[
         "CloudDownloadError",
         <|

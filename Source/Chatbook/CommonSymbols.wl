@@ -81,6 +81,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$simpleToolMethod;
 `$statelessProgressIndicator;
 `$suppressButtonAppearance;
+`$templateBoxOptionsCache;
 `$timingLog;
 `$tinyHashLength;
 `$tokenBudget;
