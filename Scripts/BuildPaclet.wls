@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (* ::Section::Closed:: *)
 (*Initialization*)
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
+System`$PublisherID = "Wolfram";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
