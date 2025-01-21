@@ -54,9 +54,13 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclos
         task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
         If[ FailureQ @ task, throwFailureToChatOutput @ task ];
         TaskWait @ ConfirmMatch[ task, _TaskObject, "Task" ];
-        If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ] && attempt <= 3,
+
+        If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ]
+            ,
+            If[ attempt > 3, throwFailureToChatOutput @ result ];
             Pause[ Exp @ attempt / E ];
-            llmSynthesize0[ prompt, evaluator, attempt + 1 ],
+            llmSynthesize0[ prompt, evaluator, attempt + 1 ]
+            ,
             result
         ]
     ],
@@ -108,7 +112,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                         FailureQ @ strings,
                             callback[ strings, #1 ],
                         True,
-                            callback[ Failure[ "InvalidResponse", <| "Data" -> data |> ], #1 ]
+                            callback[ makeInvalidResponseFailure @ data, #1 ]
                     ]
                 ]
             ]
@@ -134,11 +138,37 @@ llmSynthesizeSubmit // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeInvalidResponseFailure*)
+makeInvalidResponseFailure // beginDefinition;
+
+makeInvalidResponseFailure[ data_List ] /; MemberQ[ data, KeyValuePattern[ "StatusCode" -> 504 ] ] := Failure[
+    "InvalidResponse",
+    <|
+        "Message" -> "The server is currently unavailable (504 Gateway Time-out). Please try again later.",
+        "Data"    -> data
+    |>
+];
+
+makeInvalidResponseFailure[ data_List ] := Failure[
+    "InvalidResponse",
+    <|
+        "Message" -> "The server returned an invalid response. Please try again later.",
+        "Data"    -> data
+    |>
+];
+
+makeInvalidResponseFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*truncatePrompt*)
 truncatePrompt // beginDefinition;
 
-truncatePrompt[ string_String, evaluator_ ] :=  stringTrimMiddle[ string, modelContextLimit @ evaluator ];
-truncatePrompt[ { strings___String }, evaluator_ ] := truncatePrompt[ StringJoin @ strings, evaluator ];
+truncatePrompt[ string_String, evaluator_ ] :=
+    stringTrimMiddle[ string, modelContextLimit @ evaluator ];
+
+truncatePrompt[ { strings___String }, evaluator_ ] :=
+    truncatePrompt[ StringJoin @ strings, evaluator ];
 
 truncatePrompt[ prompts: { ($$string|$$graphics).. }, evaluator_ ] := Enclose[
     Module[ { stringCount, images, imageCount, budget, imageBudget, resized, imageTokens, stringBudget },
