@@ -6,7 +6,7 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (* ::Section::Closed:: *)
 (*Initialization*)
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
-System`$PublisherID = "Wolfram";
+If[ ! StringQ @ Environment[ "GITHUB_ACTIONS" ], System`$PublisherID = "Wolfram" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
