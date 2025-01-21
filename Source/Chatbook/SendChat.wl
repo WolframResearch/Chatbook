@@ -2594,7 +2594,7 @@ throwFailureToChatOutput[ task_, cell_CellObject, failure_ ] := (
     ]
 );
 
-throwFailureToChatOutput[ task_, None, failure_Failure ] := (
+throwFailureToChatOutput[ task_, _, failure_Failure ] := (
     Quiet @ TaskRemove @ task;
     throwTop @ failure
 );
