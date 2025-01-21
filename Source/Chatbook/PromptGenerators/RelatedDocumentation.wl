@@ -919,14 +919,17 @@ fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
      Module[ { count, text, $results, tasks },
         count = Length @ uris;
 
-        text = ConfirmBy[
-            If[ count === 1,
-                trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
-                trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
-            ],
-            StringQ,
-            "Text"
-        ];
+        text = If[ $EvaluationEnvironment === "Session",
+                   ConfirmBy[
+                       If[ count === 1,
+                           trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
+                           trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
+                       ],
+                       StringQ,
+                       "Text"
+                   ],
+                   ""
+               ];
 
         withApproximateProgress[
             $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
