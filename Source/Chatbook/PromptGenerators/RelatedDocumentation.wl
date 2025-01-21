@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 $snippetType                  = "Text";
 $documentationSnippetVersion := $snippetVersion;
 $baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL  = URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
 $resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
