@@ -16,7 +16,8 @@ $$graphicsPattern = HoldPattern @ Alternatives[
     _Graphics3D,
     _Image,
     _Image3D,
-    _Legended
+    _Legended,
+    Dynamic[ RawBoxes[ _FEPrivate`ImportImage ], ___ ]
 ];
 
 $$definitelyNotGraphics = HoldPattern @ Alternatives[
