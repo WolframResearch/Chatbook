@@ -1190,7 +1190,11 @@ boxesToExpressionURI[ boxes_ ] :=
     Replace[
         Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ],
         {
-            HoldComplete[ expr_ ] :> MakeExpressionURI @ Unevaluated @ expr,
+            HoldComplete[ expr_ ] :> (
+                (* Ensure that the expression is recognized as a graphics expression later: *)
+                HoldPattern[ graphicsQ[ Verbatim @ expr ] ] = True;
+                MakeExpressionURI @ Unevaluated @ expr
+            ),
             _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
         }
     ];
