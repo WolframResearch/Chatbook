@@ -847,13 +847,13 @@ vectorDBSearch[ names: $$dbNames, prompt_, prop: "Values"|"Results" ] := Enclose
 
         results = ConfirmMatch[
             applyBias[ #, vectorDBSearch[ #, prompt, "Results" ] ] & /@ names,
-            { { KeyValuePattern[ "Distance" -> $$size ].. }... },
+            { { KeyValuePattern[ "Distance" -> $$size ]... }... },
             "Results"
         ];
 
         sorted = SortBy[ Flatten @ results, #Distance & ];
 
-        If[ prop === "Results",
+        If[ prop === "Results" || sorted === { },
             sorted,
             ConfirmBy[ DeleteDuplicates @ Lookup[ sorted, "Value" ], ListQ, "Values" ]
         ]
