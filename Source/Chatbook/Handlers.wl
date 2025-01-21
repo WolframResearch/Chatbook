@@ -67,6 +67,7 @@ applyHandlerFunction[ settings_Association, name_String, args0_ ] := Enclose[
         args = ConfirmBy[
             <|
                 "EventName"            -> name,
+                (* FIXME: Add settings at start of evaluation instead of each function call *)
                 "ChatNotebookSettings" -> KeyDrop[ settings, $settingsDroppedKeys ],
                 args0
             |>,
@@ -178,6 +179,7 @@ applyProcessingFunction[ settings_Association, name_String, args_HoldComplete, p
         addProcessingArguments[
             name,
             <|
+                (* FIXME: Add settings at start of evaluation instead of each function call *)
                 "ChatNotebookSettings"      -> KeyDrop[ settings, $settingsDroppedKeys ],
                 "DefaultProcessingFunction" -> default,
                 params

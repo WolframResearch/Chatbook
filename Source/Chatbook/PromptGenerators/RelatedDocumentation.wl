@@ -10,11 +10,11 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$snippetType                 = "Text";
-$documentationSnippetVersion = "14-1-0-10549042";
-$baseURL                     = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL = URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
-$resourceSnippetBaseURL      = URLBuild @ { $baseURL, "Resources", $snippetType };
+$snippetType                  = "Text";
+$documentationSnippetVersion := $snippetVersion;
+$baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
@@ -45,6 +45,11 @@ $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 10;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$snippetVersion*)
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-11168610", "14-1-0-10549042" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
