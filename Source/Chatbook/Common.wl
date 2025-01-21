@@ -631,7 +631,7 @@ catchMine // endDefinition;
 (* ::Subsection::Closed:: *)
 (*throwTop*)
 throwTop // beginDefinition;
-throwTop[ expr_ ] /; $catching := Throw[ Unevaluated @ expr, $catchTopTag ];
+throwTop[ expr_ ] := If[ TrueQ @ $catching, Throw[ Unevaluated @ expr, $catchTopTag ], expr ];
 throwTop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
