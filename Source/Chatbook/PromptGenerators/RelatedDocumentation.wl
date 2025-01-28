@@ -32,7 +32,7 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "DataRepository", "Documentation", "FunctionRepository" };
+$defaultSources = { "Documentation", "FunctionRepository", "DataRepository" };
 
 $sourceAliases = <|
     "DataRepository"     -> "DataRepositoryURIs",
@@ -40,7 +40,7 @@ $sourceAliases = <|
     "FunctionRepository" -> "FunctionRepositoryURIs"
 |>;
 
-
+$maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 10;
 
@@ -56,13 +56,14 @@ $snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-1116861
 (*Messages*)
 Chatbook::CloudDownloadError           = "Unable to download required data from the cloud. Please try again later.";
 Chatbook::InvalidSources               = "Invalid value for the \"Sources\" option: `1`.";
+Chatbook::InvalidMaxSources            = "Invalid value for the \"MaxSources\" option: `1`.";
 Chatbook::SnippetFunctionOutputFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
 Chatbook::SnippetFunctionLengthFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*$RelatedDocumentationSources*)
-$RelatedDocumentationSources := $defaultSources;
+$RelatedDocumentationSources = Automatic;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -73,6 +74,7 @@ RelatedDocumentation // Options = {
     "FilterResults"     -> Automatic,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
+    "MaxSources"        -> $maxSelectedSources,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
     "Sources"           :> $RelatedDocumentationSources
@@ -104,7 +106,10 @@ RelatedDocumentation[ prompt_, property_, opts: OptionsPattern[ ] ] :=
     catchMine @ RelatedDocumentation[
         prompt,
         property,
-        getMaxItems[ OptionValue @ MaxItems, getSources @ OptionValue[ "Sources" ] ],
+        getMaxItems[
+            OptionValue @ MaxItems,
+            getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
+        ],
         opts
     ];
 
@@ -114,7 +119,7 @@ RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
 RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
     URL /@ ConfirmMatch[
-        vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ],
+        vectorDBSearch[ getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ], prompt, "Values" ],
         { ___String },
         "Values"
     ],
@@ -124,7 +129,7 @@ RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[
 RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
     URL /@ Union @ ConfirmMatch[
-        vectorDBSearch[ getSources @ OptionValue[ "Sources" ], All ],
+        vectorDBSearch[ getSources[ None, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ], All ],
         { ___String },
         "Values"
     ],
@@ -134,7 +139,11 @@ RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catch
 RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
         (* TODO: filter results *)
-        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Results" ] ],
+        DeleteMissing @ makeDocSnippets @ vectorDBSearch[
+            getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+            prompt,
+            "Results"
+        ],
         { ___String },
         "Snippets"
     ],
@@ -159,7 +168,11 @@ RelatedDocumentation[
         (* TODO: filter results *)
         Take[
             ConfirmBy[
-                vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, property ],
+                vectorDBSearch[
+                    getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+                    prompt,
+                    property
+                ],
                 ListQ,
                 "Results"
             ],
@@ -199,7 +212,7 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $filteringLLMConfig
             ],
-            $RelatedDocumentationSources = getSources @ OptionValue[ "Sources" ]
+            $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
         },
         relatedDocumentationPrompt[
             ensureChatMessages @ prompt,
@@ -231,11 +244,32 @@ getMaxItems // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getSources*)
 getSources // beginDefinition;
-getSources[ names_List ] := toSource /@ Flatten @ names;
-getSources[ name_String ] := { toSource @ name };
-getSources[ Automatic|All ] := toSource /@ $defaultSources;
-getSources[ source_ ] := throwFailure[ "InvalidSources", source ];
+getSources[ prompt_, names_List, max_ ] := toSource /@ Flatten @ names;
+getSources[ prompt_, name_String, max_ ] := { toSource @ name };
+getSources[ prompt_, All, max_ ] := toSource /@ $defaultSources;
+getSources[ None, Automatic, max_Integer? NonNegative ] := toSource /@ Take[ $defaultSources, UpTo[ max ] ];
+getSources[ prompt_, Automatic, max_Integer? NonNegative ] := autoSelectSources[ prompt, max ];
+getSources[ prompt_, source_, max_Integer? NonNegative ] := throwFailure[ "InvalidSources", source ];
+getSources[ prompt_, source_, max_ ] := throwFailure[ "InvalidMaxSources", max ];
 getSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoSelectSources*)
+autoSelectSources // beginDefinition;
+
+autoSelectSources[ prompt_, max_ ] /; max >= Length @ $defaultSources :=
+    toSource /@ $defaultSources;
+
+autoSelectSources[ prompt_, max_Integer? NonNegative ] := Enclose[
+    Module[ { values },
+        values = ConfirmMatch[ vectorDBSearch[ "SourceSelector", prompt, "Values" ], { ___String }, "Values" ];
+        ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+autoSelectSources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
