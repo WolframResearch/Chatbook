@@ -616,9 +616,11 @@ selectSnippetsFromResponse // endDefinition;
 selectSnippetsFromResponseSmall // beginDefinition;
 
 selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclose[
-    Catch @ Module[ { scored, selected, selectedIDs, selectedURIs },
+    Catch @ Module[ { idPatt, scored, selected, selectedIDs, selectedURIs },
 
-        If[ StringMatchQ[ StringTrim @ response, $$assistantTypeTag, IgnoreCase -> True ], Throw @ { } ];
+        If[ StringMatchQ[ StringTrim @ response, $$assistantTypeTag|"", IgnoreCase -> True ], Throw @ { } ];
+
+        idPatt = ReverseSortBy[ ids, StringLength @ Last @ StringSplit[ #, "-" ] & ];
 
         scored = ConfirmMatch[
             StringCases[
@@ -628,7 +630,7 @@ selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclo
                     s: NumberString,
                     Whitespace,
                     Except[ "\n" ]...,
-                    id: ids,
+                    id: idPatt,
                     Except[ "\n" ]...,
                     WhitespaceCharacter...,
                     EndOfLine
