@@ -32,7 +32,7 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "DataRepository", "Documentation", "FunctionRepository" };
+$defaultSources = { "Documentation", "FunctionRepository", "DataRepository" };
 
 $sourceAliases = <|
     "DataRepository"     -> "DataRepositoryURIs",
@@ -40,11 +40,14 @@ $sourceAliases = <|
     "FunctionRepository" -> "FunctionRepositoryURIs"
 |>;
 
-
+$maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 10;
+$unfilteredItemsPerSource = 20;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+
+
+$$assistantTypeTag = "Computational"|"Knowledge"|"CasualChat";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -56,13 +59,14 @@ $snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-1116861
 (*Messages*)
 Chatbook::CloudDownloadError           = "Unable to download required data from the cloud. Please try again later.";
 Chatbook::InvalidSources               = "Invalid value for the \"Sources\" option: `1`.";
+Chatbook::InvalidMaxSources            = "Invalid value for the \"MaxSources\" option: `1`.";
 Chatbook::SnippetFunctionOutputFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
 Chatbook::SnippetFunctionLengthFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*$RelatedDocumentationSources*)
-$RelatedDocumentationSources := $defaultSources;
+$RelatedDocumentationSources = Automatic;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -73,6 +77,7 @@ RelatedDocumentation // Options = {
     "FilterResults"     -> Automatic,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
+    "MaxSources"        -> $maxSelectedSources,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
     "Sources"           :> $RelatedDocumentationSources
@@ -104,7 +109,10 @@ RelatedDocumentation[ prompt_, property_, opts: OptionsPattern[ ] ] :=
     catchMine @ RelatedDocumentation[
         prompt,
         property,
-        getMaxItems[ OptionValue @ MaxItems, getSources @ OptionValue[ "Sources" ] ],
+        getMaxItems[
+            OptionValue @ MaxItems,
+            getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
+        ],
         opts
     ];
 
@@ -114,7 +122,7 @@ RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
 RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
     URL /@ ConfirmMatch[
-        vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ],
+        vectorDBSearch[ getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ], prompt, "Values" ],
         { ___String },
         "Values"
     ],
@@ -124,7 +132,7 @@ RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[
 RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
     URL /@ Union @ ConfirmMatch[
-        vectorDBSearch[ getSources @ OptionValue[ "Sources" ], All ],
+        vectorDBSearch[ getSources[ None, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ], All ],
         { ___String },
         "Values"
     ],
@@ -134,7 +142,11 @@ RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catch
 RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
         (* TODO: filter results *)
-        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Results" ] ],
+        DeleteMissing @ makeDocSnippets @ vectorDBSearch[
+            getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+            prompt,
+            "Results"
+        ],
         { ___String },
         "Snippets"
     ],
@@ -159,7 +171,11 @@ RelatedDocumentation[
         (* TODO: filter results *)
         Take[
             ConfirmBy[
-                vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, property ],
+                vectorDBSearch[
+                    getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+                    prompt,
+                    property
+                ],
                 ListQ,
                 "Results"
             ],
@@ -199,7 +215,7 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $filteringLLMConfig
             ],
-            $RelatedDocumentationSources = getSources @ OptionValue[ "Sources" ]
+            $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
         },
         relatedDocumentationPrompt[
             ensureChatMessages @ prompt,
@@ -222,7 +238,7 @@ RelatedDocumentation // endDefinition;
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 50;
+getMaxItems[ Infinity, _ ] := 100;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
@@ -231,11 +247,32 @@ getMaxItems // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getSources*)
 getSources // beginDefinition;
-getSources[ names_List ] := toSource /@ Flatten @ names;
-getSources[ name_String ] := { toSource @ name };
-getSources[ Automatic|All ] := toSource /@ $defaultSources;
-getSources[ source_ ] := throwFailure[ "InvalidSources", source ];
+getSources[ prompt_, names_List, max_ ] := toSource /@ Flatten @ names;
+getSources[ prompt_, name_String, max_ ] := { toSource @ name };
+getSources[ prompt_, All, max_ ] := toSource /@ $defaultSources;
+getSources[ None, Automatic, max_Integer? NonNegative ] := toSource /@ Take[ $defaultSources, UpTo[ max ] ];
+getSources[ prompt_, Automatic, max_Integer? NonNegative ] := autoSelectSources[ prompt, max ];
+getSources[ prompt_, source_, max_Integer? NonNegative ] := throwFailure[ "InvalidSources", source ];
+getSources[ prompt_, source_, max_ ] := throwFailure[ "InvalidMaxSources", max ];
 getSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoSelectSources*)
+autoSelectSources // beginDefinition;
+
+autoSelectSources[ prompt_, max_ ] /; max >= Length @ $defaultSources :=
+    toSource /@ $defaultSources;
+
+autoSelectSources[ prompt_, max_Integer? NonNegative ] := Enclose[
+    Module[ { values },
+        values = ConfirmMatch[ vectorDBSearch[ "SourceSelector", prompt, "Values" ], { ___String }, "Values" ];
+        ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+autoSelectSources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -269,7 +306,7 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         If[ results === { }, Throw[ "" ] ];
 
-        results = DeleteDuplicatesBy[ results, Lookup[ "Value" ] ];
+        results = Take[ DeleteDuplicatesBy[ results, Lookup[ "Value" ] ], UpTo[ count ] ];
 
         filtered = ConfirmMatch[
             filterSnippets[ messages, results, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
@@ -511,8 +548,8 @@ Specify the score as any number from 1 to 5 for your chosen snippets using the f
 
 <example>
 Computational
-4 Plus31258
-3 ArithmeticFunctions6736786
+4 Plus-3
+3 ArithmeticFunctions-1
 </example>
 
 Here is the chat transcript:
@@ -527,7 +564,8 @@ Available documentation snippets:
 %%Snippets%%
 </snippets>
 
-Choose up to %%FilteredCount%% most relevant snippets. Skip irrelevant or redundant ones.
+Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or redundant ones.
+If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
 Respond only in the specified format and do not include any other text.\
 ", Delimiters -> "%%" ];
@@ -578,28 +616,44 @@ selectSnippetsFromResponse // endDefinition;
 selectSnippetsFromResponseSmall // beginDefinition;
 
 selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclose[
-    Module[ { scored, selected, selectedIDs, selectedURIs },
+    Catch @ Module[ { idPatt, scored, selected, selectedIDs, selectedURIs },
+
+        If[ StringMatchQ[ StringTrim @ response, $$assistantTypeTag|"", IgnoreCase -> True ], Throw @ { } ];
+
+        idPatt = ReverseSortBy[ ids, StringLength @ Last @ StringSplit[ #, "-" ] & ];
 
         scored = ConfirmMatch[
             StringCases[
                 response,
-                StartOfLine ~~ s: NumberString ~~ Whitespace ~~ id: ids ~~ WhitespaceCharacter... ~~ EndOfLine :>
-                    <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
+                StringExpression[
+                    StartOfLine,
+                    s: NumberString,
+                    Whitespace,
+                    Except[ "\n" ]...,
+                    id: idPatt,
+                    Except[ "\n" ]...,
+                    WhitespaceCharacter...,
+                    EndOfLine
+                ] :> <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
             ],
             { __Association }
         ];
 
+        ConfirmAssert[ AllTrue[ scored, NumberQ @ #[ "Score" ] & ], "ScoreCheck" ];
+
         selected = ReverseSortBy[
             ConfirmMatch[
                 Select[ scored, #[ "Score" ] >= $rerankScoreThreshold & ],
-                { __Association }
+                { ___Association }
             ],
             Lookup[ "Score" ]
         ];
 
-        selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { __String }, "SelectedIDs" ];
-        selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { __String }, "SelectedURIs" ];
-        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { __String } ]
+        If[ selected === { }, Throw @ { } ];
+
+        selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { ___String }, "SelectedIDs" ];
+        selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { ___String }, "SelectedURIs" ];
+        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
     ],
     snippetIDToURI /@ selectSnippetsFromString[ response, ids ] &
 ];
@@ -611,7 +665,11 @@ selectSnippetsFromResponseSmall // endDefinition;
 (*scoreSnippetLine*)
 scoreSnippetLine // beginDefinition;
 
-scoreSnippetLine[ "Computational"|"Knowledge"|"CasualChat" ] := Nothing;
+scoreSnippetLine[ $$assistantTypeTag ] :=
+    Nothing;
+
+scoreSnippetLine[ line_String ] /; StringMatchQ[ StringTrim @ line, $$assistantTypeTag, IgnoreCase -> True ] :=
+    Nothing;
 
 scoreSnippetLine[ line_String ] := Enclose[
     Module[ { scoreString, id, score },
@@ -669,8 +727,8 @@ uriToSnippetID[ uri_String ] := Enclose[
     Module[ { split, base, counter, id },
         split = Last @ ConfirmMatch[ StringSplit[ uri, "/" ], { __String }, "Split" ];
         base = First @ StringSplit[ split, "#" ];
-        counter = ConfirmBy[ getSnippetIDCounter @ uri, IntegerQ, "Counter" ];
-        id = base <> ToString @ counter;
+        counter = ConfirmBy[ getSnippetIDCounter[ uri, base ], IntegerQ, "Counter" ];
+        id = base <> "-" <> ToString @ counter;
         snippetIDToURI[ id ] = uri;
         uriToSnippetID[ uri ] = id
     ],
@@ -691,10 +749,19 @@ snippetIDToURI // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getSnippetIDCounter*)
 getSnippetIDCounter // beginDefinition;
-getSnippetIDCounter[ uri_String ] := getSnippetIDCounter[ uri ] = $snippetIDCounter++;
+
+getSnippetIDCounter[ uri_String ] :=
+    getSnippetIDCounter[ uri, First @ StringSplit[ Last @ StringSplit[ uri, "/" ], "#" ] ];
+
+getSnippetIDCounter[ uri_String, base_String ] := getSnippetIDCounter[ uri, base ] =
+    If[ IntegerQ @ $snippetIDCounters[ base ],
+        ++$snippetIDCounters[ base ],
+        $snippetIDCounters[ base ] = 1
+    ];
+
 getSnippetIDCounter // endDefinition;
 
-$snippetIDCounter = 1;
+$snippetIDCounters = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

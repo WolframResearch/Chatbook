@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`ChatbookVectorDatabaseBuilder`" ];
 `ExportVectorDatabaseData;
 `GetEmbedding;
 `ImportVectorDatabaseData;
+`BuildSourceSelector;
 
 Begin[ "`Private`" ];
 
@@ -57,6 +58,15 @@ $dbConnectivity            = 16;
 $dbExpansionAdd            = 256;
 $dbExpansionSearch         = 2048;
 $relativePaths             = Automatic;
+
+$minCompressedVectors = 2^14;
+$maxCompressedVectors = 2^18;
+
+$defaultSourceSelectorNames = {
+    "DataRepositoryURIs",
+    "DocumentationURIs",
+    "FunctionRepositoryURIs"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -156,7 +166,21 @@ BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
             $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
             $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
         },
-        AssociationMap[ BuildVectorDatabase, FileBaseName /@ getVectorDBSourceFile @ All ]
+        <|
+            AssociationMap[ BuildVectorDatabase, FileBaseName /@ getVectorDBSourceFile @ All ],
+            "SourceSelector" -> BuildSourceSelector[ ]
+        |>
+    ];
+
+BuildVectorDatabase[ "SourceSelector", opts: OptionsPattern[ ] ] :=
+    Block[
+        {
+            $dbConnectivity    = OptionValue[ "Connectivity"    ],
+            $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
+            $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
+        },
+        BuildSourceSelector[ ]
     ];
 
 BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
@@ -168,11 +192,7 @@ BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
             $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
         },
         If[ TrueQ @ $relativePaths,
-            WithCleanup[
-                SetDirectory @ ensureDirectory @ $vectorDBTargetDirectory,
-                ConfirmMatch[ buildVectorDatabase @ name, $$vectorDatabase, "Build" ],
-                ResetDirectory[ ]
-            ],
+            ConfirmMatch[ inDBDirectory @ buildVectorDatabase @ name, $$vectorDatabase, "Build" ],
             ConfirmMatch[ buildVectorDatabase @ name, $$vectorDatabase, "Build" ]
         ]
     ]
@@ -288,6 +308,19 @@ buildVectorDatabase[ name_String ] :=
         ];
 
         ConfirmMatch[ built, $$vectorDatabase, "Result" ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inDBDirectory*)
+inDBDirectory // ClearAll;
+inDBDirectory // Attributes = { HoldFirst };
+
+inDBDirectory[ eval_ ] :=
+    WithCleanup[
+        SetDirectory @ ensureDirectory @ $vectorDBTargetDirectory,
+        eval,
+        ResetDirectory[ ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -417,6 +450,167 @@ dbDataQ[ ___ ] := False;
 dbDataQ0 // ClearAll;
 dbDataQ0[ KeyValuePattern @ { "Tag" -> _String, "Text" -> _String, "Value" -> _ } ] := True;
 dbDataQ0[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*BuildSourceSelector*)
+BuildSourceSelector // ClearAll;
+
+BuildSourceSelector[ ] :=
+    BuildSourceSelector @ $defaultSourceSelectorNames;
+
+BuildSourceSelector[ names: { ___String } ] := Enclose @ inDBDirectory @
+    Module[ { dbs, compressed, newVectors, values, arr, dir, rel, file, db, d, n, count },
+
+        $currentAction = "Getting source databases";
+        withProgress[
+            dbs = ConfirmBy[ getSourceDatabases @ names, AssociationQ, "Databases" ];
+            $currentAction = "Compressing vectors";
+            compressed = compressVectors /@ dbs;
+            $currentAction = "Packing vectors";
+            newVectors = Developer`ToPackedArray @ Flatten[ Values @ compressed, 1 ];
+            values = Flatten @ KeyValueMap[ ConstantArray[ #1, Length[ #2 ] ] &, compressed ];
+            arr = NumericArray[ newVectors, "Integer8", "ClipAndRound" ],
+            <| "Text" :> $currentAction, "ElapsedTime" -> Automatic |>,
+            "Delay" -> 0,
+            UpdateInterval -> 1
+        ];
+
+        dir = ConfirmBy[
+            ensureDirectory @ FileNameJoin @ { $vectorDBTargetDirectory, "SourceSelector" },
+            DirectoryQ,
+            "Directory"
+        ];
+
+        rel = ConfirmBy[
+            ResourceFunction[ "RelativePath" ][ dir ],
+            DirectoryQ,
+            "Relative"
+        ];
+
+        DeleteFile /@ FileNames[ { "*.wxf", "*.usearch" }, dir ];
+        ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch" }, dir ] === { }, "ClearedFilesCheck" ];
+
+        ConfirmMatch[
+            CreateVectorDatabase[
+                { },
+                "SourceSelector",
+                "Database"             -> "USearch",
+                WorkingPrecision       -> $embeddingType,
+                GeneratedAssetLocation -> rel,
+                OverwriteTarget        -> True
+            ],
+            $$vectorDatabase,
+            "Database"
+        ];
+
+        ConfirmBy[ setDBDefaults[ dir, "SourceSelector" ], FileExistsQ, "SetDBDefaults" ];
+
+        file = ConfirmBy[ FileNameJoin @ { dir, "SourceSelector.wxf" }, FileExistsQ, "File" ];
+        db = ConfirmMatch[ VectorDatabaseObject @ File @ file, $$vectorDatabase, "DatabaseReload" ];
+        d = $incrementalBuildBatchSize;
+        n = 0;
+        count = Length @ arr;
+
+        withProgress[
+            Do[
+                n = i;
+                AddToVectorDatabase[ db, arr[[ i + 1 ;; UpTo[ i + d ] ]] ],
+                { i, 0, Length @ arr - 1, d }
+            ],
+            <|
+                "Text"          -> "Building SourceSelector vector database",
+                "ElapsedTime"   -> Automatic,
+                "RemainingTime" -> Automatic,
+                "ItemTotal"     :> count,
+                "ItemCurrent"   :> n,
+                "Progress"      :> Automatic
+            |>,
+            "Delay" -> 0,
+            UpdateInterval -> 1
+        ];
+
+        ConfirmBy[
+            writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
+            FileExistsQ,
+            "Values"
+        ];
+
+        db
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSourceDatabases*)
+getSourceDatabases // ClearAll;
+getSourceDatabases[ names: { ___String } ] :=
+    Enclose @ WithCleanup[
+        SetDirectory @ ensureDirectory @ $vectorDBTargetDirectory,
+        ConfirmBy[
+            AssociationMap[ getSourceDatabase, names ],
+            AllTrue @ MatchQ @ $$vectorDatabase,
+            "Databases"
+        ],
+        ResetDirectory[ ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getSourceDatabase*)
+getSourceDatabase // ClearAll;
+getSourceDatabase[ name_String ] := Enclose[
+    Module[ { dir, file },
+        dir = ConfirmBy[ FileNameJoin @ { $vectorDBTargetDirectory, name }, DirectoryQ, "Directory" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
+        ConfirmMatch[ VectorDatabaseObject @ File @ file, $$vectorDatabase, "Database" ]
+    ],
+    BuildVectorDatabase @ name &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*compressVectors*)
+compressVectors // ClearAll;
+compressVectors[ db_ ] := compressVectors[ db, Automatic ];
+compressVectors[ db_, count_ ] := RandomChoice /@ clusterVectors[ db, count ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*clusterVectors*)
+clusterVectors // ClearAll;
+
+clusterVectors[ db_ ] :=
+    clusterVectors[ db, Automatic ];
+
+clusterVectors[ db: $$vectorDatabase, count_ ] :=
+    clusterVectors[ db[ "Vectors" ], count ];
+
+clusterVectors[ vectors_NumericArray, count_ ] :=
+    clusterVectors[ DeleteDuplicates @ Normal @ NumericArray[ vectors, "Real64" ], count ];
+
+clusterVectors[ vectors_List, count_ ] :=
+    With[ { n = autoClusterCount[ vectors, count ] },
+        If[ n === All,
+            Developer`ToPackedArray[ List /@ vectors ],
+            ResourceFunction[ "PrincipalAxisClustering" ][ vectors, n, Method -> Mean ]
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*autoClusterCount*)
+autoClusterCount // ClearAll;
+
+autoClusterCount[ vectors_, Automatic ] :=
+    With[ { n = Length @ vectors },
+        If[ n < $minCompressedVectors,
+            All,
+            Max[ $minCompressedVectors, Min[ $maxCompressedVectors, 2 ^ Floor[ 0.9 * Log2 @ Length @ vectors ] ] ]
+        ]
+    ];
+
+autoClusterCount[ vectors_, count_ ] :=
+    count;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
