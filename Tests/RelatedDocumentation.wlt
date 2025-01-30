@@ -162,8 +162,8 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Regression Tests*)
 VerificationTest[
-    RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> }, "Prompt", "FilterResults" -> False ],
-    _String? (StringFreeQ[ "$Username" ]),
+    Take[ RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> } ], UpTo[ 30 ] ][[ All, 1 ]],
+    { __String? (StringFreeQ[ "$Username" ]) },
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:164,1-169,2"
 ]
