@@ -46,6 +46,9 @@ $unfilteredItemsPerSource = 10;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
+
+$$assistantTypeTag = "Computational"|"Knowledge"|"CasualChat";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
@@ -545,8 +548,8 @@ Specify the score as any number from 1 to 5 for your chosen snippets using the f
 
 <example>
 Computational
-4 Plus31258
-3 ArithmeticFunctions6736786
+4 Plus-3
+3 ArithmeticFunctions-1
 </example>
 
 Here is the chat transcript:
@@ -561,7 +564,8 @@ Available documentation snippets:
 %%Snippets%%
 </snippets>
 
-Choose up to %%FilteredCount%% most relevant snippets. Skip irrelevant or redundant ones.
+Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or redundant ones.
+If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
 Respond only in the specified format and do not include any other text.\
 ", Delimiters -> "%%" ];
@@ -612,28 +616,42 @@ selectSnippetsFromResponse // endDefinition;
 selectSnippetsFromResponseSmall // beginDefinition;
 
 selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclose[
-    Module[ { scored, selected, selectedIDs, selectedURIs },
+    Catch @ Module[ { scored, selected, selectedIDs, selectedURIs },
+
+        If[ StringMatchQ[ StringTrim @ response, $$assistantTypeTag, IgnoreCase -> True ], Throw @ { } ];
 
         scored = ConfirmMatch[
             StringCases[
                 response,
-                StartOfLine ~~ s: NumberString ~~ Whitespace ~~ id: ids ~~ WhitespaceCharacter... ~~ EndOfLine :>
-                    <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
+                StringExpression[
+                    StartOfLine,
+                    s: NumberString,
+                    Whitespace,
+                    Except[ "\n" ]...,
+                    id: ids,
+                    Except[ "\n" ]...,
+                    WhitespaceCharacter...,
+                    EndOfLine
+                ] :> <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
             ],
             { __Association }
         ];
 
+        ConfirmAssert[ AllTrue[ scored, NumberQ @ #[ "Score" ] & ], "ScoreCheck" ];
+
         selected = ReverseSortBy[
             ConfirmMatch[
                 Select[ scored, #[ "Score" ] >= $rerankScoreThreshold & ],
-                { __Association }
+                { ___Association }
             ],
             Lookup[ "Score" ]
         ];
 
-        selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { __String }, "SelectedIDs" ];
-        selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { __String }, "SelectedURIs" ];
-        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { __String } ]
+        If[ selected === { }, Throw @ { } ];
+
+        selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { ___String }, "SelectedIDs" ];
+        selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { ___String }, "SelectedURIs" ];
+        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
     ],
     snippetIDToURI /@ selectSnippetsFromString[ response, ids ] &
 ];
@@ -645,7 +663,11 @@ selectSnippetsFromResponseSmall // endDefinition;
 (*scoreSnippetLine*)
 scoreSnippetLine // beginDefinition;
 
-scoreSnippetLine[ "Computational"|"Knowledge"|"CasualChat" ] := Nothing;
+scoreSnippetLine[ $$assistantTypeTag ] :=
+    Nothing;
+
+scoreSnippetLine[ line_String ] /; StringMatchQ[ StringTrim @ line, $$assistantTypeTag, IgnoreCase -> True ] :=
+    Nothing;
 
 scoreSnippetLine[ line_String ] := Enclose[
     Module[ { scoreString, id, score },
@@ -703,8 +725,8 @@ uriToSnippetID[ uri_String ] := Enclose[
     Module[ { split, base, counter, id },
         split = Last @ ConfirmMatch[ StringSplit[ uri, "/" ], { __String }, "Split" ];
         base = First @ StringSplit[ split, "#" ];
-        counter = ConfirmBy[ getSnippetIDCounter @ uri, IntegerQ, "Counter" ];
-        id = base <> ToString @ counter;
+        counter = ConfirmBy[ getSnippetIDCounter[ uri, base ], IntegerQ, "Counter" ];
+        id = base <> "-" <> ToString @ counter;
         snippetIDToURI[ id ] = uri;
         uriToSnippetID[ uri ] = id
     ],
@@ -725,10 +747,19 @@ snippetIDToURI // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getSnippetIDCounter*)
 getSnippetIDCounter // beginDefinition;
-getSnippetIDCounter[ uri_String ] := getSnippetIDCounter[ uri ] = $snippetIDCounter++;
+
+getSnippetIDCounter[ uri_String ] :=
+    getSnippetIDCounter[ uri, First @ StringSplit[ Last @ StringSplit[ uri, "/" ], "#" ] ];
+
+getSnippetIDCounter[ uri_String, base_String ] := getSnippetIDCounter[ uri, base ] =
+    If[ IntegerQ @ $snippetIDCounters[ base ],
+        ++$snippetIDCounters[ base ],
+        $snippetIDCounters[ base ] = 1
+    ];
+
 getSnippetIDCounter // endDefinition;
 
-$snippetIDCounter = 1;
+$snippetIDCounters = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
