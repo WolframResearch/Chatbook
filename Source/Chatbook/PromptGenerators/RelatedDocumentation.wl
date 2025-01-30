@@ -42,7 +42,7 @@ $sourceAliases = <|
 
 $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 10;
+$unfilteredItemsPerSource = 20;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
@@ -238,7 +238,7 @@ RelatedDocumentation // endDefinition;
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 50;
+getMaxItems[ Infinity, _ ] := 100;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
@@ -306,7 +306,7 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         If[ results === { }, Throw[ "" ] ];
 
-        results = DeleteDuplicatesBy[ results, Lookup[ "Value" ] ];
+        results = Take[ DeleteDuplicatesBy[ results, Lookup[ "Value" ] ], UpTo[ count ] ];
 
         filtered = ConfirmMatch[
             filterSnippets[ messages, results, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
