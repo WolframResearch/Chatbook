@@ -275,9 +275,12 @@ registerVectorDatabase[ info_Association ] := Enclose[
 
         $vectorDBNames = DeleteDuplicates @ Append[ $vectorDBNames, name ];
 
-        $defaultSources = DeleteDuplicates @ Append[
-            ConfirmMatch[ $defaultSources, { ___String }, "DefaultSources" ],
-            name
+        $RelatedDocumentationSources = Take[
+            DeleteDuplicates @ Prepend[
+                ConfirmMatch[ $defaultSources, { ___String }, "DefaultSources" ],
+                name
+            ],
+            UpTo[ $maxSelectedSources ]
         ];
 
         Success[ "VectorDatabaseRegistered", KeyTake[ info, { "Name", "Version", "Bias", "VectorDatabaseObject" } ] ]
