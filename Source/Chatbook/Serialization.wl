@@ -1614,6 +1614,10 @@ fasterCellToString0[ TemplateBox[
 fasterCellToString0[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
+(* Reasoning Text *)
+fasterCellToString0[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
+    "<think>\n" <> thoughts <> "\n</think>\n";
+
 (* Other *)
 fasterCellToString0[ box: TemplateBox[ args_, name_String, ___ ] ] /;
     $templateBoxRules @ name === makeExpressionString :=

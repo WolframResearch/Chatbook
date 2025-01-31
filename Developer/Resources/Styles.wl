@@ -1537,6 +1537,210 @@ Cell[
 
 
 
+(* ::Subsection::Closed:: *)
+(*ThinkingOpener*)
+
+
+Cell[
+    StyleData[ "ThinkingOpener" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ StyleBox[
+            PaneBox[
+                GridBox[
+                    {
+                        {
+                            OpenerBox[
+                                True,
+                                Appearance       -> Automatic,
+                                Enabled          -> False,
+                                AutoAction       -> False,
+                                ContinuousAction -> False
+                            ],
+                            StyleBox[
+                                #2,
+                                "Text",
+                                FontSlant            -> "Italic",
+                                FontColor            -> GrayLevel[ 0.5 ],
+                                ShowStringCharacters -> False,
+                                StripOnInput         -> False
+                            ]
+                        },
+                        {
+                            PaneBox[
+                                Cell[ BoxData @ TemplateBox[ { # }, "ThinkingContent" ], Background -> None ],
+                                Alignment    -> Left,
+                                ImageMargins -> { { 5, 0 }, { 0, 0 } }
+                            ],
+                            "\[SpanFromLeft]"
+                        }
+                    },
+                    AutoDelete        -> False,
+                    BaselinePosition  -> { 1, 1 },
+                    GridBoxAlignment  -> { "Columns" -> { { Left } } },
+                    GridBoxBackground -> { "Columns" -> { { Automatic } } },
+                    GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                    GridBoxSpacings   -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } }
+                ],
+                Alignment        -> Automatic,
+                BaselinePosition -> Baseline,
+                BaseStyle        -> { },
+                DefaultBaseStyle -> "OpenerView",
+                ImageMargins     -> { { 0, 0 }, { 10, 10 } },
+                ImageSize        -> Automatic
+            ],
+            Deployed     -> False,
+            StripOnInput -> False
+        ]
+    }
+]
+
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ThoughtsOpener*)
+
+
+Cell[
+    StyleData[ "ThoughtsOpener" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ DynamicModuleBox[
+            { Typeset`var$$ = False },
+            StyleBox[
+                PaneSelectorBox[
+                    {
+                        False -> GridBox[
+                            {
+                                {
+                                    OpenerBox[
+                                        Dynamic @ Typeset`var$$,
+                                        Appearance -> Automatic,
+                                        Enabled -> Automatic,
+                                        AutoAction -> False,
+                                        ContinuousAction -> False
+                                    ],
+                                    TagBox[
+                                        TagBox[
+                                            StyleBox[
+                                                #2,
+                                                "Text",
+                                                FontSlant -> "Italic",
+                                                FontColor -> GrayLevel[ 0.5 ],
+                                                ShowStringCharacters -> False,
+                                                StripOnInput -> False
+                                            ],
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
+                                }
+                            },
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            AutoDelete -> False,
+                            GridBoxBackground -> { "Columns" -> { { Automatic } } },
+                            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } },
+                            BaselinePosition -> { 1, 1 }
+                        ],
+                        True -> GridBox[
+                            {
+                                {
+                                    OpenerBox[
+                                        Dynamic @ Typeset`var$$,
+                                        Appearance -> Automatic,
+                                        Enabled -> Automatic,
+                                        AutoAction -> False,
+                                        ContinuousAction -> False
+                                    ],
+                                    TagBox[
+                                        TagBox[
+                                            StyleBox[
+                                                #2,
+                                                "Text",
+                                                FontSlant -> "Italic",
+                                                FontColor -> GrayLevel[ 0.5 ],
+                                                ShowStringCharacters -> False,
+                                                StripOnInput -> False
+                                            ],
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
+                                },
+                                {
+                                    PaneBox[
+                                        Cell[ BoxData @ TemplateBox[ { #1 }, "ThinkingContent" ], Background -> None ],
+                                        Alignment -> Left,
+                                        ImageMargins -> { { 5, 0 }, { 0, 0 } }
+                                    ],
+                                    "\[SpanFromLeft]"
+                                }
+                            },
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            AutoDelete -> False,
+                            GridBoxBackground -> { "Columns" -> { { Automatic } } },
+                            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } },
+                            BaselinePosition -> { 1, 1 }
+                        ]
+                    },
+                    Dynamic @ TrueQ @ Typeset`var$$,
+                    Alignment -> Automatic,
+                    ImageSize -> Automatic,
+                    ImageMargins -> { { 0, 0 }, { 10, 10 } },
+                    BaseStyle -> { },
+                    DefaultBaseStyle -> "OpenerView",
+                    BaselinePosition -> Baseline
+                ],
+                Deployed -> False,
+                StripOnInput -> False
+            ],
+            DynamicModuleValues -> Automatic
+        ]
+    }
+]
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ThinkingContent*)
+
+
+Cell[
+    StyleData[ "ThinkingContent" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ GridBox[
+            { {
+                PaneBox[
+                    Cell[ #, "Text", FontColor -> GrayLevel[ 0.35 ], Background -> None, Editable -> True ],
+                    Alignment    -> Left,
+                    ImageMargins -> { { 5, 5 }, { 5, 5 } },
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ]
+            } },
+            AutoDelete        -> False,
+            GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
+            GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxDividers   -> {
+                "ColumnsIndexed" -> { 1 -> Directive[ GrayLevel[ 0.9 ], AbsoluteThickness[ 2 ] ] },
+                "Rows"           -> { { False } }
+            }
+        ]
+    }
+]
+
+
+
 (* ::Section::Closed:: *)
 (*Package Footer*)
 
