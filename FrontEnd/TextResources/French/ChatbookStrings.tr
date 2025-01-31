@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "Contenu inclus\[NonBreakingSpace]:",
 "FeedbackDialogContentOutputImageLabel" -> "Image de sortie",
 "FeedbackDialogCommentFieldHint" -> "Avez-vous d\[CloseCurlyQuote]autres commentaires \[AGrave] formuler\[NonBreakingSpace]? (facultatif)",
-"FeedbackDialogBodyUsedForTraining" -> "Votre historique de chat et vos commentaires peuvent \[EHat]tre utilis\[EAcute]s \[AGrave] des fins de formation.",
+"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
 "FeedbackDialogBodyPreviewData" -> "Aper\[CCedilla]u des donn\[EAcute]es \[AGrave] envoyer",
 "FeedbackDialogThanks" -> "Merci pour vos commentaires\[NonBreakingSpace]!",
 
