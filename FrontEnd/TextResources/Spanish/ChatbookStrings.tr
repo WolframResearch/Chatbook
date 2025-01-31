@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "Contenido incluido:",
 "FeedbackDialogContentOutputImageLabel" -> "Imagen de salida",
 "FeedbackDialogCommentFieldHint" -> "\[DownExclamation]Tiene comentarios adicionales? (Opcional)",
-"FeedbackDialogBodyUsedForTraining" -> "Su historial de chat y comentarios pueden ser utilizados con fines de entrenamiento.",
+"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
 "FeedbackDialogBodyPreviewData" -> "Previsualizar datos a enviar",
 "FeedbackDialogThanks" -> "\[DownExclamation]Gracias por sus comentarios!",
 
