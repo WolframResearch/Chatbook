@@ -467,6 +467,14 @@ tokenCheckedMessage[
         tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
     ];
 
+tokenCheckedMessage[
+    as_,
+    message0: KeyValuePattern @ { "Content" -> Except[ _String ] }
+] /; ! $countImageTokens :=
+    With[ { message = revertMultimodalContent @ message0 },
+        tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
+    ];
+
 tokenCheckedMessage[ as_Association, message_ ] /; $cellStringBudget === Infinity := message;
 
 tokenCheckedMessage[ as_Association, message_ ] := Enclose[
