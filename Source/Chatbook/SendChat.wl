@@ -349,11 +349,13 @@ prepareMessagesForLLM[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], m
     $lastSubmittedMessages = contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
 
 prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
-    $lastSubmittedMessages = contentFlatten @ ReplaceAll[
-        messages,
-        s_String :> RuleCondition @ StringTrim @ StringReplace[
-            s,
-            "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+    $lastSubmittedMessages = contentFlatten[
+        KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
+            messages,
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+            ]
         ]
     ];
 
@@ -1534,35 +1536,46 @@ makeToolResponseMessage // endDefinition;
 makeToolResponseMessage0 // beginDefinition;
 
 makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_, toolResponse_ ] := <|
-    "Role"            -> "User",
-    "Content"         -> wrapResponse[ "<system>", response, "</system>" ],
-    "ToolResponse"    -> True,
-    "ToolResponses"   -> { toolResponse }
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<system>", response, "</system>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
+|>;
+
+makeToolResponseMessage0[ "DeepSeek", "DeepSeekReasoner", response_, toolResponse_ ] := <|
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
 makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_, toolResponse_ ] := <|
-    "Role"            -> "User",
-    "Content"         -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
-    "ToolResponse"    -> True,
-    "ToolResponses"   -> { toolResponse }
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
 (* makeToolResponseMessage0[ service_, "Nemotron", response_ ] := <|
-    "Role"            -> "User",
-    "Content"         -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
-    "ToolResponse"    -> True,
-    "ToolResponses"   -> { toolResponse }
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
 makeToolResponseMessage0[ service_, "Mistral", response_ ] := <|
-    "Role"            -> "User",
-    "Content"         -> wrapResponse[ "[TOOL_RESULTS] {\"content\": ", response, "} [/TOOL_RESULTS]" ],
-    "ToolResponse"    -> True,
-    "ToolResponses"   -> { toolResponse }
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "[TOOL_RESULTS] {\"content\": ", response, "} [/TOOL_RESULTS]" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>; *)
 
-makeToolResponseMessage0[ service_String, family_, response_, toolResponse_ ] :=
-    <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True, "ToolResponses" -> { toolResponse } |>;
+makeToolResponseMessage0[ service_String, family_, response_, toolResponse_ ] := <|
+    "Role"          -> "System",
+    "Content"       -> response,
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
+|>;
 
 makeToolResponseMessage0 // endDefinition;
 
