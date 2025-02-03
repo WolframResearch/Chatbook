@@ -320,6 +320,27 @@ makeResultCell // endDefinition;
 
 makeResultCell0 // beginDefinition;
 
+makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
+    If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
+    Cell[
+        BoxData @ templateBox[ { StringTrim @ thoughts, "\"Thinking\[Ellipsis]\"" }, "ThinkingOpener" ],
+        "ThinkingOpener",
+        Background -> None
+    ]
+);
+
+makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
+    Module[ { seconds, label },
+        If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
+        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
+        label = If[ NumberQ @ seconds, "Thought for " <> ToString @ seconds <> " seconds", "Thoughts" ];
+        Cell[
+            BoxData @ templateBox[ { StringTrim @ thoughts, label }, "ThoughtsOpener" ],
+            "ThoughtsOpener",
+            Background -> None
+        ]
+    ];
+
 makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
     makeDiscardedMaterialCell @ stuff;
 
@@ -1288,6 +1309,9 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
 $textDataFormatRules = {
+    "<think>"~~thoughts__~~"</think>" :> thoughtsOpener @ thoughts,
+    "<think>"~~thoughts__~~EndOfString :> thinkingOpener @ thoughts,
+
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
