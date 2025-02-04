@@ -256,7 +256,12 @@ Cell[
             {
                 {
                     FrameBox[
-                        #1,
+                        PaneBox[
+                            #1,
+                            AppearanceElements -> None,
+                            ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
+                            Scrollbars         -> Automatic
+                        ],
                         Background   -> GrayLevel[ 1 ],
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
                         FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],

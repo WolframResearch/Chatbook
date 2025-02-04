@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.1.12.3947330633"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.1.15.3947661859"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
