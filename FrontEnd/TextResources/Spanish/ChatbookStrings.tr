@@ -153,7 +153,7 @@
 "ToolManagerDeleteTool" -> "Eliminar herramienta",
 
 "UIEnableChatFeatures" -> "Habilitar caracter\[IAcute]sticas de chat de IA",
-"UIAutomaticAnalysisLabel" -> "Realizar an\[AAcute]lisis autom\[AAcute]tico de resultados",
+"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
 "UIAutomaticAnalysisTooltip" -> "Si ha sido habilitado, se agregar\[AAcute]n sugerencias autom\[AAcute]ticas proporcionadas por IA luego de los resultados de la evaluaci\[OAcute].",
 "UIPersonas" -> "Personas",
 "UIChatBlockSettings" -> "Configuraci\[OAcute]n de bloqueo de chat\[Ellipsis]",
