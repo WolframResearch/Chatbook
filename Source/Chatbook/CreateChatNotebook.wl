@@ -160,7 +160,8 @@ $cloudStylesheet :=
                                 {
                                     Cell[
                                         BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ],
-                                        Background -> None
+                                        Background -> None,
+                                        CellTags   -> "ChatNotebookDockedCell"
                                     ]
                                 },
                                 { }
