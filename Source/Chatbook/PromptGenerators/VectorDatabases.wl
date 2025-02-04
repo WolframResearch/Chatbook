@@ -19,6 +19,7 @@ $vectorDatabases := $vectorDatabases = <|
     "DataRepositoryURIs"     -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
     "DocumentationURIs"      -> <| "Version" -> $docVersion, "Bias" -> 0.0, "SnippetFunction" -> getSnippets |>,
     "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
+    "SourceSelector"         -> <| "Version" -> "1.0.0"    , "Bias" -> 0.0, "SnippetFunction" -> Identity    |>,
     "WolframAlphaQueries"    -> <| "Version" -> "1.3.0"    , "Bias" -> 0.0, "SnippetFunction" -> Identity    |>
 |>;
 
@@ -29,7 +30,7 @@ $allowDownload   = True;
 $cacheEmbeddings = True;
 
 $embeddingDimension      = 384;
-$maxNeighbors            = 50;
+$maxNeighbors            = 100;
 $maxEmbeddingDistance    = 150.0;
 $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
@@ -274,9 +275,12 @@ registerVectorDatabase[ info_Association ] := Enclose[
 
         $vectorDBNames = DeleteDuplicates @ Append[ $vectorDBNames, name ];
 
-        $defaultSources = DeleteDuplicates @ Append[
-            ConfirmMatch[ $defaultSources, { ___String }, "DefaultSources" ],
-            name
+        $RelatedDocumentationSources = Take[
+            DeleteDuplicates @ Prepend[
+                ConfirmMatch[ $defaultSources, { ___String }, "DefaultSources" ],
+                name
+            ],
+            UpTo[ $maxSelectedSources ]
         ];
 
         Success[ "VectorDatabaseRegistered", KeyTake[ info, { "Name", "Version", "Bias", "VectorDatabaseObject" } ] ]

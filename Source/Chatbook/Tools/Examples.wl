@@ -19,7 +19,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*$fullExamples*)
 $fullExamples :=
     With[ { keys = $fullExamplesKeys },
-        If[ keys === { },
+        If[ keys === { } || $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Service",
             "",
             needsBasePrompt[ "EndTurnToolCall" ];
             StringJoin[

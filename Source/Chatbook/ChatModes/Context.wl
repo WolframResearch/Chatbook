@@ -238,7 +238,8 @@ getContextFromSelection[ chatNB_, nbo_NotebookObject, settings0_Association, opt
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
-            $notebookMetadataString     = getNotebookMetadataString @ nbo
+            $notebookMetadataString     = getNotebookMetadataString @ nbo,
+            $countImageTokens           = countImageTokensQ @ settings0
         },
         Module[ { settings, selectionData, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
@@ -303,6 +304,17 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
 ];
 
 getContextFromSelection0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*countImageTokensQ*)
+countImageTokensQ // beginDefinition;
+countImageTokensQ[ settings_ ] := countImageTokensQ[ settings, allowedMultimodalRoles @ settings ];
+countImageTokensQ[ settings_, All ] := True;
+countImageTokensQ[ settings_, "System" ] := True;
+countImageTokensQ[ settings_, { ___, "System", ___ } ] := True;
+countImageTokensQ[ settings_, roles_ ] := False;
+countImageTokensQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

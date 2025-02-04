@@ -5,6 +5,8 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 HoldComplete[
     `$$prompt,
     `$defaultSources,
+    `$maxSelectedSources,
+    `$maxNeighbors,
     `getSmallContextString,
     `getSnippets,
     `insertContextPrompt,

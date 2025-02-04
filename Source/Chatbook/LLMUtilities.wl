@@ -296,6 +296,18 @@ extractBodyChunks0[ Failure[
 extractBodyChunks0[ fail_Failure? apiFailureQ ] :=
     throwFailureToChatOutput @ fail;
 
+extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
+    ! FreeQ[
+        fail,
+        Alternatives[
+            KeyValuePattern @ {
+                "MessageTemplate" :> "Unexpected value modification `1` changed for `2`.",
+                "MessageParameters" -> { _, "stop" }
+            },
+            KeyValuePattern[ "Message" -> "Unexpected delta type" ]
+        ]
+    ] := { };
+
 extractBodyChunks0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
