@@ -153,7 +153,7 @@
 "ToolManagerDeleteTool" -> "Delete Tool",
 
 "UIEnableChatFeatures" -> "Enable AI Chat Features",
-"UIAutomaticAnalysisLabel" -> "Do automatic result analysis",
+"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
 "UIAutomaticAnalysisTooltip" -> "If enabled, automatic AI provided suggestions will be added following evaluation results.",
 "UIPersonas" -> "Personas",
 "UIChatBlockSettings" -> "Chat Block Settings\[Ellipsis]",

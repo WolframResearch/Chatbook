@@ -153,7 +153,7 @@
 "ToolManagerDeleteTool" -> "\:522A\:9664\:5DE5\:5177",
 
 "UIEnableChatFeatures" -> "\:8CE6\:80FD AI \:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:529F\:80FD",
-"UIAutomaticAnalysisLabel" -> "\:57F7\:884C\:81EA\:52D5\:7D50\:679C\:5206\:6790",
+"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
 "UIAutomaticAnalysisTooltip" -> "\:8CE6\:80FD\:5F8C\:FF0C\:81EA\:52D5 AI \:6240\:63D0\:4F9B\:7684\:5EFA\:8B70\:5C07\:6703\:88AB\:6DFB\:52A0\:81F3\:4E0B\:5217\:8A08\:7B97\:7D50\:679C\:4E2D\:3002",
 "UIPersonas" -> "\:4EBA\:7269\:8A8C",
 "UIChatBlockSettings" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:5C01\:9396\:8A2D\:5B9A\[Ellipsis]",
