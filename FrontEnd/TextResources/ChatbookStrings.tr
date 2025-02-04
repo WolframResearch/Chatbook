@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "Included content:",
 "FeedbackDialogContentOutputImageLabel" -> "Output image",
 "FeedbackDialogCommentFieldHint" -> "Do you have additional feedback? (Optional)",
-"FeedbackDialogBodyUsedForTraining" -> "Your chat history and feedback may be used for training purposes.",
+"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
 "FeedbackDialogBodyPreviewData" -> "Preview data to be sent",
 "FeedbackDialogThanks" -> "Thanks for your feedback!",
 

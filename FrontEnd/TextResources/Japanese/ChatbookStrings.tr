@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "\:542b\:307e\:308c\:308b\:30b3\:30f3\:30c6\:30f3\:30c4\:ff1a",
 "FeedbackDialogContentOutputImageLabel" -> "\:51fa\:529b\:753b\:50cf",
 "FeedbackDialogCommentFieldHint" -> "\:4ed6\:306b\:3082\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:304c\:3042\:308a\:307e\:3059\:304b\:ff1f\:ff08\:4efb\:610f\:ff09",
-"FeedbackDialogBodyUsedForTraining" -> "\:304a\:5ba2\:69d8\:306e\:30c1\:30e3\:30c3\:30c8\:5c65\:6b74\:3068\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:306f\:8a13\:7df4\:306e\:305f\:3081\:306b\:4f7f\:308f\:308c\:308b\:3053\:3068\:304c\:3042\:308a\:307e\:3059\:ff0e",
+"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
 "FeedbackDialogBodyPreviewData" -> "\:9001\:4fe1\:3059\:308b\:30c7\:30fc\:30bf\:306e\:30d7\:30ec\:30d3\:30e5\:30fc",
 "FeedbackDialogThanks" -> "\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:306e\:9001\:4fe1\:ff0c\:3042\:308a\:304c\:3068\:3046\:3054\:3056\:3044\:307e\:3057\:305f\:ff01",
 

@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "\:5305\:542B\:7684\:5185\:5BB9\:ff1a",
 "FeedbackDialogContentOutputImageLabel" -> "\:8F93\:51FA\:56FE\:50CF",
 "FeedbackDialogCommentFieldHint" -> "\:60A8\:8FD8\:6709\:5176\:4ED6\:5EFA\:8BAE\:5417\:ff1f\:ff08\:53EF\:9009\:ff09",
-"FeedbackDialogBodyUsedForTraining" -> "\:60A8\:7684\:804A\:5929\:8BB0\:5F55\:548C\:53CD\:9988\:610F\:89C1\:53EF\:80FD\:4F1A\:7528\:6765\:8FDB\:884C\:57F9\:8BAD\:3002",
+"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
 "FeedbackDialogBodyPreviewData" -> "\:9884\:89C8\:5C06\:8981\:53D1\:9001\:7684\:6570\:636E",
 "FeedbackDialogThanks" -> "\:611F\:8C22\:60A8\:7684\:53CD\:9988\:610F\:89C1\:ff01",
 
