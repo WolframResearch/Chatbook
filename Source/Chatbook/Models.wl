@@ -360,7 +360,8 @@ chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen"
 chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 
-chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Coder", $$versionOrParams } ] ] := "DeepSeekCoder";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
 
 chooseModelFamily0[ _String ] := None;
 

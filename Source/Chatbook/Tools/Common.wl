@@ -812,7 +812,7 @@ simpleToolRequestParser // beginDefinition;
 simpleToolRequestParser[ string_String ] := Enclose[
     Catch @ Module[ { tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, params },
 
-        tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
+        tools = ConfirmMatch[ Values @ $AvailableTools, { ___LLMTool }, "Tools" ];
         commands = ConfirmMatch[ toolShortName /@ tools, { ___String }, "Commands" ];
 
         (* TODO: return failure when trying to use an invalid tool command string *)
@@ -952,6 +952,7 @@ makeToolPrompt // endDefinition;
 (*getToolPrePrompt*)
 getToolPrePrompt // beginDefinition;
 getToolPrePrompt[ as_Association ] := getToolPrePrompt[ as, as[ "ToolMethod" ], as[ "ToolPrePrompt" ] ];
+getToolPrePrompt[ as_, "Service", $$unspecified ] := Nothing;
 getToolPrePrompt[ as_, "Simple", $$unspecified ] := $simpleToolPre;
 getToolPrePrompt[ as_, method_, $$unspecified ] := $toolPre;
 getToolPrePrompt[ as_, method_, prompt: $$template ] := prompt;
@@ -963,6 +964,7 @@ getToolPrePrompt // endDefinition;
 (*getToolListingPrompt*)
 getToolListingPrompt // beginDefinition;
 getToolListingPrompt[ as_Association ] := getToolListingPrompt[ as, as[ "ToolMethod" ], as[ "ToolListingPrompt" ] ];
+getToolListingPrompt[ as_, "Service", $$unspecified ] := Nothing;
 getToolListingPrompt[ as_, "Simple", $$unspecified ] := $simpleToolListing;
 getToolListingPrompt[ as_, method_, $$unspecified ] := $toolListing;
 getToolListingPrompt[ as_, method_, prompt: $$template ] := prompt;
@@ -974,6 +976,7 @@ getToolListingPrompt // endDefinition;
 (*getToolPostPrompt*)
 getToolPostPrompt // beginDefinition;
 getToolPostPrompt[ as_Association ] := getToolPostPrompt[ as, as[ "ToolMethod" ], as[ "ToolPostPrompt" ] ];
+getToolPostPrompt[ as_, "Service", $$unspecified ] := Nothing;
 getToolPostPrompt[ as_, "Simple", $$unspecified ] := $simpleToolPost;
 getToolPostPrompt[ as_, method_, $$unspecified ] := $toolPost;
 getToolPostPrompt[ as_, method_, prompt: $$template ] := prompt;

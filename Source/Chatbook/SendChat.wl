@@ -138,7 +138,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         task = $lastTask = chatSubmit[
             container,
-            prepareMessagesForLLM @ messages,
+            prepareMessagesForLLM[ settings, messages ],
             cellObject,
             settings
         ] // withApproximateProgress[ "SendingChat", 0.4 ];
@@ -309,7 +309,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         data = DeleteCases[
             <|
-                "messages"          -> prepareMessagesForHTTPRequest @ messages,
+                "messages"          -> prepareMessagesForHTTPRequest[ settings, messages ],
                 "temperature"       -> temperature,
                 "max_tokens"        -> tokens,
                 "top_p"             -> topP,
@@ -345,15 +345,137 @@ makeHTTPRequest // endDefinition;
 (*prepareMessagesForLLM*)
 prepareMessagesForLLM // beginDefinition;
 
-prepareMessagesForLLM[ messages: { ___Association } ] := ReplaceAll[
-        messages,
-        s_String :> RuleCondition @ StringTrim @ StringReplace[
-            s,
-            "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+prepareMessagesForLLM[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
+    $lastSubmittedMessages = contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+
+prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
+    $lastSubmittedMessages = contentFlatten[
+        KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
+            messages,
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+            ]
         ]
     ];
 
 prepareMessagesForLLM // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contentFlatten*)
+contentFlatten // beginDefinition;
+contentFlatten[ messages_List ] := contentFlatten /@ messages;
+contentFlatten[ as: KeyValuePattern[ "Content" -> { s___String } ] ] := <| as, "Content" -> StringJoin @ s |>;
+contentFlatten[ as_Association ] := as;
+contentFlatten // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteServiceToolCalls*)
+rewriteServiceToolCalls // beginDefinition;
+
+rewriteServiceToolCalls[ settings_, messages_List ] :=
+    Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
+
+rewriteServiceToolCalls[
+    settings_,
+    message: KeyValuePattern @ {
+        "Content"      -> content_String,
+        "ToolRequest"  -> True,
+        "ToolRequests" -> requests: { __LLMToolRequest }
+    }
+] := <|
+    message,
+    "Content" -> StringDelete[
+        content,
+        "\n"... ~~ StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL" ~~ EndOfString
+    ]
+|>;
+
+rewriteServiceToolCalls[
+    settings_,
+    message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
+] := serviceToolMessageThread[
+    message,
+    Flatten @ StringSplit[
+        content,
+        Shortest[
+            req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
+        ] :> toolStringSplit[ req, result ]
+    ]
+];
+
+rewriteServiceToolCalls[ settings_, message_Association ] :=
+    message;
+
+rewriteServiceToolCalls // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceToolMessageThread*)
+serviceToolMessageThread // beginDefinition;
+
+serviceToolMessageThread[ message_Association, items_List ] :=
+    serviceToolMessageMerge @ Flatten[ serviceToolMessageThread[ message, # ] & /@ items ];
+
+serviceToolMessageThread[ message_Association, item_String ] :=
+    <| message, "Content" -> { item } |>;
+
+serviceToolMessageThread[ message_Association, req_LLMToolRequest ] :=
+    <| message, "Content" -> { }, "ToolRequests" -> { req } |>;
+
+serviceToolMessageThread[ message_Association, resp_LLMToolResponse ] :=
+    <| message, "Role" -> "Tool", "Content" -> { }, "ToolResponses" -> { resp } |>;
+
+serviceToolMessageThread // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceToolMessageMerge*)
+serviceToolMessageMerge // beginDefinition;
+
+serviceToolMessageMerge[ {
+    a___,
+    b: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content1_ },
+    c: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content2_ },
+    d___
+} ] := serviceToolMessageMerge @ { a, <| b, c, "Content" -> Flatten @ { content1, content2 } |>, d };
+
+serviceToolMessageMerge[ messages: { ___Association } ] :=
+    messages;
+
+serviceToolMessageMerge // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolStringSplit*)
+toolStringSplit // beginDefinition;
+
+toolStringSplit[ req_String, result_String ] :=
+    toolStringSplit[ toolRequestParser @ req, result ];
+
+toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
+    With[ { id = tinyHash @ req },
+        toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
+    ];
+
+toolStringSplit[ req_LLMToolRequest, result_String ] :=
+    toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
+
+toolStringSplit[ req_LLMToolRequest, tool_LLMTool, result_String ] :=
+    {
+        req,
+        LLMToolResponse @ <|
+            "Request"                    -> req,
+            "Tool"                       -> tool,
+            "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
+            "Output"                     -> result,
+            "ResponseString"             -> result
+        |>
+    };
+
+toolStringSplit // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -379,8 +501,8 @@ chatIndicatorSymbol // endDefinition;
 (*prepareMessagesForHTTPRequest*)
 prepareMessagesForHTTPRequest // beginDefinition;
 
-prepareMessagesForHTTPRequest[ messages_List ] :=
-    $lastHTTPMessages = prepareMessagesForLLM[ prepareMessageForHTTPRequest /@ messages ];
+prepareMessagesForHTTPRequest[ settings_, messages_List ] :=
+    $lastHTTPMessages = prepareMessagesForLLM[ settings, prepareMessageForHTTPRequest /@ messages ];
 
 prepareMessagesForHTTPRequest // endDefinition;
 
@@ -632,7 +754,7 @@ makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
-makeLLMConfiguration[ as_Association ] /; as[ "HybridToolMethod" ] :=
+makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
     $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
         "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
@@ -1264,6 +1386,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "GenerateLLMToolResponse"
         ];
 
+        toolID = tinyHash @ toolResponse;
+        toolCall = insertToolID[ toolCall, toolID ];
+        toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
+
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
         (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
 
@@ -1284,18 +1410,19 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Flatten @ {
             messages,
             <|
-                "Role"        -> "Assistant",
-                "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
-                "ToolRequest" -> True
+                "Role"         -> "Assistant",
+                "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "ToolRequest"  -> True,
+                "ToolRequests" -> { toolCall }
             |>,
-            makeToolResponseMessage[ settings, response ]
+            makeToolResponseMessage[ settings, response, toolResponse ]
         };
 
         $finishReason = None;
 
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[
-                      prepareMessagesForLLM @ constructMessages[ settings, newMessages ],
+                      prepareMessagesForLLM[ settings, constructMessages[ settings, newMessages ] ],
                       { __Association },
                       "ConstructMessages"
                   ],
@@ -1303,7 +1430,6 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
               ];
 
-        toolID = tinyHash @ toolResponse;
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, settings, output, toolID ];
@@ -1337,6 +1463,28 @@ toolEvaluation // endDefinition;
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
 Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertToolID*)
+insertToolID // beginDefinition;
+
+insertToolID[ HoldPattern @ LLMToolRequest[ as_Association, opts___ ], toolID_String ] :=
+    LLMToolRequest[ <| as, "RequestID" -> toolID |>, opts ];
+
+insertToolID[
+    HoldPattern @ LLMToolResponse[ a: KeyValuePattern[ "Output" -> KeyValuePattern[ "String" -> s_String ] ], opts___ ],
+    toolID_String,
+    toolCall_LLMToolRequest
+] := LLMToolResponse[ <| a, "ResponseString" -> s, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
+
+insertToolID[
+    HoldPattern @ LLMToolResponse[ as_Association, opts___ ],
+    toolID_String,
+    toolCall_LLMToolRequest
+] := LLMToolResponse[ <| as, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
+
+insertToolID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1374,12 +1522,12 @@ terminalQ // endDefinition;
 (*makeToolResponseMessage*)
 makeToolResponseMessage // beginDefinition;
 
-makeToolResponseMessage[ settings_, response_ ] :=
-    makeToolResponseMessage[ settings, settings[ "Model" ], response ];
+makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
+    makeToolResponseMessage[ settings, settings[ "Model" ], response, toolResponse ];
 
-makeToolResponseMessage[ settings_, model_Association, response_ ] := {
+makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
-    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ]
+    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response, toolResponse ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -1387,32 +1535,47 @@ makeToolResponseMessage // endDefinition;
 
 makeToolResponseMessage0 // beginDefinition;
 
-makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_ ] := <|
-    "Role"         -> "User",
-    "Content"      -> wrapResponse[ "<system>", response, "</system>" ],
-    "ToolResponse" -> True
+makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_, toolResponse_ ] := <|
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<system>", response, "</system>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
-makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_ ] := <|
-    "Role"         -> "User",
-    "Content"      -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
-    "ToolResponse" -> True
+makeToolResponseMessage0[ "DeepSeek", "DeepSeekReasoner", response_, toolResponse_ ] := <|
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
+|>;
+
+makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_, toolResponse_ ] := <|
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
 (* makeToolResponseMessage0[ service_, "Nemotron", response_ ] := <|
-    "Role"         -> "User",
-    "Content"      -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
-    "ToolResponse" -> True
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>;
 
 makeToolResponseMessage0[ service_, "Mistral", response_ ] := <|
-    "Role"         -> "User",
-    "Content"      -> wrapResponse[ "[TOOL_RESULTS] {\"content\": ", response, "} [/TOOL_RESULTS]" ],
-    "ToolResponse" -> True
+    "Role"          -> "User",
+    "Content"       -> wrapResponse[ "[TOOL_RESULTS] {\"content\": ", response, "} [/TOOL_RESULTS]" ],
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
 |>; *)
 
-makeToolResponseMessage0[ service_String, family_, response_ ] :=
-    <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
+makeToolResponseMessage0[ service_String, family_, response_, toolResponse_ ] := <|
+    "Role"          -> "System",
+    "Content"       -> response,
+    "ToolResponse"  -> True,
+    "ToolResponses" -> { toolResponse }
+|>;
 
 makeToolResponseMessage0 // endDefinition;
 
@@ -1474,7 +1637,7 @@ appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ],
 
 appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
-        append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        append = "\nENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];

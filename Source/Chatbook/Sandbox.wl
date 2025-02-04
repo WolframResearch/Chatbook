@@ -871,7 +871,8 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
         "!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")" /; expressionURIKeyQ @ key :>
             "InlinedExpression[\"" <> uri <> "\"]",
         "<!" ~~ uri: Except[ "!" ].. ~~ "!>" :>
-            "InlinedExpression[\"" <> uri <> "\"]"
+            "InlinedExpression[\"" <> uri <> "\"]",
+        "\n/"~~EndOfString :> ""
     }
 ];
 

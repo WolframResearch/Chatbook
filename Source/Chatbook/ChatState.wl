@@ -34,6 +34,8 @@ withChatState[ eval_ ] :=
             $progressContainer            = None,
             $showProgressText             = $showProgressText,
             $receivedToolCall             = False,
+            $thinkingStart                = None,
+            $thinkingEnd                  = None,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,
