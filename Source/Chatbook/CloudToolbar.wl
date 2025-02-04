@@ -30,17 +30,28 @@ $menuItemIconSize = { 20, 20 };
 ToggleCloudNotebookAssistantMenu // beginDefinition
 
 (* Try not to mess up any existing DockedCells *)
+(* NA cell is added to the top of the stack of DockedCells, but below the Chatbook cell if it exists *)
 ToggleCloudNotebookAssistantMenu[ ] := (
     CurrentValue[ EvaluationNotebook[ ], DockedCells ] =
         Replace[
             CurrentValue[ EvaluationNotebook[ ], DockedCells ],
             {
-                (* Remove if it exists *)
+                (* ============ Remove if it exists ============ *)
+                (* Case: NA cell is all alone (likely in default notebooks) *)
                 Cell[ ___, CellTags -> "NotebookAssistantDockedCell", ___ ] -> Inherited,
+                (* Case: NA cell is with other cells *)
                 { first___, Cell[ ___, CellTags -> "NotebookAssistantDockedCell", ___ ], last___ } :> { first, last },
-                (* Add if it does not exist *)
+                
+                (* ============ Add if it does not  ============ *)
+                (* Case: Chatbook cell exists so put NA cell right below it *)
+                { first___, cb:Cell[ ___, CellTags -> "ChatNotebookDockedCell", ___ ], last___ } :> { first, cb, makeChatCloudDefaultNotebookDockedCell[ ], last },
+                (* Case: no Chatbook cell but others exist so prepend NA cell *)
                 { existing___ } :> { makeChatCloudDefaultNotebookDockedCell[ ], existing },
+                (* Case: standalone cell is the Chatbook cell *)
+                c:Cell[ ___, CellTags -> "ChatNotebookDockedCell", ___ ] :> { c, makeChatCloudDefaultNotebookDockedCell[ ] },
+                (* Case: standalone cell is something else *)
                 c_Cell :> { makeChatCloudDefaultNotebookDockedCell[ ], c },
+                (* Fallthrough: add the NA cell as the only cell *)
                 _ :> { makeChatCloudDefaultNotebookDockedCell[ ] }
             }
         ];
@@ -381,25 +392,34 @@ cloudPreferencesButton // endDefinition;
 (*toggleCloudPreferences*)
 toggleCloudPreferences // beginDefinition;
 
+(* These cells are added to the bottom of the stack of DockedCells *)
 toggleCloudPreferences[ nbo_NotebookObject ] :=
-    toggleCloudPreferences[ nbo, Flatten @ List @ CurrentValue[ nbo, DockedCells ] ];
-
-toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell } ] :=
-    SetOptions[ nbo, DockedCells -> { cell, $cloudPreferencesCell } ];
-
-toggleCloudPreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
-    nbo,
-    DockedCells -> {
-        Cell[ BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ], Background -> None ],
-        $cloudPreferencesCell
-    }
-];
-
-toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell, _Cell } ] :=
-    SetOptions[ nbo, DockedCells -> { cell } ];
-
-toggleCloudPreferences[ nbo_NotebookObject, _ ] :=
-    SetOptions[ nbo, DockedCells -> Inherited ];
+(
+    CurrentValue[ nbo, DockedCells ] =
+        Replace[
+            CurrentValue[ nbo, DockedCells ],
+            {
+                (* ============ Remove if it exists ============ *)
+                (* Case: preferences cell is all alone (unlikely) *)
+                Cell[ ___, CellTags -> "CloudChatPreferencesDockedCell", ___ ] -> Inherited,
+                (* Case: chat notebook cell is all alone (possible but don't remove if in a Chatbook.nb notebook) *)
+                Cell[ ___, CellTags -> "ChatNotebookDockedCell", ___ ] -> Inherited /; CurrentValue[ nbo, StyleDefinitions ] =!= "Chatbook.nb",
+                (* Case: preferences cell is with other cells *)
+                { first___, Cell[ ___, CellTags -> "CloudChatPreferencesDockedCell", ___ ], last___ } :> { first, last },
+                
+                (* ============ Add if it does not  ============ *)
+                (* Case: other cells exist so append preferences cell *)
+                { existing___ } :> { existing, $cloudPreferencesCell },
+                (* Case: one other cell exist so append preferences cell *)
+                c_Cell :> { c, $cloudPreferencesCell },
+                (* Fallthrough: reset all Chatbook DockedCells *)
+                _ :> {
+                        Cell[ BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ], Background -> None, CellTags -> "ChatNotebookDockedCell"],
+                        $cloudPreferencesCell
+                    }
+            }
+        ];
+)
 
 toggleCloudPreferences // endDefinition;
 
@@ -418,7 +438,8 @@ $cloudPreferencesCell := $cloudPreferencesCell = Cell[
         ImageSize -> { Scaled[ 1 ], Automatic },
         Alignment -> { Center, Top }
     ],
-    Background -> GrayLevel[ 0.95 ]
+    Background -> GrayLevel[ 0.95 ],
+    CellTags -> "CloudChatPreferencesDockedCell"
 ];
 
 (* ::**************************************************************************************************************:: *)
