@@ -157,7 +157,7 @@ ShowNotebookAssistance // Options = {
     "ChatNotebookSettings" -> <| |>,
     "EvaluateInput"        -> False,
     "ExtraInstructions"    -> None,
-    "Input"                -> None,
+    "Input"                -> "",
     "NewChat"              -> Automatic
 };
 
@@ -436,7 +436,7 @@ showNotebookAssistanceInline // endDefinition;
 setInlineInputAndEvaluate // beginDefinition;
 
 setInlineInputAndEvaluate[ attached_CellObject, input_, evaluate_ ] := (
-    If[ StringQ @ input, CurrentValue[ attached, { TaggingRules, "ChatInputString" } ] = input ];
+    If[ validInputStringQ @ input, CurrentValue[ attached, { TaggingRules, "ChatInputString" } ] = input ];
     If[ TrueQ @ evaluate, evaluateAttachedInlineChat[ ] ];
     attached
 );
@@ -554,7 +554,7 @@ setNotebookAssistanceEvaluator // endDefinition;
 setWindowInputAndEvaluate // beginDefinition;
 
 setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] := (
-    If[ StringQ @ input,
+    If[ validInputStringQ @ input,
         CurrentValue[ nbo, { TaggingRules, "ChatInputString" } ] = input;
     ];
 

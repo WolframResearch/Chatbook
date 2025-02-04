@@ -28,7 +28,7 @@ $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
     ImageSize  -> { Scaled[ 1 ], Automatic },
     FieldHint  -> tr[ "AttachedChatFieldHint" ],
-    BaseStyle  -> { "Text" },
+    BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
     Appearance -> "Frameless"
 ];
 
@@ -368,7 +368,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         EvaluationNotebook[ ],
                                         { TaggingRules, "ChatInputString" }
                                     ],
-                                    String,
+                                    Boxes,
                                     ContinuousAction -> True,
                                     $inputFieldOptions
                                 ],
