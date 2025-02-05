@@ -46,7 +46,12 @@ addHandlerArguments // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*combineNestedHandlerData*)
 combineNestedHandlerData // beginDefinition;
-combineNestedHandlerData[ as1_Association, as2_Association ] := combineNestedHandlerData0 @ { as1, as2 };
+
+combineNestedHandlerData[ as1_Association, as2_Association ] := ReplaceAll[
+    combineNestedHandlerData0 @ { as1, as2 },
+    DownValues @ combineNestedHandlerData0
+];
+
 combineNestedHandlerData // endDefinition;
 
 combineNestedHandlerData0 // beginDefinition;
