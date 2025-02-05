@@ -79,6 +79,8 @@ $defaultChatSettings = <|
     "ToolExamplePrompt"              -> Automatic,
     "ToolMethod"                     -> Automatic,
     "ToolOptions"                    :> $DefaultToolOptions,
+    "ToolResponseRole"               -> Automatic,
+    "ToolResponseStyle"              -> Automatic,
     "Tools"                          -> Automatic,
     "ToolSelectionType"              -> <| |>,
     "ToolsEnabled"                   -> Automatic,
@@ -112,6 +114,160 @@ $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
 $$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Model-specific settings*)
+$modelAutoSettings = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Services*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Anthropic*)
+$modelAutoSettings[ "Anthropic" ] = <| |>;
+
+$modelAutoSettings[ "Anthropic", Automatic ] = <|
+    "ToolMethod" -> "Service"
+|>;
+
+$modelAutoSettings[ "Anthropic", "Claude2" ] = <|
+    "ToolMethod"       -> Automatic,
+    "ToolResponseRole" -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*DeepSeek*)
+$modelAutoSettings[ "DeepSeek" ] = <| |>;
+
+$modelAutoSettings[ "DeepSeek", "DeepSeekReasoner" ] = <|
+    "HybridToolMethod" -> False,
+    "ToolResponseRole" -> "User"
+|>;
+
+$modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
+    "ToolMethod" -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*GoogleGemini*)
+$modelAutoSettings[ "GoogleGemini" ] = <| |>;
+
+$modelAutoSettings[ "GoogleGemini", "GeminiPro" ] = <|
+    "ToolsEnabled" -> False
+|>;
+
+$modelAutoSettings[ "GoogleGemini", "GeminiProVision" ] = <|
+    "ToolsEnabled" -> False
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*MistralAI*)
+$modelAutoSettings[ "MistralAI" ] = <| |>;
+
+$modelAutoSettings[ "MistralAI", Automatic ] = <|
+    "ToolResponseRole"  -> "User",
+    "ToolResponseStyle" -> "SystemTags"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenAI*)
+$modelAutoSettings[ "OpenAI" ] = <| |>;
+
+$modelAutoSettings[ "OpenAI", "GPT35" ] = <|
+    "ToolMethod" -> "Service"
+|>;
+
+$modelAutoSettings[ "OpenAI", "GPT4" ] = <|
+
+|>;
+
+$modelAutoSettings[ "OpenAI", "GPT4Omni" ] = <|
+
+|>;
+
+$modelAutoSettings[ "OpenAI", "O1" ] = <|
+    "ToolMethod" -> "Service"
+|>;
+
+$modelAutoSettings[ "OpenAI", "O3" ] = <|
+    "ToolMethod" -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*TogetherAI*)
+$modelAutoSettings[ "TogetherAI" ] = <| |>;
+
+$modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
+    "ToolResponseRole" -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Any Service*)
+$modelAutoSettings[ Automatic ] = <| |>;
+
+$modelAutoSettings[ Automatic, "Qwen" ] = <|
+    "ToolResponseRole" -> "User"
+|>;
+
+$modelAutoSettings[ Automatic, "Nemotron" ] = <|
+    "ToolResponseRole" -> "User"
+|>;
+
+$modelAutoSettings[ Automatic, "Mistral" ] = <|
+    "ToolResponseRole" -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Defaults*)
+$modelAutoSettings[ Automatic, Automatic ] = <|
+    "ToolResponseRole" -> "System"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*autoModelSetting*)
+autoModelSetting // beginDefinition;
+
+autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
+    autoModelSetting[ model, key ];
+
+autoModelSetting[ model_Association, key_String ] :=
+    autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ];
+
+autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
+    autoModelSetting[ service, name, id, family, key ] =
+        FirstCase[
+            Unevaluated @ {
+                (* Check in order of specificity: *)
+                $modelAutoSettings[ service  , name     , key ],
+                $modelAutoSettings[ service  , id       , key ],
+                $modelAutoSettings[ service  , family   , key ],
+
+                (* Check for service-level default: *)
+                $modelAutoSettings[ service  , Automatic, key ],
+
+                (* Check service-agnostic defaults: *)
+                $modelAutoSettings[ Automatic, name     , key ],
+                $modelAutoSettings[ Automatic, id       , key ],
+                $modelAutoSettings[ Automatic, family   , key ],
+
+                (* Check for global default: *)
+                $modelAutoSettings[ Automatic, Automatic, key ]
+            },
+            e_ :> With[ { s = e }, s /; ! MissingQ @ s ]
+        ];
+
+autoModelSetting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -360,7 +516,16 @@ resolveAutoSetting // beginDefinition;
 resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAutoSetting0[ settings, key ] |>;
 resolveAutoSetting // endDefinition;
 
+
 resolveAutoSetting0 // beginDefinition;
+
+(* See if model-specific default is defined: *)
+resolveAutoSetting0[ as_, name_String ] :=
+    With[ { s = autoModelSetting[ as, name ] },
+        s /; ! MatchQ[ s, $$unspecified ]
+    ];
+
+(* Otherwise resolve defaults normally: *)
 resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat || $InlineChat ];
 resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
@@ -405,7 +570,7 @@ $autoSettingKeyDependencies = <|
     "BypassResponseChecking"     -> "ForceSynchronous",
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
-    "HybridToolMethod"           -> { "Model", "ToolsEnabled" },
+    "HybridToolMethod"           -> { "Model", "ToolsEnabled", "ToolMethod" },
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
     "MaxContextTokens"           -> { "Authentication", "Model" },
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
@@ -424,9 +589,12 @@ $autoSettingKeyDependencies = <|
 (* Sort topologically so dependencies will be satisfied in order: *)
 $autoSettingKeyPriority := Enclose[
     $autoSettingKeyPriority = ConfirmMatch[
-        TopologicalSort @ Flatten @ KeyValueMap[
-            Thread @* Reverse @* Rule,
-            $autoSettingKeyDependencies
+        DeleteDuplicates @ Prepend[
+            TopologicalSort @ Flatten @ KeyValueMap[
+                Thread @* Reverse @* Rule,
+                $autoSettingKeyDependencies
+            ],
+            "Model"
         ],
         { __String? StringQ }
     ],
@@ -443,6 +611,7 @@ $autoSettingKeyPriority := Enclose[
 (*hybridToolMethodQ*)
 hybridToolMethodQ // beginDefinition;
 hybridToolMethodQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
+hybridToolMethodQ[ KeyValuePattern[ "ToolMethod" -> "Service" ] ] := False;
 hybridToolMethodQ[ as_Association ] := hybridToolMethodQ[ as, as[ "Model" ] ];
 hybridToolMethodQ[ as_, $$hybridToolModel ] := True;
 hybridToolMethodQ[ as_, _ ] := False;
@@ -574,9 +743,6 @@ autoToolExamplePromptStyle0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoStopTokens*)
 autoStopTokens // beginDefinition;
-
-autoStopTokens[ as_Association? o1ModelQ ] :=
-    None;
 
 autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
     If[ TrueQ @ $AutomaticAssistance, { "[INFO]" }, None ];
@@ -793,22 +959,22 @@ getNamedLLMEvaluator // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toolsEnabledQ*)
 $$disabledToolsModel = Alternatives[
-    ___ ~~ "gpt-3" ~~ ___,
     "chat-bison-001",
-    "claude-instant-1.2",
     "gemini-1.0-pro" ~~ ___,
     "gemini-pro-vision",
-    "gemini-pro",
-    "o1" ~~ WordBoundary ~~ ___
+    "gemini-pro"
 ];
 
+toolsEnabledQ // beginDefinition;
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
+toolsEnabledQ[ model_Association ] := With[ { e = autoModelSetting[ model, "ToolsEnabled" ] }, e /; BooleanQ @ e ];
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ { service_String, name_String } ] := toolsEnabledQ @ <| "Service" -> service, "Name" -> name |>;
 toolsEnabledQ[ model_String ] := ! StringMatchQ[ model, $$disabledToolsModel, IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
+toolsEnabledQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
