@@ -696,7 +696,7 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result },
+    Module[ { auth, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
@@ -716,7 +716,14 @@ chatSubmit0[
 
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
 
-        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> result[ "Content" ] |> ];
+        chunks = <|
+            "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
+            "ToolRequestsChunk" -> Lookup[ result, "ToolRequests", { } ]
+        |>;
+
+        content = extractBodyChunks @ chunks;
+
+        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> content |> ];
         logUsage @ container;
         trimStopTokens[ container, stop ];
         checkResponse[ settings, Unevaluated @ container, cellObject, <| |> ];
