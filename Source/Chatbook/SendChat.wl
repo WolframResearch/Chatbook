@@ -355,10 +355,10 @@ prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
     $lastSubmittedMessages = rewriteMessageRoles[
         settings,
         contentFlatten[
-        KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
-            messages,
-            s_String :> RuleCondition @ StringTrim @ StringReplace[
-                s,
+            KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
+                messages,
+                s_String :> RuleCondition @ StringTrim @ StringReplace[
+                    s,
                     "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
                         "\nENDRESULT\n"
                 ]
@@ -1565,7 +1565,12 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
-    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response, toolResponse ]
+    makeToolResponseMessage0[
+        If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
+        settings[ "ToolResponseStyle" ],
+        response,
+        toolResponse
+    ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -1573,21 +1578,14 @@ makeToolResponseMessage // endDefinition;
 
 makeToolResponseMessage0 // beginDefinition;
 
-makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_, toolResponse_ ] := <|
-    "Role"          -> "User",
+makeToolResponseMessage0[ role_, "SystemTags", response_, toolResponse_ ] := <|
+    "Role"          -> If[ StringQ @ role, role, "System" ],
     "Content"       -> wrapResponse[ "<system>", response, "</system>" ],
     "ToolResponse"  -> True,
     "ToolResponses" -> { toolResponse }
 |>;
 
-makeToolResponseMessage0[ "DeepSeek", "DeepSeekReasoner", response_, toolResponse_ ] := <|
-    "Role"          -> "User",
-    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
-    "ToolResponse"  -> True,
-    "ToolResponses" -> { toolResponse }
-|>;
-
-makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_, toolResponse_ ] := <|
+makeToolResponseMessage0[ "User", style_, response_, toolResponse_ ] := <|
     "Role"          -> "User",
     "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
     "ToolResponse"  -> True,
@@ -1608,8 +1606,8 @@ makeToolResponseMessage0[ service_, "Mistral", response_ ] := <|
     "ToolResponses" -> { toolResponse }
 |>; *)
 
-makeToolResponseMessage0[ service_String, family_, response_, toolResponse_ ] := <|
-    "Role"          -> "System",
+makeToolResponseMessage0[ role_, style_, response_, toolResponse_ ] := <|
+    "Role"          -> If[ StringQ @ role, role, "System" ],
     "Content"       -> response,
     "ToolResponse"  -> True,
     "ToolResponses" -> { toolResponse }
