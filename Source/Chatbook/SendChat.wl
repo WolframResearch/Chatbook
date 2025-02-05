@@ -346,15 +346,22 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
-    $lastSubmittedMessages = contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+    $lastSubmittedMessages = rewriteMessageRoles[
+        settings,
+        contentFlatten @ rewriteServiceToolCalls[ settings, messages ]
+    ];
 
 prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
-    $lastSubmittedMessages = contentFlatten[
+    $lastSubmittedMessages = rewriteMessageRoles[
+        settings,
+        contentFlatten[
         KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
             messages,
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                        "\nENDRESULT\n"
+                ]
             ]
         ]
     ];
@@ -476,6 +483,30 @@ toolStringSplit[ req_LLMToolRequest, tool_LLMTool, result_String ] :=
     };
 
 toolStringSplit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMessageRoles*)
+rewriteMessageRoles // beginDefinition;
+rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
+rewriteMessageRoles[ settings_, messages_ ] := messages;
+rewriteMessageRoles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertSystemRoleToUser*)
+convertSystemRoleToUser // beginDefinition;
+
+convertSystemRoleToUser[ messages_List ] :=
+    convertSystemRoleToUser /@ messages;
+
+convertSystemRoleToUser[ as: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } ] :=
+    <| as, "Role" -> "User" |>;
+
+convertSystemRoleToUser[ message_Association ] :=
+    message;
+
+convertSystemRoleToUser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
