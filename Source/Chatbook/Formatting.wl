@@ -1309,8 +1309,9 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
 $textDataFormatRules = {
-    "<think>"~~thoughts__~~"</think>" :> thoughtsOpener @ thoughts,
-    "<think>"~~thoughts__~~EndOfString :> thinkingOpener @ thoughts,
+    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
