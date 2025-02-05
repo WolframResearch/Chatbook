@@ -1559,14 +1559,25 @@ parsePartialToolCallString // beginDefinition;
 (* TODO: define a `parsePartialSimpleToolCallString` that can also be used in `simpleToolRequestParser` *)
 
 parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
-    Module[ { command, argString, tool, name, paramNames, params, result },
-        command = ConfirmBy[
-            StringReplace[
+    Catch @ Module[ { command, argString, tool, name, paramNames, params, result },
+        command = First @ ConfirmMatch[
+            StringCases[
                 string,
-                StartOfString ~~ $$ws ~~ ("/" ~~ cmd: $$cmd) ~~ $$eol ~~ ___ :> cmd
+                StartOfString ~~ $$ws ~~ ("/" ~~ cmd: $$cmd) ~~ $$eol ~~ ___ :> cmd,
+                1
             ],
-            toolShortNameQ,
+            { _String },
             "Command"
+        ];
+
+        If[ ! toolShortNameQ @ command,
+            Throw @ Failure[
+                "InvalidToolCall",
+                <|
+                    "MessageTemplate"   -> "No tool found that uses the command \"`1`\".",
+                    "MessageParameters" -> { command }
+                |>
+            ]
         ];
 
         argString = First[
