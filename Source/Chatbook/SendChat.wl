@@ -346,15 +346,22 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
-    $lastSubmittedMessages = contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+    $lastSubmittedMessages = rewriteMessageRoles[
+        settings,
+        contentFlatten @ rewriteServiceToolCalls[ settings, messages ]
+    ];
 
 prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
-    $lastSubmittedMessages = contentFlatten[
-        KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
-            messages,
-            s_String :> RuleCondition @ StringTrim @ StringReplace[
-                s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+    $lastSubmittedMessages = rewriteMessageRoles[
+        settings,
+        contentFlatten[
+            KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
+                messages,
+                s_String :> RuleCondition @ StringTrim @ StringReplace[
+                    s,
+                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                        "\nENDRESULT\n"
+                ]
             ]
         ]
     ];
@@ -476,6 +483,30 @@ toolStringSplit[ req_LLMToolRequest, tool_LLMTool, result_String ] :=
     };
 
 toolStringSplit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMessageRoles*)
+rewriteMessageRoles // beginDefinition;
+rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
+rewriteMessageRoles[ settings_, messages_ ] := messages;
+rewriteMessageRoles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertSystemRoleToUser*)
+convertSystemRoleToUser // beginDefinition;
+
+convertSystemRoleToUser[ messages_List ] :=
+    convertSystemRoleToUser /@ messages;
+
+convertSystemRoleToUser[ as: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } ] :=
+    <| as, "Role" -> "User" |>;
+
+convertSystemRoleToUser[ message_Association ] :=
+    message;
+
+convertSystemRoleToUser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -665,7 +696,7 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result },
+    Module[ { auth, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
@@ -685,7 +716,14 @@ chatSubmit0[
 
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
 
-        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> result[ "Content" ] |> ];
+        chunks = <|
+            "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
+            "ToolRequestsChunk" -> Lookup[ result, "ToolRequests", { } ]
+        |>;
+
+        content = extractBodyChunks @ chunks;
+
+        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> content |> ];
         logUsage @ container;
         trimStopTokens[ container, stop ];
         checkResponse[ settings, Unevaluated @ container, cellObject, <| |> ];
@@ -1527,7 +1565,12 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
-    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response, toolResponse ]
+    makeToolResponseMessage0[
+        If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
+        settings[ "ToolResponseStyle" ],
+        response,
+        toolResponse
+    ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -1535,21 +1578,14 @@ makeToolResponseMessage // endDefinition;
 
 makeToolResponseMessage0 // beginDefinition;
 
-makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_, toolResponse_ ] := <|
-    "Role"          -> "User",
+makeToolResponseMessage0[ role_, "SystemTags", response_, toolResponse_ ] := <|
+    "Role"          -> If[ StringQ @ role, role, "System" ],
     "Content"       -> wrapResponse[ "<system>", response, "</system>" ],
     "ToolResponse"  -> True,
     "ToolResponses" -> { toolResponse }
 |>;
 
-makeToolResponseMessage0[ "DeepSeek", "DeepSeekReasoner", response_, toolResponse_ ] := <|
-    "Role"          -> "User",
-    "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
-    "ToolResponse"  -> True,
-    "ToolResponses" -> { toolResponse }
-|>;
-
-makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_, toolResponse_ ] := <|
+makeToolResponseMessage0[ "User", style_, response_, toolResponse_ ] := <|
     "Role"          -> "User",
     "Content"       -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
     "ToolResponse"  -> True,
@@ -1570,8 +1606,8 @@ makeToolResponseMessage0[ service_, "Mistral", response_ ] := <|
     "ToolResponses" -> { toolResponse }
 |>; *)
 
-makeToolResponseMessage0[ service_String, family_, response_, toolResponse_ ] := <|
-    "Role"          -> "System",
+makeToolResponseMessage0[ role_, style_, response_, toolResponse_ ] := <|
+    "Role"          -> If[ StringQ @ role, role, "System" ],
     "Content"       -> response,
     "ToolResponse"  -> True,
     "ToolResponses" -> { toolResponse }
