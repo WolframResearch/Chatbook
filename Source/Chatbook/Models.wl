@@ -238,15 +238,17 @@ multimodalModelQ // endDefinition;
 modelNameData // beginDefinition;
 
 modelNameData[ data: KeyValuePattern @ {
-    "Name"         -> _String,
-    "BaseName"     -> _String,
-    "Date"         -> _? modelDateSpecQ | None,
-    "Preview"      -> True|False,
-    "Family"       -> _String|None,
-    "FineTuned"    -> True|False,
-    "FineTuneName" -> _String|None,
-    "Organization" -> _String|None,
-    "ID"           -> _String|None
+    "Name"           -> _String,
+    "BaseID"         -> _String,
+    "BaseName"       -> _String,
+    "Date"           -> _? modelDateSpecQ | None,
+    "Preview"        -> True|False,
+    "Family"         -> _String|None,
+    "FineTuned"      -> True|False,
+    "FineTuneName"   -> _String|None,
+    "Organization"   -> _String|None,
+    "FineTuneID"     -> _String|None,
+    "CheckpointStep" -> _Integer|None
 } ] := modelNameData[ data ] = KeySort @ data;
 
 modelNameData[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
@@ -258,14 +260,16 @@ modelNameData[ model0_ ] := Enclose[
         model = ConfirmBy[ toModelName @ model0, StringQ, "Model" ];
 
         defaults = <|
-            "Name"         -> model,
-            "Date"         -> None,
-            "Preview"      -> False,
-            "Family"       -> None,
-            "FineTuned"    -> False,
-            "FineTuneName" -> None,
-            "Organization" -> None,
-            "ID"           -> None
+            "Name"           -> model,
+            "BaseID"         -> makeBaseID @ model,
+            "Date"           -> None,
+            "Preview"        -> False,
+            "Family"         -> None,
+            "FineTuned"      -> False,
+            "FineTuneName"   -> None,
+            "Organization"   -> None,
+            "FineTuneID"     -> None,
+            "CheckpointStep" -> None
         |>;
 
         data = ConfirmBy[
@@ -291,6 +295,18 @@ modelNameData // endDefinition;
 
 
 modelNameData0 // beginDefinition;
+
+modelNameData0[ model_String ] /; StringContainsQ[ model, "/" ] := Enclose[
+    Module[ { parts, before, data },
+        parts = StringSplit[ model, "/" ];
+        before = StringRiffle[ capitalize @ Most @ parts, "/" ];
+        data = ConfirmBy[ modelNameData @ Last @ parts, AssociationQ, "Data" ];
+        data[ "Name" ] = model;
+        data[ "BaseName" ] = before <> "/" <> ConfirmBy[ data[ "BaseName" ], StringQ, "BaseName" ];
+        data
+    ],
+    throwInternalFailure
+];
 
 modelNameData0[ model_String ] :=
     modelNameData0 @ StringSplit[
@@ -333,9 +349,61 @@ modelNameData0[ { before___, gpt_String, "4o", after___ } ] /; StringEndsQ[ gpt,
     modelNameData0 @ { before, gpt<>"-4", "Omni", after };
 
 modelNameData0[ parts: { __String } ] :=
-	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
+	<|
+        "BaseID"   -> makeBaseID @ StringRiffle @ capitalize @ parts,
+        "BaseName" -> StringRiffle @ capitalize @ parts
+    |>;
 
 modelNameData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeBaseID*)
+makeBaseID // beginDefinition;
+
+makeBaseID[ name_String ] /; StringContainsQ[ name, "/" ] :=
+    StringRiffle[ makeBaseID /@ StringSplit[ name, "/" ], "/" ];
+
+makeBaseID[ name_String ] := StringDelete[
+    StringDelete[
+        StringRiffle @ capitalize @ StringSplit[
+            StringReplace[
+                StringDelete[ name, WordBoundary~~("1.0"|"001")~~WordBoundary ],
+                WordBoundary ~~ v: DigitCharacter.. ~~ ".0" ~~ WordBoundary :> v
+            ],
+            Except[ WordCharacter ]
+        ],
+        {
+            WordBoundary~~DigitCharacter..~~("b"|"k")~~WordBoundary
+        },
+        IgnoreCase -> True
+    ],
+    Except[ WordCharacter ]
+];
+
+makeBaseID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*capitalize*)
+capitalize // beginDefinition;
+
+capitalize[ str: _String | { ___String } ] := StringReplace[
+    Capitalize @ str,
+    {
+        WordBoundary~~"ai"~~WordBoundary -> "AI",
+        WordBoundary~~"dbrx"~~WordBoundary -> "Databricks",
+        WordBoundary~~"dpo"~~WordBoundary -> "DPO",
+        WordBoundary~~"hf"~~WordBoundary -> "HF",
+        WordBoundary~~"llm"~~WordBoundary -> "LLM",
+        WordBoundary~~"lm"~~WordBoundary -> "LM",
+        WordBoundary~~"vl"~~WordBoundary -> "VL",
+        WordBoundary~~"llama"~~WordBoundary -> "Llama"
+    },
+    IgnoreCase -> True
+];
+
+capitalize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -346,22 +414,51 @@ $$parameterCount  = ((DigitCharacter.. ~~ "x") | "") ~~ $$parameterCount0;
 $$versionOrParams = $$version | $$parameterCount | "";
 
 chooseModelFamily // beginDefinition;
-chooseModelFamily[ as_Association ] := chooseModelFamily @ as[ "Name" ];
-chooseModelFamily[ name_String ] := chooseModelFamily[ name ] = chooseModelFamily0 @ name;
+
+chooseModelFamily[ as_Association ] :=
+    With[ { s = chooseModelFamily @ as[ "Name" ] },
+        If[ StringQ @ s,
+            s,
+            FixedPoint[
+                StringDelete[
+                    {
+                        Except[ WordCharacter ],
+                        "Mini",
+                        "Turbo",
+                        DigitCharacter..~~"k"~~EndOfString,
+                        "00"~~DigitCharacter~~EndOfString,
+                        "Nightly"~~EndOfString,
+                        "Tuning"~~EndOfString,
+                        "Hf"~~EndOfString
+                    }
+                ],
+                as[ "BaseID" ]
+            ]
+        ]
+    ];
+
+chooseModelFamily[ name_String ] :=
+    chooseModelFamily[ name ] = chooseModelFamily0 @ name;
+
 chooseModelFamily // endDefinition;
 
 chooseModelFamily0 // beginDefinition;
 
+chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
+
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Chat"    , $$versionOrParams } ] ] := "DeepSeekChat";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrParams } ] ] := "DeepSeekChat";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrParams } ] ] := "DeepSeekReasoner";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
+
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
-chooseModelFamily0[ wordsPattern[ "Llama"     ~~ $$versionOrParams ] ] := "Llama";
 chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";
 chooseModelFamily0[ wordsPattern[ "CodeGemma" ~~ $$versionOrParams ] ] := "Gemma";
 chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen";
 chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
-
-chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
-chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
+chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
 
 chooseModelFamily0[ _String ] := None;
 
@@ -382,20 +479,24 @@ modelDateSpecQ // endDefinition;
 createModelDisplayName // beginDefinition;
 
 createModelDisplayName[ KeyValuePattern @ {
-    "BaseName"     -> base_String,
-    "Date"         -> date0_,
-    "Preview"      -> preview0_,
-    "Organization" -> org0_,
-    "FineTuneName" -> name0_,
-    "ID"           -> id0_
+    "BaseName"       -> base_String,
+    "Date"           -> date0_,
+    "Preview"        -> preview0_,
+    "Organization"   -> org0_,
+    "FineTuneName"   -> name0_,
+    "FineTuneID"     -> id0_,
+    "CheckpointStep" -> step0_
 } ] :=
-    Module[ { date, preview, id, org, ftName, ftID },
+    Module[ { date, preview, id, org, ftName, ftID, step },
 
         date    = Replace[ modelDateString @ date0, Except[ _String? StringQ ] -> Nothing ];
         preview = If[ TrueQ @ preview0, "(Preview)", Nothing ];
         id      = If[ StringQ @ id0 && id0 =!= "", id0, Nothing ];
         org     = If[ StringQ @ org0 && ! MatchQ[ org0, ""|"personal" ], org0, Nothing ];
         ftName  = If[ StringQ @ name0 && name0 =!= "", name0, Nothing ];
+        step    = If[ IntegerQ @ step0, ToString @ step0, Nothing ];
+
+        If[ StringQ @ step, id = id <> ":" <> step ];
 
         ftID = Which[
             StringQ @ ftName && StringQ @ org, "(" <> StringRiffle[ { org, ftName }, ":" ] <> ")",
@@ -405,12 +506,20 @@ createModelDisplayName[ KeyValuePattern @ {
 
         If[ StringQ @ ftID, date = Nothing ];
 
-        StringReplace[
-            StringRiffle[ { base, date, preview, ftID }, " " ],
-            {
-                ") (Preview)" -> " Preview)",
-                ") (" -> ", "
-            }
+        FixedPoint[
+            StringReplace[
+                {
+                    ") (Preview)"      -> " Preview)",
+                    ") ("              -> ", ",
+                    "Qw Q"             -> "QwQ",
+                    "Meta-Llama/"      -> "Meta/",
+                    "Meta Llama Llama" -> "Meta/Llama",
+                    "Meta/Meta "       -> "Meta/",
+                    "Deepseek-AI/"     -> "DeepSeek/",
+                    "Mistralai/"       -> "Mistral/"
+                }
+            ],
+            StringRiffle[ { base, date, preview, ftID }, " " ]
         ]
     ];
 
@@ -435,12 +544,18 @@ fineTunedModelNameData // beginDefinition;
 fineTunedModelNameData[ name_String ] :=
     fineTunedModelNameData @ StringSplit[ name, ":" ];
 
+fineTunedModelNameData[ { before__String, step_String } ] /; StringMatchQ[ step, "ckpt-step-"~~DigitCharacter.. ] := <|
+    fineTunedModelNameData @ { before },
+    "CheckpointStep" -> ToExpression @ StringDelete[ step, "ckpt-step-" ]
+|>;
+
 fineTunedModelNameData[ { "ft", model_, org_, name_, id_ } ] := <|
     modelNameData0 @ model,
-    "Organization" -> org,
-    "ID"           -> id,
-    "FineTuneName" -> name,
-    "FineTuned"    -> True
+    "CheckpointStep" -> None,
+    "Organization"   -> org,
+    "FineTuneID"     -> id,
+    "FineTuneName"   -> name,
+    "FineTuned"      -> True
 |>;
 
 fineTunedModelNameData[ { "ft", rest__String } ] :=
