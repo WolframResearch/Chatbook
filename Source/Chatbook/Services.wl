@@ -194,7 +194,7 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
     ];
 
 getModelListQuietly[ info_Association ] := Quiet[
-    checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
+    ServiceFramework`WithCredentialsProvider["llm"] @ checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
     { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
 ];
 
@@ -214,7 +214,11 @@ checkModelList[ info_, $Canceled | $Failed | Missing[ "NotConnected" ] ] :=
 checkModelList[ info_, Failure[ "ConfirmationFailed", KeyValuePattern[ "Expression" :> expr_ ] ] ] :=
     checkModelList[ info, expr ];
 
+checkModelList[ info_, Failure[ "AuthenticationError", KeyValuePattern[ {} ] ] ] :=
+    Missing[ "NotConnected" ];
+
 checkModelList[ info_, HoldPattern[ _ServiceExecute ] ] := (
+    (* note *)
     If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
         KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, info[ "Service" ] ]
     ];

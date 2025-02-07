@@ -687,7 +687,7 @@ serviceConnectButton[
         tr[ "PreferencesContentServiceConnectButton" ],
         Needs[ "Wolfram`LLMFunctions`" -> None ];
         Replace[
-            Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ],
+            ServiceFramework`WithCredentialsProvider["llm"] @ Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ],
             _ServiceObject :>
                 If[ ListQ @ getServiceModelList @ service,
                     serviceSelectCallback[
@@ -1504,7 +1504,7 @@ connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] 
         tr[ "ConnectButton" ],
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         clearConnectionCache[ service, False ];
-        Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ];
+        ServiceFramework`WithCredentialsProvider["llm"] @ Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ];
         createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
         Method -> "Queued"
     ];
@@ -1806,9 +1806,13 @@ credentialKey // endDefinition;
 (*savedConnectionQ*)
 savedConnectionQ // beginDefinition;
 
-savedConnectionQ[ service_String ] := (
+savedConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[] := (
     Needs[ "OAuth`" -> None ];
     MatchQ[ ServiceConnections`SavedConnections @ service, { __ } ]
+);
+
+savedConnectionQ[ service_String ] /; serviceFrameworkAvailable[] := (
+    MatchQ[ Join[ServiceObjects @ service, ServiceFramework`WithCredentialsProvider["llm"] @ ServiceObjects @ service ], { __ } ]
 );
 
 savedConnectionQ // endDefinition;
@@ -1818,10 +1822,12 @@ savedConnectionQ // endDefinition;
 (*serviceConnectionQ*)
 serviceConnectionQ // beginDefinition;
 
-serviceConnectionQ[ service_String ] := (
+serviceConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[] := (
     Needs[ "OAuth`" -> None ];
     MatchQ[ ServiceConnections`ServiceConnections @ service, { __ } ]
 );
+
+serviceConnectionQ[ service_String ] /; serviceFrameworkAvailable[] := savedConnectionQ[ service ];
 
 serviceConnectionQ // endDefinition;
 
@@ -1833,7 +1839,7 @@ clearConnectionCache // beginDefinition;
 clearConnectionCache[ service_String ] :=
     clearConnectionCache[ service, True ];
 
-clearConnectionCache[ service_String, delete: True|False ] := (
+clearConnectionCache[ service_String, delete: True|False ] /; ! serviceFrameworkAvailable[] := (
     Needs[ "Wolfram`LLMFunctions`" -> None ];
     If[ delete,
         Needs[ "OAuth`" -> None ];
@@ -1842,6 +1848,15 @@ clearConnectionCache[ service_String, delete: True|False ] := (
     ];
     If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
         KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, service ]
+    ];
+    InvalidateServiceCache[ ];
+);
+
+clearConnectionCache[ service_String, delete: True|False ] /; serviceFrameworkAvailable[] := (
+    Needs[ "Wolfram`LLMFunctions`" -> None ];
+    If[ delete,
+        DeleteObject[ServiceObjects @ service];
+        ServiceFramework`WithCredentialsProvider["llm"] @ DeleteObject[ServiceObjects @ service];
     ];
     InvalidateServiceCache[ ];
 );

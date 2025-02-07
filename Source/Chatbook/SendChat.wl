@@ -678,6 +678,7 @@ chatSubmit[ args__ ] := Quiet[
     $receivedToolCall = False;
     rasterizeBlock @ chatSubmit0 @ args,
     {
+        (* note *)
         ServiceConnections`SavedConnections::wname,
         ServiceConnections`ServiceConnections::wname,
         URLSubmit::invm,
@@ -751,10 +752,12 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
             HoldComplete[
                 standardizeMessageKeys @ messages,
                 makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
+                Sequence @@ {
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    If[!serviceFrameworkAvailable[], "TestConnection" -> False, Nothing]
+                }
             ],
             <|
                 "Container"             :> container,

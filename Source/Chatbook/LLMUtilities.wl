@@ -125,10 +125,12 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
         setServiceCaller @ LLMServices`ChatSubmit[
             messages,
             config,
-            Authentication       -> auth,
-            HandlerFunctions     -> handlers,
-            HandlerFunctionsKeys -> keys,
-            "TestConnection"     -> False
+            Sequence @@ {
+                Authentication       -> auth,
+                HandlerFunctions     -> handlers,
+                HandlerFunctionsKeys -> keys,
+                If[!serviceFrameworkAvailable[], "TestConnection" -> False, Nothing]
+            }
         ]
     ],
     throwInternalFailure
