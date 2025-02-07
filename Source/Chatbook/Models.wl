@@ -388,7 +388,9 @@ makeBaseID // endDefinition;
 (*capitalize*)
 capitalize // beginDefinition;
 
-capitalize[ str: _String | { ___String } ] := StringReplace[
+capitalize[ { } ] := { };
+
+capitalize[ str: _String | { __String } ] := StringReplace[
     Capitalize @ str,
     {
         WordBoundary~~"ai"~~WordBoundary -> "AI",
