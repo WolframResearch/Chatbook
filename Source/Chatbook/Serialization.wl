@@ -77,6 +77,8 @@ $$ignoredCellStyle = Alternatives[
 $$noCodeBlockStyle = Alternatives[
     "ChatInput",
     "ChatOutput",
+    "DisplayFormula",
+    "DisplayFormulaNumbered",
     "FunctionEssay",
     "GuideFunctionsSubsection",
     "NotebookImage",
@@ -111,6 +113,12 @@ $defaultWindowWidth = 625;
 
 (* Maximum number of images to include in multimodal messages per cell before switching to a fully rasterized cell: *)
 $maxMarkdownBoxes = 5;
+
+(* Maximum number of bytes to include in multimodal messages per cell before switching to a fully rasterized cell: *)
+$maxMarkdownImageCellBytes = 10000000;
+
+(* Maximum number of bytes for a single box to be rasterized: *)
+$maxBoxSizeForImages = 1000000;
 
 (* Whether to generate a transcript and preview images for Video[...] expressions: *)
 $generateVideoPrompt = False;
@@ -650,12 +658,12 @@ cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
 (* Rasterize entire cell if it contains enough graphics boxes *)
-cellToString[ cell: Cell[ _BoxData, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
-    $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
-        toMarkdownImageBox @ cell;
+cellToString[ cell: Cell[ _, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
+    rasterWholeCellQ @ cell :=
+        MakeExpressionURI[ "cell image", RawBoxes @ StyleBox[ cell, "GraphicsRawBoxes" ] ];
 
 cellToString[ cell: Cell[ _, "Picture", ___ ] ] /; $multimodalImages :=
-        toMarkdownImageBox @ cell;
+        MakeExpressionURI[ "cell image", RawBoxes @ StyleBox[ cell, "GraphicsRawBoxes" ] ];
 
 cellToString[ other_ ] :=
     cellToString0 @ other;
@@ -705,6 +713,27 @@ cellsToString[ cells_List ] :=
             "\n\n" ~~ Longest[ "\n".. ] -> "\n\n"
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rasterWholeCellQ*)
+rasterWholeCellQ // beginDefinition;
+
+rasterWholeCellQ[ cell_Cell ] := Enclose[
+    Module[ { maxBoxCount, boxes, count },
+        maxBoxCount = ConfirmMatch[ $maxMarkdownBoxes, _Integer? Positive, "MaxMarkdownBoxes" ];
+        boxes = Cases[ cell, $$graphicsBox, Infinity ];
+        count = Length @ boxes;
+        Which[
+            count > maxBoxCount, True,
+            count > 0 && ByteCount @ boxes > $maxMarkdownImageCellBytes, True,
+            True, False
+        ]
+    ],
+    throwInternalFailure
+];
+
+rasterWholeCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1166,6 +1195,11 @@ $graphicsBoxStringReplacements = {
 (*toMarkdownImageBox*)
 toMarkdownImageBox // beginDefinition;
 
+toMarkdownImageBox[ graphics_ ] /; $multimodalImages && ByteCount @ graphics > $maxBoxSizeForImages :=
+    Block[ { $multimodalImages = False },
+        fasterCellToString0 @ graphics
+    ];
+
 toMarkdownImageBox[ graphics_ ] := Enclose[
     Catch @ Module[ { uri },
         uri = ConfirmBy[ boxesToExpressionURI @ graphics, StringQ, "RasterID" ];
@@ -1190,16 +1224,36 @@ boxesToExpressionURI[ boxes_ ] :=
     Replace[
         Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ],
         {
-            HoldComplete[ expr_ ] :> (
+            HoldComplete[ expr_ ] /; graphicsQ @ Unevaluated @ expr :> (
                 (* Ensure that the expression is recognized as a graphics expression later: *)
-                HoldPattern[ graphicsQ[ Verbatim @ expr ] ] = True;
+                cacheBoxRaster[ boxes, expr ];
                 MakeExpressionURI @ Unevaluated @ expr
             ),
-            _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
+            _ :> MakeExpressionURI[ "image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
         }
     ];
 
 boxesToExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*cacheBoxRaster*)
+cacheBoxRaster // beginDefinition;
+
+cacheBoxRaster[ boxes_, expr_ ] /; $useRasterCache && $countImageTokens :=
+    Catch @ Module[ { hash, img },
+        hash = rasterHash @ expr;
+        img = Lookup[ $rasterCache, hash, None ];
+        If[ img =!= None, Throw @ img ];
+        img = Block[ { $useRasterCache = False }, rasterize @ RawBoxes @ boxes ];
+        $rasterCache[ hash ] = img;
+        img
+    ];
+
+cacheBoxRaster[ boxes_, expr_ ] :=
+    Null;
+
+cacheBoxRaster // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -1222,18 +1276,6 @@ rasterizeGraphics[ cell_Cell, width_Real ] :=
     ];
 
 rasterizeGraphics // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsubsection::Closed:: *)
-(*checkedRasterize*)
-checkedRasterize // beginDefinition;
-
-checkedRasterize[ expr_ ] := Quiet[
-    Check[ rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
-    Rasterize::bigraster
-];
-
-checkedRasterize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2880,6 +2922,7 @@ makeGraphicsString[ Raster3DBox[ a___ ], _ ] :=
 (* ::Subsubsubsection::Closed:: *)
 (*makeGraphicsExpression*)
 makeGraphicsExpression // SetFallthroughError;
+makeGraphicsExpression[ gfx_ ] /; ByteCount @ gfx > $maxBoxSizeForImages := $Failed;
 makeGraphicsExpression[ gfx_ ] := Quiet @ Check[ ToExpression[ gfx, StandardForm, HoldComplete ], $Failed ];
 
 (* ::**************************************************************************************************************:: *)

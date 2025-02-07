@@ -947,29 +947,25 @@ inferMultimodalTypes[ content_List ] := Enclose[
 
 inferMultimodalTypes // endDefinition;
 
+
 (* TODO: add a way to control image detail and insert "Detail" -> "..." here when appropriate: *)
 inferMultimodalTypes0 // beginDefinition;
-inferMultimodalTypes0[ content_List        ] := inferMultimodalTypes0 /@ content;
-inferMultimodalTypes0[ content_String      ] := <| "Type" -> "Text" , "Data" -> content |>;
-inferMultimodalTypes0[ content_? graphicsQ ] := <| "Type" -> "Image", "Data" -> ensureCompatibleImage @ content |>;
-inferMultimodalTypes0 // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*ensureCompatibleImage*)
-ensureCompatibleImage // beginDefinition;
-ensureCompatibleImage[ img_RawBoxes ] := rasterize @ img; (* Workaround for 446030 *)
-ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
-ensureCompatibleImage[ img_ ] := img;
-ensureCompatibleImage // endDefinition;
+inferMultimodalTypes0[ content_List ] :=
+    inferMultimodalTypes0 /@ content;
 
+inferMultimodalTypes0[ content_String ] :=
+    <| "Type" -> "Text", "Data" -> content |>;
 
-$useRasterizationCompatibility := Enclose[
-    $useRasterizationCompatibility =
-        Or[ $CloudEvaluation,
-            ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+inferMultimodalTypes0[ content_? graphicsQ ] :=
+    With[ { img = rasterize @ content },
+        If[ image2DQ @ img,
+            <| "Type" -> "Image", "Data" -> img |>,
+            <| "Type" -> "Text" , "Data" -> MakeExpressionURI @ content |>
         ]
-];
+    ];
+
+inferMultimodalTypes0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
