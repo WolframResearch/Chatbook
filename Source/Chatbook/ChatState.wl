@@ -36,6 +36,7 @@ withChatState[ eval_ ] :=
             $receivedToolCall             = False,
             $thinkingStart                = None,
             $thinkingEnd                  = None,
+            $useRasterCache               = True,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

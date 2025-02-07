@@ -1308,7 +1308,10 @@ rasterize[ image_Image ] /; image2DQ @ Unevaluated @ image :=
     image;
 
 rasterize[ RawBoxes[ cell_Cell ] ] :=
-    rasterize @ Unevaluated @ cell;
+    rasterize @ cell;
+
+rasterize[ RawBoxes[ StyleBox[ boxes_, "GraphicsRawBoxes", ___ ] ] ] :=
+    rasterize @ RawBoxes @ boxes;
 
 rasterize[ Cell[ BoxData[ box: GraphicsBox[ TagBox[ _RasterBox, _BoxForm`ImageTag, ___ ], ___ ], ___ ], ___ ] ] :=
     rasterize @ Unevaluated @ RawBoxes @ box;
@@ -1318,10 +1321,44 @@ rasterize[ RawBoxes[ box: GraphicsBox[ TagBox[ _RasterBox, _BoxForm`ImageTag, __
         ReleaseHold @ img /; MatchQ[ img, HoldComplete[ _Image ] ]
     ];
 
+rasterize[ expr_, opts___ ] /; $useRasterCache :=
+    Catch @ Module[ { hash, img },
+        hash = rasterHash @ expr;
+        img = Lookup[ $rasterCache, hash, None ];
+        If[ img =!= None, Throw @ img ];
+        img = usingFrontEnd @ checkedRasterize[ Unevaluated @ expr, opts ];
+        $rasterCache[ hash ] = img;
+        img
+    ];
+
 rasterize[ expr_, opts___ ] :=
-    usingFrontEnd @ Rasterize[ Unevaluated @ expr, opts ];
+    usingFrontEnd @ checkedRasterize[ Unevaluated @ expr, opts ];
 
 rasterize // endDefinition;
+
+
+$rasterCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rasterHash*)
+rasterHash // beginDefinition;
+rasterHash // Attributes = { HoldFirst };
+rasterHash[ Cell[ a__, (CellID|ExpressionUUID|CellChangeTimes|CellLabel) -> _, b___ ] ] := rasterHash @ Cell[ a, b ];
+rasterHash[ expr_ ] := Hash @ Unevaluated @ expr;
+rasterHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkedRasterize*)
+checkedRasterize // beginDefinition;
+
+checkedRasterize[ expr_ ] := Quiet[
+    Check[ Rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+    Rasterize::bigraster
+];
+
+checkedRasterize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
