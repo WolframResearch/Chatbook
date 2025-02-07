@@ -675,7 +675,9 @@ chatSubmit[ args__ ] := Quiet[
         ServiceConnections`SavedConnections::wname,
         ServiceConnections`ServiceConnections::wname,
         URLSubmit::invm,
-        URLSubmit::invk
+        URLSubmit::invk,
+        ServiceSubmit::invh,
+        ServiceSubmit::invk
     }
 ];
 
