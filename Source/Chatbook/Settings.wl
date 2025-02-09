@@ -253,13 +253,13 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
                 $modelAutoSettings[ service  , id       , key ],
                 $modelAutoSettings[ service  , family   , key ],
 
-                (* Check for service-level default: *)
-                $modelAutoSettings[ service  , Automatic, key ],
-
                 (* Check service-agnostic defaults: *)
                 $modelAutoSettings[ Automatic, name     , key ],
                 $modelAutoSettings[ Automatic, id       , key ],
                 $modelAutoSettings[ Automatic, family   , key ],
+
+                (* Check for service-level default: *)
+                $modelAutoSettings[ service  , Automatic, key ],
 
                 (* Check for global default: *)
                 $modelAutoSettings[ Automatic, Automatic, key ]
