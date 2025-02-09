@@ -324,7 +324,7 @@ toolRequestsToStrings // endDefinition;
 toolRequestToString // beginDefinition;
 
 (* TODO: we currently only support one tool call at a time, so extras are discarded *)
-toolRequestString[ req_ ] /; $receivedToolCall := "";
+toolRequestToString[ req_ ] /; $receivedToolCall := "";
 
 toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod := Enclose[
     Module[ { name, tool, command, params, argString },
