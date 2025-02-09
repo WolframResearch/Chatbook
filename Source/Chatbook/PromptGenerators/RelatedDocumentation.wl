@@ -620,7 +620,7 @@ selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclo
 
         If[ StringMatchQ[ StringTrim @ response, $$assistantTypeTag|"", IgnoreCase -> True ], Throw @ { } ];
 
-        idPatt = ReverseSortBy[ ids, StringLength @ Last @ StringSplit[ #, "-" ] & ];
+        idPatt = ReverseSortBy[ ids, StringLength ];
 
         scored = ConfirmMatch[
             StringCases[
@@ -629,9 +629,9 @@ selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclo
                     StartOfLine,
                     s: NumberString,
                     Whitespace,
-                    Except[ "\n" ]...,
+                    Shortest[ Except[ "\n" ]... ],
                     id: idPatt,
-                    Except[ "\n" ]...,
+                    Shortest[ Except[ "\n" ]... ],
                     WhitespaceCharacter...,
                     EndOfLine
                 ] :> <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
