@@ -1079,6 +1079,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "<" ~~ Shortest[ scheme: LetterCharacter.. ~~ "://" ~~ id: Except[ "!" ].. ] ~~ ">" :>
         "<!" <> scheme <> "://" <> id <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",
+    "\\uF351" -> "\[FreeformPrompt]",
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     $longNameCharacters
