@@ -140,6 +140,16 @@ $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*AzureOpenAI*)
+$modelAutoSettings[ "AzureOpenAI" ] = <| |>;
+
+$modelAutoSettings[ "AzureOpenAI", Automatic ] = <|
+    "ToolMethod"                 -> "Service",
+    "ToolCallExamplePromptStyle" -> "Basic"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*DeepSeek*)
 $modelAutoSettings[ "DeepSeek" ] = <| |>;
 
@@ -184,20 +194,9 @@ $modelAutoSettings[ "OpenAI", "GPT35" ] = <|
     "ToolMethod" -> "Service"
 |>;
 
-$modelAutoSettings[ "OpenAI", "GPT4" ] = <|
-
-|>;
-
-$modelAutoSettings[ "OpenAI", "GPT4Omni" ] = <|
-
-|>;
-
-$modelAutoSettings[ "OpenAI", "O1" ] = <|
-    "ToolMethod" -> "Service"
-|>;
-
-$modelAutoSettings[ "OpenAI", "O3" ] = <|
-    "ToolMethod" -> "Service"
+$modelAutoSettings[ "OpenAI", Automatic ] = <|
+    "ToolMethod"                 -> "Service",
+    "ToolCallExamplePromptStyle" -> "Basic"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -213,6 +212,12 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
+
+$modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
+    "HybridToolMethod"           -> True,
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Automatic
+|>;
 
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
