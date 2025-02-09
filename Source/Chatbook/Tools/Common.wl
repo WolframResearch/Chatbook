@@ -1000,6 +1000,9 @@ getToolExamplePrompt[ as_, method_, prompt: $$template, style_ ] :=
 getToolExamplePrompt[ as_, method_, None, style_ ] :=
     Nothing;
 
+getToolExamplePrompt[ as_, method_, $$unspecified, None ] :=
+    Nothing;
+
 getToolExamplePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1056,7 +1059,8 @@ ENDARGUMENTS
 ENDTOOLCALL
 
 This will hide the previous tool call in a collapsed section that the user can open if they wish to see prior attempts.
-If you fail to do this, the user will have a hard time knowing which tool calls contain the correct results.";
+If you fail to do this, the user will have a hard time knowing which tool calls contain the correct results.
+Only make one tool call at a time.";
 
 
 $toolListing = {
@@ -1118,8 +1122,9 @@ value
 $simpleToolPost = "\
 ## Important
 
-You must write the tool call in your CURRENT response. \
-Do not state that you will use a tool and end your message before making the tool call.";
+You must write the tool call in your CURRENT response.
+Do not state that you will use a tool and end your message before making the tool call.
+Only make one tool call at a time.";
 
 
 $simpleToolListing = {

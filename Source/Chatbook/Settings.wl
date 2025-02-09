@@ -140,6 +140,16 @@ $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*AzureOpenAI*)
+$modelAutoSettings[ "AzureOpenAI" ] = <| |>;
+
+$modelAutoSettings[ "AzureOpenAI", Automatic ] = <|
+    "ToolMethod"                 -> "Service",
+    "ToolCallExamplePromptStyle" -> "Basic"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*DeepSeek*)
 $modelAutoSettings[ "DeepSeek" ] = <| |>;
 
@@ -184,20 +194,9 @@ $modelAutoSettings[ "OpenAI", "GPT35" ] = <|
     "ToolMethod" -> "Service"
 |>;
 
-$modelAutoSettings[ "OpenAI", "GPT4" ] = <|
-
-|>;
-
-$modelAutoSettings[ "OpenAI", "GPT4Omni" ] = <|
-
-|>;
-
-$modelAutoSettings[ "OpenAI", "O1" ] = <|
-    "ToolMethod" -> "Service"
-|>;
-
-$modelAutoSettings[ "OpenAI", "O3" ] = <|
-    "ToolMethod" -> "Service"
+$modelAutoSettings[ "OpenAI", Automatic ] = <|
+    "ToolMethod"                 -> "Service",
+    "ToolCallExamplePromptStyle" -> "Basic"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -213,6 +212,12 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
+
+$modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
+    "HybridToolMethod"           -> True,
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Automatic
+|>;
 
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
@@ -253,13 +258,13 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
                 $modelAutoSettings[ service  , id       , key ],
                 $modelAutoSettings[ service  , family   , key ],
 
-                (* Check for service-level default: *)
-                $modelAutoSettings[ service  , Automatic, key ],
-
                 (* Check service-agnostic defaults: *)
                 $modelAutoSettings[ Automatic, name     , key ],
                 $modelAutoSettings[ Automatic, id       , key ],
                 $modelAutoSettings[ Automatic, family   , key ],
+
+                (* Check for service-level default: *)
+                $modelAutoSettings[ service  , Automatic, key ],
 
                 (* Check for global default: *)
                 $modelAutoSettings[ Automatic, Automatic, key ]
@@ -777,7 +782,7 @@ styleStopTokens[ "Llama"         ] := { "<|start_header_id|>" };
 styleStopTokens[ "Gemma"         ] := { "<start_of_turn>" };
 styleStopTokens[ "Nemotron"      ] := { "<extra_id_0>", "<extra_id_1>" };
 styleStopTokens[ "DeepSeekCoder" ] := { "<\:ff5cbegin\:2581of\:2581sentence\:ff5c>" };
-styleStopTokens[ _String         ] := { };
+styleStopTokens[ _String | None  ] := { };
 styleStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
