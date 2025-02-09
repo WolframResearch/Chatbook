@@ -1525,6 +1525,9 @@ insertToolID[
     toolCall_LLMToolRequest
 ] := LLMToolResponse[ <| as, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
 
+insertToolID[ fail_Failure, ___ ] :=
+    fail;
+
 insertToolID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
