@@ -18,10 +18,12 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Subsection::Closed:: *)
 (*$fullExamples*)
 $fullExamples :=
-    With[ { keys = $fullExamplesKeys },
-        If[ keys === { } || $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Service",
+    Catch @ With[ { keys = $fullExamplesKeys },
+        If[ keys === { },
             "",
-            needsBasePrompt[ "EndTurnToolCall" ];
+            If[ $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] =!= "Service",
+                needsBasePrompt[ "EndTurnToolCall" ];
+            ];
             StringJoin[
                 "## Full examples\n\n",
                 "The following are brief conversation examples that demonstrate how you can use tools in a ",
