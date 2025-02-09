@@ -777,7 +777,7 @@ styleStopTokens[ "Llama"         ] := { "<|start_header_id|>" };
 styleStopTokens[ "Gemma"         ] := { "<start_of_turn>" };
 styleStopTokens[ "Nemotron"      ] := { "<extra_id_0>", "<extra_id_1>" };
 styleStopTokens[ "DeepSeekCoder" ] := { "<\:ff5cbegin\:2581of\:2581sentence\:ff5c>" };
-styleStopTokens[ _String         ] := { };
+styleStopTokens[ _String | None  ] := { };
 styleStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
