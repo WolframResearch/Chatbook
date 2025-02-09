@@ -28,8 +28,7 @@ The evaluator supports interactive content such as Manipulate. \
 You have read access to local files.
 Parse natural language input with `\[FreeformPrompt][\"query\"]`, which is analogous to ctrl-= input in notebooks. \
 Natural language input is parsed before evaluation, so it works like macro expansion. \
-You should ALWAYS use this natural language input to obtain things like `Quantity`, `DateObject`, `Entity`, etc. \
-\[FreeformPrompt] should be written as \\uf351 in JSON.
+You should ALWAYS use this natural language input to obtain things like `Quantity`, `DateObject`, `Entity`, etc.
 ";
 
 (* ::**************************************************************************************************************:: *)

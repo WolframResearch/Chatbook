@@ -670,6 +670,7 @@ chatSubmit // beginDefinition;
 chatSubmit // Attributes = { HoldFirst };
 
 chatSubmit[ args__ ] := Quiet[
+    $receivedToolCall = False;
     rasterizeBlock @ chatSubmit0 @ args,
     {
         ServiceConnections`SavedConnections::wname,
@@ -1078,6 +1079,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "<" ~~ Shortest[ scheme: LetterCharacter.. ~~ "://" ~~ id: Except[ "!" ].. ] ~~ ">" :>
         "<!" <> scheme <> "://" <> id <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",
+    "\\uF351" -> "\[FreeformPrompt]",
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     $longNameCharacters
@@ -1523,6 +1525,9 @@ insertToolID[
     toolID_String,
     toolCall_LLMToolRequest
 ] := LLMToolResponse[ <| as, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
+
+insertToolID[ fail_Failure, ___ ] :=
+    fail;
 
 insertToolID // endDefinition;
 
