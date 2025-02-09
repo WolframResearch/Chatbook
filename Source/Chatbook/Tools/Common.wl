@@ -1000,6 +1000,9 @@ getToolExamplePrompt[ as_, method_, prompt: $$template, style_ ] :=
 getToolExamplePrompt[ as_, method_, None, style_ ] :=
     Nothing;
 
+getToolExamplePrompt[ as_, method_, $$unspecified, None ] :=
+    Nothing;
+
 getToolExamplePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
