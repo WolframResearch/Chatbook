@@ -1457,7 +1457,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
-            makeToolResponseMessage[ settings, response, toolResponse ]
+            makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
         };
 
         $finishReason = None;
@@ -1664,6 +1664,39 @@ toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolRespons
 toolResponseString[ as_, output_String ] := output;
 toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkMarkdownOutput*)
+checkMarkdownOutput // beginDefinition;
+
+checkMarkdownOutput[ output_ ] /; $openToolCallBoxes :=
+    output;
+
+checkMarkdownOutput[ output_? containsMarkdownImageQ ] := Replace[
+    Flatten @ { output, $useMarkdownMessage },
+    { s__String } :> StringJoin @ s
+];
+
+checkMarkdownOutput[ output_ ] :=
+    output;
+
+checkMarkdownOutput // endDefinition;
+
+$useMarkdownMessage = "
+
+(* IMPORTANT: The user does not see the output of this tool call. \
+You must use this output in your response for them to see it. *)";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*containsMarkdownImageQ*)
+containsMarkdownImageQ // beginDefinition;
+containsMarkdownImageQ[ output_String ] := StringContainsQ[ output, "!["~~__~~"]("~~__~~")" ];
+containsMarkdownImageQ[ output_List ] := AnyTrue[ output, containsMarkdownImageQ ];
+containsMarkdownImageQ[ KeyValuePattern[ "Data" -> output_ ] ] := containsMarkdownImageQ @ output;
+containsMarkdownImageQ[ _ ] := False;
+containsMarkdownImageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

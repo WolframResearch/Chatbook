@@ -41,6 +41,7 @@ $fullExamplesKeys :=
     With[ { selected = Keys @ $selectedTools },
         Select[
             {
+                "PlotEvaluate",
                 "NaturalLanguageInput"
             },
             ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
