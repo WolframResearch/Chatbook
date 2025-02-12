@@ -116,21 +116,6 @@ chatModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*o1ModelQ*)
-o1ModelQ // beginDefinition;
-
-o1ModelQ[ model_ ] := Enclose[
-    o1ModelQ[ model ] = StringContainsQ[
-        ConfirmBy[ toModelName @ model, StringQ, "Name" ],
-        WordBoundary~~"o1"~~WordBoundary
-    ],
-    throwInternalFailure
-];
-
-o1ModelQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*modelName*)
 modelName // beginDefinition;
 modelName[ KeyValuePattern[ "Name" -> name_String ] ] := modelName @ name;
@@ -681,14 +666,15 @@ standardizeModelData[ name_String ] := standardizeModelData[ name ] =
 standardizeModelData[ model: KeyValuePattern @ { } ] :=
     standardizeModelData[ model ] = KeySort @ <|
         modelNameData @ model,
-        "Date"        -> modelDate @ model,
-        "DisplayName" -> modelDisplayName @ model,
-        "FineTuned"   -> fineTunedModelQ @ model,
-        "Icon"        -> modelIcon @ model,
-        "Multimodal"  -> multimodalModelQ @ model,
-        "Name"        -> modelName @ model,
-        "Snapshot"    -> snapshotModelQ @ model,
-        model
+        "Date"          -> modelDate @ model,
+        "DisplayName"   -> modelDisplayName @ model,
+        "FineTuned"     -> fineTunedModelQ @ model,
+        "Icon"          -> modelIcon @ model,
+        "Multimodal"    -> multimodalModelQ @ model,
+        "Name"          -> modelName @ model,
+        "Snapshot"      -> snapshotModelQ @ model,
+        model,
+        "ResolvedModel" -> True
     |>;
 
 standardizeModelData[ service_String, models_List ] :=
@@ -735,6 +721,9 @@ chooseDefaultModelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*resolveFullModelSpec*)
 resolveFullModelSpec // beginDefinition;
+
+resolveFullModelSpec[ model: KeyValuePattern[ "ResolvedModel" -> True ] ] :=
+    model;
 
 resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
     resolveFullModelSpec @ model;

@@ -488,8 +488,13 @@ toolStringSplit // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*rewriteMessageRoles*)
 rewriteMessageRoles // beginDefinition;
-rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
-rewriteMessageRoles[ settings_, messages_ ] := messages;
+
+rewriteMessageRoles[ settings_, messages_ ] :=
+    If[ TrueQ @ settings[ "ConvertSystemRoleToUser" ],
+        convertSystemRoleToUser @ messages,
+        messages
+    ];
+
 rewriteMessageRoles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1436,7 +1441,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
 
         messages = ConfirmMatch[
-            removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
+            removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
             { __Association },
             "Messages"
         ];

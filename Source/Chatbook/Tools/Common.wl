@@ -1254,6 +1254,32 @@ $toolFrequencyExplanations = <|
 |>;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeToolPreferencePrompt*)
+removeToolPreferencePrompt // beginDefinition;
+
+removeToolPreferencePrompt[ {
+    system: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ },
+    rest__
+} ] := {
+    <| system, "Content" -> ReplaceAll[ content, s_String :> RuleCondition @ StringDelete[ s, $$toolPreferences ] ] |>,
+    rest
+};
+
+removeToolPreferencePrompt[ messages_ ] := messages;
+
+removeToolPreferencePrompt // endDefinition;
+
+
+$$toolPreferences = Apply[
+    StringExpression,
+    StringSplit[
+        TemplateApply[ $toolPreferencePrompt, <| "Number" -> "*", "Explanation" -> "*" |> ],
+        "*" -> Except[ "\n" ]..
+    ]
+];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Properties*)
 

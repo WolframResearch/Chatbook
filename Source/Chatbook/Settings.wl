@@ -31,6 +31,7 @@ $defaultChatSettings = <|
     "ChatInputIndicator"             -> Automatic,
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
+    "ConvertSystemRoleToUser"        -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
@@ -213,12 +214,49 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gpt-4o*)
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Automatic
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*OpenAI reasoning models*)
+
+(* Note: Max tokens are halved for these models in order to leave room for reasoning *)
+$modelAutoSettings[ Automatic, "O1Mini" ] = <|
+    "ForceSynchronous"        -> False,
+    "ConvertSystemRoleToUser" -> True,
+    "MaxContextTokens"        -> 64000,
+    "Multimodal"              -> False,
+    "ToolsEnabled"            -> False
+|>;
+
+$modelAutoSettings[ Automatic, "O1" ] = <|
+    "ForceSynchronous"           -> True,
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 100000,
+    "MaxToolResponses"           -> 3,
+    "Multimodal"                 -> True,
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
+$modelAutoSettings[ Automatic, "O3Mini" ] = <|
+    "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 100000,
+    "Multimodal"                 -> False,
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Automatic
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
 |>;
@@ -235,7 +273,8 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
-    "ToolResponseRole" -> "System"
+    "ConvertSystemRoleToUser" -> False,
+    "ToolResponseRole"        -> "System"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -246,8 +285,10 @@ autoModelSetting // beginDefinition;
 autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
     autoModelSetting[ model, key ];
 
-autoModelSetting[ model_Association, key_String ] :=
-    autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ];
+autoModelSetting[ model0_Association, key_String ] :=
+    With[ { model = resolveFullModelSpec @ model0 },
+        autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ]
+    ];
 
 autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
     autoModelSetting[ service, name, id, family, key ] =
@@ -483,15 +524,13 @@ overrideSettings // beginDefinition;
 
 overrideSettings[ settings_Association ] := <|
     settings,
-    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ],
-    If[ o1ModelQ @ settings, $o1Overrides, <| |> ]
+    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ]
 |>;
 
 overrideSettings // endDefinition;
 
 (* TODO: these shouldn't be mutually exclusive: *)
 $llmKitOverrides = <| "Authentication" -> "LLMKit" |>;
-$o1Overrides     = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -657,7 +696,7 @@ bypassResponseCheckingQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*forceSynchronousQ*)
 forceSynchronousQ // beginDefinition;
-forceSynchronousQ[ as_Association ] := TrueQ @ Or[ o1ModelQ @ as, serviceName @ as === "GoogleGemini" ];
+forceSynchronousQ[ as_Association ] := serviceName @ as === "GoogleGemini";
 forceSynchronousQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
