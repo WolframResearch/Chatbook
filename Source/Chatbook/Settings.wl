@@ -31,6 +31,7 @@ $defaultChatSettings = <|
     "ChatInputIndicator"             -> Automatic,
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
+    "ConvertSystemRoleToUser"        -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
@@ -235,7 +236,8 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
-    "ToolResponseRole" -> "System"
+    "ConvertSystemRoleToUser" -> False,
+    "ToolResponseRole"        -> "System"
 |>;
 
 (* ::**************************************************************************************************************:: *)

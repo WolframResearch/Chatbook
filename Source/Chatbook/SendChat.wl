@@ -488,8 +488,13 @@ toolStringSplit // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*rewriteMessageRoles*)
 rewriteMessageRoles // beginDefinition;
-rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
-rewriteMessageRoles[ settings_, messages_ ] := messages;
+
+rewriteMessageRoles[ settings_, messages_ ] :=
+    If[ TrueQ @ settings[ "ConvertSystemRoleToUser" ],
+        convertSystemRoleToUser @ messages,
+        messages
+    ];
+
 rewriteMessageRoles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
