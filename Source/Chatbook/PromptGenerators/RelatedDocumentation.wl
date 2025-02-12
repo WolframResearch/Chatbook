@@ -57,11 +57,26 @@ $snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-1116861
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
-Chatbook::CloudDownloadError           = "Unable to download required data from the cloud. Please try again later.";
-Chatbook::InvalidSources               = "Invalid value for the \"Sources\" option: `1`.";
-Chatbook::InvalidMaxSources            = "Invalid value for the \"MaxSources\" option: `1`.";
-Chatbook::SnippetFunctionOutputFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
-Chatbook::SnippetFunctionLengthFailure = "The snippet function `1` returned a list of length `2` for `3` values.";
+Chatbook::CloudDownloadError = "\
+Unable to download required data from the cloud. Please try again later.";
+
+Chatbook::InvalidSources = "\
+Invalid value for the \"Sources\" option: `1`.";
+
+Chatbook::InvalidMaxSources = "\
+Invalid value for the \"MaxSources\" option: `1`.";
+
+Chatbook::InstructionsFunctionOutputFailure = "\
+The instructions function `1` returned an invalid output: `2`.";
+
+Chatbook::InstructionsFunctionLengthFailure = "\
+The instructions function `1` returned a list of length `2` for `3` values.";
+
+Chatbook::SnippetFunctionOutputFailure = "\
+The snippet function `1` returned an invalid output: `2`.";
+
+Chatbook::SnippetFunctionLengthFailure = "\
+The snippet function `1` returned a list of length `2` for `3` values.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -336,10 +351,10 @@ prependRelatedDocsHeader // endDefinition;
 
 
 $relatedDocsStringFilteredHeader =
-"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
+"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n======\n\n";
 
 $relatedDocsStringUnfilteredHeader =
-"Here are some Wolfram documentation snippets that you may find useful.\n\n";
+"Here are some Wolfram documentation snippets that you may find useful.\n\n======\n\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -419,17 +434,16 @@ filterSnippets[
 filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] := Enclose[
     Catch @ Module[
         {
-            results, snippets, inserted, transcript, xml,
+            results, inserted, transcript, xml,
             instructions, response, uriToSnippet, uris, selected, pages
         },
 
-        results = ConfirmMatch[ addDocSnippets @ results0, { ___Association }, "Results" ];
-        snippets = ConfirmMatch[ Lookup[ results, "Snippet" ], { ___String }, "Snippets" ];
+        results = ConfirmMatch[ addInstructions @ addDocSnippets @ results0, { ___Association }, "Results" ];
         setProgressDisplay[ "ChoosingDocumentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
-        xml = ConfirmMatch[ snippetXML /@ snippets, { __String }, "XML" ];
+        xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
@@ -452,10 +466,20 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             "Response"
         ];
 
-        uriToSnippet = <| #Value -> #Snippet & /@ results |>;
+        uriToSnippet = GroupBy[ results, Lookup[ "Value" ] -> Lookup[ "Snippet" ] ];
         uris = ConfirmMatch[ Keys @ uriToSnippet, { ___String }, "URIs" ];
-        selected = ConfirmMatch[ LogChatTiming @ selectSnippetsFromResponse[ response, uris ], { ___String }, "Pages" ];
-        pages = ConfirmMatch[ Lookup[ uriToSnippet, selected ], { ___String }, "Pages" ];
+
+        selected = ConfirmMatch[
+            LogChatTiming @ selectSnippetsFromResponse[ response, uris ],
+            { ___String },
+            "Selected"
+        ];
+
+        pages = ConfirmMatch[
+            DeleteDuplicates @ Flatten @ Lookup[ uriToSnippet, selected ],
+            { ___String },
+            "Pages"
+        ];
 
         addHandlerArguments[
             "RelatedDocumentation" -> <|
@@ -694,6 +718,12 @@ selectSnippetsFromString // endDefinition;
 (*snippetXML*)
 snippetXML // beginDefinition;
 
+snippetXML[ KeyValuePattern @ { "Type" -> "Instructions", "Snippet" -> instructions_String } ] :=
+    "<info>\n" <> instructions <> "\n</info>";
+
+snippetXML[ KeyValuePattern[ "Snippet" -> snippet_String ] ] :=
+    snippetXML @ snippet;
+
 snippetXML[ snippet_String ] :=
     snippetXML[ snippet, $bestDocumentationPromptMethod ];
 
@@ -770,6 +800,95 @@ $documentationSnippets = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*addInstructions*)
+addInstructions // beginDefinition;
+
+addInstructions[ results: { ___Association } ] := Enclose[
+    Module[ { withOrdering, grouped, withInstructions, sorted },
+
+        withOrdering = MapIndexed[ <| "Position" -> First[ #2 ], #1 |> &, results ];
+        grouped      = GroupBy[ withOrdering, Lookup[ "Instructions" ] ];
+
+        withInstructions = ConfirmMatch[
+            Flatten @ KeyValueMap[ applyInstructionsFunction, grouped ],
+            { ___Association },
+            "WithInstructions"
+        ];
+
+        sorted = ConfirmMatch[ SortBy[ withInstructions, Lookup[ "Position" ] ], { ___Association }, "Sorted" ];
+
+        sorted
+    ],
+    throwInternalFailure
+];
+
+addInstructions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyInstructionsFunction*)
+applyInstructionsFunction // beginDefinition;
+
+applyInstructionsFunction[ f_, { } ] := { };
+
+applyInstructionsFunction[ None|$$unspecified, data: { ___Association } ] := data;
+
+applyInstructionsFunction[ instructions_String, data: { ___Association } ] :=
+    applyInstructionsFunction[ Map[ instructions & ], data ];
+
+applyInstructionsFunction[ f_, data: { ___Association } ] := Enclose[
+    Module[ { values, instructions, instructionsLen, valuesLen, threaded },
+
+        values          = ConfirmMatch[ Lookup[ data, "Value" ], { ___String }, "Values" ];
+        instructions    = f @ values;
+        instructionsLen = Length @ instructions;
+        valuesLen       = Length @ values;
+
+        If[ ! MatchQ[ instructions, { (_String | { ___String } | None)... } ],
+            throwFailure[ "InstructionsFunctionOutputFailure", f, instructions ]
+        ];
+        If[ instructionsLen =!= valuesLen,
+            throwFailure[ "InstructionsFunctionLengthFailure", f, instructionsLen, valuesLen ]
+        ];
+
+        threaded = ConfirmBy[
+            Association /@ Transpose @ { data, Thread[ "Instructions" -> instructions ] },
+            AllTrue @ AssociationQ,
+            "Threaded"
+        ];
+
+        ConfirmMatch[ expandInstructionPairs @ threaded, { ___Association }, "Expanded" ]
+
+    ] // LogChatTiming @ { "ApplyInstructionsFunction", f },
+    throwInternalFailure
+];
+
+applyInstructionsFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandInstructionPairs*)
+expandInstructionPairs // beginDefinition;
+
+expandInstructionPairs[ results_List ] :=
+    Flatten[ expandInstructionPairs /@ results ];
+
+expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> None ] ] :=
+    data;
+
+expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> instructions0_ ] ] :=
+    Module[ { offset, position, instructions, instData },
+        offset = If[ MatchQ[ data[ "InstructionsPosition" ], Before ], -0.5, 0.5 ];
+        position = Lookup[ data, "Position", 0 ] + offset;
+        instructions = Select[ Flatten @ { instructions0 }, StringQ ];
+        instData = <| data, "Type" -> "Instructions", "Snippet" -> #, "Position" -> position |> & /@ instructions;
+        SortBy[ Flatten @ { data, instData }, Lookup[ "Position" ] ]
+    ];
+
+expandInstructionPairs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*addDocSnippets*)
 addDocSnippets // beginDefinition;
 
@@ -795,23 +914,6 @@ addDocSnippets[ results: { ___Association } ] := Enclose[
 ];
 
 addDocSnippets // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*makeDocSnippets*)
-makeDocSnippets // beginDefinition;
-
-makeDocSnippets[ results: { ___Association } ] := Enclose[
-    Module[ { sorted, snippets },
-        sorted   = ConfirmMatch[ addDocSnippets @ results, { ___Association }, "Sorted" ];
-        snippets = ConfirmMatch[ Lookup[ sorted, "Snippet" ], { ___String }, "Snippets" ];
-        ConfirmAssert[ Length @ snippets === Length @ results, "LengthCheck" ];
-        DeleteDuplicates @ snippets
-    ],
-    throwInternalFailure
-];
-
-makeDocSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -841,6 +943,23 @@ applySnippetFunction[ f_, data: { ___Association } ] := Enclose[
 ];
 
 applySnippetFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeDocSnippets*)
+makeDocSnippets // beginDefinition;
+
+makeDocSnippets[ results: { ___Association } ] := Enclose[
+    Module[ { sorted, snippets },
+        sorted   = ConfirmMatch[ addDocSnippets @ results, { ___Association }, "Sorted" ];
+        snippets = ConfirmMatch[ Lookup[ sorted, "Snippet" ], { ___String }, "Snippets" ];
+        ConfirmAssert[ Length @ snippets === Length @ results, "LengthCheck" ];
+        DeleteDuplicates @ snippets
+    ],
+    throwInternalFailure
+];
+
+makeDocSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
