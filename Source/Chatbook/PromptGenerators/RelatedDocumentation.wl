@@ -351,10 +351,10 @@ prependRelatedDocsHeader // endDefinition;
 
 
 $relatedDocsStringFilteredHeader =
-"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
+"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n======\n\n";
 
 $relatedDocsStringUnfilteredHeader =
-"Here are some Wolfram documentation snippets that you may find useful.\n\n";
+"Here are some Wolfram documentation snippets that you may find useful.\n\n======\n\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -844,7 +844,7 @@ applyInstructionsFunction[ f_, data: { ___Association } ] := Enclose[
         instructionsLen = Length @ instructions;
         valuesLen       = Length @ values;
 
-        If[ ! MatchQ[ instructions, { (_String|None)... } ],
+        If[ ! MatchQ[ instructions, { (_String | { ___String } | None)... } ],
             throwFailure[ "InstructionsFunctionOutputFailure", f, instructions ]
         ];
         If[ instructionsLen =!= valuesLen,
@@ -870,19 +870,20 @@ applyInstructionsFunction // endDefinition;
 (*expandInstructionPairs*)
 expandInstructionPairs // beginDefinition;
 
-expandInstructionPairs[ results_List ] := Flatten[ expandInstructionPairs /@ results ];
+expandInstructionPairs[ results_List ] :=
+    Flatten[ expandInstructionPairs /@ results ];
 
-expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> instructions_String ] ] := {
-    data,
-    <|
-        data,
-        "Type"     -> "Instructions",
-        "Snippet"  -> instructions,
-        "Position" -> Lookup[ data, "Position", 0 ] + 0.5
-    |>
-};
+expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> None ] ] :=
+    data;
 
-expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> None ] ] := data;
+expandInstructionPairs[ data: KeyValuePattern[ "Instructions" -> instructions0_ ] ] :=
+    Module[ { offset, position, instructions, instData },
+        offset = If[ MatchQ[ data[ "InstructionsPosition" ], Before ], -0.5, 0.5 ];
+        position = Lookup[ data, "Position", 0 ] + offset;
+        instructions = Select[ Flatten @ { instructions0 }, StringQ ];
+        instData = <| data, "Type" -> "Instructions", "Snippet" -> #, "Position" -> position |> & /@ instructions;
+        SortBy[ Flatten @ { data, instData }, Lookup[ "Position" ] ]
+    ];
 
 expandInstructionPairs // endDefinition;
 
