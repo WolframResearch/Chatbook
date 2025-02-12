@@ -214,12 +214,49 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gpt-4o*)
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Automatic
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*OpenAI reasoning models*)
+
+(* Note: Max tokens are halved for these models in order to leave room for reasoning *)
+$modelAutoSettings[ Automatic, "O1Mini" ] = <|
+    "ForceSynchronous"        -> False,
+    "ConvertSystemRoleToUser" -> True,
+    "MaxContextTokens"        -> 64000,
+    "Multimodal"              -> False,
+    "ToolsEnabled"            -> False
+|>;
+
+$modelAutoSettings[ Automatic, "O1" ] = <|
+    "ForceSynchronous"           -> True,
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 100000,
+    "MaxToolResponses"           -> 3,
+    "Multimodal"                 -> True,
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
+$modelAutoSettings[ Automatic, "O3Mini" ] = <|
+    "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 100000,
+    "Multimodal"                 -> False,
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Automatic
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
 |>;
