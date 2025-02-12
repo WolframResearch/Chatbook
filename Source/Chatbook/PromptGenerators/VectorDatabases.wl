@@ -15,16 +15,45 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$vectorDatabases := $vectorDatabases = <|
-    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
-    "DocumentationURIs"      -> <| "Version" -> $docVersion, "Bias" -> 0.0, "SnippetFunction" -> getSnippets |>,
-    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0"    , "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
-    "SourceSelector"         -> <| "Version" -> "1.0.0"    , "Bias" -> 0.0, "SnippetFunction" -> Identity    |>,
-    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0"    , "Bias" -> 0.0, "SnippetFunction" -> Identity    |>
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Vector Databases*)
+$vectorDatabases = <| |>;
+
+$vectorDatabases[ "DataRepositoryURIs" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> 1.0,
+    "SnippetFunction" -> getSnippets
 |>;
 
-$docVersion := If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ];
+$vectorDatabases[ "DocumentationURIs" ] = <|
+    "Version"         :> If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ],
+    "Bias"            -> 0.0,
+    "SnippetFunction" -> getSnippets
+|>;
 
+$vectorDatabases[ "FunctionRepositoryURIs" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> 1.0,
+    "SnippetFunction" -> getSnippets
+|>;
+
+$vectorDatabases[ "SourceSelector" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> 0.0,
+    "SnippetFunction" -> Identity
+|>;
+
+$vectorDatabases[ "WolframAlphaQueries" ] = <|
+    "Version"         -> "1.3.0",
+    "Bias"            -> 0.0,
+    "SnippetFunction" -> Identity
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Other Settings*)
 $vectorDBNames  := $vectorDBNames = Keys @ $vectorDatabases;
 $allowDownload   = True;
 $cacheEmbeddings = True;
@@ -669,7 +698,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
     Module[
         {
             vectorDBInfo, vectorDB, allValues, embeddingVector, close,
-            indices, distances, values, data, result, snippetFunction
+            indices, distances, values, data, result, snippetFunction, instructionsFunction
         },
 
         vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
@@ -694,7 +723,8 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 
         ConfirmAssert[ Length @ indices === Length @ distances === Length @ values, "LengthCheck" ];
 
-        snippetFunction = Confirm[ getSnippetFunction @ dbName, "SnippetFunction" ];
+        snippetFunction      = Confirm[ getSnippetFunction @ dbName     , "SnippetFunction"      ];
+        instructionsFunction = Confirm[ getInstructionsFunction @ dbName, "InstructionsFunction" ];
 
         data = MapApply[
             <|
@@ -702,7 +732,8 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
                 "Index"           -> #2,
                 "Distance"        -> #3,
                 "Source"          -> dbName,
-                "SnippetFunction" -> snippetFunction
+                "SnippetFunction" -> snippetFunction,
+                "Instructions"    -> instructionsFunction
             |> &,
             Transpose @ { values, indices, distances }
         ];
@@ -885,6 +916,15 @@ getSnippetFunction[ name_String ] := getSnippetFunction[ name, $vectorDatabases[
 getSnippetFunction[ name_String, $$unspecified ] := Identity;
 getSnippetFunction[ name_String, function_ ] := function;
 getSnippetFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getInstructionsFunction*)
+getInstructionsFunction // beginDefinition;
+getInstructionsFunction[ name_String ] := getInstructionsFunction[ name, $vectorDatabases[ name, "Instructions" ] ];
+getInstructionsFunction[ name_String, $$unspecified ] := None;
+getInstructionsFunction[ name_String, function_ ] := function;
+getInstructionsFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
