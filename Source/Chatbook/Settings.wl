@@ -248,8 +248,10 @@ autoModelSetting // beginDefinition;
 autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
     autoModelSetting[ model, key ];
 
-autoModelSetting[ model_Association, key_String ] :=
-    autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ];
+autoModelSetting[ model0_Association, key_String ] :=
+    With[ { model = resolveFullModelSpec @ model0 },
+        autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ]
+    ];
 
 autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
     autoModelSetting[ service, name, id, family, key ] =
