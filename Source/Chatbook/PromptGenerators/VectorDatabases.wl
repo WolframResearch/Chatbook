@@ -24,31 +24,36 @@ $vectorDatabases = <| |>;
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
     "Version"         -> "1.0.0",
     "Bias"            -> 1.0,
-    "SnippetFunction" -> getSnippets
+    "SnippetFunction" -> getSnippets,
+    "Instructions"    -> None
 |>;
 
 $vectorDatabases[ "DocumentationURIs" ] = <|
     "Version"         :> If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ],
     "Bias"            -> 0.0,
-    "SnippetFunction" -> getSnippets
+    "SnippetFunction" -> getSnippets,
+    "Instructions"    -> None
 |>;
 
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
     "Version"         -> "1.0.0",
     "Bias"            -> 1.0,
-    "SnippetFunction" -> getSnippets
+    "SnippetFunction" -> getSnippets,
+    "Instructions"    -> None
 |>;
 
 $vectorDatabases[ "SourceSelector" ] = <|
     "Version"         -> "1.0.0",
     "Bias"            -> 0.0,
-    "SnippetFunction" -> Identity
+    "SnippetFunction" -> Identity,
+    "Instructions"    -> None
 |>;
 
 $vectorDatabases[ "WolframAlphaQueries" ] = <|
     "Version"         -> "1.3.0",
     "Bias"            -> 0.0,
-    "SnippetFunction" -> Identity
+    "SnippetFunction" -> Identity,
+    "Instructions"    -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -145,7 +150,7 @@ RegisterVectorDatabase // endExportedDefinition;
 toVectorDatabaseInfo // beginDefinition;
 
 toVectorDatabaseInfo[ source: $$vectorDatabaseSource, info0_Association ] := Enclose[
-    Module[ { info, name, values, length, dim, bias, version, db, valueFunction },
+    Module[ { info, name, values, length, dim, bias, version, db, valueFunction, instructions, position },
 
         info = info0;
 
@@ -162,6 +167,7 @@ toVectorDatabaseInfo[ source: $$vectorDatabaseSource, info0_Association ] := Enc
             { _Integer, _Integer },
             "Dimensions"
         ];
+
         If[ dim =!= $embeddingDimension, throwFailure[ "InvalidVectorDatabaseDimensions", dim, $embeddingDimension ] ];
         If[ Length @ values =!= length, throwFailure[ "InvalidVectorDatabaseValuesLength", Length @ values, length ] ];
         info[ "Dimensions" ] = { length, dim };
@@ -180,6 +186,12 @@ toVectorDatabaseInfo[ source: $$vectorDatabaseSource, info0_Association ] := Enc
         valueFunction = Replace[ Lookup[ info, "SnippetFunction" ], $$unspecified -> Identity ];
         info[ "SnippetFunction" ] = valueFunction;
 
+        instructions = Replace[ Lookup[ info, "Instructions" ], $$unspecified -> None ];
+        info[ "Instructions" ] = instructions;
+
+        position = Replace[ Lookup[ info, "InstructionsPosition" ], $$unspecified -> After ];
+        info[ "InstructionsPosition" ] = position;
+
         info
     ],
     throwInternalFailure
@@ -191,9 +203,7 @@ toVectorDatabaseInfo // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getVectorDatabaseName*)
 getVectorDatabaseName // beginDefinition;
-
 getVectorDatabaseName[ db: $$vectorDatabase, info_Association ] := Lookup[ info, "Name", db[ "ID" ] ];
-
 getVectorDatabaseName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -288,7 +298,7 @@ getVectorDatabaseObject // endDefinition;
 registerVectorDatabase // beginDefinition;
 
 registerVectorDatabase[ info_Association ] := Enclose[
-    Module[ { name, version, bias, values, db, valueFunction },
+    Module[ { name, version, bias, values, db, valueFunction, instructions, position },
 
         ConfirmAssert[ DirectoryQ @ $vectorDBDirectory, "DownloadCheck" ];
 
@@ -298,9 +308,23 @@ registerVectorDatabase[ info_Association ] := Enclose[
         values        = ConfirmMatch[ info[ "Values" ], { ___String }, "Values" ];
         db            = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabaseObject" ];
         valueFunction = ConfirmMatch[ info[ "SnippetFunction" ], Except[ $$unspecified ], "SnippetFunction" ];
+        instructions  = ConfirmMatch[ info[ "Instructions" ], Except[ $$unspecified ], "Instructions" ];
+
+        position = ConfirmMatch[
+            Lookup[ info, "InstructionsPosition", After ],
+            Except[ $$unspecified ],
+            "InstructionsPosition"
+        ];
 
         getVectorDB[ name ] = <| "Values" -> values, "VectorDatabaseObject" -> db |>;
-        $vectorDatabases[ name ] = <| "Version" -> version, "Bias" -> bias, "SnippetFunction" -> valueFunction |>;
+
+        $vectorDatabases[ name ] = <|
+            "Version"              -> version,
+            "Bias"                 -> bias,
+            "SnippetFunction"      -> valueFunction,
+            "Instructions"         -> instructions,
+            "InstructionsPosition" -> position
+        |>;
 
         $vectorDBNames = DeleteDuplicates @ Append[ $vectorDBNames, name ];
 
@@ -312,7 +336,21 @@ registerVectorDatabase[ info_Association ] := Enclose[
             UpTo[ $maxSelectedSources ]
         ];
 
-        Success[ "VectorDatabaseRegistered", KeyTake[ info, { "Name", "Version", "Bias", "VectorDatabaseObject" } ] ]
+        Success[
+            "VectorDatabaseRegistered",
+            KeyTake[
+                info,
+                {
+                    "Name",
+                    "Version",
+                    "Bias",
+                    "SnippetFunction",
+                    "Instructions",
+                    "InstructionsPosition",
+                    "VectorDatabaseObject"
+                }
+            ]
+        ]
     ],
     throwInternalFailure
 ];
@@ -698,7 +736,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
     Module[
         {
             vectorDBInfo, vectorDB, allValues, embeddingVector, close,
-            indices, distances, values, data, result, snippetFunction, instructionsFunction
+            indices, distances, values, data, result, snippetFunction, instructionsFunction, instructionsPosition
         },
 
         vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
@@ -726,14 +764,20 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
         snippetFunction      = Confirm[ getSnippetFunction @ dbName     , "SnippetFunction"      ];
         instructionsFunction = Confirm[ getInstructionsFunction @ dbName, "InstructionsFunction" ];
 
+        instructionsPosition = Confirm[
+            Lookup[ $vectorDatabases[ dbName ], "InstructionsPosition", After ],
+            "InstructionsPosition"
+        ];
+
         data = MapApply[
             <|
-                "Value"           -> #1,
-                "Index"           -> #2,
-                "Distance"        -> #3,
-                "Source"          -> dbName,
-                "SnippetFunction" -> snippetFunction,
-                "Instructions"    -> instructionsFunction
+                "Value"                -> #1,
+                "Index"                -> #2,
+                "Distance"             -> #3,
+                "Source"               -> dbName,
+                "SnippetFunction"      -> snippetFunction,
+                "Instructions"         -> instructionsFunction,
+                "InstructionsPosition" -> instructionsPosition
             |> &,
             Transpose @ { values, indices, distances }
         ];
