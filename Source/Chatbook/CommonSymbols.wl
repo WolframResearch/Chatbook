@@ -253,7 +253,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `notebookInformation;
 `notebookObjectQ;
 `notebookRead;
-`o1ModelQ;
 `openerView;
 `openPreferencesPage;
 `parentCell;

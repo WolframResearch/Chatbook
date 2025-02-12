@@ -116,21 +116,6 @@ chatModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*o1ModelQ*)
-o1ModelQ // beginDefinition;
-
-o1ModelQ[ model_ ] := Enclose[
-    o1ModelQ[ model ] = StringContainsQ[
-        ConfirmBy[ toModelName @ model, StringQ, "Name" ],
-        WordBoundary~~"o1"~~WordBoundary
-    ],
-    throwInternalFailure
-];
-
-o1ModelQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*modelName*)
 modelName // beginDefinition;
 modelName[ KeyValuePattern[ "Name" -> name_String ] ] := modelName @ name;

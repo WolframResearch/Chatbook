@@ -524,15 +524,13 @@ overrideSettings // beginDefinition;
 
 overrideSettings[ settings_Association ] := <|
     settings,
-    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ],
-    If[ o1ModelQ @ settings, $o1Overrides, <| |> ]
+    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ]
 |>;
 
 overrideSettings // endDefinition;
 
 (* TODO: these shouldn't be mutually exclusive: *)
 $llmKitOverrides = <| "Authentication" -> "LLMKit" |>;
-$o1Overrides     = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -698,7 +696,7 @@ bypassResponseCheckingQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*forceSynchronousQ*)
 forceSynchronousQ // beginDefinition;
-forceSynchronousQ[ as_Association ] := TrueQ @ Or[ o1ModelQ @ as, serviceName @ as === "GoogleGemini" ];
+forceSynchronousQ[ as_Association ] := serviceName @ as === "GoogleGemini";
 forceSynchronousQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
