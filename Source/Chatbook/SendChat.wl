@@ -1441,7 +1441,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
 
         messages = ConfirmMatch[
-            removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
+            removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
             { __Association },
             "Messages"
         ];
