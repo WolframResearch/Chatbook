@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "Utilisation de ",
 "FormattingToolUsed" -> "Utilisant ",
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
+"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
+"FormattingThinkingComplete" -> "Thought for `time` seconds",
+"FormattingThinkingCompleteFallback" -> "Thought",
+"FormattingHide" -> "Hide",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",

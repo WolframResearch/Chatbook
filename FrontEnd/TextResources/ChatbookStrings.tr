@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "Using ",
 "FormattingToolUsed" -> "Used ",
 "FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
+"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
+"FormattingThinkingComplete" -> "Thought for `time` seconds",
+"FormattingThinkingCompleteFallback" -> "Thought",
+"FormattingHide" -> "Hide",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insert:",

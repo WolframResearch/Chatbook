@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "Utilizando ",
 "FormattingToolUsed" -> "Se utiliz\[OAcute] ",
 "FormattingToolUsingLoading" -> "Utilizando herramienta\[Ellipsis]",
+"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
+"FormattingThinkingComplete" -> "Thought for `time` seconds",
+"FormattingThinkingCompleteFallback" -> "Thought",
+"FormattingHide" -> "Hide",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insertar:",
