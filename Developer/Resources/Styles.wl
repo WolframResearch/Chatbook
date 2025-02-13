@@ -1544,52 +1544,153 @@ Cell[
 Cell[
     StyleData[ "ThinkingOpener" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ StyleBox[
-            PaneBox[
-                GridBox[
+        DisplayFunction -> Function @ DynamicModuleBox[
+            { Typeset`var$$ = True },
+            StyleBox[
+                PaneSelectorBox[
                     {
-                        {
-                            OpenerBox[
-                                True,
-                                Appearance       -> Automatic,
-                                Enabled          -> False,
-                                AutoAction       -> False,
-                                ContinuousAction -> False
-                            ],
-                            StyleBox[
-                                #2,
-                                "Text",
-                                FontSlant            -> "Italic",
-                                FontColor            -> GrayLevel[ 0.5 ],
-                                ShowStringCharacters -> False,
-                                StripOnInput         -> False
-                            ]
-                        },
-                        {
-                            PaneBox[
-                                Cell[ BoxData @ TemplateBox[ { # }, "ThinkingContent" ], Background -> None ],
-                                Alignment    -> Left,
-                                ImageMargins -> { { 5, 0 }, { 0, 0 } }
-                            ],
-                            "\[SpanFromLeft]"
-                        }
+                        False -> GridBox[
+                            {
+                                {
+                                    TagBox[
+                                        TagBox[
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f442" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
+                                }
+                            },
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            AutoDelete -> False,
+                            GridBoxBackground -> { "Columns" -> { { Automatic } } },
+                            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } },
+                            BaselinePosition -> { 1, 1 }
+                        ],
+                        True -> GridBox[
+                            {
+                                {
+                                    TagBox[
+                                        TagBox[
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f442" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
+                                },
+                                {
+                                    PaneBox[
+                                        Cell[ BoxData @ TemplateBox[ { #1 }, "ThinkingContent" ], Background -> None ],
+                                        Alignment -> Left,
+                                        ImageMargins -> { { 5, 0 }, { 0, 0 } }
+                                    ]
+                                },
+                                {
+                                    TagBox[
+                                        TagBox[
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { {
+                                                            AdjustmentBox[ RotationBox[ "\:f443", BoxRotation -> 3.14159 ], BoxBaselineShift -> -0.2 ],
+                                                            StyleBox[
+                                                                DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ], StandardForm] ],
+                                                                FontSlant -> "Italic"
+                                                            ]
+                                                        } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { {
+                                                            AdjustmentBox[ RotationBox[ "\:f449", BoxRotation -> 3.14159 ], BoxBaselineShift -> -0.2 ],
+                                                            StyleBox[
+                                                                DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ], StandardForm] ],
+                                                                FontSlant -> "Italic"
+                                                            ]
+                                                        } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
+                                }
+                            },
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            AutoDelete -> False,
+                            GridBoxBackground -> { "Columns" -> { { Automatic } } },
+                            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } },
+                            BaselinePosition -> { 1, 1 }
+                        ]
                     },
-                    AutoDelete        -> False,
-                    BaselinePosition  -> { 1, 1 },
-                    GridBoxAlignment  -> { "Columns" -> { { Left } } },
-                    GridBoxBackground -> { "Columns" -> { { Automatic } } },
-                    GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                    GridBoxSpacings   -> { "Columns" -> { { 0.2 } }, "Rows" -> { { 0.5 } } }
+                    Dynamic @ TrueQ @ Typeset`var$$,
+                    Alignment -> Automatic,
+                    ImageSize -> Automatic,
+                    ImageMargins -> { { 0, 0 }, { 10, 10 } },
+                    BaseStyle -> { },
+                    DefaultBaseStyle -> "OpenerView",
+                    BaselinePosition -> Baseline
                 ],
-                Alignment        -> Automatic,
-                BaselinePosition -> Baseline,
-                BaseStyle        -> { },
-                DefaultBaseStyle -> "OpenerView",
-                ImageMargins     -> { { 0, 0 }, { 10, 10 } },
-                ImageSize        -> Automatic
+                Deployed -> False,
+                StripOnInput -> False
             ],
-            Deployed     -> False,
-            StripOnInput -> False
+            DynamicModuleValues -> Automatic
         ]
     }
 ]
@@ -1612,23 +1713,25 @@ Cell[
                         False -> GridBox[
                             {
                                 {
-                                    OpenerBox[
-                                        Dynamic @ Typeset`var$$,
-                                        Appearance -> Automatic,
-                                        Enabled -> Automatic,
-                                        AutoAction -> False,
-                                        ContinuousAction -> False
-                                    ],
                                     TagBox[
                                         TagBox[
-                                            StyleBox[
-                                                #2,
-                                                "Text",
-                                                FontSlant -> "Italic",
-                                                FontColor -> GrayLevel[ 0.5 ],
-                                                ShowStringCharacters -> False,
-                                                StripOnInput -> False
-                                            ],
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f442" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1650,23 +1753,25 @@ Cell[
                         True -> GridBox[
                             {
                                 {
-                                    OpenerBox[
-                                        Dynamic @ Typeset`var$$,
-                                        Appearance -> Automatic,
-                                        Enabled -> Automatic,
-                                        AutoAction -> False,
-                                        ContinuousAction -> False
-                                    ],
                                     TagBox[
                                         TagBox[
-                                            StyleBox[
-                                                #2,
-                                                "Text",
-                                                FontSlant -> "Italic",
-                                                FontColor -> GrayLevel[ 0.5 ],
-                                                ShowStringCharacters -> False,
-                                                StripOnInput -> False
-                                            ],
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f443" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f449" } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1682,8 +1787,49 @@ Cell[
                                         Cell[ BoxData @ TemplateBox[ { #1 }, "ThinkingContent" ], Background -> None ],
                                         Alignment -> Left,
                                         ImageMargins -> { { 5, 0 }, { 0, 0 } }
-                                    ],
-                                    "\[SpanFromLeft]"
+                                    ]
+                                },
+                                {
+                                    TagBox[
+                                        TagBox[
+                                            PaneSelectorBox[
+                                                {
+                                                    False -> GridBox[
+                                                        { {
+                                                            AdjustmentBox[ RotationBox[ "\:f443", BoxRotation -> 3.14159 ], BoxBaselineShift -> -0.2 ],
+                                                            StyleBox[
+                                                                DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ], StandardForm] ],
+                                                                FontSlant -> "Italic"
+                                                            ]
+                                                        } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                                                    ],
+                                                    True -> GridBox[
+                                                        { {
+                                                            AdjustmentBox[ RotationBox[ "\:f449", BoxRotation -> 3.14159 ], BoxBaselineShift -> -0.2 ],
+                                                            StyleBox[
+                                                                DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ], StandardForm] ],
+                                                                FontSlant -> "Italic"
+                                                            ]
+                                                        } },
+                                                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                    ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                ImageSize -> Automatic,
+                                                FrameMargins -> 0
+                                            ], 
+                                            MouseAppearanceTag[ "Arrow" ]
+                                        ],
+                                        EventHandlerTag @ {
+                                            "MouseClicked" :> (Typeset`var$$ = ! Typeset`var$$),
+                                            Method -> "Preemptive",
+                                            PassEventsDown -> Automatic,
+                                            PassEventsUp -> True
+                                        }
+                                    ]
                                 }
                             },
                             GridBoxAlignment -> { "Columns" -> { { Left } } },
@@ -1722,7 +1868,7 @@ Cell[
         DisplayFunction -> Function @ GridBox[
             { {
                 PaneBox[
-                    Cell[ #, "Text", FontColor -> GrayLevel[ 0.35 ], Background -> None, Editable -> True ],
+                    Cell[ #, "Text", FontColor -> GrayLevel[ 0.35 ], FontSize -> 12, Background -> None, Editable -> True ],
                     Alignment    -> Left,
                     ImageMargins -> { { 5, 5 }, { 5, 5 } },
                     ImageSize    -> { Scaled[ 1 ], Automatic }
@@ -1732,7 +1878,7 @@ Cell[
             GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
             GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
             GridBoxDividers   -> {
-                "ColumnsIndexed" -> { 1 -> Directive[ GrayLevel[ 0.9 ], AbsoluteThickness[ 2 ] ] },
+                "ColumnsIndexed" -> { 1 -> Directive[ GrayLevel[ 0.8196 ], AbsoluteThickness[ 2 ] ] },
                 "Rows"           -> { { False } }
             }
         ]
