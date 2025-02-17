@@ -210,11 +210,12 @@ chunkNotebook[ file_? FileExistsQ ] := Enclose[
 ];
 
 chunkNotebook[ nb_Notebook ] := Enclose[
-    Module[ { trailed, merged, flatNodes },
+    Module[ { trailed, merged, flatNodes, document },
         trailed   = ConfirmBy[ insertTrailInfo @ nb, AssociationQ, "Trailed" ];
         merged    = ConfirmBy[ mergeSmallNodes @ trailed, AssociationQ, "Merged" ];
         flatNodes = Cases[ merged, KeyValuePattern[ "String" -> _String ], Infinity ];
-        flatNodes
+        document  = ConfirmBy[ cellToString @ nb, StringQ, "Document" ];
+        <| "Document" -> document, "Chunks" -> flatNodes |>
     ],
     throwInternalFailure
 ];
