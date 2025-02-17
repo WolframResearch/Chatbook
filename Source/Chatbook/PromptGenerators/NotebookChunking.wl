@@ -659,23 +659,24 @@ rewriteCellLabel[
     ];
 
 rewriteCellLabel[
-    Cell[ a___, style: $inputStyles, b: Except[ $cellLabelOpt ]... ]
+    Cell[ a___, style: $inputStyles, b___String, c: Except[ $cellLabelOpt, _Rule|_RuleDelayed ]... ]
 ] :=
-    rewriteCellLabel @ Cell[ a, style, CellLabel -> "In[0]:=", b ];
+    rewriteCellLabel @ Cell[ a, style, b, CellLabel -> "In[0]:=", c ];
 
 rewriteCellLabel[
-    Cell[ a___, style: $outputStyles, b: Except[ $cellLabelOpt ]... ]
+    Cell[ a___, style: $outputStyles, b___String, c: Except[ $cellLabelOpt, _Rule|_RuleDelayed ]... ]
 ] :=
-    rewriteCellLabel @ Cell[ a, style, CellLabel -> "Out[0]=", b ];
+    rewriteCellLabel @ Cell[ a, style, b, CellLabel -> "Out[0]=", c ];
 
 rewriteCellLabel[
-    Cell[ a___, style: $sideEffectStyles, b: Except[ $cellLabelOpt ]... ]
+    Cell[ a___, style: $sideEffectStyles, b___String, c: Except[ $cellLabelOpt, _Rule|_RuleDelayed ]... ]
 ] :=
     rewriteCellLabel @ Cell[
         a,
         style,
+        b,
         CellLabel -> "During evaluation of In[0]:=",
-        b
+        c
     ];
 
 rewriteCellLabel[ other_ ] := setLastStyle @ other;
