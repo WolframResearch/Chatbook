@@ -13,6 +13,7 @@ $subcontexts = {
     "Wolfram`Chatbook`PromptGenerators`Common`",
     "Wolfram`Chatbook`PromptGenerators`DefaultPromptGenerators`",
     "Wolfram`Chatbook`PromptGenerators`EmbeddingContext`",
+    "Wolfram`Chatbook`PromptGenerators`NotebookChunking`",
     "Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`",
     "Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaQueries`",
     "Wolfram`Chatbook`PromptGenerators`VectorDatabases`"
