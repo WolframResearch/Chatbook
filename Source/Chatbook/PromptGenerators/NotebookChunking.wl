@@ -238,10 +238,10 @@ insertTrailInfo[
     group_Integer,
     { trail___ },
     source: Cell @ CellGroupData[ { header_Cell? breadCrumbHeaderCellQ, contents___Cell }, ___ ]
-] := Enclose[
+] :=
     Module[ { string, name, new },
 
-        string = ConfirmBy[ cellToString @ header, StringQ, "String" ];
+        string = cellToString @ header;
 
         name = If[ StringQ @ string, StringTrim @ StringDelete[ StringTrim @ string, StartOfString ~~ "#".. ] ];
 
@@ -260,9 +260,7 @@ insertTrailInfo[
             "LeafNode" -> False,
             "Children" -> Prepend[ new, insertTrailInfo[ level + 1, 0, { trail, name }, header ] ]
         |> /; StringQ @ name && StringFreeQ[ name, "\n" ] && StringLength @ name < 200
-    ],
-    throwInternalFailure
-];
+    ];
 
 
 (* Cell group without a header cell: *)
