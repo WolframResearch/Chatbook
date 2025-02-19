@@ -153,50 +153,6 @@ DisplayBase64Boxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Chat Input Formatting*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*FormatChatInput*)
-FormatChatInput // beginDefinition;
-
-FormatChatInput[ input_ ] := formatChatInput @ input
-
-FormatChatInput // endExportedDefinition;
-(* TODO: actual error handling for invalid arguments *)
-
-formatChatInput // beginDefinition;
-
-formatChatInput[ input_String ] := RawBoxes @ Cell @ TextData @ expandMultimodalInputString @ input;
-
-formatChatInput // endDefinition;
-
-expandMultimodalInputString // beginDefinition
-
-expandMultimodalInputString[ input_String ] :=
-Enclose[
-    Module[ { split, joined, typed },
-
-        split = StringSplit[
-            input,
-            {
-                md: Shortest[ "\\!\\(\\*MarkdownImageBox[\"" ~~ link: ("![" ~~ __ ~~ "](" ~~ uri__ ~~ ")") ~~ "\"]\\)" ] /;
-                    expressionURIQ @ uri :> {
-                        md,
-                        ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], graphicsQ, "MarkdownImageBox" ]
-                    }
-            }
-        ];
-
-        Flatten @ Replace[ split, { _String, e_ } :> Cell @ BoxData @ ToBoxes @ e, { 1 } ]
-    ],
-    throwInternalFailure[ expandMultimodalInputString @ input, ## ] &
-]
-
-expandMultimodalInputString // endDefinition
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Chat Output Formatting*)
 
 (* ::**************************************************************************************************************:: *)
