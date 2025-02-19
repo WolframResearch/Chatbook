@@ -30,7 +30,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
     Catch @ Module[ { text, uuid, cell, cellObject },
 
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
-        text = input;
+        text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
 
         cell = Cell[
@@ -219,6 +219,52 @@ $inlineChatTaggingRules := <| "InlineChat" -> True, "InlineChatRootCell" -> $inl
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeBoxesInputMoreTextLike*)
+makeBoxesInputMoreTextLike // beginDefinition;
+
+makeBoxesInputMoreTextLike[ input_String ] := input;
+
+makeBoxesInputMoreTextLike[ boxes_ ] := Enclose[
+    Module[ { simplerStringLikeBoxes, nonStringBoxPositions },
+        (* Flatten input boxes *)
+        simplerStringLikeBoxes =
+            ReplaceRepeated[
+                boxes,
+                {
+                    RowBox[ { a___, b1_String, b2_String, c___ } ] :> RowBox[ { a, StringJoin[ b1, b2 ], c} ],
+                    RowBox[ { a___, RowBox[ { b___ } ],   c___ } ] :> RowBox[ { a, b, c } ]
+                }
+            ];
+
+        (* wrap non-string box expressions in BoxData cells *)
+        nonStringBoxPositions = Cases[ Position[ simplerStringLikeBoxes, Except[ RowBox | List, _Symbol ], Heads -> True ], { e___, 0 } :> { e } ];
+        nonStringBoxPositions = Pick[ nonStringBoxPositions, Length /@ nonStringBoxPositions, Min[ Length /@ nonStringBoxPositions ] ];
+        simplerStringLikeBoxes =
+            ReplacePart[
+                simplerStringLikeBoxes,
+                Thread[
+                    Rule[
+                        nonStringBoxPositions,
+                        Map[ Cell[ BoxData[ # ] ]&, Extract[ simplerStringLikeBoxes, nonStringBoxPositions ] ]
+                    ]
+                ]
+            ];
+
+        (* *)
+        Switch[ simplerStringLikeBoxes,
+            RowBox[ { _String } ], simplerStringLikeBoxes[[ 1, 1 ]],
+            RowBox[ { __ } ],      TextData @@ simplerStringLikeBoxes,
+            _List,                 TextData @ simplerStringLikeBoxes,
+            _,                     Cell @ simplerStringLikeBoxes (* FIXME: should we throw an error instead? *)
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeBoxesInputMoreTextLike // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*formatInlineChatInput*)
 formatInlineChatInput // beginDefinition;
 
@@ -241,8 +287,12 @@ formatInlineChatInput // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validInputStringQ*)
+(* LLM-712: adding images as allowed input means we must be much more permissive in validating chat input *)
 validInputStringQ // beginDefinition;
 validInputStringQ[ input_String? StringQ ] := ! StringMatchQ[ input, WhitespaceCharacter... ];
+validInputStringQ[ Null ] := False
+validInputStringQ[ RowBox[ { args___String } ] ] := True /; ! Apply[ And, StringMatchQ[ { args }, WhitespaceCharacter... ] ]
+validInputStringQ[ args___ ] := True /; MatchQ[ MakeExpression[ args, StandardForm ], Except[ HoldComplete[ Null ], _HoldComplete ] ]
 validInputStringQ[ _ ] := False
 validInputStringQ // endDefinition;
 
