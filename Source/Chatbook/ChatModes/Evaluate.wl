@@ -222,8 +222,10 @@ $inlineChatTaggingRules := <| "InlineChat" -> True, "InlineChatRootCell" -> $inl
 (*makeBoxesInputMoreTextLike*)
 makeBoxesInputMoreTextLike // beginDefinition;
 
+makeBoxesInputMoreTextLike[ input_String ] := input;
+
 makeBoxesInputMoreTextLike[ boxes_ ] := Enclose[
-    Module[ { simplerStringLikeBoxes, nonStringBoxPositions, nonStringBoxes },
+    Module[ { simplerStringLikeBoxes, nonStringBoxPositions },
         (* Flatten input boxes *)
         simplerStringLikeBoxes =
             ReplaceRepeated[
