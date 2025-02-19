@@ -323,7 +323,7 @@ makeResultCell0 // beginDefinition;
 makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
+        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
         "ThinkingOpener",
         Background -> None
     ]
