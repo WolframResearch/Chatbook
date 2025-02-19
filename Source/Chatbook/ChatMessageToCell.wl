@@ -49,14 +49,6 @@ chatMessageToCell // beginDefinition;
 chatMessageToCell[ message_Association, format_ ] :=
     chatMessageToCell[ message[ "Role" ], message[ "Content" ], format ];
 
-chatMessageToCell[ role : "User", content_, format_ ] := Enclose[
-    Module[ { formatted },
-        formatted = ConfirmMatch[ getFormattedTextData[ content, FormatChatInput ], _TextData, "TextData" ];
-        ConfirmMatch[ wrapCellContent[ formatted, role, format ], _Cell | Nothing, "Result" ]
-    ],
-    throwInternalFailure
-];
-
 chatMessageToCell[ role_String, content_, format_ ] := Enclose[
     Module[ { formatted },
         formatted = ConfirmMatch[ getFormattedTextData @ content, _TextData, "TextData" ];
@@ -122,7 +114,6 @@ workspaceOutput // endDefinition;
 (*getFormattedTextData*)
 getFormattedTextData // beginDefinition;
 getFormattedTextData[ content_String ] := getFormattedTextData[ content, FormatChatOutput @ content ];
-getFormattedTextData[ content_, FormatChatInput ] := getFormattedTextData[ content, FormatChatInput @ content ];
 getFormattedTextData[ content_, (Cell|RawBoxes)[ boxes_ ] ] := getFormattedTextData[ content, boxes ];
 getFormattedTextData[ content_, TextData[ text: $$textDataList ] ] := TextData @ text;
 getFormattedTextData[ content_, string_String ] := TextData @ { string };

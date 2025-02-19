@@ -57,7 +57,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `DisplayBase64Boxes;
 `EnableNotebookAssistance;
 `ExplodeCell;
-`FormatChatInput;
 `FormatChatOutput;
 `FormatToolCall;
 `FormatToolResponse;
@@ -230,7 +229,6 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "DisplayBase64Boxes",
     "EnableNotebookAssistance",
     "ExplodeCell",
-    "FormatChatInput",
     "FormatChatOutput",
     "FormatToolCall",
     "FormatToolResponse",
