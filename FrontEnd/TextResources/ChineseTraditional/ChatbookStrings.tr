@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "\:6B63\:5728\:4F7F\:7528 ",
 "FormattingToolUsed" -> "\:5DF2\:4F7F\:7528 ",
 "FormattingToolUsingLoading" -> "\:4F7F\:7528\:4E2D\:7684\:5DE5\:5177\[Ellipsis]",
+"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
+"FormattingThinkingComplete" -> "Thought for `time` seconds",
+"FormattingThinkingCompleteFallback" -> "Thought",
+"FormattingHide" -> "Hide",
 
 "InlineReferencesFieldHint" -> "\:63D0\:793A\:540D\:7A31",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:FF1A",

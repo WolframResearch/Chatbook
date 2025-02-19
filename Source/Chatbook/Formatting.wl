@@ -328,7 +328,7 @@ makeResultCell0 // beginDefinition;
 makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, "\"Thinking\[Ellipsis]\"" }, "ThinkingOpener" ],
+        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
         "ThinkingOpener",
         Background -> None
     ]
@@ -338,7 +338,7 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
     Module[ { seconds, label },
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
         seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, "Thought for " <> ToString @ seconds <> " seconds", "Thoughts" ];
+        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
         Cell[
             BoxData @ templateBox[ { StringTrim @ thoughts, label }, "ThoughtsOpener" ],
             "ThoughtsOpener",

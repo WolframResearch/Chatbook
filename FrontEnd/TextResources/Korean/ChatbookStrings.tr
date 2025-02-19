@@ -70,6 +70,10 @@
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
 "FormattingToolUsed" -> "\:C0AC\:C6A9 ",
 "FormattingToolUsingLoading" -> "\:B3C4\:AD6C \:C0AC\:C6A9\[Ellipsis]",
+"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
+"FormattingThinkingComplete" -> "Thought for `time` seconds",
+"FormattingThinkingCompleteFallback" -> "Thought",
+"FormattingHide" -> "Hide",
 
 "InlineReferencesFieldHint" -> "\:D504\:B86C\:D504\:D2B8 \:C774\:B984",
 "InlineReferencesInsertLabel" -> "\:C0BD\:C785:",
