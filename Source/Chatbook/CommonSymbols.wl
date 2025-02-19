@@ -116,6 +116,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `attachMenuCell;
 `attachWorkspaceChatInput;
 `autoAssistQ;
+`autoCorrect;
 `boxDataQ;
 `cachedTokenizer;
 `cellFlatten;

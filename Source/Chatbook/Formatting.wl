@@ -273,14 +273,19 @@ formatToolCall0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*reformatTextData*)
 reformatTextData // beginDefinition;
+reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ string;
+reformatTextData // endDefinition;
 
-reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
+
+reformatTextData0 // beginDefinition;
+
+reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
     ReplaceAll[
-        reformatTextData @ StringReplace[ string, $mdEscapeRules ],
+        reformatTextData0 @ StringReplace[ string, $mdEscapeRules ],
         s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
     ];
 
-reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
+reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
         Quiet[
             StringSplit[
@@ -294,9 +299,9 @@ reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     ]
 ];
 
-reformatTextData[ other_ ] := other;
+reformatTextData0[ other_ ] := other;
 
-reformatTextData // endDefinition;
+reformatTextData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
