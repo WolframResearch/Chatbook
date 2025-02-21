@@ -40,6 +40,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$enableLLMServices;
 `$evaluationCell;
 `$evaluationNotebook;
+`$filterDocumentationRAG;
 `$finalCell;
 `$fixedProgressText;
 `$fullBasePrompt;

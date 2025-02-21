@@ -24,6 +24,8 @@ $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
+$usePromptHeader = True;
+
 $rerankScoreThreshold = 3;
 
 $bestDocumentationPromptMethod := $bestDocumentationPromptMethod = CurrentChatSettings[ "RerankPromptStyle" ];
@@ -93,6 +95,7 @@ RelatedDocumentation // Options = {
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "MaxSources"        -> $maxSelectedSources,
+    "PromptHeader"      -> Automatic,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
     "Sources"           :> $RelatedDocumentationSources
@@ -230,6 +233,10 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $filteringLLMConfig
             ],
+            $usePromptHeader = Replace[
+                OptionValue[ "PromptHeader" ],
+                $$unspecified :> $usePromptHeader
+            ],
             $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
         },
         relatedDocumentationPrompt[
@@ -345,6 +352,7 @@ relatedDocumentationPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prependRelatedDocsHeader*)
 prependRelatedDocsHeader // beginDefinition;
+prependRelatedDocsHeader[ string_String, _    ] /; ! TrueQ @ $usePromptHeader := string;
 prependRelatedDocsHeader[ string_String, True ] := $relatedDocsStringFilteredHeader <> string;
 prependRelatedDocsHeader[ string_String, _    ] := $relatedDocsStringUnfilteredHeader <> string;
 prependRelatedDocsHeader // endDefinition;
@@ -459,7 +467,13 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize[ instructions, Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ] ],
+                setServiceCaller[
+                    llmSynthesize[
+                        instructions,
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                    ],
+                    "RelatedDocumentation"
+                ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,
