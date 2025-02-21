@@ -10,11 +10,12 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$snippetType                  = "Text";
-$documentationSnippetVersion := $snippetVersion;
-$baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
-$resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
+$snippetType                   = "Text";
+$documentationSnippetVersion  := $snippetVersion;
+$baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
+$resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };

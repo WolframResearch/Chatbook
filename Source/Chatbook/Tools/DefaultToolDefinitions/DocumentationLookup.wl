@@ -9,19 +9,23 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Specification*)
+$documentationIDsHelp = "\
+One or more symbol names or documentation URIs separated by commas, \
+e.g. 'Table', 'paclet:ref/Table', or 'paclet:ref/Table,paclet:tutorial/Lists,guide/ListManipulation'";
+
 $defaultChatTools0[ "DocumentationLookup" ] = <|
     toolDefaultData[ "DocumentationLookup" ],
     "ShortName"          -> "doc_lookup",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
-    "Description"        -> "Get documentation pages for Wolfram Language symbols.",
+    "Description"        -> "Get Wolfram Language documentation pages.",
     "Function"           -> documentationLookup,
-    "FormattingFunction" -> toolAutoFormatter,
+    "FormattingFunction" -> documentationSearchFormatter,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "names" -> Block[ { DelimitedSequence },
+        "ids" -> Block[ { DelimitedSequence },
             <|
-                "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
-                "Help"        -> "One or more Wolfram Language symbols separated by commas",
+                "Interpreter" -> DelimitedSequence[ "String", "," ],
+                "Help"        -> $documentationIDsHelp,
                 "Required"    -> True
             |>
         ]
@@ -37,23 +41,56 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
 (*documentationLookup*)
 documentationLookup // beginDefinition;
 
-documentationLookup[ KeyValuePattern[ "names" -> name_ ] ] := documentationLookup @ name;
-documentationLookup[ name_Entity ] := documentationLookup @ CanonicalName @ name;
-documentationLookup[ names_List ] := StringRiffle[ documentationLookup /@ names, "\n\n---\n\n" ];
-
-documentationLookup[ name_String ] := Enclose[
-    Module[ { usage, details, examples, strings, body },
-        usage    = ConfirmMatch[ documentationUsage @ name, _String|_Missing, "Usage" ];
-        details  = ConfirmMatch[ documentationDetails @ name, _String|_Missing, "Details" ];
-        examples = ConfirmMatch[ documentationBasicExamples @ name, _String|_Missing, "Examples" ];
-        strings  = ConfirmMatch[ DeleteMissing @ { usage, details, examples }, { ___String }, "Strings" ];
-        body     = If[ strings === { }, ToString[ Missing[ "NotFound" ], InputForm ], StringRiffle[ strings, "\n\n" ] ];
-        "# " <> name <> "\n\n" <> body
-    ],
-    throwInternalFailure
-];
-
+documentationLookup[ KeyValuePattern[ "ids" -> ids_ ] ] := documentationLookup @ ids;
+documentationLookup[ ids_List ] := StringRiffle[ documentationLookup /@ ids, "\n\n======\n\n" ];
+documentationLookup[ id_String ] := documentationLookup0 @ toDocumentationURI @ id;
 documentationLookup // endDefinition;
+
+
+documentationLookup0 // beginDefinition;
+
+documentationLookup0[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] && StringFreeQ[ uri, "#" ] :=
+    Module[ { url, response, body },
+        url = URLBuild @ { $documentationMarkdownBaseURL, StringDelete[ uri, "paclet:" ] <> ".md" };
+        response = URLRead @ url;
+        body = If[ response[ "StatusCode" ] === 200, response[ "Body" ] ];
+        documentationLookup0[ uri ] =
+            If[ StringQ @ body,
+                body,
+                ToString[ Missing[ "NotFound", uri ], InputForm ]
+            ]
+    ];
+
+documentationLookup0[ uri_String ] :=
+    Module[ { snippet },
+        snippet = Quiet @ catchAlways @ getSnippets @ uri;
+        documentationLookup0[ uri ] =
+            If[ StringQ @ snippet,
+                snippet,
+                ToString[ Missing[ "NotFound", uri ], InputForm ]
+            ]
+    ];
+
+documentationLookup0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDocumentationURI*)
+toDocumentationURI // beginDefinition;
+
+toDocumentationURI[ name_String ] /; Internal`SymbolNameQ[ name, True ] :=
+    "paclet:ref/" <> StringReplace[ StringDelete[ name, StartOfString ~~ "System`" ], "`" -> "/" ];
+
+toDocumentationURI[ id_String ] /; StringFreeQ[ id, ":" ] && StringContainsQ[ id, "/" ] :=
+    "paclet:" <> StringTrim[ id, "/" ];
+
+toDocumentationURI[ id_String ] /; StringStartsQ[ id, ("https"|"http") ~~ "://reference.wolfram.com/language/" ] :=
+    "paclet:" <> StringDelete[ id, ("https"|"http") ~~ "://reference.wolfram.com/language/" ];
+
+toDocumentationURI[ id_String ] :=
+    id;
+
+toDocumentationURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
