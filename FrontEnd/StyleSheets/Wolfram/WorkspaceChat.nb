@@ -83,7 +83,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.1.29.3949481078"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.1.29.3949488636"|>
   ],
   Cell[
    StyleData["AttachedCell"],

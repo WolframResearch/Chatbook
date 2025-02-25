@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.1.29.3949481078"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.1.29.3949488636"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1007,7 +1007,8 @@ Notebook[
          Catch[
           Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
           Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$
+           Wolfram`Chatbook`UI`Private`cell$$,
+           Automatic
           ],
           Blank[]
          ],
@@ -1039,7 +1040,8 @@ Notebook[
             Catch[
              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Wolfram`Chatbook`UI`Private`cell$$
+              Wolfram`Chatbook`UI`Private`cell$$,
+              True
              ],
              Blank[]
             ],
@@ -1054,18 +1056,33 @@ Notebook[
           UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
         False ->
-         FrameBox[
-          TemplateBox[{}, "ChatIconUser"],
-          RoundingRadius -> 3,
-          FrameMargins -> 2,
-          ImageMargins -> {{0, 3}, {0, 0}},
-          FrameStyle -> GrayLevel[0, 0],
+         ButtonBox[
+          FrameBox[
+           PaneBox[
+            TemplateBox[{}, "ChatIconUser"],
+            Alignment -> {Center, Center},
+            ImageSize -> {25, 25},
+            ImageSizeAction -> "ShrinkToFit"
+           ],
+           Background -> None,
+           ContentPadding -> False,
+           FrameMargins -> 0,
+           FrameStyle -> None,
+           ImageMargins -> 0,
+           RoundingRadius -> 2,
+           StripOnInput -> False
+          ],
+          ButtonFunction :> Null,
+          Appearance -> None,
+          ImageMargins -> 0,
           FrameMargins -> 0,
-          StripOnInput -> False
+          ContentPadding -> False,
+          Evaluator -> Automatic,
+          Method -> "Preemptive"
          ]
        },
        Dynamic[CurrentValue["MouseOver"]],
-       ImageSize -> All
+       ImageSize -> Automatic
       ]
      ])
    }

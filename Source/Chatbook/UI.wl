@@ -704,14 +704,14 @@ errorMessageLinkAppearance // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatInputActiveCellDingbat*)
-MakeChatInputActiveCellDingbat[ ] :=
+MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
 	DynamicModule[ { cell },
-		trackedDynamic[ MakeChatInputActiveCellDingbat @ cell, { "ChatBlock" } ],
+		trackedDynamic[ MakeChatInputActiveCellDingbat[ cell, mouseOver ], { "ChatBlock" } ],
 		Initialization :> (cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
 		UnsavedVariables :> { cell }
 	];
 
-MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
+MakeChatInputActiveCellDingbat[ cell_CellObject, mouseOver_ ] := Module[{
 	menuLabel,
 	button
 },
@@ -732,12 +732,8 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 		Framed[
 			Pane[menuLabel, Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
 			RoundingRadius -> 2,
-			FrameStyle -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.74902], None]
-			],
-			Background -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.960784], None]
-			],
+			FrameStyle -> If[ TrueQ @ mouseOver, GrayLevel[ 0.74902  ], Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.74902  ], None ] ] ],
+			Background -> If[ TrueQ @ mouseOver, GrayLevel[ 0.960784 ], Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.960784 ], None ] ] ],
 			FrameMargins -> 0,
 			ImageMargins -> 0,
 			ContentPadding -> False
@@ -771,18 +767,26 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 MakeChatInputCellDingbat[] :=
 	PaneSelector[
 		{
-			True -> MakeChatInputActiveCellDingbat[],
-			False -> Framed[
-				RawBoxes @ TemplateBox[{}, "ChatIconUser"],
-				RoundingRadius -> 3,
-				FrameMargins -> 2,
-				ImageMargins -> {{0, 3}, {0, 0}},
-				FrameStyle -> Transparent,
-				FrameMargins -> 0
+			True -> MakeChatInputActiveCellDingbat[ True ],
+			False -> Button[(* I hate this: the only reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
+				Framed[
+					Pane[RawBoxes @ TemplateBox[{}, "ChatIconUser"], Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
+					Background     -> None,
+					ContentPadding -> False,
+					FrameMargins   -> 0,
+					FrameStyle     -> None,
+					ImageMargins   -> 0,
+					RoundingRadius -> 2
+				],
+				Null,
+				Appearance -> None,
+				ImageMargins -> 0,
+				FrameMargins -> 0,
+				ContentPadding -> False
 			]
 		},
 		Dynamic[CurrentValue["MouseOver"]],
-		ImageSize -> All
+		ImageSize -> Automatic
 	]
 
 (* ::**************************************************************************************************************:: *)
