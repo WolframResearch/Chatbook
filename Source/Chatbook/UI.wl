@@ -61,52 +61,51 @@ CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "P
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Notebook Toolbar*)
-CreateToolbarContent[] := With[{
-	nbObj = EvaluationNotebook[],
-	menuCell = EvaluationCell[]
+CreateToolbarContent[ ] := DynamicModule[{
+	nbObj,
+	menuCell,
+	isChatEnabled
 },
-	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
-		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
+	(* This menu is kernel-generated, so calculate variables once before the DM displayed content, and pass them on as needed *)
+	nbObj = EvaluationNotebook[ ];
+	menuCell = EvaluationCell[ ];
+	isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
 
-	CurrentValue[menuCell, {TaggingRules, "MenuData", "Root"}] = menuCell;
+	CurrentValue[ menuCell, { TaggingRules, "MenuData", "Root" } ] = menuCell; (* TODO: can we convert to DM variable? *)
 
 	PaneSelector[
 		{
-			True :> (
-				Dynamic[ makeToolbarMenuContent @ menuCell, SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
+			True -> ((* Creating the menu is expensive. The Dynamic means we only create it when it is first displayed. *)
+				Dynamic[ makeToolbarMenuContent[ menuCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
 			),
-			False :> (
-				Dynamic @ Refresh[
-					createChatNotEnabledToolbar[nbObj, menuCell],
-					None
-				]
-			)
+			False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
 		},
-		Dynamic @ CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}],
+		Dynamic @ isChatEnabled,
 		ImageSize -> Automatic
 	]
 ];
 
-makeToolbarMenuContent[ menuCell_ ] := Enclose[
-    Module[ { items, item1, item2, new },
+makeToolbarMenuContent[ menuCell_, nbObj_NotebookObject ] := Enclose[
+	Module[ { items, item1, item2, new },
 
-        items = ConfirmBy[ makeChatActionMenu[ "Toolbar", EvaluationNotebook[ ], Automatic, "List" ], ListQ, "Items" ];
+		items = ConfirmBy[ makeChatActionMenu[ "Toolbar", nbObj, Automatic, "List" ], ListQ, "Items" ];
 
-        item1 = Pane[
-            makeEnableAIChatFeaturesLabel @ True,
-            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
-        ];
+		(* IMO we don't need to show that chat features are enabled anymore as they are on by default *)
+		(* item1 = Pane[
+			makeEnableAIChatFeaturesLabel @ True,
+			ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+		]; *)
 
-        item2 = Pane[
-            makeAutomaticResultAnalysisCheckbox @ EvaluationNotebook[ ],
-            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
-        ];
+		item2 = Pane[
+			makeAutomaticResultAnalysisCheckbox @ nbObj,
+			ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+		];
 
-        new = Join[ { { None, item1, None }, { None, item2, None } }, items ];
+		new = Join[ { (*{ None, item1, None },*) { None, item2, None } }, items ];
 
-        MakeMenu[ new, Transparent, $chatMenuWidth ]
-    ],
-    throwInternalFailure
+		MakeMenu[ new, Transparent, $chatMenuWidth ]
+	],
+	throwInternalFailure
 ];
 
 (*====================================*)
@@ -115,12 +114,12 @@ SetFallthroughError[createChatNotEnabledToolbar]
 
 createChatNotEnabledToolbar[
 	nbObj_NotebookObject,
-	menuCell_CellObject
+	Dynamic[ isChatEnabled ]
 ] :=
 	EventHandler[
-		makeEnableAIChatFeaturesLabel[False],
+		makeEnableAIChatFeaturesLabel @ False,
 		"MouseClicked" :> (
-			tryMakeChatEnabledNotebook[nbObj, menuCell]
+			tryMakeChatEnabledNotebook[ nbObj, Dynamic @ isChatEnabled ]
 		),
 		(* Needed so that we can open a ChoiceDialog if required. *)
 		Method -> "Queued"
@@ -132,7 +131,7 @@ SetFallthroughError[tryMakeChatEnabledNotebook]
 
 tryMakeChatEnabledNotebook[
 	nbObj_NotebookObject,
-	menuCell_CellObject
+	Dynamic[ isChatEnabled ]
 ] := Module[{
 	useChatbookStylesheet
 },
@@ -166,7 +165,7 @@ tryMakeChatEnabledNotebook[
 
 	(* Cause the PaneSelector to switch to showing all the options allowed
 		for Chat-Enabled notebooks. *)
-	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] = True;
+	isChatEnabled = True;
 ]
 
 (*====================================*)
@@ -231,9 +230,10 @@ makeAutomaticResultAnalysisCheckbox[
 	}]
 },
 	labeledCheckbox[
-		Dynamic[ autoAssistQ @ target, setterFunction ],
+		autoAssistQ @ target,
+		setterFunction,
 		(* We can only get the tooltip to glue itself to the text by first literalizing the text resource as a string before typesetting to RowBox. *)
-		Dynamic @ Row[
+		Row[
 			{
 				FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
 				Spacer[ 3 ],
@@ -257,89 +257,104 @@ Pane[
 
 SetFallthroughError[labeledCheckbox]
 
-labeledCheckbox[value_, label_, enabled_ : Automatic] :=
+labeledCheckbox[ value : True | False, label_, enabled_ : Automatic ] := labeledCheckbox[ value, #&, label, enabled ]
+
+labeledCheckbox[initialValue_, update_Function, label_, enabled_ : Automatic] :=
+DynamicModule[ { value },
+	labeledCheckbox0[ Dynamic @ value, update, label, enabled ],
+	Initialization :> (value = TrueQ @ initialValue)]
+
+labeledCheckbox0[ Dynamic @ value_, update_Function, label_, enabled_ : Automatic ] :=
 	Row[
 		{
 			Checkbox[
-				value,
+				Dynamic[ value, Function[ value = #; update[#] ] ],
 				{False, True},
 				Enabled -> enabled
 			],
 			Spacer[3],
-			menuItemLineWrap @ label
+			EventHandler[
+				menuItemLineWrap @ label,
+				"MouseClicked" :> update[ value = ! value ]
+			]
 		},
 		BaseStyle -> {
 			"Text",
 			FontSize -> 14,
+			FontSlant -> Plain,
 			(* Note: Workaround increased ImageMargins of Checkbox's in
-			         Preferences.nb *)
+					 Preferences.nb *)
 			CheckboxBoxOptions -> { ImageMargins -> 0 }
 		}
 	]
 
 (*====================================*)
 
-makeToolCallFrequencySlider[ obj_ ] :=
-    Module[ { checkbox, slider },
-        checkbox = labeledCheckbox[
-            Dynamic[
-                currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic,
-                Function[
-                    If[ TrueQ[ # ],
-                        CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-                        CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
-                    ]
-                ]
-            ],
-            Style[ menuItemLineWrap @ tr[ "UIAdvancedChooseAutomatically" ], "ChatMenuLabel" ]
-        ];
-        slider = Pane[
-            Grid[
-                {
-                    {
-                        Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
-                        Slider[
-                            Dynamic[
-                                Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
-                                (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) &
-                            ],
-                            { 0, 1, 0.01 },
-                            ImageSize    -> { 100, Automatic },
-                            ImageMargins -> { { 0, 0 }, { 5, 5 } }
-                        ],
-                        Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
-                    }
-                },
-                Spacings -> { { 0, { 0.5 }, 0 }, 0 },
-                Alignment -> { { Left, Center, Right }, Baseline }
-            ],
-            ImageMargins -> 0,
-            ImageSize    -> { 170, Automatic }
-        ];
-        Pane[
-            PaneSelector[
-                {
-                    True -> Column[ { checkbox }, Alignment -> Left ],
-                    False -> Column[ { slider, checkbox }, Alignment -> Left ]
-                },
-                Dynamic[ currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic ],
-                ImageSize -> Automatic
-            ],
-            ImageMargins -> { { 5, 0 }, { 5, 5 } }
-        ]
-    ];
+makeToolCallFrequencySlider[ obj_ ] := With[ { initFrequency = currentChatSettings[ obj, "ToolCallFrequency" ] },
+	Module[ { checkboxUpdate, checkboxLabel, slider },
+		checkboxUpdate =
+			Function[
+				If[ TrueQ[ # ],
+					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
+					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
+				]
+			];
+		checkboxLabel = Style[ tr[ "UIAdvancedChooseAutomatically" ], "ChatMenuLabel" ];
+		slider = Pane[
+			Grid[
+				{
+					{
+						Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
+						DynamicModule[ { value },
+							Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
+								Dynamic[ value, { None, Temporary, (value = CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
+								{ 0, 1, 0.01 },
+								ImageSize    -> { 100, Automatic },
+								ImageMargins -> { { 0, 0 }, { 5, 5 } }
+							],
+							Initialization :> (value = Replace[ initFrequency, Except[ _?NumericQ ] -> 0.5 ])
+						],
+						Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
+					}
+				},
+				Spacings -> { { 0, { 0.5 }, 0 }, 0 },
+				Alignment -> { { Left, Center, Right }, Baseline }
+			],
+			ImageMargins -> 0,
+			ImageSize    -> { 170, Automatic }
+		];
+		Pane[
+			DynamicModule[ { value },
+				PaneSelector[
+					{
+						True -> Column[ { labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel ] }, Alignment -> Left ],
+						False -> Column[ { slider, labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel ] }, Alignment -> Left ]
+					},
+					Dynamic @ value,
+					ImageSize -> Automatic
+				],
+				Initialization :> (value = initFrequency === Automatic)
+			],
+			ImageMargins -> { { 5, 0 }, { 5, 5 } }
+		]
+	]
+];
 
+SetFallthroughError[makeTemperatureSlider]
 
 makeTemperatureSlider[
-	value_
+	Dynamic[ initialValue_, update_Function ]
 ] :=
 	Pane[
-		Slider[
-			value,
-			{ 0, 2, 0.01 },
-			ImageSize  -> { 135, Automatic },
-			ImageMargins -> {{5, 0}, {5, 5}},
-			Appearance -> "Labeled"
+		DynamicModule[ { value },
+			Slider[
+				Dynamic[ value, { None, Automatic, Function[ value = #; update[#] ] } ],
+				{ 0, 2, 0.01 },
+				ImageSize  -> { 135, Automatic },
+				ImageMargins -> {{5, 0}, {5, 5}},
+				Appearance -> "Labeled"
+			],
+			Initialization :> (value = initialValue)
 		],
 		ImageSize -> { 180, Automatic },
 		BaseStyle -> { FontSize -> 12 }
