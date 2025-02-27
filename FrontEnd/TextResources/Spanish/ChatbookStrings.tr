@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "Contenido incluido:",
 "FeedbackDialogContentOutputImageLabel" -> "Imagen de salida",
 "FeedbackDialogCommentFieldHint" -> "\[DownExclamation]Tiene comentarios adicionales? (Opcional)",
-"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
+"FeedbackDialogBodyUsedForTraining" -> "Esta opini\[OAcute]n puede ser usada con fines de capacitaci\[OAcute]n.",
 "FeedbackDialogBodyPreviewData" -> "Previsualizar datos a enviar",
 "FeedbackDialogThanks" -> "\[DownExclamation]Gracias por sus comentarios!",
 
@@ -69,10 +69,10 @@
 "FormattingToolUsing" -> "Utilizando ",
 "FormattingToolUsed" -> "Se utiliz\[OAcute] ",
 "FormattingToolUsingLoading" -> "Utilizando herramienta\[Ellipsis]",
-"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
-"FormattingThinkingComplete" -> "Thought for `time` seconds",
-"FormattingThinkingCompleteFallback" -> "Thought",
-"FormattingHide" -> "Hide",
+"FormattingThinkingActive" -> "Pensando\[Ellipsis]",
+"FormattingThinkingComplete" -> "Se pens\[OAcute] durante `time`segundos",
+"FormattingThinkingCompleteFallback" -> "Pensado",
+"FormattingHide" -> "Ocultar",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insertar:",
@@ -157,7 +157,7 @@
 "ToolManagerDeleteTool" -> "Eliminar herramienta",
 
 "UIEnableChatFeatures" -> "Habilitar caracter\[IAcute]sticas de chat de IA",
-"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
+"UIAutomaticAnalysisLabel" -> "Analizar salidas autom\[AAcute]ticamente",
 "UIAutomaticAnalysisTooltip" -> "Si ha sido habilitado, se agregar\[AAcute]n sugerencias autom\[AAcute]ticas proporcionadas por IA luego de los resultados de la evaluaci\[OAcute].",
 "UIPersonas" -> "Personas",
 "UIChatBlockSettings" -> "Configuraci\[OAcute]n de bloqueo de chat\[Ellipsis]",
