@@ -10,11 +10,12 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$snippetType                  = "Text";
-$documentationSnippetVersion := $snippetVersion;
-$baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
-$resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
+$snippetType                   = "Text";
+$documentationSnippetVersion  := $snippetVersion;
+$baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
+$resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
@@ -23,6 +24,8 @@ $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
+
+$usePromptHeader = True;
 
 $rerankScoreThreshold = 3;
 
@@ -93,6 +96,7 @@ RelatedDocumentation // Options = {
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "MaxSources"        -> $maxSelectedSources,
+    "PromptHeader"      -> Automatic,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
     "Sources"           :> $RelatedDocumentationSources
@@ -230,6 +234,10 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $filteringLLMConfig
             ],
+            $usePromptHeader = Replace[
+                OptionValue[ "PromptHeader" ],
+                $$unspecified :> $usePromptHeader
+            ],
             $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
         },
         relatedDocumentationPrompt[
@@ -345,6 +353,7 @@ relatedDocumentationPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prependRelatedDocsHeader*)
 prependRelatedDocsHeader // beginDefinition;
+prependRelatedDocsHeader[ string_String, _    ] /; ! TrueQ @ $usePromptHeader := string;
 prependRelatedDocsHeader[ string_String, True ] := $relatedDocsStringFilteredHeader <> string;
 prependRelatedDocsHeader[ string_String, _    ] := $relatedDocsStringUnfilteredHeader <> string;
 prependRelatedDocsHeader // endDefinition;
@@ -459,7 +468,13 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize[ instructions, Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ] ],
+                setServiceCaller[
+                    llmSynthesize[
+                        instructions,
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                    ],
+                    "RelatedDocumentation"
+                ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,

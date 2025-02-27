@@ -13,6 +13,11 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Config*)
+$filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Messages*)
 Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead of `1`.";
 
@@ -98,11 +103,8 @@ formatWebSearchResult // endDefinition;
 relatedDocumentationGenerator // beginDefinition;
 
 relatedDocumentationGenerator[ messages: $$chatMessages ] :=
-    If[ TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ],
-        setServiceCaller[
-            LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
-            "RelatedDocumentation"
-        ],
+    If[ TrueQ @ $filterDocumentationRAG,
+        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
 
