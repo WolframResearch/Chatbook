@@ -9,19 +9,23 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Specification*)
+$documentationIDsHelp = "\
+One or more symbol names or documentation URIs separated by commas, \
+e.g. 'Table', 'paclet:ref/Table', or 'paclet:ref/Table,paclet:tutorial/Lists,guide/ListManipulation'";
+
 $defaultChatTools0[ "DocumentationLookup" ] = <|
     toolDefaultData[ "DocumentationLookup" ],
     "ShortName"          -> "doc_lookup",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
-    "Description"        -> "Get documentation pages for Wolfram Language symbols.",
+    "Description"        -> "Get Wolfram Language documentation pages.",
     "Function"           -> documentationLookup,
-    "FormattingFunction" -> toolAutoFormatter,
+    "FormattingFunction" -> documentationSearchFormatter,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "names" -> Block[ { DelimitedSequence },
+        "ids" -> Block[ { DelimitedSequence },
             <|
-                "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
-                "Help"        -> "One or more Wolfram Language symbols separated by commas",
+                "Interpreter" -> DelimitedSequence[ "String", "," ],
+                "Help"        -> $documentationIDsHelp,
                 "Required"    -> True
             |>
         ]
@@ -37,114 +41,56 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
 (*documentationLookup*)
 documentationLookup // beginDefinition;
 
-documentationLookup[ KeyValuePattern[ "names" -> name_ ] ] := documentationLookup @ name;
-documentationLookup[ name_Entity ] := documentationLookup @ CanonicalName @ name;
-documentationLookup[ names_List ] := StringRiffle[ documentationLookup /@ names, "\n\n---\n\n" ];
-
-documentationLookup[ name_String ] := Enclose[
-    Module[ { usage, details, examples, strings, body },
-        usage    = ConfirmMatch[ documentationUsage @ name, _String|_Missing, "Usage" ];
-        details  = ConfirmMatch[ documentationDetails @ name, _String|_Missing, "Details" ];
-        examples = ConfirmMatch[ documentationBasicExamples @ name, _String|_Missing, "Examples" ];
-        strings  = ConfirmMatch[ DeleteMissing @ { usage, details, examples }, { ___String }, "Strings" ];
-        body     = If[ strings === { }, ToString[ Missing[ "NotFound" ], InputForm ], StringRiffle[ strings, "\n\n" ] ];
-        "# " <> name <> "\n\n" <> body
-    ],
-    throwInternalFailure
-];
-
+documentationLookup[ KeyValuePattern[ "ids" -> ids_ ] ] := documentationLookup @ ids;
+documentationLookup[ ids_List ] := StringRiffle[ documentationLookup /@ ids, "\n\n======\n\n" ];
+documentationLookup[ id_String ] := documentationLookup0 @ toDocumentationURI @ id;
 documentationLookup // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*documentationUsage*)
-documentationUsage // beginDefinition;
-documentationUsage[ name_String ] := documentationUsage[ name, wolframLanguageData[ name, "PlaintextUsage" ] ];
-documentationUsage[ name_, missing_Missing ] := missing;
-documentationUsage[ name_, usage_String ] := "## Usage\n\n" <> usage;
-documentationUsage // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*documentationDetails*)
-documentationDetails // beginDefinition;
-documentationDetails[ name_String ] := Missing[ ]; (* TODO *)
-documentationDetails // endDefinition;
+documentationLookup0 // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*documentationBasicExamples*)
-documentationBasicExamples // beginDefinition;
-
-documentationBasicExamples[ name_String ] :=
-    documentationBasicExamples[ name, wolframLanguageData[ name, "DocumentationBasicExamples" ] ];
-
-documentationBasicExamples[ name_, missing_Missing ] := missing;
-
-documentationBasicExamples[ name_, examples_List ] := Enclose[
-    Module[ { cells, strings },
-        cells   = renumberCells @ Replace[ Flatten @ examples, RawBoxes[ cell_ ] :> cell, { 1 } ];
-        strings = ConfirmMatch[ cellToString /@ cells, { ___String }, "CellToString" ];
-        If[ strings === { },
-            Missing[ ],
-            StringDelete[
-                "## Basic Examples\n\n" <> StringRiffle[ strings, "\n\n" ],
-                Longest[ "```\n\n```"~~("wl"|"") ]
+documentationLookup0[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] && StringFreeQ[ uri, "#" ] :=
+    Module[ { url, response, body },
+        url = URLBuild @ { $documentationMarkdownBaseURL, StringDelete[ uri, "paclet:" ] <> ".md" };
+        response = URLRead @ url;
+        body = If[ response[ "StatusCode" ] === 200, response[ "Body" ] ];
+        documentationLookup0[ uri ] =
+            If[ StringQ @ body,
+                body,
+                ToString[ Missing[ "NotFound", uri ], InputForm ]
             ]
-        ]
-    ],
-    throwInternalFailure
-];
+    ];
 
-documentationBasicExamples // endDefinition;
+documentationLookup0[ uri_String ] :=
+    Module[ { snippet },
+        snippet = Quiet @ catchAlways @ getSnippets @ uri;
+        documentationLookup0[ uri ] =
+            If[ StringQ @ snippet,
+                snippet,
+                ToString[ Missing[ "NotFound", uri ], InputForm ]
+            ]
+    ];
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellToString*)
-cellToString[ args___ ] := CellToString[
-    args,
-    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
-    "MaxCellStringLength" -> 100
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*renumberCells*)
-renumberCells // beginDefinition;
-renumberCells[ cells_List ] := Block[ { $line = 0 }, renumberCell /@ Flatten @ cells ];
-renumberCells // endDefinition;
+documentationLookup0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*renumberCell*)
-renumberCell // beginDefinition;
+(*toDocumentationURI*)
+toDocumentationURI // beginDefinition;
 
-renumberCell[ Cell[ a__, "Input", b: (Rule|RuleDelayed)[ _, _ ]... ] ] :=
-    Cell[ a, "Input", CellLabel -> "In[" <> ToString @ ++$line <> "]:=" ];
+toDocumentationURI[ name_String ] /; Internal`SymbolNameQ[ name, True ] :=
+    "paclet:ref/" <> StringReplace[ StringDelete[ name, StartOfString ~~ "System`" ], "`" -> "/" ];
 
-renumberCell[ Cell[ a__, "Output", b: (Rule|RuleDelayed)[ _, _ ]... ] ] :=
-    Cell[ a, "Output", CellLabel -> "Out[" <> ToString @ $line <> "]=" ];
+toDocumentationURI[ id_String ] /; StringFreeQ[ id, ":" ] && StringContainsQ[ id, "/" ] :=
+    "paclet:" <> StringTrim[ id, "/" ];
 
-renumberCell[ Cell[ a__, style: "Print"|"Echo", b: (Rule|RuleDelayed)[ _, _ ]... ] ] :=
-    Cell[ a, style, CellLabel -> "During evaluation of In[" <> ToString @ $line <> "]:=" ];
+toDocumentationURI[ id_String ] /; StringStartsQ[ id, ("https"|"http") ~~ "://reference.wolfram.com/language/" ] :=
+    "paclet:" <> StringDelete[ id, ("https"|"http") ~~ "://reference.wolfram.com/language/" ];
 
-renumberCell[ cell_Cell ] := cell;
+toDocumentationURI[ id_String ] :=
+    id;
 
-renumberCell // endDefinition;
-
-$line = 0;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*wolframLanguageData*)
-wolframLanguageData // beginDefinition;
-
-wolframLanguageData[ name_, property_ ] := Enclose[
-    wolframLanguageData[ name, property ] = ConfirmBy[ WolframLanguageData[ name, property ], Not@*FailureQ ],
-    Missing[ "DataFailure" ] &
-];
-
-wolframLanguageData // endDefinition;
+toDocumentationURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
