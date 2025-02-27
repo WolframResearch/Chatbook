@@ -35,7 +35,7 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "Documentation", "FunctionRepository", "DataRepository" };
+$defaultSources = { "Documentation", "FunctionRepository", "EntityValues", "DataRepository" };
 
 $sourceAliases = <|
     "DataRepository"     -> "DataRepositoryURIs",
