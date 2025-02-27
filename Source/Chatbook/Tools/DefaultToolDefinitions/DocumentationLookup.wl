@@ -40,7 +40,6 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
 (* ::Subsection::Closed:: *)
 (*documentationLookup*)
 documentationLookup // beginDefinition;
-
 documentationLookup[ KeyValuePattern[ "ids" -> ids_ ] ] := documentationLookup @ ids;
 documentationLookup[ ids_List ] := StringRiffle[ documentationLookup /@ ids, "\n\n======\n\n" ];
 documentationLookup[ id_String ] := documentationLookup0 @ toDocumentationURI @ id;

@@ -21,6 +21,9 @@ HoldComplete[
 (*Vector Databases*)
 $vectorDatabases = <| |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*DataRepositoryURIs*)
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
     "Version"         -> "1.0.0",
     "Bias"            -> 1.0,
@@ -28,6 +31,9 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
     "Instructions"    -> None
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*DocumentationURIs*)
 $vectorDatabases[ "DocumentationURIs" ] = <|
     "Version"         :> If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ],
     "Bias"            -> 0.0,
@@ -35,6 +41,57 @@ $vectorDatabases[ "DocumentationURIs" ] = <|
     "Instructions"    -> None
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*EntityValues*)
+$entityValueInstructions = "\
+Use the following information to write Wolfram Language code that involves \
+Entity, EntityClass, EntityProperty, etc. objects.
+
+Retrieve a value for a property of a specific entity or entities:
+```wl
+EntityValue[\[FreeformPrompt][\"entity name\", \"entity type\"], \"property canonical name\"]
+```
+
+Include \"Association\" in the third argument of EntityValue when requesting more than one entity and/or property; \
+this returns an association with Entity and/or EntityProperty objects as Keys:
+```wl
+EntityValue[\[FreeformPrompt][\"entity name(s)\", \"entity type\"], {\"property canonical name\", ...}, \"Association\"]
+```
+
+If an EntityProperty can be used to perform an EntityClass lookup, \
+use this syntax with specified patterns for `selector`:
+```wl
+EntityClass[\[FreeformPrompt][\"entity type\"], {EntityProperty[\"entity type\", \"property canonical name\", \
+{\"qualifier name\"->\"value name\"}]->`selector`}]
+```";
+
+$vectorDatabases[ "EntityValues" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> -30.0,
+    "SnippetFunction" -> getEntityValueSnippets,
+    "Instructions"    -> $entityValueInstructions
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getEntityValueSnippets*)
+getEntityValueSnippets // beginDefinition;
+getEntityValueSnippets[ uris: { ___String } ] := Lookup[ $entityValueSnippets, uris ];
+getEntityValueSnippets // endDefinition;
+
+$entityValueSnippets := Enclose[
+    Module[ { file, snippets },
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "EntityValueSnippets" ], FileExistsQ, "File" ];
+        snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
+        If[ TrueQ @ $mxFlag, snippets, $entityValueSnippets = snippets ]
+    ],
+    throwInternalFailure[ $entityValueSnippets, ## ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FunctionRepositoryURIs*)
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
     "Version"         -> "1.0.0",
     "Bias"            -> 1.0,
@@ -42,13 +99,19 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
     "Instructions"    -> None
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*SourceSelector*)
 $vectorDatabases[ "SourceSelector" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> Identity,
     "Instructions"    -> None
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*WolframAlphaQueries*)
 $vectorDatabases[ "WolframAlphaQueries" ] = <|
     "Version"         -> "1.3.0",
     "Bias"            -> 0.0,
@@ -1178,7 +1241,7 @@ toTinyVector // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $entityValueSnippets
 ];
 
 End[ ];
