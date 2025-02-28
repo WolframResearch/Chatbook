@@ -45,26 +45,44 @@ $vectorDatabases[ "DocumentationURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*EntityValues*)
 $entityValueInstructions = "\
-Use the following information to write Wolfram Language code that involves \
-Entity, EntityClass, EntityProperty, etc. objects.
+Use the following information to write Wolfram Language code that involves `Entity`, `EntityClass`, `EntityProperty`, \
+etc. objects.
 
-Retrieve a value for a property of a specific entity or entities:
+Retrieve a value for a property of a specific entity, entities, or named entity group(s):
+
 ```wl
-EntityValue[\[FreeformPrompt][\"entity name\", \"entity type\"], \"property canonical name\"]
+EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\"], \"property canonical name\"]
 ```
 
-Include \"Association\" in the third argument of EntityValue when requesting more than one entity and/or property; \
-this returns an association with Entity and/or EntityProperty objects as Keys:
+Include `\"Association\"` in the third argument of `EntityValue` when requesting more than one entity, entity group \
+and/or property; this returns an association with `Entity` and/or `EntityProperty` objects as keys:
+
 ```wl
-EntityValue[\[FreeformPrompt][\"entity name(s)\", \"entity type\"], {\"property canonical name\", ...}, \"Association\"]
+EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\"], \
+{\"property canonical name\", ...}, \"Association\"]
 ```
 
-If an EntityProperty can be used to perform an EntityClass lookup, \
-use this syntax with specified patterns for `selector`:
+If an `EntityProperty` can be used to perform an `EntityClass` lookup, use this syntax with specified patterns for \
+selector:
+
 ```wl
 EntityClass[\[FreeformPrompt][\"entity type\"], {EntityProperty[\"entity type\", \"property canonical name\", \
 {\"qualifier name\"->\"value name\"}]->`selector`}]
-```";
+```
+
+NEVER attempt to manually write `Entity`, `Quantity`, or `DateObject` expressions unless you are re-using values from \
+existing, valid code. Unless exceptions are noted below, ALWAYS use freeform input syntax, as in the examples shown \
+below, to find valid expressions for `DateObject`, `Quantity`, `Entity`, or named `EntityClass` expressions:
+
+```wl
+\[FreeformPrompt][\"Empire State Building\", \"Building\"]
+\[FreeformPrompt][\"lanthanide elements\", \"Element\"]
+\[FreeformPrompt][\"30 m\", Quantity]
+\[FreeformPrompt][\"January 20, 1987\", DateObject]
+```
+
+In code results, `Missing[\"UnknownEntity\", ...]` indicates that you used an invalid entity standard name. \
+Try again using freeform input syntax.";
 
 $vectorDatabases[ "EntityValues" ] = <|
     "Version"         -> "1.0.0",
