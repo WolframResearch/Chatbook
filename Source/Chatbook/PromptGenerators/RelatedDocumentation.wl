@@ -50,7 +50,7 @@ $unfilteredItemsPerSource = 20;
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
 
-$$assistantTypeTag = "Computational"|"Knowledge"|"CasualChat";
+$$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -537,6 +537,7 @@ Respond with JSON in the following format:
 For \"AssistantType\", specify the type of assistant that should handle the user's message:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"Data\": The user's message requires a data or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Specify a score as any number from 1 to 5 for your chosen snippets using the following rubric:
@@ -560,6 +561,7 @@ Here are the available documentation snippets to choose from:
 
 Reminder: Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
 You can (and should) skip snippets that are not relevant to the user's message or are redundant.
+A snippet does not need to exactly answer the user's message in full in order to be relevant.
 Respond only with the specified JSON and nothing else.
 If there are no relevant pages, respond with [].
 ", Delimiters -> "%%" ];
@@ -573,6 +575,7 @@ user's latest message.
 On the first line of your response, write one of these assistant types:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"Data\": The user's message requires a data or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Then on each subsequent line, write a score (1-5) and id pair, separated by a space:
@@ -606,6 +609,7 @@ Available documentation snippets:
 Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or redundant ones.
 If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
+A snippet does not need to exactly answer the user's message in full in order to be relevant.
 Respond only in the specified format and do not include any other text.\
 ", Delimiters -> "%%" ];
 
