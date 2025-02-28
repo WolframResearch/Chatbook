@@ -67,7 +67,7 @@ selector:
 
 ```wl
 EntityClass[\[FreeformPrompt][\"entity type\"], {EntityProperty[\"entity type\", \"property canonical name\", \
-{\"qualifier name\"->\"value name\"}]->`selector`}]
+{\"qualifier name\" -> \"value name\"}] -> selector}]
 ```
 
 NEVER attempt to manually write `Entity`, `Quantity`, or `DateObject` expressions unless you are re-using values from \
