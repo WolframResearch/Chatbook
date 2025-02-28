@@ -82,7 +82,7 @@ getEntityValueSnippets // endDefinition;
 
 $entityValueSnippets := Enclose[
     Module[ { file, snippets },
-        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "EntityValueSnippets" ], FileExistsQ, "File" ];
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "EntityValuesSnippets" ], FileExistsQ, "File" ];
         snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
         If[ TrueQ @ $mxFlag, snippets, $entityValueSnippets = snippets ]
     ],

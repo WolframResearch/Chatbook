@@ -65,6 +65,7 @@ $maxCompressedVectors = 2^18;
 $defaultSourceSelectorNames = {
     "DataRepositoryURIs",
     "DocumentationURIs",
+    "EntityValues",
     "FunctionRepositoryURIs"
 };
 
