@@ -696,7 +696,7 @@ selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclo
 
         selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { ___String }, "SelectedIDs" ];
         selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { ___String }, "SelectedURIs" ];
-        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
+        ConfirmMatch[ DeleteDuplicates @ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
     ],
     snippetIDToURI /@ selectSnippetsFromString[ response, ids ] &
 ];
@@ -729,7 +729,7 @@ scoreSnippetLine // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*selectSnippetsFromString*)
 selectSnippetsFromString // beginDefinition;
-selectSnippetsFromString[ response_String, ids: { ___String } ] := StringCases[ response, ids ];
+selectSnippetsFromString[ response_String, ids: { ___String } ] := DeleteDuplicates @ StringCases[ response, ids ];
 selectSnippetsFromString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
