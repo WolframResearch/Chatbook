@@ -48,10 +48,12 @@ $entityValueInstructions = "\
 Use the following information to write Wolfram Language code that involves `Entity`, `EntityClass`, `EntityProperty`, \
 etc. objects.
 
-Retrieve a value for a property of a specific entity, entities, or named entity group(s):
+# Retrieving values for named entities or entity classes
+
+Retrieve a value for a property of a specific entity, entities, or named entity class(es):
 
 ```wl
-EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\"], \"property canonical name\"]
+EntityValue[\[FreeformPrompt][\"entity or entity class name(s)\", \"entity type\"], \"property canonical name\"]
 ```
 
 Include `\"Association\"` in the third argument of `EntityValue` when requesting more than one entity, entity group \
@@ -62,27 +64,45 @@ EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\
 {\"property canonical name\", ...}, \"Association\"]
 ```
 
+# Filtering entities by property values
+
 If an `EntityProperty` can be used to perform an `EntityClass` lookup, use this syntax with specified patterns for \
-selector:
+`selector`:
 
 ```wl
-EntityClass[\[FreeformPrompt][\"entity type\"], {EntityProperty[\"entity type\", \"property canonical name\", \
-{\"qualifier name\" -> \"value name\"}] -> selector}]
+EntityList[EntityClass[\"entity type\",
+	{
+		EntityProperty[\"entity type\", \"property canonical name\", {\"qualifier name\" -> \"value name\"}] -> selector,
+		EntityProperty[\"entity type\", \"property canonical name\", {\"qualifier name\" -> \"value name\"}] -> selector,
+		...
+	}
+]]
 ```
 
-NEVER attempt to manually write `Entity`, `Quantity`, or `DateObject` expressions unless you are re-using values from \
-existing, valid code. Unless exceptions are noted below, ALWAYS use freeform input syntax, as in the examples shown \
-below, to find valid expressions for `DateObject`, `Quantity`, `Entity`, or named `EntityClass` expressions:
+Note that several selectors may be combined in a single `EntityClass` expression. This is usually the most efficient \
+method of filtering entities.
+
+# Converting natural language to Wolfram Language expressions
+
+Unless exceptions are noted in the instructions for a specific `EntityProperty`, NEVER write `Entity[type, name]` \
+expressions yourself; ALWAYS use \[FreeformPrompt] syntax, as in the examples shown here, to convert natural language \
+names into valid Wolfram expressions.
+
+i.e. NEVER write `Entity[\"Building\", \"EmpireStateBuilding\"]` in code; ALWAYS write \
+`\[FreeformPrompt][\"Empire State Building\"]`.
+
+Additional examples:
 
 ```wl
-\[FreeformPrompt][\"Empire State Building\", \"Building\"]
-\[FreeformPrompt][\"lanthanide elements\", \"Element\"]
+\[FreeformPrompt][\"Pennsylvania\", Entity]
+\[FreeformPrompt][\"lanthanide elements\", EntityClass]
 \[FreeformPrompt][\"30 m\", Quantity]
 \[FreeformPrompt][\"January 20, 1987\", DateObject]
 ```
 
 In code results, `Missing[\"UnknownEntity\", ...]` indicates that you used an invalid entity standard name. \
-Try again using freeform input syntax.";
+Try again using \[FreeformPrompt] syntax.\
+";
 
 $vectorDatabases[ "EntityValues" ] = <|
     "Version"         -> "1.0.0",
@@ -1007,7 +1027,7 @@ vectorDBSearch[ names: $$dbNames, prompt_, prop: "Values"|"Results" ] := Enclose
 
         results = ConfirmMatch[
             applyBias[ #, vectorDBSearch[ #, prompt, "Results" ] ] & /@ names,
-            { { KeyValuePattern[ "Distance" -> $$size ]... }... },
+            { { KeyValuePattern[ "Distance" -> _Real|_Integer ]... }... },
             "Results"
         ];
 
