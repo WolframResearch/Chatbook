@@ -200,6 +200,7 @@ Cell[
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "WLTemplate", $CellContext`cell ]
         ]
         ,
+        (* NOTE: MouseEntered/Exited actions are removed from the version of this style in CoreExtensions.nb, see StyleSheetBuilder.wl. *)
         (* Highlight cells that will be included in chat context: *)
         "MouseEntered" :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];

@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.1.27.3948515199"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.1.29.3949481078"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -113,22 +113,6 @@ Notebook[
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "WLTemplate",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseEntered" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "AccentIncludedCells",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseExited" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "RemoveCellAccents",
        Wolfram`ChatNB`cell
       ]
      ]
