@@ -218,7 +218,6 @@ checkModelList[ info_, Failure[ "AuthenticationError", KeyValuePattern[ {} ] ] ]
     Missing[ "NotConnected" ];
 
 checkModelList[ info_, HoldPattern[ _ServiceExecute ] ] := (
-    (* note *)
     If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
         KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, info[ "Service" ] ]
     ];
