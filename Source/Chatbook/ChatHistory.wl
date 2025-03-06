@@ -96,13 +96,14 @@ getCellsInChatHistory // beginDefinition;
 getCellsInChatHistory[ cell_CellObject ] :=
     getCellsInChatHistory[ topParentCell @ cell, parentNotebook @ cell ];
 
-getCellsInChatHistory[ cell_CellObject, nbo_NotebookObject ] :=
+getCellsInChatHistory[ cell_CellObject, nbo_NotebookObject ] := With[ { cells = Cells @ nbo },
     getCellsInChatHistory[
         cell,
-        sowHistoryData[ "ChatDelimiter", getPrecedingDelimiter[ cell, nbo ] ],
+        sowHistoryData[ "ChatDelimiter", getPrecedingDelimiter[ cell, nbo, cells ] ],
         nbo,
-        Cells @ nbo
-    ];
+        cells
+    ]
+];
 
 getCellsInChatHistory[
     cell_CellObject,
