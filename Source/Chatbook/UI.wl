@@ -83,18 +83,26 @@ makeToolbarMenuContent[ menuCell_, nbObj_NotebookObject ] := Enclose[
 
 		items = ConfirmBy[ makeChatActionMenu[ "Toolbar", nbObj ], ListQ, "Items" ];
 
-		(* IMO we don't need to show that chat features are enabled anymore as they are on by default *)
-		(* item1 = Pane[
-			makeEnableAIChatFeaturesLabel @ True,
-			ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
-		]; *)
+		(* 14.2+ we don't need to show that chat features are enabled anymore as they are on by default *)
+		item1 = If[ insufficientVersionQ @ 14.2,
+			<|
+				"Type"    -> "Custom",
+				"Content" ->
+					Pane[
+						makeEnableAIChatFeaturesLabel @ True,
+						ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } }
+					]
+			|>
+			,
+			Nothing
+		];
 
 		item2 = Pane[
 			makeAutomaticResultAnalysisCheckbox @ nbObj,
 			ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } }
 		];
 
-		new = Join[ { (*{ None, item1, None },*) <| "Type" -> "Custom", "Content" -> item2 |> }, items ];
+		new = Join[ { item1, <| "Type" -> "Custom", "Content" -> item2 |> }, items ];
 
 		(* The default toolbar's menu frame is 231 points, but has 1 pt of ImageMargins and 4 total FrameMargins, so use ~226 for a good fit *)
 		MakeMenu[ new, ImageSize -> 225, TaggingRules -> <| "IsRoot" -> True |> ]
@@ -167,7 +175,19 @@ tryMakeChatEnabledNotebook[
 SetFallthroughError[makeEnableAIChatFeaturesLabel]
 
 makeEnableAIChatFeaturesLabel[ enabled_? BooleanQ ] :=
-	labeledCheckbox[ enabled, tr[ "UIEnableChatFeatures" ], ! enabled, 200 ];
+	labeledCheckbox[
+		enabled,
+		If[ ! enabled,
+			Style[
+				tr @ "UIEnableChatFeatures",
+				FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.537 ], GrayLevel[ 0.0 ] ] ]
+			]
+			,
+			Style[ tr @ "UIEnableChatFeatures", FontColor -> GrayLevel[ 0.5 ] ]
+		],
+		! enabled,
+		195
+	];
 
 (*====================================*)
 
@@ -266,7 +286,7 @@ labeledCheckbox0[ Dynamic @ value_, update_Function, label_, enabled_, width_ ] 
 			Spacer[3],
 			EventHandler[
 				lineWrap[ label, width ],
-				"MouseClicked" :> update[ value = ! value ]
+				"MouseClicked" :> If[ TrueQ @ Replace[ enabled, Automatic -> True ], update[ value = ! value ] ]
 			]
 		},
 		BaseStyle -> {
