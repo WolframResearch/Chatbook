@@ -2211,7 +2211,7 @@ formatNLInputs[ string_String ] :=
     StringReplace[
         string,
         {
-            "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+            "\[FreeformPrompt][\"" ~~ q: Except[ "]" ].. ~~ ("]"|EndOfString) :>
                 ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ],
             "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
                 ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ]
@@ -2221,6 +2221,9 @@ formatNLInputs[ string_String ] :=
 formatNLInputs[ boxes_ ] :=
     boxes /. {
         RowBox @ { "\[FreeformPrompt]", "[", q_String, "]" } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ] :>
+            RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
+        ,
+        RowBox @ { "\[FreeformPrompt]", "[", RowBox @ { q_String, ",", _ }, "]" } :>
             RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
@@ -2234,9 +2237,25 @@ formatNLInputs[ boxes_ ] :=
         ,
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
+        ,
+        box: RowBox @ { "Entity"|"EntityClass"|"EntityProperty", "[", ___, "]" } :>
+            RuleCondition @ formatEntityBoxes @ box
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatEntityBoxes*)
+formatEntityBoxes // beginDefinition;
+
+formatEntityBoxes[ boxes_RowBox ] :=
+    Quiet @ Module[ { new },
+        new = Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ];
+        formatEntityBoxes[ Verbatim[ boxes ] ] = If[ MatchQ[ new, _TemplateBox ], new, boxes ]
+    ];
+
+formatEntityBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
