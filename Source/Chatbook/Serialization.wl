@@ -192,6 +192,9 @@ $rightSelectionIndicator = "</selection>";
 $includeCellXML    = False;
 $xmlCellAttributes = { "id" };
 
+(* Whether to include a stack trace for message cells *)
+$includeStackTrace = False;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Conversion Rules*)
@@ -322,9 +325,9 @@ codeTemplate[ template_ ] := template;
 (*Stack Trace for Message Cells*)
 $stackTraceTemplate = codeTemplate[ "\
 %%String%%
-BEGIN_STACK_TRACE
+<message_stack_trace>
 %%StackTrace%%
-END_STACK_TRACE\
+</message_stack_trace>
 " ];
 
 (* ::**************************************************************************************************************:: *)
@@ -369,6 +372,7 @@ CellToString // Options = {
     "PageWidth"                 -> $cellPageWidth,
     "UnhandledBoxFunction"      -> None,
     "WindowWidth"               -> $windowWidth,
+    "IncludeStackTrace"         :> $includeStackTrace,
     "IncludeXML"                :> $includeCellXML,
     "XMLCellAttributes"         :> $xmlCellAttributes
 };
@@ -382,6 +386,7 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
             $unhandledBoxFunction = OptionValue[ "UnhandledBoxFunction" ],
             $includeCellXML = TrueQ @ OptionValue[ "IncludeXML" ],
+            $includeStackTrace = TrueQ @ OptionValue[ "IncludeStackTrace" ],
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength,
             $contentTypes, $multimodalImages
         },
@@ -613,23 +618,14 @@ cellToString[ cell: Cell[ _StyleData, ___ ] ] :=
     inputFormString @ cell;
 
 (* Include a stack trace for message cells when available *)
-cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
+cellToString[ Cell[ a__, "Message"|"MSG", b___ ] ] :=
     Module[ { string, stacks, stack, stackString },
         { string, stacks } = Reap[ cellToString0 @ Cell[ a, b ], $messageStack ];
         stack = First[ First[ stacks, $Failed ], $Failed ];
         If[ MatchQ[ stack, { __HoldForm } ] && Length @ stack >= 3
             ,
-            stackString = StringRiffle[
-                Cases[
-                    stack,
-                    HoldForm[ expr_ ] :> truncateStackString @ inputFormString[
-                        Unevaluated @ expr,
-                        PageWidth -> Infinity
-                    ]
-                ],
-                "\n"
-            ];
-            needsBasePrompt[ "WolframLanguage" ];
+            stackString = StringRiffle[ Cases[ stack, HoldForm[ expr_ ] :> stackFrameString @ expr ], "\n" ];
+            needsBasePrompt[ "MessageStackTrace" ];
             TemplateApply[
                 $stackTraceTemplate,
                 <| "String" -> string, "StackTrace" -> stackString |>
@@ -1417,7 +1413,9 @@ fasterCellToString0[ TemplateBox[ { code_, language_ }, "ChatCodeBlockTemplate",
 (*Template Boxes*)
 
 (* Messages *)
-fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str0_String, ___ }, "MessageTemplate", ___ ] ] :=
+$$messageTemplate = "MessageTemplate"|"MessageTemplate2";
+
+fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str0_String, ___ }, $$messageTemplate, ___ ] ] :=
     Module[ { str },
         str = If[ StringMatchQ[ str0, "\""~~__~~"\"" ],
                   Replace[ Quiet @ ToExpression[ str0, InputForm, HoldComplete ], HoldComplete[ s_String ] :> s ],
@@ -1429,7 +1427,7 @@ fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str0_String, _
         sym <> "::" <> tag <> ": "<> Block[ { $escapeMarkdown = False }, fasterCellToString0 @ str ]
     ];
 
-fasterCellToString0[ TemplateBox[ args: { _, _, str0_String, ___ }, "MessageTemplate", ___ ] ] :=
+fasterCellToString0[ TemplateBox[ args: { _, _, str0_String, ___ }, $$messageTemplate, ___ ] ] :=
     Module[ { str },
         str = If[ StringMatchQ[ str0, "\""~~__~~"\"" ],
                   Replace[ Quiet @ ToExpression[ str0, InputForm, HoldComplete ], HoldComplete[ s_String ] :> s ],
@@ -2928,7 +2926,7 @@ makeGraphicsExpression[ gfx_ ] := Quiet @ Check[ ToExpression[ gfx, StandardForm
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*sowMessageData*)
-sowMessageData[ { _, _, _, _, line_Integer, counter_Integer, session_Integer, _ } ] :=
+sowMessageData[ { _, _, _, _, line_Integer, counter_Integer, session_Integer, __ } ] /; $includeStackTrace :=
     With[ { stack = MessageMenu`MessageStackList[ line, counter, session ] },
         Sow[ stack, $messageStack ] /; MatchQ[ stack, { __HoldForm } ]
     ];
@@ -2983,10 +2981,11 @@ truncatedTableStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*truncateStackString*)
-truncateStackString // SetFallthroughError;
-truncateStackString[ str_String ] /; StringLength @ str <= 80 := str;
-truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
+(*stackFrameString*)
+stackFrameString // beginDefinition;
+stackFrameString // Attributes = { HoldAllComplete };
+stackFrameString[ expr_ ] := stringTrimMiddle[ inputFormString[ Unevaluated @ expr, PageWidth -> Infinity ], 160 ];
+stackFrameString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

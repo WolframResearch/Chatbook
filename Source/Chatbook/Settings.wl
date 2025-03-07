@@ -63,6 +63,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> { },
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
@@ -131,7 +132,8 @@ $modelAutoSettings = <| |>;
 $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
-    "ToolMethod" -> "Service"
+    "ReplaceUnicodeCharacters" -> True,
+    "ToolMethod"               -> "Service"
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
@@ -273,8 +275,9 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
-    "ConvertSystemRoleToUser" -> False,
-    "ToolResponseRole"        -> "System"
+    "ConvertSystemRoleToUser"  -> False,
+    "ReplaceUnicodeCharacters" -> False,
+    "ToolResponseRole"         -> "System"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -969,6 +972,22 @@ multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
 ];
 
 multimodalOpenAIQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*serviceFrameworkAvailable*)
+serviceFrameworkAvailable // beginDefinition;
+
+serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] = (
+    serviceFrameworkAvailable[
+        PacletObject[ "ServiceFramework" ]
+    ]
+);
+
+serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ] :=
+    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
+
+serviceFrameworkAvailable // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

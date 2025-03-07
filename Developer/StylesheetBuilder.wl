@@ -969,7 +969,11 @@ Module[ { excludedCoreExtensions },
         "Text"
     ];
 
-    DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ]
+    Replace[
+        DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ],
+        Cell[ sd:StyleData[ "ChatInput", ___ ], a___, CellEventActions -> b_List, c___ ] :>
+            Cell[ sd, a, CellEventActions -> DeleteCases[ b, _[ "MouseEntered" | "MouseExited", _ ] ], c ],
+        1]
 ]
 
 BuildCoreExtensionsStylesheet[ target_ ] :=

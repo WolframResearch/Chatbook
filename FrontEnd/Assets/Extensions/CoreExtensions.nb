@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.1.27.3948515199"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.1.29.3949747233"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -115,22 +115,6 @@ Notebook[
        "WLTemplate",
        Wolfram`ChatNB`cell
       ]
-     ],
-    "MouseEntered" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "AccentIncludedCells",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseExited" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "RemoveCellAccents",
-       Wolfram`ChatNB`cell
-      ]
      ]
    },
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
@@ -168,7 +152,8 @@ Notebook[
          Catch[
           Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
           Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$
+           Wolfram`Chatbook`UI`Private`cell$$,
+           Automatic
           ],
           Blank[]
          ],
@@ -200,7 +185,8 @@ Notebook[
             Catch[
              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Wolfram`Chatbook`UI`Private`cell$$
+              Wolfram`Chatbook`UI`Private`cell$$,
+              True
              ],
              Blank[]
             ],
@@ -215,18 +201,33 @@ Notebook[
           UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
         False ->
-         FrameBox[
-          TemplateBox[{}, "ChatIconUser"],
-          RoundingRadius -> 3,
-          FrameMargins -> 2,
-          ImageMargins -> {{0, 3}, {0, 0}},
-          FrameStyle -> GrayLevel[0, 0],
+         ButtonBox[
+          FrameBox[
+           PaneBox[
+            TemplateBox[{}, "ChatIconUser"],
+            Alignment -> {Center, Center},
+            ImageSize -> {25, 25},
+            ImageSizeAction -> "ShrinkToFit"
+           ],
+           Background -> None,
+           ContentPadding -> False,
+           FrameMargins -> 0,
+           FrameStyle -> None,
+           ImageMargins -> 0,
+           RoundingRadius -> 2,
+           StripOnInput -> False
+          ],
+          ButtonFunction :> Null,
+          Appearance -> None,
+          ImageMargins -> 0,
           FrameMargins -> 0,
-          StripOnInput -> False
+          ContentPadding -> False,
+          Evaluator -> Automatic,
+          Method -> "Preemptive"
          ]
        },
        Dynamic[CurrentValue["MouseOver"]],
-       ImageSize -> All
+       ImageSize -> Automatic
       ]
      ])
    }
@@ -1242,62 +1243,48 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      ButtonBox[
-       TemplateBox[
-        {
-         TagBox[
-          GridBox[
-           {
-            {
-             #1,
-             TemplateBox[{7}, "Spacer1"],
-             PaneBox[
-              StyleBox[#2, "ChatMenuLabel"],
-              FrameMargins -> 0,
-              ImageMargins -> 0,
-              BaselinePosition -> Baseline,
-              ImageSize -> Full
-             ]
-            }
-           },
-           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-           AutoDelete -> False,
-           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-           GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-          ],
-          "Grid"
-         ],
-         FrameStyle ->
-          Dynamic[
-           If[ CurrentValue["MouseOver"],
-            GrayLevel[0.8],
-            GrayLevel[0.98]
+      FrameBox[
+       TagBox[
+        GridBox[
+         {
+          {
+           #1,
+           TemplateBox[{7}, "Spacer1"],
+           PaneBox[
+            StyleBox[#2, "ChatMenuLabel"],
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            BaselinePosition -> Baseline,
+            ImageSize -> Full
            ]
-          ],
-         RoundingRadius -> 0,
-         FrameMargins -> {{5, 2}, {2, 2}},
-         ImageSize -> Full,
-         ImageMargins -> {{0, 0}, {0, 0}},
-         Background ->
-          Dynamic[
-           If[ CurrentValue["MouseOver"],
-            GrayLevel[1],
-            GrayLevel[0.98]
-           ]
-          ]
-        },
-        "Highlighted"
+          }
+         },
+         GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+         AutoDelete -> False,
+         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+         GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
+        ],
+        "Grid"
        ],
-       ButtonFunction :> ReleaseHold[#3],
-       Appearance ->
+       Background ->
         Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
+         If[ CurrentValue["MouseOver"],
+          GrayLevel[1],
+          GrayLevel[0.98]
          ]
         ],
-       Method -> "Queued",
-       Evaluator -> Automatic
+       BaselinePosition -> Baseline,
+       FrameMargins -> {{5, 2}, {2, 2}},
+       FrameStyle ->
+        Dynamic[
+         If[ CurrentValue["MouseOver"],
+          GrayLevel[0.8],
+          GrayLevel[0.98]
+         ]
+        ],
+       ImageMargins -> {{0, 0}, {0, 0}},
+       ImageSize -> Full,
+       RoundingRadius -> 0
       ]
      ])
    }
@@ -1307,36 +1294,34 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      TemplateBox[
-       {
-        TagBox[
-         GridBox[
+      FrameBox[
+       TagBox[
+        GridBox[
+         {
           {
-           {
-            PaneBox[
-             StyleBox[#1, "ChatMenuSectionLabel"],
-             FrameMargins -> 0,
-             ImageMargins -> 0,
-             BaselinePosition -> Baseline,
-             ImageSize -> Full
-            ]
-           }
-          },
-          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-          AutoDelete -> False,
-          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-          GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-         ],
-         "Grid"
+           PaneBox[
+            StyleBox[#1, "ChatMenuSectionLabel"],
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            BaselinePosition -> Baseline,
+            ImageSize -> Full
+           ]
+          }
+         },
+         GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+         AutoDelete -> False,
+         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+         GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
         ],
-        Background -> GrayLevel[0.937],
-        FrameMargins -> {{5, 2}, {2, 2}},
-        FrameStyle -> None,
-        ImageMargins -> {{0, 0}, {0, 0}},
-        ImageSize -> Full,
-        RoundingRadius -> 0
-       },
-       "Highlighted"
+        "Grid"
+       ],
+       Background -> GrayLevel[0.937],
+       BaselinePosition -> Baseline,
+       FrameMargins -> {{5, 2}, {2, 2}},
+       FrameStyle -> None,
+       ImageMargins -> {{0, 0}, {0, 0}},
+       ImageSize -> Full,
+       RoundingRadius -> 0
       ]
      ])
    }
