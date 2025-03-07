@@ -345,28 +345,64 @@ makeHTTPRequest // endDefinition;
 (*prepareMessagesForLLM*)
 prepareMessagesForLLM // beginDefinition;
 
-prepareMessagesForLLM[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
-    $lastSubmittedMessages = rewriteMessageRoles[
-        settings,
-        contentFlatten @ rewriteServiceToolCalls[ settings, messages ]
-    ];
+prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
+    Module[ { messages, newRoles, replaced },
+        messages = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
+        newRoles = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
+        replaced = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
+        $lastSubmittedMessages = replaced
+    ],
+    throwInternalFailure
+];
 
-prepareMessagesForLLM[ settings_, messages: { ___Association } ] :=
-    $lastSubmittedMessages = rewriteMessageRoles[
-        settings,
-        contentFlatten[
-            KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
-                messages,
-                s_String :> RuleCondition @ StringTrim @ StringReplace[
-                    s,
-                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
-                        "\nENDRESULT\n"
-                ]
+prepareMessagesForLLM // endDefinition;
+
+
+prepareMessagesForLLM0 // beginDefinition;
+
+prepareMessagesForLLM0[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
+    contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+
+prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
+    contentFlatten[
+        KeyDrop[ { "ToolRequests", "ToolResponses" } ] /@ ReplaceAll[
+            messages,
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                    "\nENDRESULT\n"
             ]
         ]
     ];
 
-prepareMessagesForLLM // endDefinition;
+prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceUnicodeCharacters*)
+replaceUnicodeCharacters // beginDefinition;
+
+replaceUnicodeCharacters[ settings_Association, messages_ ] :=
+    If[ TrueQ @ settings[ "ReplaceUnicodeCharacters" ],
+        replaceUnicodeCharacters @ messages,
+        messages
+    ];
+
+replaceUnicodeCharacters[ data: _List|_Association ] :=
+    data /. {
+        string_String :> RuleCondition @ replaceUnicodeCharacters @ string,
+        tool_LLMTool  :> RuleCondition @ replaceUnicodeCharacters @ tool
+    };
+
+replaceUnicodeCharacters[ content_String ] :=
+    StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
+
+replaceUnicodeCharacters[ HoldPattern[ LLMTool ][ as0_Association, opts___ ] ] :=
+    With[ { as = replaceUnicodeCharacters @ as0 },
+        LLMTool[ as, opts ]
+    ];
+
+replaceUnicodeCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -801,17 +837,23 @@ makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
 makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
-    $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
-        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
-        "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
-        "StopTokens" -> makeStopTokens @ as,
-        "ToolMethod" -> "Service"
+    $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
+        as,
+        DeleteMissing @ Association[
+            KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+            "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
+            "StopTokens" -> makeStopTokens @ as,
+            "ToolMethod" -> "Service"
+        ]
     ];
 
 makeLLMConfiguration[ as_Association ] :=
-    $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
-        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
-        "StopTokens" -> makeStopTokens @ as
+    $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
+        as,
+        DeleteMissing @ Association[
+            KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+            "StopTokens" -> makeStopTokens @ as
+        ]
     ];
 
 makeLLMConfiguration // endDefinition;
@@ -1085,6 +1127,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
         "<!" <> scheme <> "://" <> id <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",
     "\\uF351" -> "\[FreeformPrompt]",
+    "\:ff1d" -> "\[FreeformPrompt]",
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     $longNameCharacters
