@@ -453,11 +453,11 @@ makeResultCell0 // endDefinition;
 inlineSection // beginDefinition;
 
 inlineSection[ content_, style_String ] :=
-    inlineSection[ content, style, sectionMargins @ style ];
+    inlineSection[ content, style, sectionMargins @ style, sectionFontSize @ style ];
 
-inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } } ] := Cell[
+inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } }, size_ ] := Cell[
     BoxData @ PaneBox[
-        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False ],
+        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False, FontSize -> size ],
         ImageMargins -> margins
     ],
     "InlineSection",
@@ -485,6 +485,15 @@ sectionMargins // beginDefinition;
 sectionMargins[ "Title"|"Section"|"Subsection"|"Subsubsection" ] := { { 0, 0 }, { 5, 15 } };
 sectionMargins[ _String ] := { { 0, 0 }, { 2, 5 } };
 sectionMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*sectionFontSize*)
+sectionFontSize // beginDefinition;
+sectionFontSize[ "Title"   ] := 26;
+sectionFontSize[ "Section" ] := 22;
+sectionFontSize[ _String   ] := Inherited;
+sectionFontSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
