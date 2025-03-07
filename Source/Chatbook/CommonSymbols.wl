@@ -44,6 +44,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$fixedProgressText;
 `$fullBasePrompt;
 `$includeCellXML;
+`$includeStackTrace;
 `$inDialog;
 `$inEpilog;
 `$initialCellStringBudget;
