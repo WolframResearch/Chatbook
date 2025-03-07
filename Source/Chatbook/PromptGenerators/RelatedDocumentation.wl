@@ -35,7 +35,7 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "Documentation", "FunctionRepository", "EntityValues", "DataRepository" };
+$defaultSources = { "Documentation", "EntityValues", "FunctionRepository", "DataRepository" };
 
 $sourceAliases = <|
     "DataRepository"     -> "DataRepositoryURIs",
@@ -290,7 +290,7 @@ autoSelectSources[ prompt_, max_ ] /; max >= Length @ $defaultSources :=
 autoSelectSources[ prompt_, max_Integer? NonNegative ] := Enclose[
     Module[ { values },
         values = ConfirmMatch[ vectorDBSearch[ "SourceSelector", prompt, "Values" ], { ___String }, "Values" ];
-        ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
+        $lastSelectedSources = ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
     ],
     throwInternalFailure
 ];
