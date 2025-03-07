@@ -25,9 +25,13 @@ Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`WolframLanguageEvaluator`" ]
 (*Package Footer*)
 
 (* Sort tools to their default ordering: *)
-$defaultChatTools0 = Block[ { LLMTool },
+$defaultChatTools0 = Block[
+    {
+        LLMTool,
+        ver = Information[ PacletObject[ "Wolfram/LLMFunctions" ], "Version" ]
+    },
     Map[
-        LLMTool[ #, { } ] &,
+        LLMTool[ <| #, "Options" -> { }, "LLMPacletVersion" -> ver |> ] &,
         <| KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 |>
     ]
 ];
