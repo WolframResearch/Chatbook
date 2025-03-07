@@ -232,7 +232,12 @@ getExpressionURI0 // beginDefinition;
 
 getExpressionURI0[ str_String ] :=
     Module[ { split },
-        split = First[ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, url } ], $Failed ];
+
+        split = First[
+            StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, StringReplace[ url, "\\/" -> "/" ] } ],
+            $Failed
+        ];
+
         getExpressionURI0 @@ split /; MatchQ[ split, { _String, _String } ]
     ];
 
