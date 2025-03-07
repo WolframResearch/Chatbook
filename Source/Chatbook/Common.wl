@@ -67,6 +67,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `endDefinition;
 `endExportedDefinition;
 `importResourceFunction;
+`lineWrap;
 `messageFailure;
 `messagePrint;
 `setServiceCaller;

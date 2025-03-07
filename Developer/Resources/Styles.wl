@@ -839,45 +839,38 @@ Cell[
 Cell[
     StyleData[ "ChatMenuItem" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ ButtonBox[
-            TemplateBox[
-                {
-                    TagBox[
-                        GridBox[
+        DisplayFunction -> Function @
+            FrameBox[
+                TagBox[
+                    GridBox[
+                        {
                             {
-                                {
-                                    #1,
-                                    TemplateBox[ { 7 }, "Spacer1" ],
-                                    PaneBox[
-                                        StyleBox[ #2, "ChatMenuLabel" ],
-                                        FrameMargins     -> 0,
-                                        ImageMargins     -> 0,
-                                        BaselinePosition -> Baseline,
-                                        ImageSize        -> Full
-                                    ]
-                                }
-                            },
-                            GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Baseline } } },
-                            AutoDelete       -> False,
-                            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                            GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
-                        ],
-                        "Grid"
+                                #1,
+                                TemplateBox[ { 7 }, "Spacer1" ],
+                                PaneBox[
+                                    StyleBox[ #2, "ChatMenuLabel" ],
+                                    FrameMargins     -> 0,
+                                    ImageMargins     -> 0,
+                                    BaselinePosition -> Baseline,
+                                    ImageSize        -> Full
+                                ]
+                            }
+                        },
+                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Baseline } } },
+                        AutoDelete       -> False,
+                        GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                        GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
                     ],
-                    FrameStyle     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.8 ], GrayLevel[ 0.98 ] ],
-                    RoundingRadius -> 0,
-                    FrameMargins   -> { { 5, 2 }, { 2, 2 } },
-                    ImageSize      -> Full,
-                    ImageMargins   -> { { 0, 0 }, { 0, 0 } },
-                    Background     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 1 ], GrayLevel[ 0.98 ] ]
-                },
-                "Highlighted"
-            ],
-            ButtonFunction :> ReleaseHold @ #3,
-            Appearance     -> $suppressButtonAppearance,
-            Method         -> "Queued",
-            Evaluator      -> Automatic
-        ]
+                    "Grid"
+                ],
+                Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 1 ], GrayLevel[ 0.98 ] ],
+                BaselinePosition -> Baseline,
+                FrameMargins     -> { { 5, 2 }, { 2, 2 } },
+                FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.8 ], GrayLevel[ 0.98 ] ],
+                ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+                ImageSize        -> Full,
+                RoundingRadius   -> 0
+            ]
     }
 ]
 
@@ -890,8 +883,8 @@ Cell[
 Cell[
     StyleData[ "ChatMenuSection" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ TemplateBox[
-            {
+        DisplayFunction -> Function @
+            FrameBox[
                 TagBox[
                     GridBox[
                         {
@@ -912,15 +905,14 @@ Cell[
                     ],
                     "Grid"
                 ],
-                Background     -> GrayLevel[ 0.937 ],
-                FrameMargins   -> { { 5, 2 }, { 2, 2 } },
-                FrameStyle     -> None,
-                ImageMargins   -> { { 0, 0 }, { 0, 0 } },
-                ImageSize      -> Full,
-                RoundingRadius -> 0
-            },
-            "Highlighted"
-        ]
+                Background       -> GrayLevel[ 0.937 ],
+                BaselinePosition -> Baseline,
+                FrameMargins     -> { { 5, 2 }, { 2, 2 } },
+                FrameStyle       -> None,
+                ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+                ImageSize        -> Full,
+                RoundingRadius   -> 0
+            ]
     }
 ]
 
