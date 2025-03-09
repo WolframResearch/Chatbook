@@ -62,12 +62,14 @@ $relativePaths             = Automatic;
 $minCompressedVectors = 2^14;
 $maxCompressedVectors = 2^18;
 
-$defaultSourceSelectorNames = {
-    "DataRepositoryURIs",
-    "DocumentationURIs",
-    "EntityValues",
-    "FunctionRepositoryURIs"
+$sourceSelectorExcludedNames = {
+    "WolframAlphaQueries"
 };
+
+$defaultSourceSelectorNames = Complement[
+    FileBaseName /@ FileNames[ "*.wl", $defaultVectorDBSourceDirectory ],
+    $sourceSelectorExcludedNames
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
