@@ -289,11 +289,11 @@ formatInlineChatInput // endDefinition;
 (*validInputStringQ*)
 (* LLM-712: adding images as allowed input means we must be much more permissive in validating chat input *)
 validInputStringQ // beginDefinition;
+validInputStringQ[ "" ] := False;
 validInputStringQ[ input_String? StringQ ] := ! StringMatchQ[ input, WhitespaceCharacter... ];
-validInputStringQ[ Null ] := False
-validInputStringQ[ RowBox[ { args___String } ] ] := True /; ! Apply[ And, StringMatchQ[ { args }, WhitespaceCharacter... ] ]
-validInputStringQ[ args___ ] := True /; MatchQ[ MakeExpression[ args, StandardForm ], Except[ HoldComplete[ Null ], _HoldComplete ] ]
-validInputStringQ[ _ ] := False
+validInputStringQ[ Null ] := False;
+validInputStringQ[ RowBox[ boxes_List ] ] := AnyTrue[ boxes, validInputStringQ ];
+validInputStringQ[ boxes_ ] := True;
 validInputStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
