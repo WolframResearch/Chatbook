@@ -139,6 +139,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chooseDefaultModelName;
 `clearMinimizedChats;
 `clickToCopy;
+`color;
 `compressUntilViewed;
 `constructMessages;
 `containsWordsQ;
