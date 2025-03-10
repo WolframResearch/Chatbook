@@ -68,6 +68,10 @@ $BuildWithDarkModeSupportQ = False; (* Block[ ] any expressions that can build w
 
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
+Get[ FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "ColorData.wl" } ];
+
+
+color = Wolfram`Chatbook`Common`color;
 
 
 (* ::Section::Closed:: *)

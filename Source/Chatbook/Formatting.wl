@@ -2074,7 +2074,6 @@ makeInteractiveCodeCell[ language_String, code_String ] :=
         Cell[
             code,
             "ChatPreformatted",
-            Background   -> GrayLevel[ 1 ],
             TaggingRules -> <| "CellToStringType" -> "InlineCodeCell", "CodeLanguage" -> language |>
         ],
         code,
@@ -2428,8 +2427,7 @@ codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
     BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
-    "ChatCodeBlock",
-    Background -> None
+    "ChatCodeBlock"
 ];
 
 codeBlockFrame // endDefinition;
