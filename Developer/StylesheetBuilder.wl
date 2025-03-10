@@ -37,19 +37,29 @@ $workspaceDefaultSettings = <|
 (* ::Subsection::Closed:: *)
 (*Paths*)
 
-$inputFileName          = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
-$assetLocation          = FileNameJoin @ { DirectoryName @ $inputFileName, "Resources" };
-$iconDirectory          = FileNameJoin @ { $assetLocation, "Icons" };
-$ninePatchDirectory     = FileNameJoin @ { $assetLocation, "NinePatchImages" };
-$styleDataFile          = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
-$pacletDirectory        = DirectoryName[ $inputFileName, 2 ];
-$iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
-$displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
-$coreExtensionsTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
-$styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$inputFileName              = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
+$assetLocation              = FileNameJoin @ { DirectoryName @ $inputFileName, "Resources" };
+$iconDirectory              = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory         = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
+$iconManifestFile           = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$displayFunctionsFile       = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$coreExtensionsTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
+$styleSheetTarget           = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$floatStyleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
+$darkStyleSheetTarget       = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Chatbook.nb" };
+$darkFloatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$darkDisplayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctionsDark.wxf" };
+
+
+(* ::Subsection::Closed:: *)
+(* Flag to build stylesheets with dark mode supported *)
+
+
+$BuildWithDarkModeSupportQ = False; (* Block[ ] any expressions that can build with dark mode switch *)
 
 
 (* ::Subsection::Closed:: *)
@@ -806,10 +816,10 @@ inlineResources[ expr_ ] := expr /. {
 (*$styleDataCells*)
 
 
-$styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+$styleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
 
-$workspaceStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
+$workspaceStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
 (* ::Subsection::Closed:: *)
@@ -838,7 +848,7 @@ $defaultChatbookSettings := (
 (*$ChatbookStylesheet*)
 
 
-$ChatbookStylesheet = Notebook[
+$ChatbookStylesheet := Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Default.nb" ],
         $styleDataCells
@@ -852,7 +862,7 @@ $ChatbookStylesheet = Notebook[
 (*$WorkspaceStylesheet*)
 
 
-$WorkspaceStylesheet = Notebook[
+$WorkspaceStylesheet := Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Chatbook.nb" ],
         $workspaceStyleDataCells
@@ -907,7 +917,13 @@ fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
 ];
 
 
-BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
+BuildChatbookStylesheet[ ] := {
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildChatbookStylesheet @ $darkStyleSheetTarget
+        ,
+        BuildChatbookStylesheet @ $styleSheetTarget
+    ]
+}
 
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -936,7 +952,13 @@ BuildChatbookStylesheet[ target_ ] :=
 (*BuildWorkspaceStylesheet*)
 
 
-BuildWorkspaceStylesheet[ ] := BuildWorkspaceStylesheet @ $floatStyleSheetTarget;
+BuildWorkspaceStylesheet[ ] := {
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildWorkspaceStylesheet @ $darkFloatStyleSheetTarget
+        ,
+        BuildWorkspaceStylesheet @ $floatStyleSheetTarget
+    ]
+}
 
 BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -960,8 +982,11 @@ BuildWorkspaceStylesheet[ target_ ] :=
     ];
 
 
-(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. *)
-BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
+(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. 14.2 understands dark mode but may not support all features. *)
+BuildCoreExtensionsStylesheet[ ] :=
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildCoreExtensionsStylesheet @ $coreExtensionsTarget
+    ]
 
 revisedCoreExtensions[ ] :=
 Module[ { excludedCoreExtensions },
@@ -1019,7 +1044,11 @@ BuildCoreExtensionsStylesheet[ target_ ] :=
 (*CompileTemplateData*)
 
 
-CompileTemplateData[ ] := Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
+CompileTemplateData[ ] := If[ BoxForm`sufficientVersionQ[ 14.3 ],
+    Developer`WriteWXFFile[ $darkDisplayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
+    ,
+    Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
+];
 
 
 (* ::Section::Closed:: *)

@@ -14,18 +14,20 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Paths*)
-$stylesheetFile = cStr @ FileNameJoin @ { $pacletDir, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$builderFile    = cFile @ FileNameJoin @ { $pacletDir, "Developer", "StylesheetBuilder.wl" };
+$stylesheetFiles = FileNames[ "*.nb", FileNameJoin[ { $pacletDir, "FrontEnd", "StyleSheets" } ], 2 ];
+$builderFile     = cFile @ FileNameJoin @ { $pacletDir, "Developer", "StylesheetBuilder.wl" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Build Stylesheet*)
-If[ FileExistsQ @ $stylesheetFile,
-    cicd`ConsoleLog @ SequenceForm[ "Removing existing stylesheet file: ", $stylesheetFile ];
-    cicd`ScriptConfirm @ DeleteFile @ $stylesheetFile;
-];
-
-cicd`ScriptConfirmAssert[ ! FileExistsQ @ $stylesheetFile ];
+Do[
+    If[ FileExistsQ @ file,
+        cicd`ConsoleLog @ SequenceForm[ "Removing existing stylesheet file: ", file ];
+        cicd`ScriptConfirm @ DeleteFile @ file;
+    ];
+    cicd`ScriptConfirmAssert[ ! FileExistsQ @ file ],
+    {file, $stylesheetFiles}
+]
 
 cicd`ConsoleLog[ "Building stylesheet..." ];
 Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" }, $ContextAliases = $ContextAliases },
@@ -35,7 +37,7 @@ Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" }, $Context
     ];
 ];
 
-cicd`ConsoleLog @ SequenceForm[ "Built stylesheet: ", result ];
+cicd`ConsoleLog @ SequenceForm[ "Built stylesheets: ", result ];
 
 (* :!CodeAnalysis::EndBlock:: *)
 
