@@ -79,8 +79,8 @@ makeWorkspaceChatDockedCell[ ] := workspaceChatInitializer @ Framed[
         ],
         Initialization :> (nbo = EvaluationNotebook[ ])
     ],
-    Background   -> RGBColor[ "#66ADD2" ],
-    FrameStyle   -> RGBColor[ "#66ADD2" ], (* RGBColor[ "#A3C9F2" ] *)
+    Background   -> color @ "NA_Toolbar",
+    FrameStyle   -> color @ "NA_Toolbar",
     FrameMargins -> { { 5, 4 }, { 0, 1 } },
     ImageMargins -> 0
 ];
@@ -95,9 +95,9 @@ makeWorkspaceChatSubDockedCellExpression // beginDefinition;
 makeWorkspaceChatSubDockedCellExpression[ content_ ] := Cell[ BoxData @ ToBoxes @
     Framed[
         content,
-        Background   -> RGBColor[ "#DDEFF9" ],
+        Background   -> color @ "NA_ToolbarTitleBackground",
         FrameMargins -> { { 7, 7 }, { 4, 4 } },
-        FrameStyle   -> RGBColor[ "#DDEFF9" ],
+        FrameStyle   -> color @ "NA_ToolbarTitleBackground",
         ImageMargins -> 0,
         ImageSize    -> Scaled[1.]
     ],
@@ -181,17 +181,18 @@ newChatButton // beginDefinition;
 
 newChatButton[ Dynamic[ nbo_ ] ] :=
 	With[{(* the icon colors come from the given BaseStyle *)
-    	label = toolbarButtonLabel0["New", "New",
-    		{FontColor -> RGBColor["#469ECB"]},
-    		{BaseStyle -> RGBColor["#469ECB"]}
-    	],
-    	hotLabel = toolbarButtonLabel0["New", "New",
-    		{FontColor -> RGBColor[1,1,1]},
-    		{BaseStyle -> RGBColor[1,1,1]}
-    	]},
+		label = toolbarButtonLabel0["New", "New",
+			{FontColor -> color @ "NA_ToolbarLightButtonFont"},
+			{BaseStyle -> color @ "NA_ToolbarLightButtonFont"}
+		],
+		hotLabel = toolbarButtonLabel0["New", "New",
+			{FontColor -> color @ "NA_ToolbarLightButtonFontHover"},
+			{BaseStyle -> color @ "NA_ToolbarLightButtonFontHover"}
+		]},
 
 		Button[
-			toolbarButtonLabel[ lightButton, {label, hotLabel}, "New"],
+			toolbarButtonLabel[ lightButton, {label, hotLabel}, "New"]
+			,
 			clearOverlayMenus @ nbo;
 			NotebookDelete @ Cells @ nbo;
 			removeWorkspaceChatSubDockedCell @ nbo;
@@ -199,7 +200,8 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 			CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
 			moveChatInputToTop @ nbo;
 			,
-			Appearance -> "Suppressed"
+			Appearance -> "Suppressed",
+			Method     -> "Queued"
 		]
 	];
 
@@ -299,10 +301,10 @@ $toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
     RoundingRadius -> 3
 ];
 
-$toolbarButtonDefault = Sequence[ Background -> RGBColor[ "#66ADD2" ], FrameStyle -> RGBColor[ "#66ADD2" ] ];
-$toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyle -> RGBColor[ "#9ACAE4" ] ];
-$toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
-$toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#F1F8FC" ], FrameStyle -> RGBColor[ "#F1F8FC" ] ];
+$toolbarButtonDefault = Sequence[ Background -> color @ "NA_Toolbar", FrameStyle -> color @ "NA_Toolbar" ];
+$toolbarButtonHover   = Sequence[ Background -> color @ "NA_ToolbarButtonBackgroundHover",   FrameStyle -> color @ "NA_ToolbarButtonFrameHover" ];
+$toolbarButtonActive  = Sequence[ Background -> color @ "NA_ToolbarButtonBackgroundPressed", FrameStyle -> color @ "NA_ToolbarButtonFramePressed" ];
+$toolbarButtonLight   = Sequence[ Background -> color @ "NA_ToolbarLightButtonBackground",   FrameStyle -> color @ "NA_ToolbarLightButtonFrame" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
