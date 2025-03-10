@@ -533,6 +533,8 @@ BuildSourceSelector[ names: { ___String } ] := Enclose @ inDBDirectory @
             UpdateInterval -> 1
         ];
 
+        ConfirmBy[ rewriteDBData[ rel, "SourceSelector" ], FileExistsQ, "Rewrite" ];
+
         ConfirmBy[
             writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
             FileExistsQ,
