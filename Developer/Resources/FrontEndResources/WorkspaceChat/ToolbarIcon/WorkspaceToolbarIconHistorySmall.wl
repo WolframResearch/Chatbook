@@ -10,7 +10,7 @@ Graphics[{Thickness[0.14285714285714285],
        {7., 3.5939998626708984}, {0., 3.5939998626708984}, 
        {0., 2.3929998874664307}}, {{0., 0.}, {7., 0.}, 
        {7., 1.2000000476837158}, {0., 1.2000000476837158}, {0., 0.}}}]}, 
-   FaceForm[RGBColor[0.2, 0.5137254901960784, 0.6745098039215687, 1.]]]}, 
+   FaceForm[color @ "NA_ToolbarTitleFont"]]}, 
  ImageSize -> {8., 7.}, PlotRange -> {{-0.5, 7.5}, {-0.5, 6.5}}, 
  AspectRatio -> Automatic,
  BaselinePosition -> Center -> Center]

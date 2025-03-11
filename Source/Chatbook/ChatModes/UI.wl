@@ -186,8 +186,8 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 			{BaseStyle -> color @ "NA_ToolbarLightButtonFont"}
 		],
 		hotLabel = toolbarButtonLabel0["New", "New",
-			{FontColor -> color @ "NA_ToolbarLightButtonFontHover"},
-			{BaseStyle -> color @ "NA_ToolbarLightButtonFontHover"}
+			{FontColor -> color @ "NA_ToolbarFont"},
+			{BaseStyle -> color @ "NA_ToolbarFont"}
 		]},
 
 		Button[
@@ -215,7 +215,8 @@ openAsChatbookButton // beginDefinition;
 openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
     toolbarButtonLabel[ "OpenAsChatbook", None ],
     popOutChatNB @ nbo,
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    Method     -> "Queued"
 ];
 
 openAsChatbookButton // endDefinition;

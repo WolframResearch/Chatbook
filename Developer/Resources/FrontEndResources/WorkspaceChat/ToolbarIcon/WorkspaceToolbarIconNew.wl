@@ -1,5 +1,5 @@
 (* ::Package:: *)
-
+(*Note: color comes from BaseStyle setting elsewhere*)
 RawBoxes @ ToBoxes @ Graphics[{Thickness[0.058823529411764705],
   FilledCurve[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
        {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
