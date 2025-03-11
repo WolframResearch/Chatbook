@@ -431,7 +431,7 @@ makeMenu[ items_List, frameColor_, width_ ] := Pane[
         {
             ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
             FrameMargins   -> 3,
-            Background     -> GrayLevel[ 0.98 ],
+            Background     -> color @ "ChatMenuItemBackground",
             RoundingRadius -> 3,
             FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
             ImageMargins   -> 0
@@ -500,7 +500,7 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
         { "TypesettingIcon"  , tr[ "StylesheetToggleFormatting" ]     , "ToggleFormatting"   },
         { "InPlaceIcon"      , tr[ "StylesheetCopyChatObject" ]       , "CopyChatObject"     }
     },
-    GrayLevel[ 0.85 ],
+    color @ "ChatMenuFrame",
     250
 ];
 
@@ -726,10 +726,10 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
                 ],
                 "Grid"
             ],
-            Background -> Dynamic @ FEPrivate`If[ hover, GrayLevel[ 1 ], RGBColor[ 0.94902, 0.96863, 0.98824 ] ],
+            Background -> (Dynamic[ FEPrivate`If[ hover, #1, #2 ] ]&[ color @ "DiscardedMaterialBackgroundHover", color @ "DiscardedMaterialBackground" ]),
             BaseStyle -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
             FrameMargins -> 2,
-            FrameStyle -> RGBColor[ 0.9098, 0.93333, 0.95294 ],
+            FrameStyle -> color @ "DiscardedMaterialFrame",
             RoundingRadius -> 5,
             StripOnInput -> False
         ],
@@ -746,7 +746,7 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
 ];
 
 discardedMaterialLabelIcon[ Dynamic[ hover_ ], Dynamic[ open_ ] ] :=
-    With[ { hoverColor = RGBColor[ 0.3451, 0.72157, 0.98039 ], defaultColor = GrayLevel[ 0.7451 ] },
+    With[ { hoverColor = color @ "DiscardedMaterialIconHover", defaultColor = color @ "DiscardedMaterialIcon" },
         PaneSelectorBox[
             {
                 { True , False } -> TemplateBox[ { hoverColor   }, "DiscardedMaterialOpenerIcon" ],
