@@ -151,7 +151,7 @@ tryMakeChatEnabledNotebook[
 					"",
 					tr[ "UITryEnableChatDialogConfirm" ]
 				}, BaseStyle -> {"DialogTextBasic", FontSize -> 15, LineIndent -> 0}, Spacings -> {0, 0}],
-				Background -> White
+				Background -> color @ "NA_NotebookBackground"
 			],
 			_?BooleanQ
 		]
@@ -180,10 +180,13 @@ makeEnableAIChatFeaturesLabel[ enabled_? BooleanQ ] :=
 		If[ ! enabled,
 			Style[
 				tr @ "UIEnableChatFeatures",
-				FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.537 ], GrayLevel[ 0.0 ] ] ]
+				FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+					color @ "ChatMenuCheckboxLabelFontHover",
+					color @ "ChatMenuCheckboxLabelFont"
+				])
 			]
 			,
-			Style[ tr @ "UIEnableChatFeatures", FontColor -> GrayLevel[ 0.5 ] ]
+			Style[ tr @ "UIEnableChatFeatures", FontColor -> color @ "ChatMenuCheckboxLabelFontDisabled" ]
 		],
 		! enabled,
 		195
@@ -257,7 +260,10 @@ makeAutomaticResultAnalysisCheckbox[
 				"\[NoBreak]",
 				StripOnInput -> True
 			],
-			FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.537 ], GrayLevel[ 0.0 ] ] ]
+			FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+				color @ "ChatMenuCheckboxLabelFontHover",
+				color @ "ChatMenuCheckboxLabelFont"
+			])
 		],
 		True,
 		195
@@ -318,7 +324,11 @@ With[
 		checkboxLabel =
 			Style[
 				tr @ "UIAdvancedChooseAutomatically",
-				"ChatMenuLabel", FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.537 ], GrayLevel[ 0.0 ] ] ]
+				"ChatMenuLabel",
+				FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						color @ "ChatMenuCheckboxLabelFontHover",
+						color @ "ChatMenuCheckboxLabelFont"
+					])
 			];
 		slider = Pane[
 			Grid[
@@ -780,8 +790,16 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 				Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"
 			],
 			RoundingRadius -> 2,
-			FrameStyle -> If[ TrueQ @ mouseOver, GrayLevel[ 0.74902  ], Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.74902  ], None ] ] ],
-			Background -> If[ TrueQ @ mouseOver, GrayLevel[ 0.960784 ], Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.960784 ], None ] ] ],
+			FrameStyle ->
+				If[ TrueQ @ mouseOver,
+					color @ "ChatDingbatFrameHover",
+					Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]
+				],
+			Background ->
+				If[ TrueQ @ mouseOver,
+					color @ "ChatDingbatBackgroundHover",
+					Dynamic[ If[ CurrentValue[ "MouseOver" ], #, None ] ]&[ color @ "ChatDingbatBackgroundHover" ]
+				],
 			FrameMargins -> 0,
 			ImageMargins -> 0,
 			ContentPadding -> False
@@ -858,8 +876,8 @@ MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
 				getPersonaMenuIcon @ currentValueOrigin[ targetCell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ][[ 2 ]],
 				Alignment -> { Center, Center }, ImageSize -> { 25, 25 }, ImageSizeAction -> "ShrinkToFit" ],
 			RoundingRadius -> 2,
-			FrameStyle     -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.74902  ], GrayLevel[ 0, 0 ] ] ],
-			Background     -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.960784 ], GrayLevel[ 1 ] ] ],
+			FrameStyle     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]),
+			Background     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatBackgroundHover" ]),
 			FrameMargins   -> 0,
 			ImageMargins   -> 0,
 			ContentPadding -> False
