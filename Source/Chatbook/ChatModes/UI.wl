@@ -1520,7 +1520,7 @@ toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
                     nbo,
                     Style[
                         tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                        FontColor -> GrayLevel[ 0.2 ], FontFamily -> "Source Sans Pro", FontSlant -> Italic ] ],
+                        FontColor -> color @ "NA_SourcesDockedCellFont", FontFamily -> "Source Sans Pro", FontSlant -> Italic ] ],
                 removeWorkspaceChatSubDockedCell[ nbo ]
             ];
             attachOverlayMenu[ nbo, name ];
@@ -1559,9 +1559,9 @@ attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
             BoxData @ ToBoxes @ Framed[
                 ConfirmMatch[ overlayMenu[ nbo, name ], Except[ _overlayMenu ], "OverlayMenu" ],
                 Alignment    -> { Center, Top },
-                Background   -> White,
+                Background   -> color @ "NA_NotebookBackground",
                 FrameMargins -> { { 5, 5 }, { 2000, 5 } },
-                FrameStyle   -> White,
+                FrameStyle   -> color @ "NA_NotebookBackground",
                 ImageSize    -> { Scaled[ 1 ], Automatic }
             ],
             "AttachedOverlayMenu",
@@ -1652,7 +1652,7 @@ notebookSources[ ] := Framed[
                     tr[ "WorkspaceSourcesOpenNotebooks" ],
                     "Text",
                     FontSize   -> 14,
-                    FontColor  -> RGBColor[ "#333333" ],
+                    FontColor  -> color @ "NA_OverlayMenuFont",
                     FontWeight -> Bold
                 ],
                 FrameMargins -> { { 5, 5 }, { 3, 3 } }
@@ -1683,8 +1683,8 @@ notebookSources[ ] := Framed[
                             Button[
                                 MouseAppearance[
                                     Mouseover[
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.6 ] ],
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.2 ] ]
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont_2" ],
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont" ]
                                     ],
                                     "LinkHand"
                                 ],
@@ -1696,19 +1696,19 @@ notebookSources[ ] := Framed[
                         }
                     ],
                     Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
                     Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                 ],
                 FrameMargins -> { { 0, 0 }, { 5, 5 } }
             ]
         },
         Alignment -> Left,
-        Background -> { RGBColor[ "#F5F5F5" ], White },
-        Dividers -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+        Background -> { color @ "NA_OverlayMenuHeaderBackground", White },
+        Dividers -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
     ],
     RoundingRadius -> 3,
     FrameMargins   -> 0,
-    FrameStyle     -> RGBColor[ "#D1D1D1" ]
+    FrameStyle     -> color @ "NA_OverlayMenuFrame"
 ];
 
 notebookSources // endDefinition;
@@ -1717,7 +1717,7 @@ notebookSources // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatNotebookTitle*)
 formatNotebookTitle // beginDefinition;
-formatNotebookTitle[ None|"" ] := Style[ "Unnamed Notebook", FontColor -> GrayLevel[ 0.6 ], FontSlant -> Italic ];
+formatNotebookTitle[ None|"" ] := Style[ (*FIXME:TR*)"Unnamed Notebook", FontColor -> color @ "NA_OverlayMenuFont_2", FontSlant -> Italic ];
 formatNotebookTitle[ title_String ] := title;
 formatNotebookTitle // endDefinition;
 
@@ -1863,12 +1863,12 @@ historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
             Column[
                 { header, view },
                 Alignment  -> Left,
-                Background -> { RGBColor[ "#F5F5F5" ], White },
-                Dividers   -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+                Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
+                Dividers   -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
             ],
             RoundingRadius -> 3,
             FrameMargins   -> 0,
-            FrameStyle     -> RGBColor[ "#D1D1D1" ]
+            FrameStyle     -> color @ "NA_OverlayMenuFrame"
         ]
     ],
     throwInternalFailure
@@ -1883,7 +1883,7 @@ makeDefaultHistoryView // beginDefinition;
 
 makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
     RawBoxes @ ToBoxes @ DynamicModule[ { display },
-        display = Pane[ ProgressIndicator[ Appearance -> "Percolate" ], ImageMargins -> 25 ];
+        display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
 
         Pane[
             Dynamic[ display, TrackedSymbols :> { display } ],
@@ -1914,7 +1914,7 @@ makeDefaultHistoryView0[ nbo_NotebookObject ] := Enclose[
             Grid[
                 rows,
                 Alignment -> { Left, Center },
-                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
                 Spacings  -> { Automatic, { 0, { 1 }, 0 } }
             ],
             TrackedSymbols :> { rows }
@@ -1934,11 +1934,11 @@ makeHistoryHeader[ extraContent_ ] := Pane[
     Grid[
         {
             {
-                Style[ tr[ "WorkspaceHistoryTitle" ], "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
+                Style[ tr[ "WorkspaceHistoryTitle" ], "Text", FontSize -> 14, FontColor -> color @ "NA_OverlayMenuFont", FontWeight -> Bold ],
                 extraContent
             }
         },
-        Alignment -> { { Left, Right }, Baseline },
+        Alignment -> { { Left, Right }, Center },
         ItemSize  -> { { Fit, Automatic }, Automatic }
     ],
     FrameMargins -> { { 5, 5 }, { 3, 3 } }
@@ -1977,7 +1977,7 @@ makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] :=
         default = Grid[
             { {
                 title,
-                Style[ timeString, FontColor -> RGBColor[ "#A6A6A6" ] ]
+                Style[ timeString, FontColor -> color @ "NA_OverlayMenuFontSubtle" ]
             } },
             Alignment -> { { Left, Right }, Baseline },
             BaseStyle -> { "Text", FontSize -> 14, LineBreakWithin -> False },
@@ -1999,19 +1999,21 @@ makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] :=
                         Button[
                             $popOutButtonLabel,
                             popOutChatNB[ chat, CurrentChatSettings @ nbo ],
-                            Appearance -> "Suppressed"
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
                         ],
                         Button[
                             $trashButtonLabel,
                             DeleteChat @ chat;
                             removeChatFromRows[ Dynamic @ rows, chat ],
-                            Appearance -> "Suppressed"
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
                         ]
                     } }
                 ]
             } },
             Alignment  -> { { Left, Right }, Baseline },
-            Background -> RGBColor[ "#EDF7FC" ],
+            Background -> color @ "NA_OverlayMenuItemBackgroundHover",
             ItemSize   -> Fit
         ];
 

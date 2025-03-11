@@ -24,11 +24,12 @@ dominantColor[ "AssisstantOutputError"   ] := RGBColor["#FDF4F4"];
 dominantColor[ "AssisstantOutputWarning" ] := RGBColor["#FDFAF4"];
 dominantColor[ "ChatMenu"                ] := GrayLevel[0.98];
 dominantColor[ "ChatOutput"              ] := RGBColor["#FCFDFF"];
-dominantColor[ "CloudToolbar"            ] := White
+dominantColor[ "CloudToolbar"            ] := White;
 dominantColor[ "ErrorMessageBlocked"     ] := RGBColor[ "#F3FBFF" ];
 dominantColor[ "ErrorMessageFatal"       ] := RGBColor[ "#FFF3F1" ];
 dominantColor[ "ErrorMessageNonFatal"    ] := RGBColor[ "#FFFAF2" ];
 dominantColor[ "NA_ChatOutput"           ] := RGBColor["#F9FDFF"];
+dominantColor[ "NA_OverlayMenu"          ] := White;
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
 dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
@@ -811,21 +812,21 @@ Dispatch[{
 	|>,
 	"NA_CloudToolbarBackground" -> <|
 		 "Light"  -> RGBColor[0.9137254, 0.9686274, 1.],
-		 "Dark"   -> RGBColor[0.2495220, 0.3536672, 0.4315410],
+		 "Dark"   -> RGBColor[0.2495220, 0.3536671, 0.4315410],
 		 "Method" -> "Background",
 		 "DC"     -> "NA_CloudToolbar",
 		 "Notes"  -> "Cloud only: default notebook optional docked cell"
 	|>,
 	"NA_CloudToolbarButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.9137254, 0.9686274, 1.],
-		 "Dark"   -> RGBColor[0.1756672, 0.2419842, 0.2966990],
+		 "Dark"   -> RGBColor[0.1756673, 0.2419843, 0.2966992],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_CloudToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_CloudToolbarButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6313725, 0.8039215, 0.8941176],
-		 "Dark"   -> RGBColor[0.4100845, 0.5415206, 0.6208043],
+		 "Dark"   -> RGBColor[0.4100845, 0.5415207, 0.6208044],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_CloudToolbar",
 		 "Notes"  -> ""
@@ -839,7 +840,7 @@ Dispatch[{
 	|>,
 	"NA_CloudToolbarIconInsertChatCell_1" -> <|
 		 "Light"  -> RGBColor[0.6470588, 0.7529411, 0.8117647],
-		 "Dark"   -> RGBColor[0.5027361, 0.5822059, 0.6314905],
+		 "Dark"   -> RGBColor[0.5027361, 0.5822059, 0.6314907],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_CloudToolbar",
 		 "Notes"  -> ""
@@ -863,6 +864,83 @@ Dispatch[{
 		 "Dark"   -> GrayLevel[0.0999191],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuFont" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.9640047],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuFont_2" -> <|
+		 "Light"  -> GrayLevel[0.6],
+		 "Dark"   -> GrayLevel[0.7255594],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuFontSubtle" -> <|
+		 "Light"  -> GrayLevel[0.6509803],
+		 "Dark"   -> GrayLevel[0.6816802],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuFrame" -> <|
+		 "Light"  -> GrayLevel[0.8196078],
+		 "Dark"   -> GrayLevel[0.5079930],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuHeaderBackground" -> <|
+		 "Light"  -> GrayLevel[0.9607843],
+		 "Dark"   -> GrayLevel[0.1965747],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuIcon_Blue" -> <|
+		 "Light"  -> RGBColor[0.4, 0.67843, 0.82353],
+		 "Dark"   -> RGBColor[0.4271693, 0.7167508, 0.8646465],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuIcon_Gray" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.9640047],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuItemBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.9294117, 0.9686274, 0.9882352],
+		 "Dark"   -> RGBColor[0.1509433, 0.2053128, 0.2456591],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuPercolate" -> <|
+		 "Light"  -> GrayLevel[0.7490196],
+		 "Dark"   -> GrayLevel[0.5867762],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_SourcesDockedCellFont" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.9255081],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_Toolbar" -> <|
