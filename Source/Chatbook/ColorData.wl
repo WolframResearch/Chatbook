@@ -24,11 +24,13 @@ dominantColor[ "AssisstantOutputError"   ] := RGBColor["#FDF4F4"];
 dominantColor[ "AssisstantOutputWarning" ] := RGBColor["#FDFAF4"];
 dominantColor[ "ChatMenu"                ] := GrayLevel[0.98];
 dominantColor[ "ChatOutput"              ] := RGBColor["#FCFDFF"];
+dominantColor[ "CloudToolbar"            ] := White
 dominantColor[ "ErrorMessageBlocked"     ] := RGBColor[ "#F3FBFF" ];
 dominantColor[ "ErrorMessageFatal"       ] := RGBColor[ "#FFF3F1" ];
 dominantColor[ "ErrorMessageNonFatal"    ] := RGBColor[ "#FFFAF2" ];
 dominantColor[ "NA_ChatOutput"           ] := RGBColor["#F9FDFF"];
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
+dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
 dominantColor[ "White"                   ] := White;
 
@@ -316,6 +318,27 @@ Dispatch[{
 		 "Method" -> "Background",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, code block background color for unknown programming languages"
+	|>,
+	"CloudToolbarFont" -> <|
+		 "Light"  -> RGBColor[0.2, 0.2, 0.2],
+		 "Dark"   -> RGBColor[0.9640047, 0.9640047, 0.9640047],
+		 "Method" -> "Feature",
+		 "DC"     -> "CloudToolbar",
+		 "Notes"  -> "Cloud only: Chatbook top docked cell"
+	|>,
+	"CloudToolbarMenuShortcutFont" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.5516041],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> "Cloud only: cell style action menu has white background"
+	|>,
+	"CloudToolbarPreferencesCellBackground" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.5483285],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Cloud only: cell content is used in multiple places, so leave as content color"
 	|>,
 	"DiscardedMaterialBackground" -> <|
 		 "Light"  -> RGBColor[0.94902, 0.96863, 0.98824],
@@ -785,6 +808,55 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
+	|>,
+	"NA_CloudToolbarBackground" -> <|
+		 "Light"  -> RGBColor[0.9137254, 0.9686274, 1.],
+		 "Dark"   -> RGBColor[0.2495220, 0.3536672, 0.4315410],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> "Cloud only: default notebook optional docked cell"
+	|>,
+	"NA_CloudToolbarButtonFrame" -> <|
+		 "Light"  -> RGBColor[0.9137254, 0.9686274, 1.],
+		 "Dark"   -> RGBColor[0.1756672, 0.2419842, 0.2966990],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_CloudToolbarButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.6313725, 0.8039215, 0.8941176],
+		 "Dark"   -> RGBColor[0.4100845, 0.5415206, 0.6208043],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_CloudToolbarFont" -> <|
+		 "Light"  -> RGBColor[0.2, 0.2, 0.2],
+		 "Dark"   -> RGBColor[0.9614924, 0.9614924, 0.9614924],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_CloudToolbarIconInsertChatCell_1" -> <|
+		 "Light"  -> RGBColor[0.6470588, 0.7529411, 0.8117647],
+		 "Dark"   -> RGBColor[0.5027361, 0.5822059, 0.6314905],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_CloudToolbarIconInsertChatCell_2" -> <|
+		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
+		 "Dark"   -> RGBColor[0.3406807, 0.7196094, 0.9058676],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_CloudToolbarIconNewChat" -> <|
+		 "Light"  -> RGBColor[0.2784313, 0.6235294, 0.7960784],
+		 "Dark"   -> RGBColor[0.3437993, 0.7197632, 0.9010030],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_CloudToolbar",
+		 "Notes"  -> ""
 	|>,
 	"NA_NotebookBackground" -> <|
 		 "Light"  -> GrayLevel[1],
