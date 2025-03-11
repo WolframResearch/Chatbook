@@ -184,12 +184,47 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Solid bar across the cell content area"
 	|>,
+	"ChatDingbatBackgroundHover" -> <|
+		 "Light"  -> GrayLevel[0.960784],
+		 "Dark"   -> GrayLevel[0.2194089],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Dingbat for ChatInput/Output"
+	|>,
+	"ChatDingbatFrameHover" -> <|
+		 "Light"  -> GrayLevel[0.74902],
+		 "Dark"   -> GrayLevel[0.5494749],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Dingbat for ChatInput/Output"
+	|>,
 	"ChatInputFrame" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
 		 "Dark"   -> RGBColor[0.3992328, 0.5826272, 0.7859296],
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
 		 "Notes"  -> "Acccent6"
+	|>,
+	"ChatMenuCheckboxLabelFont" -> <|
+		 "Light"  -> GrayLevel[0.],
+		 "Dark"   -> GrayLevel[0.9999999],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuCheckboxLabelFontDisabled" -> <|
+		 "Light"  -> GrayLevel[0.5],
+		 "Dark"   -> GrayLevel[0.7953969],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuCheckboxLabelFontHover" -> <|
+		 "Light"  -> GrayLevel[0.537],
+		 "Dark"   -> GrayLevel[0.7673870],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
 	|>,
 	"ChatMenuFrame" -> <|
 		 "Light"  -> GrayLevel[0.85],
@@ -445,7 +480,7 @@ Dispatch[{
 	|>,
 	"ErrorMessageBlockedLinkFontHover" -> <|
 		 "Light"  -> RGBColor[0.2666666, 0.6156862, 0.8],
-		 "Dark"   -> RGBColor[0.3360057, 0.7234408, 0.9192359],
+		 "Dark"   -> RGBColor[0.3360057, 0.7234408, 0.9192360],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageBlocked",
 		 "Notes"  -> ""
@@ -557,7 +592,7 @@ Dispatch[{
 	|>,
 	"ErrorMessageFatalLinkFontHover" -> <|
 		 "Light"  -> RGBColor[0.8823529, 0.3294117, 0.2196078],
-		 "Dark"   -> RGBColor[0.9499245, 0.5631079, 0.4940350],
+		 "Dark"   -> RGBColor[0.9499245, 0.5631079, 0.4940351],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageFatal",
 		 "Notes"  -> ""
@@ -668,7 +703,7 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLinkFontHover" -> <|
-		 "Light"  -> RGBColor[0.8117647, 0.5450980, 0.],
+		 "Light"  -> RGBColor[0.8117647, 0.545098, 0.],
 		 "Dark"   -> RGBColor[0.9094903, 0.5997460, 0.0487317],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageNonFatal",
