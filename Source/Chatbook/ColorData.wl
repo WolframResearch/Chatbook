@@ -966,22 +966,22 @@ Dispatch[{
 	|>,
 	"NA_ToolbarButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6039215, 0.7921568, 0.8941176],
-		 "Dark"   -> RGBColor[0., 0., 0.],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4804729, 0.6542139, 0.7548048],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "This frame is a transitional color"
 	|>,
 	"NA_ToolbarButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.2117647, 0.5372549, 0.7098039],
-		 "Dark"   -> RGBColor[0.2420709, 0.5899503, 0.7708906],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2359915, 0.3864898, 0.4889553],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "This frame is a transitional color"
 	|>,
 	"NA_ToolbarFont" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[1.6995766*^-16],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[1],
+		 "Method" -> "Same",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
@@ -999,19 +999,12 @@ Dispatch[{
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
-	"NA_ToolbarLightButtonFontHover" -> <|
-		 "Light"  -> RGBColor[1, 1, 1],
-		 "Dark"   -> RGBColor[4.8210629*^-16, 0, 2.2638497*^-16],
-		 "Method" -> "Feature",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
 	"NA_ToolbarLightButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
-		 "Dark"   -> RGBColor[0., 0., 0.],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.7234794, 0.8525465, 0.9284763],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "This frame is a transitional color"
 	|>,
 	"NA_ToolbarTitleBackground" -> <|
 		 "Light"  -> RGBColor[0.8666666, 0.9372549, 0.9764705],
@@ -1198,13 +1191,17 @@ StringJoin[
 				"\t", ToString[#1, InputForm], " -> <|",
 				"\n\t\t \"Light\"  -> ", shortenReals @ ToString[#2["Light"], InputForm], ",",
 				"\n\t\t \"Dark\"   -> ",
-					shortenReals @
-					ToString[ Last @ DarkModeMigration`ExpandLightDarkSwitched @
-						DarkModeMigration`ColorToDarkMode[
-							#2["Light"],
-							If[#2["Method"] === "Content", "Content", {#2["Method"], dominantColor @ #2["DC"]}]
-						],
-						InputForm
+					If[ #2["Method"] === "Same",
+						shortenReals @ ToString[#2["Light"], InputForm]
+						,
+						shortenReals @
+						ToString[ Last @ DarkModeMigration`ExpandLightDarkSwitched @
+							DarkModeMigration`ColorToDarkMode[
+								#2["Light"],
+								If[#2["Method"] === "Content", "Content", {#2["Method"], dominantColor @ #2["DC"]}]
+							],
+							InputForm
+						]
 					], ",",
 				"\n\t\t \"Method\" -> ", ToString[#2["Method"], InputForm], ",",
 				"\n\t\t \"DC\"     -> ", ToString[#2["DC"], InputForm], ",",
