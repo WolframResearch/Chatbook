@@ -69,10 +69,10 @@
 "FormattingToolUsing" -> "\:4F7F\:7528 ",
 "FormattingToolUsed" -> "\:5DF2\:4F7F\:7528 ",
 "FormattingToolUsingLoading" -> "\:4F7F\:7528\:5DE5\:5177\[Ellipsis]",
-"FormattingThinkingActive" -> "Thinking\[Ellipsis]",
-"FormattingThinkingComplete" -> "Thought for `time` seconds",
-"FormattingThinkingCompleteFallback" -> "Thought",
-"FormattingHide" -> "Hide",
+"FormattingThinkingActive" -> "\:6B63\:5728\:601D\:8003\[Ellipsis]",
+"FormattingThinkingComplete" -> "\:601D\:8003\:4E86 `time` \:79D2",
+"FormattingThinkingCompleteFallback" -> "\:601D\:8003\:5B8C\:6210",
+"FormattingHide" -> "\:9690\:85CF",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:ff1a",
@@ -157,7 +157,7 @@
 "ToolManagerDeleteTool" -> "\:5220\:9664\:5DE5\:5177",
 
 "UIEnableChatFeatures" -> "\:542F\:7528 AI \:804A\:5929\:529F\:80FD",
-"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
+"UIAutomaticAnalysisLabel" -> "\:81EA\:52A8\:5BF9\:8F93\:51FA\:8FDB\:884C\:5206\:6790",
 "UIAutomaticAnalysisTooltip" -> "\:5982\:679C\:542F\:7528\:ff0cAI \:63D0\:4F9B\:7684\:5EFA\:8BAE\:5C06\:88AB\:6DFB\:52A0\:5230\:8BA1\:7B97\:7ED3\:679C\:7684\:540E\:9762\:3002",
 "UIPersonas" -> "\:89D2\:8272",
 "UIChatBlockSettings" -> "\:804A\:5929\:7B14\:8BB0\:672C\:7684\:8BBE\:7F6E\[Ellipsis]",
