@@ -111,7 +111,7 @@ $autoOperatorRenderings = <|
             AutoDelete      -> False,
             GridBoxDividers -> { "Columns" -> { False, { True }, False }, "Rows" -> { False, { True }, False } },
             GridBoxItemSize -> { "Columns" -> { { Fit } }, "Rows" -> { { Automatic } } },
-            FrameStyle      -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
+            FrameStyle      -> Directive[ color @ "ChatDelimiterCellFrame", AbsoluteThickness[ 1 ] ]
         ],
         "Grid"
     ],
@@ -703,9 +703,8 @@ floatingButtonGrid[ cell_Cell, lang_ ] /; $cloudNotebooks :=
                 button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
             }
         },
-        Alignment  -> Top,
-        Spacings   -> 0.2,
-        FrameStyle -> GrayLevel[ 0.85 ]
+        Alignment -> Top,
+        Spacings  -> 0.2
     ];
 
 floatingButtonGrid[ cell_Cell, lang_ ] :=
@@ -725,9 +724,8 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
                     }
                 ]
             },
-            Alignment  -> Top,
-            Spacings   -> 0.2,
-            FrameStyle -> GrayLevel[ 0.85 ]
+            Alignment -> Top,
+            Spacings  -> 0.2
         ]
     ];
 
@@ -743,9 +741,8 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
                     button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
                 }
             },
-            Alignment  -> Top,
-            Spacings   -> 0.2,
-            FrameStyle -> GrayLevel[ 0.85 ]
+            Alignment -> Top,
+            Spacings  -> 0.2
         ]
     },
     "ChatCodeBlockButtonPanel"
@@ -1230,8 +1227,8 @@ buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
 buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
-        FrameStyle       -> RGBColor[ "#d4e5ed" ],
-        Background       -> GrayLevel[ 1 ],
+        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
+        Background       -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
         RoundingRadius   -> 3
@@ -1269,7 +1266,7 @@ labeledIcon[ icon_, textResource_String ] := Grid[
             buttonPane @ icon,
             Style[
                 tr @ textResource,
-                FontColor  -> RGBColor[ "#333333" ],
+                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFont",
                 FontFamily -> "Source Sans Pro",
                 FontSize   -> 12
             ]
@@ -1292,13 +1289,13 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
         Style[
             tooltip,
             "Text",
-            FontColor    -> RGBColor[ 0.53725, 0.53725, 0.53725 ],
+            FontColor    -> color @ "ChatOutputTooltipFont",
             FontSize     -> 12,
             FontWeight   -> "Plain",
             FontTracking -> "Plain"
         ],
-        Background   -> RGBColor[ 0.96078, 0.96078, 0.96078 ],
-        FrameStyle   -> RGBColor[ 0.89804, 0.89804, 0.89804 ],
+        Background   -> color @ "ChatOutputTooltipBackground",
+        FrameStyle   -> color @ "ChatOutputTooltipFrame",
         FrameMargins -> 8
     ],
     TooltipDelay -> 0.15,
