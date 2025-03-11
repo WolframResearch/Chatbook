@@ -187,6 +187,13 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Solid bar across the cell content area"
 	|>,
+	"ChatDelimiterCellFrame" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.4867756],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Solid bar separating streamed output?"
+	|>,
 	"ChatDingbatBackgroundHover" -> <|
 		 "Light"  -> GrayLevel[0.960784],
 		 "Dark"   -> GrayLevel[0.2194089],
@@ -312,6 +319,27 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, vertical ellipsis button, fully transparent frame"
+	|>,
+	"ChatOutputTooltipBackground" -> <|
+		 "Light"  -> GrayLevel[0.96078],
+		 "Dark"   -> GrayLevel[0.2174697],
+		 "Method" -> "Background",
+		 "DC"     -> "ChatOutput",
+		 "Notes"  -> "ChatOutput UI, hover over evaluate/insert/copy buttons"
+	|>,
+	"ChatOutputTooltipFont" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.7718786],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatOutput",
+		 "Notes"  -> "ChatOutput UI, hover over evaluate/insert/copy buttons"
+	|>,
+	"ChatOutputTooltipFrame" -> <|
+		 "Light"  -> GrayLevel[0.89804],
+		 "Dark"   -> GrayLevel[0.3955619],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatOutput",
+		 "Notes"  -> "ChatOutput UI, hover over evaluate/insert/copy buttons"
 	|>,
 	"ChatPreformattedBackground" -> <|
 		 "Light"  -> GrayLevel[1],
