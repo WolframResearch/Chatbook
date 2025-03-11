@@ -1,0 +1,10 @@
+@@resource ChatbookExpressions
+{
+"DeleteMe" -> ""
+}
+@|
+@|
+@@resource ChatbookBitmaps
+{
+}
+@|

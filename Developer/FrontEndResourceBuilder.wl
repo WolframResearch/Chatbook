@@ -15,6 +15,7 @@ ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
 
+color = Wolfram`Chatbook`Common`color;
 WriteTextResource;
 $ChatbookResources;
 FEResource;
@@ -27,10 +28,19 @@ Begin["`Private`"]
 (*Paths*)
 
 
-$inputFileName    = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
-$pacletDirectory  = DirectoryName[ $inputFileName, 2 ];
-$sourceDirectory  = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "FrontEndResources" };
-$resourceLocation = FileNameJoin @ { $pacletDirectory, "FrontEnd", "TextResources", "ChatbookResources.tr" };
+$inputFileName        = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
+$pacletDirectory      = DirectoryName[ $inputFileName, 2 ];
+$sourceDirectory      = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "FrontEndResources" };
+$resourceLocation     = FileNameJoin @ { $pacletDirectory, "FrontEnd", "TextResources", "ChatbookResources.tr" };
+$resourceLocationDark = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "TextResources", "ChatbookResources.tr" };
+
+
+(* ::Subsection::Closed:: *)
+(*Load Paclet*)
+
+
+PacletDirectoryLoad @ $pacletDirectory;
+Get[ "Wolfram`Chatbook`" ];
 
 
 (* ::Section::Closed:: *)
@@ -79,6 +89,15 @@ WriteTextResource[ All ] :=
 			Failure[ "SomethingHappened", <| "File" -> $resourceLocation, "Results" -> written |> ]
 		]
     ];
+
+
+WriteTextResource[ All, "Dark" ] :=
+	Block[ { $resourceLocation = $resourceLocationDark },
+		WriteTextResource[ All ]
+	] /; BoxForm`sufficientVersionQ[14.3]
+
+WriteTextResource[ All, "Dark" ] := WriteTextResource[ All ]
+
 
 WriteTextResource[name_String, opts:OptionsPattern[]] := WriteTextResource[name -> FEResource[name], opts]
 
