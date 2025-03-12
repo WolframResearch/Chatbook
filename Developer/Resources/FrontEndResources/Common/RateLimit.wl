@@ -1,5 +1,4 @@
 (* Created with the Wolfram Language : www.wolfram.com *)
-RawBoxes @ ToBoxes @
 Graphics[{Thickness[0.005988023952095809], 
   {FaceForm[{color @ "ErrorMessageBlockedIcon", Opacity[1.]}], FilledCurve[{{{0, 2, 0}, {0, 1, 0}, 
     {0, 1, 0}, {0, 1, 0}}}, {{{167., 0.}, {0., 0.}, {0., 0.9380000233650208}, 

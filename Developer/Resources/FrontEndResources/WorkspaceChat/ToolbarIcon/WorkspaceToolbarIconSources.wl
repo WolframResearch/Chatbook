@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-RawBoxes @ ToBoxes @ Graphics[{Thickness[0.07692307692307693],
+Graphics[{Thickness[0.07692307692307693],
    FaceForm[{color @ "NA_ToolbarFont", Opacity[1.]}],
    FilledCurve[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0},
       {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},

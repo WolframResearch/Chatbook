@@ -1,5 +1,4 @@
 (* Created with the Wolfram Language : www.wolfram.com *)
-RawBoxes @ ToBoxes @
 Graphics[{Thickness[0.09523809523809523], 
   FaceForm[{RGBColor[0.2901960784313726, 0.5843137254901961, 0.8], 
     Opacity[1.]}], FilledCurve[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, 
