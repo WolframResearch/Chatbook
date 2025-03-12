@@ -974,22 +974,6 @@ multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
 multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*serviceFrameworkAvailable*)
-serviceFrameworkAvailable // beginDefinition;
-
-serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] =
-    serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ];
-
-serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
-    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
-
-serviceFrameworkAvailable[ _ ] :=
-    False;
-
-serviceFrameworkAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
