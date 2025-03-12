@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (*Configuration*)
 $inputFieldPaneMargins       = { { 5, 5 }, { 0, 5 } };
 $inputFieldGridMagnification = Inherited;
-$inputFieldOuterBackground   = GrayLevel[ 0.95 ];
+$inputFieldOuterBackground   = color @ "NA_ChatInputFieldBackgroundArea";
 $initialInlineChatWidth      = Scaled[ 0.85 ];
 $initialInlineChatHeight     = UpTo[ 300 ];
 $inputFieldBox               = None;
@@ -34,9 +34,9 @@ $inputFieldOptions = Sequence[
 
 $inputFieldFrameOptions = Sequence[
     Alignment    -> { Automatic, Baseline },
-    Background   -> White,
+    Background   -> color @ "NA_ChatInputFieldBackground",
     FrameMargins -> { { 5, 5 }, { 4, 4 } },
-    FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
+    FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ]
 ];
 
 $actionMenuItemOptions = Sequence[
@@ -382,8 +382,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 {
                                     None -> Button[
                                         Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                            RGBColor[ "#a3c9f2" ],
-                                            RGBColor[ "#f1f7fd" ],
+                                            color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                            color @ "NA_ChatInputFieldSendButtonBackgroundHover",
                                             27
                                         ],
                                         Needs[ "Wolfram`Chatbook`" -> None ];
@@ -400,8 +400,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
                                 Button[
                                     Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                        RGBColor[ "#a3c9f2" ],
-                                        RGBColor[ "#f1f7fd" ],
+                                        color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                        color @ "NA_ChatInputFieldSendButtonBackgroundHover",
                                         27
                                     ],
                                     Needs[ "Wolfram`Chatbook`" -> None ];

@@ -30,7 +30,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.65098, 0.65098, 0.65098, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIcon"
   ],
   Style[
    {
@@ -55,7 +55,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ],
   Style[
    {
@@ -77,7 +77,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ],
   Style[
    {
@@ -99,7 +99,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ],
   Style[
    {
@@ -121,7 +121,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ],
   Style[
    {
@@ -146,7 +146,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ],
   Style[
    {
@@ -175,7 +175,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 1.0, 1.0, 1.0, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_4"
   ],
   Style[
    {
@@ -271,7 +271,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.53725, 0.53725, 0.53725, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
   ]
  },
  ImageSize -> { 12.0, 12.0 },
