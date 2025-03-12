@@ -64,10 +64,7 @@ Notebook[
      CellMargins -> {{-1, -5}, {-1, -1}},
      Magnification ->
       Dynamic[
-       AbsoluteCurrentValue[
-        FrontEnd`EvaluationNotebook[],
-        Magnification
-       ]
+       AbsoluteCurrentValue[EvaluationNotebook[], Magnification]
       ]
     ]
    },
@@ -81,12 +78,13 @@ Notebook[
    |>,
    DefaultNewCellStyle -> "AutoMoveToChatInputField",
    Magnification -> 0.85,
-   Background -> GrayLevel[1]
+   Background ->
+    LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]]
   ],
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.16.3951878911"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.2.3950766996"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -109,7 +107,7 @@ Notebook[
    ],
    FontSize -> 13,
    FontWeight -> "DemiBold",
-   FontColor -> GrayLevel[1]
+   FontColor -> LightDarkSwitched[GrayLevel[1], GrayLevel[1]]
   ],
   Cell[
    StyleData[
@@ -118,7 +116,11 @@ Notebook[
      StyleData["WorkspaceChatToolbarButtonLabel"]
    ],
    FontSize -> 12,
-   FontColor -> RGBColor[0.2, 0.513725, 0.67451]
+   FontColor ->
+    LightDarkSwitched[
+     RGBColor[0.2, 0.513725, 0.67451],
+     RGBColor[0.254083, 0.617296, 0.795196]
+    ]
   ],
   Cell[
    StyleData["ChatInput"],
@@ -221,9 +223,17 @@ Notebook[
        FrameBox[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.929412, 0.956863, 0.988235],
+        Background ->
+         LightDarkSwitched[
+          RGBColor[0.929412, 0.956863, 0.988235],
+          RGBColor[0.246964, 0.305198, 0.402424]
+         ],
         FrameMargins -> {{8, 15}, {8, 8}},
-        FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
+        FrameStyle ->
+         LightDarkSwitched[
+          RGBColor[0.639216, 0.788235, 0.94902],
+          RGBColor[0.37503, 0.538177, 0.726895]
+         ],
         RoundingRadius -> 8,
         StripOnInput -> False
        ],
@@ -242,12 +252,19 @@ Notebook[
        FrameBox[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.97647, 0.992157, 1.0],
+        Background ->
+         LightDarkSwitched[
+          RGBColor[0.97647, 0.992157, 1.0],
+          RGBColor[0.264099, 0.264099, 0.264099]
+         ],
         FrameMargins -> 8,
         FrameStyle ->
          Directive[
           AbsoluteThickness[2],
-          RGBColor[0.878431, 0.937255, 0.968627]
+          LightDarkSwitched[
+           RGBColor[0.878431, 0.937255, 0.968627],
+           RGBColor[0.278311, 0.360962, 0.419838]
+          ]
          ],
         ImageSize -> {Scaled[1], Automatic},
         RoundingRadius -> 8,
@@ -290,10 +307,14 @@ Notebook[
            ImageSize -> {Scaled[1], UpTo[400]},
            Scrollbars -> Automatic
           ],
-          Background -> GrayLevel[1],
+          Background ->
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.273977]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
-           Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
+           Directive[
+            AbsoluteThickness[2],
+            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.392133]]
+           ],
           ImageMargins -> {{0, 0}, {0, 8}},
           ImageSize -> {Full, Automatic}
          ]
@@ -303,10 +324,17 @@ Notebook[
           DynamicBox[
            ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
           ],
-          Background -> RGBColor[0.97647, 0.992157, 1.0],
+          Background ->
+           LightDarkSwitched[
+            RGBColor[0.97647, 0.992157, 1.0],
+            RGBColor[0.264099, 0.264099, 0.264099]
+           ],
           FrameMargins -> {{7, 2}, {2, 2}},
           FrameStyle ->
-           Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
+           Directive[
+            AbsoluteThickness[2],
+            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.392133]]
+           ],
           ImageMargins -> {{0, 0}, {8, -2}},
           ImageSize -> {Full, Automatic}
          ]
@@ -316,6 +344,67 @@ Notebook[
        GridBoxAlignment -> {"Columns" -> {{Left}}},
        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
        GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["WorkspaceSendChatButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneSelectorBox[
+       {
+        None ->
+         ButtonBox[
+          DynamicBox[
+           FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButtonLabel"][
+            #1,
+            #2,
+            #3
+           ]
+          ],
+          ButtonFunction :>
+           (Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "EvaluateWorkspaceChat",
+            #4,
+            Dynamic[
+             CurrentValue[#4, {TaggingRules, "ChatInputString"}]
+            ]
+           ]),
+          Appearance ->
+           FEPrivate`FrontEndResource[
+            "FEExpressions",
+            "SuppressMouseDownNinePatchAppearance"
+           ],
+          FrameMargins -> 0,
+          Method -> "Queued",
+          Evaluator -> Automatic
+         ]
+       },
+       Dynamic[Wolfram`Chatbook`$ChatEvaluationCell],
+       ButtonBox[
+        DynamicBox[
+         FEPrivate`FrontEndResource["ChatbookExpressions", "StopChatButtonLabel"][
+          #1,
+          #2,
+          #3
+         ]
+        ],
+        ButtonFunction :>
+         (Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
+        Appearance ->
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ],
+        FrameMargins -> 0,
+        Evaluator -> Automatic,
+        Method -> "Preemptive"
+       ],
+       Alignment -> {Automatic, Baseline}
       ]
      ])
    }
@@ -342,7 +431,8 @@ Notebook[
              "\"Welcome to Code Assistance Chat\"",
              FontWeight -> Bold,
              FontSize -> 17,
-             FontColor -> GrayLevel[0.25],
+             FontColor ->
+              LightDarkSwitched[GrayLevel[0.25], GrayLevel[0.943384]],
              StripOnInput -> False
             ]
            },
@@ -364,7 +454,8 @@ Notebook[
           BaseStyle -> {
            "Text",
            FontSize -> 13,
-           FontColor -> GrayLevel[0.5],
+           FontColor ->
+            LightDarkSwitched[GrayLevel[0.5], GrayLevel[0.798588]],
            LineBreakWithin -> False
           }
          ],
@@ -375,9 +466,17 @@ Notebook[
         ImageSizeAction -> "ShrinkToFit"
        ],
        Alignment -> {Center, Automatic},
-       Background -> RGBColor[0.97647, 0.992157, 1.0],
+       Background ->
+        LightDarkSwitched[
+         RGBColor[0.97647, 0.992157, 1.0],
+         RGBColor[0.264099, 0.264099, 0.264099]
+        ],
        FrameMargins -> {{10, 10}, {10, 10}},
-       FrameStyle -> RGBColor[0.92549, 0.941176, 0.960784],
+       FrameStyle ->
+        LightDarkSwitched[
+         RGBColor[0.92549, 0.941176, 0.960784],
+         RGBColor[0.298166, 0.330117, 0.393622]
+        ],
        ImageSize -> {Automatic, Automatic},
        RoundingRadius -> 10,
        StripOnInput -> False

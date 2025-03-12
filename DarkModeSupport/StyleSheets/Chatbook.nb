@@ -11,757 +11,6 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Default.nb"]],
   Cell[
    StyleData["Notebook"],
-   CellInsertionPointCell ->
-    Cell[
-     BoxData[
-      PaneBox[
-       TooltipBox[
-        ActionMenuBox[
-         PaneBox[
-          DynamicBox[
-           FEPrivate`ImportImage[
-            FrontEnd`FileName[{"Misc"}, "CellInsertionPointBitmap.png"]
-           ]
-          ],
-          BaselinePosition -> Center -> Center
-         ],
-         {
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionMath"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "MathematicaInput"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput2"
-                ]
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "Input"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionText"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "TextStyle"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              PaneSelectorBox[
-               {
-                True ->
-                 StyleBox[
-                  DynamicBox[
-                   FEPrivate`FrontEndResource[
-                    "CellInsertionMenu",
-                    "TextStyle2Mac"
-                   ]
-                  ],
-                  "CellInsertionMenuStyleShortcutLabel"
-                 ],
-                False ->
-                 StyleBox[
-                  DynamicBox[
-                   FEPrivate`FrontEndResource[
-                    "CellInsertionMenu",
-                    "TextStyle2"
-                   ]
-                  ],
-                  "CellInsertionMenuStyleShortcutLabel"
-                 ]
-               },
-               Dynamic[$OperatingSystem === "MacOSX"],
-               ImageSize -> {Automatic, Automatic}
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[EvaluationNotebook[], "Style", "Text"],
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionOther"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "OtherStyle"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle2"
-                ]
-               ],
-               "CellInsertionMenuShortcut"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[EvaluationNotebook[], "StyleOther"],
-          Delimiter,
-          GridBox[
-           {
-            {
-             PaneBox[
-              TemplateBox[{}, "ChatInputIcon"],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "ChatbookStrings",
-                "StylesheetInsertionMenuChatInput"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox["'", "CellInsertionMenuShortcut"],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "ChatInput"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              TemplateBox[{}, "SideChatIcon"],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "ChatbookStrings",
-                "StylesheetInsertionMenuChatBreak"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox["~", "CellInsertionMenuShortcut"],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "ChatDelimiter"
-           ],
-          Delimiter,
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "FEBitmaps",
-                "InsertionFreeform"
-               ]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "FreeformInput"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput2"
-                ]
-               ],
-               "CellInsertionMenuShortcut"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "WolframAlphaShort"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionAlpha"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery2"]
-               ],
-               "CellInsertionMenuShortcut"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "WolframAlphaLong"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "FEBitmaps",
-                "InsertionExternal"
-               ]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ExternalLanguageInput"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput2"
-                ]
-               ],
-               "CellInsertionMenuShortcut"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "ExternalLanguage"
-           ]
-         },
-         Appearance -> None
-        ],
-        StyleBox[
-         DynamicBox[
-          FEPrivate`FrontEndResource["CellInsertionMenu", "Tooltip"]
-         ],
-         "CellInsertionMenu"
-        ]
-       ],
-       BaselinePosition -> Top -> Baseline
-      ]
-     ],
-     CellMargins -> {{17, 0}, {0, 0}},
-     Magnification -> 1,
-     FontSize -> 0.1
-    ],
    PrivateCellOptions -> {
     "AccentStyle" -> {
      CellTrayWidgets -> <|"ChatIncluded" -> <|"Condition" -> True|>|>
@@ -824,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951878911"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.2.2.3950766996"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -871,7 +120,11 @@ Notebook[
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
-   CellFrameColor -> RGBColor[0.92549, 0.941176, 0.960784],
+   CellFrameColor ->
+    LightDarkSwitched[
+     RGBColor[0.92549, 0.941176, 0.960784],
+     RGBColor[0.301723, 0.334287, 0.398635]
+    ],
    AutoQuoteCharacters -> { },
    PasteAutoQuoteCharacters -> { }
   ],
@@ -972,7 +225,11 @@ Notebook[
       ]
      ]
    },
-   CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+   CellFrameColor ->
+    LightDarkSwitched[
+     RGBColor[0.639216, 0.788235, 0.94902],
+     RGBColor[0.399233, 0.582627, 0.78593]
+    ],
    CellFrameLabels -> {
     {
      None,
@@ -980,8 +237,14 @@ Notebook[
       BoxData[
        DynamicBox[
         FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButton"][
-         RGBColor[0.639216, 0.788235, 0.94902],
-         RGBColor[0.945098, 0.968627, 0.992157],
+         LightDarkSwitched[
+          RGBColor[0.639216, 0.788235, 0.94902],
+          RGBColor[0.399233, 0.582627, 0.78593]
+         ],
+         LightDarkSwitched[
+          RGBColor[0.945098, 0.968627, 0.992157],
+          RGBColor[0.16419, 0.203707, 0.26762]
+         ],
          20
         ]
        ]
@@ -1112,7 +375,11 @@ Notebook[
       ]
      ],
      CellFrame -> {{0, 0}, {0, 2}},
-     CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+     CellFrameColor ->
+      LightDarkSwitched[
+       RGBColor[0.639216, 0.788235, 0.94902],
+       RGBColor[0.399233, 0.582627, 0.78593]
+      ],
      CellFrameMargins -> 6
     ],
    CellMargins -> {{79, 26}, {Inherited, Inherited}},
@@ -1127,7 +394,11 @@ Notebook[
    CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
    CounterIncrements -> { },
    MenuSortingValue -> 1544,
-   Background -> RGBColor[0.980392, 0.988235, 1.0]
+   Background ->
+    LightDarkSwitched[
+     RGBColor[0.980392, 0.988235, 1.0],
+     RGBColor[0.220797, 0.220797, 0.220797]
+    ]
   ],
   Cell[
    StyleData[
@@ -1366,7 +637,13 @@ Notebook[
        Cell[
         BoxData[
          TemplateBox[
-          {"ChatOutput", RGBColor[0.92549, 0.941176, 0.960784]},
+          {
+           "ChatOutput",
+           LightDarkSwitched[
+            RGBColor[0.92549, 0.941176, 0.960784],
+            RGBColor[0.181229, 0.198128, 0.238938]
+           ]
+          },
           "ChatMenuButton"
          ]
         ],
@@ -1384,7 +661,11 @@ Notebook[
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
    LineSpacing -> {1.1, 0, 2},
    LanguageCategory -> None,
-   Background -> RGBColor[0.988235, 0.992157, 1.0],
+   Background ->
+    LightDarkSwitched[
+     RGBColor[0.988235, 0.992157, 1.0],
+     RGBColor[0.246064, 0.246064, 0.246064]
+    ],
    GraphicsBoxOptions -> {ImageSizeRaw -> {{300}, {220}}},
    Graphics3DBoxOptions -> {ImageSizeRaw -> {{300}, {220}}}
   ],
@@ -1464,7 +745,13 @@ Notebook[
             },
             {
              TemplateBox[
-              {"AssistantOutput", RGBColor[0.815686, 0.870588, 0.92549]},
+              {
+               "AssistantOutput",
+               LightDarkSwitched[
+                RGBColor[0.815686, 0.870588, 0.92549],
+                RGBColor[0.3348, 0.393712, 0.472345]
+               ]
+              },
               "ChatMenuButton"
              ]
             }
@@ -1485,8 +772,16 @@ Notebook[
       ]
      ]
     ],
-   CellFrameColor -> RGBColor[0.815686, 0.870588, 0.92549],
-   Background -> RGBColor[0.929412, 0.94902, 0.968627]
+   CellFrameColor ->
+    LightDarkSwitched[
+     RGBColor[0.815686, 0.870588, 0.92549],
+     RGBColor[0.3348, 0.393712, 0.472345]
+    ],
+   Background ->
+    LightDarkSwitched[
+     RGBColor[0.929412, 0.94902, 0.968627],
+     RGBColor[0.248671, 0.283075, 0.337148]
+    ]
   ],
   Cell[
    StyleData[
@@ -1564,7 +859,13 @@ Notebook[
             },
             {
              TemplateBox[
-              {"AssistantOutput", RGBColor[0.945098, 0.905882, 0.870588]},
+              {
+               "AssistantOutput",
+               LightDarkSwitched[
+                RGBColor[0.945098, 0.905882, 0.870588],
+                RGBColor[0.395058, 0.353019, 0.279374]
+               ]
+              },
               "ChatMenuButton"
              ]
             }
@@ -1585,8 +886,16 @@ Notebook[
       ]
      ]
     ],
-   CellFrameColor -> RGBColor[0.945098, 0.905882, 0.870588],
-   Background -> RGBColor[0.992157, 0.980392, 0.956863]
+   CellFrameColor ->
+    LightDarkSwitched[
+     RGBColor[0.945098, 0.905882, 0.870588],
+     RGBColor[0.395058, 0.353019, 0.279374]
+    ],
+   Background ->
+    LightDarkSwitched[
+     RGBColor[0.992157, 0.980392, 0.956863],
+     RGBColor[0.293586, 0.288716, 0.178978]
+    ]
   ],
   Cell[
    StyleData[
@@ -1664,7 +973,13 @@ Notebook[
             },
             {
              TemplateBox[
-              {"AssistantOutput", RGBColor[0.945098, 0.870588, 0.870588]},
+              {
+               "AssistantOutput",
+               LightDarkSwitched[
+                RGBColor[0.945098, 0.870588, 0.870588],
+                RGBColor[0.54211, 0.306479, 0.276097]
+               ]
+              },
               "ChatMenuButton"
              ]
             }
@@ -1685,8 +1000,16 @@ Notebook[
       ]
      ]
     ],
-   CellFrameColor -> RGBColor[0.945098, 0.870588, 0.870588],
-   Background -> RGBColor[0.992157, 0.956863, 0.956863]
+   CellFrameColor ->
+    LightDarkSwitched[
+     RGBColor[0.945098, 0.870588, 0.870588],
+     RGBColor[0.54211, 0.306479, 0.276097]
+    ],
+   Background ->
+    LightDarkSwitched[
+     RGBColor[0.992157, 0.956863, 0.956863],
+     RGBColor[0.452838, 0.191624, 0.148936]
+    ]
   ],
   Cell[
    StyleData["ChatBlockDivider"],
@@ -1699,7 +1022,8 @@ Notebook[
    PageBreakBelow -> False,
    ShowCellLabel -> False,
    CellFrameMargins -> 4,
-   CellFrameColor -> GrayLevel[0.74902],
+   CellFrameColor ->
+    LightDarkSwitched[GrayLevel[0.74902], GrayLevel[0.549475]],
    CellFrameLabels -> {
     {
      Cell[
@@ -1732,7 +1056,8 @@ Notebook[
    FontFamily -> "Source Sans Pro",
    FontSize -> 28,
    FontWeight -> "DemiBold",
-   FontColor -> GrayLevel[0.2]
+   FontColor ->
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.961256]]
   ],
   Cell[
    StyleData["ChatDelimiter"],
@@ -1809,7 +1134,8 @@ Notebook[
    CounterAssignments -> {{"ChatInputCount", 0}},
    MenuSortingValue -> 1547,
    FontSize -> 6,
-   Background -> GrayLevel[0.95]
+   Background ->
+    LightDarkSwitched[GrayLevel[0.95], GrayLevel[0.243778]]
   ],
   Cell[
    StyleData["ChatDelimiterCellDingbat"],
@@ -1868,7 +1194,8 @@ Notebook[
     Dynamic[AbsoluteCurrentValue[{StyleHints, "CodeFont"}]],
    FontSize -> 13,
    FontWeight -> "Plain",
-   Background -> GrayLevel[1]
+   Background ->
+    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]]
   ],
   Cell[
    StyleData[
@@ -1889,10 +1216,14 @@ Notebook[
         {
          FrameBox[
           #1,
-          Background -> GrayLevel[1],
+          Background ->
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
-           Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+           Directive[
+            AbsoluteThickness[1],
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+           ],
           ImageMargins -> {{0, 0}, {0, 8}},
           ImageSize -> {Full, Automatic}
          ]
@@ -1902,10 +1233,17 @@ Notebook[
           DynamicBox[
            ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
           ],
-          Background -> RGBColor[0.988235, 0.992157, 1.0],
+          Background ->
+           LightDarkSwitched[
+            RGBColor[0.988235, 0.992157, 1.0],
+            RGBColor[0.246064, 0.246064, 0.246064]
+           ],
           FrameMargins -> {{7, 2}, {2, 2}},
           FrameStyle ->
-           Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+           Directive[
+            AbsoluteThickness[1],
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+           ],
           ImageMargins -> {{0, 0}, {8, -1}},
           ImageSize -> {Full, Automatic}
          ]
@@ -1926,11 +1264,15 @@ Notebook[
      (Function[
       FrameBox[
        #1,
-       Background -> GrayLevel[1],
+       Background ->
+        LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
        BaselinePosition -> Scaled[0.275],
        FrameMargins -> {{3, 3}, {2, 2}},
        FrameStyle ->
-        Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+        Directive[
+         AbsoluteThickness[1],
+         LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+        ],
        ImageMargins -> {{0, 0}, {0, 0}},
        BaseStyle -> {
         "InlineCode",
@@ -1947,8 +1289,14 @@ Notebook[
    FontColor ->
     Dynamic[
      If[ CurrentValue["MouseOver"],
-      RGBColor[0.855, 0.396, 0.145],
-      RGBColor[0.02, 0.286, 0.651]
+      LightDarkSwitched[
+       RGBColor[0.855, 0.396, 0.145],
+       RGBColor[0.979955, 0.652026, 0.52179]
+      ],
+      LightDarkSwitched[
+       RGBColor[0.02, 0.286, 0.651],
+       RGBColor[0.704536, 0.80027, 0.993989]
+      ]
      ]
     ]
   ],
@@ -2027,7 +1375,11 @@ Notebook[
             Method -> "Preemptive"
            ],
            RoundingRadius -> 3,
-           FrameStyle -> GrayLevel[1, 0],
+           FrameStyle ->
+            LightDarkSwitched[
+             GrayLevel[1, 0],
+             GrayLevel[0.214151, 0.0]
+            ],
            Background -> None,
            FrameMargins -> 0,
            ContentPadding -> False,
@@ -2057,7 +1409,11 @@ Notebook[
             Method -> "Preemptive"
            ],
            RoundingRadius -> 3,
-           FrameStyle -> GrayLevel[1, 0],
+           FrameStyle ->
+            LightDarkSwitched[
+             GrayLevel[1, 0],
+             GrayLevel[0.214151, 0.0]
+            ],
            Background -> #2,
            FrameMargins -> 0,
            ContentPadding -> False,
@@ -2101,7 +1457,7 @@ Notebook[
         GraphicsBox[
          {
           CapForm["Round"],
-          GrayLevel[0.9],
+          LightDarkSwitched[GrayLevel[0.9], GrayLevel[0.376626]],
           AbsoluteThickness[2],
           LineBox[{{-1, 0}, {1, 0}}]
          },
@@ -2152,8 +1508,8 @@ Notebook[
        Background ->
         Dynamic[
          If[ CurrentValue["MouseOver"],
-          GrayLevel[1],
-          GrayLevel[0.98]
+          LightDarkSwitched[GrayLevel[1], GrayLevel[0.25089]],
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
          ]
         ],
        BaselinePosition -> Baseline,
@@ -2161,8 +1517,8 @@ Notebook[
        FrameStyle ->
         Dynamic[
          If[ CurrentValue["MouseOver"],
-          GrayLevel[0.8],
-          GrayLevel[0.98]
+          LightDarkSwitched[GrayLevel[0.8], GrayLevel[0.512185]],
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
          ]
         ],
        ImageMargins -> {{0, 0}, {0, 0}},
@@ -2198,7 +1554,8 @@ Notebook[
         ],
         "Grid"
        ],
-       Background -> GrayLevel[0.937],
+       Background ->
+        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.193043]],
        BaselinePosition -> Baseline,
        FrameMargins -> {{5, 2}, {2, 2}},
        FrameStyle -> None,
@@ -2221,207 +1578,157 @@ Notebook[
           GridBox[
            {
             {
-             ButtonBox[
-              TemplateBox[
-               {
-                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetExplodeCellsInPlace"
-                  ],
-                  StandardForm
-                 ]
+             TemplateBox[
+              {
+               TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsInPlace"
+                 ],
+                 StandardForm
                 ]
-               },
-               "ChatMenuItem"
-              ],
-              ButtonFunction :>
-               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "ExplodeInPlace",
-                 Wolfram`ChatNB`root$
-                ];
+               ],
+               Hold[
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ExplodeInPlace",
+                  Wolfram`ChatNB`root$
+                 ];
 
-                NotebookDelete[Wolfram`ChatNB`cell$];
-               ],
-              Appearance ->
-               Dynamic[
-                FEPrivate`FrontEndResource[
-                 "FEExpressions",
-                 "SuppressMouseDownNinePatchAppearance"
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
-               ],
-              Method -> "Queued",
-              Evaluator -> Automatic
+               ]
+              },
+              "ChatMenuItem"
              ]
             },
             {
-             ButtonBox[
-              TemplateBox[
-               {
-                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetExplodeCellsDuplicate"
-                  ],
-                  StandardForm
-                 ]
+             TemplateBox[
+              {
+               TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsDuplicate"
+                 ],
+                 StandardForm
                 ]
-               },
-               "ChatMenuItem"
-              ],
-              ButtonFunction :>
-               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "ExplodeDuplicate",
-                 Wolfram`ChatNB`root$
-                ];
+               ],
+               Hold[
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ExplodeDuplicate",
+                  Wolfram`ChatNB`root$
+                 ];
 
-                NotebookDelete[Wolfram`ChatNB`cell$];
-               ],
-              Appearance ->
-               Dynamic[
-                FEPrivate`FrontEndResource[
-                 "FEExpressions",
-                 "SuppressMouseDownNinePatchAppearance"
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
-               ],
-              Method -> "Queued",
-              Evaluator -> Automatic
+               ]
+              },
+              "ChatMenuItem"
              ]
             },
             {
-             ButtonBox[
-              TemplateBox[
-               {
-                TemplateBox[
-                 {"HyperlinkCopyIcon"},
-                 "ChatMenuItemToolbarIcon"
-                ],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetCopyExplodedCells"
-                  ],
-                  StandardForm
-                 ]
+             TemplateBox[
+              {
+               TemplateBox[
+                {"HyperlinkCopyIcon"},
+                "ChatMenuItemToolbarIcon"
+               ],
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyExplodedCells"
+                 ],
+                 StandardForm
                 ]
-               },
-               "ChatMenuItem"
-              ],
-              ButtonFunction :>
-               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "CopyExplodedCells",
-                 Wolfram`ChatNB`root$
-                ];
+               ],
+               Hold[
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "CopyExplodedCells",
+                  Wolfram`ChatNB`root$
+                 ];
 
-                NotebookDelete[Wolfram`ChatNB`cell$];
-               ],
-              Appearance ->
-               Dynamic[
-                FEPrivate`FrontEndResource[
-                 "FEExpressions",
-                 "SuppressMouseDownNinePatchAppearance"
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
-               ],
-              Method -> "Queued",
-              Evaluator -> Automatic
+               ]
+              },
+              "ChatMenuItem"
              ]
             },
             {TemplateBox[{}, "ChatMenuItemDelimiter"]},
             {
-             ButtonBox[
-              TemplateBox[
-               {
-                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetToggleFormatting"
-                  ],
-                  StandardForm
-                 ]
+             TemplateBox[
+              {
+               TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetToggleFormatting"
+                 ],
+                 StandardForm
                 ]
-               },
-               "ChatMenuItem"
-              ],
-              ButtonFunction :>
-               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "ToggleFormatting",
-                 Wolfram`ChatNB`root$
-                ];
+               ],
+               Hold[
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ToggleFormatting",
+                  Wolfram`ChatNB`root$
+                 ];
 
-                NotebookDelete[Wolfram`ChatNB`cell$];
-               ],
-              Appearance ->
-               Dynamic[
-                FEPrivate`FrontEndResource[
-                 "FEExpressions",
-                 "SuppressMouseDownNinePatchAppearance"
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
-               ],
-              Method -> "Queued",
-              Evaluator -> Automatic
+               ]
+              },
+              "ChatMenuItem"
              ]
             },
             {
-             ButtonBox[
-              TemplateBox[
-               {
-                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetCopyChatObject"
-                  ],
-                  StandardForm
-                 ]
+             TemplateBox[
+              {
+               TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyChatObject"
+                 ],
+                 StandardForm
                 ]
-               },
-               "ChatMenuItem"
-              ],
-              ButtonFunction :>
-               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "CopyChatObject",
-                 Wolfram`ChatNB`root$
-                ];
+               ],
+               Hold[
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "CopyChatObject",
+                  Wolfram`ChatNB`root$
+                 ];
 
-                NotebookDelete[Wolfram`ChatNB`cell$];
-               ],
-              Appearance ->
-               Dynamic[
-                FEPrivate`FrontEndResource[
-                 "FEExpressions",
-                 "SuppressMouseDownNinePatchAppearance"
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
-               ],
-              Method -> "Queued",
-              Evaluator -> Automatic
+               ]
+              },
+              "ChatMenuItem"
              ]
             }
            },
@@ -2433,10 +1740,14 @@ Notebook[
           "Column"
          ],
          FrameMargins -> 3,
-         Background -> GrayLevel[0.98],
+         Background ->
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]],
          RoundingRadius -> 3,
          FrameStyle ->
-          Directive[AbsoluteThickness[1], GrayLevel[0.85]],
+          Directive[
+           AbsoluteThickness[1],
+           LightDarkSwitched[GrayLevel[0.85], GrayLevel[0.448455]]
+          ],
          ImageMargins -> 0
         },
         "Highlighted"
@@ -2453,7 +1764,8 @@ Notebook[
    FontFamily -> "Source Sans Pro",
    FontSize -> 13,
    FontWeight -> Plain,
-   FontColor -> GrayLevel[0.2]
+   FontColor ->
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.962822]]
   ],
   Cell[
    StyleData[
@@ -2461,7 +1773,8 @@ Notebook[
     StyleDefinitions -> StyleData["ChatMenuLabel"]
    ],
    FontSize -> 13,
-   FontColor -> GrayLevel[0.35]
+   FontColor ->
+    LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.892465]]
   ],
   Cell[
    StyleData["AssistantCopyBelow"],
@@ -3563,9 +2876,17 @@ Notebook[
        FrameBox[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.929412, 0.956863, 0.988235],
+        Background ->
+         LightDarkSwitched[
+          RGBColor[0.929412, 0.956863, 0.988235],
+          RGBColor[0.246964, 0.305198, 0.402424]
+         ],
         FrameMargins -> {{8, 15}, {8, 8}},
-        FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
+        FrameStyle ->
+         LightDarkSwitched[
+          RGBColor[0.639216, 0.788235, 0.94902],
+          RGBColor[0.37503, 0.538177, 0.726895]
+         ],
         RoundingRadius -> 10,
         StripOnInput -> False
        ],
@@ -3584,9 +2905,17 @@ Notebook[
        FrameBox[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.988235, 0.992157, 1.0],
+        Background ->
+         LightDarkSwitched[
+          RGBColor[0.988235, 0.992157, 1.0],
+          RGBColor[0.246064, 0.246064, 0.246064]
+         ],
         FrameMargins -> {{15, 8}, {8, 8}},
-        FrameStyle -> RGBColor[0.788235, 0.8, 0.815686],
+        FrameStyle ->
+         LightDarkSwitched[
+          RGBColor[0.788235, 0.8, 0.815686],
+          RGBColor[0.511542, 0.527047, 0.552938]
+         ],
         ImageSize -> {Scaled[1], Automatic},
         RoundingRadius -> 10,
         StripOnInput -> False
@@ -3929,14 +3258,16 @@ Notebook[
     "InlineReferenceText",
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
-   FontColor -> GrayLevel[0.2]
+   FontColor ->
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.961256]]
   ],
   Cell[
    StyleData[
     "NotebookAssistant`InlineReferenceText",
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
-   FontColor -> GrayLevel[0.2]
+   FontColor ->
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.964005]]
   ],
   Cell[
    StyleData["ChatExcluded"],
@@ -4028,7 +3359,11 @@ Notebook[
        CounterBox["ChatInputCount"],
        FontFamily -> "Source Sans Pro",
        FontSize -> 10,
-       FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
+       FontColor ->
+        LightDarkSwitched[
+         RGBColor[0.55433, 0.707942, 0.925795],
+         RGBColor[0.463544, 0.62289, 0.853831]
+        ],
        FontWeight -> Plain
       ]
      ])
@@ -4061,22 +3396,32 @@ Notebook[
                       {
                        {True, False} ->
                         TemplateBox[
-                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         {
+                          LightDarkSwitched[
+                           RGBColor[0.3451, 0.72157, 0.98039],
+                           RGBColor[0.340718, 0.683722, 0.928584]
+                          ]
+                         },
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {False, False} ->
                         TemplateBox[
-                         {GrayLevel[0.7451]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {True, True} ->
                         TemplateBox[
-                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         {
+                          LightDarkSwitched[
+                           RGBColor[0.3451, 0.72157, 0.98039],
+                           RGBColor[0.340718, 0.683722, 0.928584]
+                          ]
+                         },
                          "DiscardedMaterialCloserIcon"
                         ],
                        {False, True} ->
                         TemplateBox[
-                         {GrayLevel[0.7451]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
                          "DiscardedMaterialCloserIcon"
                         ]
                       },
@@ -4094,8 +3439,11 @@ Notebook[
                   Dynamic[
                    FEPrivate`If[
                     Typeset`hover$$,
-                    GrayLevel[1],
-                    RGBColor[0.94902, 0.96863, 0.98824]
+                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+                    LightDarkSwitched[
+                     RGBColor[0.94902, 0.96863, 0.98824],
+                     RGBColor[0.185561, 0.225385, 0.289153]
+                    ]
                    ]
                   ],
                  BaseStyle -> {
@@ -4104,7 +3452,11 @@ Notebook[
                   ShowStringCharacters -> False
                  },
                  FrameMargins -> 2,
-                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 FrameStyle ->
+                  LightDarkSwitched[
+                   RGBColor[0.9098, 0.93333, 0.95294],
+                   RGBColor[0.312177, 0.352756, 0.401407]
+                  ],
                  RoundingRadius -> 5,
                  StripOnInput -> False
                 ],
@@ -4152,22 +3504,32 @@ Notebook[
                       {
                        {True, False} ->
                         TemplateBox[
-                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         {
+                          LightDarkSwitched[
+                           RGBColor[0.3451, 0.72157, 0.98039],
+                           RGBColor[0.340718, 0.683722, 0.928584]
+                          ]
+                         },
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {False, False} ->
                         TemplateBox[
-                         {GrayLevel[0.7451]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {True, True} ->
                         TemplateBox[
-                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         {
+                          LightDarkSwitched[
+                           RGBColor[0.3451, 0.72157, 0.98039],
+                           RGBColor[0.340718, 0.683722, 0.928584]
+                          ]
+                         },
                          "DiscardedMaterialCloserIcon"
                         ],
                        {False, True} ->
                         TemplateBox[
-                         {GrayLevel[0.7451]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
                          "DiscardedMaterialCloserIcon"
                         ]
                       },
@@ -4185,8 +3547,11 @@ Notebook[
                   Dynamic[
                    FEPrivate`If[
                     Typeset`hover$$,
-                    GrayLevel[1],
-                    RGBColor[0.94902, 0.96863, 0.98824]
+                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+                    LightDarkSwitched[
+                     RGBColor[0.94902, 0.96863, 0.98824],
+                     RGBColor[0.185561, 0.225385, 0.289153]
+                    ]
                    ]
                   ],
                  BaseStyle -> {
@@ -4195,7 +3560,11 @@ Notebook[
                   ShowStringCharacters -> False
                  },
                  FrameMargins -> 2,
-                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 FrameStyle ->
+                  LightDarkSwitched[
+                   RGBColor[0.9098, 0.93333, 0.95294],
+                   RGBColor[0.312177, 0.352756, 0.401407]
+                  ],
                  RoundingRadius -> 5,
                  StripOnInput -> False
                 ],
@@ -4220,9 +3589,17 @@ Notebook[
              {
               FrameBox[
                #1,
-               Background -> RGBColor[0.94902, 0.968627, 0.988235],
+               Background ->
+                LightDarkSwitched[
+                 RGBColor[0.94902, 0.968627, 0.988235],
+                 RGBColor[0.185564, 0.225382, 0.289143]
+                ],
                FrameMargins -> 10,
-               FrameStyle -> RGBColor[0.909804, 0.933333, 0.952941],
+               FrameStyle ->
+                LightDarkSwitched[
+                 RGBColor[0.909804, 0.933333, 0.952941],
+                 RGBColor[0.312173, 0.352751, 0.401396]
+                ],
                ImageSize -> {Full, Automatic},
                RoundingRadius -> 5,
                StripOnInput -> False
@@ -4369,12 +3746,16 @@ Notebook[
                    GridBox[
                     {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4418,12 +3799,16 @@ Notebook[
                    GridBox[
                     {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4504,12 +3889,16 @@ Notebook[
                      }
                     },
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4580,12 +3969,16 @@ Notebook[
                    GridBox[
                     {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4629,12 +4022,16 @@ Notebook[
                    GridBox[
                     {{StyleBox[#2, FontSlant -> "Italic"], "\:f449"}},
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4715,12 +4112,16 @@ Notebook[
                      }
                     },
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                    BaseStyle -> {
+                     FontColor ->
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                    }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
-                  FontColor -> GrayLevel[0.4666],
+                  FontColor ->
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4776,7 +4177,8 @@ Notebook[
           Cell[
            #1,
            "Text",
-           FontColor -> GrayLevel[0.35],
+           FontColor ->
+            LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.89454]],
            FontSize -> 12,
            Background -> None,
            Editable -> True
@@ -4788,10 +4190,18 @@ Notebook[
         }
        },
        AutoDelete -> False,
-       GridBoxBackground -> {"Columns" -> {{GrayLevel[1]}}},
+       GridBoxBackground -> {
+        "Columns" -> {{LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]]}}
+       },
        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
        GridBoxDividers -> {
-        "ColumnsIndexed" -> {1 -> Directive[GrayLevel[0.8196], AbsoluteThickness[2]]},
+        "ColumnsIndexed" -> {
+         1 ->
+          Directive[
+           LightDarkSwitched[GrayLevel[0.8196], GrayLevel[0.499956]],
+           AbsoluteThickness[2]
+          ]
+        },
         "Rows" -> {{False}}
        }
       ]
