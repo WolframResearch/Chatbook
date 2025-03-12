@@ -79,6 +79,21 @@ getUpdatedLLMKitService[ ] := Enclose[
 getUpdatedLLMKitService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*serviceFrameworkAvailable*)
+serviceFrameworkAvailable // beginDefinition;
+
+serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] =
+    serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ];
+
+serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
+    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
+
+serviceFrameworkAvailable[ _ ] :=
+    False;
+
+serviceFrameworkAvailable // endDefinition;
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
 
