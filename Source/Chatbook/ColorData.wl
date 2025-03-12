@@ -32,6 +32,7 @@ dominantColor[ "NA_ChatInputField"       ] := GrayLevel[0.95];
 dominantColor[ "NA_ChatOutput"           ] := RGBColor["#F9FDFF"];
 dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "NA_OverlayMenu"          ] := White;
+dominantColor[ "NA_RaftMenu"             ] := White;
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
 dominantColor[ "White"                   ] := White;
@@ -925,23 +926,44 @@ Dispatch[{
 	|>,
 	"NA_ChatInputFieldFrame" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3734606, 0.5352853, 0.7230165],
+		 "Dark"   -> RGBColor[0.3734607, 0.5352854, 0.7230167],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldSendButtonBackgroundHover" -> <|
-		 "Light"  -> RGBColor[0.9450980, 0.9686274, 0.9921568],
-		 "Dark"   -> RGBColor[0.2010618, 0.2507119, 0.3264606],
+		 "Light"  -> RGBColor[0.945098, 0.9686274, 0.9921568],
+		 "Dark"   -> RGBColor[0.2010618, 0.2507118, 0.3264605],
 		 "Method" -> "Background",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldSendButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3734606, 0.5352853, 0.7230165],
+		 "Dark"   -> RGBColor[0.3734607, 0.5352854, 0.7230167],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatOutputInlineButtonBackground" -> <|
+		 "Light"  -> GrayLevel[0.96],
+		 "Dark"   -> GrayLevel[0.2367773],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatOutputInlineButtonFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4588607],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatOutputInlineButtonIcon" -> <|
+		 "Light"  -> GrayLevel[0.3],
+		 "Dark"   -> GrayLevel[0.9202233],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> ""
 	|>,
 	"NA_CloudToolbarBackground" -> <|
@@ -999,6 +1021,34 @@ Dispatch[{
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
+	|>,
+	"NA_OutputRaftBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.85882, 0.92941, 0.96863],
+		 "Dark"   -> RGBColor[0.2457882, 0.3208711, 0.3780036],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Contents float over the NA's notebook background"
+	|>,
+	"NA_OutputRaftBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
+		 "Dark"   -> RGBColor[0.3992042, 0.7589181, 0.9392855],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Contents float over the NA's notebook background"
+	|>,
+	"NA_OutputRaftIcon" -> <|
+		 "Light"  -> RGBColor[0.2, 0.51373, 0.67451, 1.],
+		 "Dark"   -> RGBColor[0.5287567, 0.8108010, 0.9550615, 1.],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Contents float over the NA's notebook background"
+	|>,
+	"NA_OutputRaftIconPressed" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0999191],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
 	"NA_OverlayMenuBackground" -> <|
 		 "Light"  -> GrayLevel[1],
@@ -1063,11 +1113,95 @@ Dispatch[{
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
+	"NA_OverlayMenuNotebookIcon_Gray" -> <|
+		 "Light"  -> GrayLevel[0.651],
+		 "Dark"   -> GrayLevel[0.6816626],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuNotebookIcon_Red" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[1, 0.4023381, 0.3263404],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
 	"NA_OverlayMenuPercolate" -> <|
 		 "Light"  -> GrayLevel[0.7490196],
 		 "Dark"   -> GrayLevel[0.5867762],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_ProgressBarCenterColor" -> <|
+		 "Light"  -> RGBColor[0.3333333, 0.7607843, 1.],
+		 "Dark"   -> RGBColor[0.3302480, 0.6242150, 0.8141857],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ProgressBarEdgeColor" -> <|
+		 "Light"  -> RGBColor[0.8156862, 0.9333333, 1.],
+		 "Dark"   -> RGBColor[0.2320179, 0.3300490, 0.4040888],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuFrame" -> <|
+		 "Light"  -> RGBColor[0.8980392, 0.8980392, 0.8980392],
+		 "Dark"   -> RGBColor[0.4062021, 0.4062021, 0.4062021],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuHeaderFont" -> <|
+		 "Light"  -> RGBColor[0.5372549, 0.5372549, 0.5372549],
+		 "Dark"   -> RGBColor[0.7750602, 0.7750602, 0.7750602],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuItemBackgroundHover" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuItemBackgroundPressed" -> <|
+		 "Light"  -> GrayLevel[0.9],
+		 "Dark"   -> GrayLevel[0.1408312],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuItemFont" -> <|
+		 "Light"  -> RGBColor[0.2, 0.2, 0.2],
+		 "Dark"   -> RGBColor[0.9640047, 0.9640047, 0.9640047],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuItemFrameHover" -> <|
+		 "Light"  -> GrayLevel[0.82],
+		 "Dark"   -> GrayLevel[0.5075256],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_RaftMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_RaftMenuItemFramePressed" -> <|
+		 "Light"  -> GrayLevel[0.749],
+		 "Dark"   -> GrayLevel[0.5867967],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_RaftMenu",
 		 "Notes"  -> ""
 	|>,
 	"NA_SourcesDockedCellFont" -> <|
@@ -1223,6 +1357,20 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI"
+	|>,
+	"ThumbsUpDownIcon" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.4867756],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "They're positioned over the notebook's background color"
+	|>,
+	"ThumbsUpDownIconHover" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.9612557],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
 	"UserMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.9568627, 0.9882352],

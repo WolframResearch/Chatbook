@@ -40,7 +40,7 @@ $inputFieldFrameOptions = Sequence[
 ];
 
 $actionMenuItemOptions = Sequence[
-    BaseStyle      -> { FontColor -> RGBColor[ "#333333" ], FontSize -> 13 },
+    BaseStyle      -> { FontColor -> color @ "NA_RaftMenuItemFont", FontSize -> 13 },
     ImageSize      -> Scaled[ 1. ],
     RoundingRadius -> 2
 ];
@@ -719,7 +719,7 @@ closeButton[ cell_CellObject ] := ToBoxes @ Button[
     RawBoxes @ FrameBox[
         GraphicsBox[
             {
-                GrayLevel[ 0.3 ],
+                color @ "NA_ChatOutputInlineButtonIcon",
                 AbsoluteThickness[ 1 ],
                 CapForm[ "Round" ],
                 LineBox @ { { { -1, -1 }, { 1, 1 } }, { { 1, -1 }, { -1, 1 } } }
@@ -729,10 +729,10 @@ closeButton[ cell_CellObject ] := ToBoxes @ Button[
             PlotRange    -> 1
         ],
         Alignment      -> { Center, Center },
-        Background     -> GrayLevel[ 0.96 ],
+        Background     -> color @ "NA_ChatOutputInlineButtonBackground",
         ContentPadding -> False,
         FrameMargins   -> None,
-        FrameStyle     -> GrayLevel[ 0.85 ],
+        FrameStyle     -> color @ "NA_ChatOutputInlineButtonFrame",
         ImageSize      -> { 16, 16 },
         RoundingRadius -> 2,
         StripOnInput   -> False
@@ -753,7 +753,7 @@ popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
     RawBoxes @ FrameBox[
         GraphicsBox[
             {
-                GrayLevel[ 0.3 ],
+                color @ "NA_ChatOutputInlineButtonIcon",
                 AbsoluteThickness[ 1 ],
                 CapForm[ "Round" ],
                 LineBox @ {
@@ -767,10 +767,10 @@ popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
             PlotRange    -> 1
         ],
         Alignment      -> { Center, Center },
-        Background     -> GrayLevel[ 0.96 ],
+        Background     -> color @ "NA_ChatOutputInlineButtonBackground",
         ContentPadding -> False,
         FrameMargins   -> None,
-        FrameStyle     -> GrayLevel[ 0.85 ],
+        FrameStyle     -> color @ "NA_ChatOutputInlineButtonFrame",
         ImageSize      -> { 16, 16 },
         RoundingRadius -> 2,
         StripOnInput   -> False
@@ -1197,18 +1197,18 @@ DynamicModule[ { Typeset`menuActiveQ = False },
             {
                 "Default" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIcon" ],
+                        Background -> color @ "NA_NotebookBackground", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_NotebookBackground",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Hover" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIcon" ],
+                        Background -> color @ "NA_OutputRaftBackgroundHover", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundHover",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Down" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#FFFFFF" ] ],
-                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIconPressed" ],
+                        Background -> color @ "NA_OutputRaftBackgroundPressed", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundPressed",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
             Dynamic[
                 Which[
@@ -1225,7 +1225,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                             Framed[
                                 Grid[
                                     {
-                                        { Style[ tr[ "WorkspaceOutputRaftCopyAs" ], FontColor -> RGBColor[ "#898989" ], FontSize -> 12 ] },
+                                        { Style[ tr[ "WorkspaceOutputRaftCopyAs" ], FontColor -> color @ "NA_RaftMenuHeaderFont", FontSize -> 12 ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsNotebookCells" ], ChatbookAction[ "CopyExplodedCells", cell ] ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsPlainText" ], ChatbookAction[ "CopyPlainText", cell ] ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsImage" ], ChatbookAction[ "CopyImage", cell ] ] }
@@ -1234,7 +1234,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                                     BaseStyle -> { FontFamily -> "Source Sans Pro" },
                                     Spacings -> { 0, { 0, 0.5, { 0 } } }
                                 ],
-                                Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
+                                Background -> color @ "NA_RaftMenuBackground", FrameStyle -> color @ "NA_RaftMenuFrame", ImageSize -> 158, RoundingRadius -> 4 ],
                             InheritScope -> True,
                             Initialization :> (True), (* Deinitialization won't run without an Init *)
                             Deinitialization :> (Typeset`menuActiveQ = False)
@@ -1264,18 +1264,18 @@ DynamicModule[ { Typeset`menuActiveQ = False },
             {
                 "Default" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
+                        Background -> color @ "NA_NotebookBackground", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_NotebookBackground",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Hover" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
+                        Background -> color @ "NA_OutputRaftBackgroundHover", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundHover",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Down" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#FFFFFF" ] ],
-                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIconPressed" ],
+                        Background -> color @ "NA_OutputRaftBackgroundPressed", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundPressed",
                         Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
             Dynamic[
                 Which[
@@ -1292,7 +1292,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                             Framed[
                                 Grid[
                                     {
-                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> RGBColor[ "#898989" ], FontSize -> 12 ] },
+                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> color @ "NA_RaftMenuHeaderFont", FontSize -> 12 ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsCloudDeployment" ], ChatbookAction[ "ShareAsCloudDeployment", cell ] ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsPDF" ], ChatbookAction[ "ShareAsPDF", cell ] ] },
                                         { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsImage" ], ChatbookAction[ "ShareAsImage", cell ] ] }
@@ -1301,7 +1301,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                                     BaseStyle -> { FontFamily -> "Source Sans Pro" },
                                     Spacings -> { 0, { 0, 0.5, { 0 } } }
                                 ],
-                                Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
+                                Background -> color @ "NA_RaftMenuBackground", FrameStyle -> color @ "NA_RaftMenuFrame", ImageSize -> 158, RoundingRadius -> 4 ],
                             InheritScope -> True,
                             Initialization :> (True), (* Deinitialization won't run without an Init *)
                             Deinitialization :> (Typeset`menuActiveQ = False)
@@ -1327,14 +1327,14 @@ assistantActionMenuItem // Attributes = { HoldRest };
 assistantActionMenuItem[ label_, clickAction_ ] :=
 Button[
     mouseDown[
-        Framed[ label, $actionMenuItemOptions, Background -> None,             FrameStyle -> None ],
-        Framed[ label, $actionMenuItemOptions, Background -> GrayLevel[ 1. ],  FrameStyle -> GrayLevel[ 0.82 ] ],
-        Framed[ label, $actionMenuItemOptions, Background -> GrayLevel[ 0.9 ], FrameStyle -> GrayLevel[ 0.749 ] ] ],
+        Framed[ label, $actionMenuItemOptions, Background -> None, FrameStyle -> None ],
+        Framed[ label, $actionMenuItemOptions, Background -> color @ "NA_RaftMenuItemBackgroundHover",   FrameStyle -> color @ "NA_RaftMenuItemFrameHover" ],
+        Framed[ label, $actionMenuItemOptions, Background -> color @ "NA_RaftMenuItemBackgroundPressed", FrameStyle -> color @ "NA_RaftMenuItemFramePressed" ] ],
     clickAction;
     NotebookDelete[ Cells[ EvaluationNotebook[ ], AttachedCell -> True, CellTags -> "CustomActionMenu" ]],
     Appearance -> "Suppressed",
-    Method -> "Queued",
-    ImageSize -> Automatic ]
+    Method     -> "Queued",
+    ImageSize  -> Automatic ]
 
 assistantActionMenuItem // endDefinition
 
@@ -1486,9 +1486,9 @@ popOutChatNB0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Overlay Menus*)
-$notebookIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
-    GrayLevel[ 0.651 ],
-    RGBColor[ 0.86667, 0.066667, 0. ]
+$notebookIcon = (RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ #1, #2 ] ])&[
+    color @ "NA_OverlayMenuNotebookIcon_Gray",
+    color @ "NA_OverlayMenuNotebookIcon_Red"
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1669,7 +1669,10 @@ notebookSources[ ] := Framed[
                                 Button[
                                     MouseAppearance[
                                         Grid[
-                                            { { $notebookIcon, formatNotebookTitle @ title } },
+                                            { {
+                                                $notebookIcon,
+                                                If[ MatchQ[ title, None|"" ], formatNotebookTitle @ title, Style[ title, color @ "NA_OverlayMenuFont" ] ]
+                                            } },
                                             Alignment -> { Left, Baseline }
                                         ],
                                         "LinkHand"
@@ -1704,7 +1707,7 @@ notebookSources[ ] := Framed[
             ]
         },
         Alignment -> Left,
-        Background -> { color @ "NA_OverlayMenuHeaderBackground", White },
+        Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
         Dividers -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
     ],
     RoundingRadius -> 3,
@@ -1779,12 +1782,12 @@ historySearchView[ nbo_NotebookObject, Dynamic[ searching_ ], Dynamic[ query_ ] 
             Column[
                 { header, view },
                 Alignment  -> Left,
-                Background -> { RGBColor[ "#F5F5F5" ], White },
-                Dividers   -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+                Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
+                Dividers   -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
             ],
             RoundingRadius -> 3,
             FrameMargins   -> 0,
-            FrameStyle     -> RGBColor[ "#D1D1D1" ]
+            FrameStyle     -> color @ "NA_OverlayMenuFrame"
         ]
     ],
     throwInternalFailure
@@ -1817,7 +1820,7 @@ showSearchResults[ nbo_, appName_, query_String ] := Enclose[
             Grid[
                 rows,
                 Alignment -> { Left, Center },
-                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
                 Spacings  -> { Automatic, { 0, { 1 }, 0 } }
             ],
             TrackedSymbols :> { rows }
@@ -2134,9 +2137,9 @@ withWorkspaceGlobalProgress // endDefinition;
 
 $workspaceChatProgressBar = With[
     {
-        background  = RGBColor[ "#D0EEFF" ],
-        colorCenter = RGBColor[ "#55C2FF" ],
-        colorEdges  = RGBColor[ "#D0EEFF" ],
+        background  = color @ "NA_ProgressBarEdgeColor",
+        colorCenter = color @ "NA_ProgressBarCenterColor",
+        colorEdges  = color @ "NA_ProgressBarEdgeColor",
         duration    = 2.5,
         leftOffset  = -0.2,
         rightOffset = 1.2,

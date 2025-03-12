@@ -84,7 +84,7 @@ RawBoxes @ ToBoxes @ Mouseover[
        }
       ]
      },
-     FaceForm @ RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ]
+     FaceForm @ color @ "NA_OutputRaftIcon"
     ]
    },
    ImageSize -> { 15.0, 15.0 },
@@ -93,10 +93,10 @@ RawBoxes @ ToBoxes @ Mouseover[
   ],
   Alignment -> { Center, Center },
   ImageSize -> { 22, 22 },
-  Background -> GrayLevel[ 1 ],
+  Background -> color @ "NA_NotebookBackground",
   RoundingRadius -> 3,
   FrameMargins -> 0,
-  FrameStyle -> GrayLevel[ 1 ]
+  FrameStyle -> color @ "NA_NotebookBackground"
  ],
  Framed[
   Graphics[
@@ -181,7 +181,7 @@ RawBoxes @ ToBoxes @ Mouseover[
        }
       ]
      },
-     FaceForm @ RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ]
+     FaceForm @ color @ "NA_OutputRaftIcon"
     ]
    },
    ImageSize -> { 15.0, 15.0 },
@@ -190,9 +190,9 @@ RawBoxes @ ToBoxes @ Mouseover[
   ],
   Alignment -> { Center, Center },
   ImageSize -> { 22, 22 },
-  Background -> RGBColor[ 0.85882, 0.92941, 0.96863 ],
+  Background -> color @ "NA_OutputRaftBackgroundHover",
   RoundingRadius -> 3,
   FrameMargins -> 0,
-  FrameStyle -> RGBColor[ 0.85882, 0.92941, 0.96863 ]
+  FrameStyle -> color @ "NA_OutputRaftBackgroundHover"
  ]
 ]
