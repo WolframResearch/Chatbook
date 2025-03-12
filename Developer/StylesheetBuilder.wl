@@ -246,31 +246,13 @@ $includedCellWidget = Cell[
 (*makeIconTemplateBoxStyle*)
 
 
-makeIconTemplateBoxStyle[ file_ ] := makeIconTemplateBoxStyle[ file, Import @ file ];
-
-makeIconTemplateBoxStyle[ file_, func_Function ] :=
-    makeIconTemplateBoxStyle[
-        file,
-        func,
-        ToBoxes @ func[ $$slot1, $$slot2, $$slot3 ] /. {
-            ToBoxes @ $$slot1 -> $$slot1,
-            ToBoxes @ $$slot2 -> $$slot2,
-            ToBoxes @ $$slot3 -> $$slot3
-        } /. {
-            $$slot1 -> $$slot[ 1 ],
-            $$slot2 -> $$slot[ 2 ],
-            $$slot3 -> $$slot[ 3 ]
-        } /. {
-            $$slot -> Slot
-        }
-    ];
-
-makeIconTemplateBoxStyle[ file_, icon_ ] :=
-    makeIconTemplateBoxStyle[ file, icon, ToBoxes @ icon ];
-
-makeIconTemplateBoxStyle[ file_, icon_, boxes_ ] :=
-    Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (boxes &) } ];
-
+(* Pre 14.1, Chatbook used styles with TemplateBoxOptions -> {DisplayFunction -> ...} as an icon manifest, called via TemplateBox[{}, name].
+    By 14.1, we have access to front end resources.
+    However, some TemplateBox cases are serialized in saved notebooks.
+    For backwards compatibility we must keep all defined styles, but we can point them at the FE resources instead. *)
+makeIconTemplateBoxStyle[ file_ ] := With[ { basename = FileBaseName @ file },
+    Cell[ StyleData @ basename, TemplateBoxOptions -> { DisplayFunction -> (DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", basename ] ] &) } ]
+]
 
 
 (* ::Subsection::Closed:: *)
