@@ -1,3 +1,4 @@
+RawBoxes @ ToBoxes @
 Pane[
  Button[
   Tooltip[

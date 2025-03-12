@@ -31,6 +31,7 @@ Begin["`Private`"]
 $inputFileName        = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
 $pacletDirectory      = DirectoryName[ $inputFileName, 2 ];
 $sourceDirectory      = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "FrontEndResources" };
+$sourceDirectory2     = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "Icons" };
 $resourceLocation     = FileNameJoin @ { $pacletDirectory, "FrontEnd", "TextResources", "ChatbookResources.tr" };
 $resourceLocationDark = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "TextResources", "ChatbookResources.tr" };
 
@@ -47,7 +48,7 @@ Get[ "Wolfram`Chatbook`" ];
 (*Load Resources*)
 
 
-$resourceFiles = FileNames[ "*.wl", $sourceDirectory, Infinity ];
+$resourceFiles = FileNames[ "*.wl", { $sourceDirectory, $sourceDirectory2 }, Infinity ];
 $resourceNames = FileBaseName /@ $resourceFiles;
 $ChatbookResources = AssociationThread[ $resourceNames, Import /@ $resourceFiles ];
 
@@ -340,6 +341,10 @@ toTextResourceString[RawBoxes[boxExpression: head_[args___]]] :=
 		str = StringDrop[str, start-1];
 		StringTake[str, SyntaxLength[str]] // StringTrim
 	]
+
+
+toTextResourceString[g_Graphics] := toTextResourceString[ToBoxes[g]]
+
 
 (* automatically switch to FE formatting for known boxes *)
 toTextResourceString[head_[args___]] := toTextResourceString[RawBoxes[head[args]]] /;
