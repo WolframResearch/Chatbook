@@ -806,7 +806,7 @@ $priorityFailureKeys = { "Information", "ConfirmationType", "Expression", "Funct
 setServiceCallerAndID // beginDefinition;
 setServiceCallerAndID // Attributes = { HoldFirst };
 
-setServiceCallerAndID[ eval_, uuid_String ] /; serviceFrameworkAvailable[] := (
+setServiceCallerAndID[ eval_, uuid_String ] /; serviceFrameworkAvailable[ ] := (
     Quiet @ Needs[ "ServiceFramework`" -> None ];
     Block[ { ServiceFramework`$TransactionID = uuid }, setServiceCaller @ eval ]
 );
@@ -826,12 +826,12 @@ setServiceCaller // beginDefinition;
 setServiceCaller[ eval_ ] :=
     setServiceCaller[ eval, chatbookServiceCaller[ ] ];
 
-setServiceCaller[ eval_, caller_ ]  /; serviceFrameworkAvailable[] := (
+setServiceCaller[ eval_, caller_ ]  /; serviceFrameworkAvailable[ ] := (
     Quiet @ Needs[ "ServiceFramework`" -> None ];
     setServiceCaller[ eval, caller, ServiceFramework`$Caller ]
 );
 
-setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ]  /; serviceFrameworkAvailable[] :=
+setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ]  /; serviceFrameworkAvailable[ ] :=
     Block[ { ServiceFramework`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
         eval
     ];
