@@ -82,7 +82,7 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
                 focusedNotebookDisplay0[ chatNB, focused, locked, info ]
             } },
             Alignment        -> { Left, Baseline },
-            BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 },
+            BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
             BaselinePosition -> { 1, 2 } (* align to the text *)
         ];
 
@@ -105,7 +105,7 @@ focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 }, (* align to the button *)
     Dividers         -> Center,
-    FrameStyle       -> GrayLevel[ 0.75 ]
+    FrameStyle       -> color @ "NA_ChatInputFieldFocusDividerFrame"
 ];
 
 focusedNotebookDisplay0 // endDefinition;
@@ -150,7 +150,7 @@ currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookO
         ],
         SetSelectedNotebook @ nbo,
         Appearance       -> "Suppressed",
-        BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 },
+        BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
         BaselinePosition -> Baseline
     ];
 
@@ -174,7 +174,7 @@ currentNotebookButtonLabel[ title_ ] := Mouseover[
         {
             chatbookIcon[ "WorkspaceFocusIndicatorNotebookActive", False ],
             Spacer[ 3 ],
-            Style[ title, FontColor -> RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ] ]
+            Style[ title, FontColor -> color @ "NA_ChatInputFieldFocusNotebookIconHover_3" ]
         },
         BaselinePosition -> Baseline
     ],
@@ -202,7 +202,7 @@ selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] := Tooltip[
             otherNotebookActions[ chatNB, locked, rest ]
         },
         Appearance       -> "Suppressed",
-        BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> Inherited / 0.85 },
+        BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13, Magnification -> Inherited / 0.85 },
         BaselinePosition -> Baseline
     ],
     tr[ "WorkspaceFocusIndicatorMenuTooltip" ]

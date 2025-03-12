@@ -28,10 +28,11 @@ dominantColor[ "CloudToolbar"            ] := White;
 dominantColor[ "ErrorMessageBlocked"     ] := RGBColor[ "#F3FBFF" ];
 dominantColor[ "ErrorMessageFatal"       ] := RGBColor[ "#FFF3F1" ];
 dominantColor[ "ErrorMessageNonFatal"    ] := RGBColor[ "#FFFAF2" ];
+dominantColor[ "NA_ChatInputField"       ] := GrayLevel[0.95];
 dominantColor[ "NA_ChatOutput"           ] := RGBColor["#F9FDFF"];
+dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "NA_OverlayMenu"          ] := White;
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
-dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
 dominantColor[ "White"                   ] := White;
 
@@ -838,6 +839,111 @@ Dispatch[{
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
+	"NA_ChatInputFieldBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.2785938],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldBackgroundArea" -> <|
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusDividerFrame" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.5436932],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusFont" -> <|
+		 "Light"  -> GrayLevel[0.5],
+		 "Dark"   -> GrayLevel[0.7843347],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocus_Gray_1" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.7544607],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocus_Gray_2" -> <|
+		 "Light"  -> GrayLevel[0.74902],
+		 "Dark"   -> GrayLevel[0.5448549],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocus_Gray_3" -> <|
+		 "Light"  -> GrayLevel[0.97647],
+		 "Dark"   -> GrayLevel[0.1648786],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocus_Gray_4" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0669240],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusNotebookIcon" -> <|
+		 "Light"  -> RGBColor[0.65098, 0.65098, 0.65098, 1.],
+		 "Dark"   -> RGBColor[0.6511949, 0.6511949, 0.6511949, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusNotebookIconHover_1" -> <|
+		 "Light"  -> RGBColor[0.51765, 0.7451, 0.86275, 1.],
+		 "Dark"   -> RGBColor[0.4510661, 0.6133837, 0.7060085, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusNotebookIconHover_2" -> <|
+		 "Light"  -> RGBColor[0.59216, 0.81176, 0.92941, 1.],
+		 "Dark"   -> RGBColor[0.3698625, 0.5336903, 0.6348830, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusNotebookIconHover_3" -> <|
+		 "Light"  -> RGBColor[0.2, 0.51373, 0.67451, 1.],
+		 "Dark"   -> RGBColor[0.3069794, 0.7139283, 0.9035027, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFrame" -> <|
+		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Dark"   -> RGBColor[0.3734606, 0.5352853, 0.7230165],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldSendButtonBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.9450980, 0.9686274, 0.9921568],
+		 "Dark"   -> RGBColor[0.2010618, 0.2507119, 0.3264606],
+		 "Method" -> "Background",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldSendButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Dark"   -> RGBColor[0.3734606, 0.5352853, 0.7230165],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
 	"NA_CloudToolbarBackground" -> <|
 		 "Light"  -> RGBColor[0.9137254, 0.9686274, 1.],
 		 "Dark"   -> RGBColor[0.2495220, 0.3536671, 0.4315410],
@@ -966,10 +1072,10 @@ Dispatch[{
 	|>,
 	"NA_SourcesDockedCellFont" -> <|
 		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> GrayLevel[0.9255081],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[0.1448012],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NA_Toolbar" -> <|
 		 "Light"  -> RGBColor[0.4, 0.6784313, 0.8235294],
@@ -1008,8 +1114,8 @@ Dispatch[{
 	|>,
 	"NA_ToolbarFont" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[1],
-		 "Method" -> "Same",
+		 "Dark"   -> GrayLevel[0.8633859],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
@@ -1022,10 +1128,10 @@ Dispatch[{
 	|>,
 	"NA_ToolbarLightButtonFont" -> <|
 		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
-		 "Dark"   -> RGBColor[0.2679819, 0.4244285, 0.5267638],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2830595, 0.4701611, 0.5868002],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NA_ToolbarLightButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
@@ -1043,10 +1149,10 @@ Dispatch[{
 	|>,
 	"NA_ToolbarTitleFont" -> <|
 		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Dark"   -> RGBColor[0.2540833, 0.6172958, 0.7951960],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2198419, 0.3625565, 0.4563879],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
+		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NotebookAssistant`InlineReferenceTextFont" -> <|
 		 "Light"  -> GrayLevel[0.2],
