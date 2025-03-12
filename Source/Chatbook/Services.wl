@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 Needs[ "Wolfram`Chatbook`UI`"     ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
+$ContextAliases[ "sf`"  ] = "ServiceFramework`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -93,6 +94,16 @@ serviceFrameworkAvailable[ _ ] :=
     False;
 
 serviceFrameworkAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withCredentialsProvider*)
+withCredentialsProvider // beginDefinition;
+withCredentialsProvider // Attributes = { HoldFirst };
+withCredentialsProvider[ eval_ ] /; serviceFrameworkAvailable[ ] := sf`WithCredentialsProvider[ "llm" ][ eval ];
+withCredentialsProvider[ eval_ ] := eval;
+withCredentialsProvider // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
@@ -209,7 +220,10 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
     ];
 
 getModelListQuietly[ info_Association ] := Quiet[
-    ServiceFramework`WithCredentialsProvider["llm"] @ checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
+    withCredentialsProvider @ checkModelList[
+        info,
+        Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
+    ],
     { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
 ];
 
