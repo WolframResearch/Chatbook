@@ -978,14 +978,14 @@ multimodalOpenAIQ // endDefinition;
 (*serviceFrameworkAvailable*)
 serviceFrameworkAvailable // beginDefinition;
 
-serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] = (
-    serviceFrameworkAvailable[
-        PacletObject[ "ServiceFramework" ]
-    ]
-);
+serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] =
+    serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ];
 
-serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ] :=
+serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
     Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
+
+serviceFrameworkAvailable[ _ ] :=
+    False;
 
 serviceFrameworkAvailable // endDefinition;
 
