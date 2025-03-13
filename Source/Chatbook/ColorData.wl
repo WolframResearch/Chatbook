@@ -35,6 +35,7 @@ dominantColor[ "NA_CloudToolbar"         ] := RGBColor["#E9F7FF"];
 dominantColor[ "NA_OverlayMenu"          ] := White;
 dominantColor[ "NA_RaftMenu"             ] := White;
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
+dominantColor[ "PreferencesContent"      ] := GrayLevel[0.96];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
 dominantColor[ "White"                   ] := White;
 
@@ -806,6 +807,97 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
+	"ManagerGridActiveBlue" -> <|
+		 "Light"  -> Hue[0.59, 0.9, 0.93],
+		 "Dark"   -> Hue[0.6072062, 0.5177831, 0.9780168],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridFont_1" -> <|
+		 "Light"  -> GrayLevel[0.808],
+		 "Dark"   -> GrayLevel[0.5216652],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4706459],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridFrame_2" -> <|
+		 "Light"  -> GrayLevel[0.9],
+		 "Dark"   -> GrayLevel[0.4034052],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGrid_Gray_1" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.5309122],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGrid_Gray_2" -> <|
+		 "Light"  -> GrayLevel[0.65],
+		 "Dark"   -> GrayLevel[0.6825568],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGrid_Gray_3" -> <|
+		 "Light"  -> GrayLevel[0.5],
+		 "Dark"   -> GrayLevel[0.8022448],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridHeaderBackground" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.1389923],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
+	|>,
+	"ManagerGridHighlight" -> <|
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.1866942],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridHighlightFade" -> <|
+		 "Light"  -> GrayLevel[0.97, 0.85],
+		 "Dark"   -> GrayLevel[0.2050183, 0.85],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ManagerGridItemBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
+	|>,
+	"ManagerGridPeelOffIcon" -> <|
+		 "Light"  -> RGBColor[0.0862, 0.6196, 0.8156],
+		 "Dark"   -> RGBColor[0.2783136, 0.7289525, 0.9207715],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in Persona manager dialogs, preferences dialog"
+	|>,
+	"ManagerGridPeelOffIconHover" -> <|
+		 "Light"  -> RGBColor[0.2392156, 0.7960784, 1.],
+		 "Dark"   -> RGBColor[0.2914353, 0.6504886, 0.8070528],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in Persona manager dialogs, preferences dialog"
+	|>,
 	"NA_AssistantMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
 		 "Dark"   -> RGBColor[0.2640989, 0.2640989, 0.2640989],
@@ -849,8 +941,8 @@ Dispatch[{
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatCodeBlockTemplateButtonIcon" -> <|
-		 "Light"  -> RGBColor[0.2901960, 0.5843137, 0.8],
-		 "Dark"   -> RGBColor[0.4025149, 0.7146922, 0.9352954],
+		 "Light"  -> RGBColor[0.290196, 0.5843137, 0.8],
+		 "Dark"   -> RGBColor[0.4025148, 0.7146922, 0.9352954],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> ""
@@ -1088,7 +1180,7 @@ Dispatch[{
 	|>,
 	"NA_ChatOutputToolCallOpenerBackground" -> <|
 		 "Light"  -> RGBColor[0.8980392, 0.9686274, 1.],
-		 "Dark"   -> RGBColor[0.1630671, 0.2457284, 0.2964029],
+		 "Dark"   -> RGBColor[0.1630672, 0.2457283, 0.2964028],
 		 "Method" -> "Background",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
@@ -1101,15 +1193,15 @@ Dispatch[{
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatOutputToolCallOpenerFrame" -> <|
-		 "Light"  -> RGBColor[0.6117647, 0.7960784, 0.8901960],
-		 "Dark"   -> RGBColor[0.4366366, 0.5823123, 0.6659342],
+		 "Light"  -> RGBColor[0.6117647, 0.7960784, 0.890196],
+		 "Dark"   -> RGBColor[0.4366367, 0.5823123, 0.6659342],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatOutputToolCallOpenerFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8392156, 0.9294117, 0.9764705],
-		 "Dark"   -> RGBColor[0.2748471, 0.3858371, 0.4597231],
+		 "Dark"   -> RGBColor[0.2748472, 0.3858373, 0.4597232],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
@@ -1441,6 +1533,153 @@ Dispatch[{
 		 "Dark"   -> GrayLevel[0.9640047],
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.2693397],
+		 "Method" -> "Background",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentFont_1" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.9615732],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentFont_2" -> <|
+		 "Light"  -> GrayLevel[0.],
+		 "Dark"   -> GrayLevel[0.9999999],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentFont_3" -> <|
+		 "Light"  -> GrayLevel[0.537254],
+		 "Dark"   -> GrayLevel[0.7588317],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentFrame" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.3503756],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentInputFieldBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.2693397],
+		 "Method" -> "Background",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentInputFieldFrame" -> <|
+		 "Light"  -> GrayLevel[0.7843137],
+		 "Dark"   -> GrayLevel[0.5117006],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentLLMSignInButtonFont" -> <|
+		 "Light"  -> RGBColor[0., 0.5411764, 0.772549],
+		 "Dark"   -> RGBColor[0.2254652, 0.7046221, 0.9520947],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentLLMSignInButtonFontHover" -> <|
+		 "Light"  -> RGBColor[0.3333333, 0.6941176, 0.848366],
+		 "Dark"   -> RGBColor[0.3513878, 0.7036768, 0.8554012],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentProgressIndicator" -> <|
+		 "Light"  -> GrayLevel[0.8509803],
+		 "Dark"   -> GrayLevel[0.4229013],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentResetButtonIcon" -> <|
+		 "Light"  -> GrayLevel[0.3921],
+		 "Dark"   -> GrayLevel[0.8632772],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesDeleteIcon" -> <|
+		 "Light"  -> GrayLevel[0.65],
+		 "Dark"   -> GrayLevel[0.6586475],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesDeleteIconAlt" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.4919838],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesDeleteIconHover" -> <|
+		 "Light"  -> Hue[0.59, 0.9, 0.93],
+		 "Dark"   -> Hue[0.6071887, 0.5207923, 0.9778042],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesIconFade_1" -> <|
+		 "Light"  -> GrayLevel[1, 0.5],
+		 "Dark"   -> GrayLevel[0.1213331, 0.5],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesIconFade_2" -> <|
+		 "Light"  -> GrayLevel[0, 0.5],
+		 "Dark"   -> GrayLevel[0.9999999, 0.5],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesNAInfoIcon" -> <|
+		 "Light"  -> GrayLevel[0.537],
+		 "Dark"   -> GrayLevel[0.7590376],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesNAInfoIconHover" -> <|
+		 "Light"  -> GrayLevel[0.692],
+		 "Dark"   -> GrayLevel[0.6163730],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesNAInfoIconPressed" -> <|
+		 "Light"  -> GrayLevel[0.358],
+		 "Dark"   -> GrayLevel[0.8840947],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesNAInfoTooltipBackground" -> <|
+		 "Light"  -> RGBColor[0.9294117, 0.9294117, 0.9294117],
+		 "Dark"   -> RGBColor[0.2043874, 0.2043874, 0.2043874],
+		 "Method" -> "Background",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesNAInfoTooltipFrame" -> <|
+		 "Light"  -> RGBColor[0.8196078, 0.8196078, 0.8196078],
+		 "Dark"   -> RGBColor[0.4663820, 0.4663820, 0.4663820],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
 	"SendChatButtonBackgroundHover" -> <|
