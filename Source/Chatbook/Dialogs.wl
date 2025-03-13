@@ -59,7 +59,7 @@ createDialog // Attributes = { HoldFirst };
 createDialog[ expr_, opts: OptionsPattern[ ] ] := Block[ { $inDialog = True }, CreateDialog[
     ExpressionCell[ expr, CellMargins -> 0 ],
     opts,
-    Background             -> White,
+    Background             -> color @ "NA_NotebookBackground",
     CellInsertionPointCell -> None,
     StyleDefinitions       -> $dialogStyles,
     WindowFrameElements    -> { "CloseBox" },
