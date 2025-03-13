@@ -64,7 +64,10 @@ Notebook[
      CellMargins -> {{-1, -5}, {-1, -1}},
      Magnification ->
       Dynamic[
-       AbsoluteCurrentValue[EvaluationNotebook[], Magnification]
+       AbsoluteCurrentValue[
+        FrontEnd`EvaluationNotebook[],
+        Magnification
+       ]
       ]
     ]
    },
@@ -84,7 +87,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.2.3950766996"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.16.3951879397"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -119,7 +122,7 @@ Notebook[
    FontColor ->
     LightDarkSwitched[
      RGBColor[0.2, 0.513725, 0.67451],
-     RGBColor[0.254083, 0.617296, 0.795196]
+     RGBColor[0.219842, 0.362557, 0.456388]
     ]
   ],
   Cell[
@@ -344,67 +347,6 @@ Notebook[
        GridBoxAlignment -> {"Columns" -> {{Left}}},
        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
        GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["WorkspaceSendChatButton"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      PaneSelectorBox[
-       {
-        None ->
-         ButtonBox[
-          DynamicBox[
-           FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButtonLabel"][
-            #1,
-            #2,
-            #3
-           ]
-          ],
-          ButtonFunction :>
-           (Needs["Wolfram`Chatbook`" -> None];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "EvaluateWorkspaceChat",
-            #4,
-            Dynamic[
-             CurrentValue[#4, {TaggingRules, "ChatInputString"}]
-            ]
-           ]),
-          Appearance ->
-           FEPrivate`FrontEndResource[
-            "FEExpressions",
-            "SuppressMouseDownNinePatchAppearance"
-           ],
-          FrameMargins -> 0,
-          Method -> "Queued",
-          Evaluator -> Automatic
-         ]
-       },
-       Dynamic[Wolfram`Chatbook`$ChatEvaluationCell],
-       ButtonBox[
-        DynamicBox[
-         FEPrivate`FrontEndResource["ChatbookExpressions", "StopChatButtonLabel"][
-          #1,
-          #2,
-          #3
-         ]
-        ],
-        ButtonFunction :>
-         (Needs["Wolfram`Chatbook`" -> None];
-         Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
-        Appearance ->
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ],
-        FrameMargins -> 0,
-        Evaluator -> Automatic,
-        Method -> "Preemptive"
-       ],
-       Alignment -> {Automatic, Baseline}
       ]
      ])
    }
