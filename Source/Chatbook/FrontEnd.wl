@@ -106,10 +106,10 @@ $feTaskDebugPanel := Framed[
         },
         BaseStyle  -> { "Text", FontSize -> 12 },
         Dividers   -> Center,
-        FrameStyle -> GrayLevel[ 0.75 ],
+        FrameStyle -> color @ "FETaskDebugPanelFrame",
         Spacings   -> 1
     ],
-    Background   -> GrayLevel[ 0.98 ],
+    Background   -> color @ "FETaskDebugPanelBackground",
     FrameMargins -> { { 5, 5 }, { 0, 0 } },
     FrameStyle   -> None
 ];
@@ -1065,8 +1065,8 @@ MouseAppearance[
                     If[ListQ[label], label, {label}],
                     PaneSelector[
                         {
-                            True -> RawBoxes @ TemplateBox[ { RGBColor[ "#3383AC" ] }, "DiscardedMaterialCloserIcon" ],
-                            False -> RawBoxes @ TemplateBox[ { RGBColor[ "#3383AC" ] }, "DiscardedMaterialOpenerIcon" ]
+                            True -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialCloserIcon" ],
+                            False -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ]
                         },
                         Dynamic[var],
                         ImageSize -> Automatic,
@@ -1092,8 +1092,8 @@ $openerLabelGridOptions = Sequence[
 
 $openerFrameOptionsDefault = Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> RGBColor[ "#E5F7FF" ],
-    FrameStyle     -> RGBColor[ "#9CCBE3" ],
+    Background     -> color @ "NA_ChatOutputToolCallOpenerBackground",
+    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrame",
     FrameMargins   -> { { 4, 2 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
     RoundingRadius -> 5
@@ -1101,8 +1101,8 @@ $openerFrameOptionsDefault = Sequence[
 
 $openerFrameOptionsActive = Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> RGBColor[ "#ffffff" ],
-    FrameStyle     -> RGBColor[ "#D6EDF9" ],
+    Background     -> color @ "NA_ChatOutputToolCallOpenerBackgroundHover",
+    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrameHover",
     FrameMargins   -> { { 4, 2 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
     RoundingRadius -> 5
@@ -1121,7 +1121,7 @@ fakeOpenerView[ label_, showButton_: False ] := Deploy @ Framed[
             Flatten @ {
                 label,
                 If[ TrueQ @ showButton,
-                    RawBoxes @ TemplateBox[ { RGBColor[ "#3383AC" ] }, "DiscardedMaterialOpenerIcon" ],
+                    RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ],
                     Nothing
                 ]
             }
@@ -1165,10 +1165,10 @@ compressUntilViewed // endDefinition;
 
 (* TODO: move this to the stylesheet *)
 $statelessProgressIndicator =
-    With[ { clock := Clock[ 10, 1.5 ] },
+    With[ { clock := Clock[ 10, 1.5 ], col = color @ "StatelessProgressIndicator" },
         RawBoxes @ GraphicsBox[
             {
-                GrayLevel[ 0.75 ],
+                col,
                 {
                     {
                         PointSize @ Dynamic @ FEPrivate`Which[
