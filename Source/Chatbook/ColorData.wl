@@ -219,6 +219,13 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Acccent6"
 	|>,
+	"ChatMenuAdvancedSettingsIcon" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.7671921],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
 	"ChatMenuCheckboxLabelFont" -> <|
 		 "Light"  -> GrayLevel[0.],
 		 "Dark"   -> GrayLevel[0.9999999],
@@ -261,6 +268,20 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
+	"ChatMenuItemCheckmarkInherited" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.5698143],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuItemCheckmarkTrue" -> <|
+		 "Light"  -> GrayLevel[0.25],
+		 "Dark"   -> GrayLevel[0.9425281],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
 	"ChatMenuItemDelimiter" -> <|
 		 "Light"  -> GrayLevel[0.9],
 		 "Dark"   -> GrayLevel[0.3766262],
@@ -289,6 +310,27 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
+	"ChatMenuModelsIcon" -> <|
+		 "Light"  -> GrayLevel[0.50196],
+		 "Dark"   -> GrayLevel[0.7939547],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuModelsIconBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1849556],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuPersonaManagerIcon" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.1849556],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
 		 "Dark"   -> GrayLevel[0.1930434],
@@ -299,6 +341,20 @@ Dispatch[{
 	"ChatMenuSectionLabelFont" -> <|
 		 "Light"  -> GrayLevel[0.35],
 		 "Dark"   -> GrayLevel[0.8924651],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuToolManagerIconLeft" -> <|
+		 "Light"  -> RGBColor[0.41961, 0.78431, 0.82745],
+		 "Dark"   -> RGBColor[0.3380794, 0.6511558, 0.6885934],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuToolManagerIconRight" -> <|
+		 "Light"  -> RGBColor[0.32157, 0.6902, 0.70196],
+		 "Dark"   -> RGBColor[0.4274507, 0.7275913, 0.7364345],
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
