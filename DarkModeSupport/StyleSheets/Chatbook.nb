@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.2.3950766996"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951879397"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1578,157 +1578,207 @@ Notebook[
           GridBox[
            {
             {
-             TemplateBox[
-              {
-               TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetExplodeCellsInPlace"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetExplodeCellsInPlace"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ExplodeInPlace",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ExplodeInPlace",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetExplodeCellsDuplicate"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetExplodeCellsDuplicate"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ExplodeDuplicate",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ExplodeDuplicate",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[
-                {"HyperlinkCopyIcon"},
-                "ChatMenuItemToolbarIcon"
-               ],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetCopyExplodedCells"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[
+                 {"HyperlinkCopyIcon"},
+                 "ChatMenuItemToolbarIcon"
+                ],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetCopyExplodedCells"
+                  ],
+                  StandardForm
+                 ]
                 ]
-               ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "CopyExplodedCells",
-                  Wolfram`ChatNB`root$
-                 ];
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "CopyExplodedCells",
+                 Wolfram`ChatNB`root$
+                ];
 
-                 NotebookDelete[Wolfram`ChatNB`cell$];
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
-               ]
-              },
-              "ChatMenuItem"
+               ],
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {TemplateBox[{}, "ChatMenuItemDelimiter"]},
             {
-             TemplateBox[
-              {
-               TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetToggleFormatting"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetToggleFormatting"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ToggleFormatting",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ToggleFormatting",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetCopyChatObject"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetCopyChatObject"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "CopyChatObject",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "CopyChatObject",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             }
            },
