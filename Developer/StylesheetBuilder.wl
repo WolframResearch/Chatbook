@@ -464,6 +464,15 @@ menuItem[ icon_, label_, None ] :=
         ]
     ];
 
+menuItem[ icon_, label_, Hold[ code_ ] ] :=
+    Button[
+        RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+        code,
+        Appearance -> $suppressButtonAppearance,
+        Method     -> "Queued",
+        Evaluator  -> Automatic
+    ];
+
 menuItem[ icon_, label_, code_ ] :=
     RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
