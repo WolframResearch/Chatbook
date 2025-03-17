@@ -1300,7 +1300,16 @@ menuModelGroup[ obj_, currentModel_, None, models_List ] :=
     modelMenuItem[ obj, currentModel ] /@ models;
 
 menuModelGroup[ obj_, currentModel_, name_String, models_List ] :=
-    Join[ { <| "Type" -> "Header", "Label" -> name |> }, modelMenuItem[ obj, currentModel ] /@ models ];
+	Join[
+		{ <| "Type" -> "Header", "Label" -> name |> },
+		Map[
+			modelMenuItem[ obj, currentModel ],
+			Join[
+				Cases[ models, KeyValuePattern[ "Date" -> "Latest" ] ],
+				ReverseSortBy[ DeleteCases[ models, KeyValuePattern[ "Date" -> "Latest" ] ], #[ "Date" ]& ]
+			]
+		]
+	];
 
 menuModelGroup // endDefinition;
 
