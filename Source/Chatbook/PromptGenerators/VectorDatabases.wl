@@ -915,13 +915,16 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
         If[ messages === { }, Throw @ { } ];
 
         conversationString = ConfirmBy[
-            getSmallContextString[ messages, "SingleMessageTemplate" -> StringTemplate[ "`Content`" ] ],
+            preprocessEmbeddingString @ getSmallContextString[
+                messages,
+                "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
+            ],
             StringQ,
             "ConversationString"
         ];
 
         lastMessageString = ConfirmBy[
-            getSmallContextString[
+            preprocessEmbeddingString @ getSmallContextString[
                 { Last @ messages },
                 "IncludeSystemMessage"  -> True,
                 "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
@@ -930,7 +933,11 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
             "LastMessageString"
         ];
 
-        selectionString = If[ StringQ @ $selectionPrompt, $selectionPrompt, None ];
+        selectionString =
+            If[ StringQ @ $selectionPrompt,
+                Replace[ preprocessEmbeddingString @ $selectionPrompt, "" -> None ],
+                None
+            ];
 
         If[ conversationString === "" || lastMessageString === "", Throw @ { } ];
 
@@ -1052,6 +1059,22 @@ vectorDBSearch[ All, prompt_, prop_ ] :=
 
 
 vectorDBSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessEmbeddingString*)
+preprocessEmbeddingString // beginDefinition;
+
+preprocessEmbeddingString[ s: _String | { ___String } ] := StringTrim @ StringDelete[
+    s,
+    {
+        Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ __ ~~ ")\"]\\)" ],
+        $leftSelectionIndicator,
+        $rightSelectionIndicator
+    }
+];
+
+preprocessEmbeddingString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
