@@ -222,12 +222,11 @@ ExplodeInPlace // endDefinition;
 ToggleFormatting // beginDefinition;
 
 ToggleFormatting[ cellObject0_ ] := Enclose[
-    Module[ { cellObject, nbo, content },
+    Module[ { cellObject, cell, toggled },
         cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
-        nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
-        SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ];
-        content = ConfirmMatch[ NotebookRead @ nbo, _String | _List, "NotebookRead" ];
-        Confirm[ toggleFormatting[ cellObject, nbo, content ], "Toggle" ]
+        cell = ConfirmMatch[ notebookRead @ cellObject, _Cell, "NotebookRead" ];
+        toggled = ConfirmMatch[ toggleFormatting @ cell, _Cell, "Toggled" ];
+        ConfirmMatch[ NotebookWrite[ cellObject, toggled ], Null, "NotebookWrite" ]
     ],
     throwInternalFailure
 ];
@@ -242,28 +241,10 @@ ToggleFormatting // endDefinition;
 (*toggleFormatting*)
 toggleFormatting // beginDefinition;
 (* FIXME: define an "Unformatted" mix-in style (with different background) that's added/removed when toggling *)
-
 (* Convert a plain string to formatted TextData: *)
-toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := Enclose[
-    Module[ { textDataList },
-        (* FIXME: get chat settings from cell and use ChatFormattingFunction here *)
-        textDataList = ConfirmMatch[ reformatTextData @ string, $$textDataList, "ReformatTextData" ];
-        Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
-        Confirm[ NotebookWrite[ nbo, TextData @ textDataList, None ], "NotebookWrite" ]
-    ],
-    throwInternalFailure
-];
-
+toggleFormatting[ Cell[ content_String, rest___ ] ] := Cell[ TextData @ reformatTextData @ content, rest ];
 (* Convert formatted TextData to a plain string: *)
-toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, textDataList_List ] := Enclose[
-    Module[ { string },
-        string = ConfirmMatch[ CellToString @ Cell[ TextData @ textDataList, "ChatOutput" ], _String, "CellToString" ];
-        Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
-        Confirm[ NotebookWrite[ nbo, TextData @ string, None ], "NotebookWrite" ]
-    ],
-    throwInternalFailure
-];
-
+toggleFormatting[ Cell[ content_TextData, rest___ ] ] := Cell[ CellToString @ Cell[ content, "ChatOutput" ], rest ];
 toggleFormatting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
