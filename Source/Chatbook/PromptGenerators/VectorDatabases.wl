@@ -106,7 +106,7 @@ Try again using \[FreeformPrompt] syntax.\
 
 $vectorDatabases[ "EntityValues" ] = <|
     "Version"         -> "1.0.0",
-    "Bias"            -> -30.0,
+    "Bias"            -> 0.0,
     "SnippetFunction" -> getEntityValueSnippets,
     "Instructions"    -> $entityValueInstructions
 |>;
