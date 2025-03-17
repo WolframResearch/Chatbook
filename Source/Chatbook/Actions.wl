@@ -241,9 +241,9 @@ ToggleFormatting // endDefinition;
 (*toggleFormatting*)
 toggleFormatting // beginDefinition;
 (* FIXME: define an "Unformatted" mix-in style (with different background) that's added/removed when toggling *)
-
 (* Convert a plain string to formatted TextData: *)
 toggleFormatting[ Cell[ content_String, rest___ ] ] := Cell[ TextData @ reformatTextData @ content, rest ];
+(* Convert formatted TextData to a plain string: *)
 toggleFormatting[ Cell[ content_TextData, rest___ ] ] := Cell[ CellToString @ Cell[ content, "ChatOutput" ], rest ];
 toggleFormatting // endDefinition;
 
