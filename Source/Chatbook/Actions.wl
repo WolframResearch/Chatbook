@@ -222,11 +222,11 @@ ExplodeInPlace // endDefinition;
 ToggleFormatting // beginDefinition;
 
 ToggleFormatting[ cellObject0_ ] := Enclose[
-    Module[ { cellObject, cell, toggled },
+    Module[ { cellObject, nbo },
         cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
-        cell = ConfirmMatch[ notebookRead @ cellObject, _Cell, "NotebookRead" ];
-        toggled = ConfirmMatch[ toggleFormatting @ cell, _Cell, "Toggled" ];
-        ConfirmMatch[ NotebookWrite[ cellObject, toggled ], Null, "NotebookWrite" ]
+        nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
+        initFETaskWidget @ nbo;
+        createFETask @ toggleFormatting @ cellObject
     ],
     throwInternalFailure
 ];
@@ -240,12 +240,26 @@ ToggleFormatting // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toggleFormatting*)
 toggleFormatting // beginDefinition;
+
+toggleFormatting[ cellObject_CellObject ] := Enclose[
+    Module[ { cell, toggled },
+        cell = ConfirmMatch[ NotebookRead @ cellObject, _Cell, "NotebookRead" ];
+        toggled = ConfirmMatch[ toggleFormatting0 @ cell, _Cell, "Toggled" ];
+        ConfirmMatch[ NotebookWrite[ cellObject, toggled ], Null, "NotebookWrite" ]
+    ],
+    throwInternalFailure
+];
+
+toggleFormatting // endDefinition;
+
+
+toggleFormatting0 // beginDefinition;
 (* FIXME: define an "Unformatted" mix-in style (with different background) that's added/removed when toggling *)
 (* Convert a plain string to formatted TextData: *)
-toggleFormatting[ Cell[ content_String, rest___ ] ] := Cell[ TextData @ reformatTextData @ content, rest ];
+toggleFormatting0[ Cell[ content_String, rest___ ] ] := Cell[ TextData @ reformatTextData @ content, rest ];
 (* Convert formatted TextData to a plain string: *)
-toggleFormatting[ Cell[ content_TextData, rest___ ] ] := Cell[ CellToString @ Cell[ content, "ChatOutput" ], rest ];
-toggleFormatting // endDefinition;
+toggleFormatting0[ Cell[ content_TextData, rest___ ] ] := Cell[ CellToString @ Cell[ content, "ChatOutput" ], rest ];
+toggleFormatting0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
