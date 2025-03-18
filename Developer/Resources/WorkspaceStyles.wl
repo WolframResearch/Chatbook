@@ -286,39 +286,6 @@ Cell[
     }
 ]
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*WorkspaceSendChatButton*)
-Cell[
-    StyleData[ "WorkspaceSendChatButton" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ PaneSelector[
-            {
-                None -> Button[
-                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ],
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "EvaluateWorkspaceChat",
-                        #4,
-                        Dynamic @ CurrentValue[ #4, { TaggingRules, "ChatInputString" } ]
-                    ],
-                    Appearance   -> "Suppressed",
-                    FrameMargins -> 0,
-                    Method       -> "Queued"
-                ]
-            },
-            Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
-            Button[
-                Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ],
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
-                Appearance   -> "Suppressed",
-                FrameMargins -> 0
-            ],
-            Alignment -> { Automatic, Baseline }
-        ]
-    }
-]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

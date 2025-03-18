@@ -355,7 +355,7 @@ attachWorkspaceChatInput // endDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, chatInputText = CurrentValue[ FrontEnd`EvaluationNotebook[], { TaggingRules, "ChatInputString" }, "" ] },
         EventHandler[
             Pane[
                 Grid[
@@ -364,19 +364,46 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
-                                    Dynamic @ CurrentValue[
-                                        EvaluationNotebook[ ],
-                                        { TaggingRules, "ChatInputString" }
-                                    ],
+                                    Dynamic @ chatInputText,
                                     Boxes,
                                     ContinuousAction -> True,
                                     $inputFieldOptions
                                 ],
                                 $inputFieldFrameOptions
                             ],
-                            RawBoxes @ TemplateBox[
-                                { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
-                                "WorkspaceSendChatButton"
+                            (* no need to templatize an attached cell as it is ephemeral *)
+                            PaneSelector[
+                                {
+                                    None -> Button[
+                                        Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                            RGBColor[ "#a3c9f2" ],
+                                            RGBColor[ "#f1f7fd" ],
+                                            27
+                                        ],
+                                        Needs[ "Wolfram`Chatbook`" -> None ];
+                                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                            "EvaluateWorkspaceChat",
+                                            thisNB,
+                                            Dynamic @ chatInputText
+                                        ],
+                                        Appearance   -> "Suppressed",
+                                        FrameMargins -> 0,
+                                        Method       -> "Queued"
+                                    ]
+                                },
+                                Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
+                                Button[
+                                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                        RGBColor[ "#a3c9f2" ],
+                                        RGBColor[ "#f1f7fd" ],
+                                        27
+                                    ],
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                    Appearance   -> "Suppressed",
+                                    FrameMargins -> 0
+                                ],
+                                Alignment -> { Automatic, Baseline }
                             ]
                         },
                         {
@@ -405,7 +432,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
-                        Dynamic @ CurrentValue[ thisNB, { TaggingRules, "ChatInputString" } ]
+                        Dynamic @ chatInputText
                     ]
                 )
             },
