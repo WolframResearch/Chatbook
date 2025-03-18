@@ -215,7 +215,7 @@
          "MoreInfoOpenerButtonTemplate"
         ]
       },
-      Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
+      Dynamic @ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
       ImageSize -> Automatic
      ]
     },
@@ -275,7 +275,7 @@
          "MoreInfoOpenerButtonTemplate"
         ]
       },
-      Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
+      Dynamic @ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
       ImageSize -> Automatic
      ]
     },
@@ -327,7 +327,7 @@
          "MoreInfoOpenerButtonTemplate"
         ]
       },
-      Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
+      Dynamic @ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ],
       ImageSize -> Automatic
      ]
     },
