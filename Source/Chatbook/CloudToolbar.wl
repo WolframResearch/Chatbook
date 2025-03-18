@@ -34,7 +34,7 @@ ToggleCloudNotebookAssistantMenu // beginDefinition
 ToggleCloudNotebookAssistantMenu[ ] := (
     CurrentValue[ EvaluationNotebook[ ], DockedCells ] =
         Replace[
-            CurrentValue[ EvaluationNotebook[ ], DockedCells ],
+            CurrentValue[ FrontEnd`EvaluationNotebook[ ], DockedCells ],
             {
                 (* ============ Remove if it exists ============ *)
                 (* Case: NA cell is all alone (likely in default notebooks) *)

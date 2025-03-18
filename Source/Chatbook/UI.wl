@@ -473,7 +473,7 @@ With[
 		Replace[
 			OptionValue[ImageSize],
 			Automatic :>
-				If[ TrueQ @ AbsoluteCurrentValue[ EvaluationNotebook[], { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } ],
+				If[ TrueQ @ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[], { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } ],
 					{ { 296, 366 }, Automatic }, (* messages in the NA window are allowed to be larger *)
 					296
 				]
