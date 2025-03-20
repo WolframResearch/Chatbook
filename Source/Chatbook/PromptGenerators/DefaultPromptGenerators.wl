@@ -16,6 +16,9 @@ HoldComplete[
 (*Config*)
 $filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ];
 
+$wolframAlphaCAGEnabled := $wolframAlphaCAGEnabled = CurrentChatSettings[ "WolframAlphaCAGEnabled" ];
+$webSearchRAGMethod     := $webSearchRAGMethod     = CurrentChatSettings[ "WebSearchRAGMethod"     ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -25,18 +28,31 @@ Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead 
 (* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = <|
-    "RelatedDocumentation" -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ],
-    "WebSearch"            -> LLMPromptGenerator[ webSearchGenerator           , "Messages" ]
+    "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator      , "Messages" ],
+    "RelatedWolframAlphaResults" -> LLMPromptGenerator[ relatedWolframAlphaResultsGenerator, "Messages" ],
+    "WebSearch"                  -> LLMPromptGenerator[ webSearchGenerator                 , "Messages" ]
 |>;
 
 (* TODO: update RelatedWolframAlphaQueries to support same argument types as RelatedDocumentation *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*relatedWolframAlphaResultsGenerator*)
+relatedWolframAlphaResultsGenerator // beginDefinition;
+
+relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /; $wolframAlphaCAGEnabled :=
+    LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
+
+relatedWolframAlphaResultsGenerator[ _ ] := "";
+
+relatedWolframAlphaResultsGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*webSearchGenerator*)
 webSearchGenerator // beginDefinition;
 
-webSearchGenerator[ messages: $$chatMessages ] /; CurrentChatSettings[ "WebSearchRAGMethod" ] === "Tavily" := Enclose[
+webSearchGenerator[ messages: $$chatMessages ] /; $webSearchRAGMethod === "Tavily" := Enclose[
     Catch @ Module[ { key, string, request, response, data, results, snippets },
 
         key = SystemCredential[ "TAVILY_API_KEY" ];
