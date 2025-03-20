@@ -606,6 +606,7 @@ prepareMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prepareMessagePart*)
 prepareMessagePart // beginDefinition;
+prepareMessagePart[ ""                  ] := Nothing;
 prepareMessagePart[ text_String         ] := prepareMessagePart @ <| "Type" -> "Text" , "Data" -> text  |>;
 prepareMessagePart[ image_? graphicsQ   ] := prepareMessagePart @ <| "Type" -> "Image", "Data" -> image |>;
 prepareMessagePart[ file_File           ] := prepareMessagePart @ <| "Type" -> partType @ file, "Data" -> file |>;
@@ -1620,6 +1621,7 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
+    (* If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
     makeToolResponseMessage0[
         If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
         settings[ "ToolResponseStyle" ],
@@ -1676,9 +1678,21 @@ IMPORTANT: If a tool call does not give the expected output, \
 ask the user before retrying unless you are ABSOLUTELY SURE you know how to fix the issue.";
 
 $toolCallRetryMessage = <|
-    "Role"      -> "System",
-    "Content"   -> $toolCallRetryPrompt,
-    "Temporary" -> True
+    "Role"          -> "System",
+    "Content"       -> $toolCallRetryPrompt,
+    "HoldTemporary" -> True
+|>;
+
+$discourageExtraToolCallsPrompt = "\
+IMPORTANT: Do not make any more tool calls unless absolutely necessary! \
+Stop and think about what the user was asking for. \
+Does the tool response give you enough information to answer the user's query? \
+If so, respond to the user now instead of making any additional tool calls.";
+
+$discourageExtraToolCallsMessage = <|
+    "Role"          -> "System",
+    "Content"       -> $discourageExtraToolCallsPrompt,
+    "HoldTemporary" -> True
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1734,7 +1748,9 @@ checkMarkdownOutput // endDefinition;
 $useMarkdownMessage = "
 
 (* IMPORTANT: The user does not see the output of this tool call. \
-You must use this output in your response for them to see it. *)";
+You must use this output in your response for them to see it. \
+You can use any markdown links from the tool output in your response \
+to show images or other formatted expressions to the user. *)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

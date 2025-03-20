@@ -154,6 +154,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `dialogBody;
 `dialogHeader;
 `dialogSubHeader;
+`discourageExtraToolCallsQ;
 `displayInlineChat;
 `documentationSearchAPI;
 `dynamicAutoFormatQ;
