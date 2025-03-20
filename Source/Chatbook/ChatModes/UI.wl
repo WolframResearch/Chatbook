@@ -102,7 +102,7 @@ makeWorkspaceChatSubDockedCellExpression[ content_ ] := Cell[ BoxData @ ToBoxes 
     CellFrameMargins   -> 0,
     CellMargins        -> { { -1, -5 }, { -1, -1 } },
     CellTags           -> "WorkspaceChatSubDockedCell",
-    Magnification      -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
+    Magnification      -> Dynamic[ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
 makeWorkspaceChatSubDockedCellExpression // endDefinition;
@@ -416,7 +416,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> location,
-    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
 (* :!CodeAnalysis::EndBlock:: *)
@@ -639,7 +639,7 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
     ],
     "AttachedChatInput",
     Background    -> None,
-    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
     Selectable    -> True,
     TaggingRules  -> <| "ChatNotebookSettings" -> settings |>
 ];

@@ -501,7 +501,7 @@ attachOverlay[ expr_, opts___ ] := AttachCell[
                     "",
                     Background -> GrayLevel[ 0.97, 0.85 ],
                     FrameStyle -> None,
-                    ImageSize  -> { Full, Last @ AbsoluteCurrentValue[ EvaluationNotebook[ ], WindowSize ] }
+                    ImageSize  -> { Full, Last @ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], WindowSize ] }
                 ],
                 Framed[
                     overlayGrid @ expr,

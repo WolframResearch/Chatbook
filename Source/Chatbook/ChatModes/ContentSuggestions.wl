@@ -39,7 +39,7 @@ $$whitespace       = $$whitespaceString | TextData @ $$whitespaceString | TextDa
 
 
 (* TODO: stop tokens for resource notebooks:
-    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ]
+    CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ]
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -433,7 +433,7 @@ contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
         RoundingRadius -> 5
     ],
     "AttachedContentSuggestions",
-    Magnification -> Dynamic @ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]
+    Magnification -> Dynamic @ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ]
 ];
 
 contentSuggestionsCell // endDefinition;
