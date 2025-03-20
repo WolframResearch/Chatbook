@@ -813,7 +813,7 @@ toSandboxExpression // beginDefinition;
 toSandboxExpression[ s_String ] := $lastSandboxExpression =
     Block[ { $Context = $Context, $ContextPath = Prepend[ $ContextPath, "Wolfram`Chatbook`SandboxParsing`" ] },
         $lastSandboxString = s;
-        toSandboxExpression[ s, Quiet @ ToExpression[ preprocessSandboxString @ s, InputForm, HoldComplete ] ]
+        toSandboxExpression[ s, toHeldExpression @ preprocessSandboxString @ s ]
     ];
 
 toSandboxExpression[ s_, expr_HoldComplete ] :=
@@ -822,12 +822,24 @@ toSandboxExpression[ s_, expr_HoldComplete ] :=
 toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
     Module[ { new, held },
         new = preprocessSandboxString @ StringReplace[ s, "'" -> "\"" ];
-        held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
-        If[ MatchQ[ held, _HoldComplete ],
+        held = toHeldExpression @ new;
+        (
             sandboxStringNormalize[ s ] = new;
-            held,
-            HoldComplete[ ToExpression[ s, InputForm ] ]
-        ]
+            held
+        ) /; MatchQ[ held, _HoldComplete ]
+    ];
+
+toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, StartOfLine~~"// " ] :=
+    Module[ { new, held },
+        new = preprocessSandboxString @ StringReplace[
+            s,
+            StartOfLine ~~ "// " ~~ c: Except[ "\n" ].. ~~ "\n" :> "(*"<>c<>"*)\n"
+        ];
+        held = toHeldExpression @ new;
+        (
+            sandboxStringNormalize[ s ] = new;
+            held
+        ) /; MatchQ[ held, _HoldComplete ]
     ];
 
 toSandboxExpression[ s_String, $Failed ] :=
@@ -836,7 +848,7 @@ toSandboxExpression[ s_String, $Failed ] :=
         closers = StringCount[ s, "]" ];
         (
             new = s <> StringRepeat[ "]", openers - closers ];
-            held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
+            held = toHeldExpression @ new;
             If[ MatchQ[ held, _HoldComplete ],
                 sandboxStringNormalize[ s ] = new;
                 held,
@@ -849,6 +861,30 @@ toSandboxExpression[ s_String, $Failed ] :=
     HoldComplete @ ToExpression[ s, InputForm ];
 
 toSandboxExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toHeldExpression*)
+toHeldExpression // beginDefinition;
+
+toHeldExpression[ s_String ] :=
+    Replace[
+        DeleteCases[ Quiet @ ToExpression[ s, InputForm, HoldComplete ], Null ],
+        {
+            HoldComplete[ xs__, CompoundExpression[ x_, Null ] ] :> Replace[
+                HoldComplete @ CompoundExpression[ xs, x, Null ],
+                HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
+                { 2 }
+            ],
+            HoldComplete[ xs__, x_ ] :> Replace[
+                HoldComplete @ CompoundExpression[ xs, x ],
+                HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
+                { 2 }
+            ]
+        }
+    ];
+
+toHeldExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
