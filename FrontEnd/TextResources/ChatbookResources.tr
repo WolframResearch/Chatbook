@@ -2,7 +2,7 @@
 {
 "AdvancedSettings" -> GraphicsBox[
   {Thickness[0.05], 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.53725], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3,
       3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
@@ -12,13 +12,13 @@ g/Fh9qHy9eF8mHtRzTNAs8/AAd3/qPIcaPIcDiYN2x2aknjhfMtrR3NNgPSf
 lR8v+QLFYXyY+1D5+nD+wVMLXbcFG6CZZ4hmnyGaewyh+gxR5RmM4ObB+Kjh
 AeMLwfkw96Kax4HhfwDHCW5r
      "]]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.53725], Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {
      0, 1, 0}}}, {{{15., 14.}, {14., 14.}, {14., 6.}, {15., 6.}, {15., 
      14.}}, {{11., 14.}, {10., 14.}, {10., 6.}, {11., 6.}, {11., 14.}}, {{7., 
      6.}, {6., 6.}, {6., 14.}, {7., 14.}, {7., 6.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.53725], Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {
      0, 1, 0}}}, {{{8., 13.}, {5., 13.}, {5., 12.}, {8., 12.}, {8., 13.}}, {{
@@ -293,8 +293,8 @@ fwN0Zqu2hMOBaAXHj4eVHdDTCwBIjusA
 
 "ChatBlockSettingsMenuIcon" -> GraphicsBox[
   {Thickness[0.05], 
-   {EdgeForm[{RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.], Thickness[
-    0.04]}], FaceForm[GrayLevel[1]], 
+   {EdgeForm[{GrayLevel[0.50196], Opacity[1.], Thickness[0.04]}], FaceForm[
+    GrayLevel[1.]], 
     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
      0}}}, CompressedData["
@@ -302,7 +302,7 @@ fwN0Zqu2hMOBaAXHj4eVHdDTCwBIjusA
 AOdnbH5VvHUqN5xvee1orgkDB9wcGB9mDipfBs6fkSfUfOCUJJp5Emj2wfgS
 OPgwc1Xg8qjul0DzH0ze0KHW3jRu10lJOP/pBaXbP/9JY4QDAHoEQIQ=
      "]]}, 
-   {FaceForm[{RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.50196], Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
       0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
@@ -349,7 +349,7 @@ DTnP3rwj/In3gciveF+I/GdLuQKNqA91LimuMMGI+j0n3XvnGFHfW0fJoJ0Y
 wrY5AwaxzVePGPQP72uW15H4i+eD5e9DqxaeEpduN5rQn7b85P4U/fv/ffwP
 llVkVA==
       "]}]}, 
-   {FaceForm[{RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.50196], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
      3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, CompressedData["
 1:eJxTTMoPSmVmYGBgAmJeKP1ERPbk0//KDqcXum77vFfF4Z/zr7evDyjB+eu2
@@ -2332,19 +2332,19 @@ fgH+BXai
 
 "PeelOff-hover" -> GraphicsBox[
   {Thickness[0.1], 
-   {FaceForm[{RGBColor[0.23921568627450981`, 0.796078431372549, 1.], Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1,
-      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0., 
+   {FaceForm[{RGBColor[0.2392156, 0.7960784, 1.], Opacity[1.]}], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0., 
      9.999899864196777}, {0., -0.00010013580322265625`}, {
      10., -0.00010013580322265625`}, {10., 3.9998998641967773`}, {8., 
      3.9998998641967773`}, {8., 1.9998998641967773`}, {2., 
      1.9998998641967773`}, {2., 7.999899864196777}, {4., 7.999899864196777}, {
      4., 9.999899864196777}, {0., 9.999899864196777}}}]}, 
-   {FaceForm[{RGBColor[0.23921568627450981`, 0.796078431372549, 1.], Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3,
-      3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}}, {{{6., 10.}, {6., 9.}, {8.292999982833862, 9.}, {4.146000146865845,
-      4.854000091552734}, {3.9509999752044678`, 4.658999919891357}, {
+   {FaceForm[{RGBColor[0.2392156, 0.7960784, 1.], Opacity[1.]}], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {
+     1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{6.,
+      10.}, {6., 9.}, {8.292999982833862, 9.}, {4.146000146865845, 
+     4.854000091552734}, {3.9509999752044678`, 4.658999919891357}, {
      3.9509999752044678`, 4.3420000076293945`}, {4.146000146865845, 
      4.146999835968018}, {4.24399995803833, 4.048999786376953}, {
      4.371999979019165, 4.}, {4.5, 4.}, {4.628000020980835, 4.}, {
@@ -2939,7 +2939,7 @@ KYe1v2Jyj/77bx+VYn3fv1cDzjcGgc0IPg84ADQcDloqe1UzM8DdnxgSpL6A
 k8Hhy98rwBDRhMuDzfPVRDWvGMGfc0RhQ5GHEZy/bDZQ4JMB3H3o4Q8AZ4+k
 Wg==
      "]]}, 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {
      1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
@@ -2973,7 +2973,7 @@ Mf2qcP/KggISxnfQgst/WH7M29xTG65/3nugQLkunO8CihBNfbj96PELAE+O
      17.218}, {5.284, 17.265}, {7.5, 17.265}, {9.716, 17.265}, {10.609, 
      17.218}, {11.631, 17.692}, {11.952, 17.129}, {13.318, 7.7568}, {7.5, 
      8.0048}}}]}, 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
       3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{6.653,
        12.427}, {5.403, 12.427}, {4.365, 12.521}, {4.209, 12.292}, {3.871, 
@@ -4700,154 +4700,119 @@ xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
   ImageSize -> {7, 4}, ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> 
   Scaled[-0.5]]& ),
 
-"ChatEvaluatingSpinner" -> (RawBoxes[
-  DynamicBox[
-   If[
-    TrueQ[$CloudEvaluation], 
-    GraphicsBox[{
-      Thickness[0.05], 
-      GrayLevel[0.9], 
-      CircleBox[{0, 0}, 1]}, PlotRange -> 1.1, ImageSize -> #], 
-    DynamicModuleBox[{Wolfram`ChatbookFrontEndResourceBuilder`Private`i}, 
-     OverlayBox[{
-       PaneBox[
-        AnimatorBox[
-         Dynamic[Wolfram`ChatbookFrontEndResourceBuilder`Private`i], {1, 30, 
-         1}, AutoAction -> False, AnimationRate -> Automatic, DisplayAllSteps -> 
-         True, DefaultDuration -> 2, AppearanceElements -> None], 
-        ImageSize -> {0, 0}], 
-       GraphicsBox[{
-         Thickness[0.05], 
-         GrayLevel[0.9], 
-         CircleBox[{0, 0}, 1, {0., 6.2832}]}, PlotRange -> 1.1, 
-        ImageSize -> #], 
-       PaneSelectorBox[{1 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.5332, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 2 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.5151, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 3 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.4611, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 4 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.3713, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 5 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.2463, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 6 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {4.0869, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 7 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {3.894, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 8 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {3.6686, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 9 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {3.412, 4.9332}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 10 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {3.1258, 4.924}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 11 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {2.8116, 4.8802}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 12 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {2.4711, 4.8006}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 13 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {2.1064, 4.6856}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 14 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {1.7195, 4.5359}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 15 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {1.3127, 4.3525}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 16 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {0.88824, 4.1362}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 17 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {0.44865, 3.8884}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 18 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-0.0035846, 3.6105}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 19 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-0.46585, 3.3041}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 20 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-0.9355, 2.9709}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 21 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.4098, 2.6129}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 22 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 2.2322}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 23 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 1.8308}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 24 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 1.4112}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 25 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 0.97565}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 26 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 0.52676}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 27 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, 0.067093}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 28 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, -0.40072}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 29 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, -0.87399}]}, PlotRange -> 1.1, 
-           ImageSize -> #], 30 -> GraphicsBox[{
-            Thickness[0.06], 
-            GrayLevel[0.7], 
-            CircleBox[{0, 0}, 1, {-1.75, -1.35}]}, PlotRange -> 1.1, 
-           ImageSize -> #]}, 
-        Dynamic[Wolfram`ChatbookFrontEndResourceBuilder`Private`i], 
-        ContentPadding -> False, FrameMargins -> 0, ImageSize -> All, 
-        Alignment -> Automatic, BaseStyle -> None, TransitionDirection -> 
-        Horizontal, TransitionDuration -> 0.5, TransitionEffect -> 
-        Automatic]}, ContentPadding -> False, FrameMargins -> 0], 
-     DynamicModuleValues :> {}]], SingleEvaluation -> True]]& ),
+"ChatEvaluatingSpinner" -> (DynamicBox[
+  If[
+   TrueQ[$CloudEvaluation], 
+   GraphicsBox[{
+     Thickness[0.05], #2, 
+     CircleBox[{0, 0}, 1]}, PlotRange -> 1.1, ImageSize -> #], 
+   DynamicModuleBox[{Typeset`i}, 
+    OverlayBox[{
+      PaneBox[
+       AnimatorBox[
+        Dynamic[Typeset`i], {1, 30, 1}, AutoAction -> False, AnimationRate -> 
+        Automatic, DisplayAllSteps -> True, DefaultDuration -> 2, 
+        AppearanceElements -> None], ImageSize -> {0, 0}], 
+      GraphicsBox[{
+        Thickness[0.05], #2, 
+        CircleBox[{0, 0}, 1, {0., 6.2832}]}, PlotRange -> 1.1, 
+       ImageSize -> #], 
+      PaneSelectorBox[{1 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.5332, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 2 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.5151, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 3 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.4611, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 4 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.3713, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 5 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.2463, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 6 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.0869, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 7 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.894, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 8 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.6686, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 9 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.412, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 10 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.1258, 4.924}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 11 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.8116, 4.8802}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 12 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.4711, 4.8006}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 13 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.1064, 4.6856}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 14 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {1.7195, 4.5359}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 15 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {1.3127, 4.3525}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 16 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {0.88824, 4.1362}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 17 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {0.44865, 3.8884}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 18 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.0035846, 3.6105}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 19 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.46585, 3.3041}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 20 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.9355, 2.9709}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 21 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.4098, 2.6129}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 22 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 2.2322}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 23 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 1.8308}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 24 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 1.4112}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 25 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.97565}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 26 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.52676}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 27 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.067093}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 28 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -0.40072}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 29 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -0.87399}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 30 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -1.35}]}, PlotRange -> 1.1, 
+          ImageSize -> #]}, 
+       Dynamic[Typeset`i], ContentPadding -> False, FrameMargins -> 0, 
+       ImageSize -> All, Alignment -> Automatic, BaseStyle -> None, 
+       TransitionDirection -> Horizontal, TransitionDuration -> 0.5, 
+       TransitionEffect -> Automatic]}, ContentPadding -> False, FrameMargins -> 
+     0], DynamicModuleValues :> {}]], SingleEvaluation -> True]& ),
 
 "StopChatButtonLabel" -> (TagBox[
   PaneSelectorBox[{False -> FrameBox[
@@ -5722,10 +5687,9 @@ JzxmIQ==
   PlotRange -> {{-0.5, 18.5}, {-0.5, 14.5}}, AspectRatio -> Automatic]& ),
 
 "WorkspaceFocusIndicatorCaret" -> GraphicsBox[
-  {Thickness[0.2], FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[
-   1.]}], FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
-    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-    3}}}, CompressedData["
+  {Thickness[0.2], FaceForm[GrayLevel[0.53725]], 
+   FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0,
+     1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
 1:eJxTTMoPSmVmYGBgBGJxIGYCYpfunOe/M4Ud2sVunvt+mc3hz8qPl3wXCTmI
 A7nByRwOLGF8uptiBeH8PSWTJVimCcDVP72gdPvnP2aHoB1yra8DP9vLRqVY
 3/d/bQ+Tv+/fOz1P6Kk9TL9TAkjHVTgfJNt84BBc/SLXbZ//Xlmx/0fw46Wz
@@ -5741,14 +5705,14 @@ xoe5Hz18AaZOtJQ=
 "WorkspaceFocusIndicatorCheck" -> PaneSelectorBox[{False->
   GraphicsBox[
    {Thickness[0.1], 
-    {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+    {FaceForm[GrayLevel[0.53725]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
       7.596}, {-0.00010014, 8.924}, {1.0759, 10.}, {2.4039, 10.}, {7.5959, 
       10.}, {8.9239, 10.}, {9.9999, 8.924}, {9.9999, 7.596}, {9.9999, 
       2.404}, {9.9999, 1.076}, {8.9239, 0.}, {7.5959, 0.}}}]}, 
-    {RGBColor[1., 1., 1.], Opacity[1.], CapForm["Round"], JoinForm["Round"], 
+    {GrayLevel[1.], CapForm["Round"], JoinForm["Round"], 
      JoinedCurveBox[{{{1, 4, 3}, {1, 3, 3}}}, {{{2.2297, 5.2572}, {3.1857, 
       3.9922}, {4.1847, 2.3282}, {4.1847, 2.3282}, {4.1847, 2.3282}, {6.0057, 
       5.3422}, {7.7707, 7.6712}}},
@@ -5759,14 +5723,14 @@ xoe5Hz18AaZOtJQ=
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}], True->
   GraphicsBox[
    {Thickness[0.1], 
-    {FaceForm[{RGBColor[0.74902, 0.74902, 0.74902], Opacity[1.]}], 
+    {FaceForm[GrayLevel[0.74902]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
       7.596}, {-0.00010014, 8.924}, {1.0759, 10.}, {2.4039, 10.}, {7.5959, 
       10.}, {8.9239, 10.}, {9.9999, 8.924}, {9.9999, 7.596}, {9.9999, 
       2.404}, {9.9999, 1.076}, {8.9239, 0.}, {7.5959, 0.}}}]}, 
-    {RGBColor[1., 1., 1.], Opacity[1.], CapForm["Round"], JoinForm["Round"], 
+    {GrayLevel[1.], CapForm["Round"], JoinForm["Round"], 
      JoinedCurveBox[{{{1, 4, 3}, {1, 3, 3}}}, {{{2.2297, 5.2572}, {3.1857, 
       3.9922}, {4.1847, 2.3282}, {4.1847, 2.3282}, {4.1847, 2.3282}, {6.0057, 
       5.3422}, {7.7707, 7.6712}}},
@@ -5810,7 +5774,7 @@ xoe5Hz18AaZOtJQ=
      1, 3, 3}}}, {{{2., 1.5}, {2., 2.}, {0.5, 2.}, {0.224, 2.}, {0., 1.776}, {
      0., 1.5}, {0., 1.224}, {0.224, 1.}, {0.5, 1.}, {2.5, 1.}, {2.224, 1.}, {
      2., 1.224}, {2., 1.5}}}]}, 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[GrayLevel[1.]], 
     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.5, 10.}, {2.224, 10.}, {2., 
      9.776}, {2., 9.5}, {2., 1.5}, {2., 1.224}, {2.224, 1.}, {2.5, 1.}, {9.5, 
@@ -5879,35 +5843,35 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
      11.}, {2., 11.}, {10., 11.}, {10.552, 11.}, {11., 10.552}, {11., 10.}, {
      11., 1.}, {11., 0.448}, {10.552, 0.}, {10., 0.}, {2., 0.}, {1.448, 0.}, {
      1., 0.448}, {1., 1.}, {1., 10.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      1, 3, 3}}}, {{{0.5, 9.}, {2., 9.}, {2., 9.5}, {2., 9.776}, {2.224, 
      10.}, {2.5, 10.}, {0.5, 10.}, {0.224, 10.}, {0., 9.776}, {0., 9.5}, {0., 
      9.224}, {0.224, 9.}, {0.5, 9.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 7.}, {2., 7.}, {2., 8.}, {0.5, 8.}, {0.224, 8.}, {0., 
      7.776}, {0., 7.5}, {0., 7.224}, {0.224, 7.}, {0.5, 7.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 3.}, {2., 3.}, {2., 4.}, {0.5, 4.}, {0.224, 4.}, {0., 
      3.776}, {0., 3.5}, {0., 3.224}, {0.224, 3.}, {0.5, 3.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 5.}, {2., 5.}, {2., 6.}, {0.5, 6.}, {0.224, 6.}, {0., 
      5.776}, {0., 5.5}, {0., 5.224}, {0.224, 5.}, {0.5, 5.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}}}, {{{2., 1.5}, {2., 2.}, {0.5, 2.}, {0.224, 2.}, {0., 1.776}, {
      0., 1.5}, {0., 1.224}, {0.224, 1.}, {0.5, 1.}, {2.5, 1.}, {2.224, 1.}, {
      2., 1.224}, {2., 1.5}}}]}, 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[GrayLevel[1.]], 
     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.5, 10.}, {2.224, 10.}, {2., 
      9.776}, {2., 9.5}, {2., 1.5}, {2., 1.224}, {2.224, 1.}, {2.5, 1.}, {9.5, 
      1.}, {9.776, 1.}, {10., 1.224}, {10., 1.5}, {10., 9.5}, {10., 9.776}, {
      9.776, 10.}, {9.5, 10.}, {2.5, 10.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[GrayLevel[0.53725]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 
       0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
@@ -5965,14 +5929,14 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
 "WorkspaceFocusIndicatorUncheck" -> PaneSelectorBox[{False->
   GraphicsBox[
    {Thickness[0.1], 
-    {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+    {FaceForm[GrayLevel[1.]], 
      FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
       0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.4043, 0.5}, {1.3543, 0.5}, {
       0.5003, 1.354}, {0.5003, 2.404}, {0.5003, 7.596}, {0.5003, 8.646}, {
       1.3543, 9.5}, {2.4043, 9.5}, {7.5953, 9.5}, {8.6453, 9.5}, {9.5003, 
       8.646}, {9.5003, 7.596}, {9.5003, 2.404}, {9.5003, 1.354}, {8.6453, 
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
-    {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+    {FaceForm[GrayLevel[0.53725]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -5989,14 +5953,14 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}], True->
   GraphicsBox[
    {Thickness[0.1], 
-    {FaceForm[{RGBColor[0.97647, 0.97647, 0.97647], Opacity[1.]}], 
+    {FaceForm[GrayLevel[0.97647]], 
      FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
       0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.4043, 0.5}, {1.3543, 0.5}, {
       0.5003, 1.354}, {0.5003, 2.404}, {0.5003, 7.596}, {0.5003, 8.646}, {
       1.3543, 9.5}, {2.4043, 9.5}, {7.5953, 9.5}, {8.6453, 9.5}, {9.5003, 
       8.646}, {9.5003, 7.596}, {9.5003, 2.404}, {9.5003, 1.354}, {8.6453, 
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
-    {FaceForm[{RGBColor[0.74902, 0.74902, 0.74902], Opacity[1.]}], 
+    {FaceForm[GrayLevel[0.74902]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -6394,7 +6358,7 @@ TD2Mb3lNEkxzlMqBaSGoOMw9MD7MvTC+5EEUPjx8oOahhB8ACaE9/g==
 
 "WorkspaceCodeBlockCopy" -> GraphicsBox[
   {Thickness[0.09523809523809523], FaceForm[{RGBColor[
-   0.2901960784313726, 0.5843137254901961, 0.8], Opacity[1.]}], 
+   0.290196, 0.5843137, 0.8], Opacity[1.]}], 
    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0,
       1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
      0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
@@ -6435,9 +6399,8 @@ hHuxIfvHYfl1NmT/MjCsMLbHwmdg2GC8H0h6qDOoOmDhw9SjhB8ALM9M/g==
 
 "WorkspaceCodeBlockInsertAndEvaluate" -> GraphicsBox[
   {Thickness[0.07016411257027613], 
-   {RGBColor[0.2901960784313726, 0.5843137254901961, 0.8], Thickness[
-    0.05262308442770709], Opacity[1.], CapForm["Butt"], 
-    JoinForm[{"Miter", 1.}], 
+   {RGBColor[0.290196, 0.5843137, 0.8], Thickness[0.05262308442770709], 
+    CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
@@ -6449,11 +6412,11 @@ ogyw/ANdAzWwvGYMWP+N6wtVwe5wTwSbP2GBhDaIdlh3HGz/hosJYH8tkNKX
 Q5bfcMwb7P4XUYvA+i+UQfzHYWIINr9isgTY/zD7YeGDEn4ArS1I9w==
      "],
      CurveClosed->{1}]}, 
-   {FaceForm[{RGBColor[0.2901960784313726, 0.5843137254901961, 0.8], Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{
-     5.526100158691406, 10.766900062561035`}, {5.526100158691406, 
-     4.3668999671936035`}, {10.32610034942627, 7.582900285720825}, {
-     5.526100158691406, 10.766900062561035`}}}]}},
+   {FaceForm[RGBColor[0.290196, 0.5843137, 0.8]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{5.526100158691406, 
+     10.766900062561035`}, {5.526100158691406, 4.3668999671936035`}, {
+     10.32610034942627, 7.582900285720825}, {5.526100158691406, 
+     10.766900062561035`}}}]}},
   AspectRatio->Automatic,
   BaselinePosition->(Center -> Center),
   ImageSize->{16., 17.},
