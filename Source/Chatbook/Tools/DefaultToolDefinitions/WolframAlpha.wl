@@ -177,6 +177,13 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
+waResultText0[ as: KeyValuePattern @ { "Content" -> RawBoxes[ boxes_ ] } ] /;
+    ! KeyExistsQ[ as, "Plaintext" ] :=
+        CellToString[
+            boxes /. FormBox[ box_, TraditionalForm ] /; ! FreeQ[ box, _GraphicsBox|_Graphics3DBox ] :> box,
+            "ContentTypes" -> { "Text", "Image" }
+        ];
+
 waResultText0[ as: KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
     ! FreeQ[ Unevaluated @ expr, _Missing ] :=
         Replace[ Lookup[ as, "Plaintext" ], Except[ _String ] :> Nothing ];
