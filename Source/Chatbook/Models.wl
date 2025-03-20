@@ -432,6 +432,7 @@ chooseModelFamily // endDefinition;
 chooseModelFamily0 // beginDefinition;
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
+chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Chat"    , $$versionOrParams } ] ] := "DeepSeekChat";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrParams } ] ] := "DeepSeekChat";

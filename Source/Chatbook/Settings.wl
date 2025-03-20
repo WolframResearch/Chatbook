@@ -142,6 +142,9 @@ $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
     "ToolResponseRole" -> "User"
 |>;
 
+$modelAutoSettings[ "Anthropic", "Claude3" ] = <|
+    "ToolExamplePrompt" -> None
+|>;
 
 $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
     "DiscourageExtraToolCalls" -> True
