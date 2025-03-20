@@ -1893,8 +1893,7 @@ appendURIInstructions0 // endDefinition;
 
 
 $uriPromptTemplate = StringTemplate[ "\
-(* You can inline this expression in future evaluator inputs or WL code blocks (with proper formatting) using \
-the syntax: <!expression://%%1%%!>
+(* You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://%%1%%!>
 
 Always use this syntax when referring to this expression instead of writing it out manually.
 This syntax is only available to you. Do not mention it to the user. *)\

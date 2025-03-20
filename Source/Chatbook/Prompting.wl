@@ -51,6 +51,7 @@ $basePromptOrder = {
     "WolframLanguageEvaluatorTool",
     "EndTurnToken",
     "EndTurnToolCall",
+    "DiscourageExtraToolCalls",
     "NotebookAssistanceInstructionsHeader",
     "NotebookAssistanceGettingStarted",
     "NotebookAssistanceErrorMessage",
@@ -105,6 +106,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
     "EndTurnToken"                         -> { },
     "EndTurnToolCall"                      -> { "EndTurnToken" },
+    "DiscourageExtraToolCalls"             -> { },
     "NotebookAssistanceInstructionsHeader" -> { },
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
@@ -291,6 +293,9 @@ $basePromptComponents[ "EndTurnToken" ] = "\
 
 $basePromptComponents[ "EndTurnToolCall" ] = "\
 * If you are going to make a tool call, you must do so BEFORE ending your turn.";
+
+$basePromptComponents[ "DiscourageExtraToolCalls" ] = "\
+* Don't make more tool calls than is needed. Tool calls cost tokens, so be efficient!";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

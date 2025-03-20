@@ -32,6 +32,7 @@ $defaultChatSettings = <|
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
     "ConvertSystemRoleToUser"        -> Automatic,
+    "DiscourageExtraToolCalls"       -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
@@ -139,6 +140,11 @@ $modelAutoSettings[ "Anthropic", Automatic ] = <|
 $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
     "ToolMethod"       -> Automatic,
     "ToolResponseRole" -> "User"
+|>;
+
+
+$modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
+    "DiscourageExtraToolCalls" -> True
 |>;
 
 (* ::**************************************************************************************************************:: *)
