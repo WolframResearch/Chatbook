@@ -1457,6 +1457,10 @@ $stringFormatRules = {
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
         makeResultCell @ mathCell @ math,
 
+    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            makeResultCell @ imageCell[ alt, url ],
+
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
         hyperlink[ label, url ],
 
