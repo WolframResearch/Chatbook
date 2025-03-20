@@ -937,7 +937,7 @@ SetFallthroughError[makeChatActionMenu]
 makeChatActionMenu[
 	containerType: "Input" | "Delimiter" | "Toolbar",
 	targetObj : _CellObject | _NotebookObject
-] := 
+] :=
 Join[
 	{
 		<| "Type" -> "Header", "Label" -> tr @ "UIPersonas" |>
@@ -949,8 +949,8 @@ Join[
 		KeyValueMap[ { persona, personaSettings } |->
 			<|
 				"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
-				"Label"  -> personaDisplayName[ persona, personaSettings ], 
-				"Icon"   -> getPersonaMenuIcon @ personaSettings, 
+				"Label"  -> personaDisplayName[ persona, personaSettings ],
+				"Icon"   -> getPersonaMenuIcon @ personaSettings,
 				"Check"  -> styleListItem[ persona, personaValue ],
 				"Action" :> (
 					CurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = persona;
@@ -1278,7 +1278,14 @@ simpleModelMenuDisplay // endDefinition;
 groupMenuModels // beginDefinition;
 
 groupMenuModels[ obj_, currentModel_, models_List ] :=
-    groupMenuModels[ obj, currentModel, GroupBy[ models, modelGroupName ] ];
+    groupMenuModels[
+		obj,
+		currentModel,
+		Map[
+			ReverseSortBy[ { Lookup[ "Family" ], Lookup[ "BaseName" ], Lookup[ "Date" ] } ],
+			GroupBy[ models, modelGroupName ]
+		]
+	];
 
 groupMenuModels[ obj_, currentModel_, models_Association ] /; Length @ models === 1 :=
     modelMenuItem[ obj, currentModel ] /@ First @ models;
