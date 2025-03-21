@@ -1191,12 +1191,23 @@ $graphicsBoxStringReplacements = {
 (*toMarkdownImageBox*)
 toMarkdownImageBox // beginDefinition;
 
+toMarkdownImageBox[ box: GraphicsBox[ TagBox[ _RasterBox, ___ ], ___ ] ] :=
+    toMarkdownImageBox0 @ box;
+
 toMarkdownImageBox[ graphics_ ] /; $multimodalImages && ByteCount @ graphics > $maxBoxSizeForImages :=
     Block[ { $multimodalImages = False },
         fasterCellToString0 @ graphics
     ];
 
-toMarkdownImageBox[ graphics_ ] := Enclose[
+toMarkdownImageBox[ graphics_ ] :=
+    toMarkdownImageBox0 @ graphics;
+
+toMarkdownImageBox // endDefinition;
+
+
+toMarkdownImageBox0 // beginDefinition;
+
+toMarkdownImageBox0[ graphics_ ] := Enclose[
     Catch @ Module[ { uri },
         uri = ConfirmBy[ boxesToExpressionURI @ graphics, StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
@@ -1206,7 +1217,7 @@ toMarkdownImageBox[ graphics_ ] := Enclose[
     throwInternalFailure
 ];
 
-toMarkdownImageBox // endDefinition;
+toMarkdownImageBox0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -1954,6 +1965,9 @@ gridFlatten // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Tables*)
+fasterCellToString0[ GridBox[ { { box_ } }, ___ ] ] :=
+    fasterCellToString0 @ box;
+
 fasterCellToString0[ GridBox[ { row: { ___ } }, ___ ] ] :=
     fasterCellToString0 @ RowBox @ Riffle[ row, "\t" ];
 

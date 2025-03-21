@@ -102,7 +102,7 @@ makeWorkspaceChatSubDockedCellExpression[ content_ ] := Cell[ BoxData @ ToBoxes 
     CellFrameMargins   -> 0,
     CellMargins        -> { { -1, -5 }, { -1, -1 } },
     CellTags           -> "WorkspaceChatSubDockedCell",
-    Magnification      -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
+    Magnification      -> Dynamic[ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
 makeWorkspaceChatSubDockedCellExpression // endDefinition;
@@ -355,7 +355,7 @@ attachWorkspaceChatInput // endDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, chatInputText = CurrentValue[ FrontEnd`EvaluationNotebook[], { TaggingRules, "ChatInputString" }, "" ] },
         EventHandler[
             Pane[
                 Grid[
@@ -364,19 +364,46 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
-                                    Dynamic @ CurrentValue[
-                                        EvaluationNotebook[ ],
-                                        { TaggingRules, "ChatInputString" }
-                                    ],
+                                    Dynamic @ chatInputText,
                                     Boxes,
                                     ContinuousAction -> True,
                                     $inputFieldOptions
                                 ],
                                 $inputFieldFrameOptions
                             ],
-                            RawBoxes @ TemplateBox[
-                                { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
-                                "WorkspaceSendChatButton"
+                            (* no need to templatize an attached cell as it is ephemeral *)
+                            PaneSelector[
+                                {
+                                    None -> Button[
+                                        Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                            RGBColor[ "#a3c9f2" ],
+                                            RGBColor[ "#f1f7fd" ],
+                                            27
+                                        ],
+                                        Needs[ "Wolfram`Chatbook`" -> None ];
+                                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                            "EvaluateWorkspaceChat",
+                                            thisNB,
+                                            Dynamic @ chatInputText
+                                        ],
+                                        Appearance   -> "Suppressed",
+                                        FrameMargins -> 0,
+                                        Method       -> "Queued"
+                                    ]
+                                },
+                                Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
+                                Button[
+                                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                        RGBColor[ "#a3c9f2" ],
+                                        RGBColor[ "#f1f7fd" ],
+                                        27
+                                    ],
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                    Appearance   -> "Suppressed",
+                                    FrameMargins -> 0
+                                ],
+                                Alignment -> { Automatic, Baseline }
                             ]
                         },
                         {
@@ -405,7 +432,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
-                        Dynamic @ CurrentValue[ thisNB, { TaggingRules, "ChatInputString" } ]
+                        Dynamic @ chatInputText
                     ]
                 )
             },
@@ -416,7 +443,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> location,
-    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
 (* :!CodeAnalysis::EndBlock:: *)
@@ -639,7 +666,7 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
     ],
     "AttachedChatInput",
     Background    -> None,
-    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
     Selectable    -> True,
     TaggingRules  -> <| "ChatNotebookSettings" -> settings |>
 ];
