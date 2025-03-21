@@ -56,6 +56,9 @@ $defaultUserImage := $defaultUserImage =
 (* ::Section::Closed:: *)
 (*Workspace Chat*)
 
+(* TODO: We'll eventually need to scope this by AppName *)
+$WorkspaceChatInput = "";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*makeWorkspaceChatDockedCell*)
@@ -355,7 +358,7 @@ attachWorkspaceChatInput // endDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, chatInputText = CurrentValue[ FrontEnd`EvaluationNotebook[], { TaggingRules, "ChatInputString" }, "" ] },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB },
         EventHandler[
             Pane[
                 Grid[
@@ -364,7 +367,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
-                                    Dynamic @ chatInputText,
+                                    Dynamic @ $WorkspaceChatInput,
                                     Boxes,
                                     ContinuousAction -> True,
                                     $inputFieldOptions
@@ -384,7 +387,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                                             "EvaluateWorkspaceChat",
                                             thisNB,
-                                            Dynamic @ chatInputText
+                                            Dynamic @ $WorkspaceChatInput
                                         ],
                                         Appearance   -> "Suppressed",
                                         FrameMargins -> 0,
@@ -432,7 +435,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
-                        Dynamic @ chatInputText
+                        Dynamic @ $WorkspaceChatInput
                     ]
                 )
             },
