@@ -459,7 +459,7 @@ byteArrayToPodInformation[ ba_ByteArray ] := Enclose[
 
         info = ConfirmMatch[
             WolframAlpha[ "dummy", "PodInformation", Method -> { "ProcessedXML" -> processed } ],
-            { (Rule|RuleDelayed)[ _, _ ].. }
+            { (Rule|RuleDelayed)[ _, _ ]... }
         ];
 
         Cases[ info, (Rule|RuleDelayed)[ { _, "Title"|"Plaintext"|"ComputableData"|"Content" }, _ ] ]
