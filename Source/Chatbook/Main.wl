@@ -37,6 +37,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$SandboxKernel;
 `$ToolFunctions;
 `$WorkspaceChat;
+`$WorkspaceChatInput;
 `AbsoluteCurrentChatSettings;
 `AddChatToSearchIndex;
 `AppendURIInstructions;
