@@ -1965,6 +1965,9 @@ gridFlatten // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Tables*)
+fasterCellToString0[ GridBox[ { { box_ } }, ___ ] ] :=
+    fasterCellToString0 @ box;
+
 fasterCellToString0[ GridBox[ { row: { ___ } }, ___ ] ] :=
     fasterCellToString0 @ RowBox @ Riffle[ row, "\t" ];
 
