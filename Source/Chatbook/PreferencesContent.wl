@@ -2006,7 +2006,7 @@ highlightColor[ tab_, id_ ] :=
                 { PrivateFrontEndOptions, "DialogSettings", "Preferences", "ControlHighlight", "HighlightID" },
                 None
             ],
-            color := FrontEnd`AbsoluteCurrentValue[ EvaluationNotebook[ ], { TaggingRules, "HighlightColor" }, None ]
+            color := FrontEnd`AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "HighlightColor" }, None ]
         },
         Dynamic @ If[ hid === { "AI", tab, id }, color, None ]
     ];
