@@ -205,6 +205,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getToolIcon;
 `getUserNotebook;
 `getUserNotebooks;
+`getWolframAlphaText;
 `getWorkspacePrompt;
 `graphicsQ;
 `grayDialogButtonLabel;

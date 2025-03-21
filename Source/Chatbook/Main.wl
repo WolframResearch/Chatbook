@@ -78,6 +78,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `RebuildChatSearchIndex;
 `RegisterVectorDatabase;
 `RelatedDocumentation;
+`RelatedWolframAlphaResults;
 `RelatedWolframAlphaQueries;
 `RemoveChatFromSearchIndex;
 `SandboxLinguisticAssistantData;
