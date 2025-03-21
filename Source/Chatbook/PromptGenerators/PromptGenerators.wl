@@ -15,6 +15,7 @@ $subcontexts = {
     "Wolfram`Chatbook`PromptGenerators`EmbeddingContext`",
     "Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`",
     "Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaQueries`",
+    "Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`",
     "Wolfram`Chatbook`PromptGenerators`VectorDatabases`"
 };
 

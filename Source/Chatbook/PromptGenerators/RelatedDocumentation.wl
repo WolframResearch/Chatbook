@@ -306,15 +306,6 @@ toSource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*ensureChatMessages*)
-ensureChatMessages // beginDefinition;
-ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
-ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
-ensureChatMessages[ messages: $$chatMessages ] := messages;
-ensureChatMessages // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*relatedDocumentationPrompt*)
 relatedDocumentationPrompt // beginDefinition;
 
