@@ -389,8 +389,12 @@ validateOptionInput // beginDefinition;
 validateOptionInput[ input: $$string | None ] :=
     input;
 
-validateOptionInput[ boxes_List? boxDataQ ] :=
-    validateOptionInput @ RowBox @ boxes;
+validateOptionInput[ content_List ] :=
+    validateOptionInput @ RowBox @ Replace[
+        content,
+        e: Except[ _String ] :> ToBoxes @ e,
+        { 1 }
+    ];
 
 validateOptionInput[ boxes_? boxDataQ ] :=
     boxes;
