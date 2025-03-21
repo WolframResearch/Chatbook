@@ -3062,6 +3062,7 @@ boxDataQ // beginDefinition;
 boxDataQ[ _String? StringQ ] := True;
 boxDataQ[ boxes_List ] := AllTrue[ boxes, boxDataQ ];
 boxDataQ[ (_? boxSymbolQ)[ ___ ] ] := True;
+boxDataQ[ _ ] := False;
 boxDataQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
