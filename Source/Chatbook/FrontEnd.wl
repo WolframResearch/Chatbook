@@ -1083,14 +1083,14 @@ MouseAppearance[
     "Arrow"]
 
 
-$openerLabelGridOptions = Sequence[
+$openerLabelGridOptions := Sequence[
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
     BaseStyle        -> { ShowStringCharacters -> False },
     Spacings         -> 0.25
 ];
 
-$openerFrameOptionsDefault = Sequence[
+$openerFrameOptionsDefault := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
     Background     -> color @ "NA_ChatOutputToolCallOpenerBackground",
     FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrame",
@@ -1099,7 +1099,7 @@ $openerFrameOptionsDefault = Sequence[
     RoundingRadius -> 5
 ];
 
-$openerFrameOptionsActive = Sequence[
+$openerFrameOptionsActive := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
     Background     -> color @ "NA_ChatOutputToolCallOpenerBackgroundHover",
     FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrameHover",

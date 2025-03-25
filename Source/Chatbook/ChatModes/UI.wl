@@ -1486,7 +1486,7 @@ popOutChatNB0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Overlay Menus*)
-$notebookIcon = (RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ #1, #2 ] ])&[
+$notebookIcon := (RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ #1, #2 ] ])&[
     color @ "NA_OverlayMenuNotebookIcon_Gray",
     color @ "NA_OverlayMenuNotebookIcon_Red"
 ];
