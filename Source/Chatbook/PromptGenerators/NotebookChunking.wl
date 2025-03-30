@@ -214,12 +214,13 @@ chunkNotebook[ nb_Notebook ] :=
     chunkNotebook[ nb, getNotebookURI @ nb ];
 
 chunkNotebook[ nb_Notebook, uri_String ] := Enclose[
-    Module[ { trailed, flatNodes, withURI, document },
+    Module[ { trailed, flatNodes, withURI, document, tokens },
         trailed   = ConfirmBy[ insertTrailInfo @ nb, AssociationQ, "Trailed" ];
         flatNodes = Cases[ trailed, KeyValuePattern[ "String" -> _String ], Infinity ];
         withURI   = insertURIs[ flatNodes, uri ];
         document  = ConfirmBy[ cellToString @ nb, StringQ, "Document" ];
-        <| "Document" -> document, "Chunks" -> withURI |>
+        tokens    = ConfirmBy[ tokenCount @ document, IntegerQ, "TokenCount" ];
+        <| "Document" -> document, "Chunks" -> withURI, "TokenCount" -> tokens, "URI" -> uri |>
     ],
     throwInternalFailure
 ];
