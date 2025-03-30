@@ -347,11 +347,15 @@ prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
     Module[ { messages, newRoles, replaced, split },
+
         messages = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
         replaced = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
         split    = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
-        $lastSubmittedMessages = split
+
+        addHandlerArguments[ "SubmittedMessages" -> split ];
+
+        split
     ],
     throwInternalFailure
 ];
@@ -420,17 +424,17 @@ replaceUnicodeCharacters[ settings_Association, messages_ ] :=
 
 replaceUnicodeCharacters[ data: _List|_Association ] :=
     data /. {
-        string_String :> RuleCondition @ replaceUnicodeCharacters @ string,
-        tool_LLMTool  :> RuleCondition @ replaceUnicodeCharacters @ tool
+        string_String        :> RuleCondition @ replaceUnicodeCharacters @ string,
+        tool_LLMTool         :> RuleCondition @ replaceUnicodeCharacters @ tool,
+        req_LLMToolRequest   :> RuleCondition @ replaceUnicodeCharacters @ req,
+        resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
 
-replaceUnicodeCharacters[ HoldPattern[ LLMTool ][ as0_Association, opts___ ] ] :=
-    With[ { as = replaceUnicodeCharacters @ as0 },
-        LLMTool[ as, opts ]
-    ];
+replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
+    With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
 
 replaceUnicodeCharacters // endDefinition;
 
