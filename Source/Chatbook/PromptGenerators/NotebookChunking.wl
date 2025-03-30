@@ -14,7 +14,7 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (*Configuration*)
 
 (* Configure chunk size parameters (in tokens): *)
-$targetTokens      = 2^10;
+$targetTokens      = 2^9;
 $targetTokensLow   = $targetTokens/2;
 $targetTokensHigh  = 2*$targetTokens;
 $maxTokens         = 2*$targetTokensHigh;
@@ -333,7 +333,7 @@ mergeHeaderNode[ header_Association, { first_Association, rest___Association } ]
 mergeHeaderNode[ header_Association, node: KeyValuePattern[ "Cells" -> { ___Cell } ] ] := Enclose[
     Module[ { headerTokens },
         headerTokens = ConfirmBy[ Lookup[ header, "TokenCount" ], IntegerQ, "HeaderTokenCount" ];
-        If[ TrueQ[ headerTokens <= $minTokens ],
+        If[ TrueQ[ headerTokens <= $targetTokensLow ],
             mergeNodes @ { header, node },
             { header, node }
         ]
