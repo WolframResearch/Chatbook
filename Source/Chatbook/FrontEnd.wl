@@ -718,6 +718,7 @@ cellOpenQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellStyles*)
 cellStyles // beginDefinition;
+cellStyles[ Cell[ _, styles___String, OptionsPattern[ ] ] ] := { styles };
 cellStyles[ cells_ ] /; $cloudNotebooks := cloudCellStyles @ cells;
 cellStyles[ cells_ ] := CurrentValue[ cells, CellStyle ];
 cellStyles // endDefinition;
