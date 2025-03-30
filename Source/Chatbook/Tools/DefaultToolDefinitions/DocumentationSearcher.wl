@@ -23,7 +23,7 @@ Search Wolfram Language documentation for symbols and more. \
 Follow up search results with the documentation lookup tool to get the full information."; *)
 
 $documentationSearcherDescription = "\
-Search Wolfram Language documentation for symbols and more.";
+Discover relevant Wolfram Language documentation snippets using semantic search.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -39,7 +39,7 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
-            "Help"        -> "A string representing a documentation search query",
+            "Help"        -> "A natural language question or description of what you're trying to achieve",
             "Required"    -> True
         |>
     }
@@ -71,7 +71,8 @@ documentationRAGSearch[ query_String, True ] :=
     processSearchResults @ LogChatTiming @ RelatedDocumentation[
         query,
         "Prompt",
-        MaxItems        -> 30,
+        MaxItems        -> 80,
+        "FilteredCount" -> 10,
         "FilterResults" -> True,
         "PromptHeader"  -> False
     ];
