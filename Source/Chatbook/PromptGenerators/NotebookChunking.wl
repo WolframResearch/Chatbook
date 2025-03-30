@@ -259,7 +259,7 @@ insertTrailInfo[
 
         headerNode = insertTrailInfo[ level + 1, 0, { trail, name }, header ];
         childNodes = mergeSmallNodes @ new;
-        merged     = mergeHeaderNode[ headerNode, childNodes ];
+        merged     = mergeSmallEndNodes @ mergeHeaderNode[ headerNode, childNodes ];
 
         <|
             "Level"    -> level,
@@ -276,7 +276,7 @@ insertTrailInfo[
 insertTrailInfo[ level_Integer, group_Integer, trail: { ___String }, cell: Cell @ CellGroupData[ cells_List, ___ ] ] :=
     Module[ { new, childNodes },
         new = MapIndexed[ insertTrailInfo[ level + 1, First[ #2 ], trail, #1 ] &, regroup @ cells ];
-        childNodes = mergeSmallNodes @ new;
+        childNodes = mergeSmallEndNodes @ mergeSmallNodes @ new;
         <|
             "Level"    -> level,
             "Group"    -> group,
@@ -344,6 +344,27 @@ mergeHeaderNode[ header_Association, node: KeyValuePattern[ "Children" -> nodes_
     <| node, "Children" -> mergeHeaderNode[ header, nodes ] |>;
 
 mergeHeaderNode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeSmallEndNodes*)
+mergeSmallEndNodes // beginDefinition;
+
+mergeSmallEndNodes[ { } ] := { };
+mergeSmallEndNodes[ { node_Association } ] := { node };
+
+mergeSmallEndNodes[ { before___, node_Association, end_Association } ] := Enclose[
+    Module[ { tokens },
+        tokens = ConfirmBy[ Lookup[ end, "TokenCount" ], IntegerQ, "TokenCount" ];
+        If[ tokens <= $targetTokensLow,
+            { before, mergeNodes @ { node, end } },
+            { before, node, end }
+        ]
+    ],
+    { before, node, end } &
+];
+
+mergeSmallEndNodes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
