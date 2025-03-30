@@ -346,11 +346,12 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced },
+    Module[ { messages, newRoles, replaced, split },
         messages = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
         replaced = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
-        $lastSubmittedMessages = replaced
+        split    = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
+        $lastSubmittedMessages = split
     ],
     throwInternalFailure
 ];
@@ -376,6 +377,35 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     ];
 
 prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*splitToolResponses*)
+splitToolResponses // beginDefinition;
+
+splitToolResponses[ settings_Association, messages_ ] :=
+    If[ TrueQ @ settings[ "SplitToolResponseMessages" ],
+        (* Temporary workaround for bug 458548 *)
+        Flatten[ splitToolResponse /@ messages ],
+        messages
+    ];
+
+splitToolResponses // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*splitToolResponse*)
+splitToolResponse // beginDefinition;
+
+splitToolResponse[ msg: KeyValuePattern @ {
+    "Role"         -> "Assistant",
+    "Content"      -> content: Except[ "", _String ],
+    "ToolRequests" -> { __LLMToolRequest }
+} ] := { KeyDrop[ msg, "ToolRequests" ], <| msg, "Content" -> "" |> };
+
+splitToolResponse[ msg_ ] := msg;
+
+splitToolResponse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
