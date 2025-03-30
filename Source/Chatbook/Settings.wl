@@ -149,7 +149,8 @@ $modelAutoSettings[ "Anthropic", "Claude3" ] = <|
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
-    "DiscourageExtraToolCalls" -> True
+    "DiscourageExtraToolCalls" -> True,
+    "ToolExamplePrompt"        -> Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
