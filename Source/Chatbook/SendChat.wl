@@ -346,11 +346,16 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced },
+    Module[ { messages, newRoles, replaced, split },
+
         messages = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
         replaced = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
-        $lastSubmittedMessages = replaced
+        split    = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
+
+        addHandlerArguments[ "SubmittedMessages" -> split ];
+
+        split
     ],
     throwInternalFailure
 ];
@@ -379,6 +384,35 @@ prepareMessagesForLLM0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*splitToolResponses*)
+splitToolResponses // beginDefinition;
+
+splitToolResponses[ settings_Association, messages_ ] :=
+    If[ TrueQ @ settings[ "SplitToolResponseMessages" ],
+        (* Temporary workaround for bug 458548 *)
+        Flatten[ splitToolResponse /@ messages ],
+        messages
+    ];
+
+splitToolResponses // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*splitToolResponse*)
+splitToolResponse // beginDefinition;
+
+splitToolResponse[ msg: KeyValuePattern @ {
+    "Role"         -> "Assistant",
+    "Content"      -> content: Except[ "", _String ],
+    "ToolRequests" -> { __LLMToolRequest }
+} ] := { KeyDrop[ msg, "ToolRequests" ], <| msg, "Content" -> "" |> };
+
+splitToolResponse[ msg_ ] := msg;
+
+splitToolResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*replaceUnicodeCharacters*)
 replaceUnicodeCharacters // beginDefinition;
 
@@ -390,17 +424,17 @@ replaceUnicodeCharacters[ settings_Association, messages_ ] :=
 
 replaceUnicodeCharacters[ data: _List|_Association ] :=
     data /. {
-        string_String :> RuleCondition @ replaceUnicodeCharacters @ string,
-        tool_LLMTool  :> RuleCondition @ replaceUnicodeCharacters @ tool
+        string_String        :> RuleCondition @ replaceUnicodeCharacters @ string,
+        tool_LLMTool         :> RuleCondition @ replaceUnicodeCharacters @ tool,
+        req_LLMToolRequest   :> RuleCondition @ replaceUnicodeCharacters @ req,
+        resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
 
-replaceUnicodeCharacters[ HoldPattern[ LLMTool ][ as0_Association, opts___ ] ] :=
-    With[ { as = replaceUnicodeCharacters @ as0 },
-        LLMTool[ as, opts ]
-    ];
+replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
+    With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
 
 replaceUnicodeCharacters // endDefinition;
 
@@ -606,6 +640,7 @@ prepareMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prepareMessagePart*)
 prepareMessagePart // beginDefinition;
+prepareMessagePart[ ""                  ] := Nothing;
 prepareMessagePart[ text_String         ] := prepareMessagePart @ <| "Type" -> "Text" , "Data" -> text  |>;
 prepareMessagePart[ image_? graphicsQ   ] := prepareMessagePart @ <| "Type" -> "Image", "Data" -> image |>;
 prepareMessagePart[ file_File           ] := prepareMessagePart @ <| "Type" -> partType @ file, "Data" -> file |>;
@@ -1620,6 +1655,7 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
+    (* If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
     makeToolResponseMessage0[
         If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
         settings[ "ToolResponseStyle" ],
@@ -1676,9 +1712,21 @@ IMPORTANT: If a tool call does not give the expected output, \
 ask the user before retrying unless you are ABSOLUTELY SURE you know how to fix the issue.";
 
 $toolCallRetryMessage = <|
-    "Role"      -> "System",
-    "Content"   -> $toolCallRetryPrompt,
-    "Temporary" -> True
+    "Role"          -> "System",
+    "Content"       -> $toolCallRetryPrompt,
+    "HoldTemporary" -> True
+|>;
+
+$discourageExtraToolCallsPrompt = "\
+IMPORTANT: Do not make any more tool calls unless absolutely necessary! \
+Stop and think about what the user was asking for. \
+Does the tool response give you enough information to answer the user's query? \
+If so, respond to the user now instead of making any additional tool calls.";
+
+$discourageExtraToolCallsMessage = <|
+    "Role"          -> "System",
+    "Content"       -> $discourageExtraToolCallsPrompt,
+    "HoldTemporary" -> True
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1734,7 +1782,9 @@ checkMarkdownOutput // endDefinition;
 $useMarkdownMessage = "
 
 (* IMPORTANT: The user does not see the output of this tool call. \
-You must use this output in your response for them to see it. *)";
+You must use this output in your response for them to see it. \
+You can use any markdown links from the tool output in your response \
+to show images or other formatted expressions to the user. *)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
