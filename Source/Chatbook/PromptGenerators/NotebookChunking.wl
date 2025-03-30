@@ -491,7 +491,11 @@ makeCellURI[ uri_String, KeyValuePattern[ "Cells" -> cells_ ] ] :=
     makeCellURI[ uri, cells ];
 
 makeCellURI[ uri_String, cells: { __Cell } ] :=
-    FirstCase[ cells, c_Cell :> With[ { s = makeCellURI[ uri, c ] }, s /; StringQ @ s ] ];
+    FirstCase[
+        cells,
+        c_Cell :> With[ { s = makeCellURI[ uri, c ] }, s /; StringQ @ s ],
+        uri <> "#h-" <> Hash[ cells, Automatic, "HexString" ]
+    ];
 
 makeCellURI[ baseURI_String, cell_Cell ] :=
     With[ { fragment = cellURIFragment @ cell },
