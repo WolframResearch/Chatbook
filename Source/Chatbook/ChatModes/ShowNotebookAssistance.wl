@@ -22,7 +22,6 @@ $notebookAssistanceBaseSettings = <|
     "PromptGenerators"          -> { "RelatedDocumentation" },
     "ServiceCaller"             -> "NotebookAssistance",
     "Tools"                     -> { "NotebookEditor" },
-    "ToolSelectionType"         -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>,
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>
     |>
@@ -49,7 +48,6 @@ $workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
     TaggingRules        -> <|
-        "ChatInputString"      -> "",
         "ChatNotebookSettings" -> $notebookAssistanceWorkspaceSettings,
         "ConversationTitle"    -> ""
     |>
@@ -157,7 +155,7 @@ ShowNotebookAssistance // Options = {
     "ChatNotebookSettings" -> <| |>,
     "EvaluateInput"        -> False,
     "ExtraInstructions"    -> None,
-    "Input"                -> None,
+    "Input"                -> "",
     "NewChat"              -> Automatic
 };
 
@@ -165,7 +163,7 @@ ShowNotebookAssistance // Options = {
 (* ::Subsection::Closed:: *)
 (*Messages*)
 Chatbook::MissingNotebookAssistanceInput = "No code assistance input defined for key `1`.";
-Chatbook::InvalidExtraInstructions   = "Expected a string or None instead of `1` for ExtraInstructions.";
+Chatbook::InvalidExtraInstructions       = "Expected a string or None instead of `1` for ExtraInstructions.";
 
 GeneralUtilities`SetUsage[ ShowNotebookAssistance, "\
 ShowNotebookAssistance[] shows code assistance in a new or existing window.
@@ -390,6 +388,16 @@ validateOptionInput // beginDefinition;
 validateOptionInput[ input: $$string | None ] :=
     input;
 
+validateOptionInput[ content_List ] :=
+    validateOptionInput @ RowBox @ Replace[
+        content,
+        e: Except[ _String ] :> ToBoxes @ e,
+        { 1 }
+    ];
+
+validateOptionInput[ boxes_? boxDataQ ] :=
+    boxes;
+
 validateOptionInput[ Key[ name_String ] ] :=
     With[ { input = getNotebookAssistanceInput @ name },
         If[ StringQ @ input,
@@ -436,7 +444,7 @@ showNotebookAssistanceInline // endDefinition;
 setInlineInputAndEvaluate // beginDefinition;
 
 setInlineInputAndEvaluate[ attached_CellObject, input_, evaluate_ ] := (
-    If[ StringQ @ input, CurrentValue[ attached, { TaggingRules, "ChatInputString" } ] = input ];
+    If[ validInputStringQ @ input, $WorkspaceChatInput = input ];
     If[ TrueQ @ evaluate, evaluateAttachedInlineChat[ ] ];
     attached
 );
@@ -554,18 +562,8 @@ setNotebookAssistanceEvaluator // endDefinition;
 setWindowInputAndEvaluate // beginDefinition;
 
 setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] := (
-    If[ StringQ @ input,
-        CurrentValue[ nbo, { TaggingRules, "ChatInputString" } ] = input;
-    ];
-
-    If[ TrueQ @ evaluate,
-        ChatbookAction[
-            "EvaluateWorkspaceChat",
-            nbo,
-            Dynamic @ CurrentValue[ nbo, { TaggingRules, "ChatInputString" } ]
-        ]
-    ];
-
+    If[ validInputStringQ @ input, $WorkspaceChatInput = input ];
+    If[ TrueQ @ evaluate, ChatbookAction[ "EvaluateWorkspaceChat", nbo, Dynamic @ $WorkspaceChatInput ] ];
     nbo
 );
 
@@ -582,7 +580,7 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
         mag     = Replace[ AbsoluteCurrentValue[ source, Magnification ], Except[ _? NumberQ ] :> 1.0 ];
         width   = Ceiling @ ConfirmBy[ $workspaceChatWidth * mag, NumberQ, "Width" ];
         margins = ConfirmMatch[ windowMargins @ source, { { _, _ }, { _, _ } }, "Margins" ];
-        
+
         displayindex = NotebookTools`NotebookDisplayIndex[source];
         displayleftedge = If[IntegerQ[displayindex],
             Replace[CurrentValue["ConnectedDisplays"][[displayindex]], {

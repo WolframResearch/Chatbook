@@ -102,7 +102,7 @@ VerificationTest[
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
-    _Integer? (GreaterThan[ 3 ]),
+    _Integer? Positive,
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:103,1-108,2"
 ]

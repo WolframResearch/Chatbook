@@ -62,11 +62,14 @@ $relativePaths             = Automatic;
 $minCompressedVectors = 2^14;
 $maxCompressedVectors = 2^18;
 
-$defaultSourceSelectorNames = {
-    "DataRepositoryURIs",
-    "DocumentationURIs",
-    "FunctionRepositoryURIs"
+$sourceSelectorExcludedNames = {
+    "WolframAlphaQueries"
 };
+
+$defaultSourceSelectorNames = Complement[
+    FileBaseName /@ FileNames[ "*.wl", $defaultVectorDBSourceDirectory ],
+    $sourceSelectorExcludedNames
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -529,6 +532,8 @@ BuildSourceSelector[ names: { ___String } ] := Enclose @ inDBDirectory @
             "Delay" -> 0,
             UpdateInterval -> 1
         ];
+
+        ConfirmBy[ rewriteDBData[ rel, "SourceSelector" ], FileExistsQ, "Rewrite" ];
 
         ConfirmBy[
             writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],

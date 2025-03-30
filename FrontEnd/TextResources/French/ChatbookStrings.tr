@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "Contenu inclus\[NonBreakingSpace]:",
 "FeedbackDialogContentOutputImageLabel" -> "Image de sortie",
 "FeedbackDialogCommentFieldHint" -> "Avez-vous d\[CloseCurlyQuote]autres commentaires \[AGrave] formuler\[NonBreakingSpace]? (facultatif)",
-"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
+"FeedbackDialogBodyUsedForTraining" -> "Ce feedback peut \[EHat]tre utilis\[EAcute] \[AGrave] des fins d\[CloseCurlyQuote]apprentissage.",
 "FeedbackDialogBodyPreviewData" -> "Aper\[CCedilla]u des donn\[EAcute]es \[AGrave] envoyer",
 "FeedbackDialogThanks" -> "Merci pour vos commentaires\[NonBreakingSpace]!",
 
@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "Utilisation de ",
 "FormattingToolUsed" -> "Utilisant ",
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
+"FormattingThinkingActive" -> "En train de r\[EAcute]fl\[EAcute]chir\[Ellipsis]",
+"FormattingThinkingComplete" -> "A r\[EAcute]fl\[EAcute]chi pendant `time` secondes",
+"FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
+"FormattingHide" -> "Cacher",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",
@@ -153,7 +157,7 @@
 "ToolManagerDeleteTool" -> "Supprimer l\[CloseCurlyQuote]outil",
 
 "UIEnableChatFeatures" -> "Activer les fonctions de chat de l\[CloseCurlyQuote]IA",
-"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
+"UIAutomaticAnalysisLabel" -> "Analyser automatiquement les r\[EAcute]sultats",
 "UIAutomaticAnalysisTooltip" -> "Si cette option est activ\[EAcute]e, des suggestions automatiques fournies par l\[CloseCurlyQuote]IA seront ajout\[EAcute]es en fonction des r\[EAcute]sultats de l\[CloseCurlyQuote]\[EAcute]valuation.",
 "UIPersonas" -> "Personnages",
 "UIChatBlockSettings" -> "Param\[EGrave]tres de blocage du chat\[Ellipsis]",
@@ -245,14 +249,14 @@
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?",
 
-"ProgressTextCheckingDocumentation" -> "Checking documentation",
-"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
-"ProgressTextCreatingMessages" -> "Creating messages",
-"ProgressTextSendingChat" -> "Sending chat",
-"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
-"ProgressTextWaitingForResponse" -> "Waiting for response",
-"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
-"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
+"ProgressTextCheckingDocumentation" -> "V\[EAcute]rification de la documentation",
+"ProgressTextChoosingDocumentation" -> "S\[EAcute]lection de la documentation pertinente",
+"ProgressTextCreatingMessages" -> "Cr\[EAcute]ation de messages",
+"ProgressTextSendingChat" -> "Envoi d\[CloseCurlyQuote]un chat",
+"ProgressTextGeneratingSuggestions" -> "Cr\[EAcute]ation de suggestions",
+"ProgressTextWaitingForResponse" -> "En attente de r\[EAcute]ponse",
+"ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
+"ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`"
 }
 @|
 @|

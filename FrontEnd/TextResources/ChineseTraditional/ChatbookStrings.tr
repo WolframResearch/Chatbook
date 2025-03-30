@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "\:5DF2\:5305\:62EC\:5167\:5BB9\:FF1A",
 "FeedbackDialogContentOutputImageLabel" -> "\:8F38\:51FA\:5F71\:50CF",
 "FeedbackDialogCommentFieldHint" -> "\:60A8\:9084\:6709\:53E6\:5916\:7684\:56DE\:994B\:55CE\:FF1F\:FF08\:53EF\:9078\:7684\:FF09",
-"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
+"FeedbackDialogBodyUsedForTraining" -> "\:6B64\:56DE\:994B\:53EF\:80FD\:88AB\:7528\:4F86\:57F9\:8A13\:4E4B\:7528\:3002",
 "FeedbackDialogBodyPreviewData" -> "\:9810\:89BD\:8CC7\:6599\:5C07\:6703\:88AB\:767C\:9001",
 "FeedbackDialogThanks" -> "\:611F\:8B1D\:60A8\:7684\:56DE\:994B\:FF01",
 
@@ -69,6 +69,10 @@
 "FormattingToolUsing" -> "\:6B63\:5728\:4F7F\:7528 ",
 "FormattingToolUsed" -> "\:5DF2\:4F7F\:7528 ",
 "FormattingToolUsingLoading" -> "\:4F7F\:7528\:4E2D\:7684\:5DE5\:5177\[Ellipsis]",
+"FormattingThinkingActive" -> "\:601D\:8003\:4E2D\[Ellipsis]",
+"FormattingThinkingComplete" -> "\:5DF2\:601D\:8003 `time` \:79D2",
+"FormattingThinkingCompleteFallback" -> "\:601D\:8003",
+"FormattingHide" -> "\:96B1\:85CF",
 
 "InlineReferencesFieldHint" -> "\:63D0\:793A\:540D\:7A31",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:FF1A",
@@ -153,7 +157,7 @@
 "ToolManagerDeleteTool" -> "\:522A\:9664\:5DE5\:5177",
 
 "UIEnableChatFeatures" -> "\:8CE6\:80FD AI \:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:529F\:80FD",
-"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
+"UIAutomaticAnalysisLabel" -> "\:81EA\:52D5\:5206\:6790\:8F38\:51FA",
 "UIAutomaticAnalysisTooltip" -> "\:8CE6\:80FD\:5F8C\:FF0C\:81EA\:52D5 AI \:6240\:63D0\:4F9B\:7684\:5EFA\:8B70\:5C07\:6703\:88AB\:6DFB\:52A0\:81F3\:4E0B\:5217\:8A08\:7B97\:7D50\:679C\:4E2D\:3002",
 "UIPersonas" -> "\:4EBA\:7269\:8A8C",
 "UIChatBlockSettings" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:5C01\:9396\:8A2D\:5B9A\[Ellipsis]",

@@ -5,10 +5,10 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 HoldComplete[
     `$$prompt,
     `$defaultSources,
-    `$maxSelectedSources,
     `$maxNeighbors,
+    `$maxSelectedSources,
+    `ensureChatMessages,
     `getSmallContextString,
-    `getSnippets,
     `insertContextPrompt,
     `vectorDBSearch
 ];
@@ -22,6 +22,19 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Argument Patterns*)
 $$prompt = $$string | { $$string... } | $$chatMessages;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Common Functions*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureChatMessages*)
+ensureChatMessages // beginDefinition;
+ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
+ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
+ensureChatMessages[ messages: $$chatMessages ] := messages;
+ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

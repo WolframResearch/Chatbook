@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.1.15.3947661859"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.2.8.3951300173"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -115,22 +115,6 @@ Notebook[
        "WLTemplate",
        Wolfram`ChatNB`cell
       ]
-     ],
-    "MouseEntered" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "AccentIncludedCells",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseExited" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "RemoveCellAccents",
-       Wolfram`ChatNB`cell
-      ]
      ]
    },
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
@@ -168,7 +152,8 @@ Notebook[
          Catch[
           Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
           Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$
+           Wolfram`Chatbook`UI`Private`cell$$,
+           Automatic
           ],
           Blank[]
          ],
@@ -200,7 +185,8 @@ Notebook[
             Catch[
              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Wolfram`Chatbook`UI`Private`cell$$
+              Wolfram`Chatbook`UI`Private`cell$$,
+              True
              ],
              Blank[]
             ],
@@ -215,18 +201,33 @@ Notebook[
           UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
         False ->
-         FrameBox[
-          TemplateBox[{}, "ChatIconUser"],
-          RoundingRadius -> 3,
-          FrameMargins -> 2,
-          ImageMargins -> {{0, 3}, {0, 0}},
-          FrameStyle -> GrayLevel[0, 0],
+         ButtonBox[
+          FrameBox[
+           PaneBox[
+            TemplateBox[{}, "ChatIconUser"],
+            Alignment -> {Center, Center},
+            ImageSize -> {25, 25},
+            ImageSizeAction -> "ShrinkToFit"
+           ],
+           Background -> None,
+           ContentPadding -> False,
+           FrameMargins -> 0,
+           FrameStyle -> None,
+           ImageMargins -> 0,
+           RoundingRadius -> 2,
+           StripOnInput -> False
+          ],
+          ButtonFunction :> Null,
+          Appearance -> None,
+          ImageMargins -> 0,
           FrameMargins -> 0,
-          StripOnInput -> False
+          ContentPadding -> False,
+          Evaluator -> Automatic,
+          Method -> "Preemptive"
          ]
        },
        Dynamic[CurrentValue["MouseOver"]],
-       ImageSize -> All
+       ImageSize -> Automatic
       ]
      ])
    }
@@ -1242,62 +1243,48 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      ButtonBox[
-       TemplateBox[
-        {
-         TagBox[
-          GridBox[
-           {
-            {
-             #1,
-             TemplateBox[{7}, "Spacer1"],
-             PaneBox[
-              StyleBox[#2, "ChatMenuLabel"],
-              FrameMargins -> 0,
-              ImageMargins -> 0,
-              BaselinePosition -> Baseline,
-              ImageSize -> Full
-             ]
-            }
-           },
-           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-           AutoDelete -> False,
-           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-           GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-          ],
-          "Grid"
-         ],
-         FrameStyle ->
-          Dynamic[
-           If[ CurrentValue["MouseOver"],
-            GrayLevel[0.8],
-            GrayLevel[0.98]
+      FrameBox[
+       TagBox[
+        GridBox[
+         {
+          {
+           #1,
+           TemplateBox[{7}, "Spacer1"],
+           PaneBox[
+            StyleBox[#2, "ChatMenuLabel"],
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            BaselinePosition -> Baseline,
+            ImageSize -> Full
            ]
-          ],
-         RoundingRadius -> 0,
-         FrameMargins -> {{5, 2}, {2, 2}},
-         ImageSize -> Full,
-         ImageMargins -> {{0, 0}, {0, 0}},
-         Background ->
-          Dynamic[
-           If[ CurrentValue["MouseOver"],
-            GrayLevel[1],
-            GrayLevel[0.98]
-           ]
-          ]
-        },
-        "Highlighted"
+          }
+         },
+         GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+         AutoDelete -> False,
+         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+         GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
+        ],
+        "Grid"
        ],
-       ButtonFunction :> ReleaseHold[#3],
-       Appearance ->
+       Background ->
         Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
+         If[ CurrentValue["MouseOver"],
+          GrayLevel[1],
+          GrayLevel[0.98]
          ]
         ],
-       Method -> "Queued",
-       Evaluator -> Automatic
+       BaselinePosition -> Baseline,
+       FrameMargins -> {{5, 2}, {2, 2}},
+       FrameStyle ->
+        Dynamic[
+         If[ CurrentValue["MouseOver"],
+          GrayLevel[0.8],
+          GrayLevel[0.98]
+         ]
+        ],
+       ImageMargins -> {{0, 0}, {0, 0}},
+       ImageSize -> Full,
+       RoundingRadius -> 0
       ]
      ])
    }
@@ -1307,36 +1294,34 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      TemplateBox[
-       {
-        TagBox[
-         GridBox[
+      FrameBox[
+       TagBox[
+        GridBox[
+         {
           {
-           {
-            PaneBox[
-             StyleBox[#1, "ChatMenuSectionLabel"],
-             FrameMargins -> 0,
-             ImageMargins -> 0,
-             BaselinePosition -> Baseline,
-             ImageSize -> Full
-            ]
-           }
-          },
-          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-          AutoDelete -> False,
-          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-          GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-         ],
-         "Grid"
+           PaneBox[
+            StyleBox[#1, "ChatMenuSectionLabel"],
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            BaselinePosition -> Baseline,
+            ImageSize -> Full
+           ]
+          }
+         },
+         GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+         AutoDelete -> False,
+         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+         GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
         ],
-        Background -> GrayLevel[0.937],
-        FrameMargins -> {{5, 2}, {2, 2}},
-        FrameStyle -> None,
-        ImageMargins -> {{0, 0}, {0, 0}},
-        ImageSize -> Full,
-        RoundingRadius -> 0
-       },
-       "Highlighted"
+        "Grid"
+       ],
+       Background -> GrayLevel[0.937],
+       BaselinePosition -> Baseline,
+       FrameMargins -> {{5, 2}, {2, 2}},
+       FrameStyle -> None,
+       ImageMargins -> {{0, 0}, {0, 0}},
+       ImageSize -> Full,
+       RoundingRadius -> 0
       ]
      ])
    }
@@ -1353,157 +1338,207 @@ Notebook[
           GridBox[
            {
             {
-             TemplateBox[
-              {
-               TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetExplodeCellsInPlace"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetExplodeCellsInPlace"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ExplodeInPlace",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ExplodeInPlace",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetExplodeCellsDuplicate"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetExplodeCellsDuplicate"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ExplodeDuplicate",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ExplodeDuplicate",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[
-                {"HyperlinkCopyIcon"},
-                "ChatMenuItemToolbarIcon"
-               ],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetCopyExplodedCells"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[
+                 {"HyperlinkCopyIcon"},
+                 "ChatMenuItemToolbarIcon"
+                ],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetCopyExplodedCells"
+                  ],
+                  StandardForm
+                 ]
                 ]
-               ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "CopyExplodedCells",
-                  Wolfram`ChatNB`root$
-                 ];
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "CopyExplodedCells",
+                 Wolfram`ChatNB`root$
+                ];
 
-                 NotebookDelete[Wolfram`ChatNB`cell$];
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
-               ]
-              },
-              "ChatMenuItem"
+               ],
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {TemplateBox[{}, "ChatMenuItemDelimiter"]},
             {
-             TemplateBox[
-              {
-               TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetToggleFormatting"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetToggleFormatting"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "ToggleFormatting",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "ToggleFormatting",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             },
             {
-             TemplateBox[
-              {
-               TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-               DynamicBox[
-                ToBoxes[
-                 FEPrivate`FrontEndResource[
-                  "ChatbookStrings",
-                  "StylesheetCopyChatObject"
-                 ],
-                 StandardForm
+             ButtonBox[
+              TemplateBox[
+               {
+                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetCopyChatObject"
+                  ],
+                  StandardForm
+                 ]
+                ]
+               },
+               "ChatMenuItem"
+              ],
+              ButtonFunction :>
+               With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
+                Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "CopyChatObject",
+                 Wolfram`ChatNB`root$
+                ];
+
+                NotebookDelete[Wolfram`ChatNB`cell$];
+               ],
+              Appearance ->
+               Dynamic[
+                FEPrivate`FrontEndResource[
+                 "FEExpressions",
+                 "SuppressMouseDownNinePatchAppearance"
                 ]
                ],
-               Hold[
-                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "CopyChatObject",
-                  Wolfram`ChatNB`root$
-                 ];
-
-                 NotebookDelete[Wolfram`ChatNB`cell$];
-                ]
-               ]
-              },
-              "ChatMenuItem"
+              Method -> "Queued",
+              Evaluator -> Automatic
              ]
             }
            },
@@ -14102,66 +14137,8 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      StyleBox[
-       PaneBox[
-        GridBox[
-         {
-          {
-           OpenerBox[
-            True,
-            Appearance -> Automatic,
-            Enabled -> False,
-            AutoAction -> False,
-            ContinuousAction -> False
-           ],
-           StyleBox[
-            #2,
-            "Text",
-            FontSlant -> "Italic",
-            FontColor -> GrayLevel[0.5],
-            ShowStringCharacters -> False,
-            StripOnInput -> False
-           ]
-          },
-          {
-           PaneBox[
-            Cell[
-             BoxData[TemplateBox[{#1}, "ThinkingContent"]],
-             Background -> None
-            ],
-            Alignment -> Left,
-            ImageMargins -> {{5, 0}, {0, 0}}
-           ],
-           "\[SpanFromLeft]"
-          }
-         },
-         AutoDelete -> False,
-         BaselinePosition -> {1, 1},
-         GridBoxAlignment -> {"Columns" -> {{Left}}},
-         GridBoxBackground -> {"Columns" -> {{Automatic}}},
-         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-         GridBoxSpacings -> {"Columns" -> {{0.2}}, "Rows" -> {{0.5}}}
-        ],
-        Alignment -> Automatic,
-        BaselinePosition -> Baseline,
-        BaseStyle -> { },
-        DefaultBaseStyle -> "OpenerView",
-        ImageMargins -> {{0, 0}, {10, 10}},
-        ImageSize -> Automatic
-       ],
-       Deployed -> False,
-       StripOnInput -> False
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ThoughtsOpener"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
       DynamicModuleBox[
-       {Typeset`var$$ = False},
+       {Typeset`var$$ = True},
        StyleBox[
         PaneSelectorBox[
          {
@@ -14169,22 +14146,30 @@ Notebook[
            GridBox[
             {
              {
-              OpenerBox[
-               Dynamic[Typeset`var$$],
-               Appearance -> Automatic,
-               Enabled -> Automatic,
-               AutoAction -> False,
-               ContinuousAction -> False
-              ],
               TagBox[
                TagBox[
-                StyleBox[
-                 #2,
-                 "Text",
-                 FontSlant -> "Italic",
-                 FontColor -> GrayLevel[0.5],
-                 ShowStringCharacters -> False,
-                 StripOnInput -> False
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f442"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
                 ],
                 MouseAppearanceTag["Arrow"]
                ],
@@ -14210,22 +14195,30 @@ Notebook[
            GridBox[
             {
              {
-              OpenerBox[
-               Dynamic[Typeset`var$$],
-               Appearance -> Automatic,
-               Enabled -> Automatic,
-               AutoAction -> False,
-               ContinuousAction -> False
-              ],
               TagBox[
                TagBox[
-                StyleBox[
-                 #2,
-                 "Text",
-                 FontSlant -> "Italic",
-                 FontColor -> GrayLevel[0.5],
-                 ShowStringCharacters -> False,
-                 StripOnInput -> False
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f442"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
                 ],
                 MouseAppearanceTag["Arrow"]
                ],
@@ -14247,8 +14240,294 @@ Notebook[
                ],
                Alignment -> Left,
                ImageMargins -> {{5, 0}, {0, 0}}
-              ],
-              "\[SpanFromLeft]"
+              ]
+             },
+             {
+              TagBox[
+               TagBox[
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {
+                     {
+                      AdjustmentBox[
+                       RotationBox["\:f443", BoxRotation -> 3.14159],
+                       BoxBaselineShift -> -0.2
+                      ],
+                      StyleBox[
+                       DynamicBox[
+                        ToBoxes[
+                         FEPrivate`FrontEndResource[
+                          "ChatbookStrings",
+                          "FormattingHide"
+                         ],
+                         StandardForm
+                        ]
+                       ],
+                       FontSlant -> "Italic"
+                      ]
+                     }
+                    },
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {
+                     {
+                      AdjustmentBox[
+                       RotationBox["\:f449", BoxRotation -> 3.14159],
+                       BoxBaselineShift -> -0.2
+                      ],
+                      StyleBox[
+                       DynamicBox[
+                        ToBoxes[
+                         FEPrivate`FrontEndResource[
+                          "ChatbookStrings",
+                          "FormattingHide"
+                         ],
+                         StandardForm
+                        ]
+                       ],
+                       FontSlant -> "Italic"
+                      ]
+                     }
+                    },
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                MouseAppearanceTag["Arrow"]
+               ],
+               EventHandlerTag[
+                {
+                 "MouseClicked" :> (Typeset`var$$ = Not[Typeset`var$$]),
+                 Method -> "Preemptive",
+                 PassEventsDown -> Automatic,
+                 PassEventsUp -> True
+                }
+               ]
+              ]
+             }
+            },
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            AutoDelete -> False,
+            GridBoxBackground -> {"Columns" -> {{Automatic}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{0.2}}, "Rows" -> {{0.5}}},
+            BaselinePosition -> {1, 1}
+           ]
+         },
+         Dynamic[TrueQ[Typeset`var$$]],
+         Alignment -> Automatic,
+         ImageSize -> Automatic,
+         ImageMargins -> {{0, 0}, {10, 10}},
+         BaseStyle -> { },
+         DefaultBaseStyle -> "OpenerView",
+         BaselinePosition -> Baseline
+        ],
+        Deployed -> False,
+        StripOnInput -> False
+       ],
+       DynamicModuleValues -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ThoughtsOpener"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicModuleBox[
+       {Typeset`var$$ = False},
+       StyleBox[
+        PaneSelectorBox[
+         {
+          False ->
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f442"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f43b"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                MouseAppearanceTag["Arrow"]
+               ],
+               EventHandlerTag[
+                {
+                 "MouseClicked" :> (Typeset`var$$ = Not[Typeset`var$$]),
+                 Method -> "Preemptive",
+                 PassEventsDown -> Automatic,
+                 PassEventsUp -> True
+                }
+               ]
+              ]
+             }
+            },
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            AutoDelete -> False,
+            GridBoxBackground -> {"Columns" -> {{Automatic}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{0.2}}, "Rows" -> {{0.5}}},
+            BaselinePosition -> {1, 1}
+           ],
+          True ->
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f443"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {{StyleBox[#2, FontSlant -> "Italic"], "\:f449"}},
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                MouseAppearanceTag["Arrow"]
+               ],
+               EventHandlerTag[
+                {
+                 "MouseClicked" :> (Typeset`var$$ = Not[Typeset`var$$]),
+                 Method -> "Preemptive",
+                 PassEventsDown -> Automatic,
+                 PassEventsUp -> True
+                }
+               ]
+              ]
+             },
+             {
+              PaneBox[
+               Cell[
+                BoxData[TemplateBox[{#1}, "ThinkingContent"]],
+                Background -> None
+               ],
+               Alignment -> Left,
+               ImageMargins -> {{5, 0}, {0, 0}}
+              ]
+             },
+             {
+              TagBox[
+               TagBox[
+                PaneSelectorBox[
+                 {
+                  False ->
+                   GridBox[
+                    {
+                     {
+                      AdjustmentBox[
+                       RotationBox["\:f443", BoxRotation -> 3.14159],
+                       BoxBaselineShift -> -0.2
+                      ],
+                      StyleBox[
+                       DynamicBox[
+                        ToBoxes[
+                         FEPrivate`FrontEndResource[
+                          "ChatbookStrings",
+                          "FormattingHide"
+                         ],
+                         StandardForm
+                        ]
+                       ],
+                       FontSlant -> "Italic"
+                      ]
+                     }
+                    },
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                   ],
+                  True ->
+                   GridBox[
+                    {
+                     {
+                      AdjustmentBox[
+                       RotationBox["\:f449", BoxRotation -> 3.14159],
+                       BoxBaselineShift -> -0.2
+                      ],
+                      StyleBox[
+                       DynamicBox[
+                        ToBoxes[
+                         FEPrivate`FrontEndResource[
+                          "ChatbookStrings",
+                          "FormattingHide"
+                         ],
+                         StandardForm
+                        ]
+                       ],
+                       FontSlant -> "Italic"
+                      ]
+                     }
+                    },
+                    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                    BaseStyle -> {FontColor -> GrayLevel[0.39215]}
+                   ]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 BaseStyle -> {
+                  FontColor -> GrayLevel[0.4666],
+                  FontFamily -> "Source Sans Pro",
+                  FontSize -> 13.5
+                 },
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                MouseAppearanceTag["Arrow"]
+               ],
+               EventHandlerTag[
+                {
+                 "MouseClicked" :> (Typeset`var$$ = Not[Typeset`var$$]),
+                 Method -> "Preemptive",
+                 PassEventsDown -> Automatic,
+                 PassEventsUp -> True
+                }
+               ]
+              ]
              }
             },
             GridBoxAlignment -> {"Columns" -> {{Left}}},
@@ -14288,6 +14567,7 @@ Notebook[
            #1,
            "Text",
            FontColor -> GrayLevel[0.35],
+           FontSize -> 12,
            Background -> None,
            Editable -> True
           ],
@@ -14301,7 +14581,7 @@ Notebook[
        GridBoxBackground -> {"Columns" -> {{GrayLevel[1]}}},
        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
        GridBoxDividers -> {
-        "ColumnsIndexed" -> {1 -> Directive[GrayLevel[0.9], AbsoluteThickness[2]]},
+        "ColumnsIndexed" -> {1 -> Directive[GrayLevel[0.8196], AbsoluteThickness[2]]},
         "Rows" -> {{False}}
        }
       ]

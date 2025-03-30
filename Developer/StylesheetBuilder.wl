@@ -464,6 +464,15 @@ menuItem[ icon_, label_, None ] :=
         ]
     ];
 
+menuItem[ icon_, label_, Hold[ code_ ] ] :=
+    Button[
+        RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+        code,
+        Appearance -> $suppressButtonAppearance,
+        Method     -> "Queued",
+        Evaluator  -> Automatic
+    ];
+
 menuItem[ icon_, label_, code_ ] :=
     RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
@@ -764,7 +773,7 @@ $workspaceChatDockedCells = {
         CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellMargins      -> { { -1, -5 }, { -1, -1 } },
-        Magnification -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
+        Magnification -> Dynamic[ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
     ]
 };
 
@@ -969,7 +978,11 @@ Module[ { excludedCoreExtensions },
         "Text"
     ];
 
-    DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ]
+    Replace[
+        DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ],
+        Cell[ sd:StyleData[ "ChatInput", ___ ], a___, CellEventActions -> b_List, c___ ] :>
+            Cell[ sd, a, CellEventActions -> DeleteCases[ b, _[ "MouseEntered" | "MouseExited", _ ] ], c ],
+        1]
 ]
 
 BuildCoreExtensionsStylesheet[ target_ ] :=
