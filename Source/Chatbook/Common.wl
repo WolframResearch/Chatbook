@@ -139,7 +139,7 @@ $resourceVersions = <|
     "AssociationKeyDeflatten" -> "1.0.0",
     "ClickToCopy"             -> "1.0.0",
     "GPTTokenizer"            -> "1.1.0",
-    "MessageFailure"          -> "1.0.0",
+    "MessageFailure"          -> "1.0.1",
     "RelativeTimeString"      -> "1.0.0",
     "ReplaceContext"          -> "1.0.0",
     "ResourceFunctionMessage" -> "2.1.1",
