@@ -76,6 +76,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `LoadChat;
 `LogChatTiming;
 `MakeExpressionURI;
+`ProcessNotebookForRAG;
 `RebuildChatSearchIndex;
 `RegisterVectorDatabase;
 `RelatedDocumentation;
@@ -248,6 +249,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "LoadChat",
     "LogChatTiming",
     "MakeExpressionURI",
+    "ProcessNotebookForRAG",
     "RebuildChatSearchIndex",
     "RegisterVectorDatabase",
     "RelatedDocumentation",

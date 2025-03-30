@@ -191,7 +191,10 @@ $$groupDividerStyle = Alternatives[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Notebook Chunking*)
+(*ProcessNotebookForRAG*)
+ProcessNotebookForRAG // beginDefinition;
+ProcessNotebookForRAG[ file_? FileExistsQ ] := catchMine @ chunkNotebook @ file;
+ProcessNotebookForRAG // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -218,7 +221,7 @@ chunkNotebook[ nb_Notebook, uri_String ] := Enclose[
         withURI   = insertURIs[ flatNodes, uri ];
         document  = ConfirmBy[ cellToString @ nb, StringQ, "Document" ];
         tokens    = ConfirmBy[ tokenCount @ document, IntegerQ, "TokenCount" ];
-        <| "Document" -> document, "Chunks" -> withURI, "TokenCount" -> tokens, "URI" -> uri |>
+        <| "FullText" -> document, "Fragments" -> withURI, "TokenCount" -> tokens, "URI" -> uri |>
     ],
     throwInternalFailure
 ];
