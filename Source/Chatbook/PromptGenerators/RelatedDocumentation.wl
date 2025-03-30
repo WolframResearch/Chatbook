@@ -10,11 +10,12 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$snippetType                  = "Text";
-$documentationSnippetVersion := $snippetVersion;
-$baseURL                      = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
-$resourceSnippetBaseURL       = URLBuild @ { $baseURL, "Resources", $snippetType };
+$snippetType                   = "Text";
+$documentationSnippetVersion  := $snippetVersion;
+$baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
+$resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
@@ -24,6 +25,8 @@ $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
+$usePromptHeader = True;
+
 $rerankScoreThreshold = 3;
 
 $bestDocumentationPromptMethod := $bestDocumentationPromptMethod = CurrentChatSettings[ "RerankPromptStyle" ];
@@ -32,7 +35,7 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "Documentation", "FunctionRepository", "DataRepository" };
+$defaultSources = { "Documentation", "EntityValues", "FunctionRepository", "DataRepository" };
 
 $sourceAliases = <|
     "DataRepository"     -> "DataRepositoryURIs",
@@ -47,7 +50,7 @@ $unfilteredItemsPerSource = 20;
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
 
-$$assistantTypeTag = "Computational"|"Knowledge"|"CasualChat";
+$$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -93,6 +96,7 @@ RelatedDocumentation // Options = {
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "MaxSources"        -> $maxSelectedSources,
+    "PromptHeader"      -> Automatic,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
     "Sources"           :> $RelatedDocumentationSources
@@ -230,6 +234,10 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $filteringLLMConfig
             ],
+            $usePromptHeader = Replace[
+                OptionValue[ "PromptHeader" ],
+                $$unspecified :> $usePromptHeader
+            ],
             $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
         },
         relatedDocumentationPrompt[
@@ -282,7 +290,7 @@ autoSelectSources[ prompt_, max_ ] /; max >= Length @ $defaultSources :=
 autoSelectSources[ prompt_, max_Integer? NonNegative ] := Enclose[
     Module[ { values },
         values = ConfirmMatch[ vectorDBSearch[ "SourceSelector", prompt, "Values" ], { ___String }, "Values" ];
-        ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
+        $lastSelectedSources = ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
     ],
     throwInternalFailure
 ];
@@ -295,15 +303,6 @@ autoSelectSources // endDefinition;
 toSource // beginDefinition;
 toSource[ name_String ] := Lookup[ $sourceAliases, name, name ];
 toSource // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ensureChatMessages*)
-ensureChatMessages // beginDefinition;
-ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
-ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
-ensureChatMessages[ messages: $$chatMessages ] := messages;
-ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -345,6 +344,7 @@ relatedDocumentationPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prependRelatedDocsHeader*)
 prependRelatedDocsHeader // beginDefinition;
+prependRelatedDocsHeader[ string_String, _    ] /; ! TrueQ @ $usePromptHeader := string;
 prependRelatedDocsHeader[ string_String, True ] := $relatedDocsStringFilteredHeader <> string;
 prependRelatedDocsHeader[ string_String, _    ] := $relatedDocsStringUnfilteredHeader <> string;
 prependRelatedDocsHeader // endDefinition;
@@ -459,7 +459,13 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize[ instructions, Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ] ],
+                setServiceCaller[
+                    llmSynthesize[
+                        instructions,
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                    ],
+                    "RelatedDocumentation"
+                ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,
@@ -522,6 +528,7 @@ Respond with JSON in the following format:
 For \"AssistantType\", specify the type of assistant that should handle the user's message:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"Data\": The user's message requires a data or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Specify a score as any number from 1 to 5 for your chosen snippets using the following rubric:
@@ -545,6 +552,7 @@ Here are the available documentation snippets to choose from:
 
 Reminder: Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
 You can (and should) skip snippets that are not relevant to the user's message or are redundant.
+A snippet does not need to exactly answer the user's message in full in order to be relevant.
 Respond only with the specified JSON and nothing else.
 If there are no relevant pages, respond with [].
 ", Delimiters -> "%%" ];
@@ -558,6 +566,7 @@ user's latest message.
 On the first line of your response, write one of these assistant types:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"Data\": The user's message requires a data or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Then on each subsequent line, write a score (1-5) and id pair, separated by a space:
@@ -591,6 +600,7 @@ Available documentation snippets:
 Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or redundant ones.
 If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
+A snippet does not need to exactly answer the user's message in full in order to be relevant.
 Respond only in the specified format and do not include any other text.\
 ", Delimiters -> "%%" ];
 
@@ -677,7 +687,7 @@ selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclo
 
         selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { ___String }, "SelectedIDs" ];
         selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { ___String }, "SelectedURIs" ];
-        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
+        ConfirmMatch[ DeleteDuplicates @ Cases[ selectedURIs, Alternatives @@ uris ], { ___String } ]
     ],
     snippetIDToURI /@ selectSnippetsFromString[ response, ids ] &
 ];
@@ -710,7 +720,7 @@ scoreSnippetLine // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*selectSnippetsFromString*)
 selectSnippetsFromString // beginDefinition;
-selectSnippetsFromString[ response_String, ids: { ___String } ] := StringCases[ response, ids ];
+selectSnippetsFromString[ response_String, ids: { ___String } ] := DeleteDuplicates @ StringCases[ response, ids ];
 selectSnippetsFromString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

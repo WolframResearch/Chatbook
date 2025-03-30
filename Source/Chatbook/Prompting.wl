@@ -35,6 +35,7 @@ $basePromptOrder = {
     "CheckboxesIndeterminate",
     "ConversionFormatting",
     "ExternalLanguageCells",
+    "MessageStackTrace",
     "SpecialURI",
     "SpecialURIImporting",
     "SpecialURIAudio",
@@ -89,6 +90,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "VideoBoxImporting"                    -> { "MarkdownImageBoxImporting" },
     "ConversionFormatting"                 -> { "MessageConversionHeader" },
     "ExternalLanguageCells"                -> { "MessageConversionHeader" },
+    "MessageStackTrace"                    -> { "MessageConversionHeader", "WolframLanguage" },
     "SpecialURI"                           -> { },
     "SpecialURIImporting"                  -> { "SpecialURI" },
     "SpecialURIAudio"                      -> { "SpecialURI" },
@@ -228,6 +230,11 @@ becomes ``*Styled* message``.";
 $basePromptComponents[ "ExternalLanguageCells" ] = "\
 	* When you see code blocks denoted with languages other than Wolfram Language, they are external language cells, \
 which is a cell type that evaluates other languages through ExternalEvaluate returning a WL output.";
+
+$basePromptComponents[ "MessageStackTrace" ] = "\
+* When a stack trace is available for an error message, it will be displayed as a <message_stack_trace> element. \
+This is generated automatically for you and is not visible to the user in their notebook. \
+You can use this information to help you understand what might have caused the error.";
 
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \

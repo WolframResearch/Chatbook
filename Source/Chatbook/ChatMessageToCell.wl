@@ -80,6 +80,7 @@ wrapCellContent // endDefinition;
 workspaceInput // beginDefinition;
 workspaceInput[ TextData[ { text_String } ] ] := workspaceInput @ text;
 workspaceInput[ TextData[ text_String ] ] := workspaceInput @ text;
+workspaceInput[ text_TextData ] := workspaceInput0 @ text;
 workspaceInput[ text_String ] := workspaceInput0 @ text;
 workspaceInput[ text_ ] := workspaceInput0 @ Cell @ text;
 workspaceInput // endDefinition;

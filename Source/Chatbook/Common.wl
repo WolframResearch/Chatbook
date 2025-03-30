@@ -67,6 +67,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `endDefinition;
 `endExportedDefinition;
 `importResourceFunction;
+`lineWrap;
 `messageFailure;
 `messagePrint;
 `setServiceCaller;
@@ -138,7 +139,7 @@ $resourceVersions = <|
     "AssociationKeyDeflatten" -> "1.0.0",
     "ClickToCopy"             -> "1.0.0",
     "GPTTokenizer"            -> "1.1.0",
-    "MessageFailure"          -> "1.0.0",
+    "MessageFailure"          -> "1.0.1",
     "RelativeTimeString"      -> "1.0.0",
     "ReplaceContext"          -> "1.0.0",
     "ResourceFunctionMessage" -> "2.1.1",
@@ -805,6 +806,11 @@ $priorityFailureKeys = { "Information", "ConfirmationType", "Expression", "Funct
 setServiceCallerAndID // beginDefinition;
 setServiceCallerAndID // Attributes = { HoldFirst };
 
+setServiceCallerAndID[ eval_, uuid_String ] /; serviceFrameworkAvailable[ ] := (
+    Quiet @ Needs[ "ServiceFramework`" -> None ];
+    Block[ { ServiceFramework`$TransactionID = uuid }, setServiceCaller @ eval ]
+);
+
 setServiceCallerAndID[ eval_, uuid_String ] := (
     Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
     Block[ { ServiceConnectionUtilities`$TransactionID = uuid }, setServiceCaller @ eval ]
@@ -819,6 +825,16 @@ setServiceCaller // beginDefinition;
 
 setServiceCaller[ eval_ ] :=
     setServiceCaller[ eval, chatbookServiceCaller[ ] ];
+
+setServiceCaller[ eval_, caller_ ]  /; serviceFrameworkAvailable[ ] := (
+    Quiet @ Needs[ "ServiceFramework`" -> None ];
+    setServiceCaller[ eval, caller, ServiceFramework`$Caller ]
+);
+
+setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ]  /; serviceFrameworkAvailable[ ] :=
+    Block[ { ServiceFramework`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
+        eval
+    ];
 
 setServiceCaller[ eval_, caller_ ] := (
     Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];

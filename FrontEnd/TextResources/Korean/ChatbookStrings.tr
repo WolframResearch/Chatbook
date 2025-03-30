@@ -54,7 +54,7 @@
 "FeedbackDialogContentIncludedLabel" -> "\:D3EC\:D568\:B41C \:CF58\:D150\:CE20:",
 "FeedbackDialogContentOutputImageLabel" -> "\:CD9C\:B825 \:C774\:BBF8\:C9C0",
 "FeedbackDialogCommentFieldHint" -> "\:B2E4\:B978 \:D53C\:B4DC\:BC31\:C774 \:C788\:C73C\:C2E0\:AC00\:C694? (\:C120\:D0DD)",
-"FeedbackDialogBodyUsedForTraining" -> "This feedback may be used for training purposes.",
+"FeedbackDialogBodyUsedForTraining" -> "\:C774 \:D53C\:B4DC\:BC31\:C740 \:D6C8\:B828\:C5D0 \:C0AC\:C6A9\:B420 \:C218 \:C788\:C2B5\:B2C8\:B2E4.",
 "FeedbackDialogBodyPreviewData" -> "\:C804\:C1A1\:D560 \:B370\:C774\:D130 \:BBF8\:B9AC\:BCF4\:AE30",
 "FeedbackDialogThanks" -> "\:D53C\:B4DC\:BC31\:C744 \:BCF4\:B0B4 \:C8FC\:C154\:C11C \:AC10\:C0AC\:D569\:B2C8\:B2E4!",
 
@@ -70,6 +70,10 @@
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
 "FormattingToolUsed" -> "\:C0AC\:C6A9 ",
 "FormattingToolUsingLoading" -> "\:B3C4\:AD6C \:C0AC\:C6A9\[Ellipsis]",
+"FormattingThinkingActive" -> "\:C0DD\:AC01\:C911\[Ellipsis]",
+"FormattingThinkingComplete" -> "`time`\:CD08 \:B3D9\:C548 \:C0DD\:AC01",
+"FormattingThinkingCompleteFallback" -> "\:C0DD\:AC01",
+"FormattingHide" -> "\:C228\:AE30\:AE30",
 
 "InlineReferencesFieldHint" -> "\:D504\:B86C\:D504\:D2B8 \:C774\:B984",
 "InlineReferencesInsertLabel" -> "\:C0BD\:C785:",
@@ -154,7 +158,7 @@
 "ToolManagerDeleteTool" -> "\:B3C4\:AD6C \:C0AD\:C81C",
 
 "UIEnableChatFeatures" -> "AI \:CC44\:D305 \:AE30\:B2A5 \:D65C\:C131\:D654",
-"UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
+"UIAutomaticAnalysisLabel" -> "\:C790\:B3D9\:C73C\:B85C \:CD9C\:B825\:C744 \:BD84\:C11D",
 "UIAutomaticAnalysisTooltip" -> "\:D65C\:C131\:D654\:D558\:BA74 AI\:AC00 \:C81C\:ACF5\:D558\:B294 \:C81C\:C548\:C774 \:C790\:B3D9\:C73C\:B85C \:B2E4\:C74C \:D3C9\:AC00 \:ACB0\:ACFC\:C5D0 \:CD94\:AC00\:B429\:B2C8\:B2E4.",
 "UIPersonas" -> "\:D398\:B974\:C18C\:B098",
 "UIChatBlockSettings" -> "\:CC44\:D305 \:BE14\:B85D \:C124\:C815\[Ellipsis]",

@@ -229,14 +229,19 @@ formatToolCall0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*reformatTextData*)
 reformatTextData // beginDefinition;
+reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ string;
+reformatTextData // endDefinition;
 
-reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
+
+reformatTextData0 // beginDefinition;
+
+reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
     ReplaceAll[
-        reformatTextData @ StringReplace[ string, $mdEscapeRules ],
+        reformatTextData0 @ StringReplace[ string, $mdEscapeRules ],
         s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
     ];
 
-reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
+reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
         Quiet[
             StringSplit[
@@ -250,9 +255,9 @@ reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     ]
 ];
 
-reformatTextData[ other_ ] := other;
+reformatTextData0[ other_ ] := other;
 
-reformatTextData // endDefinition;
+reformatTextData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -323,7 +328,7 @@ makeResultCell0 // beginDefinition;
 makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, "\"Thinking\[Ellipsis]\"" }, "ThinkingOpener" ],
+        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
         "ThinkingOpener",
         Background -> None
     ]
@@ -333,7 +338,7 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
     Module[ { seconds, label },
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
         seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, "Thought for " <> ToString @ seconds <> " seconds", "Thoughts" ];
+        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
         Cell[
             BoxData @ templateBox[ { StringTrim @ thoughts, label }, "ThoughtsOpener" ],
             "ThoughtsOpener",
@@ -448,11 +453,11 @@ makeResultCell0 // endDefinition;
 inlineSection // beginDefinition;
 
 inlineSection[ content_, style_String ] :=
-    inlineSection[ content, style, sectionMargins @ style ];
+    inlineSection[ content, style, sectionMargins @ style, sectionFontSize @ style ];
 
-inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } } ] := Cell[
+inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } }, size_ ] := Cell[
     BoxData @ PaneBox[
-        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False ],
+        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False, FontSize -> size ],
         ImageMargins -> margins
     ],
     "InlineSection",
@@ -480,6 +485,15 @@ sectionMargins // beginDefinition;
 sectionMargins[ "Title"|"Section"|"Subsection"|"Subsubsection" ] := { { 0, 0 }, { 5, 15 } };
 sectionMargins[ _String ] := { { 0, 0 }, { 2, 5 } };
 sectionMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*sectionFontSize*)
+sectionFontSize // beginDefinition;
+sectionFontSize[ "Title"   ] := 26;
+sectionFontSize[ "Section" ] := 22;
+sectionFontSize[ _String   ] := Inherited;
+sectionFontSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1443,6 +1457,10 @@ $stringFormatRules = {
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
         makeResultCell @ mathCell @ math,
 
+    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            makeResultCell @ imageCell[ alt, url ],
+
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
         hyperlink[ label, url ],
 
@@ -2206,7 +2224,7 @@ formatNLInputs[ string_String ] :=
     StringReplace[
         string,
         {
-            "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+            "\[FreeformPrompt][\"" ~~ q: Except[ "]" ].. ~~ ("]"|EndOfString) :>
                 ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ],
             "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
                 ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ]
@@ -2216,6 +2234,9 @@ formatNLInputs[ string_String ] :=
 formatNLInputs[ boxes_ ] :=
     boxes /. {
         RowBox @ { "\[FreeformPrompt]", "[", q_String, "]" } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ] :>
+            RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
+        ,
+        RowBox @ { "\[FreeformPrompt]", "[", RowBox @ { q_String, ",", _ }, "]" } :>
             RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
@@ -2229,9 +2250,25 @@ formatNLInputs[ boxes_ ] :=
         ,
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
+        ,
+        box: RowBox @ { "Entity"|"EntityClass"|"EntityProperty", "[", ___, "]" } :>
+            RuleCondition @ formatEntityBoxes @ box
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatEntityBoxes*)
+formatEntityBoxes // beginDefinition;
+
+formatEntityBoxes[ boxes_RowBox ] :=
+    Quiet @ Module[ { new },
+        new = Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ];
+        formatEntityBoxes[ Verbatim[ boxes ] ] = If[ MatchQ[ new, _TemplateBox ], new, boxes ]
+    ];
+
+formatEntityBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3025,6 +3062,7 @@ boxDataQ // beginDefinition;
 boxDataQ[ _String? StringQ ] := True;
 boxDataQ[ boxes_List ] := AllTrue[ boxes, boxDataQ ];
 boxDataQ[ (_? boxSymbolQ)[ ___ ] ] := True;
+boxDataQ[ _ ] := False;
 boxDataQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

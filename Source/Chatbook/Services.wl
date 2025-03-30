@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 Needs[ "Wolfram`Chatbook`UI`"     ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
+$ContextAliases[ "sf`"  ] = "ServiceFramework`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -77,6 +78,31 @@ getUpdatedLLMKitService[ ] := Enclose[
 ];
 
 getUpdatedLLMKitService // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*serviceFrameworkAvailable*)
+serviceFrameworkAvailable // beginDefinition;
+
+serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] =
+    serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ];
+
+serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
+    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
+
+serviceFrameworkAvailable[ _ ] :=
+    False;
+
+serviceFrameworkAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withCredentialsProvider*)
+withCredentialsProvider // beginDefinition;
+withCredentialsProvider // Attributes = { HoldFirst };
+withCredentialsProvider[ eval_ ] /; serviceFrameworkAvailable[ ] := sf`WithCredentialsProvider[ "llm" ][ eval ];
+withCredentialsProvider[ eval_ ] := eval;
+withCredentialsProvider // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -194,7 +220,10 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
     ];
 
 getModelListQuietly[ info_Association ] := Quiet[
-    checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
+    withCredentialsProvider @ checkModelList[
+        info,
+        Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
+    ],
     { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
 ];
 
@@ -213,6 +242,9 @@ checkModelList[ info_, $Canceled | $Failed | Missing[ "NotConnected" ] ] :=
 
 checkModelList[ info_, Failure[ "ConfirmationFailed", KeyValuePattern[ "Expression" :> expr_ ] ] ] :=
     checkModelList[ info, expr ];
+
+checkModelList[ info_, Failure[ "AuthenticationError", KeyValuePattern[ {} ] ] ] :=
+    Missing[ "NotConnected" ];
 
 checkModelList[ info_, HoldPattern[ _ServiceExecute ] ] := (
     If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
