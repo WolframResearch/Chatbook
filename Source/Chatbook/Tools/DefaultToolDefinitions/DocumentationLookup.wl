@@ -17,7 +17,7 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
     toolDefaultData[ "DocumentationLookup" ],
     "ShortName"          -> "doc_lookup",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
-    "Description"        -> "Get Wolfram Language documentation pages.",
+    "Description"        -> "Get full Wolfram Language documentation pages.",
     "Function"           -> documentationLookup,
     "FormattingFunction" -> documentationSearchFormatter,
     "Origin"             -> "BuiltIn",
