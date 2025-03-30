@@ -5,5 +5,5 @@
     "Hidden"           -> True,
     "Icon"             -> RawBoxes @ TemplateBox[ { }, "ChatIconNotebookAssistant" ],
     "PromptGenerators" -> { "RelatedDocumentation", "RelatedWolframAlphaResults", "WebSearch" },
-    "Tools"            -> { "WolframAlpha", "WolframLanguageEvaluator", ParentList }
+    "Tools"            -> { "WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList }
 |>
