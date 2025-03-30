@@ -71,7 +71,8 @@ documentationRAGSearch[ query_String, True ] :=
     processSearchResults @ LogChatTiming @ RelatedDocumentation[
         query,
         "Prompt",
-        MaxItems        -> 30,
+        MaxItems        -> 80,
+        "FilteredCount" -> 10,
         "FilterResults" -> True,
         "PromptHeader"  -> False
     ];
