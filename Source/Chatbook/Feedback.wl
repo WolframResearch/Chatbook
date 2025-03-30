@@ -243,11 +243,11 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                 "Submitting" -> ProgressIndicator[ Appearance -> "Necklace" ],
                 "Done"       -> Style[ tr[ "FeedbackDialogThanks" ], $baseStyle ],
                 "Error"      -> Style[
-                    Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ErrorText" } ] ],
+                    Dynamic[ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ErrorText" } ] ],
                     $baseStyle
                 ]
             },
-            Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Status" }, "None" ],
+            Dynamic @ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "Status" }, "None" ],
             Alignment -> { Center, Center }
         ]
     ],
