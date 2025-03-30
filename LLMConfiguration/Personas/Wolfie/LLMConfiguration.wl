@@ -4,8 +4,9 @@
 	"DocumentationLink" -> "https://resources.wolframcloud.com/PromptRepository/resources/Wolfie/",
 	"PromptGenerators"  -> { "RelatedDocumentation" },
 	"Tools"             -> {
-		"WolframAlpha",
 		"WolframLanguageEvaluator",
+		"DocumentationSearcher",
+		"WolframAlpha",
 		"WebSearcher",
 		"WebFetcher",
 		ParentList
