@@ -122,8 +122,18 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         { prompted, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
+        If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
         needsBasePrompt @ settings;
-        prompted = addPrompts[ settings, DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ] ];
+
+        prompted = addPrompts[
+            settings,
+            Replace[
+                DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ],
+                as: KeyValuePattern[ "HoldTemporary" -> True ] :>
+                    <| KeyDrop[ as, "HoldTemporary" ], "Temporary" -> True |>,
+                { 1 }
+            ]
+        ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
@@ -182,6 +192,15 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*discourageExtraToolCallsQ*)
+discourageExtraToolCallsQ // beginDefinition;
+discourageExtraToolCallsQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
+discourageExtraToolCallsQ[ KeyValuePattern[ "Tools" -> { } ] ] := False;
+discourageExtraToolCallsQ[ settings_Association ] := TrueQ @ settings[ "DiscourageExtraToolCalls" ];
+discourageExtraToolCallsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
