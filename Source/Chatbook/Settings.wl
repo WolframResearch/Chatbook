@@ -68,6 +68,7 @@ $defaultChatSettings = <|
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
+    "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
     "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
@@ -133,8 +134,9 @@ $modelAutoSettings = <| |>;
 $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
-    "ReplaceUnicodeCharacters" -> True,
-    "ToolMethod"               -> "Service"
+    "ReplaceUnicodeCharacters"  -> True,
+    "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
+    "ToolMethod"                -> "Service"
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
@@ -284,9 +286,10 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
-    "ConvertSystemRoleToUser"  -> False,
-    "ReplaceUnicodeCharacters" -> False,
-    "ToolResponseRole"         -> "System"
+    "ConvertSystemRoleToUser"   -> False,
+    "ReplaceUnicodeCharacters"  -> False,
+    "SplitToolResponseMessages" -> False,
+    "ToolResponseRole"          -> "System"
 |>;
 
 (* ::**************************************************************************************************************:: *)
