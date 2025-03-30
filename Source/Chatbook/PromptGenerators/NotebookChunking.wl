@@ -443,8 +443,54 @@ mergeNodes // endDefinition;
 (* ::Subsection::Closed:: *)
 (*insertURIs*)
 insertURIs // beginDefinition;
-insertURIs[ nodes_, uri_ ] := nodes; (* TODO *)
+insertURIs[ nodes_List, uri_String ] := insertURI[ uri ] /@ nodes;
 insertURIs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertURI*)
+insertURI // beginDefinition;
+
+insertURI[ uri_String ] := insertURI[ uri, # ] &;
+
+insertURI[ uri_String, node_Association ] := Enclose[
+    <| node, "URI" -> ConfirmBy[ makeCellURI[ uri, node ], StringQ, "URI" ] |>,
+    throwInternalFailure
+];
+
+insertURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCellURI*)
+makeCellURI // beginDefinition;
+
+makeCellURI[ uri_String, KeyValuePattern[ "Cells" -> cells_ ] ] :=
+    makeCellURI[ uri, cells ];
+
+makeCellURI[ uri_String, cells: { __Cell } ] :=
+    FirstCase[ cells, c_Cell :> With[ { s = makeCellURI[ uri, c ] }, s /; StringQ @ s ] ];
+
+makeCellURI[ baseURI_String, cell_Cell ] :=
+    With[ { fragment = cellURIFragment @ cell },
+        If[ StringQ @ fragment,
+            baseURI <> "#" <> fragment,
+            Missing[ "NotFound" ]
+        ]
+    ];
+
+makeCellURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellURIFragment*)
+cellURIFragment // beginDefinition;
+cellURIFragment[ Cell[ __, CellTags -> tag_String, ___ ] ] := "tag-" <> tag;
+cellURIFragment[ Cell[ __, CellTags -> { tag_String, ___ }, ___ ] ] := "tag-" <> tag;
+cellURIFragment[ Cell[ __, CellID -> id: Except[ 0, _Integer ], ___ ] ] := ToString @ id;
+cellURIFragment[ Cell[ __, ExpressionUUID -> uuid_String, ___ ] ] := "cell-" <> uuid;
+cellURIFragment[ _Cell ] := Missing[ "NotFound" ];
+cellURIFragment // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
