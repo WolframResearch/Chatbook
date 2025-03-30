@@ -18,6 +18,7 @@ $targetTokens      = 2^10;
 $targetTokensLow   = $targetTokens/2;
 $targetTokensHigh  = 2*$targetTokens;
 $maxTokens         = 2*$targetTokensHigh;
+$minTokens         = $targetTokensLow/4;
 
 (* The tokenizer to use for chunking: *)
 $chunkingTokenizer = "gpt-4o";
@@ -204,18 +205,21 @@ chunkNotebook[ file_? FileExistsQ ] := Enclose[
         nb     = ConfirmMatch[ importNotebook @ file, _Notebook, "Notebook" ];
         name   = ConfirmMatch[ guessNotebookTitle[ nb, file ], _String|None, "Name" ];
         titled = ConfirmMatch[ prependTitleCell[ nb, name ], Notebook[ { __Cell }, OptionsPattern[ ] ], "Title" ];
-        chunkNotebook @ titled
+        chunkNotebook[ titled, getNotebookURI @ file ]
     ],
     throwInternalFailure
 ];
 
-chunkNotebook[ nb_Notebook ] := Enclose[
-    Module[ { trailed, merged, flatNodes, document },
+chunkNotebook[ nb_Notebook ] :=
+    chunkNotebook[ nb, getNotebookURI @ nb ];
+
+chunkNotebook[ nb_Notebook, uri_String ] := Enclose[
+    Module[ { trailed, flatNodes, withURI, document },
         trailed   = ConfirmBy[ insertTrailInfo @ nb, AssociationQ, "Trailed" ];
-        merged    = ConfirmBy[ mergeSmallNodes @ trailed, AssociationQ, "Merged" ];
-        flatNodes = Cases[ merged, KeyValuePattern[ "String" -> _String ], Infinity ];
+        flatNodes = Cases[ trailed, KeyValuePattern[ "String" -> _String ], Infinity ];
+        withURI   = insertURIs[ flatNodes, uri ];
         document  = ConfirmBy[ cellToString @ nb, StringQ, "Document" ];
-        <| "Document" -> document, "Chunks" -> flatNodes |>
+        <| "Document" -> document, "Chunks" -> withURI |>
     ],
     throwInternalFailure
 ];
@@ -240,7 +244,7 @@ insertTrailInfo[
     { trail___ },
     source: Cell @ CellGroupData[ { header_Cell? breadCrumbHeaderCellQ, contents___Cell }, ___ ]
 ] :=
-    Module[ { string, name, new },
+    Module[ { string, name, new, headerNode, childNodes, merged },
 
         string = cellToString @ header;
 
@@ -253,28 +257,33 @@ insertTrailInfo[
                   ]
               ];
 
+        headerNode = insertTrailInfo[ level + 1, 0, { trail, name }, header ];
+        childNodes = mergeSmallNodes @ new;
+        merged     = mergeHeaderNode[ headerNode, childNodes ];
+
         <|
             "Level"    -> level,
             "Group"    -> group,
             "Trail"    -> { trail, name },
             "Name"     -> name,
             "LeafNode" -> False,
-            "Children" -> Prepend[ new, insertTrailInfo[ level + 1, 0, { trail, name }, header ] ]
+            "Children" -> merged
         |> /; StringQ @ name && StringFreeQ[ name, "\n" ] && StringLength @ name < 200
     ];
 
 
 (* Cell group without a header cell: *)
 insertTrailInfo[ level_Integer, group_Integer, trail: { ___String }, cell: Cell @ CellGroupData[ cells_List, ___ ] ] :=
-    Module[ { new },
+    Module[ { new, childNodes },
         new = MapIndexed[ insertTrailInfo[ level + 1, First[ #2 ], trail, #1 ] &, regroup @ cells ];
+        childNodes = mergeSmallNodes @ new;
         <|
             "Level"    -> level,
             "Group"    -> group,
             "Trail"    -> trail,
             "Name"     -> None,
             "LeafNode" -> False,
-            "Children" -> new
+            "Children" -> childNodes
         |>
     ];
 
@@ -314,6 +323,30 @@ insertTrailInfo // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*mergeHeaderNode*)
+mergeHeaderNode // beginDefinition;
+
+mergeHeaderNode[ header_Association, { first_Association, rest___Association } ] :=
+    { mergeHeaderNode[ header, first ], rest };
+
+mergeHeaderNode[ header_Association, node: KeyValuePattern[ "Cells" -> { ___Cell } ] ] := Enclose[
+    Module[ { headerTokens },
+        headerTokens = ConfirmBy[ Lookup[ header, "TokenCount" ], IntegerQ, "HeaderTokenCount" ];
+        If[ TrueQ[ headerTokens <= $minTokens ],
+            mergeNodes @ { header, node },
+            { header, node }
+        ]
+    ],
+    throwInternalFailure
+];
+
+mergeHeaderNode[ header_Association, node: KeyValuePattern[ "Children" -> nodes_List ] ] :=
+    <| node, "Children" -> mergeHeaderNode[ header, nodes ] |>;
+
+mergeHeaderNode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*breadCrumbHeaderCellQ*)
 breadCrumbHeaderCellQ // beginDefinition;
 breadCrumbHeaderCellQ[ Cell[ __, s_? (MatchQ @ $$groupDividerStyle), ___ ] ] := True;
@@ -344,8 +377,12 @@ mergeSmallNodes[ node: KeyValuePattern[ "LeafNode" -> True ] ] :=
 mergeSmallNodes[ node: KeyValuePattern[ "Children" -> nodes_List ] ] :=
     <| node, "Children" -> mergeSmallNodes @ nodes |>;
 
-mergeSmallNodes[ items_List ] :=
-    With[ { merged = Flatten[ mergeSplitNodes /@ SplitBy[ items, Lookup[ "LeafNode" ] ] ] },
+mergeSmallNodes[ { } ] := { };
+mergeSmallNodes[ { node_Association } ] := { mergeSmallNodes @ node };
+
+mergeSmallNodes[ items: { __Association } ] :=
+    Module[ { merged },
+        merged = Flatten[ mergeSplitNodes /@ SplitBy[ items, Lookup[ "LeafNode" ] ] ];
         If[ merged === items, merged, mergeSmallNodes @ merged ]
     ];
 
@@ -380,9 +417,9 @@ mergeNodes // beginDefinition;
 
 mergeNodes[ { node_Association } ] := node;
 
-mergeNodes[ nodes: { first_Association, __Association } ] :=
+mergeNodes[ nodes: { first_Association, __Association } ] := Enclose[
     Module[ { cells, string, tokens },
-        cells  = Flatten @ Lookup[ nodes, "Cells" ];
+        cells  = ConfirmMatch[ Flatten @ Lookup[ nodes, "Cells" ], { __Cell }, "Cells" ];
         string = cellToString @ Notebook @ cells;
         tokens = tokenCount @ string;
         Association[
@@ -392,9 +429,61 @@ mergeNodes[ nodes: { first_Association, __Association } ] :=
             "Cells"      -> cells,
             "Styles"     -> Missing[ "MergedNodes" ]
         ]
-    ];
+    ],
+    throwInternalFailure
+];
 
 mergeNodes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*URIs*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertURIs*)
+insertURIs // beginDefinition;
+insertURIs[ nodes_, uri_ ] := nodes; (* TODO *)
+insertURIs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getNotebookURI*)
+getNotebookURI // beginDefinition;
+
+getNotebookURI[ File[ file_String ] ] :=
+    getNotebookURI @ file;
+
+getNotebookURI[ file_String ] := Enclose[
+    Module[ { string, obj },
+        string = ConfirmBy[ ExpandFileName @ file, StringQ, "String" ];
+        obj = ConfirmMatch[ LocalObject @ string, HoldPattern @ LocalObject[ _String, ___ ], "LocalObject" ];
+        getNotebookURI[ file ] = ConfirmBy[ First @ obj, StringQ, "String" ]
+    ],
+    throwInternalFailure
+];
+
+getNotebookURI[ Notebook[ __, ExpressionUUID -> uuid_String, ___ ] ] :=
+    uuidToNotebookURI @ uuid;
+
+getNotebookURI[ nbo_NotebookObject ] := Enclose[
+    With[ { file = Quiet @ NotebookFileName @ nbo },
+        If[ StringQ @ file,
+            getNotebookURI @ file,
+            uuidToNotebookURI @ ConfirmBy[ CurrentValue[ nbo, ExpressionUUID ], StringQ, "ExpressionUUID" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+getNotebookURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uuidToNotebookURI*)
+uuidToNotebookURI // beginDefinition;
+uuidToNotebookURI[ uuid_String ] := "notebook://" <> uuid;
+uuidToNotebookURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
