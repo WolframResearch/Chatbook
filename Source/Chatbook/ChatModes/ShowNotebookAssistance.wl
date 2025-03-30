@@ -22,7 +22,6 @@ $notebookAssistanceBaseSettings = <|
     "PromptGenerators"          -> { "RelatedDocumentation" },
     "ServiceCaller"             -> "NotebookAssistance",
     "Tools"                     -> { "NotebookEditor" },
-    "ToolSelectionType"         -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>,
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>
     |>
