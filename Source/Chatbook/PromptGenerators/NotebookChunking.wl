@@ -7,8 +7,6 @@ Needs[ "Wolfram`Chatbook`"                         ];
 Needs[ "Wolfram`Chatbook`Common`"                  ];
 Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
-(* TODO: Need to generate anchor IDs during chunking in order to create URIs later *)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -424,7 +422,6 @@ mergeSplitNodes[ nodes: { KeyValuePattern[ "LeafNode" -> True ], __ } ] :=
         tokenCounts = Lookup[ nodes, "TokenCount" ];
         acc = Accumulate @ tokenCounts;
         min = If[ First @ tokenCounts < $targetTokensLow, Min[ 2, Length @ acc ], 1 ];
-        (* TODO: Also ensure small nodes at the end are merged *)
         len = Max[ min, LengthWhile[ acc, LessEqualThan @ $targetTokens ] ];
         { merge, remaining } = TakeDrop[ nodes, len ];
         Flatten @ { mergeNodes @ merge, mergeSplitNodes @ remaining }
