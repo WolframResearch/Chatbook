@@ -31,6 +31,11 @@ DefinitionNotebookClient`$DisabledHints = {
         "MessageTag" -> "InternalContextWarning",
         "Level"      -> All,
         "ID"         -> All
+    |>,
+    <|
+        "MessageTag" -> "CodeInspectionFileIssue/TopLevel",
+        "Level"      -> All,
+        "ID"         -> All
     |>
 };
 
