@@ -1,3 +1,4 @@
+RawBoxes @ ToBoxes @
 Style["@",
 	PrivateFontOptions -> {"OperatorSubstitution" -> False},
 	ShowStringCharacters -> False,

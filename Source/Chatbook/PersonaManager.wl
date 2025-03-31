@@ -106,7 +106,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
                                 }
                             ],
                             Alignment -> {{Center, Center, {Left}}, Center},
-                            Background -> {{}, {RGBColor["#e5e5e5"], {White}}},
+                            Background -> {{}, { #1, { #2 }}},
                             BaseStyle -> "DialogBody",
                             Dividers -> Dynamic @ {
                                 {},
@@ -126,6 +126,9 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
                             }
                         ],
                         TrackedSymbols :> {$CachedPersonaData}
+                    ]&[
+                        color @ "ManagerGridHeaderBackground",
+                        color @ "ManagerGridItemBackground"
                     ]
                 },
 
@@ -267,7 +270,7 @@ formatName // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatDescription*)
 formatDescription // beginDefinition;
-formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
+formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "ManagerGridFont_1"];
 formatDescription[ desc_String ] :=
     Pane[(* If desc becomes a text resource then use FEPrivate`TruncateStringToWidth *)
         If[StringLength[desc] > #nChars, StringTake[desc, UpTo[#nChars - 2]] <> "\[Ellipsis]", desc],
@@ -280,7 +283,7 @@ formatDescription // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatVersion*)
 formatVersion // beginDefinition;
-formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
+formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "ManagerGridFont_1"];
 formatVersion[ version: _String|None ] := version;
 formatVersion // endDefinition;
 

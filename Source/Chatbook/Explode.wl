@@ -279,7 +279,7 @@ explodeToolCall[ KeyValuePattern @ {
 explodeToolCall[ tags: KeyValuePattern @ { } ] := Cell[
     BoxData @ ToBoxes @ Iconize[
         tags, (* FIXME: iconize an actual tool response object here *)
-        "Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
+        (*FIXME:TR*)"Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
     ],
     "Input"
 ];

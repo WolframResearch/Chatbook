@@ -5,7 +5,7 @@ RawBoxes @ ToBoxes @ Mouseover[
   {
    Thickness[ 0.090909 ],
    {
-    FaceForm @ { RGBColor[ 0.4, 0.67843, 0.82353 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "NA_OverlayMenuIcon_Blue", Opacity[ 1.0 ] },
     FilledCurve[
      {
       { { 0, 2, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -42,7 +42,7 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ { RGBColor[ 0.4, 0.67843, 0.82353 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "NA_OverlayMenuIcon_Blue", Opacity[ 1.0 ] },
     FilledCurve[
      {
       { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -57,14 +57,14 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ { RGBColor[ 0.4, 0.67843, 0.82353 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "NA_OverlayMenuIcon_Blue", Opacity[ 1.0 ] },
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 0.517, 9.0 }, { 10.498, 9.0 }, { 10.498, 10.0 }, { 0.517, 10.0 }, { 0.517, 9.0 } } }
     ]
    },
    {
-    FaceForm @ { RGBColor[ 0.4, 0.67843, 0.82353 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "NA_OverlayMenuIcon_Blue", Opacity[ 1.0 ] },
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 4.515, 10.0 }, { 6.528, 10.0 }, { 6.528, 11.0 }, { 4.515, 11.0 }, { 4.515, 10.0 } } }
@@ -79,7 +79,7 @@ RawBoxes @ ToBoxes @ Mouseover[
   {
    Thickness[ 0.090909 ],
    {
-    FaceForm @ GrayLevel[ 0.2 ],
+    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
     FilledCurve[
      {
       { { 0, 2, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -116,7 +116,7 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ GrayLevel[ 0.2 ],
+    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
     FilledCurve[
      {
       { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -131,14 +131,14 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ GrayLevel[ 0.2 ],
+    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 0.517, 9.0 }, { 10.498, 9.0 }, { 10.498, 10.0 }, { 0.517, 10.0 }, { 0.517, 9.0 } } }
     ]
    },
    {
-    FaceForm @ GrayLevel[ 0.2 ],
+    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 4.515, 10.0 }, { 6.528, 10.0 }, { 6.528, 11.0 }, { 4.515, 11.0 }, { 4.515, 10.0 } } }

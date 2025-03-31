@@ -12,6 +12,8 @@ Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`UI`"               ];
 
+(* NOTE: the "controlText", "leadinText", "checkboxText", "subsectionText", styles are defined in the Preferences dialog's stylesheet *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -157,7 +159,7 @@ createPreferencesContent[ ] := Enclose[
             Alignment  -> Left,
             BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
             AutoDelete -> False,
-            FrameStyle -> { AbsoluteThickness[ 1 ], GrayLevel[ 0.898 ] },
+            FrameStyle -> { AbsoluteThickness[ 1 ], color @ "PreferencesContentFrame" },
             Dividers   -> { False, { 4 -> True } },
             Spacings   -> { 0, 0.7 }
         ]
@@ -230,7 +232,7 @@ notebookSettingsPanel // beginDefinition;
 notebookSettingsPanel[ ] := Pane[
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
-        { display = ProgressIndicator[ Appearance -> "Percolate" ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic[ display ],
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> scopeInitialization[ display = createNotebookSettingsPanel[ ] ],
@@ -971,7 +973,7 @@ makeMultimodalMenu[ ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText" ],
+                Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                 PopupMenu[
                     scopedDynamic @ CurrentChatSettings[ $preferencesScope, "Multimodal" ],
                     {
@@ -979,7 +981,7 @@ makeMultimodalMenu[ ] := highlightControl[
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
-                    MenuStyle -> "controlText"
+                    MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
         },
@@ -1001,7 +1003,7 @@ makeToolsEnabledMenu[ ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr[ "PreferencesContentEnableTools" ], "leadinText" ],
+                Style[ tr[ "PreferencesContentEnableTools" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                 PopupMenu[
                     scopedDynamic @ CurrentChatSettings[ $preferencesScope, "ToolsEnabled" ],
                     {
@@ -1009,7 +1011,7 @@ makeToolsEnabledMenu[ ] := highlightControl[
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
-                    MenuStyle -> "controlText"
+                    MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
         },
@@ -1033,7 +1035,7 @@ makeToolCallFrequencySelector[ ] := highlightControl[
         Grid[
             {
                 {
-                    Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText" ],
+                    Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                     PopupMenu[
                         scopedDynamic[
                             type,
@@ -1052,7 +1054,7 @@ makeToolCallFrequencySelector[ ] := highlightControl[
                             Automatic -> tr[ "Automatic" ],
                             "Custom"  -> tr[ "Custom"    ]
                         },
-                        MenuStyle -> "controlText"
+                        MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                     ],
                     PaneSelector[
                         {
@@ -1172,22 +1174,27 @@ servicesSettingsPanel0[ ] := Enclose[
             Button[
                 Tooltip[
                     NotebookTools`Mousedown[
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ #1, 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ #2, 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ #3, 14 ] ] ]
+                    ]&[
+                        color @ "PreferencesContentServicesNAInfoIcon",
+                        color @ "PreferencesContentServicesNAInfoIconHover",
+                        color @ "PreferencesContentServicesNAInfoIconPressed"
+                    ],
                     Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
                     TooltipStyle -> {
-                        Background -> RGBColor[ "#EDEDED" ],
-                        CellFrameColor -> RGBColor[ "#D1D1D1" ],
+                        Background       -> color @ "PreferencesContentServicesNAInfoTooltipBackground",
+                        CellFrameColor   -> color @ "PreferencesContentServicesNAInfoTooltipFrame",
                         CellFrameMargins -> 5,
-                        FontColor -> RGBColor[ "#333333" ],
-                        FontFamily -> "Roboto",
-                        FontSize -> 11 } ],
+                        FontColor        -> color @ "PreferencesContentFont_1",
+                        FontFamily       -> "Roboto",
+                        FontSize         -> 11 } ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Learn",
-                Appearance -> "Suppressed",
+                Appearance       -> "Suppressed",
                 BaselinePosition -> Baseline,
-                Method -> "Queued",
-                ImageSize -> Automatic ];
+                Method           -> "Queued",
+                ImageSize        -> Automatic ];
 
         Pane[
             Grid[
@@ -1223,11 +1230,11 @@ makeLLMPanel[ ] :=
             Button[
                 redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
-                Appearance -> "Suppressed",
-                BaseStyle -> "DialogTextCommon",
+                Appearance       -> "Suppressed",
+                BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
-                Method -> "Queued",
-                ImageSize -> Automatic ];
+                Method           -> "Queued",
+                ImageSize        -> Automatic ];
 
         username =
             PaneSelector[
@@ -1236,42 +1243,48 @@ makeLLMPanel[ ] :=
                     True ->
                         Grid[
                             { {
-                                RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ GrayLevel[ 0.2 ] ] ],
+                                RawBoxes[ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ # ] ] ]&[
+                                    color @ "PreferencesContentFont_1"
+                                ],
                                 If[ $CloudEvaluation, Dynamic[ $CloudAccountName ], Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] ] } },
                             Alignment -> { Left, Baseline },
-                            BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
+                            BaseStyle -> { FontColor -> color @ "PreferencesContentFont_1", FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
                 Dynamic[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ] ],
                 BaselinePosition -> Baseline,
-                ImageSize -> Automatic ];
+                ImageSize        -> Automatic ];
 
         signInButton =
             Button[
                 Style[
                     tr[ "PreferencesContentLLMKitSignInButton" ],
                     FontColor ->
-                        Dynamic[
-                            If[ CurrentValue[ "MouseOver" ],
-                                RGBColor[ 0.3333333333333333, 0.6941176470588235, 0.8483660130718954 ],
-                                RGBColor[                 0., 0.5411764705882353, 0.7725490196078432 ] ] ] ],
+                        Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                            color @ "PreferencesContentLLMSignInButtonFontHover",
+                            color @ "PreferencesContentLLMSignInButtonFont"
+                        ]
+                ],
                 CloudConnect[ ];
                 If[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
-                Appearance -> "Suppressed",
-                BaseStyle -> "DialogTextCommon",
+                Appearance       -> "Suppressed",
+                BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
-                ImageSize -> Automatic,
-                Method -> "Queued" ];
+                ImageSize        -> Automatic,
+                Method           -> "Queued" ];
 
         manageButton =
             Button[
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
-                    FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
+                    FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                        color @ "PreferencesContentFont_1",
+                        color @ "PreferencesContentFont_3" ])
+                ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
                 Appearance -> "Suppressed",
-                BaseStyle -> "DialogTextCommon",
-                Method -> "Queued",
-                ImageSize -> Automatic ];
+                BaseStyle  -> "DialogTextCommon",
+                Method     -> "Queued",
+                ImageSize  -> Automatic ];
 
         Framed[
             Grid[
@@ -1283,7 +1296,7 @@ makeLLMPanel[ ] :=
                                 "Loading" ->
                                     DynamicModule[ { },
                                         (* Display a progress indicator until $LLMKitInfo is set via initialization *)
-                                        ProgressIndicator[ Appearance -> "Percolate" ],
+                                        ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
                                         Initialization :> ( Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ),
                                         SynchronousInitialization -> False
                                     ],
@@ -1293,8 +1306,8 @@ makeLLMPanel[ ] :=
                                             { tr[ "PreferencesContentLLMKitSubscriptionRequired" ], SpanFromLeft, SpanFromLeft },
                                             { subscribeButton, tr[ "PreferencesContentLLMKitSignInOr" ], signInButton }
                                         },
-                                        Alignment -> { Left, Baseline },
-                                        BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
+                                        Alignment        -> { Left, Baseline },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedButNotSubscribed" ->
@@ -1303,20 +1316,20 @@ makeLLMPanel[ ] :=
                                             { tr[ "PreferencesContentLLMKitNoSubscription" ] },
                                             { subscribeButton }
                                         },
-                                        Alignment -> { Left, Baseline },
-                                        BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
+                                        Alignment        -> { Left, Baseline },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedAndSubscribed" ->
                                     Grid[
                                         {
-                                            { chatbookExpression[ "CheckmarkGreen" ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> GrayLevel[ 0.2 ] ] },
+                                            { chatbookExpression[ "CheckmarkGreen" ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> color @ "PreferencesContentFont_1" ] },
                                             { "", manageButton }
                                         },
-                                        Alignment -> { Left, Baseline },
-                                        BaseStyle -> { "DialogTextCommon", FontColor -> GrayLevel[ 0.537254 ] },
+                                        Alignment        -> { Left, Baseline },
+                                        BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
                                         BaselinePosition -> { 1, 2 },
-                                        Spacings -> { 0.25, 0.5 }
+                                        Spacings         -> { 0.25, 0.5 }
                                     ]
                             },
                             Dynamic[
@@ -1334,9 +1347,9 @@ makeLLMPanel[ ] :=
                 Alignment -> { Left, Baseline },
                 ItemSize -> { { Automatic, Fit, Automatic } },
                 Spacings -> { Automatic, 0.7 } ],
-            Background -> White,
+            Background -> color @ "PreferencesContentBackground",
             FrameMargins -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle -> GrayLevel[ 0.898 ],
+            FrameStyle -> color @ "PreferencesContentFrame",
             ImageSize -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ];
@@ -1355,18 +1368,18 @@ makeServiceGrid[ ] :=
             Grid[
                 KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
                 Alignment  -> { Left, Baseline },
-                Background -> { { }, { { White } } },
+                Background -> { { }, { { color @ "PreferencesContentBackground" } } },
                 ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
                 Dividers   -> { { }, { False, { True }, False } },
-                FrameStyle -> GrayLevel[ 0.898 ],
+                FrameStyle -> color @ "PreferencesContentFrame",
                 Spacings   -> { Automatic, 0.7 } ],
             AppearanceElements -> { },
             FrameMargins -> 8,
             Scrollbars -> { False, Automatic },
             ImageSize -> { Scaled[ 1 ], UpTo[ 150 ] } ],
-        Background -> White,
+        Background -> color @ "PreferencesContentBackground",
         FrameMargins -> 0,
-        FrameStyle -> GrayLevel[ 0.898 ],
+        FrameStyle -> color @ "PreferencesContentFrame",
         ImageSize -> Scaled[ 1 ],
         RoundingRadius -> 3 ];
 
@@ -1403,7 +1416,7 @@ deleteServiceButton // beginDefinition;
 
 deleteServiceButton[ "OpenAI" ] := Framed[
     Button[
-        chatbookExpression[ "ToolManagerBin", GrayLevel[ 0.8 ] ],
+        chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconAlt" ],
         Null,
         Enabled -> False,
         $deleteServiceButtonOptions
@@ -1452,7 +1465,7 @@ makeServiceAuthenticationDisplay // beginDefinition;
 
 makeServiceAuthenticationDisplay[ service_String, icon_ ] :=
     DynamicModule[ { display },
-        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         Dynamic[ display, TrackedSymbols :> { display } ],
         Initialization :> scopeInitialization @ createServiceAuthenticationDisplay[ service, icon, Dynamic[ display ] ],
         SynchronousInitialization -> False
@@ -1480,9 +1493,9 @@ createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := En
                 {
                     Spacer[ 5 ],
                     If[ type === "None",
-                        Overlay[ { icon, Graphics[ Background -> GrayLevel[ 1, 0.5 ], ImageSize -> { 21, 21 } ] } ],
+                        Overlay[ { icon, Graphics[ Background -> color @ "PreferencesContentServicesIconFade_1", ImageSize -> { 21, 21 } ] } ],
                         icon ],
-                    Style[ service, FontColor -> If[ type === "None", GrayLevel[ 0, 0.5 ], Inherited ] ],
+                    Style[ service, FontColor -> If[ type === "None", color @ "PreferencesContentServicesIconFade_2", Inherited ] ],
                     "",
                     connectOrDisconnectButton[ service, type, icon, Dynamic @ display ]
                 }
@@ -1505,7 +1518,7 @@ connectOrDisconnectButton // beginDefinition;
 connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "ConnectButton" ],
-        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         clearConnectionCache[ service, False ];
         withCredentialsProvider @ Quiet[
             Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service,
@@ -1518,7 +1531,7 @@ connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] 
 connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "DisconnectButton" ],
-        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         disconnectService @ service;
         createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
         Method -> "Queued"
@@ -1537,7 +1550,7 @@ personaSettingsPanel // beginDefinition;
 
 personaSettingsPanel[ ] :=
     DynamicModule[
-        { display = ProgressIndicator[ Appearance -> "Percolate" ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic[ display ],
         Initialization            :> scopeInitialization[ display = CreatePersonaManagerPanel[ ] ],
         SynchronousInitialization -> False,
@@ -1557,7 +1570,7 @@ toolSettingsPanel // beginDefinition;
 
 toolSettingsPanel[ ] :=
     DynamicModule[
-        { display = ProgressIndicator[ Appearance -> "Percolate" ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic[ display ],
         Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ ] ],
         SynchronousInitialization -> False,
@@ -1574,8 +1587,8 @@ toolSettingsPanel // endDefinition;
 (* ::Subsection::Closed:: *)
 (*subsectionText*)
 subsectionText // beginDefinition;
-subsectionText[ text_ ] /; $CloudEvaluation := Style[ text, "subsectionText", FontSize -> 16, FontWeight -> "DemiBold" ];
-subsectionText[ text_ ] := Style[ text, "subsectionText" ];
+subsectionText[ text_ ] /; $CloudEvaluation := Style[ text, "subsectionText", FontColor -> color @ "PreferencesContentFont_1", FontSize -> 16, FontWeight -> "DemiBold" ];
+subsectionText[ text_ ] := Style[ text, "subsectionText", FontColor -> color @ "PreferencesContentFont_1" ];
 subsectionText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1589,7 +1602,7 @@ prefsInputField[ None, value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
 prefsInputField[ label_, value_Dynamic, type_, opts: OptionsPattern[ ] ] := Grid[
     { { label, prefsInputField0[ value, type, opts ] } },
     Alignment -> { Automatic, Baseline },
-    BaseStyle -> { "leadinText" },
+    BaseStyle -> { "leadinText", FontColor -> color @ "PreferencesContentFont_2" },
     Spacings  -> 0.5
 ];
 
@@ -1598,31 +1611,33 @@ prefsInputField // endDefinition;
 
 prefsInputField0 // beginDefinition;
 
-prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] := RawBoxes @ StyleBox[
-    TemplateBox[
-        {
-            value,
-            type,
+(* "InputFieldAppearance:RoundedFrame" TemplateBox definition in Core.nb is not flexible enough, so modify it here *)
+prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
+    Framed[
+        InputField[ value, type,
             DeleteDuplicatesBy[
                 Flatten @ {
                     opts,
                     Alignment        -> { Left, Top },
-                    BaseStyle        -> { "controlText" },
+                    Appearance       -> "Frameless",
+                    BaseStyle        -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" },
                     ContinuousAction -> False,
+                    Enabled          -> Automatic,
+                    FrameMargins     -> { { 6, 6 }, { 4, 4 } },
                     ImageMargins     -> { { Automatic, Automatic }, { Automatic, Automatic } }
                 },
                 ToString @* First
-            ],
-            Automatic
-        },
-        "InputFieldAppearance:RoundedFrame"
-    ],
-    (* The following FrameBoxOptions do not work well in cloud, so disable if needed: *)
-    If[ TrueQ @ $CloudEvaluation,
-        Sequence @@ { },
-        FrameBoxOptions -> { BaselinePosition -> Top -> Scaled[ 1.3 ] }
-    ]
-];
+            ]
+        ],
+        Alignment        -> { Left, Center },
+        Background       -> color @ "PreferencesContentInputFieldBackground",
+        BaseStyle        -> color @ "PreferencesContentFont_2",
+        (* The following FrameBoxOptions do not work well in cloud, so disable if needed: *)
+        BaselinePosition -> If[ TrueQ @ $CloudEvaluation, Automatic, Top -> Scaled[ 1.3 ] ],
+        FrameMargins     -> 0,
+        FrameStyle       -> { AbsoluteThickness[ 1. ], color @ "PreferencesContentInputFieldFrame" },
+        RoundingRadius   -> 3
+    ];
 
 prefsInputField0 // endDefinition;
 
@@ -1649,7 +1664,7 @@ clickableCheckboxLabel[ value_Dynamic, label_ ] := Toggler[
     value,
     { True -> label, False -> label },
     BaselinePosition -> Scaled[ 0.2 ],
-    BaseStyle        -> { "checkboxText" }
+    BaseStyle        -> { "checkboxText", FontColor -> color @ "PreferencesContentFont_2" }
 ];
 
 clickableCheckboxLabel // endDefinition;
@@ -1878,7 +1893,7 @@ clearConnectionCache // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$loadingPopupMenu*)
-$loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> "Percolate" ] }, Enabled -> False ];
+$loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] }, Enabled -> False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1889,8 +1904,8 @@ $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
 (* ::Subsection::Closed:: *)
 (*$trashBin*)
 $trashBin := Mouseover[
-    chatbookExpression[ "ToolManagerBin", GrayLevel[ 0.65 ] ],
-    chatbookExpression[ "ToolManagerBin", Hue[ 0.59, 0.9, 0.93 ] ]
+    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIcon" ],
+    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconHover" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1899,15 +1914,16 @@ $trashBin := Mouseover[
 $resetButton :=
     Module[ { icon, label },
         icon = Style[
-            Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "SyntaxColorResetIcon" ][
-                RGBColor[ 0.3921, 0.3921, 0.3921 ]
+            Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "SyntaxColorResetIcon" ][ # ] ]&[
+                color @ "PreferencesContentResetButtonIcon"
             ],
             GraphicsBoxOptions -> { BaselinePosition -> Scaled[ 0.1 ] }
         ];
 
         label = Grid[
             { { icon, Dynamic @ FEPrivate`FrontEndResource[ "PreferencesDialog", "ResetAllSettingsText" ] } },
-            Alignment -> { Automatic, Baseline }
+            Alignment -> { Automatic, Baseline },
+            BaseStyle -> { FontColor -> color @ "PreferencesContentFont_2" }
         ];
 
         expandScope @ Button[
@@ -1919,7 +1935,7 @@ $resetButton :=
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
                 FontSize   -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontSize" ],
-                FontColor  -> Black
+                FontColor  -> color @ "PreferencesContentFont_2"
             },
             ImageSize -> Automatic,
             Method    -> "Queued"

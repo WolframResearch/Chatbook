@@ -2,12 +2,16 @@
 (*Package Header*)
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
+
+color = Wolfram`Chatbook`Common`color;
+
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    Background             -> White,
+    Background             -> color @ "NA_NotebookBackground",
     CellInsertionPointCell -> None,
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
@@ -70,7 +74,7 @@ Cell[
 (*WorkspaceChatToolbarLabel*)
 Cell[
     StyleData[ "WorkspaceChatToolbarButtonLabel", StyleDefinitions -> StyleData[ "Text" ] ],
-    FontColor  -> White,
+    FontColor  -> color @ "NA_ToolbarFont",
     FontSize   -> 13,
     FontWeight -> "DemiBold"
 ]
@@ -80,7 +84,7 @@ Cell[
 (*WorkspaceChatToolbarTitle*)
 Cell[
     StyleData[ "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "WorkspaceChatToolbarButtonLabel" ] ],
-    FontColor -> RGBColor[ "#3383AC" ],
+    FontColor -> color @ "NA_ToolbarTitleFont",
     FontSize  -> 12
 ]
 
@@ -199,10 +203,10 @@ Cell[
             FrameBox[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> RGBColor[ "#edf4fc" ],
+                Background     -> color @ "UserMessageBoxBackground",
                 FrameMargins   -> { { 8, 15 }, { 8, 8 } },
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
-                RoundingRadius -> 8, (* tweaked *)
+                FrameStyle     -> color @ "UserMessageBoxFrame",
+                RoundingRadius -> 8, (* TWEAK *)
                 StripOnInput   -> False
             ],
             Alignment -> Right,
@@ -221,9 +225,9 @@ Cell[
             FrameBox[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> RGBColor[ "#f9fdff" ], (* tweaked *)
+                Background     -> color @ "NA_AssistantMessageBoxBackground", (* TWEAK *)
                 FrameMargins   -> 8,
-                FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#e0eff7" ] ], (* tweaked *)
+                FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ], (* TWEAK *)
                 ImageSize      -> { Scaled[ 1 ], Automatic },
                 RoundingRadius -> 8, (* tweaked *)
                 StripOnInput   -> False
@@ -262,18 +266,18 @@ Cell[
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
                             Scrollbars         -> Automatic
                         ],
-                        Background   -> GrayLevel[ 1 ],
+                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
                         ImageMargins -> { { 0, 0 }, { 0, 8 } },
                         ImageSize    -> { Full, Automatic }
                     ] },
                 {
                     FrameBox[
                         DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
-                        Background   -> RGBColor[ "#f9fdff" ],
+                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundBottom",
                         FrameMargins -> { { 7, 2 }, { 2, 2 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
                         ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
                         ImageSize    -> { Full, Automatic }
                     ] }
@@ -303,7 +307,7 @@ Cell[
                                 "Welcome to Code Assistance Chat",
                                 FontWeight -> Bold,
                                 FontSize   -> 17,
-                                FontColor  -> GrayLevel[ 0.25 ]
+                                FontColor  -> color @ "WelcomeToCodeAssistanceSplashTitleFont"
                             ]
                         },
                         { "Ask me anything using the input field below." },
@@ -316,7 +320,7 @@ Cell[
                             ]
                         }
                     },
-                    BaseStyle -> { "Text", FontSize -> 13, FontColor -> GrayLevel[ 0.5 ], LineBreakWithin -> False },
+                    BaseStyle -> { "Text", FontSize -> 13, FontColor -> color @ "WelcomeToCodeAssistanceSplashFont", LineBreakWithin -> False },
                     Spacings  -> { 1, { 0, 1.25, 1.25, 0.75 } }
                 ],
                 Alignment       -> { Center, Automatic },
@@ -324,9 +328,9 @@ Cell[
                 ImageSizeAction -> "ShrinkToFit"
             ],
             Alignment      -> { Center, Automatic },
-            Background     -> RGBColor[ "#fcfdff" ],
+            Background     -> color @ "WelcomeToCodeAssistanceSplashBackground",
             FrameMargins   -> { { 10, 10 }, { 10, 10 } },
-            FrameStyle     -> RGBColor[ "#ecf0f5" ],
+            FrameStyle     -> color @ "WelcomeToCodeAssistanceSplashFrame",
             ImageSize      -> { Automatic, Automatic },
             RoundingRadius -> 10
         ]

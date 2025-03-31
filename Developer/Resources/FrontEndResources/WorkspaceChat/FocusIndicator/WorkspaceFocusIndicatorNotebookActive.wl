@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-RawBoxes @ ToBoxes @ Graphics[
+Graphics[
  {
   Thickness[ 0.090909 ],
   Style[
@@ -30,7 +30,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.51765, 0.7451, 0.86275, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_1"
   ],
   Style[
    {
@@ -55,7 +55,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.59216, 0.81176, 0.92941, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
   ],
   Style[
    {
@@ -77,7 +77,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.59216, 0.81176, 0.92941, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
   ],
   Style[
    {
@@ -99,7 +99,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.59216, 0.81176, 0.92941, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
   ],
   Style[
    {
@@ -121,7 +121,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.59216, 0.81176, 0.92941, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
   ],
   Style[
    {
@@ -146,7 +146,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.59216, 0.81176, 0.92941, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
   ],
   Style[
    {
@@ -175,7 +175,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 1.0, 1.0, 1.0, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_4"
   ],
   Style[
    {
@@ -271,7 +271,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ]
+   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_3"
   ]
  },
  ImageSize -> { 12.0, 12.0 },

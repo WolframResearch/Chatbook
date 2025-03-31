@@ -101,7 +101,7 @@ $autoOperatorRenderings = <|
  |>;
 
  $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
- $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> RGBColor[ "#ff6f00" ], FontSize -> 9 ];
+ $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> color @ "NA_ChatOutputFreeFormFont", FontSize -> 9 ];
 
 
  $delimiterCell = Cell[
@@ -111,7 +111,7 @@ $autoOperatorRenderings = <|
             AutoDelete      -> False,
             GridBoxDividers -> { "Columns" -> { False, { True }, False }, "Rows" -> { False, { True }, False } },
             GridBoxItemSize -> { "Columns" -> { { Fit } }, "Rows" -> { { Automatic } } },
-            FrameStyle      -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
+            FrameStyle      -> Directive[ color @ "ChatDelimiterCellFrame", AbsoluteThickness[ 1 ] ]
         ],
         "Grid"
     ],
@@ -216,10 +216,10 @@ formatToolCall0[ string_String, as_Association ] := makeToolCallBoxLabel @ as;
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
-    Background   -> White,
+    Background   -> color @ "NA_ChatOutputToolCallFailureBackground",
     BaseStyle    -> "Output",
     FrameMargins -> 10,
-    FrameStyle   -> GrayLevel[ 0.95 ],
+    FrameStyle   -> color @ "NA_ChatOutputToolCallFailureFrame",
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
@@ -384,7 +384,7 @@ makeResultCell0[ bulletCell[ "", item_String ] ] := {
     "\n",
     Cell[
         TextData @ Flatten @ {
-            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
             " ",
             formatTextString @ item
         },
@@ -397,7 +397,7 @@ makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := {
     Cell[
         TextData @ Flatten @ {
             whitespace,
-            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
             " ",
             formatTextString @ item
         },
@@ -429,14 +429,14 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
                     formatTextToBoxes @ StringDelete[ StringTrim @ quote, StartOfLine ~~ ">" ~~ " "... ],
                     ImageMargins -> 5,
                     ImageSize    -> { Full, Automatic },
-                    BaseStyle    -> { "Text", FontColor -> GrayLevel[ 0.35 ] }
+                    BaseStyle    -> { "Text", FontColor -> color @ "NA_ChatOutputResultCellBlockQuoteFont" }
                 ]
             }
         },
         AutoDelete        -> False,
-        GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
+        GridBoxBackground -> { "Columns" -> { { color @ "NA_ChatOutputResultCellBlockQuoteBackground" } } },
         GridBoxDividers   -> {
-            "ColumnsIndexed" -> { 1 -> Directive[ RGBColor[ 0.87, 0.94, 1 ], AbsoluteThickness[ 4 ] ] },
+            "ColumnsIndexed" -> { 1 -> Directive[ color @ "NA_ChatOutputResultCellBlockQuoteFrame", AbsoluteThickness[ 4 ] ] },
             "Rows"           -> { { False } }
         },
         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
@@ -703,9 +703,8 @@ floatingButtonGrid[ cell_Cell, lang_ ] /; $cloudNotebooks :=
                 button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
             }
         },
-        Alignment  -> Top,
-        Spacings   -> 0.2,
-        FrameStyle -> GrayLevel[ 0.85 ]
+        Alignment -> Top,
+        Spacings  -> 0.2
     ];
 
 floatingButtonGrid[ cell_Cell, lang_ ] :=
@@ -725,9 +724,8 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
                     }
                 ]
             },
-            Alignment  -> Top,
-            Spacings   -> 0.2,
-            FrameStyle -> GrayLevel[ 0.85 ]
+            Alignment -> Top,
+            Spacings  -> 0.2
         ]
     ];
 
@@ -743,9 +741,8 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
                     button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
                 }
             },
-            Alignment  -> Top,
-            Spacings   -> 0.2,
-            FrameStyle -> GrayLevel[ 0.85 ]
+            Alignment -> Top,
+            Spacings  -> 0.2
         ]
     },
     "ChatCodeBlockButtonPanel"
@@ -1008,7 +1005,7 @@ attachCopiedTooltip[ ] :=
                    Hyphenation -> False,
                    HyphenationOptions -> {"HyphenationCharacter" -> "\[Null]"},
                    FontFamily -> "Source Sans Pro", FontSize -> 12,
-                   FontColor -> GrayLevel[0.5]}],
+                   FontColor -> color @ "NA_ChatCodeBlockTemplateCopiedButtonFont"}],
                 Alignment    -> { Center, Bottom },
                 FrameMargins -> 0,
                 ImageSize    -> { All, 60 }
@@ -1230,8 +1227,8 @@ buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
 buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
-        FrameStyle       -> RGBColor[ "#d4e5ed" ],
-        Background       -> GrayLevel[ 1 ],
+        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
+        Background       -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
         RoundingRadius   -> 3
@@ -1269,7 +1266,7 @@ labeledIcon[ icon_, textResource_String ] := Grid[
             buttonPane @ icon,
             Style[
                 tr @ textResource,
-                FontColor  -> RGBColor[ "#333333" ],
+                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFont",
                 FontFamily -> "Source Sans Pro",
                 FontSize   -> 12
             ]
@@ -1292,13 +1289,13 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
         Style[
             tooltip,
             "Text",
-            FontColor    -> RGBColor[ 0.53725, 0.53725, 0.53725 ],
+            FontColor    -> color @ "ChatOutputTooltipFont",
             FontSize     -> 12,
             FontWeight   -> "Plain",
             FontTracking -> "Plain"
         ],
-        Background   -> RGBColor[ 0.96078, 0.96078, 0.96078 ],
-        FrameStyle   -> RGBColor[ 0.89804, 0.89804, 0.89804 ],
+        Background   -> color @ "ChatOutputTooltipBackground",
+        FrameStyle   -> color @ "ChatOutputTooltipFrame",
         FrameMargins -> 8
     ],
     TooltipDelay -> 0.15,
@@ -1801,7 +1798,7 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
-With[ { col = RGBColor[ "#3383AC" ] },
+With[ { col = color @ "NA_ChatOutputToolCallLabelFont" },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
@@ -1812,8 +1809,8 @@ With[ { col = RGBColor[ "#3383AC" ] },
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ "#3383AC" ] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
@@ -1864,13 +1861,13 @@ makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
                 FontSize   -> 11,
                 Background -> None
             ],
-            Background   -> White,
+            Background   -> color @ "NA_ChatOutputToolCallBackground",
             FrameMargins -> 5,
             FrameStyle   -> None,
             ImageSize    -> { Scaled[ 1 ], Automatic },
             BaseStyle    -> "Text"
         ],
-        Background   -> White,
+        Background   -> color @ "NA_ChatOutputToolCallBackground",
         FrameStyle   -> None,
         FrameMargins -> 10
     ];
@@ -1887,25 +1884,25 @@ makeToolCallInterpretedView[ as_Association ] :=
         Column[
             {
                 Item[
-                    Pane[ Style[ "INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    Pane[ Style[ (*FIXME:TR*)"INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
                     ItemSize   -> Fit,
-                    Background -> GrayLevel[ 0.95 ]
+                    Background -> color @ "NA_ChatOutputToolCallHeaderBackground"
                 ],
                 Framed[
                     makeToolCallInputSection @ as,
-                    Background   -> White,
+                    Background   -> color @ "NA_ChatOutputToolCallBackground",
                     FrameMargins -> 5,
                     FrameStyle   -> None,
                     ImageSize    -> { Scaled[ 1 ], Automatic }
                 ],
                 Item[
-                    Pane[ Style[ "OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    Pane[ Style[ (*FIXME:TR*)"OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
                     ItemSize   -> Fit,
-                    Background -> GrayLevel[ 0.95 ]
+                    Background -> color @ "NA_ChatOutputToolCallHeaderBackground"
                 ],
                 Framed[
                     makeToolCallOutputSection @ as,
-                    Background   -> White,
+                    Background   -> color @ "NA_ChatOutputToolCallBackground",
                     FrameMargins -> 5,
                     FrameStyle   -> None,
                     ImageSize    -> { Scaled[ 1 ], Automatic }
@@ -1913,7 +1910,7 @@ makeToolCallInterpretedView[ as_Association ] :=
             },
             Alignment -> Left
         ],
-        Background   -> White,
+        Background   -> color @ "NA_ChatOutputToolCallBackground",
         BaseStyle    -> { Editable -> False },
         FrameStyle   -> None,
         FrameMargins -> 10
@@ -1934,7 +1931,7 @@ makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Associatio
             Alignment  -> Left,
             BaseStyle  -> "Text",
             Dividers   -> All,
-            FrameStyle -> GrayLevel[ 0.9 ],
+            FrameStyle -> color @ "NA_ChatOutputToolCallInputFrame",
             Spacings   -> 1
         ]
     ],
@@ -2037,7 +2034,6 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code0_ ] := Enclose[
             BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
             "ChatCode",
             "Input",
-            Background           -> GrayLevel[ 1 ],
             LanguageCategory     -> "Input",
             ShowAutoStyles       -> True,
             ShowStringCharacters -> True,
@@ -2074,7 +2070,6 @@ makeInteractiveCodeCell[ language_String, code_String ] :=
         Cell[
             code,
             "ChatPreformatted",
-            Background   -> GrayLevel[ 1 ],
             TaggingRules -> <| "CellToStringType" -> "InlineCodeCell", "CodeLanguage" -> language |>
         ],
         code,
@@ -2332,13 +2327,13 @@ formatNLInputFast[ q_String ] := OverlayBox[
         FrameBox[
             StyleBox[ q, ShowStringCharacters -> False, FontWeight -> Plain ],
             BaseStyle      -> { "CalculateInput", LineBreakWithin -> False },
-            FrameStyle     -> GrayLevel[ 0.85 ],
+            FrameStyle     -> color @ "NA_ChatOutputFreeFormFrame",
             RoundingRadius -> 3,
             ImageMargins   -> { { 5, 0 }, { 0, 0 } },
             FrameMargins   -> { { 6, 3 }, { 3, 3 } },
             StripOnInput   -> False
         ],
-        Append[ $freeformPromptBox, Background -> White ]
+        Append[ $freeformPromptBox, Background -> color @ "NA_ChatOutputFreeFormBackground" ]
     },
     Alignment -> { Left, Baseline }
 ];
@@ -2428,8 +2423,7 @@ codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
     BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
-    "ChatCodeBlock",
-    Background -> None
+    "ChatCodeBlock"
 ];
 
 codeBlockFrame // endDefinition;
@@ -2536,7 +2530,6 @@ attachment[ alt_String, key_String, expr_ ] :=
             BoxData @ boxes,
             "ChatCode",
             "Input",
-            Background           -> GrayLevel[ 1 ],
             LanguageCategory     -> "Input",
             ShowAutoStyles       -> True,
             ShowStringCharacters -> True,
