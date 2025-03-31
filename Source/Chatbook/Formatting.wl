@@ -2246,8 +2246,10 @@ formatNLInputs[ boxes_ ] :=
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
         ,
-        box: RowBox @ { "Entity"|"EntityClass"|"EntityProperty", "[", ___, "]" } :>
-            RuleCondition @ formatEntityBoxes @ box
+        box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
+            With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatNLInputs @ a, "]" } },
+                  b /; b =!= box
+            ]
     };
 
 formatNLInputs // endDefinition;
