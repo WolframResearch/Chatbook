@@ -64,7 +64,10 @@ Notebook[
      CellMargins -> {{-1, -5}, {-1, -1}},
      Magnification ->
       Dynamic[
-       AbsoluteCurrentValue[EvaluationNotebook[], Magnification]
+       AbsoluteCurrentValue[
+        FrontEnd`EvaluationNotebook[],
+        Magnification
+       ]
       ]
     ]
    },
@@ -83,7 +86,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.8.3951300173"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.2.16.3951878911"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -239,7 +242,7 @@ Notebook[
        FrameBox[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.976471, 0.992157, 1.0],
+        Background -> RGBColor[0.97647, 0.992157, 1.0],
         FrameMargins -> 8,
         FrameStyle ->
          Directive[
@@ -300,7 +303,7 @@ Notebook[
           DynamicBox[
            ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
           ],
-          Background -> RGBColor[0.976471, 0.992157, 1.0],
+          Background -> RGBColor[0.97647, 0.992157, 1.0],
           FrameMargins -> {{7, 2}, {2, 2}},
           FrameStyle ->
            Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
@@ -372,7 +375,7 @@ Notebook[
         ImageSizeAction -> "ShrinkToFit"
        ],
        Alignment -> {Center, Automatic},
-       Background -> RGBColor[0.988235, 0.992157, 1.0],
+       Background -> RGBColor[0.97647, 0.992157, 1.0],
        FrameMargins -> {{10, 10}, {10, 10}},
        FrameStyle -> RGBColor[0.92549, 0.941176, 0.960784],
        ImageSize -> {Automatic, Automatic},

@@ -37,19 +37,29 @@ $workspaceDefaultSettings = <|
 (* ::Subsection::Closed:: *)
 (*Paths*)
 
-$inputFileName          = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
-$assetLocation          = FileNameJoin @ { DirectoryName @ $inputFileName, "Resources" };
-$iconDirectory          = FileNameJoin @ { $assetLocation, "Icons" };
-$ninePatchDirectory     = FileNameJoin @ { $assetLocation, "NinePatchImages" };
-$styleDataFile          = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
-$pacletDirectory        = DirectoryName[ $inputFileName, 2 ];
-$iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
-$displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
-$coreExtensionsTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
-$styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$inputFileName              = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
+$assetLocation              = FileNameJoin @ { DirectoryName @ $inputFileName, "Resources" };
+$iconDirectory              = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory         = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
+$iconManifestFile           = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$displayFunctionsFile       = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$coreExtensionsTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
+$styleSheetTarget           = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$floatStyleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
+$darkStyleSheetTarget       = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Chatbook.nb" };
+$darkFloatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$darkDisplayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctionsDark.wxf" };
+
+
+(* ::Subsection::Closed:: *)
+(* Flag to build stylesheets with dark mode supported *)
+
+
+$BuildWithDarkModeSupportQ = False; (* Block[ ] any expressions that can build with dark mode switch *)
 
 
 (* ::Subsection::Closed:: *)
@@ -58,6 +68,10 @@ $floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleS
 
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
+Get[ FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "ColorData.wl" } ];
+
+
+color = Wolfram`Chatbook`Common`color;
 
 
 (* ::Section::Closed:: *)
@@ -232,31 +246,13 @@ $includedCellWidget = Cell[
 (*makeIconTemplateBoxStyle*)
 
 
-makeIconTemplateBoxStyle[ file_ ] := makeIconTemplateBoxStyle[ file, Import @ file ];
-
-makeIconTemplateBoxStyle[ file_, func_Function ] :=
-    makeIconTemplateBoxStyle[
-        file,
-        func,
-        ToBoxes @ func[ $$slot1, $$slot2, $$slot3 ] /. {
-            ToBoxes @ $$slot1 -> $$slot1,
-            ToBoxes @ $$slot2 -> $$slot2,
-            ToBoxes @ $$slot3 -> $$slot3
-        } /. {
-            $$slot1 -> $$slot[ 1 ],
-            $$slot2 -> $$slot[ 2 ],
-            $$slot3 -> $$slot[ 3 ]
-        } /. {
-            $$slot -> Slot
-        }
-    ];
-
-makeIconTemplateBoxStyle[ file_, icon_ ] :=
-    makeIconTemplateBoxStyle[ file, icon, ToBoxes @ icon ];
-
-makeIconTemplateBoxStyle[ file_, icon_, boxes_ ] :=
-    Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (boxes &) } ];
-
+(* Pre 14.1, Chatbook used styles with TemplateBoxOptions -> {DisplayFunction -> ...} as an icon manifest, called via TemplateBox[{}, name].
+    By 14.1, we have access to front end resources.
+    However, some TemplateBox cases are serialized in saved notebooks.
+    For backwards compatibility we must keep all defined styles, but we can point them at the FE resources instead. *)
+makeIconTemplateBoxStyle[ file_ ] := With[ { basename = FileBaseName @ file },
+    Cell[ StyleData @ basename, TemplateBoxOptions -> { DisplayFunction -> (DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", basename ] ] &) } ]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -417,7 +413,7 @@ makeMenu[ items_List, frameColor_, width_ ] := Pane[
         {
             ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
             FrameMargins   -> 3,
-            Background     -> GrayLevel[ 0.98 ],
+            Background     -> color @ "ChatMenuItemBackground",
             RoundingRadius -> 3,
             FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
             ImageMargins   -> 0
@@ -486,7 +482,7 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
         { "TypesettingIcon"  , tr[ "StylesheetToggleFormatting" ]     , "ToggleFormatting"   },
         { "InPlaceIcon"      , tr[ "StylesheetCopyChatObject" ]       , "CopyChatObject"     }
     },
-    GrayLevel[ 0.85 ],
+    color @ "ChatMenuFrame",
     250
 ];
 
@@ -712,10 +708,10 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
                 ],
                 "Grid"
             ],
-            Background -> Dynamic @ FEPrivate`If[ hover, GrayLevel[ 1 ], RGBColor[ 0.94902, 0.96863, 0.98824 ] ],
+            Background -> (Dynamic[ FEPrivate`If[ hover, #1, #2 ] ]&[ color @ "DiscardedMaterialBackgroundHover", color @ "DiscardedMaterialBackground" ]),
             BaseStyle -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
             FrameMargins -> 2,
-            FrameStyle -> RGBColor[ 0.9098, 0.93333, 0.95294 ],
+            FrameStyle -> color @ "DiscardedMaterialFrame",
             RoundingRadius -> 5,
             StripOnInput -> False
         ],
@@ -732,7 +728,7 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
 ];
 
 discardedMaterialLabelIcon[ Dynamic[ hover_ ], Dynamic[ open_ ] ] :=
-    With[ { hoverColor = RGBColor[ 0.3451, 0.72157, 0.98039 ], defaultColor = GrayLevel[ 0.7451 ] },
+    With[ { hoverColor = color @ "DiscardedMaterialIconHover", defaultColor = color @ "DiscardedMaterialIcon" },
         PaneSelectorBox[
             {
                 { True , False } -> TemplateBox[ { hoverColor   }, "DiscardedMaterialOpenerIcon" ],
@@ -806,10 +802,10 @@ inlineResources[ expr_ ] := expr /. {
 (*$styleDataCells*)
 
 
-$styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+$styleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
 
-$workspaceStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
+$workspaceStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
 (* ::Subsection::Closed:: *)
@@ -838,7 +834,7 @@ $defaultChatbookSettings := (
 (*$ChatbookStylesheet*)
 
 
-$ChatbookStylesheet = Notebook[
+$ChatbookStylesheet := Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Default.nb" ],
         $styleDataCells
@@ -852,7 +848,7 @@ $ChatbookStylesheet = Notebook[
 (*$WorkspaceStylesheet*)
 
 
-$WorkspaceStylesheet = Notebook[
+$WorkspaceStylesheet := Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Chatbook.nb" ],
         $workspaceStyleDataCells
@@ -907,7 +903,13 @@ fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
 ];
 
 
-BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
+BuildChatbookStylesheet[ ] := {
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildChatbookStylesheet @ $darkStyleSheetTarget
+        ,
+        BuildChatbookStylesheet @ $styleSheetTarget
+    ]
+}
 
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -936,7 +938,13 @@ BuildChatbookStylesheet[ target_ ] :=
 (*BuildWorkspaceStylesheet*)
 
 
-BuildWorkspaceStylesheet[ ] := BuildWorkspaceStylesheet @ $floatStyleSheetTarget;
+BuildWorkspaceStylesheet[ ] := {
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildWorkspaceStylesheet @ $darkFloatStyleSheetTarget
+        ,
+        BuildWorkspaceStylesheet @ $floatStyleSheetTarget
+    ]
+}
 
 BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -960,8 +968,11 @@ BuildWorkspaceStylesheet[ target_ ] :=
     ];
 
 
-(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. *)
-BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
+(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. 14.2 understands dark mode but may not support all features. *)
+BuildCoreExtensionsStylesheet[ ] :=
+    If[ BoxForm`sufficientVersionQ[ 14.3 ],
+        BuildCoreExtensionsStylesheet @ $coreExtensionsTarget
+    ]
 
 revisedCoreExtensions[ ] :=
 Module[ { excludedCoreExtensions },
@@ -1019,7 +1030,11 @@ BuildCoreExtensionsStylesheet[ target_ ] :=
 (*CompileTemplateData*)
 
 
-CompileTemplateData[ ] := Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
+CompileTemplateData[ ] := If[ BoxForm`sufficientVersionQ[ 14.3 ],
+    Developer`WriteWXFFile[ $darkDisplayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
+    ,
+    Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
+];
 
 
 (* ::Section::Closed:: *)

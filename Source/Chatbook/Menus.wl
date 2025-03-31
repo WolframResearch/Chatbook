@@ -43,7 +43,7 @@ $submenuItems = False;
 MakeMenu // beginDefinition;
 
 Options[ MakeMenu ] = {
-    CellFrameColor -> GrayLevel[ 0.85 ],
+    CellFrameColor -> color @ "ChatMenuFrame",
     ImageSize      -> { 200, UpTo[ 450 ] },
     TaggingRules   -> <||>
 };
@@ -124,13 +124,13 @@ MakeMenu // endDefinition;
 (*menuFrame*)
 menuFrame // beginDefinition;
 
-menuFrame[ resolvedItems_List, imageSize_, color_ ] :=
+menuFrame[ resolvedItems_List, imageSize_, frameColor_ ] :=
 Framed[
     menuPane[ resolvedItems, imageSize ],
-    Background       -> GrayLevel[ 0.98 ],
+    Background       -> color @ "ChatMenuItemBackground",
     BaselinePosition -> Baseline,
     FrameMargins     -> 3,
-    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], color ],
+    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
     ImageMargins     -> 0,
     RoundingRadius   -> 3
 ];
@@ -183,8 +183,8 @@ If[ Lookup[ spec, "Check", None ] === None,
     ,
     Row[ {
         Switch[ Lookup[ spec, "Check", False ],
-            True,      Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ],
-            Inherited, Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.75 ] ],
+            True,      Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkTrue" ],
+            Inherited, Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkInherited" ],
             _,         Style[ "\[Checkmark]", ShowContents -> False ]
         ],
         " ",

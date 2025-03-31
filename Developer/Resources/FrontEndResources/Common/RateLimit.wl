@@ -1,12 +1,9 @@
 (* Created with the Wolfram Language : www.wolfram.com *)
-RawBoxes @ ToBoxes @
 Graphics[{Thickness[0.005988023952095809], 
-  {FaceForm[{RGBColor[0.27450980392156865, 0.6196078431372549, 
-      0.796078431372549], Opacity[1.]}], FilledCurve[{{{0, 2, 0}, {0, 1, 0}, 
+  {FaceForm[{color @ "ErrorMessageBlockedIcon", Opacity[1.]}], FilledCurve[{{{0, 2, 0}, {0, 1, 0}, 
     {0, 1, 0}, {0, 1, 0}}}, {{{167., 0.}, {0., 0.}, {0., 0.9380000233650208}, 
     {167., 0.9380000233650208}, {167., 0.}}}]}, 
-  {FaceForm[{RGBColor[0.27450980392156865, 0.6196078431372549, 
-      0.796078431372549], Opacity[1.]}], 
+  {FaceForm[{color @ "ErrorMessageBlockedIcon", Opacity[1.]}], 
    FilledCurve[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
      1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, 
      {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 

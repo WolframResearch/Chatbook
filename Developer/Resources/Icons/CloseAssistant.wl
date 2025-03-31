@@ -1,3 +1,4 @@
+RawBoxes @ ToBoxes @
 MouseAppearance[
  Mouseover[
   Graphics[

@@ -1,3 +1,4 @@
+RawBoxes @ ToBoxes @
 Overlay[
  {
   Pane[

@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-RawBoxes @ ToBoxes @ Graphics[
+Graphics[
  {
   Thickness[ 0.05 ],
   Style[
@@ -18,7 +18,7 @@ RawBoxes @ ToBoxes @ Graphics[
      }
     ]
    },
-   FaceForm @ RGBColor[ 1.0, 1.0, 1.0, 1.0 ]
+   FaceForm @ color @ "NA_ToolbarFont"
   ]
  },
  ImageSize -> { 20.0, 20.0 },

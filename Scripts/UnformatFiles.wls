@@ -26,11 +26,15 @@ unformat[ file_ ] :=
 (* ::Section::Closed:: *)
 (*Run*)
 files = cicd`ScriptConfirmMatch[
-    FileNames[ "*.nb", FileNameJoin @ { $pacletDir, "FrontEnd" }, Infinity ],
+    FileNames[ "*.nb", { FileNameJoin @ { $pacletDir, "FrontEnd" }, FileNameJoin @ { $pacletDir, "DarkModeSupport" } }, Infinity ],
     { __String }
 ];
 
 cicd`ConsoleLog[ "Unformatting " <> ToString @ Length @ files <> " files..." ];
+
+(* These symbols are known for 14.2+, but this script may run in 14.1. *)
+System`LightDark;
+System`LightDarkSwitched;
 
 result = cicd`ScriptConfirmMatch[ UsingFrontEnd[
     CurrentValue[ $FrontEndSession, DynamicUpdating ] = False;

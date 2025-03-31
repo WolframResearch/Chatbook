@@ -3,12 +3,15 @@
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
+color = Wolfram`Chatbook`Common`color;
+
+
 (* ::Section::Closed:: *)
 (*Resources*)
 
 
 (* ::Subsection::Closed:: *)
-(*tr*)
+(*tr suppport *)
 
 
 tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
@@ -124,7 +127,7 @@ Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     AutoQuoteCharacters      -> { },
     CellFrame                -> 2,
-    CellFrameColor           -> RGBColor[ "#ecf0f5" ],
+    CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
@@ -139,7 +142,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellFrameColor        -> RGBColor[ "#a3c9f2" ],
+    CellFrameColor        -> color @ "ChatInputFrame",
     CellFrameLabelMargins -> -32,
     CellGroupingRules     -> "InputGrouping",
     CellMargins           -> { { 66, 32 }, { 1, 8 } },
@@ -153,7 +156,12 @@ Cell[
         {
             None,
             Cell[
-                BoxData[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[ RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ] ] ],
+                BoxData[
+                    DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[
+                        color @ "SendChatButtonFrame",
+                        color @ "SendChatButtonBackgroundHover"
+                    ]
+                ],
                 Background -> None
             ]
         },
@@ -250,7 +258,7 @@ Cell[
 Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue  -> 1544,
-    Background        -> RGBColor[ "#fafcff" ],
+    Background        -> color @ "SideChatBackground",
     CellMargins       -> { { 79, 26 }, { Inherited, Inherited } },
     CellDingbatMargin -> 0,
     CellFrame         -> { { 0, 0 }, { 0, 2 } },
@@ -271,7 +279,7 @@ Cell[
             TemplateBox[ { 12 }, "Spacer1" ]
         },
         CellFrame        -> { { 0, 0 }, { 0, 2 } },
-        CellFrameColor   -> RGBColor[ "#a3c9f2" ],
+        CellFrameColor   -> color @ "SideChatDingbatFrame",
         CellFrameMargins -> 6
     ]
 ]
@@ -285,7 +293,6 @@ Cell[
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat     -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
-    CellFrameColor  -> RGBColor[ "#a3c9f2" ],
     CellTrayWidgets -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules    -> <| "ChatNotebookSettings" -> <| |> |>
@@ -301,7 +308,6 @@ Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
     CellFrame         -> 1,
-    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellFrameStyle    -> Dashing @ { Small, Small },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
@@ -322,7 +328,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    Background           -> RGBColor[ "#fcfdff" ],
+    Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
     CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
@@ -340,7 +346,7 @@ Cell[
         "ChatWidget"   -> <| "Visible" -> False |>,
         "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtonsV, "ChatFeedback" ] |>
     |>,
-    menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
+    menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
 ]
 
 
@@ -351,9 +357,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutput", StyleDefinitions -> StyleData[ "ChatOutput" ] ],
-    Background     -> RGBColor[ "#edf2f7" ],
-    CellFrameColor -> RGBColor[ "#d0deec" ],
-    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#d0deec" ] ]
+    Background     -> color @ "AssistantOutputBackground",
+    CellFrameColor -> color @ "AssistantOutputFrame",
+    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputMenuButtonBackgroundHover" ]
 ]
 
 
@@ -364,9 +370,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutputWarning", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
-    Background     -> RGBColor[ "#fdfaf4" ],
-    CellFrameColor -> RGBColor[ "#f1e7de" ],
-    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1e7de" ] ]
+    Background     -> color @ "AssistantOutputWarningBackground",
+    CellFrameColor -> color @ "AssistantOutputWarningFrame",
+    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputWarningMenuButtonBackgroundHover" ]
 ]
 
 
@@ -377,9 +383,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutputError", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
-    Background     -> RGBColor[ "#fdf4f4" ],
-    CellFrameColor -> RGBColor[ "#f1dede" ],
-    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1dede" ] ]
+    Background     -> color @ "AssistantOutputErrorBackground",
+    CellFrameColor -> color @ "AssistantOutputErrorFrame",
+    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputErrorMenuButtonBackgroundHover" ]
 ]
 
 
@@ -399,14 +405,14 @@ Cell[
     StyleData[ "ChatBlockDivider" ],
     MenuSortingValue    -> 1546,
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
-    CellFrameColor      -> GrayLevel[ 0.74902 ],
+    CellFrameColor      -> color @ "ChatBlockDividerFrame",
     CellFrameMargins    -> 4,
     CellGroupingRules   -> { "SectionGrouping", 30 },
     CellMargins         -> { { 5, 25 }, { 8, 18 } },
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
     CounterIncrements   -> "Section",
-    FontColor           -> GrayLevel[ 0.2 ],
+    FontColor           -> color @ "ChatBlockDividerFont",
     FontFamily          -> "Source Sans Pro",
     FontSize            -> 28,
     FontWeight          -> "DemiBold",
@@ -448,7 +454,7 @@ Cell[
 Cell[
     StyleData[ "ChatDelimiter" ],
     MenuSortingValue    -> 1547,
-    Background          -> GrayLevel[ 0.95 ],
+    Background          -> color @ "ChatDelimiterBackground",
     CellElementSpacings -> { "CellMinHeight" -> 6 },
     CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules   -> { "SectionGrouping", 62 },
@@ -525,7 +531,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatCodeBlock" ],
-    Background -> GrayLevel[ 1 ]
+    Background -> None
 ]
 
 
@@ -557,7 +563,7 @@ Cell[
 Cell[
     StyleData[ "ChatPreformatted" ],
     AutoQuoteCharacters      -> { },
-    Background               -> GrayLevel[ 1 ],
+    Background               -> color @ "ChatPreformattedBackground",
     CellFrame                -> None,
     CellMargins              -> { { 66, 10 }, { 8, 8 } },
     CodeAssistOptions        -> { "AutoDetectHyperlinks" -> False },
@@ -591,6 +597,13 @@ Cell[
 (*ChatCodeBlockTemplate*)
 
 
+With[
+    {
+        frameColor = color @ "ChatCodeBlockTemplateFrame",
+        bg1        = color @ "ChatCodeBlockTemplateBackgroundTop",
+        bg2        = color @ "ChatCodeBlockTemplateBackgroundBottom"
+    },
+
 Cell[
     StyleData[ "ChatCodeBlockTemplate" ],
     TemplateBoxOptions -> {
@@ -600,18 +613,18 @@ Cell[
                 {
                     FrameBox[
                         #1,
-                        Background   -> GrayLevel[ 1 ],
+                        Background   -> bg1,
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
                         ImageMargins -> { { 0, 0 }, { 0, 8 } },
                         ImageSize    -> { Full, Automatic }
                     ] },
                 {
                     FrameBox[
                         DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
-                        Background   -> RGBColor[ 0.98824, 0.99216, 1. ],
+                        Background   -> bg2,
                         FrameMargins -> { { 7, 2 }, { 2, 2 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
                         ImageMargins -> { { 0, 0 }, { 8, -1 } }, (* negative margin to barely overlap the frame above *)
                         ImageSize    -> { Full, Automatic }
                     ] }
@@ -624,25 +637,35 @@ Cell[
     }
 ]
 
+]
+
 
 
 (* ::Subsection::Closed:: *)
 (*ChatCodeInlineTemplate*)
 
 
+With[
+    {
+        frameColor = color @ "ChatCodeInlineTemplateFrame",
+        bg1 =        color @ "ChatCodeInlineTemplateBackground"
+    },
+
 Cell[
     StyleData[ "ChatCodeInlineTemplate" ],
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ FrameBox[
             #1,
-            Background       -> GrayLevel[ 1 ],
+            Background       -> bg1,
             BaselinePosition -> Scaled[ 0.275 ],
             FrameMargins     -> { { 3, 3 }, { 2, 2 } },
-            FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+            FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
             ImageMargins     -> { { 0, 0 }, { 0, 0 } },
             BaseStyle        -> { "InlineCode", AutoSpacing -> False, AutoMultiplicationSymbol -> False }
         ]
     }
+]
+
 ]
 
 
@@ -654,11 +677,11 @@ Cell[
 Cell[
     StyleData[ "Link" ],
     FontFamily -> "Source Sans Pro",
-    FontColor  -> Dynamic @
-        If[ CurrentValue[ "MouseOver" ],
-            RGBColor[ 0.855, 0.396, 0.145 ],
-            RGBColor[ 0.020, 0.286, 0.651 ]
-        ]
+    FontColor  -> With[
+        {
+            hover   = color @ "LinkFontHover",
+            default = color @ "LinkFont" },
+        Dynamic @ If[ CurrentValue[ "MouseOver" ], hover, default ] ]
 ]
 
 
@@ -723,6 +746,11 @@ Cell[
 (*ChatMenuButton*)
 
 
+With[
+    {
+        frameColor = color @ "ChatOutputMenuButtonFrame"
+    },
+
 Cell[
     StyleData[ "ChatMenuButton" ],
     TemplateBoxOptions -> {
@@ -741,7 +769,7 @@ Cell[
                             Method     -> "Preemptive"
                         ],
                         RoundingRadius -> 3,
-                        FrameStyle     -> GrayLevel[ 1, 0 ],
+                        FrameStyle     -> frameColor,
                         Background     -> None,
                         FrameMargins   -> 0,
                         ContentPadding -> False,
@@ -759,7 +787,7 @@ Cell[
                             Method     -> "Preemptive"
                         ],
                         RoundingRadius -> 3,
-                        FrameStyle     -> GrayLevel[ 1, 0 ],
+                        FrameStyle     -> frameColor,
                         Background     -> #2,
                         FrameMargins   -> 0,
                         ContentPadding -> False,
@@ -773,6 +801,8 @@ Cell[
             MouseAppearanceTag[ "LinkHand" ]
         ]
     }
+]
+
 ]
 
 
@@ -800,6 +830,11 @@ Cell[
 (*ChatMenuItemDelimiter*)
 
 
+With[
+    {
+        delimiterColor = color @ "ChatMenuItemDelimiter"
+    },
+
 Cell[
     StyleData[ "ChatMenuItemDelimiter" ],
     TemplateBoxOptions -> {
@@ -809,7 +844,7 @@ Cell[
                     GraphicsBox[
                         {
                             CapForm[ "Round" ],
-                            GrayLevel[ 0.9 ],
+                            delimiterColor,
                             AbsoluteThickness[ 2 ],
                             LineBox @ { { -1, 0 }, { 1, 0 } }
                         },
@@ -830,11 +865,21 @@ Cell[
     }
 ]
 
+]
+
 
 
 (* ::Subsection::Closed:: *)
 (*ChatMenuItem*)
 
+
+With[
+    {
+        frameHover   = color @ "ChatMenuItemFrameHover",
+        frameDefault = color @ "ChatMenuItemFrame",
+        bgHover      = color @ "ChatMenuItemBackgroundHover",
+        bgDefault    = color @ "ChatMenuItemBackground"
+    },
 
 Cell[
     StyleData[ "ChatMenuItem" ],
@@ -863,10 +908,10 @@ Cell[
                     ],
                     "Grid"
                 ],
-                Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 1 ], GrayLevel[ 0.98 ] ],
+                Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], bgHover, bgDefault ],
                 BaselinePosition -> Baseline,
                 FrameMargins     -> { { 5, 2 }, { 2, 2 } },
-                FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.8 ], GrayLevel[ 0.98 ] ],
+                FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, frameDefault ],
                 ImageMargins     -> { { 0, 0 }, { 0, 0 } },
                 ImageSize        -> Full,
                 RoundingRadius   -> 0
@@ -874,11 +919,18 @@ Cell[
     }
 ]
 
+]
+
 
 
 (* ::Subsection::Closed:: *)
 (*ChatMenuSection*)
 
+
+With[
+    {
+        bg = color @ "ChatMenuSectionBackground"
+    },
 
 Cell[
     StyleData[ "ChatMenuSection" ],
@@ -905,7 +957,7 @@ Cell[
                     ],
                     "Grid"
                 ],
-                Background       -> GrayLevel[ 0.937 ],
+                Background       -> bg,
                 BaselinePosition -> Baseline,
                 FrameMargins     -> { { 5, 2 }, { 2, 2 } },
                 FrameStyle       -> None,
@@ -914,6 +966,8 @@ Cell[
                 RoundingRadius   -> 0
             ]
     }
+]
+
 ]
 
 
@@ -937,7 +991,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatMenuLabel" ],
-    FontColor       -> GrayLevel[ 0.2 ],
+    FontColor       -> color @ "ChatMenuLabelFont",
     FontFamily      -> "Source Sans Pro",
     FontSize        -> 13,
     FontWeight      -> Plain,
@@ -954,7 +1008,7 @@ Cell[
 Cell[
     StyleData[ "ChatMenuSectionLabel", StyleDefinitions -> StyleData[ "ChatMenuLabel" ] ],
     FontSize  -> 13,
-    FontColor -> GrayLevel[ 0.35 ]
+    FontColor -> color @ "ChatMenuSectionLabelFont"
 ]
 
 
@@ -1109,9 +1163,9 @@ Cell[
             FrameBox[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> RGBColor[ "#edf4fc" ],
+                Background     -> color @ "UserMessageBoxBackground",
                 FrameMargins   -> { { 8, 15 }, { 8, 8 } },
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
+                FrameStyle     -> color @ "UserMessageBoxFrame",
                 RoundingRadius -> 10,
                 StripOnInput   -> False
             ],
@@ -1133,9 +1187,9 @@ Cell[
             FrameBox[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> RGBColor[ "#fcfdff" ],
+                Background     -> color @ "AssistantMessageBoxBackground",
                 FrameMargins   -> { { 15, 8 }, { 8, 8 } },
-                FrameStyle     -> RGBColor[ "#c9ccd0" ],
+                FrameStyle     -> color @ "AssistantMessageBoxFrame",
                 ImageSize      -> { Scaled[ 1 ], Automatic },
                 RoundingRadius -> 10,
                 StripOnInput   -> False
@@ -1297,12 +1351,12 @@ Cell[
 (* TODO: unclear if this style is serialized into pre-14.1 chatbooks, so hang on to it, but exclude from CoreExtensions. *)
 Cell[
     StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
-    FontColor -> GrayLevel[ 0.2 ]
+    FontColor -> color @ "InlineReferenceTextFont" (* only shows up in 14.1 *)
 ]
 
 Cell[
     StyleData[ "NotebookAssistant`InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
-    FontColor -> GrayLevel[ 0.2 ]
+    FontColor -> color @ "NotebookAssistant`InlineReferenceTextFont"
 ]
 
 
@@ -1361,6 +1415,11 @@ Cell[
 (*ChatCounterLabel*)
 
 
+With[
+    {
+        fontColor = color @ "ChatCounterLabelFont"
+    },
+
 Cell[
     StyleData["ChatCounterLabel"],
     TemplateBoxOptions -> {
@@ -1368,18 +1427,25 @@ Cell[
             CounterBox["ChatInputCount"],
             FontFamily -> "Source Sans Pro",
             FontSize -> 10,
-            FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
+            FontColor -> fontColor,
             FontWeight -> Plain
         ]
     }
 ]
 
+]
 
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DiscardedMaterialOpener*)
 
+
+With[
+    {
+        bg         = color @ "DiscardedMaterialOpenerBackground",
+        frameColor = color @ "DiscardedMaterialOpenerFrame"
+    },
 
 Cell[
     StyleData[ "DiscardedMaterialOpener" ],
@@ -1405,9 +1471,9 @@ Cell[
                                 {
                                     FrameBox[
                                         #1,
-                                        Background     -> RGBColor[ 0.94902, 0.96863, 0.98824 ],
+                                        Background     -> bg,
                                         FrameMargins   -> 10,
-                                        FrameStyle     -> RGBColor[ 0.9098, 0.93333, 0.95294 ],
+                                        FrameStyle     -> frameColor,
                                         ImageSize      -> { Full, Automatic },
                                         RoundingRadius -> 5,
                                         StripOnInput   -> False
@@ -1432,6 +1498,8 @@ Cell[
             UnsavedVariables    :> { Typeset`hover$$ }
         ]
     }
+]
+
 ]
 
 
@@ -1534,6 +1602,11 @@ Cell[
 (*ThinkingOpener*)
 
 
+With[
+    {
+        font1      = color @ "ThinkingOpenerFont",
+        font1hover = color @ "ThinkingOpenerFontHover"
+    },
 Cell[
     StyleData[ "ThinkingOpener" ],
     TemplateBoxOptions -> {
@@ -1556,11 +1629,11 @@ Cell[
                                                     True -> GridBox[
                                                         { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1596,11 +1669,11 @@ Cell[
                                                     True -> GridBox[
                                                         { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1645,11 +1718,11 @@ Cell[
                                                             ]
                                                         } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1687,6 +1760,7 @@ Cell[
         ]
     }
 ]
+]
 
 
 
@@ -1694,6 +1768,12 @@ Cell[
 (* ::Subsection::Closed:: *)
 (*ThoughtsOpener*)
 
+
+With[
+    {
+        font1      = color @ "ThinkingOpenerFont",
+        font1hover = color @ "ThinkingOpenerFontHover"
+    },
 
 Cell[
     StyleData[ "ThoughtsOpener" ],
@@ -1717,11 +1797,11 @@ Cell[
                                                     True -> GridBox[
                                                         { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f43b" } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1757,11 +1837,11 @@ Cell[
                                                     True -> GridBox[
                                                         { { StyleBox[ #2, FontSlant -> "Italic" ], "\:f449" } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1806,11 +1886,11 @@ Cell[
                                                             ]
                                                         } },
                                                         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                                                        BaseStyle -> { FontColor -> GrayLevel[ 0.39215 ] }
+                                                        BaseStyle -> { FontColor -> font1hover }
                                                     ]
                                                 },
                                                 Dynamic[ CurrentValue[ "MouseOver" ] ],
-                                                BaseStyle -> { FontColor -> GrayLevel[ 0.4666 ], FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
+                                                BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
                                             ], 
@@ -1849,11 +1929,20 @@ Cell[
     }
 ]
 
+]
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*ThinkingContent*)
 
+
+With[
+    {
+        font    = color @ "ThinkingContentFont",
+        divider = color @ "ThinkingContentDivider",
+        bg      = color @ "ThinkingContentBackground"
+    },
 
 Cell[
     StyleData[ "ThinkingContent" ],
@@ -1861,23 +1950,24 @@ Cell[
         DisplayFunction -> Function @ GridBox[
             { {
                 PaneBox[
-                    Cell[ #, "Text", FontColor -> GrayLevel[ 0.35 ], FontSize -> 12, Background -> None, Editable -> True ],
+                    Cell[ #, "Text", FontColor -> font, FontSize -> 12, Background -> None, Editable -> True ],
                     Alignment    -> Left,
                     ImageMargins -> { { 5, 5 }, { 5, 5 } },
                     ImageSize    -> { Scaled[ 1 ], Automatic }
                 ]
             } },
             AutoDelete        -> False,
-            GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
+            GridBoxBackground -> { "Columns" -> { { bg } } },
             GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
             GridBoxDividers   -> {
-                "ColumnsIndexed" -> { 1 -> Directive[ GrayLevel[ 0.8196 ], AbsoluteThickness[ 2 ] ] },
+                "ColumnsIndexed" -> { 1 -> Directive[ divider, AbsoluteThickness[ 2 ] ] },
                 "Rows"           -> { { False } }
             }
         ]
     }
 ]
 
+]
 
 
 (* ::Section::Closed:: *)

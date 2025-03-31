@@ -2,8 +2,8 @@ Graphics[
  {
   Thickness[ 0.05 ],
   {
-   EdgeForm @ { RGBColor[ 0.50196, 0.56078, 0.59216 ], Opacity[ 1.0 ], Thickness[ 0.04 ] },
-   FaceForm @ GrayLevel[ 1 ],
+   EdgeForm @ { color @ "ChatMenuModelsIcon", Opacity[ 1.0 ], Thickness[ 0.04 ] },
+   FaceForm @ color @ "ChatMenuModelsIconBackground",
    FilledCurve[
     {
      {
@@ -47,7 +47,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { RGBColor[ 0.50196, 0.56078, 0.59216 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "ChatMenuModelsIcon", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -270,7 +270,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { RGBColor[ 0.50196, 0.56078, 0.59216 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "ChatMenuModelsIcon", Opacity[ 1.0 ] },
    FilledCurve[
     {
      { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },
