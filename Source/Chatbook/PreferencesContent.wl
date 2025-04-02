@@ -689,9 +689,8 @@ serviceConnectButton[
         tr[ "PreferencesContentServiceConnectButton" ],
         Needs[ "Wolfram`LLMFunctions`" -> None ];
         Replace[
-            withCredentialsProvider @ Quiet[
-                Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service,
-                { ServiceConnect::genconerr }
+            Quiet[
+                Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service
             ],
             _ServiceObject :>
                 If[ ListQ @ getServiceModelList @ service,
@@ -1520,9 +1519,8 @@ connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] 
         tr[ "ConnectButton" ],
         display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         clearConnectionCache[ service, False ];
-        withCredentialsProvider @ Quiet[
-            Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service,
-            { ServiceConnect::genconerr }
+        Quiet[
+            Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service
         ];
         createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
         Method -> "Queued"
@@ -1833,7 +1831,7 @@ savedConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[ ] := (
 );
 
 savedConnectionQ[ service_String ] /; serviceFrameworkAvailable[ ] :=
-    MatchQ[ Join[ serviceObjects @ service, withCredentialsProvider @ serviceObjects @ service ], { __ } ];
+    MatchQ[ serviceObjects @ service, { __ } ];
 
 savedConnectionQ // endDefinition;
 
@@ -1879,7 +1877,6 @@ clearConnectionCache[ service_String, delete: True|False ] /; serviceFrameworkAv
     Needs[ "Wolfram`LLMFunctions`" -> None ];
     If[ delete,
         DeleteObject @ serviceObjects @ service;
-        withCredentialsProvider @ DeleteObject[ serviceObjects @ service ];
     ];
     InvalidateServiceCache[ ];
 );
