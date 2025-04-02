@@ -7,6 +7,11 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
+
+System`LightDark;
+System`LightDarkSwitched;
+
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -2135,21 +2140,22 @@ withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
 withWorkspaceGlobalProgress // endDefinition;
 
 
-$workspaceChatProgressBar = With[
+(* Work around VertexColors not understanding LightDarkSwitched. This must work in all verions 14.1, 14.2, etc. *)
+$workspaceChatProgressBar := With[
     {
-        background  = color @ "NA_ProgressBarEdgeColor",
-        colorCenter = color @ "NA_ProgressBarCenterColor",
-        colorEdges  = color @ "NA_ProgressBarEdgeColor",
-        duration    = 2.5,
-        leftOffset  = -0.2,
-        rightOffset = 1.2,
-        thickness   = Thickness[ 1 ]
+        darkmodeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[], LightDark ] === "Dark"
+    },
+    {
+        background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
+        colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
+        colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
+        duration    = 2.5
     },
     Graphics[
         {
-            thickness,
+            Thickness[ 1 ],
             Dynamic @ TemplateBox[
-                { Clock[ { leftOffset, 1.0 }, duration ], Clock[ { 0.0, rightOffset }, duration ] },
+                { Clock[ { -0.2, 1.0 }, duration ], Clock[ { 0.0, 1.2 }, duration ] },
                 "WorkspaceChatProgressBar",
                 DisplayFunction -> Function[
                     LineBox[
