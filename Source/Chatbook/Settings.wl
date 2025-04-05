@@ -36,6 +36,7 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
+    "ExperimentalFeatures"           -> Automatic,
     "ForceSynchronous"               -> Automatic,
     "FrequencyPenalty"               -> 0.1,
     "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
@@ -110,6 +111,9 @@ $nonInheritedPersonaValues = {
 $currentChatSettings          = None;
 $currentSettingsCache         = None;
 $absoluteCurrentSettingsCache = None;
+
+
+$experimentalFeatures = { };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -480,6 +484,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $cellStringBudget        = $initialCellStringBudget;
             $conversionRules         = resolved[ "ConversionRules" ];
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
+            $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
 
             If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
@@ -523,6 +528,15 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*featureEnabledQ*)
+featureEnabledQ // beginDefinition;
+featureEnabledQ[ name_String ] := featureEnabledQ[ name, $experimentalFeatures ];
+featureEnabledQ[ name_String, features_List ] := MemberQ[ features, name ];
+featureEnabledQ[ name_String, settings_Association ] := featureEnabledQ[ name, settings[ "ExperimentalFeatures" ] ];
+featureEnabledQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -596,6 +610,7 @@ resolveAutoSetting0[ as_, "BypassResponseChecking"         ] := bypassResponseCh
 resolveAutoSetting0[ as_, "ChatInputIndicator"             ] := "\|01f4ac";
 resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
+resolveAutoSetting0[ as_, "ExperimentalFeatures"           ] := autoExperimentalFeatures @ as;
 resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "HybridToolMethod"               ] := hybridToolMethodQ @ as;
@@ -629,6 +644,7 @@ $autoSettingKeyDependencies = <|
     "Authentication"             -> "Model",
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "BypassResponseChecking"     -> "ForceSynchronous",
+    "ExperimentalFeatures"       -> { "WolframAlphaCAGEnabled", "WebSearchRAGMethod", "PromptGenerators" },
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
     "HybridToolMethod"           -> { "Model", "ToolsEnabled", "ToolMethod" },
@@ -666,6 +682,24 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoExperimentalFeatures*)
+autoExperimentalFeatures // beginDefinition;
+
+autoExperimentalFeatures[ as_Association ] := {
+    If[ TrueQ @ as[ "WolframAlphaCAGEnabled" ] || MemberQ[ as[ "PromptGenerators" ], "RelatedWolframAlphaResults" ],
+        "RelatedWolframAlphaResults",
+        Nothing
+    ],
+    If[ MatchQ[ as[ "WebSearchRAGMethod" ], "Tavily" ] || MemberQ[ as[ "PromptGenerators" ], "WebSearch" ],
+        "RelatedWebSearchResults",
+        Nothing
+    ]
+};
+
+autoExperimentalFeatures // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

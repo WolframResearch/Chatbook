@@ -45,7 +45,10 @@ withChatState[ eval_ ] :=
             $initialCellStringBudget      = $initialCellStringBudget,
             $multimodalMessages           = $multimodalMessages,
             $tokenBudget                  = $tokenBudget,
-            $tokenPressure                = $tokenPressure
+            $tokenPressure                = $tokenPressure,
+
+            (* Experimental features: *)
+            $experimentalFeatures         = $experimentalFeatures
         },
 
         (* These are not locally scoped for debugging purposes: *)
