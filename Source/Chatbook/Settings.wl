@@ -61,7 +61,7 @@ $defaultChatSettings = <|
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
     "PromptGeneratorMessagePosition" -> 2,
     "PromptGeneratorMessageRole"     -> "System",
-    "PromptGenerators"               -> { },
+    "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
     "ReplaceUnicodeCharacters"       -> Automatic,
@@ -512,6 +512,7 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
         ];
         result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
+        result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];

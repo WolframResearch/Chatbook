@@ -37,6 +37,61 @@ ensureChatMessages[ messages: $$chatMessages ] := messages;
 ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolvePromptGenerators*)
+resolvePromptGenerators // beginDefinition;
+
+resolvePromptGenerators[ settings0_ ] := Enclose[
+    Module[ { settings, generators, resolved },
+
+        settings   = ConfirmBy[ settings0, AssociationQ, "Settings" ];
+        generators = ConfirmBy[ settings[ "PromptGenerators" ], ListQ, "Generators" ];
+
+        If[ featureEnabledQ[ "RelatedWolframAlphaResults", settings ],
+            AppendTo[ generators, "RelatedWolframAlphaResults" ]
+        ];
+
+        If[ featureEnabledQ[ "RelatedWebSearchResults", settings ],
+            AppendTo[ generators, "WebSearch" ]
+        ];
+
+        resolved = ConfirmMatch[
+            DeleteDuplicates[ resolvePromptGenerator /@ Flatten[ generators ] ],
+            { ___LLMPromptGenerator },
+            "Resolved"
+        ];
+
+        settings[ "PromptGenerators" ] = resolved;
+
+        settings
+    ],
+    throwInternalFailure
+];
+
+resolvePromptGenerators // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolvePromptGenerator*)
+resolvePromptGenerator // beginDefinition;
+
+resolvePromptGenerator[ gen: HoldPattern[ _LLMPromptGenerator ] ] :=
+    gen;
+
+resolvePromptGenerator[ name_String ] := Enclose[
+    Lookup[
+        ConfirmBy[ $defaultPromptGenerators, AssociationQ, "DefaultPromptGenerators" ],
+        name,
+        throwFailure[ "InvalidPromptGenerator", name ]
+    ],
+    throwInternalFailure
+];
+
+resolvePromptGenerator[ ParentList|$$unspecified ] := Nothing;
+
+resolvePromptGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[

@@ -288,6 +288,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolveAutoSettings;
 `resolveFullModelSpec;
 `resolveInlineReferences;
+`resolvePromptGenerators;
 `resolveTools;
 `revertMultimodalContent;
 `rootEvaluationCell;
