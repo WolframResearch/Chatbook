@@ -16,9 +16,6 @@ HoldComplete[
 (*Config*)
 $filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ];
 
-$wolframAlphaCAGEnabled := $wolframAlphaCAGEnabled = CurrentChatSettings[ "WolframAlphaCAGEnabled" ];
-$webSearchRAGMethod     := $webSearchRAGMethod     = CurrentChatSettings[ "WebSearchRAGMethod"     ];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -40,7 +37,7 @@ $defaultPromptGenerators := $defaultPromptGenerators = <|
 (*relatedWolframAlphaResultsGenerator*)
 relatedWolframAlphaResultsGenerator // beginDefinition;
 
-relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /; $wolframAlphaCAGEnabled :=
+relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /; featureEnabledQ[ "RelatedWolframAlphaResults" ] :=
     LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
 
 relatedWolframAlphaResultsGenerator[ _ ] := "";
@@ -52,7 +49,7 @@ relatedWolframAlphaResultsGenerator // endDefinition;
 (*webSearchGenerator*)
 webSearchGenerator // beginDefinition;
 
-webSearchGenerator[ messages: $$chatMessages ] /; $webSearchRAGMethod === "Tavily" := Enclose[
+webSearchGenerator[ messages: $$chatMessages ] /; featureEnabledQ[ "RelatedWebSearchResults" ] := Enclose[
     Catch @ Module[ { key, string, request, response, data, results, snippets },
 
         key = SystemCredential[ "TAVILY_API_KEY" ];
