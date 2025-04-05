@@ -127,18 +127,30 @@ and should be used to help answer the user's query using factual information.
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*$citationHint*)
+$citationHint = "
+
+If you use any information from these results, you should cite the relevant URL with a markdown link in your response.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$markdownHint*)
 $markdownHint = "
 
 ======
 
 You can use any markdown links from these results in your response to show images, \
-formatted expressions, etc. to the user.";
+formatted expressions, etc. to the user." <> $citationHint;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$wolframAlphaResultTemplate*)
-$wolframAlphaResultTemplate = StringTemplate[ "<query>`1`</query>\n<results>\n`2`\n</results>" ];
+$wolframAlphaResultTemplate = StringTemplate[ "\
+<query>`1`</query>
+<url>`2`</url>
+<results>
+`3`
+</results>" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -231,7 +243,7 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
             resultsString,
             If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
                 ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
-                ""
+                ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
             ]
         ]
     ],
@@ -475,12 +487,25 @@ byteArrayToPodInformation // endDefinition;
 getWolframAlphaResult // beginDefinition;
 
 getWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String ] ] :=
-    TemplateApply[ $wolframAlphaResultTemplate, StringTrim @ { query, res } ];
+    TemplateApply[
+        $wolframAlphaResultTemplate,
+        { StringTrim @ query, makeWolframAlphaURL @ query, StringTrim @ res }
+    ];
 
 getWolframAlphaResult[ query_String, _ ] :=
-    TemplateApply[ $wolframAlphaResultTemplate, { StringTrim @ query, Missing[ "No Results Found" ] } ];
+    TemplateApply[
+        $wolframAlphaResultTemplate,
+        { StringTrim @ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] }
+    ];
 
 getWolframAlphaResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeWolframAlphaURL*)
+makeWolframAlphaURL // beginDefinition;
+makeWolframAlphaURL[ query_String ] := URLBuild[ "https://www.wolframalpha.com/input", { "i" -> query } ];
+makeWolframAlphaURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
