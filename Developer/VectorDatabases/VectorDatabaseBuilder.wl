@@ -730,6 +730,7 @@ getAndCacheEmbeddings0[ { } ] := Throw[ "Done", $tag ];
 
 getAndCacheEmbeddings0[ strings: { __String } ] := Enclose[
     Module[ { notCachedTokens, acc, n, batch, remaining, batchVectors },
+        (* FIXME: filter out entries that are too large and issue a warning *)
         notCachedTokens = ConfirmMatch[ tokenCount /@ strings, { __Integer }, "Tokens" ];
         acc = Accumulate @ notCachedTokens;
         n = ConfirmBy[ LengthWhile[ acc, LessThan[ $embeddingMaxTokens ] ], Positive, "Count" ];

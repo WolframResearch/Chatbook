@@ -115,17 +115,8 @@ $vectorDatabases[ "EntityValues" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*getEntityValueSnippets*)
 getEntityValueSnippets // beginDefinition;
-getEntityValueSnippets[ uris: { ___String } ] := Lookup[ $entityValueSnippets, uris ];
+getEntityValueSnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "EntityValues" ][ uris ];
 getEntityValueSnippets // endDefinition;
-
-$entityValueSnippets := Enclose[
-    Module[ { file, snippets },
-        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "EntityValuesSnippets" ], FileExistsQ, "File" ];
-        snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
-        If[ TrueQ @ $mxFlag, snippets, $entityValueSnippets = snippets ]
-    ],
-    throwInternalFailure[ $entityValueSnippets, ## ] &
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -139,9 +130,47 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*NeuralNetRepositoryURIs*)
+$vectorDatabases[ "NeuralNetRepositoryURIs" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> 1.0,
+    "SnippetFunction" -> getNeuralNetRepositorySnippets,
+    "Instructions"    -> None
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getNeuralNetRepositorySnippets*)
+getNeuralNetRepositorySnippets // beginDefinition;
+getNeuralNetRepositorySnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "NeuralNetRepositoryURIs" ][ uris ];
+getNeuralNetRepositorySnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*PacletRepositoryURIs*)
+$pacletRepositoryInstructions = "\
+IMPORTANT: Always use PacletSymbol to reference symbols from paclets in the paclet repository \
+(anything from https://paclets.com).";
+
+$vectorDatabases[ "PacletRepositoryURIs" ] = <|
+    "Version"         -> "1.0.0",
+    "Bias"            -> 2.0,
+    "SnippetFunction" -> getPacletRepositorySnippets,
+    "Instructions"    -> { URL[ "paclet:ref/PacletSymbol#1" ], $pacletRepositoryInstructions }
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getPacletRepositorySnippets*)
+getPacletRepositorySnippets // beginDefinition;
+getPacletRepositorySnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "PacletRepositoryURIs" ][ uris ];
+getPacletRepositorySnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*SourceSelector*)
 $vectorDatabases[ "SourceSelector" ] = <|
-    "Version"         -> "1.1.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> Identity,
     "Instructions"    -> None
@@ -169,7 +198,7 @@ $maxNeighbors            = 100;
 $maxEmbeddingDistance    = 150.0;
 $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
-$embeddingAuthentication = Automatic; (* FIXME *)
+$embeddingAuthentication = Automatic;
 
 
 $conversationVectorSearchPenalty = 1.0;
@@ -520,6 +549,11 @@ vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
         expected        = { name <> ".wxf", "Values.wxf", name <> "-vectors.usearch" };
         versionFile     = FileNameJoin @ { dir, "Version.wl" };
         expectedVersion = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "ExpectedVersion" ];
+
+        (* Bypass version check for development builds: *)
+        If[ ! FileExistsQ @ versionFile && StringStartsQ[ dir, $pacletVectorDBDirectory ],
+            Put[ expectedVersion, versionFile ]
+        ];
 
         TrueQ[ AllTrue[ expected, existsQ ] && FileExistsQ @ versionFile && Get @ versionFile === expectedVersion ]
     ],
@@ -1084,6 +1118,24 @@ getSnippetFunction[ name_String ] := getSnippetFunction[ name, $vectorDatabases[
 getSnippetFunction[ name_String, $$unspecified ] := Identity;
 getSnippetFunction[ name_String, function_ ] := function;
 getSnippetFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSnippetAssetFunction*)
+getSnippetAssetFunction // beginDefinition;
+
+getSnippetAssetFunction[ name_String ] := Enclose[
+    Module[ { dir, file, snippets, function },
+        dir = ConfirmBy[ $thisPaclet[ "AssetLocation", "Snippets" ], DirectoryQ, "Directory" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
+        snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
+        function = With[ { s = snippets }, Lookup[ s, # ] & ];
+        If[ TrueQ @ $mxFlag, function, getSnippetAssetFunction[ name ] = function ]
+    ],
+    throwInternalFailure
+];
+
+getSnippetAssetFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
