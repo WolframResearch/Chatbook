@@ -1,5 +1,6 @@
 .DS_Store
 Assets/VectorDatabases/**/*.usearch
+Assets/VectorDatabases/**/*.wl
 Assets/VectorDatabases/**/*.wxf
 build
 Developer/VectorDatabases/SourceData/*.jsonl
