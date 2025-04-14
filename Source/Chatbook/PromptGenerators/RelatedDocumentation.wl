@@ -35,12 +35,21 @@ $bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
                                 $bestDocumentationPromptSmall
                             ];
 
-$defaultSources = { "Documentation", "EntityValues", "FunctionRepository", "DataRepository" };
+$defaultSources = {
+    "Documentation",
+    "EntityValues",
+    "FunctionRepository",
+    "DataRepository",
+    "NeuralNetRepository",
+    "PacletRepository"
+};
 
 $sourceAliases = <|
-    "DataRepository"     -> "DataRepositoryURIs",
-    "Documentation"      -> "DocumentationURIs",
-    "FunctionRepository" -> "FunctionRepositoryURIs"
+    "DataRepository"      -> "DataRepositoryURIs",
+    "Documentation"       -> "DocumentationURIs",
+    "FunctionRepository"  -> "FunctionRepositoryURIs",
+    "NeuralNetRepository" -> "NeuralNetRepositoryURIs",
+    "PacletRepository"    -> "PacletRepositoryURIs"
 |>;
 
 $maxSelectedSources       = 3;
@@ -842,6 +851,12 @@ applyInstructionsFunction // beginDefinition;
 applyInstructionsFunction[ f_, { } ] := { };
 
 applyInstructionsFunction[ None|$$unspecified, data: { ___Association } ] := data;
+
+applyInstructionsFunction[ URL[ uri_String ], data: { ___Association } ] :=
+    applyInstructionsFunction[ getSnippets @ uri, data ];
+
+applyInstructionsFunction[ instructions_List, data: { ___Association } ] :=
+    Flatten[ applyInstructionsFunction[ #, data ] & /@ Flatten @ instructions ];
 
 applyInstructionsFunction[ instructions_String, data: { ___Association } ] :=
     applyInstructionsFunction[ Map[ instructions & ], data ];
