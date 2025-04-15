@@ -2140,15 +2140,15 @@ withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
 withWorkspaceGlobalProgress // endDefinition;
 
 
-(* Work around VertexColors not understanding LightDarkSwitched. This must work in all verions 14.1, 14.2, etc. *)
+(* Work around VertexColors not understanding LightDarkSwitched. This must work in all versions 14.1, 14.2, etc. *)
 $workspaceChatProgressBar := With[
     {
-        darkmodeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[], LightDark ] === "Dark"
+        darkModeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[], LightDark ] === "Dark"
     },
     {
-        background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
-        colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
-        colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkmodeQ, Last, First ][l] ],
+        background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
+        colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
+        colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
         duration    = 2.5
     },
     Graphics[
