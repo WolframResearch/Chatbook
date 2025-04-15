@@ -64,6 +64,7 @@ $$noCellLabelStyle = Alternatives[
     "Subsubsubsubsection",
     "Text",
     "Title",
+    "Subtitle",
     $$delimiterStyle
 ];
 
@@ -892,6 +893,7 @@ $$sectionStyle = Alternatives[
     "PrimaryExamplesSection",
     "ProgramSection",
     "Section",
+    "Subtitle",
     "WorkflowHeader",
     "WorkflowNotesSection"
 ];
