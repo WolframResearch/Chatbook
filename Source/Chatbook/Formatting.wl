@@ -2298,7 +2298,7 @@ formatPacletSymbol[ paclet_String, symbol_String ] :=
 
 formatPacletSymbol // endDefinition;
 
-
+(* TODO: This has a temporary fallback mechanism until PacletResource is updated. *)
 $pacletRepositoryPacletSymbolBoxes := $pacletRepositoryPacletSymbolBoxes = (
     Needs[ "PacletResource`" -> None ];
     If[ ToExpression[ "PacletResource`PacletRepositoryPacletSymbolBoxes", InputForm, DownValues ] === { },
