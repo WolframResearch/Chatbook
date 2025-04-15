@@ -493,9 +493,11 @@ registerVectorDatabase // endDefinition;
 InstallVectorDatabases // beginDefinition;
 
 InstallVectorDatabases[ ] := catchMine @ Enclose[
-    Success[
-        "VectorDatabasesInstalled",
-        <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
+    Block[ { $pacletVectorDBDirectory = None },
+        Success[
+            "VectorDatabasesInstalled",
+            <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
+        ]
     ],
     throwInternalFailure
 ];
