@@ -2203,19 +2203,19 @@ makeBlockLabel // endDefinition;
 (*wlStringToBoxes*)
 wlStringToBoxes // beginDefinition;
 
-wlStringToBoxes[ string_String ] /; $dynamicText := formatNLInputs @ string;
+wlStringToBoxes[ string_String ] /; $dynamicText := formatSpecialBoxes @ string;
 
 wlStringToBoxes[ string_String ] :=
-    formatNLInputs @ inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
+    formatSpecialBoxes @ inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
 
 wlStringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*formatNLInputs*)
-formatNLInputs // beginDefinition;
+(*formatSpecialBoxes*)
+formatSpecialBoxes // beginDefinition;
 
-formatNLInputs[ string_String ] :=
+formatSpecialBoxes[ string_String ] :=
     StringReplace[
         string,
         {
@@ -2228,7 +2228,7 @@ formatNLInputs[ string_String ] :=
         }
     ];
 
-formatNLInputs[ boxes_ ] :=
+formatSpecialBoxes[ boxes_ ] :=
     boxes /. {
         RowBox @ { "\[FreeformPrompt]", "[", q_String, "]" } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ] :>
             RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
@@ -2252,12 +2252,12 @@ formatNLInputs[ boxes_ ] :=
             RuleCondition @ formatDateObjectBoxes @ box
         ,
         box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
-            With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatNLInputs @ a, "]" } },
+            With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatSpecialBoxes @ a, "]" } },
                   b /; b =!= box
             ]
     };
 
-formatNLInputs // endDefinition;
+formatSpecialBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
