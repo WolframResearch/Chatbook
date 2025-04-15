@@ -243,6 +243,18 @@ $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*gpt-4.1*)
+$modelAutoSettings[ Automatic, "GPT41" ] = <|
+    "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 1047576,
+    "Multimodal"                 -> True,
+    "TokenizerName"              -> "gpt-4o",
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Automatic
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*OpenAI reasoning models*)
 
 (* Note: Max tokens are halved for these models in order to leave room for reasoning *)
@@ -882,7 +894,7 @@ styleStopTokens // endDefinition;
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
 chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
-chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^14 ];
+chooseMaxCellStringLength[ as_, tokens: $$size ] := Min[ Ceiling[ $defaultMaxCellStringLength * tokens / 2^14 ], 2^14 ];
 chooseMaxCellStringLength // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
