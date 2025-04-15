@@ -342,7 +342,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `withBasePromptBuilder;
 `withChatState;
 `withChatStateAndFEObjects;
-`withCredentialsProvider;
 `withToolBox;
 `withWorkspaceGlobalProgress;
 `wlTemplateBoxes;

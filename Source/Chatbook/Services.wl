@@ -96,15 +96,6 @@ serviceFrameworkAvailable[ _ ] :=
 serviceFrameworkAvailable // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*withCredentialsProvider*)
-withCredentialsProvider // beginDefinition;
-withCredentialsProvider // Attributes = { HoldFirst };
-withCredentialsProvider[ eval_ ] /; serviceFrameworkAvailable[ ] := sf`WithCredentialsProvider[ "llm" ][ eval ];
-withCredentialsProvider[ eval_ ] := eval;
-withCredentialsProvider // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
 
@@ -220,11 +211,11 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
     ];
 
 getModelListQuietly[ info_Association ] := Quiet[
-    withCredentialsProvider @ checkModelList[
+    checkModelList[
         info,
         Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
     ],
-    { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
+    { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink, ServiceConnect::authfail }
 ];
 
 getModelListQuietly // endDefinition;
