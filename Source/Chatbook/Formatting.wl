@@ -2222,7 +2222,9 @@ formatNLInputs[ string_String ] :=
             "\[FreeformPrompt][\"" ~~ q: Except[ "]" ].. ~~ ("]"|EndOfString) :>
                 ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ],
             "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
-                ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ]
+                ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ],
+            ps: ("PacletSymbol[" ~~ Except[ "]" ].. ~~ ("]"|EndOfString)) :>
+                ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ]
         }
     ];
 
@@ -2243,6 +2245,9 @@ formatNLInputs[ boxes_ ] :=
                                 formatResourceFunctionSlow @ name
                             ]
         ,
+        box: RowBox @ { "PacletSymbol", "[", ___, "]" } :>
+            RuleCondition @ formatPacletSymbol @ box
+        ,
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
         ,
@@ -2253,6 +2258,56 @@ formatNLInputs[ boxes_ ] :=
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPacletSymbol*)
+formatPacletSymbol // beginDefinition;
+
+formatPacletSymbol[ ps_String ] /; StringEndsQ[ ps, "]" ] :=
+    With[ { held = Quiet @ ToExpression[ ps, InputForm, HoldComplete ] },
+        If[ MatchQ[ held, HoldComplete @ PacletSymbol[ _String, _String ] ],
+            formatPacletSymbol @ held,
+            ps
+        ]
+    ];
+
+formatPacletSymbol[ ps_String ] :=
+    If[ StringContainsQ[ ps, "," ],
+        formatPacletSymbol[ ps <> "]" ],
+        ps
+    ];
+
+formatPacletSymbol[ box_RowBox ] :=
+    With[ { held = Quiet @ ToExpression[ box, StandardForm, HoldComplete ] },
+        If[ MatchQ[ held, HoldComplete @ PacletSymbol[ _String, _String ] ],
+            formatPacletSymbol @ held,
+            box
+        ]
+    ];
+
+formatPacletSymbol[ HoldComplete @ PacletSymbol[ paclet_String, symbol_String ] ] :=
+    formatPacletSymbol[ paclet, symbol ];
+
+formatPacletSymbol[ paclet_String, symbol_String ] :=
+    If[ StringContainsQ[ paclet, "/" ],
+        (* Only use paclet repository formatting for publisher/name style paclets: *)
+        $pacletRepositoryPacletSymbolBoxes[ paclet, symbol ],
+        MakeBoxes @ PacletSymbol[ paclet, symbol ]
+    ];
+
+formatPacletSymbol // endDefinition;
+
+
+$pacletRepositoryPacletSymbolBoxes := $pacletRepositoryPacletSymbolBoxes = (
+    Needs[ "PacletResource`" -> None ];
+    If[ ToExpression[ "PacletResource`PacletRepositoryPacletSymbolBoxes", InputForm, DownValues ] === { },
+        With[ { s = Symbol[ "PacletResource`Private`fancyPacletSymbolBoxes" ] },
+            s[ HoldComplete[ #1 ], #1, #2 ] &
+        ],
+        Symbol[ "PacletResource`PacletRepositoryPacletSymbolBoxes" ]
+    ]
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
