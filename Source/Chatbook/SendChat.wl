@@ -588,7 +588,7 @@ convertSystemRoleToUser // endDefinition;
 (*makeStopTokens*)
 makeStopTokens // beginDefinition;
 makeStopTokens[ settings_Association ] := makeStopTokens[ settings, settings[ "StopTokens" ] ];
-makeStopTokens[ settings_, None | { } ] := Missing[ ];
+makeStopTokens[ settings_, None | { } | _Missing ] := Missing[ ];
 makeStopTokens[ settings_, tokens: { __String } ] := tokens;
 makeStopTokens // endDefinition;
 

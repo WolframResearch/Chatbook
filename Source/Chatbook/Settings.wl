@@ -58,7 +58,7 @@ $defaultChatSettings = <|
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
     "OpenAIKey"                      -> Automatic,
     "OpenToolCallBoxes"              -> Automatic,
-    "PresencePenalty"                -> 0.1,
+    "PresencePenalty"                -> Automatic,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
     "PromptGeneratorMessagePosition" -> 2,
     "PromptGeneratorMessageRole"     -> "System",
@@ -74,7 +74,7 @@ $defaultChatSettings = <|
     "StreamingOutputMethod"          -> Automatic,
     "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
     "TargetCloudObject"              -> Automatic,
-    "Temperature"                    -> 0.7,
+    "Temperature"                    -> Automatic,
     "TimeConstraint"                 -> Automatic,
     "TokenBudgetMultiplier"          -> Automatic,
     "Tokenizer"                      -> Automatic,
@@ -284,6 +284,30 @@ $modelAutoSettings[ Automatic, "O3Mini" ] = <|
     "ToolMethod"                 -> Automatic
 |>;
 
+$modelAutoSettings[ Automatic, "O3" ] = <|
+    "ForceSynchronous"           -> True,
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 100000,
+    "MaxToolResponses"           -> 3,
+    "Multimodal"                 -> True,
+    "StopTokens"                 -> Missing[ "NotSupported" ],
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
+$modelAutoSettings[ Automatic, "O4Mini" ] = <|
+    "ForceSynchronous"           -> True,
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 100000,
+    "MaxToolResponses"           -> 3,
+    "Multimodal"                 -> True,
+    "PresencePenalty"            -> Missing[ "NotSupported" ],
+    "StopTokens"                 -> Missing[ "NotSupported" ],
+    "Temperature"                -> Missing[ "NotSupported" ],
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Local models*)
@@ -304,8 +328,10 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "ConvertSystemRoleToUser"   -> False,
+    "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
     "SplitToolResponseMessages" -> False,
+    "Temperature"               -> 0.7,
     "ToolResponseRole"          -> "System"
 |>;
 
@@ -342,7 +368,7 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
                 (* Check for global default: *)
                 $modelAutoSettings[ Automatic, Automatic, key ]
             },
-            e_ :> With[ { s = e }, s /; ! MissingQ @ s ]
+            e_ :> With[ { s = e }, s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ] ]
         ];
 
 autoModelSetting // endDefinition;
@@ -609,7 +635,7 @@ resolveAutoSetting0 // beginDefinition;
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
-        s /; ! MatchQ[ s, $$unspecified ]
+        s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
     ];
 
 (* Otherwise resolve defaults normally: *)
@@ -850,6 +876,9 @@ autoToolExamplePromptStyle0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoStopTokens*)
 autoStopTokens // beginDefinition;
+
+autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    Missing[ "NotSupported" ];
 
 autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
     If[ TrueQ @ $AutomaticAssistance, { "[INFO]" }, None ];
