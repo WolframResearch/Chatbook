@@ -15,6 +15,7 @@ $generatorLLMConfig = <| "StopTokens" -> { "[NONE]" } |>;
 $usePromptHeader    = True;
 $multimodal         = True;
 $keepAllImages      = False;
+$wolframAlphaAppID := SystemCredential[ "WOLFRAM_ALPHA_APPID" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -43,6 +44,7 @@ $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 (*RelatedWolframAlphaResults*)
 RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
+    "AppID"             -> Automatic,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "Method"            -> Automatic,
@@ -97,6 +99,10 @@ RelatedWolframAlphaResults[ prompt_, property_, Automatic, opts: OptionsPattern[
 RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[
         {
+            $wolframAlphaAppID = Replace[
+                OptionValue[ "AppID" ],
+                $$unspecified :> $wolframAlphaAppID
+            ],
             $generatorLLMConfig = Replace[
                 OptionValue[ "LLMEvaluator" ],
                 $$unspecified :> $generatorLLMConfig
@@ -118,7 +124,30 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Content*)
-(* TODO *)
+RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[ ] ] :=
+    catchMine @ Block[
+        {
+            $wolframAlphaAppID = Replace[
+                OptionValue[ "AppID" ],
+                $$unspecified :> $wolframAlphaAppID
+            ],
+            $generatorLLMConfig = Replace[
+                OptionValue[ "LLMEvaluator" ],
+                $$unspecified :> $generatorLLMConfig
+            ],
+            $usePromptHeader = Replace[
+                OptionValue[ "PromptHeader" ],
+                $$unspecified :> $usePromptHeader
+            ],
+            $maxItems = n
+        },
+        relatedWolframAlphaResultsContent[
+            ensureChatMessages @ prompt,
+            n,
+            Replace[ OptionValue[ "RelatedQueryCount" ], $$unspecified :> Min[ 20, $maxItems*4 ] ],
+            Replace[ OptionValue[ "RandomQueryCount"  ], $$unspecified :> Min[ 20, $maxItems*4 ] ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -557,6 +586,50 @@ loadWolframAlphaClient // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*relatedWolframAlphaResultsContent*)
+relatedWolframAlphaResultsContent // beginDefinition;
+
+relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
+    Catch @ Module[ { queries, content, result },
+
+        queries = ConfirmMatch[
+            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+            { ___String },
+            "Queries"
+        ];
+
+        If[ queries === { }, Throw @ { } ];
+
+        content = ConfirmBy[ getWolframAlphaAPIContent @ queries, AssociationQ, "Content" ];
+
+        result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
+
+        KeyDrop[ result, { "StatusCode", "BodyByteArray" } ]
+    ],
+    throwInternalFailure
+];
+
+relatedWolframAlphaResultsContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getWolframAlphaAPIContent*)
+getWolframAlphaAPIContent // beginDefinition;
+
+getWolframAlphaAPIContent[ queries: { ___String } ] := Enclose[
+    Module[ { results, tasks },
+        results = <| |>;
+        tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
+        TaskWait[ tasks, TimeConstraint -> 30 ];
+        results
+    ],
+    throwInternalFailure
+];
+
+getWolframAlphaAPIContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*submitXMLRequest*)
 submitXMLRequest // beginDefinition;
 submitXMLRequest // Attributes = { HoldFirst };
@@ -607,15 +680,25 @@ setXMLResult // Attributes = { HoldFirst };
 setXMLResult[ result_ ] :=
     setXMLResult[ result, # ] &;
 
-setXMLResult[ result_, as: KeyValuePattern[ "BodyByteArray" -> bytes_ByteArray ] ] :=
+setXMLResult[ result_, as: KeyValuePattern[ "BodyByteArray" -> bytes_ByteArray ] ] := Enclose[
     Module[ { xmlString, xml, warnings, processed },
-        xmlString = ByteArrayToString @ bytes;
-        xml = ImportString[ xmlString, { "XML", "XMLObject" }, "NormalizeWhitespace" -> False ];
+
+        xmlString = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "XMLString" ];
+
+        xml = ConfirmMatch[
+            ImportString[ xmlString, { "XML", "XMLObject" }, "NormalizeWhitespace" -> False ],
+            $$xml,
+            "XML"
+        ];
+
         warnings = Internal`Bag[ ];
         processed = Block[ { $warnings = warnings }, processXML @ xml ];
+
         If[ ! AssociationQ @ result, result = <| |> ];
         result = <| result, as, "Content" -> processed, "Warnings" -> Internal`BagPart[ warnings, All ] |>
-    ];
+    ],
+    throwInternalFailure
+];
 
 setXMLResult // endDefinition;
 
