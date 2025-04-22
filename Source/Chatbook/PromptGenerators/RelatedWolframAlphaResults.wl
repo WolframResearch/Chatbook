@@ -11,11 +11,12 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxItems           = 5;
-$generatorLLMConfig = <| "StopTokens" -> { "[NONE]" } |>;
+$defaultConfig      = <| "StopTokens" -> { "[NONE]" } |>;
+$generatorLLMConfig = $defaultConfig;
 $usePromptHeader    = True;
 $multimodal         = True;
 $keepAllImages      = False;
-$wolframAlphaAppID := SystemCredential[ "WOLFRAM_ALPHA_APPID" ];
+$wolframAlphaAppID  = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -47,7 +48,6 @@ RelatedWolframAlphaResults // Options = {
     "AppID"             -> Automatic,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
-    "Method"            -> Automatic,
     "RandomQueryCount"  -> Automatic,
     "RelatedQueryCount" -> Automatic,
     "PromptHeader"      -> Automatic
@@ -206,11 +206,9 @@ formatted expressions, etc. to the user." <> $citationHint;
 (* ::Subsection::Closed:: *)
 (*$wolframAlphaResultTemplate*)
 $wolframAlphaResultTemplate = StringTemplate[ "\
-<query>`1`</query>
-<url>`2`</url>
-<results>
+<waResult query='`1`' url='`2`'>
 `3`
-</results>" ];
+</waResult>" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -277,6 +275,34 @@ makeMessagePairs // endDefinition;
 (*relatedWolframAlphaResultsPrompt*)
 relatedWolframAlphaResultsPrompt // beginDefinition;
 
+relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] /;
+    StringQ @ $wolframAlphaAppID := Enclose[
+        Catch @ Module[ { content, strings, resultsString },
+
+            content = ConfirmMatch[
+                relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
+                { ___Association },
+                "Content"
+            ];
+
+            If[ content === { }, Throw[ "" ] ];
+
+            strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
+
+            resultsString = StringRiffle[ strings, "\n\n" ];
+
+            StringJoin[
+                ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
+                resultsString,
+                If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
+                    ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
+                    ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
+                ]
+            ]
+        ],
+        throwInternalFailure
+    ];
+
 relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
     Catch @ Module[ { queries, waResults, resultsString },
 
@@ -293,9 +319,9 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
         resultsString = StringRiffle[
             StringTrim @ DeleteDuplicatesBy[
                 Select[ waResults, StringQ ],
-                StringDelete @ Shortest[ "<query>" ~~ __ ~~ "</query>" ]
+                StringDelete @ Shortest[ "<result " ~~ __ ~~ ">" ]
             ],
-            "\n\n======\n\n"
+            "\n\n"
         ];
 
         StringJoin[
@@ -311,6 +337,13 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
 ];
 
 relatedWolframAlphaResultsPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*waResultString*)
+waResultString // beginDefinition;
+waResultString[ result_String ] := body;
+waResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -354,7 +387,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         response = ConfirmBy[
             (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ $generatorLLMConfig ],
+            LLMServices`Chat[ messages, LLMConfiguration @ <| $defaultConfig, $generatorLLMConfig |> ],
             AssociationQ,
             "Response"
         ];
@@ -401,7 +434,7 @@ getAllWolframAlphaResults[ queries: { ___String } ] := Enclose[
 		];
 
 		{ formatTime, strings } = ConfirmMatch[
-			AbsoluteTiming @ KeyValueMap[ getWolframAlphaResult, results[ "Queries" ] ],
+			AbsoluteTiming @ KeyValueMap[ formatWolframAlphaResult, results[ "Queries" ] ],
 			{ _Real, { __String } },
 			"Formatting"
 		];
@@ -543,22 +576,47 @@ byteArrayToPodInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getWolframAlphaResult*)
-getWolframAlphaResult // beginDefinition;
+(*formatWolframAlphaResult*)
+formatWolframAlphaResult // beginDefinition;
 
-getWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String ] ] :=
+formatWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String ] ] :=
     TemplateApply[
         $wolframAlphaResultTemplate,
         { StringTrim @ query, makeWolframAlphaURL @ query, StringTrim @ res }
     ];
 
-getWolframAlphaResult[ query_String, _ ] :=
+formatWolframAlphaResult[ query_String, _ ] :=
     TemplateApply[
         $wolframAlphaResultTemplate,
         { StringTrim @ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] }
     ];
 
-getWolframAlphaResult // endDefinition;
+formatWolframAlphaResult[ KeyValuePattern @ {
+    "Query"   -> query_String,
+    "URL"     -> url_String,
+    "Content" -> content_
+} ] := TemplateApply[
+    $wolframAlphaResultTemplate,
+    { StringTrim @ query, url, makeContentString @ content }
+];
+
+formatWolframAlphaResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeContentString*)
+makeContentString // beginDefinition;
+
+makeContentString[ content: { ___Association } ] :=
+    StringTrim @ StringJoin @ Cases[
+        content,
+        KeyValuePattern @ { "Type" -> "Text", "Data" -> text_String } :> text
+    ];
+
+makeContentString[ KeyValuePattern[ "Type" -> "Error" ] ] :=
+    "No Results Found";
+
+makeContentString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -604,7 +662,7 @@ relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCoun
 
         result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
 
-        KeyDrop[ result, { "StatusCode", "BodyByteArray" } ]
+        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "Content" ] ]
     ],
     throwInternalFailure
 ];
@@ -643,6 +701,7 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
         If[ ! AssociationQ @ assoc, assoc = <| |> ];
         If[ ! AssociationQ @ assoc @ query, assoc @ query = <| |> ];
         assoc[ query, "Query" ] = query;
+        assoc[ query, "URL"   ] = makeWolframAlphaURL @ query;
 
         request = HTTPRequest[
             "https://api.wolframalpha.com/v2/query",
@@ -664,7 +723,7 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
             TimeConstraint       -> 30
         ];
 
-        task
+        ConfirmMatch[ task, _TaskObject, "Task" ]
     ],
     throwInternalFailure
 ];
