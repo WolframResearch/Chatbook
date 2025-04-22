@@ -15,7 +15,7 @@ ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
 
-color = Wolfram`Chatbook`Common`color;
+color;
 WriteTextResource;
 $ChatbookResources;
 FEResource;
@@ -42,6 +42,8 @@ $resourceLocationDark = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "T
 
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
+Get[ FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "ColorData.wl" } ];
+color = Wolfram`Chatbook`Common`color;
 
 
 (* ::Section::Closed:: *)

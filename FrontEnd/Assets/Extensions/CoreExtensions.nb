@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951879397"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.3.3954302646"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1366,7 +1366,7 @@ Notebook[
         Dynamic[
          If[ CurrentValue["MouseOver"],
           LightDarkSwitched[GrayLevel[1], GrayLevel[0.25089]],
-          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.193043]]
          ]
         ],
        BaselinePosition -> Baseline,
@@ -1375,7 +1375,7 @@ Notebook[
         Dynamic[
          If[ CurrentValue["MouseOver"],
           LightDarkSwitched[GrayLevel[0.8], GrayLevel[0.512185]],
-          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.193043]]
          ]
         ],
        ImageMargins -> {{0, 0}, {0, 0}},
@@ -1412,7 +1412,7 @@ Notebook[
         "Grid"
        ],
        Background ->
-        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.193043]],
+        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.232515]],
        BaselinePosition -> Baseline,
        FrameMargins -> {{5, 2}, {2, 2}},
        FrameStyle -> None,
@@ -1648,7 +1648,7 @@ Notebook[
          ],
          FrameMargins -> 3,
          Background ->
-          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]],
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.193043]],
          RoundingRadius -> 3,
          FrameStyle ->
           Directive[
@@ -1832,20 +1832,6 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ChatEnabledNotebookIcon"
-       ]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatEvaluatingSpinner"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatEvaluatingSpinner"
        ]
       ]
      ])
