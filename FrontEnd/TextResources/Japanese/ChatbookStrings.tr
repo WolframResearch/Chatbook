@@ -156,6 +156,7 @@
 "ToolManagerTooltipNonDeletable2" -> "`name`\:306f\:30da\:30eb\:30bd\:30ca`persona`\:306b\:3088\:3063\:3066\:63d0\:4f9b\:3055\:308c\:305f\:3082\:306e\:3067\:ff0c\:500b\:5225\:306b\:524a\:9664\:3059\:308b\:3053\:3068\:306f\:3067\:304d\:307e\:305b\:3093\:ff0e",
 "ToolManagerDeleteTool" -> "\:30c4\:30fc\:30eb\:306e\:524a\:9664",
 
+"UIInitializeChatbook" -> "Initializing Chatbook\[Ellipsis]",
 "UIEnableChatFeatures" -> "AI\:30c1\:30e3\:30c3\:30c8\:6a5f\:80fd\:306e\:6709\:52b9\:5316",
 "UIAutomaticAnalysisLabel" -> "\:81ea\:52d5\:7684\:306b\:51fa\:529b\:3092\:5206\:6790\:3059\:308b",
 "UIAutomaticAnalysisTooltip" -> "\:6709\:52b9\:306b\:3059\:308b\:3068\:ff0c\:81ea\:52d5\:7684\:306bAI\:304c\:63d0\:4f9b\:3059\:308b\:63d0\:6848\:304c\:4ee5\:4e0b\:306e\:8a55\:4fa1\:7d50\:679c\:306b\:8ffd\:52a0\:3055\:308c\:307e\:3059\:ff0e",
