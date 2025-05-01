@@ -166,6 +166,7 @@
 "UIAddAndManageTools" -> "Agregar y administrar herramientas\[Ellipsis]",
 "UIModels" -> "Modelos",
 "UIModelsServices" -> "Servicios",
+"UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "Obteniendo modelos disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Conectar para la lista de modelos",
 "UIModelsFineTuned" -> "Modelos afinados",

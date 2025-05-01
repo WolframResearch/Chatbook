@@ -166,6 +166,7 @@
 "UIAddAndManageTools" -> "\:6DFB\:52A0\:5E76\:7BA1\:7406\:5DE5\:5177\[Ellipsis]",
 "UIModels" -> "\:6A21\:578B",
 "UIModelsServices" -> "\:670D\:52A1\:5546",
+"UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "\:83B7\:53D6\:53EF\:7528\:6A21\:578B\[Ellipsis]",
 "UIModelsNoList" -> "\:8FDE\:63A5\:83B7\:53D6\:6A21\:578B\:5217\:8868",
 "UIModelsFineTuned" -> "\:7CBE\:5FC3\:8C03\:6574\:8FC7\:7684\:6A21\:578B",

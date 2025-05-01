@@ -166,6 +166,7 @@
 "UIAddAndManageTools" -> "Ajouter et g\[EAcute]rer des outils\[Ellipsis]",
 "UIModels" -> "Mod\[EGrave]les",
 "UIModelsServices" -> "Services",
+"UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "Obtenir les mod\[EGrave]les disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Se connecter pour obtenir la liste des mod\[EGrave]les",
 "UIModelsFineTuned" -> "Mod\[EGrave]les affin\[EAcute]s",
