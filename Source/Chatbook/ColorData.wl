@@ -507,8 +507,8 @@ Dispatch[{
 		 "Notes"  -> "Cloud only: cell style action menu has white background"
 	|>,
 	"CloudToolbarPreferencesCellBackground" -> <|
-		 "Light"  -> GrayLevel[0.75],
-		 "Dark"   -> GrayLevel[0.5483285],
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.16249],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places, so leave as content color"
