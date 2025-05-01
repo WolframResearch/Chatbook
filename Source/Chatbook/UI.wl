@@ -1165,6 +1165,22 @@ createAdvancedSettingsMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*wolframServiceMenuItem*)
+wolframServiceMenuItem // beginDefinition;
+
+wolframServiceMenuItem[ targetObj_, model_ ] :=
+<|
+	"Type"   -> "Setter",
+	"Label"  -> "Wolfram",
+	"Icon"   -> serviceIcon[ model, "Wolfram" ],
+	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
+	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
+|>
+
+wolframServiceMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*createServiceMenu*)
 createServiceMenu // beginDefinition;
 
@@ -1176,20 +1192,52 @@ With[
 	Join[
 		{
 			<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
-			<|
-				"Type"   -> "Setter",
-				"Label"  -> "Wolfram",
-				"Icon"   -> serviceIcon[ model, "Wolfram" ],
-				"Check"  -> serviceIconCheck[ model, "Wolfram" ],
-				"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
-			|>,
+			wolframServiceMenuItem[ targetObj, model ],
 			<| "Type" -> "Delimiter" |>
 		},
 		Map[
 			createServiceItem[ targetObj, model, #1 ] &,
 			DeleteCases[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ]
 	]
-];
+] /; AssociationQ @ $serviceCache;
+
+createServiceMenu[ targetObj_ ] := {
+With[
+	{
+		model = currentChatSettings[ targetObj, "Model" ]
+	},
+	<|
+		"Type"        -> "Delayed",
+		"InitialMenu" -> {
+			<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
+			wolframServiceMenuItem[ targetObj, model ],
+			<| "Type" -> "Delimiter" |>,
+			<|
+				"Type"    -> "Custom",
+				"Content" ->
+					Pane[
+						Column @ {
+							Style[ tr @ "UIModelsServicesGet", "ChatMenuLabel" ],
+							ProgressIndicator[ Appearance -> "Percolate" ]
+						},
+						ImageMargins -> 5
+					]
+			|>
+		},
+		"FinalMenu" :>
+			Join[
+				{
+					<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
+					wolframServiceMenuItem[ targetObj, model ],
+					<| "Type" -> "Delimiter" |>
+				},
+				Map[
+					createServiceItem[ targetObj, model, #1 ] &,
+					DeleteCases[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ]
+			]
+	|>
+]
+};
 
 createServiceMenu // endDefinition;
 
