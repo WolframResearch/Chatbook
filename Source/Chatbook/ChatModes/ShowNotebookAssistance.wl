@@ -156,7 +156,8 @@ ShowNotebookAssistance // Options = {
     "EvaluateInput"        -> False,
     "ExtraInstructions"    -> None,
     "Input"                -> "",
-    "NewChat"              -> Automatic
+    "NewChat"              -> Automatic,
+    "NotebookOptions"      -> { } (* TODO: pass any notebook options specified here to the created notebook *)
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -178,10 +179,12 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 | ExtraInstructions | None      | Additional instructions to include in the system prompt for the LLM             |
 | Input             | None      | The initial chat input string or Key[\"name$\"] to reference a predefined input |
 | NewChat           | Automatic | Whether to start a new chat                                                     |
+| NotebookOptions   | { }       | A list of rules to be applied to the notebook created for the code assistance   |
 * If EvaluateInput is True, a value must be given for Input or InputName.
 * Specifying NewChat \[Rule] True will clear the existing code assistance chat (if any).
 * The setting for NewChat has no effect for Inline code assistance.
-* Possible values for \"name$\" in Key[\"name$\"] can be found in Keys[$NotebookAssistanceInputs].\
+* Possible values for \"name$\" in Key[\"name$\"] can be found in Keys[$NotebookAssistanceInputs].
+* NotebookOptions allows you to customize the appearance and behavior of the created notebook.\
 " ];
 
 (* ::**************************************************************************************************************:: *)
@@ -469,8 +472,10 @@ showNotebookAssistanceWindow[ source_, input_, evaluate_, new_, settings_Associa
     ];
 
 showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := Enclose[
-    Module[ { current, nbo, movedLastChatToSourcesIndicatorQ },
-
+    Module[ { current, nbo, movedLastChatToSourcesIndicatorQ, nbOptions },
+        
+        nbOptions = OptionValue[ ShowNotebookAssistance, "NotebookOptions" ];
+        
         current = ConfirmMatch[
             LogChatTiming @ findCurrentWorkspaceChat[ "NotebookAssistance" ],
             _NotebookObject | Missing[ "NotFound" ],
@@ -485,7 +490,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
         ];
 
         nbo = If[ MissingQ @ current,
-                  ConfirmMatch[ LogChatTiming @ createWorkspaceChat @ source, _NotebookObject, "New" ],
+                  ConfirmMatch[ LogChatTiming @ createWorkspaceChat[ source, nbOptions ], _NotebookObject, "New" ],
                   ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
@@ -516,7 +521,9 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
 
 
 showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
-    Module[ { current, nbo },
+    Module[ { current, nbo, nbOptions },
+        
+        nbOptions = OptionValue[ ShowNotebookAssistance, "NotebookOptions" ];
 
         current = ConfirmMatch[
             findCurrentWorkspaceChat[ "NotebookAssistance" ],
@@ -530,7 +537,7 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
         ];
 
         nbo = If[ MissingQ @ current,
-                  ConfirmMatch[ createWorkspaceChat[ ], _NotebookObject, "New" ],
+                  ConfirmMatch[ createWorkspaceChat[ nbOptions ], _NotebookObject, "New" ],
                   current
               ];
 
@@ -710,10 +717,15 @@ createWorkspaceChat // beginDefinition;
 createWorkspaceChat[ ] :=
     createWorkspaceChat[ { } ];
 
-createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
-    Module[ { nbo },
+createWorkspaceChat[ cells: { ___Cell } ] :=
+    createWorkspaceChat[ cells, { } ];
+
+createWorkspaceChat[ cells: { ___Cell }, options: { ___Rule } ] := Enclose[
+    Module[ { nbo, nbOptions },
+        nbOptions = Flatten @ { $workspaceChatNotebookOptions, options };
+        
         nbo = ConfirmMatch[
-            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            NotebookPut @ Notebook[ cells, nbOptions ],
             _NotebookObject,
             "Notebook"
         ];
@@ -732,11 +744,18 @@ createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
 createWorkspaceChat[ source_NotebookObject ] :=
     createWorkspaceChat[ source, { } ];
 
-createWorkspaceChat[ source_NotebookObject, cells: { ___Cell } ] := Enclose[
-    Module[ { nbo },
+createWorkspaceChat[ source_NotebookObject, options: { ___Rule } ] :=
+    createWorkspaceChat[ source, { }, options ];
 
+createWorkspaceChat[ source_NotebookObject, cells: { ___Cell } ] :=
+    createWorkspaceChat[ source, cells, { } ];
+
+createWorkspaceChat[ source_NotebookObject, cells: { ___Cell }, options: { ___Rule } ] := Enclose[
+    Module[ { nbo, nbOptions },
+        nbOptions = Flatten @ { $workspaceChatNotebookOptions, options };
+        
         nbo = ConfirmMatch[
-            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            NotebookPut @ Notebook[ cells, nbOptions ],
             _NotebookObject,
             "Notebook"
         ];
