@@ -5,3 +5,4 @@ Assets/VectorDatabases/**/*.wxf
 build
 Developer/VectorDatabases/SourceData/*.jsonl
 Source/Chatbook/64Bit/Chatbook.mx
+.claude/
