@@ -625,7 +625,7 @@ mouseDown[
 		Background -> color @ "ErrorMessageFatalLabelButtonBackgroundHover",
 		FrameStyle -> color @ "ErrorMessageFatalLabelButtonFrameHover" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageFatalFontPressed" ],
+		Style[ text, FontColor -> color @ "ErrorMessageFatalFont" ],
 		$commonLabeledButtonOptions,
 		Background -> color @ "ErrorMessageFatalLabelButtonBackgroundPressed",
 		FrameStyle -> color @ "ErrorMessageFatalLabelButtonBackgroundPressed" ]
@@ -644,7 +644,7 @@ mouseDown[
 		Background -> color @ "ErrorMessageNonFatalLabelButtonBackgroundHover",
 		FrameStyle -> color @ "ErrorMessageNonFatalLabelButtonFrameHover" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageNonFatalFontPressed" ],
+		Style[ text, FontColor -> color @ "ErrorMessageNonFatalFont" ],
 		$commonLabeledButtonOptions,
 		Background -> color @ "ErrorMessageNonFatalLabelButtonBackgroundPressed",
 		FrameStyle -> color @ "ErrorMessageNonFatalLabelButtonBackgroundPressed" ]
@@ -663,7 +663,7 @@ mouseDown[
 		Background -> color @ "ErrorMessageBlockedLabelButtonBackgroundHover",
 		FrameStyle -> color @ "ErrorMessageBlockedLabelButtonFrameHover" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageBlockedFontPressed" ],
+		Style[ text, FontColor -> color @ "ErrorMessageBlockedFont" ],
 		$commonLabeledButtonOptions,
 		Background -> color @ "ErrorMessageBlockedLabelButtonBackgroundPressed",
 		FrameStyle -> color @ "ErrorMessageBlockedLabelButtonBackgroundPressed" ]
@@ -703,21 +703,21 @@ errorMessageCloseButtonAppearance[ "NonFatal" ] :=
 mouseDown[
 	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFrame",        color @ "ErrorMessageNonFatalCloseButtonBackground",        color @ "ErrorMessageNonFatalFont"],
 	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFrameHover",   color @ "ErrorMessageNonFatalCloseButtonBackgroundHover",   color @ "ErrorMessageNonFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFramePressed", color @ "ErrorMessageNonFatalCloseButtonBackgroundPressed", color @ "ErrorMessageNonFatalFontPressed"]
+	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFramePressed", color @ "ErrorMessageNonFatalCloseButtonBackgroundPressed", color @ "ErrorMessageNonFatalFont"]
 ]
 
 errorMessageCloseButtonAppearance[ "Fatal" ] :=
 mouseDown[
 	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFrame",        color @ "ErrorMessageFatalCloseButtonBackground",        color @ "ErrorMessageFatalFont"],
 	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFrameHover",   color @ "ErrorMessageFatalCloseButtonBackgroundHover",   color @ "ErrorMessageFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFramePressed", color @ "ErrorMessageFatalCloseButtonBackgroundPressed", color @ "ErrorMessageFatalFontPressed"]
+	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFramePressed", color @ "ErrorMessageFatalCloseButtonBackgroundPressed", color @ "ErrorMessageFatalFont"]
 ]
 
 errorMessageCloseButtonAppearance[ "Blocked" ] :=
 mouseDown[
 	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFrame",        color @ "ErrorMessageBlockedCloseButtonBackground",        color @ "ErrorMessageBlockedFont"],
 	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFrameHover",   color @ "ErrorMessageBlockedCloseButtonBackgroundHover",   color @ "ErrorMessageBlockedFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFramePressed", color @ "ErrorMessageBlockedCloseButtonBackgroundPressed", color @ "ErrorMessageBlockedFontPressed"]
+	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFramePressed", color @ "ErrorMessageBlockedCloseButtonBackgroundPressed", color @ "ErrorMessageBlockedFont"]
 ]
 
 errorMessageCloseButtonAppearance // endDefinition;
