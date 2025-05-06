@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951879397"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.5.3955597665"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -123,7 +123,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.92549, 0.941176, 0.960784],
-     RGBColor[0.301723, 0.334287, 0.398635]
+     RGBColor[0.282973, 0.31239, 0.372334]
     ],
    AutoQuoteCharacters -> { },
    PasteAutoQuoteCharacters -> { }
@@ -228,7 +228,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.639216, 0.788235, 0.94902],
-     RGBColor[0.399233, 0.582627, 0.78593]
+     RGBColor[0.372097, 0.53277, 0.719639]
     ],
    CellFrameLabels -> {
     {
@@ -239,11 +239,11 @@ Notebook[
         FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButton"][
          LightDarkSwitched[
           RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.399233, 0.582627, 0.78593]
+          RGBColor[0.372097, 0.53277, 0.719639]
          ],
          LightDarkSwitched[
           RGBColor[0.945098, 0.968627, 0.992157],
-          RGBColor[0.16419, 0.203707, 0.26762]
+          RGBColor[0.151078, 0.187077, 0.246627]
          ],
          20
         ]
@@ -378,7 +378,7 @@ Notebook[
      CellFrameColor ->
       LightDarkSwitched[
        RGBColor[0.639216, 0.788235, 0.94902],
-       RGBColor[0.399233, 0.582627, 0.78593]
+       RGBColor[0.372097, 0.53277, 0.719639]
       ],
      CellFrameMargins -> 6
     ],
@@ -397,7 +397,7 @@ Notebook[
    Background ->
     LightDarkSwitched[
      RGBColor[0.980392, 0.988235, 1.0],
-     RGBColor[0.220797, 0.220797, 0.220797]
+     RGBColor[0.215198, 0.215198, 0.215198]
     ]
   ],
   Cell[
@@ -641,7 +641,7 @@ Notebook[
            "ChatOutput",
            LightDarkSwitched[
             RGBColor[0.92549, 0.941176, 0.960784],
-            RGBColor[0.181229, 0.198128, 0.238938]
+            RGBColor[0.157991, 0.172481, 0.209033]
            ]
           },
           "ChatMenuButton"
@@ -749,7 +749,7 @@ Notebook[
                "AssistantOutput",
                LightDarkSwitched[
                 RGBColor[0.815686, 0.870588, 0.92549],
-                RGBColor[0.3348, 0.393712, 0.472345]
+                RGBColor[0.310277, 0.362495, 0.434549]
                ]
               },
               "ChatMenuButton"
@@ -775,7 +775,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.815686, 0.870588, 0.92549],
-     RGBColor[0.3348, 0.393712, 0.472345]
+     RGBColor[0.310277, 0.362495, 0.434549]
     ],
    Background ->
     LightDarkSwitched[
@@ -863,7 +863,7 @@ Notebook[
                "AssistantOutput",
                LightDarkSwitched[
                 RGBColor[0.945098, 0.905882, 0.870588],
-                RGBColor[0.395058, 0.353019, 0.279374]
+                RGBColor[0.365394, 0.327654, 0.259258]
                ]
               },
               "ChatMenuButton"
@@ -889,7 +889,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.945098, 0.905882, 0.870588],
-     RGBColor[0.395058, 0.353019, 0.279374]
+     RGBColor[0.365394, 0.327654, 0.259258]
     ],
    Background ->
     LightDarkSwitched[
@@ -977,7 +977,7 @@ Notebook[
                "AssistantOutput",
                LightDarkSwitched[
                 RGBColor[0.945098, 0.870588, 0.870588],
-                RGBColor[0.54211, 0.306479, 0.276097]
+                RGBColor[0.502255, 0.282848, 0.251799]
                ]
               },
               "ChatMenuButton"
@@ -1003,7 +1003,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.945098, 0.870588, 0.870588],
-     RGBColor[0.54211, 0.306479, 0.276097]
+     RGBColor[0.502255, 0.282848, 0.251799]
     ],
    Background ->
     LightDarkSwitched[
@@ -1195,7 +1195,7 @@ Notebook[
    FontSize -> 13,
    FontWeight -> "Plain",
    Background ->
-    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]]
+    LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]]
   ],
   Cell[
    StyleData[
@@ -1217,12 +1217,12 @@ Notebook[
          FrameBox[
           #1,
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
             AbsoluteThickness[1],
-            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.323174]]
            ],
           ImageMargins -> {{0, 0}, {0, 8}},
           ImageSize -> {Full, Automatic}
@@ -1242,7 +1242,7 @@ Notebook[
           FrameStyle ->
            Directive[
             AbsoluteThickness[1],
-            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.323174]]
            ],
           ImageMargins -> {{0, 0}, {8, -1}},
           ImageSize -> {Full, Automatic}
@@ -1265,13 +1265,13 @@ Notebook[
       FrameBox[
        #1,
        Background ->
-        LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+        LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
        BaselinePosition -> Scaled[0.275],
        FrameMargins -> {{3, 3}, {2, 2}},
        FrameStyle ->
         Directive[
          AbsoluteThickness[1],
-         LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.347414]]
+         LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.323174]]
         ],
        ImageMargins -> {{0, 0}, {0, 0}},
        BaseStyle -> {
@@ -1378,7 +1378,7 @@ Notebook[
            FrameStyle ->
             LightDarkSwitched[
              GrayLevel[1, 0],
-             GrayLevel[0.214151, 0.0]
+             GrayLevel[0.219195, 0.0]
             ],
            Background -> None,
            FrameMargins -> 0,
@@ -1412,7 +1412,7 @@ Notebook[
            FrameStyle ->
             LightDarkSwitched[
              GrayLevel[1, 0],
-             GrayLevel[0.214151, 0.0]
+             GrayLevel[0.219195, 0.0]
             ],
            Background -> #2,
            FrameMargins -> 0,
@@ -1457,7 +1457,7 @@ Notebook[
         GraphicsBox[
          {
           CapForm["Round"],
-          LightDarkSwitched[GrayLevel[0.9], GrayLevel[0.376626]],
+          LightDarkSwitched[GrayLevel[0.9], GrayLevel[0.347785]],
           AbsoluteThickness[2],
           LineBox[{{-1, 0}, {1, 0}}]
          },
@@ -1508,7 +1508,7 @@ Notebook[
        Background ->
         Dynamic[
          If[ CurrentValue["MouseOver"],
-          LightDarkSwitched[GrayLevel[1], GrayLevel[0.25089]],
+          LightDarkSwitched[GrayLevel[1], GrayLevel[0.258943]],
           LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
          ]
         ],
@@ -1517,7 +1517,7 @@ Notebook[
        FrameStyle ->
         Dynamic[
          If[ CurrentValue["MouseOver"],
-          LightDarkSwitched[GrayLevel[0.8], GrayLevel[0.512185]],
+          LightDarkSwitched[GrayLevel[0.8], GrayLevel[0.468258]],
           LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.232515]]
          ]
         ],
@@ -1555,7 +1555,7 @@ Notebook[
         "Grid"
        ],
        Background ->
-        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.193043]],
+        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.172936]],
        BaselinePosition -> Baseline,
        FrameMargins -> {{5, 2}, {2, 2}},
        FrameStyle -> None,
@@ -1796,7 +1796,7 @@ Notebook[
          FrameStyle ->
           Directive[
            AbsoluteThickness[1],
-           LightDarkSwitched[GrayLevel[0.85], GrayLevel[0.448455]]
+           LightDarkSwitched[GrayLevel[0.85], GrayLevel[0.410418]]
           ],
          ImageMargins -> 0
         },
@@ -1815,7 +1815,7 @@ Notebook[
    FontSize -> 13,
    FontWeight -> Plain,
    FontColor ->
-    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.962822]]
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.944829]]
   ],
   Cell[
    StyleData[
@@ -1824,7 +1824,7 @@ Notebook[
    ],
    FontSize -> 13,
    FontColor ->
-    LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.892465]]
+    LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.85835]]
   ],
   Cell[
    StyleData["AssistantCopyBelow"],
@@ -1975,20 +1975,6 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ChatEnabledNotebookIcon"
-       ]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatEvaluatingSpinner"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatEvaluatingSpinner"
        ]
       ]
      ])
@@ -2929,13 +2915,13 @@ Notebook[
         Background ->
          LightDarkSwitched[
           RGBColor[0.929412, 0.956863, 0.988235],
-          RGBColor[0.246964, 0.305198, 0.402424]
+          RGBColor[0.247059, 0.305882, 0.403922]
          ],
         FrameMargins -> {{8, 15}, {8, 8}},
         FrameStyle ->
          LightDarkSwitched[
           RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.37503, 0.538177, 0.726895]
+          RGBColor[0.32549, 0.447059, 0.6]
          ],
         RoundingRadius -> 10,
         StripOnInput -> False
@@ -2964,7 +2950,7 @@ Notebook[
         FrameStyle ->
          LightDarkSwitched[
           RGBColor[0.788235, 0.8, 0.815686],
-          RGBColor[0.511542, 0.527047, 0.552938]
+          RGBColor[0.468226, 0.481882, 0.505771]
          ],
         ImageSize -> {Scaled[1], Automatic},
         RoundingRadius -> 10,
@@ -3317,7 +3303,7 @@ Notebook[
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
    FontColor ->
-    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.964005]]
+    LightDarkSwitched[GrayLevel[0.2], GrayLevel[0.946392]]
   ],
   Cell[
    StyleData["ChatExcluded"],
@@ -3449,14 +3435,14 @@ Notebook[
                          {
                           LightDarkSwitched[
                            RGBColor[0.3451, 0.72157, 0.98039],
-                           RGBColor[0.340718, 0.683722, 0.928584]
+                           RGBColor[0.341033, 0.628816, 0.848644]
                           ]
                          },
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {False, False} ->
                         TemplateBox[
-                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.536331]]},
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {True, True} ->
@@ -3464,14 +3450,14 @@ Notebook[
                          {
                           LightDarkSwitched[
                            RGBColor[0.3451, 0.72157, 0.98039],
-                           RGBColor[0.340718, 0.683722, 0.928584]
+                           RGBColor[0.341033, 0.628816, 0.848644]
                           ]
                          },
                          "DiscardedMaterialCloserIcon"
                         ],
                        {False, True} ->
                         TemplateBox[
-                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.536331]]},
                          "DiscardedMaterialCloserIcon"
                         ]
                       },
@@ -3489,10 +3475,10 @@ Notebook[
                   Dynamic[
                    FEPrivate`If[
                     Typeset`hover$$,
-                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
                     LightDarkSwitched[
                      RGBColor[0.94902, 0.96863, 0.98824],
-                     RGBColor[0.185561, 0.225385, 0.289153]
+                     RGBColor[0.175905, 0.213442, 0.274453]
                     ]
                    ]
                   ],
@@ -3505,7 +3491,7 @@ Notebook[
                  FrameStyle ->
                   LightDarkSwitched[
                    RGBColor[0.9098, 0.93333, 0.95294],
-                   RGBColor[0.312177, 0.352756, 0.401407]
+                   RGBColor[0.291162, 0.327969, 0.373167]
                   ],
                  RoundingRadius -> 5,
                  StripOnInput -> False
@@ -3557,14 +3543,14 @@ Notebook[
                          {
                           LightDarkSwitched[
                            RGBColor[0.3451, 0.72157, 0.98039],
-                           RGBColor[0.340718, 0.683722, 0.928584]
+                           RGBColor[0.341033, 0.628816, 0.848644]
                           ]
                          },
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {False, False} ->
                         TemplateBox[
-                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.536331]]},
                          "DiscardedMaterialOpenerIcon"
                         ],
                        {True, True} ->
@@ -3572,14 +3558,14 @@ Notebook[
                          {
                           LightDarkSwitched[
                            RGBColor[0.3451, 0.72157, 0.98039],
-                           RGBColor[0.340718, 0.683722, 0.928584]
+                           RGBColor[0.341033, 0.628816, 0.848644]
                           ]
                          },
                          "DiscardedMaterialCloserIcon"
                         ],
                        {False, True} ->
                         TemplateBox[
-                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.584539]]},
+                         {LightDarkSwitched[GrayLevel[0.7451], GrayLevel[0.536331]]},
                          "DiscardedMaterialCloserIcon"
                         ]
                       },
@@ -3597,10 +3583,10 @@ Notebook[
                   Dynamic[
                    FEPrivate`If[
                     Typeset`hover$$,
-                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]],
+                    LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
                     LightDarkSwitched[
                      RGBColor[0.94902, 0.96863, 0.98824],
-                     RGBColor[0.185561, 0.225385, 0.289153]
+                     RGBColor[0.175905, 0.213442, 0.274453]
                     ]
                    ]
                   ],
@@ -3613,7 +3599,7 @@ Notebook[
                  FrameStyle ->
                   LightDarkSwitched[
                    RGBColor[0.9098, 0.93333, 0.95294],
-                   RGBColor[0.312177, 0.352756, 0.401407]
+                   RGBColor[0.291162, 0.327969, 0.373167]
                   ],
                  RoundingRadius -> 5,
                  StripOnInput -> False
@@ -3642,13 +3628,13 @@ Notebook[
                Background ->
                 LightDarkSwitched[
                  RGBColor[0.94902, 0.968627, 0.988235],
-                 RGBColor[0.185564, 0.225382, 0.289143]
+                 RGBColor[0.175907, 0.213439, 0.274442]
                 ],
                FrameMargins -> 10,
                FrameStyle ->
                 LightDarkSwitched[
                  RGBColor[0.909804, 0.933333, 0.952941],
-                 RGBColor[0.312173, 0.352751, 0.401396]
+                 RGBColor[0.291158, 0.327964, 0.373158]
                 ],
                ImageSize -> {Full, Automatic},
                RoundingRadius -> 5,
@@ -3798,14 +3784,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -3851,14 +3837,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -3941,14 +3927,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4021,14 +4007,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4074,14 +4060,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4164,14 +4150,14 @@ Notebook[
                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                     BaseStyle -> {
                      FontColor ->
-                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.870388]]
+                      LightDarkSwitched[GrayLevel[0.39215], GrayLevel[0.832881]]
                     }
                    ]
                  },
                  Dynamic[CurrentValue["MouseOver"]],
                  BaseStyle -> {
                   FontColor ->
-                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.822844]],
+                   LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
                   FontFamily -> "Source Sans Pro",
                   FontSize -> 13.5
                  },
@@ -4228,7 +4214,7 @@ Notebook[
            #1,
            "Text",
            FontColor ->
-            LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.89454]],
+            LightDarkSwitched[GrayLevel[0.35], GrayLevel[0.860775]],
            FontSize -> 12,
            Background -> None,
            Editable -> True
@@ -4241,14 +4227,14 @@ Notebook[
        },
        AutoDelete -> False,
        GridBoxBackground -> {
-        "Columns" -> {{LightDarkSwitched[GrayLevel[1], GrayLevel[0.253666]]}}
+        "Columns" -> {{LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]]}}
        },
        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
        GridBoxDividers -> {
         "ColumnsIndexed" -> {
          1 ->
           Directive[
-           LightDarkSwitched[GrayLevel[0.8196], GrayLevel[0.499956]],
+           LightDarkSwitched[GrayLevel[0.8196], GrayLevel[0.457003]],
            AbsoluteThickness[2]
           ]
         },
