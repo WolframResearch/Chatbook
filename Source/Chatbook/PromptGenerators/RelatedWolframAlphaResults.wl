@@ -25,10 +25,11 @@ $instructions       = None;
 $$count = _Integer | UpTo[ _Integer ];
 $$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
-(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype *)
+(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype, downloadformatgroups *)
 $$ignoredXMLTag = Alternatives[
     "datasources",
     "definitions",
+    "downloadformatgroups",
     "expressiontypes",
     "imagesource",
     "infos",
