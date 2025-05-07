@@ -684,7 +684,7 @@ relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCoun
 
         result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
 
-        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "Content" ] ]
+        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "InputInterpretation" ] ]
     ],
     throwInternalFailure
 ];
@@ -762,7 +762,7 @@ setXMLResult[ result_ ] :=
     setXMLResult[ result, # ] &;
 
 setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArray" -> bytes_ByteArray } ] := Enclose[
-    Module[ { xmlString, xml, warnings, processed },
+    Module[ { xmlString, xml, warnings, processed, query, input },
 
         xmlString = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "XMLString" ];
 
@@ -774,14 +774,45 @@ setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArr
 
         warnings = Internal`Bag[ ];
         processed = Block[ { $warnings = warnings }, processXML @ xml ];
+        query     = ConfirmBy[ result[ "Query" ], StringQ, "Query" ];
+        input     = ConfirmMatch[ inputInterpretation[ query, processed ], _String|_Missing, "Input" ];
 
         If[ ! AssociationQ @ result, result = <| |> ];
-        result = <| result, as, "Content" -> processed, "Warnings" -> Internal`BagPart[ warnings, All ] |>
+        result = <|
+            result,
+            as,
+            "InputInterpretation" -> input,
+            "Content"             -> processed,
+            "Warnings"            -> Internal`BagPart[ warnings, All ]
+        |>
     ],
     throwInternalFailure
 ];
 
 setXMLResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inputInterpretation*)
+inputInterpretation // beginDefinition;
+
+inputInterpretation[ query_String, content_ ] := FirstCase[
+    content,
+    s_String :> With[
+        {
+            int = StringCases[
+                s,
+                "# Input interpretation\n" ~~ Shortest[ i__ ] ~~ (("\n" ~~ "#".. ~~ " ") | EndOfString) :> i,
+                1
+            ]
+        },
+        StringTrim @ First @ int /; MatchQ[ int, { _String } ]
+    ],
+    Missing[ "NotFound", query ],
+    Infinity
+];
+
+inputInterpretation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
