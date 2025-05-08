@@ -998,8 +998,8 @@ Dispatch[{
 	|>,
 	"ManagerGridHeaderBackground" -> <|
 		 "Light"  -> GrayLevel[0.898],
-		 "Dark"   -> GrayLevel[0.0747466],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
 	|>,
@@ -1019,8 +1019,8 @@ Dispatch[{
 	|>,
 	"ManagerGridItemBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.1389923],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
 	|>,
