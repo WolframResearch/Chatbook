@@ -1348,7 +1348,7 @@ makeLLMPanel[ ] :=
                 Spacings -> { Automatic, 0.7 } ],
             Background -> color @ "PreferencesContentBackground",
             FrameMargins -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle -> color @ "PreferencesContentFrame",
+            FrameStyle -> color @ "PreferencesContentServicesLLMKitFrame",
             ImageSize -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ];
@@ -1370,7 +1370,7 @@ makeServiceGrid[ ] :=
                 Background -> { { }, { { color @ "PreferencesContentBackground" } } },
                 ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
                 Dividers   -> { { }, { False, { True }, False } },
-                FrameStyle -> color @ "PreferencesContentFrame",
+                FrameStyle -> color @ "PreferencesContentDirectServiceConnectionsDelimiter",
                 Spacings   -> { Automatic, 0.7 } ],
             AppearanceElements -> { },
             FrameMargins -> 8,

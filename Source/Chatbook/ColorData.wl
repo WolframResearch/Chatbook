@@ -1677,8 +1677,15 @@ Dispatch[{
 	|>,
 	"PreferencesContentBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2846262],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.09805],
+		 "Method" -> "Design",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentDirectServiceConnectionsDelimiter" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.2039],
+		 "Method" -> "Design",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
@@ -1784,6 +1791,13 @@ Dispatch[{
 		 "Light"  -> GrayLevel[0, 0.5],
 		 "Dark"   -> GrayLevel[0.9999999, 0.5],
 		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentServicesLLMKitFrame" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.26665],
+		 "Method" -> "Design",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
