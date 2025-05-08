@@ -1712,8 +1712,8 @@ Dispatch[{
 	|>,
 	"PreferencesContentInputFieldBackground" -> <|
 		 "Light"  -> GrayLevel[1.],
-		 "Dark"   -> GrayLevel[0.2846262],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.09805],
+		 "Method" -> "Design",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
