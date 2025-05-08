@@ -394,27 +394,6 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
-	"ChatMenuModelsIcon" -> <|
-		 "Light"  -> GrayLevel[0.50196],
-		 "Dark"   -> GrayLevel[0.7483875],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
-	"ChatMenuModelsIconBackground" -> <|
-		 "Light"  -> GrayLevel[1.],
-		 "Dark"   -> GrayLevel[0.1989364],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
-	"ChatMenuPersonaManagerIcon" -> <|
-		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.1989364],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
 		 "Dark"   -> GrayLevel[0.1729358],
@@ -564,28 +543,28 @@ Dispatch[{
 	|>,
 	"ErrorMessageBlockedBackground" -> <|
 		 "Light"  -> RGBColor[0.9529411, 0.9843137, 1.],
-		 "Dark"   -> RGBColor[0.2943442, 0.2943442, 0.2943442],
+		 "Dark"   -> RGBColor[0.2943441, 0.2943441, 0.2943441],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageBlocked",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedCloseButtonBackground" -> <|
 		 "Light"  -> RGBColor[0.490196, 0.7803921, 0.9333333],
-		 "Dark"   -> RGBColor[0.3915113, 0.6067568, 0.7331108],
+		 "Dark"   -> RGBColor[0.3952244, 0.6138813, 0.7415961],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedCloseButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.8352941, 0.9411764],
-		 "Dark"   -> RGBColor[0.4493052, 0.6727633, 0.7984554],
+		 "Dark"   -> RGBColor[0.4566859, 0.6855890, 0.8132706],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedCloseButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Dark"   -> RGBColor[0.2048508, 0.3290300, 0.4134770],
+		 "Dark"   -> RGBColor[0.2032162, 0.3255968, 0.4091064],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -599,21 +578,21 @@ Dispatch[{
 	|>,
 	"ErrorMessageBlockedCloseButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.490196, 0.7803921, 0.9333333],
-		 "Dark"   -> RGBColor[0.3915113, 0.6067568, 0.7331108],
+		 "Dark"   -> RGBColor[0.3952244, 0.6138813, 0.7415961],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedCloseButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.7843137, 0.9137254, 0.9843137],
-		 "Dark"   -> RGBColor[0.4847537, 0.7667800, 0.9161837],
+		 "Dark"   -> RGBColor[0.5197441, 0.7830529, 0.9238827],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedCloseButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Dark"   -> RGBColor[0.2048508, 0.3290300, 0.4134770],
+		 "Dark"   -> RGBColor[0.2032162, 0.3255968, 0.4091064],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -634,49 +613,49 @@ Dispatch[{
 	|>,
 	"ErrorMessageBlockedFrame" -> <|
 		 "Light"  -> RGBColor[0.6666666, 0.8549019, 0.9568627],
-		 "Dark"   -> RGBColor[0.3397979, 0.5035732, 0.6066078],
+		 "Dark"   -> RGBColor[0.3164906, 0.4597856, 0.5532260],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageBlocked",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedIcon" -> <|
 		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
-		 "Dark"   -> RGBColor[0.3435086, 0.7242286, 0.9108964],
+		 "Dark"   -> RGBColor[0.3441203, 0.7070775, 0.8886718],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageBlocked",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedLabelButtonBackground" -> <|
 		 "Light"  -> RGBColor[0.490196, 0.7803921, 0.9333333],
-		 "Dark"   -> RGBColor[0.3915113, 0.6067568, 0.7331108],
+		 "Dark"   -> RGBColor[0.3952244, 0.6138813, 0.7415961],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedLabelButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.7843137, 0.9137254, 0.9843137],
-		 "Dark"   -> RGBColor[0.4847537, 0.7667800, 0.9161837],
+		 "Dark"   -> RGBColor[0.5197441, 0.7830529, 0.9238827],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedLabelButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Dark"   -> RGBColor[0.2048508, 0.3290300, 0.4134770],
+		 "Dark"   -> RGBColor[0.2032162, 0.3255968, 0.4091064],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedLabelButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.8352941, 0.9411764],
-		 "Dark"   -> RGBColor[0.4493052, 0.6727633, 0.7984554],
+		 "Dark"   -> RGBColor[0.4566859, 0.6855890, 0.8132706],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageBlockedLinkFontHover" -> <|
 		 "Light"  -> RGBColor[0.2666666, 0.6156862, 0.8],
-		 "Dark"   -> RGBColor[0.3360057, 0.7234408, 0.9192360],
+		 "Dark"   -> RGBColor[0.3382000, 0.7080240, 0.8986975],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageBlocked",
 		 "Notes"  -> ""
@@ -697,14 +676,14 @@ Dispatch[{
 	|>,
 	"ErrorMessageFatalCloseButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[1., 0.7921568, 0.7607843],
-		 "Dark"   -> RGBColor[0.9415641, 0.5779578, 0.5095406],
+		 "Dark"   -> RGBColor[0.9470760, 0.5981749, 0.5334893],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageFatalCloseButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.3960784, 0.2549019],
-		 "Dark"   -> RGBColor[0.6437814, 0.3027361, 0.1737319],
+		 "Dark"   -> RGBColor[0.6050361, 0.2910187, 0.1671001],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -725,14 +704,14 @@ Dispatch[{
 	|>,
 	"ErrorMessageFatalCloseButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[1., 0.6470588, 0.5921568],
-		 "Dark"   -> RGBColor[0.9109884, 0.4262514, 0.3390129],
+		 "Dark"   -> RGBColor[0.9146621, 0.4366346, 0.3506754],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageFatalCloseButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.3960784, 0.2549019],
-		 "Dark"   -> RGBColor[0.6437814, 0.3027361, 0.1737319],
+		 "Dark"   -> RGBColor[0.6050361, 0.2910187, 0.1671001],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -753,7 +732,7 @@ Dispatch[{
 	|>,
 	"ErrorMessageFatalFrame" -> <|
 		 "Light"  -> RGBColor[1., 0.7686274, 0.7294117],
-		 "Dark"   -> RGBColor[0.7628285, 0.3148004, 0.1983050],
+		 "Dark"   -> RGBColor[0.6869708, 0.2984622, 0.1853967],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageFatal",
 		 "Notes"  -> ""
@@ -767,56 +746,56 @@ Dispatch[{
 	|>,
 	"ErrorMessageFatalLabelButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[1., 0.7921568, 0.7607843],
-		 "Dark"   -> RGBColor[0.9415641, 0.5779578, 0.5095406],
+		 "Dark"   -> RGBColor[0.9470760, 0.5981749, 0.5334893],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageFatalLabelButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.3960784, 0.2549019],
-		 "Dark"   -> RGBColor[0.6437814, 0.3027361, 0.1737319],
+		 "Dark"   -> RGBColor[0.6050361, 0.2910187, 0.1671001],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageFatalLabelButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[1., 0.6470588, 0.5921568],
-		 "Dark"   -> RGBColor[0.9109884, 0.4262514, 0.3390129],
+		 "Dark"   -> RGBColor[0.9146621, 0.4366346, 0.3506754],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageFatalLinkFontHover" -> <|
 		 "Light"  -> RGBColor[0.8823529, 0.3294117, 0.2196078],
-		 "Dark"   -> RGBColor[0.9499245, 0.5631079, 0.4940351],
+		 "Dark"   -> RGBColor[0.9356597, 0.5690506, 0.5024120],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageFatal",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalBackground" -> <|
 		 "Light"  -> RGBColor[1., 0.9803921, 0.9490196],
-		 "Dark"   -> RGBColor[0.3232215, 0.3067767, 0.1467494],
+		 "Dark"   -> RGBColor[0.3232215, 0.3067766, 0.1467494],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalCloseButtonBackground" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.7568627, 0.3019607],
-		 "Dark"   -> RGBColor[0.7586882, 0.6141449, 0.2692910],
+		 "Dark"   -> RGBColor[0.7736218, 0.6243759, 0.2728723],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalCloseButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[1., 0.8862745, 0.6549019],
-		 "Dark"   -> RGBColor[0.8529645, 0.7226595, 0.3244836],
+		 "Dark"   -> RGBColor[0.8768154, 0.7394749, 0.3295705],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalCloseButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.9411764, 0.572549, 0.0823529],
-		 "Dark"   -> RGBColor[0.6651744, 0.4568082, 0.1714594],
+		 "Dark"   -> RGBColor[0.6628699, 0.4555662, 0.1713172],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -830,21 +809,21 @@ Dispatch[{
 	|>,
 	"ErrorMessageNonFatalCloseButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.7568627, 0.3019607],
-		 "Dark"   -> RGBColor[0.7586882, 0.6141449, 0.2692910],
+		 "Dark"   -> RGBColor[0.7736218, 0.6243759, 0.2728723],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalCloseButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.9843137, 0.7607843, 0.3058823],
-		 "Dark"   -> RGBColor[0.7642337, 0.6175747, 0.2646609],
+		 "Dark"   -> RGBColor[0.7796078, 0.6280438, 0.2680916],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalCloseButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.9411764, 0.572549, 0.0823529],
-		 "Dark"   -> RGBColor[0.6651744, 0.4568082, 0.1714594],
+		 "Dark"   -> RGBColor[0.6628699, 0.4555662, 0.1713172],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
@@ -865,42 +844,42 @@ Dispatch[{
 	|>,
 	"ErrorMessageNonFatalFrame" -> <|
 		 "Light"  -> RGBColor[1., 0.8470588, 0.6705882],
-		 "Dark"   -> RGBColor[0.4940377, 0.4035166, 0.1981610],
+		 "Dark"   -> RGBColor[0.4504077, 0.3715202, 0.1841903],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLabelButtonBackground" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.7568627, 0.3019607],
-		 "Dark"   -> RGBColor[0.7586882, 0.6141449, 0.2692910],
+		 "Dark"   -> RGBColor[0.7736218, 0.6243759, 0.2728723],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLabelButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[1., 0.8862745, 0.6549019],
-		 "Dark"   -> RGBColor[0.8529645, 0.7226595, 0.3244836],
+		 "Dark"   -> RGBColor[0.8768154, 0.7394749, 0.3295705],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLabelButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.9411764, 0.572549, 0.0823529],
-		 "Dark"   -> RGBColor[0.6651744, 0.4568082, 0.1714594],
+		 "Dark"   -> RGBColor[0.6628699, 0.4555662, 0.1713172],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLabelButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.9843137, 0.7607843, 0.3058823],
-		 "Dark"   -> RGBColor[0.7642337, 0.6175747, 0.2646609],
+		 "Dark"   -> RGBColor[0.7796078, 0.6280438, 0.2680916],
 		 "Method" -> "Background",
 		 "DC"     -> "ErrorMessageFatalDark",
 		 "Notes"  -> ""
 	|>,
 	"ErrorMessageNonFatalLinkFontHover" -> <|
 		 "Light"  -> RGBColor[0.8117647, 0.545098, 0.],
-		 "Dark"   -> RGBColor[0.9094903, 0.5997460, 0.0487317],
+		 "Dark"   -> RGBColor[0.8781603, 0.5828645, 0.0348532],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
@@ -925,6 +904,209 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "DC is ChatOutputBackground"
+	|>,
+	"IconsChatBlockSettingsMenuIcon_1" -> <|
+		 "Light"  -> GrayLevel[0.50196],
+		 "Dark"   -> GrayLevel[0.7483875],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatBlockSettingsMenuIcon_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1989364],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaFromURL_1" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaFromURL_2" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.65],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaFromURL_3" -> <|
+		 "Light"  -> GrayLevel[0.43137],
+		 "Dark"   -> GrayLevel[0.8],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaOther_1" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.1989364],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_1" -> <|
+		 "Light"  -> RGBColor[0.745098, 0.8235294, 1.],
+		 "Dark"   -> Hue[0.6, 0.45, 0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_2" -> <|
+		 "Light"  -> RGBColor[0.4235294, 0.4862745, 0.6862745],
+		 "Dark"   -> Hue[0.6, 0.55, 0.9, 0],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_3" -> <|
+		 "Light"  -> RGBColor[0.4235294, 0.4862745, 0.6862745],
+		 "Dark"   -> Hue[0.6, 0.55, 0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Opacity difference from color 2 in dark-mode"
+	|>,
+	"IconsToolIconDocumentationLookup_1" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationLookup_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationLookup_3" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_1" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_3" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_4" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_1" -> <|
+		 "Light"  -> RGBColor[0., 0.2902, 0.33137],
+		 "Dark"   -> Hue[0.5207069, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_3" -> <|
+		 "Light"  -> RGBColor[0.5, 0.7902, 0.83137],
+		 "Dark"   -> Hue[0.5207069, 0.398583, 0.4],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_4" -> <|
+		 "Light"  -> RGBColor[0., 0.58039, 0.66275],
+		 "Dark"   -> Hue[0.5207116, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_1" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_2" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_3" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_5" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_6" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_1" -> <|
+		 "Light"  -> RGBColor[0., 0.2902, 0.33137],
+		 "Dark"   -> Hue[0.5207069, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_2" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_3" -> <|
+		 "Light"  -> RGBColor[0.5, 0.7902, 0.83137],
+		 "Dark"   -> Hue[0.5207069, 0.398583, 0.4],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_4" -> <|
+		 "Light"  -> RGBColor[0., 0.58039, 0.66275],
+		 "Dark"   -> Hue[0.5207116, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
 	|>,
 	"InlineReferenceTextFont" -> <|
 		 "Light"  -> GrayLevel[0.2],

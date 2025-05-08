@@ -4,12 +4,12 @@ Overlay[
   Pane[
    Graphics[
     {
-     RGBColor[ 0.0, 0.2902, 0.33137 ],
+     color @ "IconsToolIconWebSearcher_1",
      Opacity[ 1.0 ],
      {
       Thickness[ 0.05 ],
       {
-       FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+       FaceForm @ { color @ "IconsToolIconWebSearcher_2", Opacity[ 1.0 ] },
        FilledCurve[
         { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
         {
@@ -32,7 +32,7 @@ Overlay[
        ]
       },
       {
-       FaceForm @ { RGBColor[ 0.5, 0.7902, 0.83137 ], Opacity[ 1.0 ] },
+       FaceForm @ { color @ "IconsToolIconWebSearcher_3", Opacity[ 1.0 ] },
        FilledCurve[
         {
          {
@@ -806,7 +806,7 @@ Overlay[
        ]
       },
       {
-       FaceForm @ { RGBColor[ 0.0, 0.58039, 0.66275 ], Opacity[ 1.0 ] },
+       FaceForm @ { color @ "IconsToolIconWebSearcher_4", Opacity[ 1.0 ] },
        FilledCurve[
         {
          {
@@ -1381,9 +1381,9 @@ Overlay[
   ],
   Graphics[
    {
-    { FaceForm @ GrayLevel[ 1 ], EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
+    { FaceForm @ color @ "IconsToolIconWebSearcher_2", EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
     {
-     GrayLevel[ 1 ],
+     color @ "IconsToolIconWebSearcher_2",
      CapForm[ "Round" ],
      Thickness[ 0.225 ],
      Line @ { { 10, 14 }, { 19.5, 4.5 } }
@@ -1391,7 +1391,7 @@ Overlay[
     {
      Thickness[ 0.041667 ],
      {
-      FaceForm @ { RGBColor[ 0.53725, 0.53725, 0.53725 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebImageSearcher_5", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -1419,7 +1419,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebSearcher_2", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -1442,7 +1442,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { RGBColor[ 0.39216, 0.39216, 0.39216 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebImageSearcher_6", Opacity[ 1.0 ] },
       FilledCurve[
        {
         { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },
