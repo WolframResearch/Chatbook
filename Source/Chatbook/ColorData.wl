@@ -1782,14 +1782,14 @@ Dispatch[{
 	|>,
 	"PreferencesContentServicesIconFade_1" -> <|
 		 "Light"  -> GrayLevel[1, 0.5],
-		 "Dark"   -> GrayLevel[0.1601523, 0.5],
+		 "Dark"   -> GrayLevel[0.09805, 0.5],
 		 "Method" -> "Feature",
 		 "DC"     -> "PreferencesContent",
-		 "Notes"  -> ""
+		 "Notes"  -> "Color must match background, see PreferencesContentBackground"
 	|>,
 	"PreferencesContentServicesIconFade_2" -> <|
-		 "Light"  -> GrayLevel[0, 0.5],
-		 "Dark"   -> GrayLevel[0.9999999, 0.5],
+		 "Light"  -> GrayLevel[0],
+		 "Dark"   -> GrayLevel[1],
 		 "Method" -> "Feature",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
