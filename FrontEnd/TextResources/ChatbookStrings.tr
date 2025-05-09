@@ -156,7 +156,7 @@
 "ToolManagerTooltipNonDeletable2" -> "`name` is provided by the persona `persona` and cannot be deleted separately.",
 "ToolManagerDeleteTool" -> "Delete Tool",
 
-"UIInitializeChatbook" -> "Initializing Chatbook\[Ellipsis]",
+"UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "Enable AI Chat Features",
 "UIAutomaticAnalysisLabel" -> "Automatically analyze outputs",
 "UIAutomaticAnalysisTooltip" -> "If enabled, automatic AI provided suggestions will be added following evaluation results.",

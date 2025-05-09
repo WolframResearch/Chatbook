@@ -156,7 +156,7 @@
 "ToolManagerTooltipNonDeletable2" -> "`name` ha sido proporcionada por la persona `persona` y no puede eliminarse por separado.",
 "ToolManagerDeleteTool" -> "Eliminar herramienta",
 
-"UIInitializeChatbook" -> "Initializing Chatbook\[Ellipsis]",
+"UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "Habilitar caracter\[IAcute]sticas de chat de IA",
 "UIAutomaticAnalysisLabel" -> "Analizar salidas autom\[AAcute]ticamente",
 "UIAutomaticAnalysisTooltip" -> "Si ha sido habilitado, se agregar\[AAcute]n sugerencias autom\[AAcute]ticas proporcionadas por IA luego de los resultados de la evaluaci\[OAcute].",
