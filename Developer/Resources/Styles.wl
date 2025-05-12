@@ -158,7 +158,7 @@ Cell[
             Cell[
                 BoxData[
                     DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[
-                        color @ "SendChatButtonFrame",
+                        color @ "SendChatButtonFrameHover",
                         color @ "SendChatButtonBackgroundHover"
                     ]
                 ],
@@ -332,6 +332,7 @@ Cell[
     CellAutoOverwrite    -> True,
     CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
+    CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
     CodeAssistOptions    -> { "AutoDetectHyperlinks" -> False },
@@ -690,6 +691,8 @@ Cell[
 (*TextRefLink*)
 
 
+With[ { fc = color @ "LinkFont" },
+
 Cell[
     StyleData[ "TextRefLink" ],
     TemplateBoxOptions -> {
@@ -697,7 +700,7 @@ Cell[
             TagBox[
                 ButtonBox[
                     StyleBox[ #1, ShowStringCharacters -> True, FontFamily -> "Source Sans Pro" ],
-                    BaseStyle      -> "Link",
+                    BaseStyle      -> {"Link", FontColor -> fc},
                     ButtonData     -> #2,
                     ContentPadding -> False
                 ],
@@ -705,6 +708,8 @@ Cell[
             ]
         ]
     }
+]
+
 ]
 
 
@@ -748,7 +753,7 @@ Cell[
 
 With[
     {
-        frameColor = color @ "ChatOutputMenuButtonFrame"
+        frameColor = color @ "ChatOutputMenuButtonFrameHover"
     },
 
 Cell[
@@ -769,7 +774,7 @@ Cell[
                             Method     -> "Preemptive"
                         ],
                         RoundingRadius -> 3,
-                        FrameStyle     -> frameColor,
+                        FrameStyle     -> None,
                         Background     -> None,
                         FrameMargins   -> 0,
                         ContentPadding -> False,
