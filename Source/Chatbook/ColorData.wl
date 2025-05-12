@@ -235,15 +235,15 @@ Dispatch[{
 	|>,
 	"ChatCodeBlockTemplateBackgroundTop" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.0980392],
-		 "Method" -> "Design",
+		 "Dark"   -> GrayLevel[0.2570494],
+		 "Method" -> "Background",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, code block background for known programming languages. Matches notebook default background."
 	|>,
 	"ChatCodeBlockTemplateFrame" -> <|
 		 "Light"  -> GrayLevel[0.92941],
-		 "Dark"   -> RGBColor[0.1608, 0.2314, 0.30195],
-		 "Method" -> "Design",
+		 "Dark"   -> GrayLevel[0.3231739],
+		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, frame around code blocks. Matches ChatOutputFrame."
 	|>,
@@ -466,15 +466,15 @@ Dispatch[{
 	|>,
 	"ChatOutputMenuButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
-		 "Dark"   -> RGBColor[0.2039, 0.2549, 0.3138],
-		 "Method" -> "Design",
+		 "Dark"   -> RGBColor[0.1579911, 0.1724805, 0.2090331],
+		 "Method" -> "Background",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "Light color matches FramedChatCellFrame on hover"
 	|>,
 	"ChatOutputMenuButtonFrameHover" -> <|
 		 "Light"  -> GrayLevel[1, 0],
-		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
-		 "Method" -> "Design",
+		 "Dark"   -> GrayLevel[0.2191954, 0.],
+		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, vertical ellipsis button, fully transparent frame in light-mode"
 	|>,
@@ -1145,8 +1145,8 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.8980392, 0.9294117],
-		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
-		 "Method" -> "Design",
+		 "Dark"   -> RGBColor[0.0908663, 0.1079911, 0.1212405],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
@@ -1894,8 +1894,8 @@ Dispatch[{
 	|>,
 	"SendChatButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.945098, 0.9686274, 0.9921568],
-		 "Dark"   -> RGBColor[0.2039, 0.2549, 0.3138],
-		 "Method" -> "Design",
+		 "Dark"   -> RGBColor[0.1510782, 0.1870770, 0.2466272],
+		 "Method" -> "Background",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
@@ -1915,8 +1915,8 @@ Dispatch[{
 	|>,
 	"SideChatBackground" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.9882352, 1.],
-		 "Dark"   -> RGBColor[0.1098, 0.1608, 0.2157],
-		 "Method" -> "Design",
+		 "Dark"   -> RGBColor[0.2151981, 0.2151981, 0.2151981],
+		 "Method" -> "Background",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
