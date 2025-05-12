@@ -163,7 +163,7 @@ Cell[
 Cell[
     StyleData[ "ChatInputField" ],
     CellFrame        -> 1,
-    CellFrameColor   -> GrayLevel[ 0.85 ],
+    CellFrameColor   -> color @ "NA_ChatInputFieldCellFrame",
     CellFrameMargins -> { { 5, 5 }, { 0, 0 } }
 ]
 
