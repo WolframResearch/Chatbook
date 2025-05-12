@@ -1228,7 +1228,7 @@ buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
         FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
-        Background       -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
+        Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundHover",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
         RoundingRadius   -> 3
