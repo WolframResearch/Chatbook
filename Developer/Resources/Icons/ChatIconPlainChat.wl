@@ -2,7 +2,7 @@ Graphics[
  {
   Thickness[ 0.038462 ],
   {
-   FaceForm @ { RGBColor[ 0.8549, 0.88235, 0.87843 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "ModelPlainChatIconBackground", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -46,7 +46,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { RGBColor[ 0.67451, 0.71765, 0.73725 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "ModelPlainChatIconEdge", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
