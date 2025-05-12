@@ -1051,7 +1051,7 @@ Join[
 			"Icon"    -> getIcon @ "AdvancedSettings",
 			"MenuTag" -> "AdvancedSettings",
 			"Menu"    :> createAdvancedSettingsMenu @ targetObj,
-			"Width"   -> 180
+			"Width"   -> 200
 		|>
 	}
 ]

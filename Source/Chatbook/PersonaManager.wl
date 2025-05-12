@@ -257,8 +257,8 @@ formatName[ "PacletRepository", name: Except[ $$unspecified ], link_ ] :=
 formatName[ origin_String, name: Except[ $$unspecified ], link_ ] :=
     Hyperlink[
         Mouseover[
-            Grid @ { { formatName @ name, chatbookExpression[ "PeelOff" ] } },
-            Grid @ { { formatName @ name, chatbookExpression[ "PeelOff-hover" ] } }
+            Grid[ { { formatName @ name, "\[UpperRightArrow]" } }, Spacings -> { 0.2, 0 } ],
+            Grid[ { { formatName @ name, "\[UpperRightArrow]" } }, Spacings -> { 0.2, 0 } ]
         ],
         link,
         BaseStyle -> { LineBreakWithin -> False }

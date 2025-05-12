@@ -69,12 +69,12 @@ Overlay[
       ]
      },
      {
-      EdgeForm @ { GrayLevel[ 1 ], Thickness[ 0.025 ] },
+      EdgeForm @ { color @ "IconsToolIconWebImageSearcher_1", Thickness[ 0.025 ] },
       FaceForm @ None,
       Rectangle[ { 15, 20 }, { 48, 48 } ]
      },
      {
-      EdgeForm @ { GrayLevel[ 1 ], Thickness[ 0.05 ] },
+      EdgeForm @ { color @ "IconsToolIconWebImageSearcher_1", Thickness[ 0.05 ] },
       FaceForm @ None,
       Rectangle[ { 14, 19 }, { 49, 49 }, RoundingRadius -> 1 ]
      }
@@ -86,9 +86,9 @@ Overlay[
   ],
   Graphics[
    {
-    { FaceForm @ GrayLevel[ 1 ], EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
+    { FaceForm @ color @ "IconsToolIconWebImageSearcher_1", EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
     {
-     GrayLevel[ 1 ],
+     color @ "IconsToolIconWebImageSearcher_1",
      CapForm[ "Round" ],
      Thickness[ 0.225 ],
      Line @ { { 10, 14 }, { 19.5, 4.5 } }
@@ -96,7 +96,7 @@ Overlay[
     {
      Thickness[ 0.041667 ],
      {
-      FaceForm @ { RGBColor[ 0.53725, 0.53725, 0.53725 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebImageSearcher_2", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -124,7 +124,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebImageSearcher_1", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -147,7 +147,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { RGBColor[ 0.39216, 0.39216, 0.39216 ], Opacity[ 1.0 ] },
+      FaceForm @ { color @ "IconsToolIconWebImageSearcher_3", Opacity[ 1.0 ] },
       FilledCurve[
        {
         { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },

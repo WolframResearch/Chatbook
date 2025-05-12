@@ -1,7 +1,7 @@
 (* ::Package:: *)
-
+Function[ Evaluate @ ToBoxes @
 Graphics[{Thickness[0.07692307692307693],
-   FaceForm[{color @ "NA_ToolbarFont", Opacity[1.]}],
+   FaceForm[{#, Opacity[1.]}],
    FilledCurve[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0},
       {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
       {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3},
@@ -21,3 +21,4 @@ Graphics[{Thickness[0.07692307692307693],
       {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]},
   AspectRatio -> Automatic, ImageSize -> {20, 20}, PlotRange -> {{-6, 14}, {-4, 16}},
   BaselinePosition -> Center -> Center]
+]
