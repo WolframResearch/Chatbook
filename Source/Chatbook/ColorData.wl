@@ -394,27 +394,6 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
-	"ChatMenuModelsIcon" -> <|
-		 "Light"  -> GrayLevel[0.50196],
-		 "Dark"   -> GrayLevel[0.7483875],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
-	"ChatMenuModelsIconBackground" -> <|
-		 "Light"  -> GrayLevel[1.],
-		 "Dark"   -> GrayLevel[0.1989364],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
-	"ChatMenuPersonaManagerIcon" -> <|
-		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.1989364],
-		 "Method" -> "Feature",
-		 "DC"     -> "ChatMenu",
-		 "Notes"  -> ""
-	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
 		 "Dark"   -> GrayLevel[0.1729358],
@@ -968,23 +947,205 @@ Dispatch[{
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "DC is ChatOutputBackground"
 	|>,
-	"IconsChatIconNotebookAssistant_Background" -> <|
-		 "Light"  -> GrayLevel[1],
+	"IconsChatBlockSettingsMenuIcon_1" -> <|
+		 "Light"  -> GrayLevel[0.50196],
+		 "Dark"   -> GrayLevel[0.7483875],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatBlockSettingsMenuIcon_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1989364],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaFromURL_1" -> <|
+		 "Light"  -> GrayLevel[1.],
 		 "Dark"   -> GrayLevel[0.0980392],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
-	"IconsChatIconNotebookAssistant_Edge" -> <|
+	"IconsPersonaFromURL_2" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.65],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaFromURL_3" -> <|
+		 "Light"  -> GrayLevel[0.43137],
+		 "Dark"   -> GrayLevel[0.8],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaOther_1" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.1989364],
+		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_1" -> <|
+		 "Light"  -> RGBColor[0.745098, 0.8235294, 1.],
+		 "Dark"   -> Hue[0.6, 0.45, 0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_2" -> <|
+		 "Light"  -> RGBColor[0.4235294, 0.4862745, 0.6862745],
+		 "Dark"   -> Hue[0.6, 0.55, 0.9, 0],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsPersonaUnknown_3" -> <|
+		 "Light"  -> RGBColor[0.4235294, 0.4862745, 0.6862745],
+		 "Dark"   -> Hue[0.6, 0.55, 0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Opacity difference from color 2 in dark-mode"
+	|>,
+	"IconsToolIconDocumentationLookup_1" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationLookup_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationLookup_3" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_1" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_3" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconDocumentationSearcher_4" -> <|
 		 "Light"  -> GrayLevel[0.53725],
 		 "Dark"   -> GrayLevel[0.72],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
-	"IconsChatIconNotebookAssistant_SpiralEdge" -> <|
-		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
-		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
+	"IconsToolIconWebFetcher_1" -> <|
+		 "Light"  -> RGBColor[0., 0.2902, 0.33137],
+		 "Dark"   -> Hue[0.5207069, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_2" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_3" -> <|
+		 "Light"  -> RGBColor[0.5, 0.7902, 0.83137],
+		 "Dark"   -> Hue[0.5207069, 0.398583, 0.4],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebFetcher_4" -> <|
+		 "Light"  -> RGBColor[0., 0.58039, 0.66275],
+		 "Dark"   -> Hue[0.5207116, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_1" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_2" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_3" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_5" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebImageSearcher_6" -> <|
+		 "Light"  -> GrayLevel[0.39216],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_1" -> <|
+		 "Light"  -> RGBColor[0., 0.2902, 0.33137],
+		 "Dark"   -> Hue[0.5207069, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_2" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_3" -> <|
+		 "Light"  -> RGBColor[0.5, 0.7902, 0.83137],
+		 "Dark"   -> Hue[0.5207069, 0.398583, 0.4],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsToolIconWebSearcher_4" -> <|
+		 "Light"  -> RGBColor[0., 0.58039, 0.66275],
+		 "Dark"   -> Hue[0.5207116, 1., 0.7],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1061,8 +1222,8 @@ Dispatch[{
 	|>,
 	"ManagerGridHeaderBackground" -> <|
 		 "Light"  -> GrayLevel[0.898],
-		 "Dark"   -> GrayLevel[0.0747466],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
 	|>,
@@ -1082,8 +1243,8 @@ Dispatch[{
 	|>,
 	"ManagerGridItemBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.1389923],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona/Tool manager dialogs, preferences dialog"
 	|>,
