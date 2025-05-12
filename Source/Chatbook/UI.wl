@@ -66,17 +66,73 @@ CreateToolbarContent[ ] := DynamicModule[{
 	menuCell = EvaluationCell[ ];
 	isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
 
-	PaneSelector[
-		{
-			True -> ((* Creating the menu is expensive. The Dynamic means we only create it when it is first displayed. *)
+	mainToolbarMenuContent[ True, nbObj, menuCell, isChatEnabled ]
+] /; TrueQ @ alreadyLoadedMenuQ;
+
+(*
+	The percolator only appears the first time the menu loads when invoked from the default toolbar.
+	Note that it can quickly flash if the LLM models were first loaded elsewhere, like when creating a new ChatInput cell,
+	but that's an OK compromise. *)
+CreateToolbarContent[ ] := DynamicModule[{
+	nbObj,
+	menuCell,
+	isChatEnabled,
+	display
+},
+	(* Show the progress indicator as soon as possible *)
+	display =
+		Pane[
+			Column @ {
+				Style[ tr @ "UIInitializeChatbook", "ChatMenuLabel" ],
+				ProgressIndicator[ Appearance -> "Percolate" ]
+			},
+			ImageMargins -> 5
+		];
+
+	Dynamic[ display ],
+
+	Initialization :> (
+		nbObj = EvaluationNotebook[ ];
+		menuCell = EvaluationCell[ ];
+		isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
+		display = mainToolbarMenuContent[ False, nbObj, menuCell, isChatEnabled ];
+		alreadyLoadedMenuQ = True
+	),
+
+	SynchronousInitialization -> False
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mainToolbarMenuContent*)
+
+mainToolbarMenuContent // beginDefinition;
+
+Attributes[mainToolbarMenuContent] = {HoldRest};
+
+mainToolbarMenuContent[ alreadyLoadedMenuQ_, nbObj_, menuCell_, isChatEnabled_ ] :=
+PaneSelector[
+	{
+		True -> If[ alreadyLoadedMenuQ,
+			((* Creating the menu is expensive even if it's already loaded once before.
+				The Dynamic means we only create it when it is first displayed.
+				So if the False case of this PaneSelector happens first, then createChatNotEnabledToolbar won't take time to load. *)
 				Dynamic[ makeToolbarMenuContent[ menuCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
 			),
-			False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
-		},
-		Dynamic @ isChatEnabled,
-		ImageSize -> Automatic
-	]
-];
+			(* If the menu is generating for the first time then we can't have the Dynamic here or else it competes with Dynamic[display] *)
+			makeToolbarMenuContent[ menuCell, nbObj ]
+		],
+		False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
+	},
+	Dynamic @ isChatEnabled,
+	ImageSize -> Automatic
+]
+
+mainToolbarMenuContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeToolbarMenuContent*)
 
 makeToolbarMenuContent[ menuCell_, nbObj_NotebookObject ] := Enclose[
 	Module[ { items, item1, item2, new },
@@ -1109,6 +1165,22 @@ createAdvancedSettingsMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*wolframServiceMenuItem*)
+wolframServiceMenuItem // beginDefinition;
+
+wolframServiceMenuItem[ targetObj_, model_ ] :=
+<|
+	"Type"   -> "Setter",
+	"Label"  -> "Wolfram",
+	"Icon"   -> serviceIcon[ model, "Wolfram" ],
+	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
+	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
+|>
+
+wolframServiceMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*createServiceMenu*)
 createServiceMenu // beginDefinition;
 
@@ -1120,20 +1192,52 @@ With[
 	Join[
 		{
 			<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
-			<|
-				"Type"   -> "Setter",
-				"Label"  -> "Wolfram",
-				"Icon"   -> serviceIcon[ model, "Wolfram" ],
-				"Check"  -> serviceIconCheck[ model, "Wolfram" ],
-				"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
-			|>,
+			wolframServiceMenuItem[ targetObj, model ],
 			<| "Type" -> "Delimiter" |>
 		},
 		Map[
 			createServiceItem[ targetObj, model, #1 ] &,
 			DeleteCases[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ]
 	]
-];
+] /; AssociationQ @ $serviceCache;
+
+createServiceMenu[ targetObj_ ] := {
+With[
+	{
+		model = currentChatSettings[ targetObj, "Model" ]
+	},
+	<|
+		"Type"        -> "Delayed",
+		"InitialMenu" -> {
+			<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
+			wolframServiceMenuItem[ targetObj, model ],
+			<| "Type" -> "Delimiter" |>,
+			<|
+				"Type"    -> "Custom",
+				"Content" ->
+					Pane[
+						Column @ {
+							Style[ tr @ "UIModelsServicesGet", "ChatMenuLabel" ],
+							ProgressIndicator[ Appearance -> "Percolate" ]
+						},
+						ImageMargins -> 5
+					]
+			|>
+		},
+		"FinalMenu" :>
+			Join[
+				{
+					<| "Type" -> "Header", "Label" -> tr @ "UIModelsServices" |>,
+					wolframServiceMenuItem[ targetObj, model ],
+					<| "Type" -> "Delimiter" |>
+				},
+				Map[
+					createServiceItem[ targetObj, model, #1 ] &,
+					DeleteCases[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ]
+			]
+	|>
+]
+};
 
 createServiceMenu // endDefinition;
 
