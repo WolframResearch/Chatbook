@@ -25,10 +25,11 @@ $instructions       = None;
 $$count = _Integer | UpTo[ _Integer ];
 $$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
-(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused *)
+(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype, downloadformatgroups *)
 $$ignoredXMLTag = Alternatives[
     "datasources",
     "definitions",
+    "downloadformatgroups",
     "expressiontypes",
     "imagesource",
     "infos",
@@ -36,6 +37,7 @@ $$ignoredXMLTag = Alternatives[
     "notes",
     "sources",
     "states",
+    "stepbystepcontenttype",
     "userinfoused"
 ];
 
@@ -283,54 +285,20 @@ makeMessagePairs // endDefinition;
 (*relatedWolframAlphaResultsPrompt*)
 relatedWolframAlphaResultsPrompt // beginDefinition;
 
-relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] /;
-    StringQ @ $wolframAlphaAppID := Enclose[
-        Catch @ Module[ { content, strings, resultsString },
-
-            content = ConfirmMatch[
-                relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
-                { ___Association },
-                "Content"
-            ];
-
-            If[ content === { }, Throw[ "" ] ];
-
-            strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
-
-            resultsString = StringRiffle[ strings, "\n\n" ];
-
-            StringJoin[
-                ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
-                resultsString,
-                If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
-                    ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
-                    ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
-                ]
-            ]
-        ],
-        throwInternalFailure
-    ];
-
 relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { queries, waResults, resultsString },
+    Catch @ Module[ { content, strings, resultsString },
 
-        queries = ConfirmMatch[
-            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
-            { ___String },
-            "Queries"
+        content = ConfirmMatch[
+            relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
+            { ___Association },
+            "Content"
         ];
 
-        If[ queries === { }, Throw[ "" ] ];
+        If[ content === { }, Throw[ "" ] ];
 
-        waResults = ConfirmMatch[ getAllWolframAlphaResults @ queries, { __String }, "WolframAlphaResults" ];
+        strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
 
-        resultsString = StringRiffle[
-            StringTrim @ DeleteDuplicatesBy[
-                Select[ waResults, StringQ ],
-                StringDelete @ Shortest[ "<result " ~~ __ ~~ ">" ]
-            ],
-            "\n\n"
-        ];
+        resultsString = StringRiffle[ strings, "\n\n" ];
 
         StringJoin[
             ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
@@ -345,13 +313,6 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
 ];
 
 relatedWolframAlphaResultsPrompt // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*waResultString*)
-waResultString // beginDefinition;
-waResultString[ result_String ] := body;
-waResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -684,7 +645,7 @@ relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCoun
 
         result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
 
-        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "Content" ] ]
+        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "InputInterpretation" ] ]
     ],
     throwInternalFailure
 ];
@@ -717,7 +678,8 @@ submitXMLRequest // Attributes = { HoldFirst };
 submitXMLRequest[ assoc_ ] :=
     submitXMLRequest[ assoc, # ] &;
 
-submitXMLRequest[ assoc_, query_String ] := Enclose[
+(* cSpell: ignore sbsmode, podstate *)
+submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Enclose[
     Module[ { request, task },
 
         If[ ! AssociationQ @ assoc, assoc = <| |> ];
@@ -731,15 +693,50 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
                 "Query" -> {
                     "input"       -> query,
                     "reinterpret" -> False,
-                    "appid"       -> ConfirmBy[ $wolframAlphaAppID, StringQ, "AppID" ],
+                    "appid"       -> $wolframAlphaAppID,
                     "format"      -> "image,plaintext",
-                    "output"      -> "xml"
+                    "output"      -> "xml",
+                    "sbsmode"     -> "StepByStepDetails",
+                    "podstate"    -> "Step-by-step solution,Show all steps"
                 }
             |>
         ];
 
         task = URLSubmit[
             request,
+            HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
+            HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
+            TimeConstraint       -> 30
+        ];
+
+        ConfirmMatch[ task, _TaskObject, "Task" ]
+    ],
+    throwInternalFailure
+];
+
+submitXMLRequest[ assoc_, query_String ] := Enclose[
+    Module[ { url, task },
+
+        If[ ! AssociationQ @ assoc, assoc = <| |> ];
+        If[ ! AssociationQ @ assoc @ query, assoc @ query = <| |> ];
+        assoc[ query, "Query" ] = query;
+        assoc[ query, "URL"   ] = makeWolframAlphaURL @ query;
+
+        url = ConfirmBy[
+            WolframAlpha[
+                query,
+                "URL",
+                PodStates -> { "Step-by-step solution", "Show all steps" },
+                Method    -> { "Formats" -> { "image", "plaintext" } }
+            ],
+            StringQ,
+            "URL"
+        ];
+
+        $lastURL = url;
+
+        task = URLSubmit[
+            url,
             HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
             HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
             TimeConstraint       -> 30
@@ -762,7 +759,7 @@ setXMLResult[ result_ ] :=
     setXMLResult[ result, # ] &;
 
 setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArray" -> bytes_ByteArray } ] := Enclose[
-    Module[ { xmlString, xml, warnings, processed },
+    Module[ { xmlString, xml, warnings, processed, query, input },
 
         xmlString = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "XMLString" ];
 
@@ -772,16 +769,47 @@ setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArr
             "XML"
         ];
 
-        warnings = Internal`Bag[ ];
+        warnings  = Internal`Bag[ ];
         processed = Block[ { $warnings = warnings }, processXML @ xml ];
+        query     = ConfirmBy[ result[ "Query" ], StringQ, "Query" ];
+        input     = ConfirmMatch[ inputInterpretation[ query, processed ], _String|_Missing, "Input" ];
 
         If[ ! AssociationQ @ result, result = <| |> ];
-        result = <| result, as, "Content" -> processed, "Warnings" -> Internal`BagPart[ warnings, All ] |>
+        result = <|
+            result,
+            as,
+            "InputInterpretation" -> input,
+            "Content"             -> processed,
+            "Warnings"            -> Internal`BagPart[ warnings, All ]
+        |>
     ],
     throwInternalFailure
 ];
 
 setXMLResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inputInterpretation*)
+inputInterpretation // beginDefinition;
+
+inputInterpretation[ query_String, content_ ] := FirstCase[
+    content,
+    s_String :> With[
+        {
+            int = StringCases[
+                s,
+                "# Input interpretation\n" ~~ Shortest[ i__ ] ~~ (("\n" ~~ "#".. ~~ " ") | EndOfString) :> i,
+                1
+            ]
+        },
+        StringTrim @ First @ int /; MatchQ[ int, { _String } ]
+    ],
+    Missing[ "NotFound", query ],
+    Infinity
+];
+
+inputInterpretation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -900,6 +928,13 @@ parsePodContent[ _String ] :=
     { };
 
 parsePodContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseAssumptions*)
+parseAssumptions // beginDefinition;
+parseAssumptions[ ___ ] := { }; (* TODO: Implement *)
+parseAssumptions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1057,13 +1092,6 @@ redundantCaptionQ[ KeyValuePattern[ "Caption" -> caption_String ], text_String ]
     StringDelete[ caption, Whitespace|"\\" ] === StringDelete[ text, Whitespace|"\\" ];
 
 redundantCaptionQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*parseAssumptions*)
-parseAssumptions // beginDefinition;
-parseAssumptions[ ___ ] := { }; (* TODO: Implement *)
-parseAssumptions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
