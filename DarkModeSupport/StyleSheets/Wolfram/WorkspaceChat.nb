@@ -87,7 +87,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.3.3.3954302646"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.3.5.3955431521"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -122,7 +122,7 @@ Notebook[
    FontColor ->
     LightDarkSwitched[
      RGBColor[0.2, 0.513725, 0.67451],
-     RGBColor[0.219842, 0.362557, 0.456388]
+     RGBColor[0.211599, 0.343616, 0.432091]
     ]
   ],
   Cell[
@@ -235,7 +235,7 @@ Notebook[
         FrameStyle ->
          LightDarkSwitched[
           RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.37503, 0.538177, 0.726895]
+          RGBColor[0.349809, 0.491095, 0.662898]
          ],
         RoundingRadius -> 8,
         StripOnInput -> False
@@ -266,7 +266,7 @@ Notebook[
           AbsoluteThickness[2],
           LightDarkSwitched[
            RGBColor[0.878431, 0.937255, 0.968627],
-           RGBColor[0.278311, 0.360962, 0.419838]
+           RGBColor[0.260094, 0.335555, 0.390402]
           ]
          ],
         ImageSize -> {Scaled[1], Automatic},
@@ -311,12 +311,12 @@ Notebook[
            Scrollbars -> Automatic
           ],
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.273977]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.278317]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
             AbsoluteThickness[2],
-            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.392133]]
+            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.36106]]
            ],
           ImageMargins -> {{0, 0}, {0, 8}},
           ImageSize -> {Full, Automatic}
@@ -336,7 +336,7 @@ Notebook[
           FrameStyle ->
            Directive[
             AbsoluteThickness[2],
-            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.392133]]
+            LightDarkSwitched[GrayLevel[0.89804], GrayLevel[0.36106]]
            ],
           ImageMargins -> {{0, 0}, {8, -2}},
           ImageSize -> {Full, Automatic}
@@ -374,7 +374,7 @@ Notebook[
              FontWeight -> Bold,
              FontSize -> 17,
              FontColor ->
-              LightDarkSwitched[GrayLevel[0.25], GrayLevel[0.943384]],
+              LightDarkSwitched[GrayLevel[0.25], GrayLevel[0.919831]],
              StripOnInput -> False
             ]
            },
@@ -397,7 +397,7 @@ Notebook[
            "Text",
            FontSize -> 13,
            FontColor ->
-            LightDarkSwitched[GrayLevel[0.5], GrayLevel[0.798588]],
+            LightDarkSwitched[GrayLevel[0.5], GrayLevel[0.753374]],
            LineBreakWithin -> False
           }
          ],
@@ -417,7 +417,7 @@ Notebook[
        FrameStyle ->
         LightDarkSwitched[
          RGBColor[0.92549, 0.941176, 0.960784],
-         RGBColor[0.298166, 0.330117, 0.393622]
+         RGBColor[0.280029, 0.30897, 0.368232]
         ],
        ImageSize -> {Automatic, Automatic},
        RoundingRadius -> 10,

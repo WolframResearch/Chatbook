@@ -710,7 +710,7 @@ fmQ+zP9w9dDwgZsHDT+4fVA+SngDAGbuTtY=
   PlotRange->{{-0.5, 14.5}, {-0.5, 14.5}}],
 
 "ChatMenuIcon" -> GraphicsBox[
-  {Thickness[0.071429], FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}], 
+  {Thickness[0.071429], FaceForm[{GrayLevel[0.2], Opacity[1.]}], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {
     0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
     0}}}, {{{6., 5.}, {8., 5.}, {8., 7.}, {6., 7.}, {6., 5.}}, {{6., 9.}, {8.,
@@ -1610,7 +1610,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
+      ImageSizeCache->{6., {3.0029296875, 8.1689453125}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -2992,7 +2992,7 @@ Mf2qcP/KggISxnfQgst/WH7M29xTG65/3nugQLkunO8CihBNfbj96PELAE+O
 
 "PersonaRawModel" -> GraphicsBox[
   {Thickness[0.038461538461538464`], 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[GrayLevel[1.]], 
     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -4023,8 +4023,7 @@ fBgfZj9MHcx96O5HsY/B0KH4utAnx34JOB/iXnaHHXKtrwN3aMP5qP5hd1iz
       "]]}}},
   ImageSize->16],
 
-"ToolManagerRepository" -> GraphicsBox[
-  {Thickness[0.05], 
+"ToolManagerRepository" -> GraphicsBox[{
    {FaceForm[{RGBColor[0.41961, 0.78431, 0.82745], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
@@ -4036,7 +4035,7 @@ r42QgfMh8rJwPoTWh/PbxW6e+35ZH24eWNjBAG4fKl8NztfdNPf9cjc1VPkG
 NYe7KmyNU5URfIg+BB/iHmk4319OLMu3WBpuHqp/EPz+Q181YvyV4XxJljA+
 3U0SDvsOiqsFs3I7SOuDbJaAhieXQ+/0PKFmB0R8occfABJPgUQ=
      "]]}, 
-   {Thickness[0.05], 
+   {FaceForm[GrayLevel[0]], 
     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
       3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
@@ -4063,7 +4062,7 @@ p+SwoShj4lsbZYdUyUcR4uWKcL6QiP2xO1vl4Pz25eGnjFxkHOxN43Z5nkHw
 QOVh4QfkQ/Tpw/ntYkCNl/VR5XGJM6Dz5eB8HibtdrFIGVR9wPhB0QeLL6T4
 BADCVp70
      "]]}, 
-   {Thickness[0.05], 
+   {FaceForm[GrayLevel[0]], 
     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {
       1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
       0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
@@ -4823,10 +4822,10 @@ xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
           GrayLevel[0.9], 
           GrayLevel[0.7]]], 
         GraphicsBox[{
-          RGBColor[0.2, 0.5137254901960784, 0.6745098039215687], 
+          RGBColor[0.6392156, 0.7882352, 0.9490196], 
           RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
-         1.1]}, Alignment -> {Center, Center}], FrameStyle -> GrayLevel[1], 
-      Background -> GrayLevel[1], RoundingRadius -> 3, FrameMargins -> 1, 
+         1.1]}, Alignment -> {Center, Center}], FrameStyle -> None, 
+      Background -> None, RoundingRadius -> 3, FrameMargins -> 1, 
       StripOnInput -> False], True -> FrameBox[
       OverlayBox[{
         DynamicBox[
@@ -4835,7 +4834,7 @@ xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
           GrayLevel[0.9], 
           GrayLevel[0.7]]], 
         GraphicsBox[{
-          RGBColor[0.2, 0.5137254901960784, 0.6745098039215687], 
+          RGBColor[0.6392156, 0.7882352, 0.9490196], 
           RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
          1.1]}, Alignment -> {Center, Center}], FrameStyle -> #, 
       Background -> #2, RoundingRadius -> 3, FrameMargins -> 1, StripOnInput -> 
@@ -4848,7 +4847,8 @@ xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
   PaneSelectorBox[{False -> FrameBox[
       GraphicsBox[{
         Thickness[0.055556], 
-        FaceForm[#], 
+        FaceForm[
+         RGBColor[0.6392156, 0.7882352, 0.9490196]], 
         FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
          0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
          3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
@@ -4864,12 +4864,13 @@ M2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB
 KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
 /HoO6PEFAPo2ybM=
          "]]}, AspectRatio -> Automatic, ImageSize -> #3, 
-       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> GrayLevel[1],
-       Background -> GrayLevel[1], RoundingRadius -> 3, FrameMargins -> 1, 
+       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> None, 
+      Background -> None, RoundingRadius -> 3, FrameMargins -> 1, 
       StripOnInput -> False], True -> FrameBox[
       GraphicsBox[{
         Thickness[0.055556], 
-        FaceForm[#], 
+        FaceForm[
+         RGBColor[0.6392156, 0.7882352, 0.9490196]], 
         FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
          0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
          3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
@@ -7451,7 +7452,7 @@ Ol8EjS+Dph+dL4GmHp0vg8aH0bj8pYAmjs5XcgAAE1oO7g==
   TagBox[
    TagBox[
     DynamicModuleBox[{
-     Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$}, 
+     Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$ = 1}, 
      OverlayBox[{
       PaneBox[
        AnimatorBox[Dynamic[
