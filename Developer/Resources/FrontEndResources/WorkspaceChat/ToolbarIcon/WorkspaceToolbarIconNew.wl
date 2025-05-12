@@ -1,6 +1,6 @@
 (* ::Package:: *)
-(*Note: color comes from BaseStyle setting elsewhere*)
-Graphics[{Thickness[0.058823529411764705],
+Function[ Evaluate @ ToBoxes @
+Graphics[{Thickness[0.058823529411764705], FaceForm[#],
   FilledCurve[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
        {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
        {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
@@ -21,3 +21,4 @@ Graphics[{Thickness[0.058823529411764705],
  ImageSize -> {22., 20.}, PlotRange -> {{-5., 17.}, {-3, 17}},
  AspectRatio -> Automatic, DefaultBaseStyle -> {},
  BaselinePosition -> Center -> Center]
+]
