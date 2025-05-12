@@ -340,8 +340,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -375,8 +375,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemFrame" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -426,6 +426,13 @@ Dispatch[{
 		 "Light"  -> GrayLevel[0.35],
 		 "Dark"   -> GrayLevel[0.8583498],
 		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuToolManagerIconEdge" -> <|
+		 "Light"  -> GrayLevel[0],
+		 "Dark"   -> GrayLevel[0],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -521,8 +528,8 @@ Dispatch[{
 		 "Notes"  -> "Cloud only: cell style action menu has white background"
 	|>,
 	"CloudToolbarPreferencesCellBackground" -> <|
-		 "Light"  -> GrayLevel[0.75],
-		 "Dark"   -> GrayLevel[0.5483285],
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.16249],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places, so leave as content color"
@@ -919,6 +926,27 @@ Dispatch[{
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
 	|>,
+	"FeedbackDialogFontSubtle" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.53749],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4706459],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogPreviewDataBackground" -> <|
+		 "Light"  -> GrayLevel[0.975],
+		 "Dark"   -> GrayLevel[0.1983200],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"FETaskDebugPanelBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
 		 "Dark"   -> GrayLevel[0.2325145],
@@ -1051,6 +1079,27 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona manager dialogs, preferences dialog"
+	|>,
+	"ModelPlainChatIconBackground" -> <|
+		 "Light"  -> RGBColor[0.8549, 0.88235, 0.87843],
+		 "Dark"   -> RGBColor[0.4196, 0.4549, 0.46275],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelPlainChatIconEdge" -> <|
+		 "Light"  -> RGBColor[0.67451, 0.71765, 0.73725],
+		 "Dark"   -> RGBColor[0.7255, 0.7725, 0.7843],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelRawModelIconBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1569],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
 	|>,
 	"NA_AssistantMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
