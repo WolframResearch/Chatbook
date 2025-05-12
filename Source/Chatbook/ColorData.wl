@@ -18,7 +18,7 @@ System`LightDarkSwitched;
 
 
 (* Conventions:
-	
+
 	Layout:
 
 	Chatbook has multiple interfaces that exist as toolbars, cells in the notebook's content area, and dialogs.
@@ -26,13 +26,13 @@ System`LightDarkSwitched;
 	The light-mode color is used for versions 14.1 and 14.2 and specific stylesheets exist for those versions.
 	Separate stylesheets exist for 14.3+ versions that support dark mode. See the definition of 'color' below.
 
-	The 'color' function is defined in the "Common" context of the Chatbook paclet, making it straightforward to 
+	The 'color' function is defined in the "Common" context of the Chatbook paclet, making it straightforward to
 	access in any file or build script. Include Needs[ "Wolfram`Chatbook`Common`" ], or in the case of some of the
 	build scripts, after calling Get on the paclet sources you can define a local version of the function e.g.
 	color = Wolfram`Chatbook`Common`color.
 
 	In the source files, use color["NameOfColor"] where you want the color "NameOfColor" to appear.
-	
+
 
 	Naming:
 
@@ -1146,6 +1146,27 @@ Dispatch[{
 	"IconsToolIconWebSearcher_4" -> <|
 		 "Light"  -> RGBColor[0., 0.58039, 0.66275],
 		 "Dark"   -> Hue[0.5207116, 1., 0.7],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatIconNotebookAssistant_Background" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatIconNotebookAssistant_Edge" -> <|
+		 "Light"  -> GrayLevel[0.53725],
+		 "Dark"   -> GrayLevel[0.72],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatIconNotebookAssistant_SpiralEdge" -> <|
+		 "Light"  -> RGBColor[0.86667, 0.066667, 0.],
+		 "Dark"   -> RGBColor[0.9333333, 0.1215686, 0.1333333],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -2306,7 +2327,7 @@ color // beginDefinition;
 With[{colordata = iColorData},
 
 	color[ name_String ] := LightDarkSwitched[ #Light, #Dark ]& @ Replace[ name, iColorData ] /; BoxForm`sufficientVersionQ[ 14.3 ];
-	
+
 	color[ name_String ] := #Light& @ Replace[ name, iColorData ]
 
 ];
