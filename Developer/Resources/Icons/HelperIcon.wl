@@ -1,6 +1,6 @@
 Graphics[
  {
-  Thickness[ 0.05 ],
+  Thickness[ 0.05 ], GrayLevel[ 0 ],
   {
    FaceForm @ { RGBColor[ 0.0, 0.52157, 0.8549 ], Opacity[ 1.0 ] },
    FilledCurve[
