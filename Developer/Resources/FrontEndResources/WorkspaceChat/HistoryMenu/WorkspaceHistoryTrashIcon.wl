@@ -79,7 +79,7 @@ RawBoxes @ ToBoxes @ Mouseover[
   {
    Thickness[ 0.090909 ],
    {
-    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
+    FaceForm @ color @ "NA_OverlayMenuIconHover",
     FilledCurve[
      {
       { { 0, 2, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -116,7 +116,7 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
+    FaceForm @ color @ "NA_OverlayMenuIconHover",
     FilledCurve[
      {
       { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },
@@ -131,14 +131,14 @@ RawBoxes @ ToBoxes @ Mouseover[
     ]
    },
    {
-    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
+    FaceForm @ color @ "NA_OverlayMenuIconHover",
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 0.517, 9.0 }, { 10.498, 9.0 }, { 10.498, 10.0 }, { 0.517, 10.0 }, { 0.517, 9.0 } } }
     ]
    },
    {
-    FaceForm @ color @ "NA_OverlayMenuIcon_Gray",
+    FaceForm @ color @ "NA_OverlayMenuIconHover",
     FilledCurve[
      { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
      { { { 4.515, 10.0 }, { 6.528, 10.0 }, { 6.528, 11.0 }, { 4.515, 11.0 }, { 4.515, 10.0 } } }
