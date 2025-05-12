@@ -340,8 +340,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -375,8 +375,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemFrame" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -417,8 +417,8 @@ Dispatch[{
 	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
-		 "Dark"   -> GrayLevel[0.1930434],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -426,6 +426,13 @@ Dispatch[{
 		 "Light"  -> GrayLevel[0.35],
 		 "Dark"   -> GrayLevel[0.8924651],
 		 "Method" -> "Feature",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
+	"ChatMenuToolManagerIconEdge" -> <|
+		 "Light"  -> GrayLevel[0],
+		 "Dark"   -> GrayLevel[0],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -1058,6 +1065,27 @@ Dispatch[{
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona manager dialogs, preferences dialog"
+	|>,
+	"ModelPlainChatIconBackground" -> <|
+		 "Light"  -> RGBColor[0.8549, 0.88235, 0.87843],
+		 "Dark"   -> RGBColor[0.4196, 0.4549, 0.46275],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelPlainChatIconEdge" -> <|
+		 "Light"  -> RGBColor[0.67451, 0.71765, 0.73725],
+		 "Dark"   -> RGBColor[0.7255, 0.7725, 0.7843],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelRawModelIconBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1569],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
 	|>,
 	"NA_AssistantMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
