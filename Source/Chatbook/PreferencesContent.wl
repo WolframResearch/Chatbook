@@ -1348,7 +1348,7 @@ makeLLMPanel[ ] :=
                 Spacings -> { Automatic, 0.7 } ],
             Background -> color @ "PreferencesContentBackground",
             FrameMargins -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle -> color @ "PreferencesContentFrame",
+            FrameStyle -> color @ "PreferencesContentServicesLLMKitFrame",
             ImageSize -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ];
@@ -1370,7 +1370,7 @@ makeServiceGrid[ ] :=
                 Background -> { { }, { { color @ "PreferencesContentBackground" } } },
                 ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
                 Dividers   -> { { }, { False, { True }, False } },
-                FrameStyle -> color @ "PreferencesContentFrame",
+                FrameStyle -> color @ "PreferencesContentDirectServiceConnectionsDelimiter",
                 Spacings   -> { Automatic, 0.7 } ],
             AppearanceElements -> { },
             FrameMargins -> 8,
@@ -1494,7 +1494,7 @@ createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := En
                     If[ type === "None",
                         Overlay[ { icon, Graphics[ Background -> color @ "PreferencesContentServicesIconFade_1", ImageSize -> { 21, 21 } ] } ],
                         icon ],
-                    Style[ service, FontColor -> If[ type === "None", color @ "PreferencesContentServicesIconFade_2", Inherited ] ],
+                    Style[ service, FontColor -> color @ "PreferencesContentServicesIconFade_2", FontOpacity -> If[ type === "None", 0.5, 1 ] ],
                     "",
                     connectOrDisconnectButton[ service, type, icon, Dynamic @ display ]
                 }

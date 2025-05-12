@@ -1,8 +1,8 @@
 (* ::Package:: *)
 
 (*
-	#1 -> FaceForm,
-	#2 -> Background,
+	#1 -> FrameStyle, "SendChatButtonFrameHover"
+	#2 -> Background, "SendChatButtonBackgroundHover"
 	#3 -> ImageSize *)
 Function[ Evaluate @ ToBoxes @
 	MouseAppearance[
@@ -11,7 +11,7 @@ Function[ Evaluate @ ToBoxes @
 				Graphics[
 					{
 						Thickness[ 0.055556 ],
-						FaceForm[ #1 ],
+						FaceForm[ color @ "SendChatButtonIcon" ],
 						FilledCurve[
 							{
 								{
@@ -68,8 +68,8 @@ Function[ Evaluate @ ToBoxes @
 					ImageSize -> #3,
 					PlotRange -> { { -0.5, 18.5 }, { -0.5, 18.5 } }
 				],
-				FrameStyle -> GrayLevel[ 1 ],
-				Background -> GrayLevel[ 1 ],
+				FrameStyle -> None,
+				Background -> None,
 				RoundingRadius -> 3,
 				FrameMargins -> 1
 			],
@@ -77,7 +77,7 @@ Function[ Evaluate @ ToBoxes @
 				Graphics[
 					{
 						Thickness[ 0.055556 ],
-						FaceForm[ #1 ],
+						FaceForm[ color @ "SendChatButtonIcon" ],
 						FilledCurve[
 							{
 								{
