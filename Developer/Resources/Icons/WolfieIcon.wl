@@ -1,6 +1,6 @@
 Graphics[
  {
-  Thickness[ 0.05 ],
+  Thickness[ 0.05 ], GrayLevel[ 0 ],
   {
    Thickness[ 0.05 ],
    FilledCurve[
