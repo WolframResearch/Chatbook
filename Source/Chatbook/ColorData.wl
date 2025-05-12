@@ -905,6 +905,27 @@ Dispatch[{
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
 	|>,
+	"FeedbackDialogFontSubtle" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.53749],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4706459],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogPreviewDataBackground" -> <|
+		 "Light"  -> GrayLevel[0.975],
+		 "Dark"   -> GrayLevel[0.1983200],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"FETaskDebugPanelBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
 		 "Dark"   -> GrayLevel[0.2325145],
