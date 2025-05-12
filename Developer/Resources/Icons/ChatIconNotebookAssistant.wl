@@ -2,7 +2,7 @@ Graphics[
  {
   Thickness[ 0.0625 ],
   {
-   FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "IconsChatIconNotebookAssistant_Background", Opacity[ 1.0 ] },
    FilledCurve[
     { { { 0, 2, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 } } },
     {
@@ -29,7 +29,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { RGBColor[ 0.53725, 0.53725, 0.53725 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "IconsChatIconNotebookAssistant_Edge", Opacity[ 1.0 ] },
    FilledCurve[
     {
      { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 } },
@@ -78,7 +78,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { RGBColor[ 0.86667, 0.066667, 0.0 ], Opacity[ 1.0 ] },
+   FaceForm @ { color @ "IconsChatIconNotebookAssistant_SpiralEdge", Opacity[ 1.0 ] },
    FilledCurve[
     {
      { { 1, 4, 3 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },

@@ -1654,14 +1654,14 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
     makeToolResponseMessage[ settings, settings[ "Model" ], response, toolResponse ];
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
-    (* If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
     makeToolResponseMessage0[
         If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
         settings[ "ToolResponseStyle" ],
         response,
         toolResponse
-    ]
+    ],
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ](* ,
+    If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
 };
 
 makeToolResponseMessage // endDefinition;

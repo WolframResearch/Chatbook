@@ -228,8 +228,8 @@ Dispatch[{
 	|>,
 	"ChatCodeBlockTemplateBackgroundBottom" -> <|
 		 "Light"  -> RGBColor[0.9882352, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.2460642, 0.2460642, 0.2460642],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1373, 0.1647, 0.1961],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, copy/insert button area, matches the ChatOutput background"
 	|>,
@@ -238,14 +238,14 @@ Dispatch[{
 		 "Dark"   -> GrayLevel[0.2570494],
 		 "Method" -> "Background",
 		 "DC"     -> "ChatOutput",
-		 "Notes"  -> "In ChatOutput UI, code block background for known programming languages"
+		 "Notes"  -> "In ChatOutput UI, code block background for known programming languages. Matches notebook default background."
 	|>,
 	"ChatCodeBlockTemplateFrame" -> <|
 		 "Light"  -> GrayLevel[0.92941],
 		 "Dark"   -> GrayLevel[0.3231739],
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
-		 "Notes"  -> "In ChatOutput UI, frame around code blocks"
+		 "Notes"  -> "In ChatOutput UI, frame around code blocks. Matches ChatOutputFrame."
 	|>,
 	"ChatCodeInlineTemplateBackground" -> <|
 		 "Light"  -> GrayLevel[1],
@@ -340,8 +340,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -375,8 +375,8 @@ Dispatch[{
 	|>,
 	"ChatMenuItemFrame" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[0.1930434],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -408,6 +408,13 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
+	"ChatMenuToolManagerIconEdge" -> <|
+		 "Light"  -> GrayLevel[0],
+		 "Dark"   -> GrayLevel[0],
+		 "Method" -> "Design",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> ""
+	|>,
 	"ChatMenuToolManagerIconLeft" -> <|
 		 "Light"  -> RGBColor[0.41961, 0.78431, 0.82745],
 		 "Dark"   -> RGBColor[0.3088701, 0.6026292, 0.6378993],
@@ -424,10 +431,17 @@ Dispatch[{
 	|>,
 	"ChatOutputBackground" -> <|
 		 "Light"  -> RGBColor[0.9882352, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.2460642, 0.2460642, 0.2460642],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1373, 0.1647, 0.1961],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> ""
+	|>,
+	"ChatOutputFrame" -> <|
+		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Dark"   -> RGBColor[0.1608, 0.2314, 0.30195],
+		 "Method" -> "Design",
+		 "DC"     -> "ChatOutput",
+		 "Notes"  -> "Light color is the same as ChatInputFrame"
 	|>,
 	"ChatOutputMenuButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
@@ -436,12 +450,19 @@ Dispatch[{
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "Light color matches FramedChatCellFrame on hover"
 	|>,
-	"ChatOutputMenuButtonFrame" -> <|
+	"ChatOutputMenuButtonFrameHover" -> <|
 		 "Light"  -> GrayLevel[1, 0],
 		 "Dark"   -> GrayLevel[0.2191954, 0.],
 		 "Method" -> "Feature",
 		 "DC"     -> "ChatOutput",
-		 "Notes"  -> "In ChatOutput UI, vertical ellipsis button, fully transparent frame"
+		 "Notes"  -> "In ChatOutput UI, vertical ellipsis button, fully transparent frame in light-mode"
+	|>,
+	"ChatOutputMenuButtonIcon" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.8],
+		 "Method" -> "Design",
+		 "DC"     -> "ChatOutput",
+		 "Notes"  -> ""
 	|>,
 	"ChatOutputTooltipBackground" -> <|
 		 "Light"  -> GrayLevel[0.96078],
@@ -486,8 +507,8 @@ Dispatch[{
 		 "Notes"  -> "Cloud only: cell style action menu has white background"
 	|>,
 	"CloudToolbarPreferencesCellBackground" -> <|
-		 "Light"  -> GrayLevel[0.75],
-		 "Dark"   -> GrayLevel[0.5483285],
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.16249],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places, so leave as content color"
@@ -884,6 +905,27 @@ Dispatch[{
 		 "DC"     -> "ErrorMessageNonFatal",
 		 "Notes"  -> ""
 	|>,
+	"FeedbackDialogFontSubtle" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.53749],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4706459],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogPreviewDataBackground" -> <|
+		 "Light"  -> GrayLevel[0.975],
+		 "Dark"   -> GrayLevel[0.1983200],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"FETaskDebugPanelBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
 		 "Dark"   -> GrayLevel[0.2325145],
@@ -1117,8 +1159,8 @@ Dispatch[{
 	|>,
 	"LinkFont" -> <|
 		 "Light"  -> RGBColor[0.02, 0.286, 0.651],
-		 "Dark"   -> RGBColor[0.7045361, 0.8002698, 0.9939886],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.2823, 0.6666, 0.9490],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
@@ -1220,33 +1262,61 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Appears in Persona manager dialogs, preferences dialog"
 	|>,
+	"ModelPlainChatIconBackground" -> <|
+		 "Light"  -> RGBColor[0.8549, 0.88235, 0.87843],
+		 "Dark"   -> RGBColor[0.4196, 0.4549, 0.46275],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelPlainChatIconEdge" -> <|
+		 "Light"  -> RGBColor[0.67451, 0.71765, 0.73725],
+		 "Dark"   -> RGBColor[0.7255, 0.7725, 0.7843],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
+	"ModelRawModelIconBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.1569],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Appears in menu, chat input dingbat"
+	|>,
 	"NA_AssistantMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.2640988, 0.2640988, 0.2640988],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Chat bubble around assistant's message, slight difference from non-NA version"
 	|>,
 	"NA_AssistantMessageBoxFrame" -> <|
 		 "Light"  -> RGBColor[0.8784313, 0.9372549, 0.9686274],
-		 "Dark"   -> RGBColor[0.2600937, 0.3355545, 0.3904019],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
 	"NA_ChatCodeBlockTemplateBackgroundBottom" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.2640988, 0.2640988, 0.2640988],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
 	"NA_ChatCodeBlockTemplateBackgroundTop" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2783170],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
+	|>,
+	"NA_ChatCodeBlockTemplateButtonBackgroundHover" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatCodeBlockTemplateButtonFont" -> <|
 		 "Light"  -> GrayLevel[0.2],
@@ -1257,8 +1327,8 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.8980392, 0.9294117],
-		 "Dark"   -> RGBColor[0.0908663, 0.1079911, 0.1212405],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
@@ -1278,22 +1348,29 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateFrame" -> <|
 		 "Light"  -> GrayLevel[0.89804],
-		 "Dark"   -> GrayLevel[0.3610604],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
 	"NA_ChatInputFieldBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2972259],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.09805],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldBackgroundArea" -> <|
 		 "Light"  -> GrayLevel[0.95],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1882352, 0.2078431, 0.2274509],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldCellFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> RGBColor[0.3254901, 0.3607843, 0.3960784],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1460,8 +1537,8 @@ Dispatch[{
 	|>,
 	"NA_ChatOutputToolCallBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2783170],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.09805],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
@@ -1481,8 +1558,8 @@ Dispatch[{
 	|>,
 	"NA_ChatOutputToolCallHeaderBackground" -> <|
 		 "Light"  -> GrayLevel[0.95],
-		 "Dark"   -> GrayLevel[0.2096883],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.15295],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
@@ -1502,29 +1579,29 @@ Dispatch[{
 	|>,
 	"NA_ChatOutputToolCallOpenerBackground" -> <|
 		 "Light"  -> RGBColor[0.8980392, 0.9686274, 1.],
-		 "Dark"   -> RGBColor[0.1526211, 0.2298972, 0.2778414],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1215686, 0.1490196, 0.1803921],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatOutputToolCallOpenerBackgroundHover" -> <|
 		 "Light"  -> RGBColor[1., 1., 1.],
-		 "Dark"   -> RGBColor[0.2783170, 0.2783170, 0.2783170],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1607843, 0.2509803, 0.3529411],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatOutputToolCallOpenerFrame" -> <|
 		 "Light"  -> RGBColor[0.6117647, 0.7960784, 0.890196],
-		 "Dark"   -> RGBColor[0.4025097, 0.5331862, 0.6106858],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.172549, 0.2392156, 0.3137254],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
 	"NA_ChatOutputToolCallOpenerFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8392156, 0.9294117, 0.9764705],
-		 "Dark"   -> RGBColor[0.2563792, 0.3566838, 0.4250452],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2039215, 0.3215686, 0.4588235],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
 	|>,
@@ -1586,36 +1663,36 @@ Dispatch[{
 	|>,
 	"NA_OutputRaftBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.85882, 0.92941, 0.96863],
-		 "Dark"   -> RGBColor[0.2457882, 0.3208711, 0.3780036],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
 	"NA_OutputRaftBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
-		 "Dark"   -> RGBColor[0.3992043, 0.7589182, 0.9392855],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.2509803, 0.4039215, 0.5764705],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
 	"NA_OutputRaftIcon" -> <|
 		 "Light"  -> RGBColor[0.2, 0.51373, 0.67451, 1.],
-		 "Dark"   -> RGBColor[0.5287567, 0.8108010, 0.9550615, 1.],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.3960784, 0.6235294, 0.8823529],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
 	"NA_OutputRaftIconPressed" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.0999191],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.945098],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
 	"NA_OverlayMenuBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.15295],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
@@ -1642,15 +1719,15 @@ Dispatch[{
 	|>,
 	"NA_OverlayMenuFrame" -> <|
 		 "Light"  -> GrayLevel[0.8196078],
-		 "Dark"   -> GrayLevel[0.4643916],
-		 "Method" -> "Feature",
+		 "Dark"   -> GrayLevel[0.2785],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
 	"NA_OverlayMenuHeaderBackground" -> <|
 		 "Light"  -> GrayLevel[0.9607843],
-		 "Dark"   -> GrayLevel[0.1781880],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.23135],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
@@ -1661,17 +1738,17 @@ Dispatch[{
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
-	"NA_OverlayMenuIcon_Gray" -> <|
+	"NA_OverlayMenuIconHover" -> <|
 		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> GrayLevel[0.9463918],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
 	"NA_OverlayMenuItemBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.9686274, 0.9882352],
-		 "Dark"   -> RGBColor[0.1371693, 0.1864428, 0.2236123],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1411764, 0.2627450, 0.3411764],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
@@ -1696,17 +1773,24 @@ Dispatch[{
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
+	"NA_OverlayMenuSearchIcon" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.6317181],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
 	"NA_ProgressBarCenterColor" -> <|
 		 "Light"  -> RGBColor[0.3333333, 0.7607843, 1.],
-		 "Dark"   -> RGBColor[0.3302480, 0.6242151, 0.8141857],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.1569, 0.5255, 0.7883],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_ProgressBarEdgeColor" -> <|
 		 "Light"  -> RGBColor[0.8156862, 0.9333333, 1.],
-		 "Dark"   -> RGBColor[0.2320180, 0.3300491, 0.4040889],
-		 "Method" -> "Content",
+		 "Dark"   -> RGBColor[0.1177, 0.2745, 0.3804],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
@@ -1768,47 +1852,54 @@ Dispatch[{
 	|>,
 	"NA_SourcesDockedCellFont" -> <|
 		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> GrayLevel[0.1448012],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NA_Toolbar" -> <|
 		 "Light"  -> RGBColor[0.4, 0.6784313, 0.8235294],
-		 "Dark"   -> RGBColor[0.3561395, 0.5318398, 0.6365366],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.2235294, 0.490196, 0.6784313],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.5294117, 0.7647058, 0.890196],
-		 "Dark"   -> RGBColor[0.4487142, 0.6299696, 0.7356173],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.3882352, 0.6274509, 0.772549],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.2117647, 0.5372549, 0.7098039],
-		 "Dark"   -> RGBColor[0.2238871, 0.3582949, 0.4524726],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1568627, 0.3686274, 0.5215686],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6039215, 0.7921568, 0.8941176],
-		 "Dark"   -> RGBColor[0.4873887, 0.6646074, 0.7665227],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.5137254, 0.7019607, 0.8235294],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> "This frame is a transitional color"
+		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.2117647, 0.5372549, 0.7098039],
-		 "Dark"   -> RGBColor[0.2238871, 0.3582949, 0.4524726],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.0862745, 0.3215686, 0.4862745],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> "This frame is a transitional color"
+		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarFont" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> RGBColor[0.8313725, 0.9294117, 1.],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_Toolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_ToolbarFontHover" -> <|
 		 "Light"  -> GrayLevel[1],
 		 "Dark"   -> GrayLevel[1],
 		 "Method" -> "Same",
@@ -1817,36 +1908,36 @@ Dispatch[{
 	|>,
 	"NA_ToolbarLightButtonBackground" -> <|
 		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
-		 "Dark"   -> RGBColor[0.7567251, 0.8704791, 0.9372660],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarLightButtonFont" -> <|
 		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
-		 "Dark"   -> RGBColor[0.2806558, 0.4615105, 0.5753141],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.2, 0.5137254, 0.6745098],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NA_ToolbarLightButtonFrame" -> <|
 		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
-		 "Dark"   -> RGBColor[0.7567251, 0.8704791, 0.9372660],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> "This frame is a transitional color"
 	|>,
 	"NA_ToolbarTitleBackground" -> <|
 		 "Light"  -> RGBColor[0.8666666, 0.9372549, 0.9764705],
-		 "Dark"   -> RGBColor[0.6716041, 0.8331105, 0.9242779],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1686274, 0.3960784, 0.5607843],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_ToolbarTitleFont" -> <|
 		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Dark"   -> RGBColor[0.2115994, 0.3436160, 0.4320910],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
@@ -2011,12 +2102,19 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
-	"SendChatButtonFrame" -> <|
+	"SendChatButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
 		 "Dark"   -> RGBColor[0.3720968, 0.5327701, 0.7196387],
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
 		 "Notes"  -> "Implemented as CellFrameLabel"
+	|>,
+	"SendChatButtonIcon" -> <|
+		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Dark"   -> RGBColor[0.3961, 0.6236, 0.8824],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
 	|>,
 	"SideChatBackground" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.9882352, 1.],
@@ -2036,6 +2134,27 @@ Dispatch[{
 		 "Light"  -> GrayLevel[0.75],
 		 "Dark"   -> GrayLevel[0.5374899],
 		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"StopChatButtonIcon" -> <|
+		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Dark"   -> RGBColor[0.3961, 0.6236, 0.8824],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"StopChatButtonSpinnerBase" -> <|
+		 "Light"  -> GrayLevel[0.9],
+		 "Dark"   -> GrayLevel[0.3392820],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"StopChatButtonSpinnerHighlight" -> <|
+		 "Light"  -> GrayLevel[0.7],
+		 "Dark"   -> GrayLevel[0.6042542],
+		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
@@ -2090,15 +2209,15 @@ Dispatch[{
 	|>,
 	"UserMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9294117, 0.9568627, 0.9882352],
-		 "Dark"   -> RGBColor[0.2469639, 0.3051983, 0.4024244],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.2470588, 0.3058823, 0.4039215],
+		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
 	|>,
 	"UserMessageBoxFrame" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3498090, 0.4910949, 0.6628980],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.3254901, 0.4470588, 0.6],
+		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
 	|>,
@@ -2128,6 +2247,27 @@ Dispatch[{
 		 "Dark"   -> GrayLevel[0.9198307],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
+	"WorkspaceDefaultUserIconBackground_1" -> <|
+		 "Light"  -> RGBColor[0.8392156, 0.9215686, 0.9647058],
+		 "Dark"   -> RGBColor[0.145098, 0.2352941, 0.3294117],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"WorkspaceDefaultUserIconBackground_2" -> <|
+		 "Light"  -> RGBColor[1., 1., 1.],
+		 "Dark"   -> RGBColor[0.0980392, 0.0980392, 0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"WorkspaceDefaultUserIconEdge" -> <|
+		 "Light"  -> RGBColor[0.4, 0.67843, 0.82353, 1.],
+		 "Dark"   -> RGBColor[0.3960784, 0.6235294, 0.8823529],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>(* ,
 	"" -> <|

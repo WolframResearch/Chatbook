@@ -1,8 +1,8 @@
 (* ::Package:: *)
 
 (*
-	#1 -> FrameStyle,
-	#2 -> Background,
+	#1 -> FrameStyle, "SendChatButtonFrameHover"
+	#2 -> Background, "SendChatButtonBackgroundHover"
 	#3 -> ImageSize of spinner *)
 Function[ Evaluate @ ToBoxes @
 	MouseAppearance[
@@ -10,26 +10,38 @@ Function[ Evaluate @ ToBoxes @
 			Framed[
 				Overlay[
 					{
-						RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, GrayLevel[ 0.9 ], GrayLevel[ 0.7 ] ] ],
+						With[
+							{
+								baseColor = color @ "StopChatButtonSpinnerBase",
+								highlightColor = color @ "StopChatButtonSpinnerHighlight"
+							},
+							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ]
+						],
 						Graphics[
-							{ RGBColor["#3383AC"], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+							{ color @ "StopChatButtonIcon", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
 							ImageSize -> #3,
 							PlotRange -> 1.1
 						]
 					},
 					Alignment -> { Center, Center }
 				],
-				FrameStyle -> GrayLevel[ 1 ],
-				Background -> GrayLevel[ 1 ],
+				FrameStyle -> None,
+				Background -> None,
 				RoundingRadius -> 3,
 				FrameMargins -> 1
 			],
 			Framed[
 				Overlay[
 					{
-						RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, GrayLevel[ 0.9 ], GrayLevel[ 0.7 ] ] ],
+						With[
+							{
+								baseColor = color @ "StopChatButtonSpinnerBase",
+								highlightColor = color @ "StopChatButtonSpinnerHighlight"
+							},
+							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ]
+						],
 						Graphics[
-							{ RGBColor["#3383AC"], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+							{ color @ "StopChatButtonIcon", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
 							ImageSize -> #3,
 							PlotRange -> 1.1
 						]

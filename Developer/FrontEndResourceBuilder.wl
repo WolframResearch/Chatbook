@@ -42,7 +42,7 @@ $resourceLocationDark = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "T
 
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
-Get[ FileNameJoin[ { $pacletDirectory, "Source", "Chatbook", "ColorData.wl" } ] ];
+Get[ FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "ColorData.wl" } ];
 color = Wolfram`Chatbook`Common`color;
 
 
