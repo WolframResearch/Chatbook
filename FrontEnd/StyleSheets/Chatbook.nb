@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951878911"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.5.3955705632"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -2612,20 +2612,6 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ChatEnabledNotebookIcon"
-       ]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatEvaluatingSpinner"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatEvaluatingSpinner"
        ]
       ]
      ])

@@ -1,11 +1,11 @@
 Graphics[
  {
-  RGBColor[ 0.0, 0.2902, 0.33137 ],
+  color @ "IconsToolIconWebFetcher_1",
   Opacity[ 1.0 ],
   {
    Thickness[ 0.05 ],
    {
-    FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "IconsToolIconWebFetcher_2", Opacity[ 1.0 ] },
     FilledCurve[
      { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
      {
@@ -28,7 +28,7 @@ Graphics[
     ]
    },
    {
-    FaceForm @ { RGBColor[ 0.5, 0.7902, 0.83137 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "IconsToolIconWebFetcher_3", Opacity[ 1.0 ] },
     FilledCurve[
      {
       {
@@ -802,7 +802,7 @@ Graphics[
     ]
    },
    {
-    FaceForm @ { RGBColor[ 0.0, 0.58039, 0.66275 ], Opacity[ 1.0 ] },
+    FaceForm @ { color @ "IconsToolIconWebFetcher_4", Opacity[ 1.0 ] },
     FilledCurve[
      {
       {
