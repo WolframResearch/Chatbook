@@ -514,8 +514,8 @@ Dispatch[{
 		 "Notes"  -> "Cloud only: cell style action menu has white background"
 	|>,
 	"CloudToolbarPreferencesCellBackground" -> <|
-		 "Light"  -> GrayLevel[0.75],
-		 "Dark"   -> GrayLevel[0.5483285],
+		 "Light"  -> GrayLevel[0.95],
+		 "Dark"   -> GrayLevel[0.16249],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places, so leave as content color"
@@ -910,6 +910,27 @@ Dispatch[{
 		 "Dark"   -> RGBColor[0.9094903, 0.5997460, 0.0487317],
 		 "Method" -> "Feature",
 		 "DC"     -> "ErrorMessageNonFatal",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogFontSubtle" -> <|
+		 "Light"  -> GrayLevel[0.75],
+		 "Dark"   -> GrayLevel[0.53749],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogFrame" -> <|
+		 "Light"  -> GrayLevel[0.85],
+		 "Dark"   -> GrayLevel[0.4706459],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"FeedbackDialogPreviewDataBackground" -> <|
+		 "Light"  -> GrayLevel[0.975],
+		 "Dark"   -> GrayLevel[0.1983200],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"FETaskDebugPanelBackground" -> <|
