@@ -4473,7 +4473,7 @@ KF8Mcth+drh+iPnsDmD3blV3SAOBZ8xw+yHms8LdF8anu2luPhPc/TB5mP9g
 
 "WorkspaceDefaultUserIcon" -> GraphicsBox[
   {Thickness[0.05], 
-   {FaceForm[{RGBColor[0.83922, 0.92157, 0.96471], Opacity[1.]}], 
+   {FaceForm[RGBColor[0.8392156, 0.9215686, 0.9647058]], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{10., 
      1.}, {14.971, 1.}, {19., 5.0294}, {19., 10.}, {19., 14.971}, {14.971, 
      19.}, {10., 19.}, {5.0294, 19.}, {1., 14.971}, {1., 10.}, {1., 5.0294}, {
@@ -4490,8 +4490,8 @@ KF8Mcth+drh+iPnsDmD3blV3SAOBZ8xw+yHms8LdF8anu2luPhPc/TB5mP9g
       1., 5.0294}, {1., 10.}, {1., 14.971}, {5.0294, 19.}, {10., 19.}, {
       14.971, 19.}, {19., 14.971}, {19., 10.}}}]}, 
    {EdgeForm[{RGBColor[0.4, 0.67843, 0.82353], Opacity[1.], Thickness[
-    0.05625], CapForm["Round"], JoinForm["Round"]}], FaceForm[{RGBColor[
-    1., 1., 1.], Opacity[1.]}], 
+    0.05625], CapForm["Round"], JoinForm["Round"]}], FaceForm[RGBColor[
+    1., 1., 1.]], 
     FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
      0}}}, CompressedData["
@@ -4509,20 +4509,21 @@ xyc4nl4Kwfno8Q8ARrPSLw==
      "]]}},
   ImageSize->{Automatic, 20}],
 
-"WorkspaceToolbarIconHistory" -> GraphicsBox[
-  {Thickness[0.05], FaceForm[GrayLevel[1]], 
-   FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {
-    0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-    0}}}, {{{4., 13.}, {16., 13.}, {16., 15.}, {4., 15.}, {4., 13.}}, {{4., 
-    8.9882}, {16., 8.9882}, {16., 10.989}, {4., 10.989}, {4., 8.9882}}, {{4., 
-    5.}, {16., 5.}, {16., 7.}, {4., 7.}, {4., 5.}}}]},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  ImageSize->{20., 20.},
-  PlotRange->{{0., 20.}, {0., 20.}}],
+"WorkspaceToolbarIconHistory" -> (GraphicsBox[{
+   Thickness[0.05], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}}}, {{{4., 13.}, {16., 13.}, {16., 15.}, {4., 15.}, {4., 
+      13.}}, {{4., 8.9882}, {16., 8.9882}, {16., 10.989}, {4., 10.989}, {4., 
+      8.9882}}, {{4., 5.}, {16., 5.}, {16., 7.}, {4., 7.}, {4., 5.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False]}, ImageSize -> {20., 20.}, 
+  PlotRange -> {{0., 20.}, {0., 20.}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center)]& ),
 
-"WorkspaceToolbarIconNew" -> GraphicsBox[
-  {Thickness[0.058823529411764705`], 
+"WorkspaceToolbarIconNew" -> (GraphicsBox[{
+   Thickness[0.058823529411764705`], 
+   FaceForm[#], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
       1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}, {{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
@@ -4535,15 +4536,14 @@ xyc4nl4Kwfno8Q8ARrPSLw==
 LRx8GP3BHjtfBMRvcH/I74CdzwGiHXrFpZDlgUABB18ARB8oEZZG5sPMQbKX
 A0U+4ekLe2T+AtdrKHwoCEhIFUTmM6yREUbmI4UPhA8LP4R5Omj2gfko8QEA
 LWkzDA==
-     "]}]},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  DefaultBaseStyle->{},
-  ImageSize->{22., 20.},
-  PlotRange->{{-5., 17.}, {-3, 17}}],
+     "]}]}, ImageSize -> {22., 20.}, PlotRange -> {{-5., 17.}, {-3, 17}}, 
+  AspectRatio -> Automatic, DefaultBaseStyle -> {}, 
+  BaselinePosition -> (Center -> Center)]& ),
 
-"WorkspaceToolbarIconSources" -> GraphicsBox[
-  {Thickness[0.07692307692307693], FaceForm[{GrayLevel[1], Opacity[1.]}], 
+"WorkspaceToolbarIconSources" -> (GraphicsBox[{
+   Thickness[0.07692307692307693], 
+   FaceForm[{#, 
+     Opacity[1.]}], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0,
       1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0,
@@ -4556,11 +4556,10 @@ v/idqYjM/1GXJQ6iG/ZsUQfRESnWYP4BzzNgvgcPE5jvYH0fzO+YehjsXweO
 N2D+DrlWiP8jfoL5Cf1OsPDQgNLofFh4Q/gca+7Yo8qDwQEZKXVkPgMiPmAA
 Zg4YNGTtgZiDMA+rOgZE+KPzP9gDADwyPuA=
      "], {{13., 5.}, {13., 3.}, {10., 3.}, {10., 0.}, {8., 0.}, {8., 3.}, {5.,
-      3.}, {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  ImageSize->{20, 20},
-  PlotRange->{{-6, 14}, {-4, 16}}],
+      3.}, {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]}, 
+  AspectRatio -> Automatic, ImageSize -> {20, 20}, 
+  PlotRange -> {{-6, 14}, {-4, 16}}, 
+  BaselinePosition -> (Center -> Center)]& ),
 
 "WrenchIcon" -> GraphicsBox[
   {GrayLevel[0.4], AbsoluteThickness[1], Opacity[1.], 
@@ -5586,9 +5585,10 @@ hPG91XSQ1r+rwnZQz0FvwoIfhm3KUHFtB2neB7oTgO6HhT96fAAASQiSDg==
   ImageSize->{17., 18.},
   PlotRange->{{-0.5, 16.5}, {-0.5, 17.5}}],
 
-"WorkspaceToolbarIconOpenAsChatbook" -> GraphicsBox[
-  {Thickness[0.08332986316297075], 
-   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
+"WorkspaceToolbarIconOpenAsChatbook" -> (GraphicsBox[{
+   Thickness[0.08332986316297075], {
+    FaceForm[{#, 
+      Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{0, 2, 0}, {0, 1,
       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
@@ -5607,20 +5607,22 @@ hPG91XSQ1r+rwnZQz0FvwoIfhm3KUHFtB2neB7oTgO6HhT96fAAASQiSDg==
       10.330000400543213`}, {1.6712994575500488`, 1.669999599456787}, {
       10.330299377441406`, 1.669999599456787}, {10.330299377441406`, 
       3.8350000381469727`}, {12.000299453735352`, 3.8350000381469727`}, {
-      12.000299453735352`, 0.}}}]}, 
-   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
+      12.000299453735352`, 0.}}}]}, {
+    FaceForm[{#, 
+      Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}}}, {{{6.000199794769287, 6.}, {
-     12.000199794769287`, 12.}}}]}, 
-   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
+     12.000199794769287`, 12.}}}]}, {
+    FaceForm[{#, 
+      Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}}}, {{{6.000199794769287, 5.245100021362305}, {
-     12.000199794769287`, 11.245100021362305`}}}]}, 
-   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
+     12.000199794769287`, 11.245100021362305`}}}]}, {
+    FaceForm[{#, 
+      Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}}}, {{{5.22689962387085, 6.018500328063965}, {
-     11.22689962387085, 12.018500328063965`}}}]}},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  ImageSize->{15., 14.},
-  PlotRange->{{-1., 13.000499725341797`}, {-1., 13.}}],
+     11.22689962387085, 12.018500328063965`}}}]}}, AspectRatio -> Automatic, 
+  ImageSize -> {15., 14.}, 
+  PlotRange -> {{-1., 13.000499725341797`}, {-1., 13.}}, 
+  BaselinePosition -> (Center -> Center)]& ),
 
 "WorkspaceOutputRaftShareIcon" -> (GraphicsBox[{
    Thickness[0.05555555555555555], 
@@ -8299,13 +8301,13 @@ KuSufQ+LxToe/v8CWK55JA==
 
 "ChatIconNotebookAssistant" -> GraphicsBox[
   {Thickness[0.0625], 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[1], Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{2.5, 16.}, {14.5, 16.}, {14.776, 
      16.}, {15., 15.776}, {15., 15.5}, {15., 1.5}, {15., 1.224}, {14.776, 
      1.}, {14.5, 1.}, {2.5, 1.}, {2.224, 1.}, {2., 1.224}, {2., 1.5}, {2., 
      15.5}, {2., 15.776}, {2.224, 16.}, {2.5, 16.}}}]}, 
-   {FaceForm[{RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}], 
+   {FaceForm[{GrayLevel[0.53725], Opacity[1.]}], 
     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3,
       3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
