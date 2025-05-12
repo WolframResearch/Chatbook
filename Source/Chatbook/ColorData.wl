@@ -1950,8 +1950,15 @@ Dispatch[{
 	|>,
 	"PreferencesContentBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2846262],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.09805],
+		 "Method" -> "Design",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"PreferencesContentDirectServiceConnectionsDelimiter" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.2039],
+		 "Method" -> "Design",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
@@ -2048,15 +2055,22 @@ Dispatch[{
 	|>,
 	"PreferencesContentServicesIconFade_1" -> <|
 		 "Light"  -> GrayLevel[1, 0.5],
-		 "Dark"   -> GrayLevel[0.1601523, 0.5],
+		 "Dark"   -> GrayLevel[0.09805, 0.5],
+		 "Method" -> "Feature",
+		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> "Color must match background, see PreferencesContentBackground"
+	|>,
+	"PreferencesContentServicesIconFade_2" -> <|
+		 "Light"  -> GrayLevel[0],
+		 "Dark"   -> GrayLevel[1],
 		 "Method" -> "Feature",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
-	"PreferencesContentServicesIconFade_2" -> <|
-		 "Light"  -> GrayLevel[0, 0.5],
-		 "Dark"   -> GrayLevel[0.9999999, 0.5],
-		 "Method" -> "Feature",
+	"PreferencesContentServicesLLMKitFrame" -> <|
+		 "Light"  -> GrayLevel[0.898],
+		 "Dark"   -> GrayLevel[0.26665],
+		 "Method" -> "Design",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
 	|>,
