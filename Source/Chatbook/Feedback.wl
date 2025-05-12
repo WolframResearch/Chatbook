@@ -121,8 +121,8 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                                 SetterBar[
                                     Dynamic @ data[ "Positive" ],
                                     {
-                                        True  -> chatbookIcon[ "ThumbsUpActive"  , False ],
-                                        False -> chatbookIcon[ "ThumbsDownActive", False ]
+                                        True  -> Dynamic[If[AbsoluteCurrentValue[LightDark] === "Dark", chatbookIcon[ "ThumbsUpInactive"  , False ], chatbookIcon[ "ThumbsUpActive"  , False ]]],
+                                        False -> Dynamic[If[AbsoluteCurrentValue[LightDark] === "Dark", chatbookIcon[ "ThumbsDownInactive", False ], chatbookIcon[ "ThumbsDownActive", False ]]]
                                     }
                                 ],
                                 tr[ "FeedbackDialogBodyThumbs" ]
@@ -149,7 +149,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                 dialogBody[
                     Style[
                         tr[ "FeedbackDialogBodyUsedForTraining" ],
-                        FontColor -> GrayLevel[ 0.75 ],
+                        FontColor -> color @ "FeedbackDialogFontSubtle",
                         FontSize  -> 12
                     ],
                     { Automatic, { 15, 3 } }
@@ -162,7 +162,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                                 Dynamic @ generatePreviewData[ data, choices ],
                                 BaseStyle  -> {
                                     "Program",
-                                    Background        -> GrayLevel[ 0.975 ],
+                                    Background        -> color @ "FeedbackDialogPreviewDataBackground",
                                     FontSize          -> 9,
                                     LineBreakWithin   -> False,
                                     PageWidth         -> 485,
@@ -173,11 +173,11 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                                 Scrollbars -> Automatic
                             ],
                             Framed[
-                                clickToCopy[
+                                ClickToCopy[
                                     chatbookIcon[ "AssistantCopyClipboard", False ],
-                                    Unevaluated @ Developer`ReadRawJSONString @ generatePreviewData[ data, choices ]
+                                    Developer`ReadRawJSONString @ generatePreviewData[ data, choices ]
                                 ],
-                                Background     -> GrayLevel[ 0.975 ],
+                                Background     -> color @ "FeedbackDialogPreviewDataBackground",
                                 ContentPadding -> False,
                                 FrameMargins   -> 0,
                                 FrameStyle     -> None
@@ -218,21 +218,8 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
             },
             Alignment -> { Left, Top },
             BaseStyle -> $baseStyle,
-            Dividers  -> {
-                False,
-                {
-                    False,
-                    GrayLevel[ 0.85 ],
-                    False,
-                    False,
-                    False,
-                    False,
-                    False,
-                    GrayLevel[ 0.85 ],
-                    False,
-                    { False }
-                }
-            },
+            Dividers  -> {{}, {2 -> True, -2 -> True}},
+            FrameStyle -> color @ "FeedbackDialogFrame",
             ItemSize  -> { Automatic, 0 },
             Spacings  -> { 0, 0 }
         ];
@@ -294,7 +281,7 @@ includedContentGrid[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                         {
                             True -> Style[
                                 tr[ "FeedbackDialogContentOutputImageLabel" ],
-                                FontColor -> GrayLevel[ 0.75 ]
+                                FontColor -> color @ "FeedbackDialogFontSubtle"
                             ],
                             False -> ""
                         },
@@ -315,9 +302,10 @@ includedContentGrid[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                                     ],
                                     resized,
                                     TooltipStyle -> {
-                                        Background     -> White,
-                                        CellFrame      -> 1,
-                                        CellFrameColor -> GrayLevel[ 0.85 ]
+                                        Background       -> None,
+                                        CellFrame        -> 1,
+                                        CellFrameColor   -> color @ "FeedbackDialogFrame",
+                                        CellFrameMargins -> 0
                                     }
                                 ],
                                 False -> ""
