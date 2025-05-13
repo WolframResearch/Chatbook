@@ -25,6 +25,12 @@ $$prompt = $$string | { $$string... } | $$chatMessages;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::InvalidPrompt = "\
+Expected a string or a list of chat messages instead of `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Common Functions*)
 
 (* ::**************************************************************************************************************:: *)
@@ -34,6 +40,7 @@ ensureChatMessages // beginDefinition;
 ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
 ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
 ensureChatMessages[ messages: $$chatMessages ] := messages;
+ensureChatMessages[ other_ ] /; ! TrueQ @ $chatState := throwFailure[ "InvalidPrompt", other ];
 ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
