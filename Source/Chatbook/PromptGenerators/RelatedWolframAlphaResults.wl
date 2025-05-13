@@ -54,7 +54,8 @@ RelatedWolframAlphaResults // Options = {
     "MaxItems"          -> Automatic,
     "PromptHeader"      -> Automatic,
     "RandomQueryCount"  -> Automatic,
-    "RelatedQueryCount" -> Automatic
+    "RelatedQueryCount" -> Automatic,
+    "SampleQueryCount"  -> 0
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -122,7 +123,8 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
             ensureChatMessages @ prompt,
             n,
             Replace[ OptionValue[ "RelatedQueryCount" ], $$unspecified :> Min[ 20, $maxItems*4 ] ],
-            Replace[ OptionValue[ "RandomQueryCount"  ], $$unspecified :> Min[ 20, $maxItems*4 ] ]
+            Replace[ OptionValue[ "RandomQueryCount"  ], $$unspecified :> Min[ 20, $maxItems*4 ] ],
+            Replace[ OptionValue[ "SampleQueryCount"  ], $$unspecified :> 0 ]
         ]
     ];
 
@@ -285,8 +287,14 @@ makeMessagePairs // endDefinition;
 (*relatedWolframAlphaResultsPrompt*)
 relatedWolframAlphaResultsPrompt // beginDefinition;
 
-relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { content, strings, resultsString },
+relatedWolframAlphaResultsPrompt[
+    messages: $$chatMessages,
+    count_,
+    relatedCount_,
+    randomCount_,
+    sampleCount_
+] := Enclose[
+    Catch @ Module[ { content, strings, resultsString, sampleString },
 
         content = ConfirmMatch[
             relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
@@ -299,10 +307,12 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
         strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
 
         resultsString = StringRiffle[ strings, "\n\n" ];
+        sampleString  = ConfirmBy[ createSampleQueryPrompt[ messages, sampleCount ], StringQ, "Sample" ];
 
         StringJoin[
             ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
             resultsString,
+            sampleString,
             If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
                 ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
                 ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
@@ -313,6 +323,27 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
 ];
 
 relatedWolframAlphaResultsPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createSampleQueryPrompt*)
+createSampleQueryPrompt // beginDefinition;
+
+createSampleQueryPrompt[ messages_, 0 | Automatic ] := "";
+
+createSampleQueryPrompt[ messages_, maxItems_ ] := Enclose[
+    StringJoin[
+        "\n\n",
+        ConfirmBy[
+            RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> maxItems ],
+            StringQ,
+            "Prompt"
+        ]
+    ],
+    throwInternalFailure
+];
+
+createSampleQueryPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
