@@ -49,12 +49,14 @@ $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
     "AppID"             -> Automatic,
+    "CacheResults"      -> False,
     "Instructions"      -> None,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "PromptHeader"      -> Automatic,
     "RandomQueryCount"  -> Automatic,
-    "RelatedQueryCount" -> Automatic
+    "RelatedQueryCount" -> Automatic,
+    "SampleQueryCount"  -> Automatic
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -103,6 +105,7 @@ RelatedWolframAlphaResults[ prompt_, property_, Automatic, opts: OptionsPattern[
 RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[
         {
+            $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -115,8 +118,10 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
                 OptionValue[ "PromptHeader" ],
                 $$unspecified :> $usePromptHeader
             ],
-            $instructions = OptionValue[ "Instructions" ],
-            $maxItems = n
+            $instructions     = OptionValue[ "Instructions" ],
+            $maxItems         = n,
+            $sampleQueries    = None,
+            $sampleQueryCount = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> 0 ]
         },
         relatedWolframAlphaResultsPrompt[
             ensureChatMessages @ prompt,
@@ -129,9 +134,25 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Content*)
-RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[ ] ] :=
+RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Lookup[
+        ConfirmMatch[
+            RelatedWolframAlphaResults[ prompt, "FullData", n, opts ],
+            KeyValuePattern[ "Content" -> { ___Association } ],
+            "Content"
+        ],
+        "Content"
+    ],
+    throwInternalFailure
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FullData*)
+RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[
         {
+            $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -144,10 +165,12 @@ RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[
                 OptionValue[ "PromptHeader" ],
                 $$unspecified :> $usePromptHeader
             ],
-            $instructions = OptionValue[ "Instructions" ],
-            $maxItems = n
+            $instructions     = OptionValue[ "Instructions" ],
+            $maxItems         = n,
+            $sampleQueries    = None,
+            $sampleQueryCount = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> All ]
         },
-        relatedWolframAlphaResultsContent[
+        relatedWolframAlphaResultsFullData[
             ensureChatMessages @ prompt,
             n,
             Replace[ OptionValue[ "RelatedQueryCount" ], $$unspecified :> Min[ 20, $maxItems*4 ] ],
@@ -285,20 +308,29 @@ makeMessagePairs // endDefinition;
 (*relatedWolframAlphaResultsPrompt*)
 relatedWolframAlphaResultsPrompt // beginDefinition;
 
-relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { content, strings, resultsString },
+relatedWolframAlphaResultsPrompt[
+    messages: $$chatMessages,
+    count_,
+    relatedCount_,
+    randomCount_
+] := Enclose[
+    Catch @ Module[ { contentAndQueries, content, queries, strings, resultsString, sampleString },
 
-        content = ConfirmMatch[
-            relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
-            { ___Association },
-            "Content"
+        contentAndQueries = ConfirmMatch[
+            relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ],
+            KeyValuePattern @ { "Content" -> { ___Association }, "SampleQueries" -> { ___String } },
+            "FullData"
         ];
+
+        content = contentAndQueries[ "Content"       ];
+        queries = contentAndQueries[ "SampleQueries" ];
 
         If[ content === { }, Throw[ "" ] ];
 
         strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
 
         resultsString = StringRiffle[ strings, "\n\n" ];
+        sampleString  = ConfirmBy[ createSampleQueryPrompt[ queries, $sampleQueryCount ], StringQ, "Sample" ];
 
         StringJoin[
             ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
@@ -306,13 +338,45 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
             If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
                 ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
                 ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
-            ]
+            ],
+            sampleString
         ]
     ],
     throwInternalFailure
 ];
 
 relatedWolframAlphaResultsPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createSampleQueryPrompt*)
+createSampleQueryPrompt // beginDefinition;
+
+createSampleQueryPrompt[ queries_, 0 | Automatic ] := "";
+
+createSampleQueryPrompt[ queries: { __String }, count_? Positive ] := Enclose[
+    ConfirmBy[
+        $sampleQueriesHeader <> StringRiffle[ Take[ queries, UpTo[ count ] ], "\n" ],
+        StringQ,
+        "SampleQueryPrompt"
+    ],
+    throwInternalFailure
+];
+
+createSampleQueryPrompt[ queries_, UpTo[ count_ ] ] :=
+    createSampleQueryPrompt[ queries, count ];
+
+createSampleQueryPrompt[ queries_, All ] :=
+    createSampleQueryPrompt[ queries, Infinity ];
+
+createSampleQueryPrompt // endDefinition;
+
+
+$sampleQueriesHeader = "
+
+Here are some additional valid Wolfram|Alpha queries to demonstrate what kinds of queries it can accept:
+
+";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -335,10 +399,12 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
         all = ConfirmMatch[ $allQueries, { __String }, "AllQueries" ];
 
         combined = ConfirmMatch[
-            Join[ relevant, RandomSample[ Complement[ all, relevant ], randomCount ] ],
+            Join[ relevant, cachedRandomSample[ Complement[ all, relevant ], randomCount ] ],
             { __String },
             "Combined"
         ];
+
+        $sampleQueries = ConfirmMatch[ Take[ combined, $sampleQueryCount ], { ___String }, "SampleQueries" ];
 
         examples = StringRiffle[ combined, "\n" ];
 
@@ -369,12 +435,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
         auth       = Lookup[ config, "Authentication", Automatic ];
         authOption = If[ auth === Automatic, Sequence @@ { }, Authentication -> auth ];
 
-        response = ConfirmBy[
-            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ config, authOption ],
-            AssociationQ,
-            "Response"
-        ];
+        response = ConfirmBy[ generateSuggestedQueries0[ messages, config, authOption ], AssociationQ, "Response" ];
 
         content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
@@ -388,6 +449,42 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 ];
 
 generateSuggestedQueries // endDefinition;
+
+
+generateSuggestedQueries0 // beginDefinition;
+
+generateSuggestedQueries0[ messages_, config_, opts___ ] := Enclose[
+    Module[ { response },
+
+        response = ConfirmBy[
+            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
+            LLMServices`Chat[ messages, LLMConfiguration @ config, opts ],
+            AssociationQ,
+            "Response"
+        ];
+
+        If[ TrueQ @ $cacheResults,
+            generateSuggestedQueries0[ messages, config, opts ] = response,
+            response
+        ]
+    ],
+    throwInternalFailure
+];
+
+generateSuggestedQueries0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedRandomSample*)
+cachedRandomSample // beginDefinition;
+
+cachedRandomSample[ queries_List, count_ ] :=
+    If[ TrueQ @ $cacheResults,
+        cachedRandomSample[ queries, count ] = RandomSample[ queries, count ],
+        RandomSample[ queries, count ]
+    ];
+
+cachedRandomSample // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -630,8 +727,18 @@ loadWolframAlphaClient // endDefinition;
 (*relatedWolframAlphaResultsContent*)
 relatedWolframAlphaResultsContent // beginDefinition;
 
-relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { queries, content, result },
+relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] :=
+    relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ][ "Content" ];
+
+relatedWolframAlphaResultsContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedWolframAlphaResultsFullData*)
+relatedWolframAlphaResultsFullData // beginDefinition;
+
+relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
+    Catch @ Module[ { queries, sampleQueries, content, result },
 
         queries = ConfirmMatch[
             generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
@@ -639,18 +746,25 @@ relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCoun
             "Queries"
         ];
 
-        If[ queries === { }, Throw @ { } ];
+        sampleQueries = ConfirmMatch[ $sampleQueries, { ___String }, "SampleQueries" ];
+
+        If[ queries === { }, Throw @ <| "Content" -> { }, "SampleQueries" -> sampleQueries |> ];
 
         content = ConfirmBy[ getWolframAlphaAPIContent @ queries, AssociationQ, "Content" ];
 
         result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
 
-        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "InputInterpretation" ] ]
+        result = DeleteDuplicatesBy[
+            KeyDrop[ result, { "StatusCode", "BodyByteArray" } ],
+            Lookup[ "InputInterpretation" ]
+        ];
+
+        <| "Content" -> result, "SampleQueries" -> sampleQueries |>
     ],
     throwInternalFailure
 ];
 
-relatedWolframAlphaResultsContent // endDefinition;
+relatedWolframAlphaResultsFullData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -662,7 +776,10 @@ getWolframAlphaAPIContent[ queries: { ___String } ] := Enclose[
         results = <| |>;
         tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
         TaskWait[ tasks, TimeConstraint -> 30 ];
-        results
+        If[ TrueQ @ $cacheResults,
+            getWolframAlphaAPIContent[ queries ] = results,
+            results
+        ]
     ],
     throwInternalFailure
 ];
