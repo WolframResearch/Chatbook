@@ -1004,6 +1004,24 @@ evaluateWithDialogProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*optionsAssociation*)
+optionsAssociation // beginDefinition;
+
+optionsAssociation[ sym_Symbol, opts: OptionsPattern[ ] ] :=
+    KeyMap[ optionName, Association @ Reverse @ Flatten @ { opts, Options @ sym } ];
+
+optionsAssociation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*optionName*)
+optionName // beginDefinition;
+optionName[ name_String ] := name;
+optionName[ name_Symbol? AtomQ ] := SymbolName @ name;
+optionName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*contextBlock*)
 contextBlock // beginDefinition;
 contextBlock // Attributes = { HoldFirst };

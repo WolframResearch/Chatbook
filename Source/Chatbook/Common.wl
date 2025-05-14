@@ -240,6 +240,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
     "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
     "InvalidMessages"                 -> "The value `2` returned by `1` is not a valid list of messages.",
+    "InvalidOptionValue"              -> "Invalid value for `1` option: `2`.",
     "InvalidPromptGeneratorPosition"  -> "Invalid position spec for prompt generator messages: `1`.",
     "InvalidPromptGeneratorRole"      -> "Invalid role for prompt generator messages: `1`. Valid values are: \"System\", \"Assistant\", or \"User\".",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
