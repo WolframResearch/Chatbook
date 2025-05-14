@@ -87,6 +87,121 @@ $nlpData = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*WolframLanguageToolEvaluate*)
+WolframLanguageToolEvaluate // beginDefinition;
+
+WolframLanguageToolEvaluate // Options = {
+    "AppendRetryNotice"     -> False,
+    "AppendURIInstructions" -> True,
+    "MaxCharacterCount"     -> 10000,
+    Line                    -> Automatic,
+    Method                  -> Automatic,
+    TimeConstraint          -> 60
+};
+
+WolframLanguageToolEvaluate[ code_? validCodeQ, opts: OptionsPattern[ ] ] :=
+    catchMine @ WolframLanguageToolEvaluate[ code, "String", opts ];
+
+WolframLanguageToolEvaluate[ code_? validCodeQ, property_? validPropertyQ, opts: OptionsPattern[ ] ] :=
+    catchMine @ wolframLanguageToolEvaluate[
+        code,
+        property,
+        optionsAssociation[ WolframLanguageToolEvaluate, opts ]
+    ];
+
+WolframLanguageToolEvaluate // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*validCodeQ*)
+validCodeQ // beginDefinition;
+validCodeQ[ KeyValuePattern[ "code" -> code_ ] ] := validCodeQ @ code;
+validCodeQ[ code_String ] := StringQ @ code;
+validCodeQ[ HoldComplete[ __ ] ] := True;
+validCodeQ[ ___ ] := False;
+validCodeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*validPropertyQ*)
+$$propertyName = "Packets"|"Result"|"SessionMX"|"String";
+
+validPropertyQ // beginDefinition;
+validPropertyQ[ $$propertyName ] := True;
+validPropertyQ[ All ] := True;
+validPropertyQ[ { $$propertyName... } ] := True;
+validPropertyQ[ ___ ] := False;
+validPropertyQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*wolframLanguageToolEvaluate*)
+wolframLanguageToolEvaluate // beginDefinition;
+
+wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
+    Block[
+        {
+            $returnFullResult         = True,
+            $appendRetryNotice        = getOption[ "AppendRetryNotice"    , opts ],
+            $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
+            $evaluatorMethod          = getOption[ "Method"               , opts ],
+            $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
+            $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
+            $Line                     = getOption[ "Line"                 , opts ]
+        },
+        getProperty[ sandboxEvaluate @ code, property ]
+    ],
+    throwInternalFailure
+];
+
+wolframLanguageToolEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getOption*)
+getOption // beginDefinition;
+
+getOption[ name_String, opts_Association ] := getOption[ name, Lookup[ opts, name ] ];
+
+getOption[ "AppendRetryNotice", $$unspecified ] := False;
+getOption[ "AppendRetryNotice", append: True|False ] := append;
+getOption[ "AppendRetryNotice", append_ ] := throwFailure[ "InvalidOptionValue", "AppendRetryNotice", append ];
+
+getOption[ "AppendURIInstructions", $$unspecified ] := True;
+getOption[ "AppendURIInstructions", append: True|False ] := append;
+getOption[ "AppendURIInstructions", append_ ] := throwFailure[ "InvalidOptionValue", "AppendURIInstructions", append ];
+
+getOption[ "Method", $$unspecified ] := Automatic;
+getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
+getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
+
+getOption[ "MaxCharacterCount", $$unspecified ] := Infinity;
+getOption[ "MaxCharacterCount", count_Integer? Positive ] := count;
+getOption[ "MaxCharacterCount", All|Infinity ] := Infinity;
+getOption[ "MaxCharacterCount", count_ ] := throwFailure[ "InvalidOptionValue", "MaxCharacterCount", count ];
+
+getOption[ "TimeConstraint", $$unspecified ] := Infinity;
+getOption[ "TimeConstraint", time_Integer? Positive ] := time;
+getOption[ "TimeConstraint", Infinity ] := Infinity;
+getOption[ "TimeConstraint", time_ ] := throwFailure[ "InvalidOptionValue", "TimeConstraint", time ];
+
+getOption[ "Line", $$unspecified ] := $Line;
+getOption[ "Line", line_Integer? Positive ] := line;
+getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ];
+
+getOption // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getProperty*)
+getProperty // beginDefinition;
+getProperty[ as_Association, property_String ] := Lookup[ as, property ];
+getProperty[ as_Association, All ] := as;
+getProperty[ as_Association, properties_List ] := AssociationMap[ getProperty[ as, # ] &, properties ];
+getProperty // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*SandboxLinguisticAssistantData*)
 SandboxLinguisticAssistantData // beginDefinition;
 SandboxLinguisticAssistantData[ query_String ] := catchMine @ SandboxLinguisticAssistantData[ query, _ ];
@@ -505,7 +620,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
             "Packets" -> packets
         |>;
 
-        If[ TrueQ @ $ChatNotebookEvaluation,
+        If[ TrueQ @ $ChatNotebookEvaluation || TrueQ @ $returnFullResult,
             final,
             final[ "String" ]
         ]
@@ -1855,7 +1970,7 @@ mergeComments // endDefinition;
 appendRetryNotice // beginDefinition;
 
 appendRetryNotice[ string_String ] :=
-    If[ StringContainsQ[ string, "General::messages" ],
+    If[ $appendRetryNotice =!= False && StringContainsQ[ string, "General::messages" ],
         string<>"\n\n"<>$retryMessage,
         string
     ];
@@ -1871,6 +1986,8 @@ you MUST write /retry before making the next tool call. \
 (* ::Subsubsection::Closed:: *)
 (*appendURIInstructions*)
 appendURIInstructions // beginDefinition;
+
+appendURIInstructions[ expr_, ___ ] /; $appendURIInstructions === False := expr;
 
 appendURIInstructions[ as: KeyValuePattern @ { "String" -> s_, "Result" -> expr_ } ] :=
     <| as, "String" -> appendURIInstructions[ s, expr ] |>;
