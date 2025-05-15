@@ -71,7 +71,8 @@ $$noCellLabelStyle = Alternatives[
 $$ignoredCellStyle = Alternatives[
     "AnchorBarGrid",
     "CitationContainerCell",
-    "DiscardedMaterial"
+    "DiscardedMaterial",
+    "InlineListingAddButton"
 ];
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
@@ -80,11 +81,16 @@ $$noCodeBlockStyle = Alternatives[
     "ChatOutput",
     "DisplayFormula",
     "DisplayFormulaNumbered",
+    "ExampleSection",
+    "ExampleSubsection",
+    "ExampleSubsubsection",
     "FunctionEssay",
     "GuideFunctionsSubsection",
     "NotebookImage",
     "Picture",
+    "PrimaryExamplesSection",
     "TableNotes",
+    "Template",
     "TOCChapter",
     "UsageDescription",
     "UsageInputs"
@@ -876,6 +882,8 @@ $$sectionStyle = Alternatives[
     "ElementsSection",
     "EmbeddingFormatSection",
     "EntitySection",
+    "ExamplesInitializationSection",
+    "ExtendedExamplesSection",
     "FeaturedExampleMoreAboutSection",
     "FormatBackground",
     "FunctionEssaySection",
@@ -886,29 +894,44 @@ $$sectionStyle = Alternatives[
     "IndicatorExampleSection",
     "IndicatorFormulaSection",
     "InterpreterSection",
+    "MetadataSection",
     "MethodSection",
+    "MoreAboutSection",
     "NotesSection",
     "OptionsSection",
     "PredictorSection",
     "PrimaryExamplesSection",
     "ProgramSection",
+    "RelatedLinksSection",
     "Section",
+    "SeeAlsoSection",
     "Subtitle",
+    "TechNotesSection",
     "WorkflowHeader",
     "WorkflowNotesSection"
 ];
 
-$$subsectionStyle = "Subsection"|"ExampleSection"|"GuideFunctionsSubsection"|"NotesSubsection"|"FooterHeader";
+$$subsectionStyle = Alternatives[
+    "CategorizationSection",
+    "ExampleSection",
+    "FooterHeader",
+    "GuideFunctionsSubsection",
+    "KeywordsSection",
+    "NotesSubsection",
+    "Subsection",
+    "TemplatesSection"
+];
+
 $$subsubsectionStyle = "Subsubsection"|"ExampleSubsection";
 $$subsubsubsectionStyle = "Subsubsubsection"|"ExampleSubsubsection";
 $$subsubsubsubsectionStyle = "Subsubsubsubsection"|"ExampleSubsubsubsection";
 
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$titleStyle, ___ ] ] := "# "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$sectionStyle, ___ ] ] := "## "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsectionStyle, ___ ] ] := "### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsectionStyle, ___ ] ] := "#### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsectionStyle, ___ ] ] := "##### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsubsectionStyle, ___ ] ] := "###### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$titleStyle              , ___ ] ] := makeSection[ 1, a ];
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$sectionStyle            , ___ ] ] := makeSection[ 2, a ];
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsectionStyle         , ___ ] ] := makeSection[ 3, a ];
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsectionStyle      , ___ ] ] := makeSection[ 4, a ];
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsectionStyle   , ___ ] ] := makeSection[ 5, a ];
+fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsubsectionStyle, ___ ] ] := makeSection[ 6, a ];
 
 fasterCellToString0[ Cell[ BoxData @ PaneBox[ StyleBox[ box_, style_String, ___ ], ___ ], "InlineSection", ___ ] ] :=
     Block[ { $showStringCharacters = False, $escapeMarkdown = False },
@@ -920,6 +943,22 @@ fasterCellToString0[ Cell[ BoxData @ PaneBox[ StyleBox[ box_, style_String, ___ 
     ];
 
 fasterCellToString0[ Cell[ __, $$delimiterStyle, ___ ] ] := $delimiterString;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*makeSection*)
+makeSection // beginDefinition;
+
+makeSection[ level_Integer, boxes_ ] := Enclose[
+    Module[ { string, prepend },
+        string = ConfirmBy[ fasterCellToString0 @ boxes, StringQ, "String" ];
+        prepend = StringRepeat[ "#", level ];
+        prepend <> " " <> StringDelete[ string, StartOfString ~~ "#".. ~~ " " ]
+    ],
+    throwInternalFailure
+];
+
+makeSection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2211,6 +2250,9 @@ $$usageStyle = "Usage"|"CFunctionUsage"|"EntityUsage";
 fasterCellToString0[ Cell[ BoxData[ GridBox[ grid_? MatrixQ, ___ ] ], $$usageStyle, ___ ] ] :=
     StringRiffle[ docUsageString /@ grid, "\n\n" ];
 
+fasterCellToString0[ Cell[ boxes_, $$usageStyle, ___ ] ] :=
+    docUsageString @ boxes;
+
 fasterCellToString0[
     Cell[ __, "SeeAlsoSection", ___, TaggingRules -> KeyValuePattern[ "SeeAlsoGrid" -> grid_ ], ___ ]
 ] := seeAlsoSection @ grid;
@@ -2250,6 +2292,17 @@ fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], $$relatedLinksSection, ___ ] ]
 fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], "HistorySection", ___ ] ] :=
     historySection @ grid;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+fasterCellToString0[ InterpretationBox[ box_, $Line = 0;, ___ ] ] :=
+    fasterCellToString0 @ box;
+(* :!CodeAnalysis::EndBlock:: *)
+
+fasterCellToString0[ ButtonBox[
+    _,
+    OrderlessPatternSequence[ BaseStyle -> "ExtendedExamplesLink", ButtonData :> "ExtendedExamples", ___ ]
+] ] := "";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
 (*docUsageString*)
@@ -2259,6 +2312,9 @@ docUsageString[ row_List ] :=
     Block[ { $inlineCode = True },
         StringReplace[ StringJoin[ fasterCellToString0 /@ row ], "\[LineSeparator]" -> " " ]
     ];
+
+docUsageString[ (TextData|BoxData)[ boxes_, ___ ] ] :=
+    docUsageString @ Flatten @ { boxes };
 
 docUsageString // endDefinition;
 
@@ -2390,12 +2446,15 @@ fasterCellToString0[
 ] := fasterCellToString0 @ button;
 
 fasterCellToString0[ TemplateBox[ { _, info_ }, "MoreInfoOpenerButtonTemplate", ___ ] ] :=
-    StringJoin[
-        $delimiterString,
-        "[ Instructions ]\n\n",
-        fasterCellToString0 @ info,
-        $delimiterString,
-        "\n"
+    With[ { inner = fasterCellToString0 @ info },
+        StringJoin[
+            "\n\n<instructions>",
+            If[ StringContainsQ[ inner, "\n" ],
+                "\n" <> inner <> "\n",
+                inner
+            ],
+            "</instructions>\n\n"
+        ]
     ];
 
 (* OS-specific displays: *)
