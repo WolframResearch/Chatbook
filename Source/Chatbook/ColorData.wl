@@ -2133,57 +2133,57 @@ Dispatch[{
 	|>,
 	"ProgressBarActive" -> <|
 		 "Light"  -> RGBColor[0.2666666, 0.6196078, 0.9686274],
-		 "Dark"   -> RGBColor[0.4064776, 0.6728629, 0.9725491],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressBarBackground" -> <|
 		 "Light"  -> RGBColor[0.8196078, 0.8196078, 0.8196078],
-		 "Dark"   -> RGBColor[0.4418655, 0.4418655, 0.4418655],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2509803, 0.4039215, 0.5764705],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellBackground" -> <|
 		 "Light"  -> RGBColor[0.9529411, 0.9803921, 1.],
-		 "Dark"   -> RGBColor[0.2914977, 0.2914977, 0.2914977],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellFrame" -> <|
 		 "Light"  -> RGBColor[0.7882352, 0.8509803, 0.8980392],
-		 "Dark"   -> RGBColor[0.3677432, 0.4255233, 0.4814139],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressClose" -> <|
 		 "Light"  -> RGBColor[0.27451, 0.61961, 0.79608],
-		 "Dark"   -> RGBColor[0.3433416, 0.7060428, 0.8875815],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.3960784, 0.6235294, 0.8823529],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCloseBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.80784, 0.92157, 1.],
-		 "Dark"   -> RGBColor[0.2534279, 0.3509692, 0.4395595],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCloseBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.27451, 0.61961, 0.79608],
-		 "Dark"   -> RGBColor[0.3433416, 0.7060428, 0.8875815],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.2509803, 0.4039215, 0.5764705],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressClosePressed" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.1909039],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
