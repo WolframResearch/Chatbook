@@ -428,8 +428,8 @@ contentSuggestionsCell // beginDefinition;
 contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
     BoxData @ ToBoxes @ Framed[
         Dynamic[ container(*, Deinitialization :> Quiet @ Remove @ container*) ],
-        Background     -> RGBColor[ "#F3FAFF" ],
-        FrameStyle     -> RGBColor[ "#C9D9E5" ],
+        Background     -> color @ "ProgressCellBackground",
+        FrameStyle     -> color @ "ProgressCellFrame",
         RoundingRadius -> 5
     ],
     "AttachedContentSuggestions",
