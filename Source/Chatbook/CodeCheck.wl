@@ -8,7 +8,6 @@ BeginPackage["Wolfram`Chatbook`CodeCheck`"];
 
 
 CheckCodeString
-CheckCodeChat
 
 
 (* ::Section:: *)
@@ -19,34 +18,6 @@ Begin[ "`Private`" ];
 
 
 Needs["CodeInspector`"]
-
-
-(* ::Section:: *)
-(*CheckCodeChat*)
-
-
-CheckCodeChat[chat_String]:=extractWLcodeFromString[chat]//Map[CheckCodeString]
-
-
-(* Returns:
-{
-	<|
-	"ErrorsDetected" -> True | False
-	"CodeInspector"  -> {___InspectionObject}
-	|>,
-	<|
-	"ErrorsDetected" -> True | False
-	"CodeInspector"  -> {___InspectionObject}
-	|>,
-	...
-*)
-
-
-(* ::Subsection:: *)
-(*Helpers*)
-
-
-extractWLcodeFromString[stringcode_String]:=StringCases[stringcode,StringExpression["```wl",Shortest[code__],"```"]:>code]
 
 
 (* ::Section:: *)
@@ -62,36 +33,12 @@ Options[CheckCodeString]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Erro
 						};
 
 
-CheckCodeString[s_String, OptionsPattern[]]:=CodeInspect[s, "SeverityExclusions" -> OptionValue["SeverityExclusions"]]//
-											{"ErrorsDetected"->#=!={},"CodeInspector"->#}& //
-											Association
-
-
-CheckCodeString[___]:= <|"ErrorsDetected" -> False, "CodeInspector"->{}|>
-
-
-(* Returns:
-<|
-"ErrorsDetected" -> True | False
-"CodeInspector"  -> {___InspectionObject}
-|>
-*)
-
-
-(* CheckCodeString["1+f[ ,2]]"] *)
-
-
-(* ::Section:: *)
-(*CheckCodeString2*)
-
-
-Options[CheckCodeString2]=Options[CheckCodeString];
-
-
-CheckCodeString2[s_String, OptionsPattern[]]:=(
+CheckCodeString[s_String, OptionsPattern[]]:=(
 											 CodeInspect[s, "SeverityExclusions"->OptionValue["SeverityExclusions"]]
 											 //{"ErrorsDetected"->#=!={}
-											   ,"CodeInspector"->Association@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}
+											   ,"CodeInspector"	->Association@{"InspectionObjects"->#
+											   								 ,"OverallSeverity"->codeInspectOverallSeverityLevel[#]
+																			 }
 											   }&
 											 // Association
 											 )
@@ -109,14 +56,14 @@ CheckCodeString2[s_String, OptionsPattern[]]:=(
 *)
 
 
-(* CheckCodeString2["1+f[ ,2]]"]*)
+(* CheckCodeString["1+f[ ,2]]"]*)
 
 
 (* ::Subsection:: *)
 (*Helpers*)
 
 
-codeInspectOverallSeverityLevel[ios:{__InspectionObject}]:=ios[[All,3]]//ReplaceAll[ruleCodeInspectSeverityToLevel]//Max//Replace[ruleCodeInspectSeverityLevelToOverallSeverity]
+codeInspectOverallSeverityLevel[ios:{__InspectionObject}]:=ios[[All,3]]//ReplaceAll[ruleCodeInspectSeverityToLevel]//Max
 
 
 codeInspectOverallSeverityLevel[{}]:=None
@@ -135,7 +82,7 @@ codeInspectOverallSeverityLevel[{}]:=None
 ruleCodeInspectSeverityToLevel={"Fatal"->4,"Error"->3,"Warning"->2,"Remark"->1,"ImplicitTimes"|"Formatting"|"Scoping"->0};
 
 
-ruleCodeInspectSeverityLevelToOverallSeverity={4->"4/4", 3->"3/4",2->"2/4",1->"1/4",0->"0/4"};
+(*ruleCodeInspectSeverityLevelToOverallSeverity={4->"4/4", 3->"3/4",2->"2/4",1->"1/4",0->"0/4"};*)
 
 
 (* ::Section::Closed:: *)
