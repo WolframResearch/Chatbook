@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.3.19.3956113850"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.22.3956378650"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1374,7 +1374,7 @@ Notebook[
         Dynamic[
          If[ CurrentValue["MouseOver"],
           LightDarkSwitched[GrayLevel[1], GrayLevel[0.258943]],
-          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.193043]]
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.192157]]
          ]
         ],
        BaselinePosition -> Baseline,
@@ -1420,7 +1420,7 @@ Notebook[
         "Grid"
        ],
        Background ->
-        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.172936]],
+        LightDarkSwitched[GrayLevel[0.937], GrayLevel[0.231373]],
        BaselinePosition -> Baseline,
        FrameMargins -> {{5, 2}, {2, 2}},
        FrameStyle -> None,
@@ -1656,7 +1656,7 @@ Notebook[
          ],
          FrameMargins -> 3,
          Background ->
-          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.193043]],
+          LightDarkSwitched[GrayLevel[0.98], GrayLevel[0.192157]],
          RoundingRadius -> 3,
          FrameStyle ->
           Directive[
