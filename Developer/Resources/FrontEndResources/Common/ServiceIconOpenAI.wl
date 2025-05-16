@@ -1,4 +1,4 @@
-Graphics[{Thickness[0.0625], FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}], 
+Graphics[{Thickness[0.0625], FaceForm[{color @ "ServiceIconOpenAI", Opacity[1.]}], 
   FilledCurve[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, 
      {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, 
      {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}, 
