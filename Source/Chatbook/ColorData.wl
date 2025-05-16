@@ -341,7 +341,7 @@ Dispatch[{
 	|>,
 	"ChatMenuItemBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.1930434],
+		 "Dark"   -> GrayLevel[0.1921568],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
@@ -397,8 +397,8 @@ Dispatch[{
 	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
-		 "Dark"   -> GrayLevel[0.1729358],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.2313725],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -2133,7 +2133,7 @@ Dispatch[{
 	|>,
 	"ProgressBarActive" -> <|
 		 "Light"  -> RGBColor[0.2666666, 0.6196078, 0.9686274],
-		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.945098],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
@@ -2182,7 +2182,7 @@ Dispatch[{
 	|>,
 	"ProgressClosePressed" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.945098],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
