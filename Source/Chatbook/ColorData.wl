@@ -120,6 +120,7 @@ dominantColor[ "NA_OverlayMenu"          ] := White;
 dominantColor[ "NA_RaftMenu"             ] := White;
 dominantColor[ "NA_Toolbar"              ] := RGBColor["#66ADD2"];
 dominantColor[ "PreferencesContent"      ] := GrayLevel[0.96];
+dominantColor[ "ProgressIndicator"       ] := RGBColor[ "#F3FAFF" ];
 dominantColor[ "UserMessageBox"          ] := RGBColor["#EDF4FC"];
 dominantColor[ "White"                   ] := White;
 
@@ -2128,6 +2129,62 @@ Dispatch[{
 		 "Dark"   -> RGBColor[0.4264816, 0.4264816, 0.4264816],
 		 "Method" -> "Feature",
 		 "DC"     -> "PreferencesContent",
+		 "Notes"  -> ""
+	|>,
+	"ProgressBarActive" -> <|
+		 "Light"  -> RGBColor[0.2666666, 0.6196078, 0.9686274],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressBarBackground" -> <|
+		 "Light"  -> RGBColor[0.8196078, 0.8196078, 0.8196078],
+		 "Dark"   -> RGBColor[0.2509803, 0.4039215, 0.5764705],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressCellBackground" -> <|
+		 "Light"  -> RGBColor[0.9529411, 0.9803921, 1.],
+		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressCellFrame" -> <|
+		 "Light"  -> RGBColor[0.7882352, 0.8509803, 0.8980392],
+		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressClose" -> <|
+		 "Light"  -> RGBColor[0.27451, 0.61961, 0.79608],
+		 "Dark"   -> RGBColor[0.3960784, 0.6235294, 0.8823529],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressCloseBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.80784, 0.92157, 1.],
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressCloseBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.27451, 0.61961, 0.79608],
+		 "Dark"   -> RGBColor[0.2509803, 0.4039215, 0.5764705],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
+		 "Notes"  -> ""
+	|>,
+	"ProgressClosePressed" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Method" -> "Design",
+		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"SendChatButtonBackgroundHover" -> <|

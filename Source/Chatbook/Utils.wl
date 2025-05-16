@@ -492,7 +492,7 @@ basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
                     Alignment  -> { Left, Automatic },
                     Background -> None,
                     Frame      -> All,
-                    FrameStyle -> Directive[ 1, GrayLevel[ 0, 0 ] ],
+                    FrameStyle -> Directive[ 1, Transparent ],
                     Spacings   -> { { 0, { 0 }, 0 }, { 0.6, { -0.2 }, 0.0 } }
                 ],
                 FrameMargins -> { { 0, 0 }, { 0, 0 } },
@@ -501,7 +501,7 @@ basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
         }
     },
     Frame      -> All,
-    FrameStyle -> Directive[ 1, GrayLevel[ 0, 0 ] ],
+    FrameStyle -> Directive[ 1, Transparent ],
     Spacings   -> { { 0, { 0 }, 0 }, { 0, { 0 }, 0 } }
 ];
 
@@ -552,11 +552,11 @@ basicProgressBarRow[ expr_, p_ ] /; $showProgressBar := {
             {
                 Graphics[
                     {
-                        RGBColor[ "#449EF7" ],
+                        color @ "ProgressBarActive",
                         Rectangle[ ImageScaled @ { 0, 0 }, ImageScaled @ { p, 1 } ]
                     },
                     AspectRatio      -> Full,
-                    Background       -> RGBColor[ "#D1D1D1" ],
+                    Background       -> color @ "ProgressBarBackground",
                     ImageSize        -> { Full, 4 },
                     PlotRangePadding -> None
                 ],
@@ -593,7 +593,7 @@ progressCancelButton // endDefinition;
 
 (* FIXME: move this to text resources: *)
 $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedown[
-    Graphics[
+    Graphics[(*default*)
         {
             Thickness[ 0.071429 ],
             Style[
@@ -623,7 +623,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0, 0 ]
+                FaceForm @ None
             ],
             Style[
                 {
@@ -663,14 +663,14 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+                FaceForm @ color @ "ProgressClose"
             ]
         },
         ImageSize -> { 14., 14. },
         PlotRange -> { { 0., 14. }, { 0., 14. } },
         AspectRatio -> Automatic
     ],
-    Graphics[
+    Graphics[(*hover*)
         {
             Thickness[ 0.071429 ],
             Style[
@@ -700,7 +700,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.80784, 0.92157, 1., 1. ]
+                FaceForm @ color @ "ProgressCloseBackgroundHover"
             ],
             Style[
                 {
@@ -740,14 +740,14 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+                FaceForm @ color @ "ProgressClose"
             ]
         },
         ImageSize -> { 14., 14. },
         PlotRange -> { { 0., 14. }, { 0., 14. } },
         AspectRatio -> Automatic
     ],
-    Graphics[
+    Graphics[(*pressed*)
         {
             Thickness[ 0.071429 ],
             Style[
@@ -777,7 +777,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+                FaceForm @ color @ "ProgressCloseBackgroundPressed"
             ],
             Style[
                 {
@@ -817,7 +817,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 1., 1., 1., 1. ]
+                FaceForm @ color @ "ProgressClosePressed"
             ]
         },
         ImageSize -> { 14., 14. },
