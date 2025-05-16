@@ -514,6 +514,20 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places"
 	|>,
+	"ContentSuggestionsBackgroundHover" -> <|
+		 "Light"  -> Automatic,
+		 "Dark"   -> RGBColor[0.20392156862745098`, 0.2549019607843137, 0.3137254901960784],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
+	|>,
+	"ContentSuggestionsFrameHover" -> <|
+		 "Light"  -> Automatic,
+		 "Dark"   -> RGBColor[0.35294117647058826`, 0.5098039215686274, 0.6784313725490196],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
+	|>,
 	"DiscardedMaterialBackground" -> <|
 		 "Light"  -> RGBColor[0.94902, 0.96863, 0.98824],
 		 "Dark"   -> RGBColor[0.1759050, 0.2134422, 0.2744532],
