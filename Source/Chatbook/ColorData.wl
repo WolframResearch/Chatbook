@@ -2208,6 +2208,20 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
+	"ServiceIconAnthropic" -> <|
+		 "Light"  -> GrayLevel[0.12],
+		 "Dark"   -> GrayLevel[0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ServiceIconOpenAI" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.95],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"SideChatBackground" -> <|
 		 "Light"  -> RGBColor[0.9803921, 0.9882352, 1.],
 		 "Dark"   -> RGBColor[0.2151981, 0.2151981, 0.2151981],
