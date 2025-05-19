@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.3.22.3956381892"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.23.3956653897"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -659,7 +659,7 @@ Notebook[
    CellAutoOverwrite -> True,
    CellFrameColor ->
     LightDarkSwitched[
-     RGBColor[0.639216, 0.788235, 0.94902],
+     RGBColor[0.92549, 0.941176, 0.960784],
      RGBColor[0.1608, 0.2314, 0.30195]
     ],
    ShowAutoSpellCheck -> False,

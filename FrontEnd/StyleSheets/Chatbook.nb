@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.3.22.3956382184"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.23.3956653702"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1380,7 +1380,7 @@ Notebook[
     ],
    GeneratedCell -> True,
    CellAutoOverwrite -> True,
-   CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+   CellFrameColor -> RGBColor[0.92549, 0.941176, 0.960784],
    ShowAutoSpellCheck -> False,
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
    LineSpacing -> {1.1, 0, 2},
