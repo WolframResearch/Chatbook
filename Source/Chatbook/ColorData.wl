@@ -2160,7 +2160,7 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellBackground" -> <|
-		 "Light"  -> GrayLevel[1],
+		 "Light"  -> RGBColor[0.9765, 0.9922, 1.],
 		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
