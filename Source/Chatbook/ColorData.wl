@@ -438,11 +438,11 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ChatOutputFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
 		 "Dark"   -> RGBColor[0.1608, 0.2314, 0.30195],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
-		 "Notes"  -> "Light color is the same as ChatInputFrame"
+		 "Notes"  -> "ChatOutputFrame is not the same color as ChatInputFrame"
 	|>,
 	"ChatOutputMenuButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
