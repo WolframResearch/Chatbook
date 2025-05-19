@@ -515,15 +515,15 @@ Dispatch[{
 		 "Notes"  -> "Cloud only: cell content is used in multiple places"
 	|>,
 	"ContentSuggestionsBackgroundHover" -> <|
-		 "Light"  -> Automatic,
-		 "Dark"   -> RGBColor[0.20392156862745098`, 0.2549019607843137, 0.3137254901960784],
+		 "Light"  -> RGBColor[0.9490196, 0.9803921, 1.],
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
 	|>,
 	"ContentSuggestionsFrameHover" -> <|
-		 "Light"  -> Automatic,
-		 "Dark"   -> RGBColor[0.35294117647058826`, 0.5098039215686274, 0.6784313725490196],
+		 "Light"  -> RGBColor[0.5686274, 0.7803921, 0.8862745],
+		 "Dark"   -> RGBColor[0.3529411, 0.5098039, 0.6784313],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
@@ -2160,14 +2160,14 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellBackground" -> <|
-		 "Light"  -> RGBColor[0.9529411, 0.9803921, 1.],
+		 "Light"  -> GrayLevel[1],
 		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellFrame" -> <|
-		 "Light"  -> RGBColor[0.7882352, 0.8509803, 0.8980392],
+		 "Light"  -> RGBColor[0.8352941, 0.9019607, 0.9607843],
 		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
