@@ -1929,7 +1929,7 @@ makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Associatio
         Grid[
             KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, params ],
             Alignment  -> Left,
-            BaseStyle  -> "Text",
+            BaseStyle  -> { "Text", LineBreakWithin -> Automatic },
             Dividers   -> All,
             FrameStyle -> color @ "NA_ChatOutputToolCallInputFrame",
             Spacings   -> 1
@@ -1987,10 +1987,11 @@ makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclo
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
         TextCell[
-            wideScrollPane @ formatter[ result, "Result" ],
+            wideScrollPane @ ReplaceAll[ formatter[ result, "Result" ], Cell[ bd_BoxData, a___, "Input", b___ ] :> Cell[ bd, a, "Output", b ] ],
             "Text",
             Background      -> None,
             FrameBoxOptions -> { BaselinePosition -> Automatic },
+            LineBreakWithin -> Automatic,
             PaneBoxOptions  -> { BaselinePosition -> Automatic }
         ]
     ],
@@ -2004,8 +2005,9 @@ makeToolCallOutputSection // endDefinition;
 (*wideScrollPane*)
 wideScrollPane // beginDefinition;
 
+(* This definition is similar to WorkspaceStyles.wl: "ChatCodeBlockTemplate" but has a wider minimum because it has more room initially *)
 wideScrollPane[ expr_ ] := Pane[
-    expr,
+    Pane[ expr, ImageSize -> Dynamic[ Function[ If[ # > 600, #, 600 ] ][ 0.9*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ] ],
     ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
     Scrollbars         -> Automatic,
     AppearanceElements -> None
