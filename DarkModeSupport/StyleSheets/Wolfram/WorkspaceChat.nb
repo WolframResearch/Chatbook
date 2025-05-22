@@ -87,7 +87,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.3.23.3956653897"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.3.28.3957935455"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -313,7 +313,15 @@ Notebook[
         {
          FrameBox[
           PaneBox[
-           #1,
+           PaneBox[
+            #1,
+            ImageSize ->
+             Dynamic[
+              If[#1 > 540, #1, 540] &[
+               0.95 * AbsoluteCurrentValue[{WindowSize, 1}]
+              ]
+             ]
+           ],
            AppearanceElements -> None,
            ImageSize -> {Scaled[1], UpTo[400]},
            Scrollbars -> Automatic
