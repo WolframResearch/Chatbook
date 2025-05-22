@@ -17,7 +17,7 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 (*Configuration*)
 $llmKit               := $llmKit = $VersionNumber >= 14.1;
 $llmKitService        := LogChatTiming @ getLLMKitService[ ];
-$fallbackLLMKitService = "AzureOpenAI";
+$fallbackLLMKitService = If[serviceFrameworkAvailable[ ], "LLMKitAzureOpenAI", "AzureOpenAI" ];
 $allowConnectionDialog = True;
 $enableLLMServices     = Automatic;
 $modelListCache        = <| |>;
@@ -57,7 +57,7 @@ InvalidateServiceCache // endDefinition;
 (*getLLMKitService*)
 getLLMKitService // beginDefinition;
 getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
-getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := service;
+getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := If[serviceFrameworkAvailable[ ], "LLMKit", "" ] <> service;
 getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
 getLLMKitService[ _ ] := $fallbackLLMKitService;
 getLLMKitService // endDefinition;
@@ -70,7 +70,7 @@ getUpdatedLLMKitService // beginDefinition;
 getUpdatedLLMKitService[ ] := Enclose[
     LLMSynthesize;
     Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-    getUpdatedLLMKitService[ ] = ConfirmBy[
+    getUpdatedLLMKitService[ ] = If[serviceFrameworkAvailable[ ], "LLMKit", "" ] <> ConfirmBy[
         Wolfram`LLMFunctions`Common`$LLMKitInfo[ "currentProvider" ],
         StringQ,
         "LLMKitService"
