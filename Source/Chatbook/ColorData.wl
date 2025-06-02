@@ -341,7 +341,7 @@ Dispatch[{
 	|>,
 	"ChatMenuItemBackground" -> <|
 		 "Light"  -> GrayLevel[0.98],
-		 "Dark"   -> GrayLevel[0.1930434],
+		 "Dark"   -> GrayLevel[0.1921568],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
@@ -397,8 +397,8 @@ Dispatch[{
 	|>,
 	"ChatMenuSectionBackground" -> <|
 		 "Light"  -> GrayLevel[0.937],
-		 "Dark"   -> GrayLevel[0.1729358],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.2313725],
+		 "Method" -> "Design",
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
@@ -438,11 +438,11 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ChatOutputFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
 		 "Dark"   -> RGBColor[0.1608, 0.2314, 0.30195],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
-		 "Notes"  -> "Light color is the same as ChatInputFrame"
+		 "Notes"  -> "ChatOutputFrame is not the same color as ChatInputFrame"
 	|>,
 	"ChatOutputMenuButtonBackgroundHover" -> <|
 		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
@@ -513,6 +513,20 @@ Dispatch[{
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> "Cloud only: cell content is used in multiple places"
+	|>,
+	"ContentSuggestionsBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.9490196, 0.9803921, 1.],
+		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
+	|>,
+	"ContentSuggestionsFrameHover" -> <|
+		 "Light"  -> RGBColor[0.5686274, 0.7803921, 0.8862745],
+		 "Dark"   -> RGBColor[0.3529411, 0.5098039, 0.6784313],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
 	|>,
 	"DiscardedMaterialBackground" -> <|
 		 "Light"  -> RGBColor[0.94902, 0.96863, 0.98824],
@@ -2133,7 +2147,7 @@ Dispatch[{
 	|>,
 	"ProgressBarActive" -> <|
 		 "Light"  -> RGBColor[0.2666666, 0.6196078, 0.9686274],
-		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.945098],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
@@ -2146,14 +2160,14 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellBackground" -> <|
-		 "Light"  -> RGBColor[0.9529411, 0.9803921, 1.],
+		 "Light"  -> RGBColor[0.9765, 0.9922, 1.],
 		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
 	|>,
 	"ProgressCellFrame" -> <|
-		 "Light"  -> RGBColor[0.7882352, 0.8509803, 0.8980392],
+		 "Light"  -> RGBColor[0.8352941, 0.9019607, 0.9607843],
 		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
@@ -2182,7 +2196,7 @@ Dispatch[{
 	|>,
 	"ProgressClosePressed" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.9450980],
+		 "Dark"   -> RGBColor[0.4745098, 0.6941176, 0.945098],
 		 "Method" -> "Design",
 		 "DC"     -> "ProgressIndicator",
 		 "Notes"  -> ""
@@ -2204,6 +2218,20 @@ Dispatch[{
 	"SendChatButtonIcon" -> <|
 		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
 		 "Dark"   -> RGBColor[0.3961, 0.6236, 0.8824],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ServiceIconAnthropic" -> <|
+		 "Light"  -> GrayLevel[0.12],
+		 "Dark"   -> GrayLevel[0.9],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ServiceIconOpenAI" -> <|
+		 "Light"  -> GrayLevel[0.2],
+		 "Dark"   -> GrayLevel[0.95],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
