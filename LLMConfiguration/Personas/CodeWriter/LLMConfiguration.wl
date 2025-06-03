@@ -1,6 +1,7 @@
 <|
     "BasePrompt"        -> { "WolframLanguageStyle" },
     "DisplayName"       -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameCodeWriter" ],
+    "Hidden"            -> True,
     "Icon"              -> RawBoxes @ TemplateBox[ { }, "ChatIconCodeWriter" ],
 	"PromptGenerators"  -> { "RelatedDocumentation", ParentList },
     "Tools"             -> { ParentList },
