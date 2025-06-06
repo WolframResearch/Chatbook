@@ -1041,9 +1041,9 @@ DynamicModule[{Typeset`var = initialState},
                             {
                                 {clickableOpenerRow[Dynamic[Typeset`var], label]},
                                 {content}},
-                        $openerLabelGridOptions
+                            $openerLabelGridOptions
                         ],
-                        $openerFrameOptionsActive
+                        $openerFrameOptionsDefault
                     ]
             },
             Dynamic[TrueQ[Typeset`var]],

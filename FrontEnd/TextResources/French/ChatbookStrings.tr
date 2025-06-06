@@ -156,6 +156,7 @@
 "ToolManagerTooltipNonDeletable2" -> "`name` est fourni par le personnage `persona` et ne peut pas \[EHat]tre supprim\[EAcute] s\[EAcute]par\[EAcute]ment.",
 "ToolManagerDeleteTool" -> "Supprimer l\[CloseCurlyQuote]outil",
 
+"UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "Activer les fonctions de chat de l\[CloseCurlyQuote]IA",
 "UIAutomaticAnalysisLabel" -> "Analyser automatiquement les r\[EAcute]sultats",
 "UIAutomaticAnalysisTooltip" -> "Si cette option est activ\[EAcute]e, des suggestions automatiques fournies par l\[CloseCurlyQuote]IA seront ajout\[EAcute]es en fonction des r\[EAcute]sultats de l\[CloseCurlyQuote]\[EAcute]valuation.",
@@ -165,6 +166,7 @@
 "UIAddAndManageTools" -> "Ajouter et g\[EAcute]rer des outils\[Ellipsis]",
 "UIModels" -> "Mod\[EGrave]les",
 "UIModelsServices" -> "Services",
+"UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "Obtenir les mod\[EGrave]les disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Se connecter pour obtenir la liste des mod\[EGrave]les",
 "UIModelsFineTuned" -> "Mod\[EGrave]les affin\[EAcute]s",

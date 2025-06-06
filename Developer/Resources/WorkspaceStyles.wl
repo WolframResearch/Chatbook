@@ -163,7 +163,7 @@ Cell[
 Cell[
     StyleData[ "ChatInputField" ],
     CellFrame        -> 1,
-    CellFrameColor   -> GrayLevel[ 0.85 ],
+    CellFrameColor   -> color @ "NA_ChatInputFieldCellFrame",
     CellFrameMargins -> { { 5, 5 }, { 0, 0 } }
 ]
 
@@ -259,9 +259,10 @@ Cell[
         GridBox[
             {
                 {
+                    (* Allow for some line breaking by setting a minimum window width *)
                     FrameBox[
                         PaneBox[
-                            #1,
+                            PaneBox[ #1, ImageSize -> Dynamic[ Function[ If[ # > 540, #, 540 ] ][ 0.95*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ] ],
                             AppearanceElements -> None,
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
                             Scrollbars         -> Automatic

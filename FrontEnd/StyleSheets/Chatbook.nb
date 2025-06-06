@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.2.16.3951878911"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.28.3957935366"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1380,6 +1380,7 @@ Notebook[
     ],
    GeneratedCell -> True,
    CellAutoOverwrite -> True,
+   CellFrameColor -> RGBColor[0.92549, 0.941176, 0.960784],
    ShowAutoSpellCheck -> False,
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
    LineSpacing -> {1.1, 0, 2},
@@ -1964,7 +1965,7 @@ Notebook[
          ShowStringCharacters -> True,
          FontFamily -> "Source Sans Pro"
         ],
-        BaseStyle -> "Link",
+        BaseStyle -> {"Link", FontColor -> RGBColor[0.02, 0.286, 0.651]},
         ButtonData -> #2,
         ContentPadding -> False
        ],
@@ -2027,7 +2028,7 @@ Notebook[
             Method -> "Preemptive"
            ],
            RoundingRadius -> 3,
-           FrameStyle -> GrayLevel[1, 0],
+           FrameStyle -> None,
            Background -> None,
            FrameMargins -> 0,
            ContentPadding -> False,
@@ -2612,20 +2613,6 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ChatEnabledNotebookIcon"
-       ]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatEvaluatingSpinner"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatEvaluatingSpinner"
        ]
       ]
      ])

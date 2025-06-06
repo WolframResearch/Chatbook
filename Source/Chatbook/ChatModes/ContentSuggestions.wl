@@ -428,8 +428,8 @@ contentSuggestionsCell // beginDefinition;
 contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
     BoxData @ ToBoxes @ Framed[
         Dynamic[ container(*, Deinitialization :> Quiet @ Remove @ container*) ],
-        Background     -> RGBColor[ "#F3FAFF" ],
-        FrameStyle     -> RGBColor[ "#C9D9E5" ],
+        Background     -> color @ "ProgressCellBackground",
+        FrameStyle     -> color @ "ProgressCellFrame",
         RoundingRadius -> 5
     ],
     "AttachedContentSuggestions",
@@ -1246,7 +1246,18 @@ formatSuggestions[
     Module[ { styles, formatted },
         styles = If[ MatchQ[ root, _CellObject ], ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], None ];
         formatted = ConfirmMatch[ formatSuggestion[ root, nbo, styles ] /@ suggestions, { __EventHandler }, "Formatted" ];
-        Pane[ Column[ formatted, Spacings -> 0 ], ImageSize -> { UpTo[ Scaled[ 0.9 ] ], Automatic } ]
+        (* Rasterize may be too expensive here... but it's the only way to size all items to the same smallest width *)
+        With[ { maxWidth = 1.16 * Max @ Part[ Rasterize[ #, "BoundingBox", ImageFormattingWidth -> Infinity ]& /@ formatted, All, 1 ] },
+            Pane[
+                Column[
+                    ReplaceAll[ formatted, Button[ content_, {}, BoxID -> "REPLACEME", rest___ ] :> Button[ formatSuggestionButtonFrame @ content, {}, rest ] ],
+                    Dividers   -> { { False }, { False, { True }, False } },
+                    FrameStyle -> color @ "ProgressCellFrame",
+                    Spacings   -> 0.5
+                ],
+                ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, maxWidth ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
+            ]
+        ]
     ],
     throwInternalFailure
 ];
@@ -1282,27 +1293,43 @@ formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, sugges
             },
             Sequence @@ { }
         ]
-    ], Alignment->Left],
+    ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
     If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, After ])
 ];
 
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := EventHandler[Button[
-    RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ], Alignment->Left],
+    RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
     If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, After ])
 ];
 
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := EventHandler[Button[
-    Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ], Alignment->Left],
+    Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
     If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, All ])
 ];
 
 formatSuggestion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatSuggestionButtonFrame*)
+formatSuggestionButtonFrame // beginDefinition;
+
+formatSuggestionButtonFrame[ content_ ] :=
+Framed[
+    content,
+    ImageSize      -> Scaled[ 1 ],
+    Background     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ color @ "ContentSuggestionsBackgroundHover" ]),
+    FrameStyle     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ color @ "ContentSuggestionsFrameHover" ]),
+    RoundingRadius -> 1
+]
+
+formatSuggestionButtonFrame // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

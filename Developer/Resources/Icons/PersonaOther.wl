@@ -48,7 +48,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "ChatMenuPersonaManagerIcon", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "IconsPersonaOther_1", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -187,7 +187,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "ChatMenuPersonaManagerIcon", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "IconsPersonaOther_1", Opacity[ 1.0 ] },
    FilledCurve[
     {
      { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },
