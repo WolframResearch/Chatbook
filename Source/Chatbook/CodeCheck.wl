@@ -106,11 +106,11 @@ generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
 $patternErrorComma={{"Error","Comma"}...};
 fixPattern[code_String, pat:$patternErrorComma]:=
 	Module[
-			{fixedcode, lenpat=Length@pat, ratio, falsepositive=Missing[], safe=Missing[], replaced=False, newpattern=Missing[]}
+			{fixedCode, lenPat=Length@pat, ratio, falsePositive=Missing[], safe=Missing[], replaced=False, newPattern=Missing[]}
 			,
 			(* Echo[pat,"Pattern:"]; *)
 
-			fixedcode =
+			fixedCode =
 				CodeConcreteParse[code]
 				// 	ReplaceRepeated[
 						{
@@ -127,36 +127,36 @@ fixPattern[code_String, pat:$patternErrorComma]:=
 				//	ToSourceCharacterString
 			;
 
-			fixedcode
+			fixedCode
 			// If[FailureQ@#
-				 	,	ratio={0,lenpat}
+				 	,	ratio={0,lenPat}
 				 	,	(
 						CodeCheck[#]
 				 		// 	generatePatternFromCodeCheck (* //EchoLabel["Remaining pattern"] *)
 				   		// 	Switch[#
 				   			  		, {}
-							  		, ratio={lenpat,lenpat}; safe=True; falsepositive=False;
+							  		, ratio={lenPat,lenPat}; safe=True; falsePositive=False;
 							  		(* ----- *)
 							  		, $patternErrorComma
-									, ratio={lenpat-Length@#,lenpat}
-									; containsCommentsQ[fixedcode](* //EchoLabel["contains comments"] *)
-									; lengthErrors[replaceCommaComments[fixedcode]](* //EchoLabel["replaced comments length"] *)
+									, ratio={lenPat-Length@#,lenPat}
+									; containsCommentsQ[fixedCode](* //EchoLabel["contains comments"] *)
+									; lengthErrors[replaceCommaComments[fixedCode]](* //EchoLabel["replaced comments length"] *)
 										//If[!FailureQ@#(* //EchoLabel["Failure"] *)
-											, If[(lenpat-#)>ratio[[1]], safe=False; falsepositive=True; ratio={lenpat-#,lenpat}];
+											, If[(lenPat-#)>ratio[[1]], safe=False; falsePositive=True; ratio={lenPat-#,lenPat}];
 										]&
 							 		(* ----- *)
-							  		,_ ,newpattern=#(* //EchoLabel["newpattern:"] *); fixedcode=Missing["New pattern after fix",newpattern];
+							  		,_ ,newPattern=#(* //EchoLabel["newPattern:"] *); fixedCode=Missing["New pattern after fix",newPattern];
 							]&
 						)
 				]&
 			;
-			{ "FixedCode"->fixedcode
+			{ "FixedCode"->fixedCode
 			, "Success"->(Rational@@ratio === 1)
 			, "SuccessRatio"->ratio
-			, "LikelyFalsePositive"->falsepositive
+			, "LikelyFalsePositive"->falsePositive
 			, "SafeToEvaluate"->safe
 			}
-			(* || (falsepositive=containsCommentsQ[#]), {#,falsepositive}, Missing["Failure","PatternToFix"->pat]]]& *)
+			(* || (falsePositive=containsCommentsQ[#]), {#,falsePositive}, Missing["Failure","PatternToFix"->pat]]]& *)
 	]
 
 replaceCommaComments[code_]:=
@@ -164,13 +164,13 @@ replaceCommaComments[code_]:=
 		{ccp=CodeConcreteParse[code]}
 		,
 		{
-		poscomments=Select[
+		posComments=Select[
 							Position[ccp, LeafNode[Token`Comment,comment_,_]]
 							,MatchQ[ccp[[Sequence@@Drop[#,-2]]],ruleCommaComment]&
 					]
 		}
 		,
-		ReplaceAt[ccp,LeafNode[Token`Comment,comment_,s_]:>LeafNode[Symbol,"xxxx",s],poscomments] // ToSourceCharacterString
+		ReplaceAt[ccp,LeafNode[Token`Comment,comment_,s_]:>LeafNode[Symbol,"xxxx",s],posComments] // ToSourceCharacterString
 	]
 
 ruleCommaComment=	Alternatives[
