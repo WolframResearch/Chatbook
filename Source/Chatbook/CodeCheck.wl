@@ -33,8 +33,11 @@ Begin[ "`Private`" ];
 (*CodeCheckFix*)
 
 
-CodeCheckFix[code_String]:=
+CodeCheckFix[code_String]:= (
+	Needs[ "CodeInspector`" -> None ];
+	Needs[ "CodeParser`" -> None ];
 	CodeCheck[code] // {#, CodeFix[code,#], "OriginalCode"->code}& // Association
+);
 
 
 
