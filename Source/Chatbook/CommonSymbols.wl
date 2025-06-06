@@ -265,6 +265,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `notebookRead;
 `openerView;
 `openPreferencesPage;
+`optionsAssociation;
 `parentCell;
 `parentNotebook;
 `parseInlineReferences;

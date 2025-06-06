@@ -1,5 +1,5 @@
 (* ::Package:: *)
-
+Function[ Evaluate @ ToBoxes @
 Graphics[
  {
   Thickness[ 0.05 ],
@@ -18,11 +18,12 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ToolbarFont"
+   FaceForm @ #
   ]
  },
  ImageSize -> { 20.0, 20.0 },
  PlotRange -> { { 0.0, 20.0 }, { 0.0, 20.0 } },
  AspectRatio -> Automatic,
  BaselinePosition -> Center -> Center
+]
 ]

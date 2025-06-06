@@ -157,6 +157,7 @@
 "ToolManagerTooltipNonDeletable2" -> "`name`\:C740 \:D398\:B974\:C18C\:B098 `persona`\:C5D0 \:C758\:D574 \:C81C\:ACF5\:B418\:C5C8\:C73C\:BA70 \:BCC4\:B3C4\:B85C \:C0AD\:C81C\:D560 \:C218 \:C5C6\:C2B5\:B2C8\:B2E4.",
 "ToolManagerDeleteTool" -> "\:B3C4\:AD6C \:C0AD\:C81C",
 
+"UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "AI \:CC44\:D305 \:AE30\:B2A5 \:D65C\:C131\:D654",
 "UIAutomaticAnalysisLabel" -> "\:C790\:B3D9\:C73C\:B85C \:CD9C\:B825\:C744 \:BD84\:C11D",
 "UIAutomaticAnalysisTooltip" -> "\:D65C\:C131\:D654\:D558\:BA74 AI\:AC00 \:C81C\:ACF5\:D558\:B294 \:C81C\:C548\:C774 \:C790\:B3D9\:C73C\:B85C \:B2E4\:C74C \:D3C9\:AC00 \:ACB0\:ACFC\:C5D0 \:CD94\:AC00\:B429\:B2C8\:B2E4.",
@@ -166,6 +167,7 @@
 "UIAddAndManageTools" -> "\:B3C4\:AD6C \:CD94\:AC00 \:BC0F \:AD00\:B9AC\[Ellipsis]",
 "UIModels" -> "\:BAA8\:B378",
 "UIModelsServices" -> "\:C11C\:BE44\:C2A4",
+"UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "\:C0AC\:C6A9 \:AC00\:B2A5\:D55C \:BAA8\:B378 \:AC00\:C838\:C624\:AE30\[Ellipsis]",
 "UIModelsNoList" -> "\:BAA8\:B378 \:BAA9\:B85D\:C5D0 \:C5F0\:ACB0",
 "UIModelsFineTuned" -> "\:BBF8\:C138 \:C870\:C815\:B41C \:BAA8\:B378",

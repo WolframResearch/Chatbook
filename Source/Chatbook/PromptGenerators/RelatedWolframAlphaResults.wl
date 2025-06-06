@@ -17,6 +17,7 @@ $usePromptHeader    = True;
 $multimodal         = True;
 $keepAllImages      = False;
 $wolframAlphaAppID  = None;
+$instructions       = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -24,10 +25,11 @@ $wolframAlphaAppID  = None;
 $$count = _Integer | UpTo[ _Integer ];
 $$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
-(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused *)
+(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype, downloadformatgroups *)
 $$ignoredXMLTag = Alternatives[
     "datasources",
     "definitions",
+    "downloadformatgroups",
     "expressiontypes",
     "imagesource",
     "infos",
@@ -35,6 +37,7 @@ $$ignoredXMLTag = Alternatives[
     "notes",
     "sources",
     "states",
+    "stepbystepcontenttype",
     "userinfoused"
 ];
 
@@ -46,11 +49,14 @@ $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
     "AppID"             -> Automatic,
+    "CacheResults"      -> False,
+    "Instructions"      -> None,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
+    "PromptHeader"      -> Automatic,
     "RandomQueryCount"  -> Automatic,
     "RelatedQueryCount" -> Automatic,
-    "PromptHeader"      -> Automatic
+    "SampleQueryCount"  -> Automatic
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -99,6 +105,7 @@ RelatedWolframAlphaResults[ prompt_, property_, Automatic, opts: OptionsPattern[
 RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[
         {
+            $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -111,7 +118,10 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
                 OptionValue[ "PromptHeader" ],
                 $$unspecified :> $usePromptHeader
             ],
-            $maxItems = n
+            $instructions     = OptionValue[ "Instructions" ],
+            $maxItems         = n,
+            $sampleQueries    = None,
+            $sampleQueryCount = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> 0 ]
         },
         relatedWolframAlphaResultsPrompt[
             ensureChatMessages @ prompt,
@@ -124,9 +134,25 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Content*)
-RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[ ] ] :=
+RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Lookup[
+        ConfirmMatch[
+            RelatedWolframAlphaResults[ prompt, "FullData", n, opts ],
+            KeyValuePattern[ "Content" -> { ___Association } ],
+            "Content"
+        ],
+        "Content"
+    ],
+    throwInternalFailure
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FullData*)
+RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[
         {
+            $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -139,9 +165,12 @@ RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[
                 OptionValue[ "PromptHeader" ],
                 $$unspecified :> $usePromptHeader
             ],
-            $maxItems = n
+            $instructions     = OptionValue[ "Instructions" ],
+            $maxItems         = n,
+            $sampleQueries    = None,
+            $sampleQueryCount = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> All ]
         },
-        relatedWolframAlphaResultsContent[
+        relatedWolframAlphaResultsFullData[
             ensureChatMessages @ prompt,
             n,
             Replace[ OptionValue[ "RelatedQueryCount" ], $$unspecified :> Min[ 20, $maxItems*4 ] ],
@@ -172,7 +201,9 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
-e.g. casual conversation." ];
+e.g. casual conversation.
+
+`Instructions`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -206,9 +237,11 @@ formatted expressions, etc. to the user." <> $citationHint;
 (* ::Subsection::Closed:: *)
 (*$wolframAlphaResultTemplate*)
 $wolframAlphaResultTemplate = StringTemplate[ "\
-<waResult query='`1`' url='`2`'>
+<result query='`1`' url='`2`'>
+
 `3`
-</waResult>" ];
+
+</result>" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -275,54 +308,29 @@ makeMessagePairs // endDefinition;
 (*relatedWolframAlphaResultsPrompt*)
 relatedWolframAlphaResultsPrompt // beginDefinition;
 
-relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] /;
-    StringQ @ $wolframAlphaAppID := Enclose[
-        Catch @ Module[ { content, strings, resultsString },
+relatedWolframAlphaResultsPrompt[
+    messages: $$chatMessages,
+    count_,
+    relatedCount_,
+    randomCount_
+] := Enclose[
+    Catch @ Module[ { contentAndQueries, content, queries, strings, resultsString, sampleString },
 
-            content = ConfirmMatch[
-                relatedWolframAlphaResultsContent[ messages, count, relatedCount, randomCount ],
-                { ___Association },
-                "Content"
-            ];
-
-            If[ content === { }, Throw[ "" ] ];
-
-            strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
-
-            resultsString = StringRiffle[ strings, "\n\n" ];
-
-            StringJoin[
-                ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
-                resultsString,
-                If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
-                    ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
-                    ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
-                ]
-            ]
-        ],
-        throwInternalFailure
-    ];
-
-relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { queries, waResults, resultsString },
-
-        queries = ConfirmMatch[
-            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
-            { ___String },
-            "Queries"
+        contentAndQueries = ConfirmMatch[
+            relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ],
+            KeyValuePattern @ { "Content" -> { ___Association }, "SampleQueries" -> { ___String } },
+            "FullData"
         ];
 
-        If[ queries === { }, Throw[ "" ] ];
+        content = contentAndQueries[ "Content"       ];
+        queries = contentAndQueries[ "SampleQueries" ];
 
-        waResults = ConfirmMatch[ getAllWolframAlphaResults @ queries, { __String }, "WolframAlphaResults" ];
+        If[ content === { }, Throw[ "" ] ];
 
-        resultsString = StringRiffle[
-            StringTrim @ DeleteDuplicatesBy[
-                Select[ waResults, StringQ ],
-                StringDelete @ Shortest[ "<result " ~~ __ ~~ ">" ]
-            ],
-            "\n\n"
-        ];
+        strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
+
+        resultsString = StringRiffle[ strings, "\n\n" ];
+        sampleString  = ConfirmBy[ createSampleQueryPrompt[ queries, $sampleQueryCount ], StringQ, "Sample" ];
 
         StringJoin[
             ConfirmBy[ $resultsPromptHeader, StringQ, "Header" ],
@@ -330,7 +338,8 @@ relatedWolframAlphaResultsPrompt[ messages: $$chatMessages, count_, relatedCount
             If[ StringContainsQ[ resultsString, "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ],
                 ConfirmBy[ $markdownHint, StringQ, "MarkdownHint" ],
                 ConfirmBy[ $citationHint, StringQ, "CitationHint" ]
-            ]
+            ],
+            sampleString
         ]
     ],
     throwInternalFailure
@@ -340,10 +349,34 @@ relatedWolframAlphaResultsPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*waResultString*)
-waResultString // beginDefinition;
-waResultString[ result_String ] := body;
-waResultString // endDefinition;
+(*createSampleQueryPrompt*)
+createSampleQueryPrompt // beginDefinition;
+
+createSampleQueryPrompt[ queries_, 0 | Automatic ] := "";
+
+createSampleQueryPrompt[ queries: { __String }, count_? Positive ] := Enclose[
+    ConfirmBy[
+        $sampleQueriesHeader <> StringRiffle[ Take[ queries, UpTo[ count ] ], "\n" ],
+        StringQ,
+        "SampleQueryPrompt"
+    ],
+    throwInternalFailure
+];
+
+createSampleQueryPrompt[ queries_, UpTo[ count_ ] ] :=
+    createSampleQueryPrompt[ queries, count ];
+
+createSampleQueryPrompt[ queries_, All ] :=
+    createSampleQueryPrompt[ queries, Infinity ];
+
+createSampleQueryPrompt // endDefinition;
+
+
+$sampleQueriesHeader = "
+
+Here are some additional valid Wolfram|Alpha queries to demonstrate what kinds of queries it can accept:
+
+";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -351,7 +384,11 @@ waResultString // endDefinition;
 generateSuggestedQueries // beginDefinition;
 
 generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCount_Integer ] := Enclose[
-    Module[ { relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, response, content },
+    Module[
+        {
+            relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
+            auth, authOption, response, content
+        },
 
         relevant = ConfirmMatch[
             Take[ vectorDBSearch[ "WolframAlphaQueries", prompt, "Values" ], UpTo[ relatedCount ] ],
@@ -362,15 +399,24 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
         all = ConfirmMatch[ $allQueries, { __String }, "AllQueries" ];
 
         combined = ConfirmMatch[
-            Join[ relevant, RandomSample[ Complement[ all, relevant ], randomCount ] ],
+            Join[ relevant, cachedRandomSample[ Complement[ all, relevant ], randomCount ] ],
             { __String },
             "Combined"
         ];
 
+        $sampleQueries = ConfirmMatch[ Take[ combined, $sampleQueryCount ], { ___String }, "SampleQueries" ];
+
         examples = StringRiffle[ combined, "\n" ];
 
-        systemPrompt = ConfirmBy[
-            TemplateApply[ $promptTemplate, <| "Examples" -> examples, "MaxItems" -> IntegerName @ count |> ],
+        systemPrompt = StringTrim @ ConfirmBy[
+            TemplateApply[
+                $promptTemplate,
+                <|
+                    "Examples"     -> examples,
+                    "MaxItems"     -> IntegerName @ count,
+                    "Instructions" -> If[ StringQ @ $instructions, $instructions, "" ]
+                |>
+            ],
             StringQ,
             "SystemPrompt"
         ];
@@ -385,12 +431,11 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
             "Messages"
         ];
 
-        response = ConfirmBy[
-            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ <| $defaultConfig, $generatorLLMConfig |> ],
-            AssociationQ,
-            "Response"
-        ];
+        config     = <| $defaultConfig, $generatorLLMConfig |>;
+        auth       = Lookup[ config, "Authentication", Automatic ];
+        authOption = If[ auth === Automatic, Sequence @@ { }, Authentication -> auth ];
+
+        response = ConfirmBy[ generateSuggestedQueries0[ messages, config, authOption ], AssociationQ, "Response" ];
 
         content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
@@ -405,6 +450,42 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
 generateSuggestedQueries // endDefinition;
 
+
+generateSuggestedQueries0 // beginDefinition;
+
+generateSuggestedQueries0[ messages_, config_, opts___ ] := Enclose[
+    Module[ { response },
+
+        response = ConfirmBy[
+            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
+            LLMServices`Chat[ messages, LLMConfiguration @ config, opts ],
+            AssociationQ,
+            "Response"
+        ];
+
+        If[ TrueQ @ $cacheResults,
+            generateSuggestedQueries0[ messages, config, opts ] = response,
+            response
+        ]
+    ],
+    throwInternalFailure
+];
+
+generateSuggestedQueries0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedRandomSample*)
+cachedRandomSample // beginDefinition;
+
+cachedRandomSample[ queries_List, count_ ] :=
+    If[ TrueQ @ $cacheResults,
+        cachedRandomSample[ queries, count ] = RandomSample[ queries, count ],
+        RandomSample[ queries, count ]
+    ];
+
+cachedRandomSample // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$allQueries*)
@@ -416,37 +497,37 @@ $allQueries := $allQueries = Union @ RelatedWolframAlphaQueries @ All;
 getAllWolframAlphaResults // beginDefinition;
 
 getAllWolframAlphaResults[ queries: { ___String } ] := Enclose[
-	Module[ { results, submitTime, tasks, waitTime, waitResult, formatTime, strings },
-		results = <| |>;
-		results[ "Timing" ] = <| |>;
-		results[ "Queries" ] = AssociationMap[ <| "Timing" -> <| |> |> &, queries ];
+    Module[ { results, submitTime, tasks, waitTime, waitResult, formatTime, strings },
+        results = <| |>;
+        results[ "Timing" ] = <| |>;
+        results[ "Queries" ] = AssociationMap[ <| "Timing" -> <| |> |> &, queries ];
 
-		{ submitTime, tasks } = ConfirmMatch[
-			AbsoluteTiming @ asyncWAInfo[ results[ "Queries" ], queries ],
-			{ _Real, { ___TaskObject } },
-			"Submit"
-		];
+        { submitTime, tasks } = ConfirmMatch[
+            AbsoluteTiming @ asyncWAInfo[ results[ "Queries" ], queries ],
+            { _Real, { ___TaskObject } },
+            "Submit"
+        ];
 
-		{ waitTime, waitResult } = ConfirmMatch[
-			AbsoluteTiming @ TaskWait[ tasks, TimeConstraint -> 30 ],
-			{ _Real, { ___ } },
-			"TaskWait"
-		];
+        { waitTime, waitResult } = ConfirmMatch[
+            AbsoluteTiming @ TaskWait[ tasks, TimeConstraint -> 30 ],
+            { _Real, { ___ } },
+            "TaskWait"
+        ];
 
-		{ formatTime, strings } = ConfirmMatch[
-			AbsoluteTiming @ KeyValueMap[ formatWolframAlphaResult, results[ "Queries" ] ],
-			{ _Real, { __String } },
-			"Formatting"
-		];
+        { formatTime, strings } = ConfirmMatch[
+            AbsoluteTiming @ KeyValueMap[ formatWolframAlphaResult, results[ "Queries" ] ],
+            { _Real, { __String } },
+            "Formatting"
+        ];
 
-		results[ "Timing", "Submit"     ] = submitTime;
-		results[ "Timing", "TaskWait"   ] = waitTime;
-		results[ "Timing", "Formatting" ] = formatTime;
+        results[ "Timing", "Submit"     ] = submitTime;
+        results[ "Timing", "TaskWait"   ] = waitTime;
+        results[ "Timing", "Formatting" ] = formatTime;
 
-		$lastAsyncResults = results;
-		strings
-	],
-	throwInternalFailure
+        $lastAsyncResults = results;
+        strings
+    ],
+    throwInternalFailure
 ];
 
 getAllWolframAlphaResults // endDefinition;
@@ -468,27 +549,26 @@ submitQuery // Attributes = { HoldFirst };
 submitQuery[ assoc_ ] := submitQuery[ assoc, # ] &;
 
 submitQuery[ assoc_, query_String ] :=
-	Module[ { url, urlTiming, task, taskTiming },
+    Module[ { url, urlTiming, task, taskTiming },
 
-		{ urlTiming, url } = AbsoluteTiming @ getURL @ query;
+        { urlTiming, url } = AbsoluteTiming @ getURL @ query;
 
+        { taskTiming, task } = AbsoluteTiming @ URLSubmit[
+            url,
+            HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
+            HandlerFunctions     -> <| "TaskFinished" -> setResult[ assoc, query, AbsoluteTime[ ] ] |>,
+            TimeConstraint       -> 30
+        ];
 
-		{ taskTiming, task } = AbsoluteTiming @ URLSubmit[
-			url,
-			HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
-			HandlerFunctions     -> <| "TaskFinished" -> setResult[ assoc, query, AbsoluteTime[ ] ] |>,
-			TimeConstraint       -> 30
-		];
+        assoc[ query, "Query" ] = query;
+        assoc[ query, "URL"   ] = url;
+        assoc[ query, "Task"  ] = task;
 
-		assoc[ query, "Query" ] = query;
-		assoc[ query, "URL"   ] = url;
-		assoc[ query, "Task"  ] = task;
+        assoc[ query, "Timing", "URL"  ] = urlTiming;
+        assoc[ query, "Timing", "Task" ] = taskTiming;
 
-		assoc[ query, "Timing", "URL"  ] = urlTiming;
-		assoc[ query, "Timing", "Task" ] = taskTiming;
-
-		task
-	];
+        task
+    ];
 
 submitQuery // endDefinition;
 
@@ -498,10 +578,10 @@ submitQuery // endDefinition;
 getURL // beginDefinition;
 
 getURL[ query_String ] := getURL[ query ] = WolframAlpha[
-	query,
-	"URL",
-	PodStates -> { "Step-by-step solution" },
-	Method    -> { "Formats" -> { "cell", "computabledata", "plaintext" } }
+    query,
+    "URL",
+    PodStates -> { "Step-by-step solution" },
+    Method    -> { "Formats" -> { "cell", "computabledata", "plaintext" } }
 ];
 
 getURL // endDefinition;
@@ -513,35 +593,35 @@ setResult // beginDefinition;
 setResult // Attributes = { HoldFirst };
 
 setResult[ assoc_, query_, submitTime_ ] :=
-	catchAlways @ setResult[ assoc, query, submitTime, # ] &;
+    catchAlways @ setResult[ assoc, query, submitTime, # ] &;
 
 setResult[
-	assoc_,
-	query_String,
-	submitTime_? NumberQ,
-	as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArray" -> bytes_ByteArray }
+    assoc_,
+    query_String,
+    submitTime_? NumberQ,
+    as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArray" -> bytes_ByteArray }
 ] := Enclose[
     Module[ { info, infoTiming, string, stringTiming },
 
-		assoc[ query, "Timing", "Response" ] = AbsoluteTime[ ] - submitTime;
+        assoc[ query, "Timing", "Response" ] = AbsoluteTime[ ] - submitTime;
 
-		{ infoTiming, info } = ConfirmMatch[
-			AbsoluteTiming @ byteArrayToPodInformation @ bytes,
-			{ _Real, KeyValuePattern @ { } },
-			"PodInfo"
-		];
+        { infoTiming, info } = ConfirmMatch[
+            AbsoluteTiming @ byteArrayToPodInformation @ bytes,
+            { _Real, KeyValuePattern @ { } },
+            "PodInfo"
+        ];
 
-		{ stringTiming, string } = ConfirmMatch[
-			AbsoluteTiming @ getWolframAlphaText[ query, True, info ],
-			{ _Real, _String? StringQ },
-			"String"
-		];
+        { stringTiming, string } = ConfirmMatch[
+            AbsoluteTiming @ getWolframAlphaText[ query, True, info ],
+            { _Real, _String? StringQ },
+            "String"
+        ];
 
-		assoc[ query, "PodInfo"           ] = info;
-		assoc[ query, "Timing", "PodInfo" ] = infoTiming;
-		assoc[ query, "String"            ] = string;
-		assoc[ query, "Timing", "String"  ] = stringTiming;
-	],
+        assoc[ query, "PodInfo"           ] = info;
+        assoc[ query, "Timing", "PodInfo" ] = infoTiming;
+        assoc[ query, "String"            ] = string;
+        assoc[ query, "Timing", "String"  ] = stringTiming;
+    ],
     throwInternalFailure
 ];
 
@@ -647,8 +727,18 @@ loadWolframAlphaClient // endDefinition;
 (*relatedWolframAlphaResultsContent*)
 relatedWolframAlphaResultsContent // beginDefinition;
 
-relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { queries, content, result },
+relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] :=
+    relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ][ "Content" ];
+
+relatedWolframAlphaResultsContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedWolframAlphaResultsFullData*)
+relatedWolframAlphaResultsFullData // beginDefinition;
+
+relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
+    Catch @ Module[ { queries, sampleQueries, content, result },
 
         queries = ConfirmMatch[
             generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
@@ -656,18 +746,25 @@ relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCoun
             "Queries"
         ];
 
-        If[ queries === { }, Throw @ { } ];
+        sampleQueries = ConfirmMatch[ $sampleQueries, { ___String }, "SampleQueries" ];
+
+        If[ queries === { }, Throw @ <| "Content" -> { }, "SampleQueries" -> sampleQueries |> ];
 
         content = ConfirmBy[ getWolframAlphaAPIContent @ queries, AssociationQ, "Content" ];
 
         result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
 
-        DeleteDuplicatesBy[ KeyDrop[ result, { "StatusCode", "BodyByteArray" } ], Lookup[ "Content" ] ]
+        result = DeleteDuplicatesBy[
+            KeyDrop[ result, { "StatusCode", "BodyByteArray" } ],
+            Lookup[ "InputInterpretation" ]
+        ];
+
+        <| "Content" -> result, "SampleQueries" -> sampleQueries |>
     ],
     throwInternalFailure
 ];
 
-relatedWolframAlphaResultsContent // endDefinition;
+relatedWolframAlphaResultsFullData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -679,7 +776,10 @@ getWolframAlphaAPIContent[ queries: { ___String } ] := Enclose[
         results = <| |>;
         tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
         TaskWait[ tasks, TimeConstraint -> 30 ];
-        results
+        If[ TrueQ @ $cacheResults,
+            getWolframAlphaAPIContent[ queries ] = results,
+            results
+        ]
     ],
     throwInternalFailure
 ];
@@ -695,7 +795,8 @@ submitXMLRequest // Attributes = { HoldFirst };
 submitXMLRequest[ assoc_ ] :=
     submitXMLRequest[ assoc, # ] &;
 
-submitXMLRequest[ assoc_, query_String ] := Enclose[
+(* cSpell: ignore sbsmode, podstate *)
+submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Enclose[
     Module[ { request, task },
 
         If[ ! AssociationQ @ assoc, assoc = <| |> ];
@@ -709,15 +810,50 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
                 "Query" -> {
                     "input"       -> query,
                     "reinterpret" -> False,
-                    "appid"       -> ConfirmBy[ $wolframAlphaAppID, StringQ, "AppID" ],
+                    "appid"       -> $wolframAlphaAppID,
                     "format"      -> "image,plaintext",
-                    "output"      -> "xml"
+                    "output"      -> "xml",
+                    "sbsmode"     -> "StepByStepDetails",
+                    "podstate"    -> "Step-by-step solution,Show all steps"
                 }
             |>
         ];
 
         task = URLSubmit[
             request,
+            HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
+            HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
+            TimeConstraint       -> 30
+        ];
+
+        ConfirmMatch[ task, _TaskObject, "Task" ]
+    ],
+    throwInternalFailure
+];
+
+submitXMLRequest[ assoc_, query_String ] := Enclose[
+    Module[ { url, task },
+
+        If[ ! AssociationQ @ assoc, assoc = <| |> ];
+        If[ ! AssociationQ @ assoc @ query, assoc @ query = <| |> ];
+        assoc[ query, "Query" ] = query;
+        assoc[ query, "URL"   ] = makeWolframAlphaURL @ query;
+
+        url = ConfirmBy[
+            WolframAlpha[
+                query,
+                "URL",
+                PodStates -> { "Step-by-step solution", "Show all steps" },
+                Method    -> { "Formats" -> { "image", "plaintext" } }
+            ],
+            StringQ,
+            "URL"
+        ];
+
+        $lastURL = url;
+
+        task = URLSubmit[
+            url,
             HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
             HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
             TimeConstraint       -> 30
@@ -739,8 +875,8 @@ setXMLResult // Attributes = { HoldFirst };
 setXMLResult[ result_ ] :=
     setXMLResult[ result, # ] &;
 
-setXMLResult[ result_, as: KeyValuePattern[ "BodyByteArray" -> bytes_ByteArray ] ] := Enclose[
-    Module[ { xmlString, xml, warnings, processed },
+setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArray" -> bytes_ByteArray } ] := Enclose[
+    Module[ { xmlString, xml, warnings, processed, query, input },
 
         xmlString = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "XMLString" ];
 
@@ -750,16 +886,47 @@ setXMLResult[ result_, as: KeyValuePattern[ "BodyByteArray" -> bytes_ByteArray ]
             "XML"
         ];
 
-        warnings = Internal`Bag[ ];
+        warnings  = Internal`Bag[ ];
         processed = Block[ { $warnings = warnings }, processXML @ xml ];
+        query     = ConfirmBy[ result[ "Query" ], StringQ, "Query" ];
+        input     = ConfirmMatch[ inputInterpretation[ query, processed ], _String|_Missing, "Input" ];
 
         If[ ! AssociationQ @ result, result = <| |> ];
-        result = <| result, as, "Content" -> processed, "Warnings" -> Internal`BagPart[ warnings, All ] |>
+        result = <|
+            result,
+            as,
+            "InputInterpretation" -> input,
+            "Content"             -> processed,
+            "Warnings"            -> Internal`BagPart[ warnings, All ]
+        |>
     ],
     throwInternalFailure
 ];
 
 setXMLResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inputInterpretation*)
+inputInterpretation // beginDefinition;
+
+inputInterpretation[ query_String, content_ ] := FirstCase[
+    content,
+    s_String :> With[
+        {
+            int = StringCases[
+                s,
+                "# Input interpretation\n" ~~ Shortest[ i__ ] ~~ (("\n" ~~ "#".. ~~ " ") | EndOfString) :> i,
+                1
+            ]
+        },
+        StringTrim @ First @ int /; MatchQ[ int, { _String } ]
+    ],
+    Missing[ "NotFound", query ],
+    Infinity
+];
+
+inputInterpretation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -878,6 +1045,13 @@ parsePodContent[ _String ] :=
     { };
 
 parsePodContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseAssumptions*)
+parseAssumptions // beginDefinition;
+parseAssumptions[ ___ ] := { }; (* TODO: Implement *)
+parseAssumptions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1035,13 +1209,6 @@ redundantCaptionQ[ KeyValuePattern[ "Caption" -> caption_String ], text_String ]
     StringDelete[ caption, Whitespace|"\\" ] === StringDelete[ text, Whitespace|"\\" ];
 
 redundantCaptionQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*parseAssumptions*)
-parseAssumptions // beginDefinition;
-parseAssumptions[ ___ ] := { }; (* TODO: Implement *)
-parseAssumptions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

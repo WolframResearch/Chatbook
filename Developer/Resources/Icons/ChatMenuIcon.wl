@@ -1,7 +1,7 @@
 Graphics[
  {
   Thickness[ 0.071429 ],
-  FaceForm @ { RGBColor[ 0.2, 0.2, 0.2 ], Opacity[ 1.0 ] },
+  FaceForm @ { color @ "ChatOutputMenuButtonIcon", Opacity[ 1.0 ] },
   FilledCurve[
    {
     { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },

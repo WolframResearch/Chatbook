@@ -185,29 +185,18 @@ sourcesButton // endDefinition;
 newChatButton // beginDefinition;
 
 newChatButton[ Dynamic[ nbo_ ] ] :=
-	With[{(* the icon colors come from the given BaseStyle *)
-		label = toolbarButtonLabel0["New", "New",
-			{FontColor -> color @ "NA_ToolbarLightButtonFont"},
-			{BaseStyle -> color @ "NA_ToolbarLightButtonFont"}
-		],
-		hotLabel = toolbarButtonLabel0["New", "New",
-			{FontColor -> color @ "NA_ToolbarFont"},
-			{BaseStyle -> color @ "NA_ToolbarFont"}
-		]},
-
-		Button[
-			toolbarButtonLabel[ lightButton, {label, hotLabel}, "New"]
-			,
-			clearOverlayMenus @ nbo;
-			NotebookDelete @ Cells @ nbo;
-			removeWorkspaceChatSubDockedCell @ nbo;
-			CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
-			CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
-			moveChatInputToTop @ nbo;
-			,
-			Appearance -> "Suppressed",
-			Method     -> "Queued"
-		]
+	Button[
+		toolbarButtonLabel[ "New", "New", "New", True ]
+		,
+		clearOverlayMenus @ nbo;
+		NotebookDelete @ Cells @ nbo;
+		removeWorkspaceChatSubDockedCell @ nbo;
+		CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
+		CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+		moveChatInputToTop @ nbo;
+		,
+		Appearance -> "Suppressed",
+		Method     -> "Queued"
 	];
 
 newChatButton // endDefinition;
@@ -231,64 +220,63 @@ openAsChatbookButton // endDefinition;
 (*toolbarButtonLabel*)
 toolbarButtonLabel // beginDefinition;
 
-toolbarButtonLabel[ name_String, opts: OptionsPattern[ ] ] :=
-    toolbarButtonLabel[ name, name, opts ];
+toolbarButtonLabel[ name_String ] :=
+    toolbarButtonLabel[ name, name ];
 
-toolbarButtonLabel[ iconName_String, label_, opts: OptionsPattern[ ] ] :=
-    toolbarButtonLabel[ iconName, label, iconName, opts ];
+toolbarButtonLabel[ iconName_String, label_ ] :=
+    toolbarButtonLabel[ iconName, label, iconName, False ];
 
-toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: OptionsPattern[ ] ] :=
-    toolbarButtonLabel[ iconName, label, tooltipName, opts ] =
-		With[ { lbl = toolbarButtonLabel0[ iconName, label, {}, {} ]},
+toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, lightStyleQ: True | False ] :=
+    toolbarButtonLabel[ iconName, label, tooltipName, lightStyleQ ] =
+		With[
+            {
+                default = If[ lightStyleQ,
+                    toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarLightButtonFont", {FontColor -> color @ "NA_ToolbarLightButtonFont"}, {} ],
+                    toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFont",            {FontColor -> color @ "NA_ToolbarFont"}, {} ]
+                ],
+                (* active font same as hover font; light and regular buttons have the same hover and active states *) 
+                hover   = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {} ],
+                active  = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {} ]
+            },
 			buttonTooltip[
 				mouseDown[
-					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonDefault ],
-					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
-					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
+					Framed[ default, $toolbarButtonCommon[ label =!= None ], If[ lightStyleQ, $toolbarButtonLight, $toolbarButtonDefault ] ],
+					Framed[ hover,   $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
+					Framed[ active,  $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
 				],
 				tooltipName
 			]
 		]
-
-toolbarButtonLabel[ lightButton, {default_, hot_}, tooltipName_, opts: OptionsPattern[] ] :=
-			buttonTooltip[
-				mouseDown[
-					Framed[ default, opts, $toolbarButtonCommon @ True, $toolbarButtonLight   ],
-					Framed[ hot,     opts, $toolbarButtonCommon @ True, $toolbarButtonHover   ],
-					Framed[ hot,     opts, $toolbarButtonCommon @ True, $toolbarButtonActive  ]
-				],
-				tooltipName
-			]
-
 
 toolbarButtonLabel // endDefinition;
 
 
 toolbarButtonLabel0 // beginDefinition;
 
-toolbarButtonLabel0[ iconName_String, labelName_String, {styleOpts___}, {gridOpts___}] :=
+toolbarButtonLabel0[ iconName_String, labelName_String, color_, {styleOpts___}, {gridOpts___}] :=
     With[ { label = tr[ "WorkspaceToolbarButtonLabel"<>labelName ] },
         toolbarButtonLabel0[
             iconName,
             If[ StringQ @ label, Style @ label, label ],
+            color,
             {styleOpts},
             {gridOpts}
         ]
     ];
 
-toolbarButtonLabel0[ iconName_String, None, {styleOpts___}, {gridOpts___}] :=
+toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___}] :=
     Grid[
-        { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
+        { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ] } },
         gridOpts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Baseline },
         BaselinePosition -> { 1, 1 }
     ];
 
-toolbarButtonLabel0[ iconName_String, label_, {styleOpts___}, {gridOpts___}] :=
+toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}] :=
     Grid[
         { {
-            chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ],
+            chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ],
             Style[ label, $toolbarLabelStyle, styleOpts ]
         } },
         gridOpts,
@@ -1700,7 +1688,7 @@ notebookSources[ ] := Framed[
                                 SetSelectedNotebook @ nbo,
                                 Alignment  -> Right,
                                 Appearance -> "Suppressed",
-                                BaseStyle  -> { "Text", FontSize -> 16 }
+                                BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" }
                             ]
                         }
                     ],

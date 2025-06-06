@@ -181,7 +181,13 @@ addExtraToolData // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getToolByName*)
 getToolByName // beginDefinition;
-getToolByName[ name_String ] := Lookup[ $AvailableTools, toCanonicalToolName @ name ];
+
+getToolByName[ name_String ] := Lookup[
+    $AvailableTools,
+    name,
+    Lookup[ $AvailableTools, toCanonicalToolName @ name ]
+];
+
 getToolByName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
