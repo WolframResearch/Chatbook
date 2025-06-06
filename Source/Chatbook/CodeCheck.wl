@@ -14,7 +14,7 @@ BeginPackage["Wolfram`Chatbook`CodeCheck`"]; (**)
 Needs["CodeInspector`"]
 Needs["CodeParser`"]
 
-CodeCheckFix
+`CodeCheckFix
 
 Begin[ "`Private`" ];
 
