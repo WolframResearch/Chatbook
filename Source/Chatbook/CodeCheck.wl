@@ -8,6 +8,9 @@
 (*Init*)
 
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::DifferentLine:: *)
+
 BeginPackage["Wolfram`Chatbook`CodeCheck`"]; (**)
 
 
@@ -196,6 +199,8 @@ containsCommentsQ[s_String]:=StringContainsQ[s,","~~"(*"~~Except["("]~~Except["*
 
 (* ::Chapter::Closed:: *)
 (*End*)
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 
 (* ::Section::Closed:: *)
