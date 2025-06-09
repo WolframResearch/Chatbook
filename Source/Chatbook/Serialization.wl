@@ -1287,6 +1287,7 @@ boxesToExpressionURI // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*cacheBoxRaster*)
 cacheBoxRaster // beginDefinition;
+cacheBoxRaster // Attributes = { HoldRest };
 
 cacheBoxRaster[ boxes_, expr_ ] /; $useRasterCache && $countImageTokens :=
     Catch @ Module[ { hash, img },
