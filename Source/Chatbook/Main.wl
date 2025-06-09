@@ -142,6 +142,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatState`",
     "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
+    "Wolfram`Chatbook`CodeCheck`",
     "Wolfram`Chatbook`ColorData`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`ConvertChatNotebook`",
