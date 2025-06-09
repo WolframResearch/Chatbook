@@ -46,6 +46,9 @@ chatMessagesToCells // endDefinition;
 (*chatMessageToCell*)
 chatMessageToCell // beginDefinition;
 
+chatMessageToCell[ _? toolMessageQ     , _ ] := Nothing;
+chatMessageToCell[ _? temporaryMessageQ, _ ] := Nothing;
+
 chatMessageToCell[ message_Association, format_ ] :=
     chatMessageToCell[ message[ "Role" ], message[ "Content" ], format ];
 

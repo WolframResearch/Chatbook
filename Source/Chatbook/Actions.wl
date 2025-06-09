@@ -493,19 +493,22 @@ EvaluateChatInput // endDefinition;
 (*mergeToolCallMessages*)
 mergeToolCallMessages // beginDefinition;
 
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::KernelBug:: *)
-mergeToolCallMessages[ {
-    a___,
-    KeyValuePattern[ "ToolRequest" -> True ],
-    KeyValuePattern[ "ToolResponse" -> True ],
-    b: KeyValuePattern[ "Role" -> "Assistant" ],
-    c___
-} ] := mergeToolCallMessages @ { a, b, c };
-(* :!CodeAnalysis::EndBlock:: *)
+mergeToolCallMessages[ messages_List ] := SequenceReplace[
+    DeleteCases[ messages, _? temporaryMessageQ ],
+    {
+        {
+            KeyValuePattern[ "ToolRequest"  -> True ],
+            KeyValuePattern[ "ToolResponse" -> True ],
+            msg: KeyValuePattern[ "Role" -> "Assistant" ]
+        } :> msg,
 
-mergeToolCallMessages[ messages_List ] :=
-    messages;
+        {
+            KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolRequest"  -> True ] ],
+            KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolResponse" -> True ] ],
+            msg: KeyValuePattern[ "Role" -> "Assistant" ]
+        } :> msg
+    }
+];
 
 mergeToolCallMessages // endDefinition;
 
