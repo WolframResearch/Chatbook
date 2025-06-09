@@ -1620,6 +1620,28 @@ claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Message Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolMessageQ*)
+toolMessageQ // beginDefinition;
+toolMessageQ[ KeyValuePattern[ "ToolRequest"|"ToolResponse" -> True ] ] := True;
+toolMessageQ[ KeyValuePattern[ "Metadata" -> meta_Association ] ] := toolMessageQ @ meta;
+toolMessageQ[ _ ] := False;
+toolMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*temporaryMessageQ*)
+temporaryMessageQ // beginDefinition;
+temporaryMessageQ[ KeyValuePattern[ "Temporary" -> True ] ] := True;
+temporaryMessageQ[ KeyValuePattern[ "Metadata" -> meta_Association ] ] := temporaryMessageQ @ meta;
+temporaryMessageQ[ _ ] := False;
+temporaryMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     Null
