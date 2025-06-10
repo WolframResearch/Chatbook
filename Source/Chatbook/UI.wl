@@ -1477,7 +1477,7 @@ modelMenuItem[
 ] := <|
 	"Type"   -> "Setter",
 	"Label"  -> displayName,
-	"Icon"   -> icon,
+	"Icon"   -> None,
 	"Check"  -> modelSelectionCheckmark[ currentModel, name ],
 	"Action" :> (setModel[ obj, model ])
 |>;

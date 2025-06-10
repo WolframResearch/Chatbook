@@ -179,16 +179,16 @@ menuItemIcon // beginDefinition
 
 menuItemIcon[ spec_Association?AssociationQ ] :=
 If[ Lookup[ spec, "Check", None ] === None,
-    resizeMenuIcon @ Lookup[ spec, "Icon", Graphics[ Background -> Red ] ]
+    Lookup[ spec, "Icon", resizeMenuIcon @ Graphics[ Background -> Red ], Replace[ #, { None :> "", _ :> resizeMenuIcon @ # } ]& ]
     ,
-    Row[ {
+    Row[ Flatten @ {
         Switch[ Lookup[ spec, "Check", False ],
             True,      Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkTrue" ],
             Inherited, Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkInherited" ],
             _,         Style[ "\[Checkmark]", ShowContents -> False ]
         ],
-        " ",
-        resizeMenuIcon @ Lookup[ spec, "Icon", Graphics[ Background -> Red ] ] } ]
+        Lookup[ spec, "Icon", { " ", resizeMenuIcon @ Graphics[ Background -> Red ] }, Replace[ #, { None :> Nothing, _ :> { " ", resizeMenuIcon @ # } } ]& ]
+    } ]
 ]
 
 menuItemIcon // endDefinition
