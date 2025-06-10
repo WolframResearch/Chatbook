@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.3.28.3957935455"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.37.3959065236"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -65,9 +65,9 @@ Notebook[
    CellMargins -> {{66, 32}, {1, 8}},
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
-    "'" -> "SideChat",
     "=" -> "WolframAlphaShort",
-    "*" -> "Item"
+    "*" -> "Item",
+    ">" -> "ExternalLanguageDefault"
    },
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
@@ -280,11 +280,7 @@ Notebook[
     ],
    CellMargins -> {{79, 26}, {Inherited, Inherited}},
    CellDingbatMargin -> 0,
-   StyleKeyMapping -> {
-    "~" -> "ChatDelimiter",
-    "'" -> "ChatSystemInput",
-    "Backspace" -> "ChatInput"
-   },
+   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    TaggingRules -> <|"ChatNotebookSettings" -> <|"IncludeHistory" -> False|>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
@@ -321,11 +317,7 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatSystemIcon"]],
      Background -> None
     ],
-   StyleKeyMapping -> {
-    "~" -> "ChatDelimiter",
-    "'" -> "ChatInput",
-    "Backspace" -> "SideChat"
-   },
+   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameStyle -> Dashing[{Small, Small}],
@@ -964,7 +956,13 @@ Notebook[
    StyleData["ChatDelimiter"],
    CellMargins -> {{5, 0}, {10, 10}},
    CellElementSpacings -> {"CellMinHeight" -> 6},
-   StyleKeyMapping -> {"~" -> "ChatBlockDivider", "'" -> "ChatInput"},
+   StyleKeyMapping -> {
+    "~" -> "ChatBlockDivider",
+    "'" -> "ChatInput",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item",
+    ">" -> "ExternalLanguageDefault"
+   },
    CellGroupingRules -> {"SectionGrouping", 62},
    TaggingRules -> <|"ChatNotebookSettings" -> <|"ChatDelimiter" -> True|>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
