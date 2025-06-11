@@ -1287,6 +1287,7 @@ boxesToExpressionURI // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*cacheBoxRaster*)
 cacheBoxRaster // beginDefinition;
+cacheBoxRaster // Attributes = { HoldRest };
 
 cacheBoxRaster[ boxes_, expr_ ] /; $useRasterCache && $countImageTokens :=
     Catch @ Module[ { hash, img },
@@ -2855,6 +2856,7 @@ fasterCellToString0[ HoldPattern @ DocuTools`Private`StylizeTemplatePart[ box_ ]
 (* Some system model related boxes have raw values: *)
 $$rawSymbol = Alternatives[ None, Automatic, StateSpaceModel, True, False, $Failed ];
 fasterCellToString0[ sym: $$rawSymbol ] := ToString @ sym;
+fasterCellToString0[ sym_Symbol ] /; AtomQ @ sym && Context @ sym === "$CellContext`" := SymbolName @ sym;
 fasterCellToString0[ n_? NumberQ ] := ToString @ n;
 fasterCellToString0[ HoldPattern @ BoxData[ ] ] := "";
 
