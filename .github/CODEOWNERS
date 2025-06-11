@@ -1,0 +1,9 @@
+# Global
+* @rhennigan
+
+# FrontEnd files
+/FrontEnd/ @KMDaily
+/DarkModeSupport/ @KMDaily
+/Developer/StylesheetBuilder.wl @KMDaily
+/Developer/FrontEndResourceBuilder.wl @KMDaily
+/Developer/Resources/ @KMDaily
