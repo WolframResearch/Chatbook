@@ -1,3 +1,4 @@
+(* Test comment, please ignore *)
 PreemptProtect[ BeginPackage[ "Wolfram`Chatbook`" ]; EndPackage[ ] ];
 
 Wolfram`ChatbookLoader`$MXFile = FileNameJoin @ {
