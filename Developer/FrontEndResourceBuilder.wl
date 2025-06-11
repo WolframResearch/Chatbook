@@ -7,6 +7,7 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 
+(* Test comment, please ignore *)
 
 BeginPackage["Wolfram`ChatbookFrontEndResourceBuilder`"]
 
