@@ -35,6 +35,13 @@ VerificationTest[
 ]
 
 VerificationTest[
+    FileNames[ All, ChatbookFilesDirectory[ "VectorDatabases" ], Infinity ],
+    { Repeated[ _String, { 40, Infinity } ] },
+    SameTest -> MatchQ,
+    TestID   -> "VectorDatabase-Files@@Tests/RelatedDocumentation.wlt:37,1-42,2"
+]
+
+VerificationTest[
     Length @ Select[
         First /@ urls,
         StringStartsQ @ StringExpression[
@@ -47,42 +54,42 @@ VerificationTest[
     ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:37,1-51,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:44,1-58,2"
 ]
 
 VerificationTest[
     snippets = RelatedDocumentation[ "What's the biggest pokemon?", "Snippets" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:53,1-58,2"
+    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:60,1-65,2"
 ]
 
 VerificationTest[
     Total @ StringCount[ snippets, "Entity[\"Pokemon\"," ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:60,1-65,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:67,1-72,2"
 ]
 
 VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3, "Sources" -> { "Documentation" } ],
     { URL[ _String ], URL[ _String ], URL[ _String ] },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:67,1-72,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:74,1-79,2"
 ]
 
 VerificationTest[
     AllTrue[ First /@ urls, StringStartsQ[ "paclet:ref/" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:74,1-79,2"
+    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:81,1-86,2"
 ]
 
 VerificationTest[
     RelatedDocumentation[ "What's the biggest pokemon?", "Snippets", 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:81,1-86,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:88,1-93,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -97,14 +104,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:91,1-101,2"
+    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:98,1-108,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? Positive,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:103,1-108,2"
+    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:110,1-115,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -123,14 +130,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:113,1-127,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:120,1-134,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
     _Integer? (GreaterEqualThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:129,1-134,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:136,1-141,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -148,14 +155,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:139,1-152,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:146,1-159,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterEqualThan[ 2 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:154,1-159,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:161,1-166,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -165,5 +172,5 @@ VerificationTest[
     Take[ RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> } ], UpTo[ 30 ] ][[ All, 1 ]],
     { __String? (StringFreeQ[ "$Username" ]) },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:164,1-169,2"
+    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:171,1-176,2"
 ]
