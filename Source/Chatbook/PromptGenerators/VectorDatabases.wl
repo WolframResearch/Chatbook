@@ -1410,8 +1410,7 @@ toTinyVector // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $vectorDBDownloadURLs,
-    $vectorDBDownloadSizes
+    Null
 ];
 
 End[ ];
