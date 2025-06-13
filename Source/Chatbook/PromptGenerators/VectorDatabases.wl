@@ -766,8 +766,8 @@ downloadVectorDatabase // endDefinition;
 (*checkVectorDatabaseDownload*)
 checkVectorDatabaseDownload // beginDefinition;
 
-checkVectorDatabaseDownload[ name_, tmp_, file_, cloudURL_ ][ result_ ] :=
-    checkVectorDatabaseDownload[ name, tmp, file, cloudURL, result ];
+checkVectorDatabaseDownload[ name_, tmp_, file_, cloudURL_ ] :=
+    checkVectorDatabaseDownload[ name, tmp, file, cloudURL, # ] &;
 
 checkVectorDatabaseDownload[ name_, tmp_String, file_String, cloudURL_, KeyValuePattern[ "StatusCode" -> 200 ] ] :=
     RenameFile[ tmp, file ];
