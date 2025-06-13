@@ -225,7 +225,7 @@ $vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
 ];
 
 $vectorDBDownloadSizes := Enclose[
-    $vectorDBDownloadSizes = ConfirmMatch[ getDownloadSize @ #, _Quantity, "Size" ] & /@ $vectorDBDownloadURLs,
+    $vectorDBDownloadSizes = ConfirmMatch[ getDownloadSize @ #, _Integer? Positive, "Size" ] & /@ $vectorDBDownloadURLs,
     throwInternalFailure
 ];
 
