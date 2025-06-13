@@ -1600,11 +1600,24 @@ addToMXInitialization // endDefinition;
 mxInitialize // beginDefinition;
 mxInitialize // Attributes = { HoldAllComplete };
 
-mxInitialize[ eval___ ] :=
-    If[ TrueQ @ $mxFlag,
-        addToMXInitialization @ eval;
-        ReleaseHold @ Internal`BagPart[ $mxInitializations, All ];
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+mxInitialize[ eval___ ] /; $mxFlag :=
+    Module[ { result },
+
+        result = catchTop[
+            addToMXInitialization @ eval;
+            ReleaseHold @ Internal`BagPart[ $mxInitializations, All ]
+        ];
+
+        If[ FailureQ @ result,
+            Print[ "[ERROR] MX initialization failed. Aborting MX build: ", result ];
+            Abort[ ]
+        ]
     ];
+(* :!CodeAnalysis::EndBlock:: *)
+
+mxInitialize[ eval___ ] := Null;
 
 mxInitialize // endDefinition;
 
