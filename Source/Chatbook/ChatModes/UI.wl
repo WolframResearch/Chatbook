@@ -1856,7 +1856,7 @@ historyDefaultView // beginDefinition;
 
 historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
     Catch @ Module[ { header, view },
-        DynamicModule[ { page = 1, totalPages = ToBoxes @ Style["\[FilledCircle]", color @ "NA_OverlayMenuPercolate" ] },
+        DynamicModule[ { page = 1, totalPages = Style["\[FilledCircle]", color @ "NA_OverlayMenuPercolate" ] },
             header = ConfirmMatch[ makeHistoryHeader @ historyPagination[ Dynamic @ searching, Dynamic @ page, Dynamic @ totalPages ], _Pane, "Header" ];
             view = ConfirmMatch[ makeDefaultHistoryView[ nbo, Dynamic @ page, Dynamic @ totalPages ], _RawBoxes, "View" ];
 

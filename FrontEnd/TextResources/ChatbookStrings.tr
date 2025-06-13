@@ -224,6 +224,11 @@
 "WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
+"WorkspaceHistoryPageTemplate" -> "Page `1` of `2`",
+"WorkspaceHistoryFirstPage" -> "First page",
+"WorkspaceHistoryPreviousPage" -> "Previous page",
+"WorkspaceHistoryNextPage" -> "Next page",
+"WorkspaceHistoryLastPage" -> "Last page",
 "WorkspaceHistoryTitle" -> "History",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
