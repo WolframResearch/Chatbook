@@ -616,7 +616,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
                 ,
                 tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
                 ConfirmMatch[ taskWait @ tasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
-                ConfirmMatch[ taskWait @ $extraDownloadTasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
+                ConfirmMatch[ taskWait @ $extraDownloadTasks, { (_TaskObject|$Failed)... }, "TaskWait" ];
                 $progressText = "Unpacking files\[Ellipsis]";
                 ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
                 ,
