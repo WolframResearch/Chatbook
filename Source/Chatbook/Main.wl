@@ -96,6 +96,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `StringToBoxes;
 `ToggleChatInclusion;
 `ToggleCloudNotebookAssistantMenu;
+`ToggleCloudPreferences;
 `WolframLanguageToolEvaluate;
 `WriteChatOutputCell;
 
@@ -270,6 +271,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "SourceNotebookObjectInformation",
     "StringToBoxes",
     "ToggleChatInclusion",
+    "ToggleCloudPreferences",
     "WolframLanguageToolEvaluate",
     "WriteChatOutputCell"
 };
