@@ -1887,21 +1887,64 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
     { {
         Grid[
             { {
-                Button[ "<", If[ IntegerQ @ page && page > 1, page -= 1 ], BaselinePosition -> Baseline ],
-                Dynamic[
-                    PopupMenu[
-                        Dynamic[
-                            None, (* keep this value different from all the possible values so the default appearance, defined below, is used *)
-                            Function[ page = # ] ],
-                        If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
-                        Dynamic @ RawBoxes @ RowBox[ { page, " / ", totalPages } ], (* This is what's actually displayed *)
-                        Appearance       -> None,
-                        BaselinePosition -> Baseline,
-                        MenuStyle        -> { Magnification -> 1 } (* This affects the popup list's display as well as the main display *)
-                    ],
-                    TrackedSymbols :> { totalPages }
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryFirstPage",
+                    page = 1,
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryFirstPage" ],
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryPreviousPage",
+                    If[ IntegerQ @ page && page > 1, page -= 1 ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryPreviousPage" ],
+                With[{c1 = color @ "NA_OverlayMenuIcon_Blue", c2 = color @ "NA_OverlayMenuHistoryPaginationIcon"},
+                    Dynamic[
+                        Mouseover[
+                            PopupMenu[
+                                Dynamic[
+                                    None, (* keep this value different from all the possible values so the default appearance, defined below, is used *)
+                                    Function[ page = # ] ],
+                                If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
+                                Style[
+                                    Row[ { trExprTemplate["WorkspaceHistoryPageTemplate"][ <| "1" -> Dynamic[page], "2" -> Dynamic[totalPages] |> ] } ], (* This is what's actually displayed *)
+                                    FontColor -> c2],
+                                Appearance       -> None,
+                                BaseStyle        -> {FontSize -> 12},
+                                BaselinePosition -> Baseline,
+                                MenuStyle        -> { Magnification -> 1 } (* This affects the popup list's display as well as the main display *)
+                            ],
+                            PopupMenu[
+                                Dynamic[
+                                    None, (* keep this value different from all the possible values so the default appearance, defined below, is used *)
+                                    Function[ page = # ] ],
+                                If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
+                                Style[
+                                    Row[ { trExprTemplate["WorkspaceHistoryPageTemplate"][ <| "1" -> Dynamic[page], "2" -> Dynamic[totalPages] |> ] } ], (* This is what's actually displayed *)
+                                    FontColor -> c1],
+                                Appearance       -> None,
+                                BaseStyle        -> {FontSize -> 12},
+                                BaselinePosition -> Baseline,
+                                MenuStyle        -> { Magnification -> 1 } (* This affects the popup list's display as well as the main display *)
+                            ],
+                            BaselinePosition -> Baseline
+                        ],
+                        TrackedSymbols :> { totalPages }
+                    ]
                 ],
-                Button[ ">", If[ IntegerQ @ page && IntegerQ @ totalPages && page < totalPages, page += 1 ], BaselinePosition -> Baseline ]
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryNextPage",
+                    If[ IntegerQ @ page && IntegerQ @ totalPages && page < totalPages, page += 1 ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryNextPage" ],
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryLastPage",
+                    If[ IntegerQ @ totalPages, page = totalPages, Beep[]],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryLastPage" ]
             } },
             BaselinePosition -> { 1, 2 }
         ],
