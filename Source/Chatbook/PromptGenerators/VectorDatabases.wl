@@ -597,6 +597,8 @@ downloadVectorDatabases[ ] :=
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
     Module[ { dir, lock, names, urls, sizes, tasks },
 
+        $extraDownloadTasks = Internal`Bag[ ];
+
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
         cleanupLegacyVectorDBFiles @ dir;
         names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
@@ -614,6 +616,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
                 ,
                 tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
                 ConfirmMatch[ taskWait @ tasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
+                ConfirmMatch[ taskWait @ $extraDownloadTasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
                 $progressText = "Unpacking files\[Ellipsis]";
                 ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
                 ,
@@ -716,6 +719,7 @@ unpackVectorDatabase // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*taskWait*)
 taskWait // beginDefinition;
+taskWait[ tasks_Internal`Bag ] := taskWait @ Internal`BagPart[ tasks, All ];
 taskWait[ tasks_List ] := CheckAbort[ taskWait /@ tasks, Quiet[ TaskRemove /@ tasks ], PropagateAborts -> True ];
 taskWait[ task_TaskObject ] := taskWait[ task, task[ "TaskStatus" ] ];
 taskWait[ task_TaskObject, "Removed" ] := task;
@@ -781,14 +785,17 @@ checkVectorDatabaseDownload[
     result_
 ] := (
     Quiet @ DeleteFile @ tmp;
-    URLDownloadSubmit[
-        cloudURL,
-        tmp,
-        HandlerFunctions -> <|
-            "TaskProgress" -> setDownloadProgress @ name,
-            "TaskFinished" -> (RenameFile[ tmp, file ] &)
-        |>,
-        HandlerFunctionsKeys -> { "ByteCountDownloaded", "StatusCode" }
+    Internal`StuffBag[
+        $extraDownloadTasks,
+        URLDownloadSubmit[
+            cloudURL,
+            tmp,
+            HandlerFunctions -> <|
+                "TaskProgress" -> setDownloadProgress @ name,
+                "TaskFinished" -> (RenameFile[ tmp, file ] &)
+            |>,
+            HandlerFunctionsKeys -> { "ByteCountDownloaded", "StatusCode" }
+        ]
     ]
 );
 
