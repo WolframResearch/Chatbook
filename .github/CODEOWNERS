@@ -7,3 +7,10 @@
 /Developer/StylesheetBuilder.wl @KMDaily
 /Developer/FrontEndResourceBuilder.wl @KMDaily
 /Developer/Resources/ @KMDaily
+
+# Kernel source files for UI components
+/Source/Chatbook/CloudToolbar.wl @KMDaily
+/Source/Chatbook/ColorData.wl @KMDaily
+/Source/Chatbook/Menus.wl @KMDaily
+/Source/Chatbook/PreferencesContent.wl @KMDaily
+/Source/Chatbook/UI.wl @KMDaily
