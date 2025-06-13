@@ -1603,7 +1603,9 @@ mxInitialize // Attributes = { HoldAllComplete };
 mxInitialize[ eval___ ] :=
     If[ TrueQ @ $mxFlag,
         addToMXInitialization @ eval;
-        ReleaseHold @ Internal`BagPart[ $mxInitializations, All ];
+        If[ FailureQ @ catchTop @ ReleaseHold @ Internal`BagPart[ $mxInitializations, All ],
+            Abort[ ]
+        ]
     ];
 
 mxInitialize // endDefinition;
