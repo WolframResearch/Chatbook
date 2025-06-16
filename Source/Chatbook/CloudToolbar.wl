@@ -72,7 +72,7 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
                 Button[
                     Framed[
                         Grid[
-                            { { inlineCloudChatbookIcon[ "NewChat" ], tr[ "WorkspaceToolbarButtonLabelNew" ] } },
+                            { { chatbookIcon[ "NewChat", False ], tr[ "WorkspaceToolbarButtonLabelNew" ] } },
                             Alignment -> { Center, Baseline },
                             Spacings  -> { 0.3, 0 } ],
                         FrameMargins -> { { 4, 4 }, { 1, 1 } },
@@ -89,7 +89,7 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
                 Button[
                     Framed[
                         Grid[
-                            { { inlineCloudChatbookIcon[ "InsertChatCell" ], tr[ "ChatToolbarInsertChatCell" ] } },
+                            { { chatbookIcon[ "InsertChatCell", False ], tr[ "ChatToolbarInsertChatCell" ] } },
                             Alignment -> { Center, Baseline },
                             Spacings  -> { 0.3, 0 } ],
                         FrameMargins -> { { 4, 4 }, { 1, 1 } },
@@ -124,79 +124,6 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
 
 makeChatCloudDefaultNotebookDockedCell // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*inlineCloudChatbookIcon*)
-inlineCloudChatbookIcon // beginDefinition;
-
-(* We inline these to so we don't have to release a new cloud version.
-    FIXME: when a new cloud is built we can switch usage from inlineCloudChatbookIcon[name] to chatbookIcon[name, False] *)
-inlineCloudChatbookIcon[ name_String ] := RawBoxes @ Lookup[<|
-"InsertChatCell" -> GraphicsBox[
-  {Thickness[0.06617782981861016],
-   {FaceForm[{color @ "NA_CloudToolbarIconInsertChatCell_1", Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{
-     12.77199935913086, 1.7160000801086426`}, {13.812999725341797`,
-     1.7160000801086426`}, {13.812999725341797`, 8.301000595092773}, {
-     12.77199935913086, 8.301000595092773}, {12.77199935913086,
-     1.7160000801086426`}}}]},
-   {FaceForm[{color @ "NA_CloudToolbarIconInsertChatCell_2", Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1,
-      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10.692900657653809`,
-     10.008000373840332`}, {10.692900657653809`, 0.008000373840332031}, {
-     15.11090087890625, 0.008000373840332031}, {15.11090087890625,
-     0.9569997787475586}, {11.692900657653809`, 0.9569997787475586}, {
-     11.692900657653809`, 9.008000373840332}, {15.11090087890625,
-     9.008000373840332}, {15.11090087890625, 10.008000373840332`}, {
-     10.692900657653809`, 10.008000373840332`}}}]},
-   {FaceForm[{color @ "NA_CloudToolbarIconInsertChatCell_2", Opacity[
-    1.]}], FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1,
-      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3,
-     3}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
-     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {CompressedData["
-
-1:eJxTTMoPSmViYGAQAWIQDQJM2ooOEJYSmHbovmOPzI/YdRKFDwVrZGYpIvM5
-1sig8A/49zIj8x16pzOimceAZh+Y3+DJw+CAgw8CAjH8IsjySO4H8Ru2fV2B
-zGfguskHdjfMfhgf5j4YH+Z+GB/qP2TzlNDsU3IAAGMLKnM=
-      "], {{8.028999626636505, 8.}, {8.028999626636505, 3.}, {
-      5.014999628067017, 3.}, {4.7129998207092285`, 3.}, {4.460999965667725,
-      2.8330001831054688`}, {3.0059995651245117`, 1.864999771118164}, {
-      3.0059995651245117`, 2.}, {3.0059995651245117`, 3.}, {
-      2.0059995651245117`, 3.}, {0.9999995231628418, 3.}, {0.9999995231628418,
-       8.}, {8.028999626636505, 8.}}}]}},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  ImageSize->{17., 12.},
-  PlotRange->{{-0.5, 15.610800743103027`}, {-0.5, 10.508200645446777`}}],
-
-"NewChat" -> GraphicsBox[
-  {Thickness[0.09057068177375761],
-   {FaceForm[{color @ "NA_CloudToolbarIconNewChat", Opacity[1.]}],
-     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.,
-     10.}, {11.041000366210938`, 10.}, {11.041000366210938`, 11.}, {0.,
-     11.}, {0., 10.}}}]},
-   {FaceForm[{color @ "NA_CloudToolbarIconNewChat", Opacity[1.]}],
-     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
-     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2,
-      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
-     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {CompressedData["
-1:eJxTTMoPSmViYGAQAWIQDQQJ7HrKDhCmEpj+bfXdHplf5v8Zha8t8QHEXyMz
-SxGZz7FGBoV/wL+XGZnv0DudEc08BjT7IPx4CQ4HHHwQuJAmKoEsj+R+EL9B
-7PdqZD5D1j1BFQck+2F8mPtgfJj7YXyo/5DNU0KzT8kBAHlvMuM=
-      "], {{9.03490000963211, 8.}, {9.03490000963211, 3.}, {6.020900011062622,
-       3.}, {5.718900203704834, 3.}, {5.46690034866333,
-      2.8330001831054688`}, {4.011899948120117, 1.864999771118164}, {
-      4.011899948120117, 2.}, {4.011899948120117, 3.}, {3.011899948120117,
-      3.}, {2.0058999061584473`, 3.}, {2.0058999061584473`, 8.}, {
-      9.03490000963211, 8.}}}]}},
-  AspectRatio->Automatic,
-  BaselinePosition->(Center -> Center),
-  ImageSize->{13., 12.},
-  PlotRange->{{-0.5, 11.54110050201416}, {-0.5, 11.5}}]
-|>,
-name, $Failed]
-
-inlineCloudChatbookIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
