@@ -25,7 +25,7 @@ $instructions       = None;
 $$count = _Integer | UpTo[ _Integer ];
 $$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
-(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype, downloadformatgroups *)
+(* cSpell: disable *)
 $$ignoredXMLTag = Alternatives[
     "datasources",
     "definitions",
@@ -35,11 +35,13 @@ $$ignoredXMLTag = Alternatives[
     "infos",
     "microsources",
     "notes",
+    "relatedqueries", (* TODO: this could be included in the result prompt *)
     "sources",
     "states",
     "stepbystepcontenttype",
     "userinfoused"
 ];
+(* cSpell: enable *)
 
 $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 
