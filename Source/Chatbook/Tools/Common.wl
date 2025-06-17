@@ -33,7 +33,7 @@ $$llmToolH = HoldPattern[ LLMTool ];
 (*Tool Lists*)
 $DefaultTools   := $defaultChatTools;
 $InstalledTools := $installedTools;
-$AvailableTools := Association[ $DefaultTools, $InstalledTools ];
+$AvailableTools := Association[ $DefaultTools, $InstalledTools, $selectedTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
