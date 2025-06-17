@@ -47,11 +47,17 @@ $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::UnhandledWolframAlphaXMLTag = "Unhandled Wolfram Alpha XML tag: ``";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*RelatedWolframAlphaResults*)
 RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
     "AppID"             -> Automatic,
     "CacheResults"      -> False,
+    "Debug"             -> False,
     "Instructions"      -> None,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
@@ -108,6 +114,7 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
     catchMine @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
+            $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -155,6 +162,7 @@ RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern
     catchMine @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
+            $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -1001,6 +1009,11 @@ parseXML[ s_String ] /; StringMatchQ[ s, WhitespaceCharacter... ] :=
 
 parseXML[ XMLElement[ $$ignoredXMLTag, _, _ ] ] :=
     { };
+
+parseXML[ XMLElement[ unhandledTag_String, _, _ ] ] := (
+    If[ TrueQ @ $wolframAlphaDebug, messagePrint[ "UnhandledWolframAlphaXMLTag", unhandledTag ] ];
+    { }
+);
 
 parseXML // endDefinition;
 
