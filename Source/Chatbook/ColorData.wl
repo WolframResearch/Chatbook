@@ -1767,6 +1767,20 @@ Dispatch[{
 		 "DC"     -> "NA_OverlayMenu",
 		 "Notes"  -> ""
 	|>,
+	"NA_OverlayMenuHistoryPaginationIcon" -> <|
+		 "Light"  -> GrayLevel[0.45],
+		 "Dark"   -> GrayLevel[0.85],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayMenuHistoryPaginationIconHover" -> <|
+		 "Light"  -> RGBColor[0.3, 0.6, 0.77],
+		 "Dark"   -> RGBColor[0.42, 0.07, 0.88],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_OverlayMenu",
+		 "Notes"  -> ""
+	|>,
 	"NA_OverlayMenuIcon_Blue" -> <|
 		 "Light"  -> RGBColor[0.4, 0.67843, 0.82353],
 		 "Dark"   -> RGBColor[0.4008690, 0.6784700, 0.8232476],
