@@ -94,8 +94,9 @@ scopedTrackedDynamic // endDefinition;
 (* ::Subsection::Closed:: *)
 (*currentTabPageDynamic*)
 currentTabPageDynamic // beginDefinition;
+currentTabPageDynamic // Attributes = { HoldFirst };
 
-currentTabPageDynamic[ scope_ ] := Dynamic[
+currentTabPageDynamic[ scope_ ] := expandScope @ Dynamic[
     Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
     (CurrentChatSettings[ scope, "CurrentPreferencesTab" ] = #1) &
 ];
@@ -216,7 +217,7 @@ preferencesContent[ "Personas" ] := scopedTrackedDynamic[ personaSettingsPanel[ 
 preferencesContent[ "Services" ] := scopedTrackedDynamic[ servicesSettingsPanel[ ], { "Models", "Services" } ];
 
 (* Content for the "Tools" tab: *)
-preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
+preferencesContent[ "Tools" ] := scopedTrackedDynamic[ toolSettingsPanel[ ], { "Personas" } ];
 
 preferencesContent // endDefinition;
 
@@ -591,7 +592,7 @@ makeModelNameSelector[
         ensureServiceName @ service;
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
-        If[ service === "LLMKit", Return @ "" ];
+        If[ service === "LLMKit", Throw @ "" ];
 
         models = ConfirmMatch[
             Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ],
@@ -1570,7 +1571,7 @@ toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic[ display ],
-        Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ ] ],
+        Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
