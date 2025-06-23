@@ -28,9 +28,10 @@ $activeBlue             = color @ "ManagerGridActiveBlue";
 (* ::Section::Closed:: *)
 (*CreateLLMToolManagerDialog*)
 CreateLLMToolManagerDialog // beginDefinition;
+Options[ CreateLLMToolManagerDialog ] = { "GlobalScopeOnly" -> False };
 
-CreateLLMToolManagerDialog[ args___ ] := createDialog[
-    CreateLLMToolManagerPanel @ args,
+CreateLLMToolManagerDialog[ args___, opts : OptionsPattern[ ] ] := createDialog[
+    CreateLLMToolManagerPanel[ args, opts ],
     WindowTitle -> tr[ "ToolManagerTitle" ]
 ];
 
@@ -40,18 +41,19 @@ CreateLLMToolManagerDialog // endDefinition;
 (* ::Section::Closed:: *)
 (*CreateLLMToolManagerPanel*)
 CreateLLMToolManagerPanel // beginDefinition;
+Options[ CreateLLMToolManagerPanel ] = { "GlobalScopeOnly" -> False };
 
-CreateLLMToolManagerPanel[ ] := catchMine @
+CreateLLMToolManagerPanel[ opts : OptionsPattern[ ] ] := catchMine @
     With[ { inDialog = $inDialog },
         trackedDynamic[
             Block[ { $inDialog = inDialog },
-                CreateLLMToolManagerPanel[ getFullToolList[ ], getFullPersonaList[ ] ]
+                CreateLLMToolManagerPanel[ getFullToolList[ ], getFullPersonaList[ ], opts ]
             ],
             { "Tools", "Personas" }
         ]
     ];
 
-CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
+CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] ] :=
     catchMine @ cvExpand @ Catch @ Module[
         {
             globalTools, personaTools, personaToolNames, personaToolLookup, tools,
@@ -135,7 +137,10 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                         installToolsSection[ ],
 
                         (* ----- Configure and Enable Tools ----- *)
-                        manageAndEnableToolsSection @ Dynamic[ scopeMode ],
+                        If[ TrueQ @ OptionValue[ "GlobalScopeOnly" ],
+                            manageAndEnableToolsSection[ ],
+                            manageAndEnableToolsSection @ Dynamic[ scopeMode ]
+                        ],
 
                         dialogBody[ EventHandler[
                             Grid[
