@@ -456,7 +456,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                             Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabel" ] ] ],
                             Dynamic[ If[ service === "LLMKit", "",
                                 If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ] ],
-                                TrackedSymbols :> { state, modelSelector }
+                                TrackedSymbols :> { service, state, modelSelector }
                             ],
                             "ModelName"
                         ]
@@ -468,7 +468,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                         Spacer[ 7 ],
                         Dynamic[
                             If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
-                            TrackedSymbols :> { state, modelSelector }
+                            TrackedSymbols :> { service, state, modelSelector }
                         ]
                     }
                 ],
