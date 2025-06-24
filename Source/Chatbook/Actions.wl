@@ -1117,21 +1117,6 @@ chatContextDialogInputHeader // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatContextDialogButtons*)
-chatContextDialogButtons // beginDefinition;
-
-chatContextDialogButtons[ cell_CellObject ] := Cell[
-    BoxData @ $chatContextDialogButtons[
-        DialogReturn @ setChatSectionSettings[ cell, scrapeChatContextDialog @ EvaluationNotebook[ ] ],
-        DialogReturn @ $Canceled
-    ],
-    "DialogButtons"
-];
-
-chatContextDialogButtons // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*setChatSectionSettings*)
 setChatSectionSettings // beginDefinition;
 
@@ -1150,21 +1135,6 @@ setChatSectionSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$chatContextDialogButtons*)
-$chatContextDialogButtons := getAsset[ "ChatContextDialogButtons" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$chatContextDialogTemplateCells*)
-$chatContextDialogTemplateCells := getAsset[ "ChatContextDialogCellsTemplate" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$chatContextDialogStyles*)
-$chatContextDialogStyles := getAsset[ "ChatContextDialogStyles" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*scrapeChatContextDialog*)
 scrapeChatContextDialog // beginDefinition;
 
@@ -1180,21 +1150,6 @@ scrapeChatContextDialog[ nbo_NotebookObject ] :=
     ];
 
 scrapeChatContextDialog // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*scrape*)
-scrape // beginDefinition;
-
-scrape[ nbo_, prop_, validator__ ] :=
-    DefinitionNotebookClient`GeneralValidator[ "ChatContextDialog", validator ][
-        <|
-            "Metadata" -> <| "NotebookObject" -> nbo |>,
-            "Content"  -> DefinitionNotebookClient`ScrapeSection[ "ChatContextDialog", nbo, prop ]
-        |>
-    ];
-
-scrape // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
