@@ -200,10 +200,10 @@ RelatedDocumentation[
         Take[
             ConfirmBy[
                 vectorDBSearch[
-                    getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+                    LogChatTiming @ getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
                     prompt,
                     property
-                ],
+                ] // LogChatTiming[ "OuterVectorDBSearch" ],
                 ListQ,
                 "Results"
             ],
@@ -283,7 +283,7 @@ getSources[ prompt_, names_List, max_ ] := toSource /@ Flatten @ names;
 getSources[ prompt_, name_String, max_ ] := { toSource @ name };
 getSources[ prompt_, All, max_ ] := toSource /@ $defaultSources;
 getSources[ None, Automatic, max_Integer? NonNegative ] := toSource /@ Take[ $defaultSources, UpTo[ max ] ];
-getSources[ prompt_, Automatic, max_Integer? NonNegative ] := autoSelectSources[ prompt, max ];
+getSources[ prompt_, Automatic, max_Integer? NonNegative ] := LogChatTiming @ autoSelectSources[ prompt, max ];
 getSources[ prompt_, source_, max_Integer? NonNegative ] := throwFailure[ "InvalidSources", source ];
 getSources[ prompt_, source_, max_ ] := throwFailure[ "InvalidMaxSources", max ];
 getSources // endDefinition;
