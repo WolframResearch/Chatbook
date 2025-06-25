@@ -2312,7 +2312,10 @@ docUsageString // beginDefinition;
 
 docUsageString[ row_List ] :=
     Block[ { $inlineCode = True },
-        StringReplace[ StringJoin[ fasterCellToString0 /@ row ], "\[LineSeparator]" -> " " ]
+        StringReplace[
+            StringJoin[ fasterCellToString0 /@ row ],
+            WhitespaceCharacter...~~"\[LineSeparator]"~~WhitespaceCharacter... -> " "
+        ]
     ];
 
 docUsageString[ (TextData|BoxData)[ boxes_, ___ ] ] :=
