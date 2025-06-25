@@ -397,7 +397,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
     Module[
         {
             relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
-            auth, authOption, response, content
+            auth, authOption, response, content, queries
         },
 
         relevant = ConfirmMatch[
@@ -433,7 +433,14 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         systemMessage = <| "Role" -> "System", "Content" -> systemPrompt |>;
 
-        transcript = ConfirmBy[ getSmallContextString @ insertContextPrompt @ prompt, StringQ, "Transcript" ];
+        transcript = ConfirmBy[
+            getSmallContextString[
+                insertContextPrompt @ prompt,
+                "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
+            ],
+            StringQ,
+            "Transcript"
+        ];
 
         messages = ConfirmMatch[
             Flatten @ { systemMessage, $fewShotExamples, <| "Role" -> "User", "Content" -> transcript |> },
@@ -449,11 +456,22 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
-        ConfirmMatch[
+        queries = ConfirmMatch[
             DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], "[NONE]"|"" ],
             { ___String },
             "Queries"
-        ]
+        ];
+
+        addHandlerArguments[
+            "RelatedWolframAlphaResults" -> <|
+                "Messages"      -> messages,
+                "Response"      -> response,
+                "SampleQueries" -> $sampleQueries,
+                "Queries"       -> queries
+            |>
+        ];
+
+        queries
     ],
     throwInternalFailure
 ];
@@ -463,15 +481,21 @@ generateSuggestedQueries // endDefinition;
 
 generateSuggestedQueries0 // beginDefinition;
 
-generateSuggestedQueries0[ messages_, config_, opts___ ] := Enclose[
-    Module[ { response },
+generateSuggestedQueries0[ messages_, config0_, opts___ ] := Enclose[
+    Module[ { config, response },
 
-        response = ConfirmBy[
-            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ config, opts ],
-            AssociationQ,
-            "Response"
+        config = ConfirmMatch[
+            LLMConfiguration @ config0,
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Config"
         ];
+
+        (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
+        response = LLMServices`Chat[ messages, config, opts ];
+
+        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
+
+        response = ConfirmBy[ response, AssociationQ, "Response" ];
 
         If[ TrueQ @ $cacheResults,
             generateSuggestedQueries0[ messages, config, opts ] = response,
@@ -751,7 +775,10 @@ relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCou
     Catch @ Module[ { queries, sampleQueries, content, result },
 
         queries = ConfirmMatch[
-            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+            setServiceCaller[
+                generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+                "RelatedWolframAlphaResults"
+            ],
             { ___String },
             "Queries"
         ];
