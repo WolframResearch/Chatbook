@@ -433,7 +433,14 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         systemMessage = <| "Role" -> "System", "Content" -> systemPrompt |>;
 
-        transcript = ConfirmBy[ getSmallContextString @ insertContextPrompt @ prompt, StringQ, "Transcript" ];
+        transcript = ConfirmBy[
+            getSmallContextString[
+                insertContextPrompt @ prompt,
+                "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
+            ],
+            StringQ,
+            "Transcript"
+        ];
 
         messages = ConfirmMatch[
             Flatten @ { systemMessage, $fewShotExamples, <| "Role" -> "User", "Content" -> transcript |> },
