@@ -288,7 +288,8 @@ $ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored =
         _PaneSelectorBox,
         StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
         DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
-        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ]
+        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
+        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ]
     ]
 ];
 
@@ -1790,6 +1791,11 @@ fasterCellToString0[ FormBox[ box_, TextForm, ___ ] ] :=
 (*serializeTraditionalForm*)
 serializeTraditionalForm // beginDefinition;
 
+serializeTraditionalForm[ FormBox[ StyleBox[ a_String, "TI", ___ ], TraditionalForm, ___ ] ] :=
+    With[ { b = StringTrim @ a },
+        "$$" <> b <> "$$" /; StringLength @ b === 1
+    ];
+
 serializeTraditionalForm[ box0: FormBox[ inner_, ___ ] ] := serializeTraditionalForm[ box0 ] =
     Module[ { box, string },
         box = preprocessTraditionalForm @ box0;
@@ -2311,7 +2317,10 @@ docUsageString // beginDefinition;
 
 docUsageString[ row_List ] :=
     Block[ { $inlineCode = True },
-        StringReplace[ StringJoin[ fasterCellToString0 /@ row ], "\[LineSeparator]" -> " " ]
+        StringReplace[
+            StringJoin[ fasterCellToString0 /@ row ],
+            WhitespaceCharacter...~~"\[LineSeparator]"~~WhitespaceCharacter... -> " "
+        ]
     ];
 
 docUsageString[ (TextData|BoxData)[ boxes_, ___ ] ] :=
