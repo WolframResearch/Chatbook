@@ -1791,6 +1791,11 @@ fasterCellToString0[ FormBox[ box_, TextForm, ___ ] ] :=
 (*serializeTraditionalForm*)
 serializeTraditionalForm // beginDefinition;
 
+serializeTraditionalForm[ FormBox[ StyleBox[ a_String, "TI", ___ ], TraditionalForm, ___ ] ] :=
+    With[ { b = StringTrim @ a },
+        "$$" <> b <> "$$" /; StringLength @ b === 1
+    ];
+
 serializeTraditionalForm[ box0: FormBox[ inner_, ___ ] ] := serializeTraditionalForm[ box0 ] =
     Module[ { box, string },
         box = preprocessTraditionalForm @ box0;
