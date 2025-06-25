@@ -288,7 +288,8 @@ $ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored =
         _PaneSelectorBox,
         StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
         DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
-        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ]
+        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
+        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ]
     ]
 ];
 
