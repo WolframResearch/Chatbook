@@ -481,15 +481,21 @@ generateSuggestedQueries // endDefinition;
 
 generateSuggestedQueries0 // beginDefinition;
 
-generateSuggestedQueries0[ messages_, config_, opts___ ] := Enclose[
-    Module[ { response },
+generateSuggestedQueries0[ messages_, config0_, opts___ ] := Enclose[
+    Module[ { config, response },
 
-        response = ConfirmBy[
-            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ config, opts ],
-            AssociationQ,
-            "Response"
+        config = ConfirmMatch[
+            LLMConfiguration @ config0,
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Config"
         ];
+
+        (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
+        response = LLMServices`Chat[ messages, config, opts ];
+
+        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
+
+        response = ConfirmBy[ response, AssociationQ, "Response" ];
 
         If[ TrueQ @ $cacheResults,
             generateSuggestedQueries0[ messages, config, opts ] = response,
