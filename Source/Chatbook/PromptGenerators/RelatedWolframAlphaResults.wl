@@ -775,7 +775,10 @@ relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCou
     Catch @ Module[ { queries, sampleQueries, content, result },
 
         queries = ConfirmMatch[
-            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+            setServiceCaller[
+                generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+                "RelatedWolframAlphaResults"
+            ],
             { ___String },
             "Queries"
         ];
