@@ -397,7 +397,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
     Module[
         {
             relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
-            auth, authOption, response, content
+            auth, authOption, response, content, queries
         },
 
         relevant = ConfirmMatch[
@@ -449,11 +449,22 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
-        ConfirmMatch[
+        queries = ConfirmMatch[
             DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], "[NONE]"|"" ],
             { ___String },
             "Queries"
-        ]
+        ];
+
+        addHandlerArguments[
+            "RelatedWolframAlphaResults" -> <|
+                "Messages"      -> messages,
+                "Response"      -> response,
+                "SampleQueries" -> $sampleQueries,
+                "Queries"       -> queries
+            |>
+        ];
+
+        queries
     ],
     throwInternalFailure
 ];
