@@ -694,27 +694,30 @@ byteArrayToPodInformation // endDefinition;
 formatWolframAlphaResult // beginDefinition;
 
 formatWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String ] ] :=
-    TemplateApply[
-        $wolframAlphaResultTemplate,
-        { StringTrim @ query, makeWolframAlphaURL @ query, StringTrim @ res }
-    ];
+    formatWolframAlphaResult0[ query, makeWolframAlphaURL @ query, StringTrim @ res ];
 
 formatWolframAlphaResult[ query_String, _ ] :=
-    TemplateApply[
-        $wolframAlphaResultTemplate,
-        { StringTrim @ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] }
-    ];
+    formatWolframAlphaResult0[ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] ];
 
-formatWolframAlphaResult[ KeyValuePattern @ {
-    "Query"   -> query_String,
-    "URL"     -> url_String,
-    "Content" -> content_
-} ] := TemplateApply[
-    $wolframAlphaResultTemplate,
-    { StringTrim @ query, url, makeContentString @ content }
-];
+formatWolframAlphaResult[ KeyValuePattern @ { "Query" -> query_String, "URL" -> url_String, "Content" -> content_ } ] :=
+    formatWolframAlphaResult0[ query, url, makeContentString @ content ];
 
 formatWolframAlphaResult // endDefinition;
+
+
+formatWolframAlphaResult0 // beginDefinition;
+
+formatWolframAlphaResult0[ query_String, url_String, content_ ] :=
+    TemplateApply[
+        $wolframAlphaResultTemplate,
+        {
+            StringReplace[ StringTrim @ query, "'" -> "&#39;" ],
+            url,
+            content
+        }
+    ];
+
+formatWolframAlphaResult0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
