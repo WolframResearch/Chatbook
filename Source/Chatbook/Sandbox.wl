@@ -1052,7 +1052,7 @@ expandSandboxMacros[ expr_HoldComplete ] := Enclose[
         };
 
         With[ { messages = Internal`BagPart[ msgBag, All ] },
-            Replace[ expanded, HoldComplete[ e___ ] :> HoldComplete[ Scan[ Print, messages ]; e ] ]
+            Replace[ expanded, HoldComplete[ e___ ] :> HoldComplete[ Scan[ Print, messages ]; StackBegin @ e ] ]
         ]
     ],
     throwInternalFailure
@@ -1805,7 +1805,7 @@ createEvaluationWithWarnings // Attributes = { HoldAllComplete };
 
 createEvaluationWithWarnings[ evaluation_ ] :=
     Module[ { held, undefined },
-        held = Flatten @ HoldComplete @ evaluation;
+        held = Flatten @ HoldComplete @ StackBegin @ evaluation;
 
         undefined = Flatten[ HoldComplete @@ Cases[
             Unevaluated @ evaluation,
