@@ -85,3 +85,39 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-None@@Tests/RelatedWolframAlphaResults.wlt:78,1-87,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Handler Data*)
+VerificationTest[
+    $ChatHandlerData = <| |>;
+    RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Prompt", $defaultTestOptions ];
+    $ChatHandlerData[ "RelatedWolframAlphaResults" ],
+    KeyValuePattern @ {
+        "Messages"      -> { __Association },
+        "Queries"       -> { __String },
+        "Response"      -> KeyValuePattern[ "Content" -> _String ],
+        "SampleQueries" -> { ___String }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:92,1-104,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Error Handling*)
+
+(* Specify an invalid model name to ensure LLMServices failures are returned to top-level: *)
+VerificationTest[
+    RelatedWolframAlphaResults[
+        "What's the 123456789th prime?",
+        "Prompt",
+        "CacheResults" -> True,
+        "Debug"        -> True,
+        LLMEvaluator   -> <| "Model" -> { "OpenAI", "invalid-model-name" }, Authentication -> Verbatim[ Automatic ] |>
+    ],
+    _Failure,
+    { ServiceExecute::apierr },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:111,1-123,2"
+]
