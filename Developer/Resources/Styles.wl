@@ -345,7 +345,13 @@ Cell[
     TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
     CellTrayWidgets      -> <|
         "ChatWidget"   -> <| "Visible" -> False |>,
-        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtonsV, "ChatFeedback" ] |>
+        "ChatFeedback" -> <| "Content" ->
+            Cell[ BoxData @ ToBoxes @
+                PaneSelector[
+                    { True -> $feedbackButtonsV, False -> Graphics[ ImageSize -> 0 ] },
+                    Dynamic[ CurrentValue[ ParentCell @ EvaluationCell[ ], { TaggingRules, "ChatData" } ] =!= Inherited ],
+                    ImageSize -> Automatic ],
+                "ChatFeedback" ] |>
     |>,
     menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
 ]
