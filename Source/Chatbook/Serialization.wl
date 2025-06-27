@@ -990,7 +990,7 @@ makeSection // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Styles*)
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontWeight -> Bold|"Bold", b___ ] ] :=
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontWeight -> Bold|"Bold")|Bold, b___ ] ] :=
     With[ { str = fasterCellToString0 @ h[ a, b ] },
         If[ StringMatchQ[ str, WhitespaceCharacter... ],
             str,
@@ -998,13 +998,16 @@ fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontWeight -> Bold|"Bold", b___ ] 
         ]
     ];
 
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontSlant -> Italic|"Italic", b___ ] ] :=
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontSlant -> Italic|"Italic")|Italic, b___ ] ] :=
     With[ { str = fasterCellToString0 @ h[ a, b ] },
         If[ StringMatchQ[ str, WhitespaceCharacter... ],
             str,
             "*" <> str <> "*"
         ]
     ];
+
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, Struckthrough, b___ ] ] :=
+    "~~" <> fasterCellToString0 @ h[ a, b ] <> "~~";
 
 fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontVariations -> { b___, "StrikeThrough" -> True, c___ }, d___ ] ] :=
     "~~" <> fasterCellToString0 @ h[ a, FontVariations -> { b, c }, d ] <> "~~";
