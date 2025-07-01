@@ -19,6 +19,8 @@ $$attachmentProperty = Alternatives @@ $attachmentTypes;
 
 $attachments = <| |>;
 
+$$attachmentURI := $$expressionScheme ~~ "://" ~~ $$expressionURIKey;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*FormatToolResponse*)
