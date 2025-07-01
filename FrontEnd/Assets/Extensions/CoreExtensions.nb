@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.3.37.3959065236"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.3.48.3959923654"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -344,164 +344,180 @@ Notebook[
      "Content" ->
       Cell[
        BoxData[
-        TagBox[
-         GridBox[
-          {
-           {
-            ButtonBox[
-             TagBox[
-              TagBox[
-               TooltipBox[
-                PaneSelectorBox[
-                 {
-                  False ->
-                   DynamicBox[
-                    FEPrivate`FrontEndResource[
-                     "ChatbookExpressions",
-                     "ThumbsUpInactive"
-                    ]
+        PaneSelectorBox[
+         {
+          True ->
+           TagBox[
+            GridBox[
+             {
+              {
+               ButtonBox[
+                TagBox[
+                 TagBox[
+                  TooltipBox[
+                   PaneSelectorBox[
+                    {
+                     False ->
+                      DynamicBox[
+                       FEPrivate`FrontEndResource[
+                        "ChatbookExpressions",
+                        "ThumbsUpInactive"
+                       ]
+                      ],
+                     True ->
+                      DynamicBox[
+                       FEPrivate`FrontEndResource[
+                        "ChatbookExpressions",
+                        "ThumbsUpActive"
+                       ]
+                      ]
+                    },
+                    Dynamic[CurrentValue["MouseOver"]],
+                    ImageSize -> Automatic,
+                    FrameMargins -> 0
                    ],
-                  True ->
                    DynamicBox[
-                    FEPrivate`FrontEndResource[
-                     "ChatbookExpressions",
-                     "ThumbsUpActive"
+                    ToBoxes[
+                     FEPrivate`FrontEndResource[
+                      "ChatbookStrings",
+                      "StylesheetFeedbackButtonTooltip"
+                     ],
+                     StandardForm
                     ]
                    ]
-                 },
-                 Dynamic[CurrentValue["MouseOver"]],
-                 ImageSize -> Automatic,
-                 FrameMargins -> 0
-                ],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetFeedbackButtonTooltip"
                   ],
-                  StandardForm
-                 ]
-                ]
-               ],
-               Function[
-                Annotation[
-                 #1,
-                 Dynamic[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetFeedbackButtonTooltip"
+                  Function[
+                   Annotation[
+                    #1,
+                    Dynamic[
+                     FEPrivate`FrontEndResource[
+                      "ChatbookStrings",
+                      "StylesheetFeedbackButtonTooltip"
+                     ]
+                    ],
+                    "Tooltip"
+                   ]
                   ]
                  ],
-                 "Tooltip"
-                ]
-               ]
-              ],
-              MouseAppearanceTag["LinkHand"]
-             ],
-             ButtonFunction :>
-              With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-               Quiet[Needs["Wolfram`Chatbook`" -> None]];
-               Catch[
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "SendFeedback",
-                 Wolfram`ChatNB`cell$,
-                 True
+                 MouseAppearanceTag["LinkHand"]
                 ],
-                Blank[]
-               ]
-              ],
-             Appearance ->
-              Dynamic[
-               FEPrivate`FrontEndResource[
-                "FEExpressions",
-                "SuppressMouseDownNinePatchAppearance"
-               ]
-              ],
-             Evaluator -> Automatic,
-             Method -> "Preemptive"
-            ]
-           },
-           {
-            ButtonBox[
-             TagBox[
-              TagBox[
-               TooltipBox[
-                PaneSelectorBox[
-                 {
-                  False ->
-                   DynamicBox[
-                    FEPrivate`FrontEndResource[
-                     "ChatbookExpressions",
-                     "ThumbsDownInactive"
-                    ]
+                ButtonFunction :>
+                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  Catch[
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "SendFeedback",
+                    Wolfram`ChatNB`cell$,
+                    True
                    ],
-                  True ->
+                   Blank[]
+                  ]
+                 ],
+                Appearance ->
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "FEExpressions",
+                   "SuppressMouseDownNinePatchAppearance"
+                  ]
+                 ],
+                Evaluator -> Automatic,
+                Method -> "Preemptive"
+               ]
+              },
+              {
+               ButtonBox[
+                TagBox[
+                 TagBox[
+                  TooltipBox[
+                   PaneSelectorBox[
+                    {
+                     False ->
+                      DynamicBox[
+                       FEPrivate`FrontEndResource[
+                        "ChatbookExpressions",
+                        "ThumbsDownInactive"
+                       ]
+                      ],
+                     True ->
+                      DynamicBox[
+                       FEPrivate`FrontEndResource[
+                        "ChatbookExpressions",
+                        "ThumbsDownActive"
+                       ]
+                      ]
+                    },
+                    Dynamic[CurrentValue["MouseOver"]],
+                    ImageSize -> Automatic,
+                    FrameMargins -> 0
+                   ],
                    DynamicBox[
-                    FEPrivate`FrontEndResource[
-                     "ChatbookExpressions",
-                     "ThumbsDownActive"
+                    ToBoxes[
+                     FEPrivate`FrontEndResource[
+                      "ChatbookStrings",
+                      "StylesheetFeedbackButtonTooltip"
+                     ],
+                     StandardForm
                     ]
                    ]
-                 },
-                 Dynamic[CurrentValue["MouseOver"]],
-                 ImageSize -> Automatic,
-                 FrameMargins -> 0
-                ],
-                DynamicBox[
-                 ToBoxes[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetFeedbackButtonTooltip"
                   ],
-                  StandardForm
-                 ]
-                ]
-               ],
-               Function[
-                Annotation[
-                 #1,
-                 Dynamic[
-                  FEPrivate`FrontEndResource[
-                   "ChatbookStrings",
-                   "StylesheetFeedbackButtonTooltip"
+                  Function[
+                   Annotation[
+                    #1,
+                    Dynamic[
+                     FEPrivate`FrontEndResource[
+                      "ChatbookStrings",
+                      "StylesheetFeedbackButtonTooltip"
+                     ]
+                    ],
+                    "Tooltip"
+                   ]
                   ]
                  ],
-                 "Tooltip"
-                ]
-               ]
-              ],
-              MouseAppearanceTag["LinkHand"]
-             ],
-             ButtonFunction :>
-              With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
-               Quiet[Needs["Wolfram`Chatbook`" -> None]];
-               Catch[
-                Symbol["Wolfram`Chatbook`ChatbookAction"][
-                 "SendFeedback",
-                 Wolfram`ChatNB`cell$,
-                 False
+                 MouseAppearanceTag["LinkHand"]
                 ],
-                Blank[]
+                ButtonFunction :>
+                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  Catch[
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "SendFeedback",
+                    Wolfram`ChatNB`cell$,
+                    False
+                   ],
+                   Blank[]
+                  ]
+                 ],
+                Appearance ->
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "FEExpressions",
+                   "SuppressMouseDownNinePatchAppearance"
+                  ]
+                 ],
+                Evaluator -> Automatic,
+                Method -> "Preemptive"
                ]
-              ],
-             Appearance ->
-              Dynamic[
-               FEPrivate`FrontEndResource[
-                "FEExpressions",
-                "SuppressMouseDownNinePatchAppearance"
-               ]
-              ],
-             Evaluator -> Automatic,
-             Method -> "Preemptive"
-            ]
-           }
-          },
-          GridBoxAlignment -> {"Columns" -> {{Left}}},
-          DefaultBaseStyle -> "Column",
-          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-          GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {0, 0.25, 0}}
+              }
+             },
+             GridBoxAlignment -> {"Columns" -> {{Left}}},
+             DefaultBaseStyle -> "Column",
+             GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {0, 0.25, 0}}
+            ],
+            "Column"
+           ],
+          False -> GraphicsBox[ImageSize -> 0]
+         },
+         Dynamic[
+          UnsameQ[
+           CurrentValue[
+            ParentCell[EvaluationCell[]],
+            {TaggingRules, "ChatData"}
+           ],
+           Inherited
+          ]
          ],
-         "Column"
+         ImageSize -> Automatic
         ]
        ],
        "ChatFeedback"
