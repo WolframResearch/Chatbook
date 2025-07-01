@@ -94,8 +94,9 @@ scopedTrackedDynamic // endDefinition;
 (* ::Subsection::Closed:: *)
 (*currentTabPageDynamic*)
 currentTabPageDynamic // beginDefinition;
+currentTabPageDynamic // Attributes = { HoldFirst };
 
-currentTabPageDynamic[ scope_ ] := Dynamic[
+currentTabPageDynamic[ scope_ ] := expandScope @ Dynamic[
     Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
     (CurrentChatSettings[ scope, "CurrentPreferencesTab" ] = #1) &
 ];
@@ -216,7 +217,7 @@ preferencesContent[ "Personas" ] := scopedTrackedDynamic[ personaSettingsPanel[ 
 preferencesContent[ "Services" ] := scopedTrackedDynamic[ servicesSettingsPanel[ ], { "Models", "Services" } ];
 
 (* Content for the "Tools" tab: *)
-preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
+preferencesContent[ "Tools" ] := scopedTrackedDynamic[ toolSettingsPanel[ ], { "Personas" } ];
 
 preferencesContent // endDefinition;
 
@@ -418,27 +419,28 @@ makeModelSelector0[ type_String ] :=
             <| "LLMKit" -> <| "Service" -> "Wolfram", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>, $availableServices |> ] ]
 
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
-    DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },
+    DynamicModule[ { default, service, model, state, serviceSelector, modelNameSelector, highlight },
 
         default = CurrentChatSettings[ $preferencesScope, "Model" ];
         service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
         model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
         state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
 
-        modelSelector = If[ state === "Loaded",
-                            makeModelNameSelector[
-                                Dynamic @ service,
-                                Dynamic @ model,
-                                Dynamic @ modelSelector,
-                                Dynamic @ state
-                            ],
-                            ""
-                        ];
+        modelNameSelector =
+            If[ state === "Loaded",
+                makeModelNameSelector[
+                    Dynamic @ service,
+                    Dynamic @ model,
+                    Dynamic @ modelNameSelector,
+                    Dynamic @ state
+                ],
+                ""
+            ];
 
         serviceSelector = makeServiceSelector[
             Dynamic @ service,
             Dynamic @ model,
-            Dynamic @ modelSelector,
+            Dynamic @ modelNameSelector,
             Dynamic @ state,
             services
         ];
@@ -454,8 +456,8 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                         highlight[
                             Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabel" ] ] ],
                             Dynamic[ If[ service === "LLMKit", "",
-                                If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ] ],
-                                TrackedSymbols :> { state, modelSelector }
+                                If[ state === "Loading" || MatchQ[ modelNameSelector, _Symbol ], $loadingPopupMenu, modelNameSelector ] ],
+                                TrackedSymbols :> { service, state, modelNameSelector }
                             ],
                             "ModelName"
                         ]
@@ -466,8 +468,8 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                         Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabelAlt" ] ] ],
                         Spacer[ 7 ],
                         Dynamic[
-                            If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
-                            TrackedSymbols :> { state, modelSelector }
+                            If[ state === "Loading" || MatchQ[ modelNameSelector, _Symbol ], $loadingPopupMenu, modelNameSelector ],
+                            TrackedSymbols :> { service, state, modelNameSelector }
                         ]
                     }
                 ],
@@ -476,10 +478,10 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
         ],
 
         Initialization :> scopeInitialization[
-            modelSelector = catchAlways @ makeModelNameSelector[
+            modelNameSelector = catchAlways @ makeModelNameSelector[
                 Dynamic @ service,
                 Dynamic @ model,
-                Dynamic @ modelSelector,
+                Dynamic @ modelNameSelector,
                 Dynamic @ state
             ];
             state = "Loaded";
@@ -504,22 +506,28 @@ makeServiceSelector // beginDefinition;
 makeServiceSelector[
     Dynamic[ service_ ],
     Dynamic[ model_ ],
-    Dynamic[ modelSelector_ ],
+    Dynamic[ modelNameSelector_ ],
     Dynamic[ state_ ],
     services_
 ] :=
-    PopupMenu[
-        scopedDynamic[
-            extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ],
-            serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelSelector, Dynamic @ state ]
-        ],
-        (* ensure LLMKit is first in the popup followed by a delimiter *)
-        Replace[
-            KeyValueMap[
-                popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
-                DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
-            ],
-            { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
+    DynamicModule[ { displayValue = expandScope @ extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] },
+        DynamicWrapper[
+            PopupMenu[
+                Dynamic @ displayValue,
+                (* ensure LLMKit is first in the popup followed by a delimiter *)
+                Replace[
+                    KeyValueMap[
+                        popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
+                        DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+                    ],
+                    { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
+            ]
+            ,
+            serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] @ displayValue
+            ,
+            SynchronousUpdating -> False,
+            TrackedSymbols      :> { displayValue }
+        ]
     ];
 
 makeServiceSelector // endDefinition;
@@ -529,14 +537,14 @@ makeServiceSelector // endDefinition;
 (*serviceSelectCallback*)
 serviceSelectCallback // beginDefinition;
 
-serviceSelectCallback[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelSelector_ ], Dynamic[ state_ ] ] :=
-    serviceSelectCallback[ #1, Dynamic @ service, Dynamic @ model, Dynamic @ modelSelector, Dynamic @ state ] &;
+serviceSelectCallback[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
+    serviceSelectCallback[ #1, Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] &;
 
 serviceSelectCallback[
     selected_String, (* The value chosen via PopupMenu *)
     Dynamic[ service_Symbol ],
     Dynamic[ model_Symbol ],
-    Dynamic[ modelSelector_Symbol ],
+    Dynamic[ modelNameSelector_Symbol ],
     Dynamic[ state_Symbol ]
 ] := catchAlways[
     service = selected;
@@ -555,19 +563,19 @@ serviceSelectCallback[
     If[ state === "Loading",
         expandScope[
             Block[ { $scopePlaceholder := $preferencesScope },
-                modelSelector = makeModelNameSelector[
+                modelNameSelector = makeModelNameSelector[
                     Dynamic @ service,
                     Dynamic @ model,
-                    Dynamic @ modelSelector,
+                    Dynamic @ modelNameSelector,
                     Dynamic @ state
                 ]
             ];
             state = "Loaded"
         ],
-        modelSelector = makeModelNameSelector[
+        modelNameSelector = makeModelNameSelector[
             Dynamic @ service,
             Dynamic @ model,
-            Dynamic @ modelSelector,
+            Dynamic @ modelNameSelector,
             Dynamic @ state
         ]
     ]
@@ -583,7 +591,7 @@ makeModelNameSelector // beginDefinition;
 makeModelNameSelector[
     Dynamic[ service_ ],
     Dynamic[ model_ ],
-    Dynamic[ modelSelector_ ],
+    Dynamic[ modelNameSelector_ ],
     Dynamic[ state_ ]
 ] := Enclose[
     Catch @ Module[ { models, current, default, fallback },
@@ -591,7 +599,7 @@ makeModelNameSelector[
         ensureServiceName @ service;
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
-        If[ service === "LLMKit", Return @ "" ];
+        If[ service === "LLMKit", Throw @ "" ];
 
         models = ConfirmMatch[
             Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ],
@@ -610,7 +618,7 @@ makeModelNameSelector[
             Throw @ serviceConnectButton[
                 Dynamic @ service,
                 Dynamic @ model,
-                Dynamic @ modelSelector,
+                Dynamic @ modelNameSelector,
                 Dynamic @ state
             ]
         ];
@@ -619,7 +627,7 @@ makeModelNameSelector[
             Throw @ modelNameInputField[
                 Dynamic @ service,
                 Dynamic @ model,
-                Dynamic @ modelSelector,
+                Dynamic @ modelNameSelector,
                 Dynamic @ state
             ]
         ];
@@ -632,19 +640,26 @@ makeModelNameSelector[
             CurrentChatSettings[ $preferencesScope, "Model" ] = fallback
         ];
 
-        With[ { m = fallback },
-            PopupMenu[
-                scopedDynamic[
-                    Replace[
-                        extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
-                        Except[ _String ] :> (CurrentChatSettings[ $preferencesScope, "Model" ] = m)
+        DynamicModule[
+            {
+                displayValue = expandScope @ Replace[
+                    extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
+                    Except[ _String ] :> (CurrentChatSettings[ $preferencesScope, "Model" ] = fallback)
+                ]
+            },
+            DynamicWrapper[
+                PopupMenu[
+                    Dynamic @ displayValue,
+                    Block[ { $noIcons = TrueQ @ $cloudNotebooks },
+                        Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
                     ],
-                    modelSelectCallback[ Dynamic @ service, Dynamic @ model ]
-                ],
-                Block[ { $noIcons = TrueQ @ $cloudNotebooks },
-                    Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
-                ],
-                ImageSize -> Automatic
+                    ImageSize -> Automatic
+                ]
+                ,
+                modelSelectCallback[ Dynamic @ service, Dynamic @ model ] @ displayValue
+                ,
+                SynchronousUpdating -> False,
+                TrackedSymbols      :> { displayValue }
             ]
         ]
     ],
@@ -658,7 +673,7 @@ makeModelNameSelector // endDefinition;
 (*modelNameInputField*)
 modelNameInputField // beginDefinition;
 
-modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelSelector_ ], Dynamic[ state_ ] ] :=
+modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
     prefsInputField[
         None,
         scopedDynamic[
@@ -682,7 +697,7 @@ serviceConnectButton // beginDefinition;
 serviceConnectButton[
     Dynamic[ service_ ],
     Dynamic[ model_ ],
-    Dynamic[ modelSelector_ ],
+    Dynamic[ modelNameSelector_ ],
     Dynamic[ state_ ]
 ] :=
     Button[
@@ -698,7 +713,7 @@ serviceConnectButton[
                         service,
                         Dynamic @ service,
                         Dynamic @ model,
-                        Dynamic @ modelSelector,
+                        Dynamic @ modelNameSelector,
                         Dynamic @ state
                     ]
                 ]
@@ -1570,7 +1585,7 @@ toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic[ display ],
-        Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ ] ],
+        Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
