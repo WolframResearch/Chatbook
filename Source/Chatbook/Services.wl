@@ -54,6 +54,38 @@ InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*llmKitCheck*)
+llmKitCheck // beginDefinition;
+
+llmKitCheck[ ] :=
+    LogChatTiming @ llmKitCheck[ $CloudUserID, $CloudBase ];
+
+llmKitCheck[ _, cloud_String ] := Enclose[
+    Module[ { check, user },
+        check = ConfirmMatch[ llmKitCheck0[ ], _Success|_Failure, "Check" ];
+        If[ FailureQ @ check, throwFailureToChatOutput @ check ];
+        user = ConfirmBy[ $CloudUserID, StringQ, "CloudUserID" ];
+        llmKitCheck[ user, cloud ] = check
+    ],
+    throwInternalFailure
+];
+
+llmKitCheck // endDefinition;
+
+
+llmKitCheck0 // beginDefinition;
+
+llmKitCheck0[ ] := Replace[
+    LLMSynthesize;
+    Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
+    Wolfram`LLMFunctions`Common`LLMKitCheck[ ],
+    Null :> Wolfram`LLMFunctions`Common`LLMKitCheck[ ]
+];
+
+llmKitCheck0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*getLLMKitService*)
 getLLMKitService // beginDefinition;
 getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
