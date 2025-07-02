@@ -1441,10 +1441,53 @@ serializeVideo // endDefinition;
 fasterCellToString0[ box: TagBox[ _, _Audio`AudioBox, ___ ] ] := serializeAudio @ box;
 fasterCellToString0[ box: TemplateBox[ _, "AudioBox1", ___ ] ] := serializeAudio @ box;
 
+(* Recorded speech inputs: *)
+fasterCellToString0[ TemplateBox[
+    KeyValuePattern @ {
+        "Audio"      -> audio_Audio,
+        "Transcript" -> transcript_String
+    },
+    "NotebookAssistantSpeechInput",
+    ___
+] ] := Enclose[
+    Module[ { reference, audioBox },
+        needsBasePrompt[ "NotebookAssistantSpeechInput" ];
+        If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "AudioBoxImporting" ] ];
+        reference = ConfirmBy[ MakeExpressionURI[ "audio", "Recorded Speech Input", audio ], StringQ, "Reference" ];
+        audioBox = "\\!\\(\\*AudioBox[\"" <> reference <> "\"]\\)";
+        ConfirmBy[
+            TemplateApply[ $speechInputTemplate, <| "Audio" -> audioBox, "Transcript" -> transcript |> ],
+            StringQ,
+            "SpeechInput"
+        ]
+    ],
+    throwInternalFailure
+];
+
+
+$speechInputTemplate = StringTemplate[ "\
+<speech-input>
+<audio>`Audio`</audio>
+<transcript>
+`Transcript`
+</transcript>
+</speech-input>
+" ];
+
+(* FIXME:
+    * Need to convert <speech-input> to sensible plaintext when embedding (e.g. remove the XML tags)
+    * If model supports audio input, need to expand the audio box to the raw audio
+    * Need to add formatting rules to parse the <speech-input> element as the original template box
+    * Do we need to make the audio available to the evaluator tool?
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
 (*serializeAudio*)
 serializeAudio // beginDefinition;
+
+serializeAudio[ audio_? AudioQ ] :=
+    serializeAudio[ audio, audio ];
 
 serializeAudio[ box_ ] := serializeAudio[ box ] =
     serializeAudio[ box, Quiet @ ToExpression[ box, StandardForm ] ];
