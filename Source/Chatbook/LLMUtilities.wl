@@ -122,6 +122,8 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 
         auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
 
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
+
         setServiceCaller @ LLMServices`ChatSubmit[
             messages,
             config,
