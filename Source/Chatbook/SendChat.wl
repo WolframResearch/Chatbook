@@ -777,6 +777,7 @@ chatSubmit0[
 ] /; settings[ "ForceSynchronous" ] := Enclose[
     Module[ { auth, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
         stop = makeStopTokens @ settings;
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
@@ -815,6 +816,7 @@ chatSubmit0[
 
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
+    If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
     $lastChatSubmitResult = ReleaseHold[
         $lastChatSubmit = HoldForm @ applyProcessingFunction[
             settings,
