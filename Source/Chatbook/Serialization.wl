@@ -1475,7 +1475,6 @@ $speechInputTemplate = StringTemplate[ "\
 " ];
 
 (* FIXME:
-    * Need to convert <speech-input> to sensible plaintext when embedding (e.g. remove the XML tags)
     * If model supports audio input, need to expand the audio box to the raw audio
     * Need to add formatting rules to parse the <speech-input> element as the original template box
     * Do we need to make the audio available to the evaluator tool?

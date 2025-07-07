@@ -1162,13 +1162,17 @@ vectorDBSearch // endDefinition;
 (*preprocessEmbeddingString*)
 preprocessEmbeddingString // beginDefinition;
 
-preprocessEmbeddingString[ s: _String | { ___String } ] := StringTrim @ StringDelete[
-    s,
-    {
-        Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ __ ~~ ")\"]\\)" ],
-        $leftSelectionIndicator,
-        $rightSelectionIndicator
-    }
+preprocessEmbeddingString[ s: _String | { ___String } ] := StringReplace[
+    StringTrim @ StringDelete[
+        s,
+        {
+            Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ __ ~~ ")\"]\\)" ],
+            $leftSelectionIndicator,
+            $rightSelectionIndicator
+        }
+    ],
+    Shortest[ "<speech-input>"~~___~~"<transcript>"~~transcript__~~"</transcript>"~~___~~"</speech-input>" ] :>
+        transcript
 ];
 
 preprocessEmbeddingString // endDefinition;
