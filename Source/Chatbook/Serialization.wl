@@ -227,9 +227,14 @@ $templateBoxRules = <|
     "HyperlinkDefault"             -> First,
     "Key0"                         -> First,
     "Key1"                         -> (Riffle[ #, "-" ] &),
+    "NotebookAssistantSpeechInput" -> serializeSpeechInput,
+    "PlatformDynamic"              -> First,
     "RowDefault"                   -> Identity,
     "TransferFunctionModelFull"    -> makeExpressionString,
+    "URLArgument"                  -> First,
     "UserMessageBox"               -> First,
+
+    (* Color swatches: *)
     "CMYKColorSwatchTemplate"      -> inputFormString @* Lookup[ "color" ],
     "GrayLevelColorSwatchTemplate" -> inputFormString @* Lookup[ "color" ],
     "HueColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
@@ -237,9 +242,7 @@ $templateBoxRules = <|
     "LCHColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "PlatformDynamic"              -> First,
-    "URLArgument"                  -> First
+    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1440,45 +1443,6 @@ serializeVideo // endDefinition;
 (*Audio*)
 fasterCellToString0[ box: TagBox[ _, _Audio`AudioBox, ___ ] ] := serializeAudio @ box;
 fasterCellToString0[ box: TemplateBox[ _, "AudioBox1", ___ ] ] := serializeAudio @ box;
-
-(* Recorded speech inputs: *)
-fasterCellToString0[ TemplateBox[
-    KeyValuePattern @ {
-        "Audio"      -> audio_Audio,
-        "Transcript" -> transcript_String
-    },
-    "NotebookAssistantSpeechInput",
-    ___
-] ] := Enclose[
-    Module[ { reference, audioBox },
-        needsBasePrompt[ "NotebookAssistantSpeechInput" ];
-        If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "AudioBoxImporting" ] ];
-        reference = ConfirmBy[ MakeExpressionURI[ "audio", "Recorded Speech Input", audio ], StringQ, "Reference" ];
-        audioBox = "\\!\\(\\*AudioBox[\"" <> reference <> "\"]\\)";
-        ConfirmBy[
-            TemplateApply[ $speechInputTemplate, <| "Audio" -> audioBox, "Transcript" -> transcript |> ],
-            StringQ,
-            "SpeechInput"
-        ]
-    ],
-    throwInternalFailure
-];
-
-
-$speechInputTemplate = StringTemplate[ "\
-<speech-input>
-<audio>`Audio`</audio>
-<transcript>
-`Transcript`
-</transcript>
-</speech-input>
-" ];
-
-(* FIXME:
-    * If model supports audio input, need to expand the audio box to the raw audio
-    * Need to add formatting rules to parse the <speech-input> element as the original template box
-    * Do we need to make the audio available to the evaluator tool?
-*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)

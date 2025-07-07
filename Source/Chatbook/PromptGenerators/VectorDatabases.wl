@@ -1172,7 +1172,7 @@ preprocessEmbeddingString[ s: _String | { ___String } ] := StringReplace[
         }
     ],
     Shortest[ "<speech-input>"~~___~~"<transcript>"~~transcript__~~"</transcript>"~~___~~"</speech-input>" ] :>
-        transcript
+        StringTrim @ transcript
 ];
 
 preprocessEmbeddingString // endDefinition;
