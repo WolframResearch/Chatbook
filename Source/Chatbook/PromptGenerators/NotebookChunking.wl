@@ -218,7 +218,7 @@ chunkNotebook[ nb_Notebook, uri_String ] := Enclose[
     Module[ { trailed, flatNodes, withURI, document, tokens },
         trailed   = ConfirmBy[ insertTrailInfo @ nb, AssociationQ, "Trailed" ];
         flatNodes = Cases[ trailed, KeyValuePattern[ "String" -> _String ], Infinity ];
-        withURI   = insertURIs[ flatNodes, uri ];
+        withURI   = DeleteCases[ insertURIs[ flatNodes, uri ], KeyValuePattern[ "String" -> "" ] ];
         document  = ConfirmBy[ cellToString @ nb, StringQ, "Document" ];
         tokens    = ConfirmBy[ tokenCount @ document, IntegerQ, "TokenCount" ];
         <| "FullText" -> document, "Fragments" -> withURI, "TokenCount" -> tokens, "URI" -> uri |>
@@ -441,7 +441,7 @@ mergeNodes[ { node_Association } ] := node;
 
 mergeNodes[ nodes: { first_Association, __Association } ] := Enclose[
     Module[ { cells, string, tokens },
-        cells  = ConfirmMatch[ Flatten @ Lookup[ nodes, "Cells" ], { __Cell }, "Cells" ];
+        cells  = ConfirmMatch[ getNodeCells @ nodes, { __Cell }, "Cells" ];
         string = cellToString @ Notebook @ cells;
         tokens = tokenCount @ string;
         Association[
@@ -456,6 +456,14 @@ mergeNodes[ nodes: { first_Association, __Association } ] := Enclose[
 ];
 
 mergeNodes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNodeCells*)
+getNodeCells // beginDefinition;
+getNodeCells[ as_Association ] := Flatten @ List @ Lookup[ as, "Cells", { } ];
+getNodeCells[ nodes: { ___Association } ] := Flatten[ getNodeCells /@ nodes ];
+getNodeCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -681,7 +689,7 @@ importNotebook // beginDefinition;
 
 importNotebook[ file_? FileExistsQ ] := FirstCase[
     Quiet @ Import[ file, { "WL", "HeldExpressions" } ],
-    HoldComplete[ nb: Notebook[ { ___Cell }, OptionsPattern[ ] ] ] :> rewriteCellLabels @ nb,
+    HoldComplete[ nb: Notebook[ { ___Cell }, OptionsPattern[ ] ] ] :> rewriteCellLabels @ deleteIgnoredCells @ nb,
     Failure[
         "ImportFailure",
         <| "MessageTemplate" -> "Failed to import notebook `1`.", "MessageParameters" -> { file } |>
@@ -689,6 +697,25 @@ importNotebook[ file_? FileExistsQ ] := FirstCase[
 ];
 
 importNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deleteIgnoredCells*)
+deleteIgnoredCells // beginDefinition;
+
+deleteIgnoredCells[ Notebook[ cells_, opts___ ] ] :=
+    Notebook[ deleteIgnoredCells @ cells, opts ];
+
+deleteIgnoredCells[ cells_List ] :=
+    deleteIgnoredCells /@ DeleteCases[ cells, $$ignoredBox ];
+
+deleteIgnoredCells[ Cell[ CellGroupData[ cells_, a___ ], b___ ] ] :=
+    Cell[ CellGroupData[ deleteIgnoredCells @ cells, a ], b ];
+
+deleteIgnoredCells[ other_ ] :=
+    other;
+
+deleteIgnoredCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
