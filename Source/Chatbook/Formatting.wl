@@ -346,6 +346,9 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
         ]
     ];
 
+makeResultCell0[ speechCell[ speech_String ] ] :=
+    formatSpeechInput @ speech;
+
 makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
     makeDiscardedMaterialCell @ stuff;
 
@@ -1323,6 +1326,8 @@ $textDataFormatRules = {
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+
+    speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
 
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",

@@ -175,6 +175,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
     "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`SpeechInput`",
     "Wolfram`Chatbook`Storage`",
     "Wolfram`Chatbook`TeXBoxes`",
     "Wolfram`Chatbook`ToolManager`",
