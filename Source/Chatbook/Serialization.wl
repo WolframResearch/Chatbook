@@ -227,9 +227,14 @@ $templateBoxRules = <|
     "HyperlinkDefault"             -> First,
     "Key0"                         -> First,
     "Key1"                         -> (Riffle[ #, "-" ] &),
+    "NotebookAssistantSpeechInput" -> serializeSpeechInput,
+    "PlatformDynamic"              -> First,
     "RowDefault"                   -> Identity,
     "TransferFunctionModelFull"    -> makeExpressionString,
+    "URLArgument"                  -> First,
     "UserMessageBox"               -> First,
+
+    (* Color swatches: *)
     "CMYKColorSwatchTemplate"      -> inputFormString @* Lookup[ "color" ],
     "GrayLevelColorSwatchTemplate" -> inputFormString @* Lookup[ "color" ],
     "HueColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
@@ -237,9 +242,7 @@ $templateBoxRules = <|
     "LCHColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "PlatformDynamic"              -> First,
-    "URLArgument"                  -> First
+    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1445,6 +1448,9 @@ fasterCellToString0[ box: TemplateBox[ _, "AudioBox1", ___ ] ] := serializeAudio
 (* ::Subsubsubsubsection::Closed:: *)
 (*serializeAudio*)
 serializeAudio // beginDefinition;
+
+serializeAudio[ audio_? AudioQ ] :=
+    serializeAudio[ audio, audio ];
 
 serializeAudio[ box_ ] := serializeAudio[ box ] =
     serializeAudio[ box, Quiet @ ToExpression[ box, StandardForm ] ];
