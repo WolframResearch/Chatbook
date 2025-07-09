@@ -1786,7 +1786,15 @@ fasterCellToString0[ TemplateBox[ { label_, url_String | URL[ url_String ] }, "H
         "[" <> fixLinkLabel @ fasterCellToString0 @ label <> "](" <> url <> ")"
     ];
 
-fasterCellToString0[ TemplateBox[ { label_, { url_String | URL[ url_String ], _ }, _ }, "HyperlinkDefault", ___ ] ] :=
+fasterCellToString0[ TemplateBox[
+    {
+        label_,
+        { url_String | URL[ url_String ], _ },
+        __
+    },
+    "HyperlinkDefault"|"HyperlinkTemplate",
+    ___
+] ] :=
     Block[ { $showStringCharacters = False },
         "[" <> fixLinkLabel @ fasterCellToString0 @ label <> "](" <> url <> ")"
     ];
