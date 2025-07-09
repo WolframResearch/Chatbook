@@ -196,7 +196,8 @@ $$invisibleCharacter = Alternatives[
 
 (* Boxes that probably shouldn't be serialized as TraditionalForm: *)
 $$notTraditionalForm = Alternatives[
-    Cell[ BoxData[ TemplateBox[ _, "Key1", ___ ], ___ ], ___ ]
+    Cell[ BoxData[ TemplateBox[ _, "Key1", ___ ], ___ ], ___ ],
+    TemplateBox[ _, "PlatformDynamic"|"HyperlinkTemplate", ___ ]
 ];
 
 (* Characters that should be automatically escaped when they appear in plain text to be valid markdown: *)
