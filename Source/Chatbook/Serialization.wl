@@ -1041,9 +1041,20 @@ fasterCellToString0[ Cell[ __, $$delimiterStyle, ___ ] ] := $delimiterString;
 (*makeSection*)
 makeSection // beginDefinition;
 
-makeSection[ level_Integer, boxes_ ] := Enclose[
-    Module[ { string, prepend },
-        string = ConfirmBy[ fasterCellToString0 @ boxes, StringQ, "String" ];
+makeSection[ level_Integer, boxes0_ ] := Enclose[
+    Module[ { boxes, string, prepend },
+        boxes = Replace[
+            boxes0,
+            {
+                a___,
+                b_String,
+                _String? (StringMatchQ[ WhitespaceCharacter... ]),
+                c: Cell[ _, "ExampleCount", ___ ],
+                d___
+            } :> { a, StringTrim @ b <> " ", c, d },
+            { 0, 1 }
+        ];
+        string = StringTrim @ ConfirmBy[ fasterCellToString0 @ boxes, StringQ, "String" ];
         prepend = StringRepeat[ "#", level ];
         prepend <> " " <> StringDelete[ string, StartOfString ~~ "#".. ~~ " " ]
     ],
