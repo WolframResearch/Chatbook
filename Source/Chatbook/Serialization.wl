@@ -2971,6 +2971,7 @@ fasterCellToString0[ box: TemplateBox[ args_, ___ ] ] :=
 (* ::Subsubsubsubsection::Closed:: *)
 (*getTemplateBoxFunction*)
 getTemplateBoxFunction // beginDefinition;
+getTemplateBoxFunction[ TemplateBox[ _, "Row", ___, DisplayFunction -> f: Except[ $$unspecified ], ___ ] ] := f;
 getTemplateBoxFunction[ TemplateBox[ __, InterpretationFunction -> f: Except[ $$unspecified ], ___ ] ] := f;
 getTemplateBoxFunction[ TemplateBox[ __, DisplayFunction -> f: Except[ $$unspecified ], ___ ] ] := f;
 getTemplateBoxFunction[ TemplateBox[ _, name_String, ___, InterpretationFunction -> Automatic, ___ ] ] := name;
