@@ -90,12 +90,16 @@ $$noCodeBlockStyle = Alternatives[
     "ExampleSubsubsection",
     "FunctionEssay",
     "GuideFunctionsSubsection",
+    "MoreAbout",
     "NotebookImage",
     "Picture",
     "PrimaryExamplesSection",
+    "RelatedLinks",
     "TableNotes",
     "Template",
     "TOCChapter",
+    "Tutorials",
+    "Usage",
     "UsageDescription",
     "UsageInputs"
 ];
@@ -592,26 +596,25 @@ cellToString[ Cell[ BoxData[ TemplateBox[ { name_String, content_ }, "FileListin
     name <> "\n```\n" <> fasterCellToString @ content <> "\n```";
 
 (* Delimit code blocks with triple backticks *)
-cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock && codeBlockQ @ cell :=
+cellToString[ cell_Cell? codeBlockQ ] /; ! TrueQ @ $delimitedCodeBlock := Enclose[
     Block[ { $delimitedCodeBlock = True },
-        With[ { s = cellToString @ cell },
-            If[ StringQ @ s,
+        Catch @ Module[ { string, language },
+            string = cellToString @ cell;
+            If[ ! StringQ @ string, Throw[ "" ] ];
+            language = ConfirmBy[ codeBlockLanguage @ cell, StringQ, "Language" ];
+            If[ language === "wl",
                 needsBasePrompt[ "WolframLanguage" ];
-                "```wl\n"<>s<>"\n```",
-                ""
+                "```wl\n"<>string<>"\n```",
+                "```"<>language<>"\n"<>string<>"\n```"
             ]
         ]
-    ];
+    ],
+    throwInternalFailure
+];
 
-cellToString[ cell: Cell[ __, "Program", ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
-    Block[ { $delimitedCodeBlock = True },
-        With[ { s = cellToString @ cell },
-            If[ StringQ @ s,
-                "```\n"<>s<>"\n```",
-                ""
-            ]
-        ]
-    ];
+(* For FilePrint outputs: *)
+cellToString[ Cell[ s_String, "Print", ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
+    "```\n"<>s<>"\n```";
 
 (* Add a cell label for Echo cells *)
 cellToString[ Cell[ a__, "Echo", b___ ] ] :=
@@ -3219,13 +3222,14 @@ sowMessageData[ ___ ] := Null;
 (*showStringCharactersQ*)
 showStringCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
 showStringCharactersQ[ Cell[ __, "MoreInfoText", ___ ] ] := False;
-showStringCharactersQ[ Cell[ _, OptionsPattern[ ] ] ] := $showStringCharacters;
+showStringCharactersQ[ Cell[ _, OptionsPattern[ ] ] ] := TrueQ @ $showStringCharacters;
 showStringCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*escapeMarkdownCharactersQ*)
 escapeMarkdownCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
+escapeMarkdownCharactersQ[ cell_? codeBlockQ ] := False;
 escapeMarkdownCharactersQ[ Cell[ _BoxData, ___ ] ] := False;
 escapeMarkdownCharactersQ[ ___ ] := True;
 
@@ -3525,8 +3529,17 @@ codeBlockQ[ Cell[ __, CellTags -> { ___, "CheckboxCell", ___ }, ___ ] ] := False
 codeBlockQ[ Cell[ BoxData[ _GridBox, ___ ], ___ ] ] := False;
 codeBlockQ[ Cell[ BoxData[ GraphicsBox[ TagBox[ _RasterBox, ___ ], ___ ], ___ ], "Input", ___ ] ] := False;
 codeBlockQ[ Cell[ _BoxData, ___ ] ] := True;
-codeBlockQ[ Cell[ _TextData, ___ ] ] := False;
+codeBlockQ[ _ ] := False;
 codeBlockQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeBlockLanguage*)
+codeBlockLanguage // beginDefinition;
+codeBlockLanguage[ Cell[ __, "Input"|"Output"|"Code", ___ ] ] := "wl";
+codeBlockLanguage[ Cell[ _BoxData, ___ ] ] := "wl";
+codeBlockLanguage[ ___ ] := "";
+codeBlockLanguage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
