@@ -1066,27 +1066,32 @@ makeSection // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Styles*)
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontWeight -> Bold|"Bold")|Bold, b___ ] ] :=
-    With[ { str = fasterCellToString0 @ h[ a, b ] },
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontWeight -> Bold|"Bold")|Bold, b___ ] ] /; ! TrueQ @ $bold :=
+    With[ { str = Block[ { $bold = True }, fasterCellToString0 @ h[ a, b ] ] },
         If[ StringMatchQ[ str, WhitespaceCharacter... ],
             str,
             "**" <> str <> "**"
         ]
     ];
 
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontSlant -> Italic|"Italic")|Italic, b___ ] ] :=
-    With[ { str = fasterCellToString0 @ h[ a, b ] },
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, (FontSlant -> Italic|"Italic")|Italic, b___ ] ] /; ! TrueQ @ $italic :=
+    With[ { str = Block[ { $italic = True }, fasterCellToString0 @ h[ a, b ] ] },
         If[ StringMatchQ[ str, WhitespaceCharacter... ],
             str,
             "*" <> str <> "*"
         ]
     ];
 
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, Struckthrough, b___ ] ] :=
-    "~~" <> fasterCellToString0 @ h[ a, b ] <> "~~";
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, Struckthrough, b___ ] ] /; ! TrueQ @ $struckthrough :=
+    With[ { str = Block[ { $struckthrough = True }, fasterCellToString0 @ h[ a, b ] ] },
+        "~~" <> str <> "~~"
+    ];
 
-fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontVariations -> { b___, "StrikeThrough" -> True, c___ }, d___ ] ] :=
-    "~~" <> fasterCellToString0 @ h[ a, FontVariations -> { b, c }, d ] <> "~~";
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontVariations -> { b___, "StrikeThrough" -> True, c___ }, d___ ] ] /;
+    ! TrueQ @ $struckthrough :=
+        With[ { str = Block[ { $struckthrough = True }, fasterCellToString0 @ h[ a, FontVariations -> { b, c }, d ] ] },
+            "~~" <> str <> "~~"
+        ];
 
 fasterCellToString0[ (h: Cell|StyleBox)[ a__, ShowStringCharacters -> b: True|False, c___ ] ] :=
     Block[ { $showStringCharacters = b }, fasterCellToString0 @ h[ a, c ] ];
