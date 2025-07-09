@@ -1577,6 +1577,9 @@ fasterCellToString0[
     Cell[ BoxData[ link: TemplateBox[ _, $$refLinkTemplate, ___ ], ___ ], "InlineCode"|"InlineFormula", ___ ]
 ] /; ! $inlineCode := fasterCellToString0 @ link;
 
+fasterCellToString0[ Cell[ BoxData[ FormBox[ box_, TextForm, ___ ], ___ ], ___, "InlineCode"|"InlineFormula", ___ ] ] :=
+    Block[ { $showStringCharacters = False, $escapeMarkdown = True }, fasterCellToString0 @ box ];
+
 fasterCellToString0[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ] ] /; ! $inlineCode :=
     Block[ { $escapeMarkdown = False, $inlineCode = True },
         needsBasePrompt[ "DoubleBackticks" ];
@@ -2530,10 +2533,10 @@ regroupAnnotationItems // endDefinition;
 (*Usage*)
 $$usageStyle = "Usage"|"CFunctionUsage"|"EntityUsage";
 fasterCellToString0[ Cell[ BoxData[ GridBox[ grid_? MatrixQ, ___ ] ], $$usageStyle, ___ ] ] :=
-    StringRiffle[ docUsageString /@ grid, "\n\n" ];
+    Block[ { $escapeMarkdown = True }, StringRiffle[ docUsageString /@ grid, "\n\n" ] ];
 
 fasterCellToString0[ Cell[ boxes_, $$usageStyle, ___ ] ] :=
-    docUsageString @ boxes;
+    Block[ { $escapeMarkdown = True }, docUsageString @ boxes ];
 
 (**********************************************************************************************************************)
 docUsageString // beginDefinition;
