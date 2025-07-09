@@ -974,7 +974,6 @@ $$sectionStyle = Alternatives[
     "EntitySection",
     "ExamplesInitializationSection",
     "ExtendedExamplesSection",
-    "FeaturedExampleMoreAboutSection",
     "FormatBackground",
     "FunctionEssaySection",
     "GuideFunctionsSection",
@@ -987,15 +986,12 @@ $$sectionStyle = Alternatives[
     "InterpreterSection",
     "MetadataSection",
     "MethodSection",
-    "MoreAboutSection",
     "NotesSection",
     "OptionsSection",
     "PredictorSection",
     "PrimaryExamplesSection",
     "ProgramSection",
-    "RelatedLinksSection",
     "Section",
-    "SeeAlsoSection",
     "Subtitle",
     "TechNotesSection",
     "WorkflowHeader",
@@ -2552,7 +2548,11 @@ fasterCellToString0[
     Cell[ __, "SeeAlsoSection", ___, TaggingRules -> KeyValuePattern[ "SeeAlsoGrid" -> grid_ ], ___ ]
 ] := seeAlsoSection @ grid;
 
-fasterCellToString0[ Cell[ BoxData[ grid_GridBox, ___ ], ___, "SeeAlsoSection", ___ ] ] := seeAlsoSection @ grid;
+fasterCellToString0[ Cell[ BoxData[ grid_GridBox, ___ ], ___, "SeeAlsoSection", ___ ] ] :=
+    seeAlsoSection @ grid;
+
+fasterCellToString0[ Cell[ boxes_, "SeeAlsoSection", ___ ] ] :=
+    makeSection[ 2, boxes ];
 
 (**********************************************************************************************************************)
 seeAlsoSection // beginDefinition;
@@ -2579,16 +2579,16 @@ $$relatedWorkflowsSection = "RelatedWorkflowsSection"|"GuideRelatedWorkflowsSect
 $$relatedTutorialSection  = "TutorialsSection"|"GuideTutorialsSection"|"RelatedTutorialsSection";
 $$relatedLinksSection     = "RelatedLinksSection"|"GuideRelatedLinksSection";
 
-fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], $$relatedGuideSection, ___ ] ] :=
+fasterCellToString0[ Cell[ grid_, $$relatedGuideSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedGuideSection, "Related Guides" ];
 
-fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], $$relatedWorkflowsSection, ___ ] ] :=
+fasterCellToString0[ Cell[ grid_, $$relatedWorkflowsSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedWorkflowsSection, "Related Workflows" ];
 
-fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], $$relatedTutorialSection, ___ ] ] :=
+fasterCellToString0[ Cell[ grid_, $$relatedTutorialSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedTutorialSection, "Related Tutorials" ];
 
-fasterCellToString0[ Cell[ BoxData[ grid_, ___ ], $$relatedLinksSection, ___ ] ] :=
+fasterCellToString0[ Cell[ grid_, $$relatedLinksSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedLinksSection, "Related Links" ];
 
 (**********************************************************************************************************************)
@@ -2615,7 +2615,7 @@ relatedLinksSection[ grid_, style_, header0_String ] := Enclose[
             Infinity
         ];
 
-        If[ items === { }, Throw[ "" ] ];
+        If[ items === { }, Throw @ makeSection[ 2, grid ] ];
 
         string = StringRiffle[ Flatten @ { header<>"\n", items }, "\n" ];
 
