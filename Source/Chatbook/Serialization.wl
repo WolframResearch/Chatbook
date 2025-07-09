@@ -76,13 +76,6 @@ $$noCellLabelStyle = Alternatives[
     $$delimiterStyle
 ];
 
-$$ignoredCellStyle = Alternatives[
-    "AlphabeticalListingAnchor",
-    "AnchorBarGrid",
-    "CitationContainerCell",
-    "DiscardedMaterial",
-    "InlineListingAddButton"
-];
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
 $$noCodeBlockStyle = Alternatives[
@@ -299,24 +292,6 @@ $stringStripHeads = Alternatives[
     TooltipBox
 ];
 
-(* Boxes that should be ignored during serialization *)
-$$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
-    "FEBitmaps",
-    "SquarePlusIconSmall"|"SquarePlusIconMedium"
-];
-
-$$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
-
-$ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$ignoredImportImage },
-    Alternatives[
-        _PaneSelectorBox,
-        StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
-        DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
-        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
-        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ]
-    ]
-];
-
 (* CellEvaluationLanguage appears to not be System` at startup, so use this for matching as a precaution *)
 $$cellEvaluationLanguage = Alternatives[
     "CellEvaluationLanguage",
@@ -342,6 +317,67 @@ $$controlBox = HoldPattern @ Alternatives[
     SliderBox,
     TableViewBox,
     TogglerBox
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Ignored*)
+$$ignoredCellStyle = Alternatives[
+    "AlphabeticalListingAnchor",
+    "AnchorBarGrid",
+    "CitationContainerCell",
+    "DiscardedMaterial",
+    "InlineListingAddButton"
+];
+
+$$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
+    "FEBitmaps",
+    "SquarePlusIconSmall"|"SquarePlusIconMedium"
+];
+
+$$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
+
+(* Boxes that should be ignored during serialization *)
+$$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$ignoredImportImage },
+    Alternatives[
+        _PaneSelectorBox,
+        StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
+        DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
+        DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
+        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ],
+
+        (* Documentation structures: *)
+        DynamicBox[
+            ToBoxes @ If[
+                MatchQ[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Openers", __ }, ___ ], _ ],
+                _,
+                _
+            ],
+            ___
+        ]
+        ,
+        DynamicBox[
+            ToBoxes @ If[
+                MatchQ[
+                    Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Openers", __ }, ___ ] ][[ _ ]],
+                    _
+                ],
+                _,
+                _
+            ],
+            ___
+        ]
+        ,
+        DynamicBox[ If[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ShowCitation" } ] === False, _, _ ], ___ ]
+        ,
+        TemplateBox[ { ___ }, "ExampleJumpLink"|"OptsTableJumpLink", ___ ]
+        ,
+        Cell[ __, "NotesThumbnails", ___ ]
+        ,
+        Cell[ __, "TutorialJumpBox", ___ ]
+        ,
+        Cell[ __, $$ignoredCellStyle, ___ ]
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -766,6 +802,8 @@ cellsToString[ cells_List ] :=
 (* ::Subsubsection::Closed:: *)
 (*rasterWholeCellQ*)
 rasterWholeCellQ // beginDefinition;
+
+rasterWholeCellQ[ $$ignoredBox ] := False;
 
 rasterWholeCellQ[ cell_Cell ] := Enclose[
     Module[ { maxBoxCount, boxes, count },
@@ -2701,38 +2739,6 @@ checkbox // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Ignored Patterns*)
-$$ignoredBox = Alternatives[
-    (* Documentation structures: *)
-    DynamicBox[
-        ToBoxes @ If[
-            MatchQ[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Openers", __ }, ___ ], _ ],
-            _,
-            _
-        ],
-        ___
-    ]
-    ,
-    DynamicBox[
-        ToBoxes @ If[
-            MatchQ[ Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Openers", __ }, ___ ] ][[ _ ]], _ ],
-            _,
-            _
-        ],
-        ___
-    ]
-    ,
-    DynamicBox[ If[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ShowCitation" } ] === False, _, _ ], ___ ]
-    ,
-    TemplateBox[ { ___ }, "ExampleJumpLink"|"OptsTableJumpLink", ___ ]
-    ,
-    Cell[ __, "NotesThumbnails", ___ ]
-    ,
-    Cell[ __, "TutorialJumpBox", ___ ]
-    ,
-    Cell[ __, $$ignoredCellStyle, ___ ]
-];
-
-
 fasterCellToString0[ $$ignoredBox ] := "";
 
 (* ::**************************************************************************************************************:: *)
@@ -3039,9 +3045,8 @@ applyTemplateBoxDisplayFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*Ignored/Skipped*)
+(*Other Ignored/Skipped*)
 fasterCellToString0[ FormBox[ box_, ___ ] ] := fasterCellToString0 @ box;
-fasterCellToString0[ $ignoredBoxPatterns ] := "";
 fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 
 (* ::**************************************************************************************************************:: *)
