@@ -1161,6 +1161,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\"\\\\!\\\\(\\\\*"~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "\"\\\\!\\\\("~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "<" ~~ uri: $$attachmentURI ~~ ">" :> "<!" <> uri <> "!>",
+    "!<" ~~ uri: $$attachmentURI ~~ "!>" :> "<!" <> uri <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",
     "\\uF351" -> "\[FreeformPrompt]",
     "\:ff1d" -> "\[FreeformPrompt]",
