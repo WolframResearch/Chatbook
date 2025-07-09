@@ -1123,6 +1123,16 @@ fasterCellToString0[ "\[Bullet]"|"\[FilledSmallSquare]" ] := "*";
 (* Invisible characters *)
 fasterCellToString0[ $$invisibleCharacter ] := "";
 
+(* Numbers *)
+$$realString = With[ { d1 = DigitCharacter.., d2 = DigitCharacter... },
+    (d1 ~~ ("."~~d2)) ~~ "`" ~~ ((d1 ~~ ("."~~d2)) | "") ~~ (("*^"~~d1) | "")
+];
+
+fasterCellToString0[ s_String? (StringMatchQ[ $$realString ]) ] :=
+    With[ { held = Quiet @ ToExpression[ s, InputForm, HoldComplete ] },
+        ToString[ ReleaseHold @ held, OutputForm ] /; MatchQ[ held, HoldComplete[ _Real ] ]
+    ];
+
 (* Long name characters: *)
 fasterCellToString0[ char: $$longNameCharacter ] := Lookup[ $longNameCharacters, char, char ];
 
