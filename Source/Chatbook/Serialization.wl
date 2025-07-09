@@ -45,7 +45,15 @@ $$delimiterStyle = Alternatives[
     "WorkflowPlatformDelimiter"
 ];
 
-$$itemStyle = "Item"|"Notes"|"FeaturedExampleMoreAbout"|"InterpreterNotes"|"BulletedText"|"MonographBulletedText";
+$$itemStyle = Alternatives[
+    "BulletedText",
+    "FeaturedExampleMoreAbout",
+    "InterpreterNotes",
+    "Item",
+    "MonographBulletedText",
+    "Notes",
+    "WorkflowParenthetical"
+];
 
 $$subItemStyle     = "Subitem";
 $$subSubItemStyle  = "Subsubitem";
@@ -78,6 +86,8 @@ $$ignoredCellStyle = Alternatives[
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
 $$noCodeBlockStyle = Alternatives[
+    "AnnotatedInput",
+    "AnnotatedOutput",
     "ChatInput",
     "ChatOutput",
     "DisplayFormula",
@@ -687,6 +697,14 @@ cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMark
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
+(* Annotated input cells from workflow pages *)
+cellToString[ cell: Cell[ __, "AnnotatedInput", ___ ] ] :=
+    Module[ { items, cells },
+        items = Cases[ cell, StyleBox[ _, "CellLabel"|"Input"|"Output", ___ ], Infinity ];
+        cells = regroupAnnotationItems @ items;
+        cellsToString @ cells /; MatchQ[ cells, { __Cell } ]
+    ];
+
 (* Rasterize entire cell if it contains enough graphics boxes *)
 cellToString[ cell: Cell[ _, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
     rasterWholeCellQ @ cell :=
@@ -893,6 +911,7 @@ $$titleStyle = Alternatives[
     "CFunctionName",
     "FeaturedExampleTitle",
     "GuideTitle",
+    "HowToTitle",
     "ObjectName",
     "ObjectNameAlt",
     "Title",
@@ -949,7 +968,8 @@ $$subsectionStyle = Alternatives[
     "KeywordsSection",
     "NotesSubsection",
     "Subsection",
-    "TemplatesSection"
+    "TemplatesSection",
+    "WorkflowStep"
 ];
 
 $$subsubsectionStyle = "Subsubsection"|"ExampleSubsection";
@@ -2399,6 +2419,39 @@ fasterCellToString0[ Cell[ a_, "InlineGuideFunctionListing", ___ ] ] :=
             ]
         ] /; StringQ @ str
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*Workflow Pages*)
+fasterCellToString0[ Cell[ a_, "WorkflowRelatedFunctions", ___ ] ] :=
+    Module[ { items },
+        items = Cases[ a, b: TemplateBox[ { __ }, $$refLinkTemplate, ___ ] :> fasterCellToString0 @ b, Infinity ];
+        If[ items === { },
+            "",
+            StringRiffle[ items, "\n\n" ]
+        ]
+    ];
+
+(* Annotated input and outputs: *)
+regroupAnnotationItems // beginDefinition;
+
+regroupAnnotationItems[ { OrderlessPatternSequence[
+    StyleBox[ inLabel_String, "CellLabel", ___ ] /; StringContainsQ[ inLabel, "In[" ~~ DigitCharacter.. ~~ "]" ],
+    StyleBox[ outLabel_String, "CellLabel", ___ ] /; StringContainsQ[ outLabel, "Out[" ~~ DigitCharacter.. ~~ "]" ],
+    StyleBox[ input_, "Input", ___ ],
+    StyleBox[ output_, "Output", ___ ]
+] } ] := {
+    Cell[ BoxData @ input, "Input", CellLabel -> StringTrim[ inLabel, "\"" ] ],
+    Cell[ BoxData @ output, "Output", CellLabel -> StringTrim[ outLabel, "\"" ] ]
+};
+
+regroupAnnotationItems[ items_List ] := SequenceReplace[
+    items,
+    { StyleBox[ label_String, "CellLabel", ___ ], StyleBox[ content_, style: "Input"|"Output", ___ ] } :>
+        Cell[ BoxData @ content, style, CellLabel -> StringTrim[ label, "\"" ] ]
+];
+
+regroupAnnotationItems // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
