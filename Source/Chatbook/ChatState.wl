@@ -8,6 +8,40 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Error Messages*)
+Chatbook::InvalidServiceCaller = "Invalid value for option `ServiceCaller`: `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatEvaluationBlock*)
+ChatEvaluationBlock // beginDefinition;
+ChatEvaluationBlock // Attributes = { HoldFirst };
+ChatEvaluationBlock // Options = { "ServiceCaller" -> None };
+
+ChatEvaluationBlock[ eval_, opts: OptionsPattern[ ] ] :=
+    catchMine @ chatEvaluationBlock[ eval, OptionValue[ "ServiceCaller" ] ];
+
+ChatEvaluationBlock // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluationBlock*)
+chatEvaluationBlock // beginDefinition;
+chatEvaluationBlock // Attributes = { HoldFirst };
+
+chatEvaluationBlock[ eval_, caller: $$serviceCaller ] :=
+    setServiceCaller[ withChatState @ eval, caller ];
+
+chatEvaluationBlock[ eval_, None ] :=
+    withChatState @ eval;
+
+chatEvaluationBlock[ eval_, caller_ ] :=
+    throwFailure[ "InvalidServiceCaller", caller ];
+
+chatEvaluationBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Chat State Evaluation Wrappers*)
 
 (* ::**************************************************************************************************************:: *)

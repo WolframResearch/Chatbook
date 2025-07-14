@@ -29,6 +29,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$serviceCaller;
 `$$cloudObject;
 `$$optionsSequence;
 `$$size;

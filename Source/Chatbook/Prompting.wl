@@ -437,15 +437,15 @@ needsBasePrompt // endDefinition;
 (*removeBasePrompt*)
 removeBasePrompt // beginDefinition;
 
-removeBasePrompt[ name_String ] := removeBasePrompt @ { name };
-removeBasePrompt[ names: { ___String } ] := KeyDropFrom[ $collectedPromptComponents, names ];
+removeBasePrompt[ names_ ] :=
+    KeyDropFrom[ $collectedPromptComponents, toBasePromptNames @ names ];
 
 removeBasePrompt[ message_, name_String ] :=
     removeBasePrompt[ message, { name } ];
 
 removeBasePrompt[ message_String, names: { ___String } ] := (
     removeBasePrompt @ names;
-    StringDelete[ message, Values @ KeyTake[ $basePromptComponents, names ] ]
+    StringDelete[ message, Values @ KeyTake[ $basePromptComponents, toBasePromptNames @ names ] ]
 );
 
 removeBasePrompt[ message: KeyValuePattern @ { "Content" -> content_String }, names_ ] :=
@@ -458,6 +458,14 @@ removeBasePrompt[ { message_, rest___ }, names_ ] :=
     ];
 
 removeBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toBasePromptNames*)
+toBasePromptNames // beginDefinition;
+toBasePromptNames[ name_String ] := toBasePromptNames @ { name };
+toBasePromptNames[ names: { ___String } ] := Union[ names, Flatten @ Lookup[ $basePromptClasses, names, { } ] ];
+toBasePromptNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
