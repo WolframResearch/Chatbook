@@ -163,6 +163,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `documentationSearchAPI;
 `dynamicAutoFormatQ;
 `dynamicSplitQ;
+`ensureChatMessages;
 `errorMessageBox;
 `escapeMarkdownString;
 `evaluateInlineChat;

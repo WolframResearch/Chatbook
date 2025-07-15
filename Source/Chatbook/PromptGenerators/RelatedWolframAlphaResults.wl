@@ -4,8 +4,8 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                         ];
-Needs[ "Wolfram`Chatbook`Common`"                  ];
 Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
+Needs[ "Wolfram`Chatbook`Common`"                  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
