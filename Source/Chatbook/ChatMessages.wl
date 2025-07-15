@@ -88,7 +88,7 @@ AugmentChatMessages[ messages_, $$unspecified, opts: OptionsPattern[ ] ] :=
 
 AugmentChatMessages[ messages_, settings_, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ augmentChatMessages[
-        messages,
+        ensureChatMessages @ messages,
         settings,
         optionsAssociation[ AugmentChatMessages, opts ]
     ];
@@ -171,6 +171,16 @@ CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsP
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Message Construction*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureChatMessages*)
+ensureChatMessages // beginDefinition;
+ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
+ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
+ensureChatMessages[ messages: $$chatMessages ] := messages;
+ensureChatMessages[ other_ ] /; ! TrueQ @ $chatState := throwFailure[ "InvalidPrompt", other ];
+ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

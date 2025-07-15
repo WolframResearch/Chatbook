@@ -7,7 +7,6 @@ HoldComplete[
     `$defaultSources,
     `$maxNeighbors,
     `$maxSelectedSources,
-    `ensureChatMessages,
     `getSmallContextString,
     `insertContextPrompt,
     `vectorDBSearch
@@ -32,16 +31,6 @@ Expected a string or a list of chat messages instead of `1`.";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Common Functions*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ensureChatMessages*)
-ensureChatMessages // beginDefinition;
-ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
-ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
-ensureChatMessages[ messages: $$chatMessages ] := messages;
-ensureChatMessages[ other_ ] /; ! TrueQ @ $chatState := throwFailure[ "InvalidPrompt", other ];
-ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
