@@ -32,14 +32,17 @@ Begin[ "`Private`" ];
 (* ::Section:: *)
 (*CodeCheckFix*)
 
+$FixRecursionLimit=10;
 
 CodeCheckFix[code_String]:= (
 	Needs[ "CodeInspector`" -> None ];
 	Needs[ "CodeParser`" -> None ];
-	CodeCheck[code] // {#, CodeFix[code,#], "OriginalCode"->code}& // Association
-);
-
-
+	CodeCheck[code] // { #
+						,Block[{niter=0,recursionLimit=$FixRecursionLimit},CodeFix[code,#]]
+						,"OriginalCode"->code
+						}&
+	// Association
+)
 
 (* ::Section:: *)
 (*CodeCheck*)
@@ -50,7 +53,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 												,(*1/4*)"Remark"
 												,(*0/4*)"ImplicitTimes","Formatting" ,"Scoping"
 												},
-					"TagExclusions" -> {"SetInfixInequality"}, (* this excludes errors for code like a = b==c *)
+					"TagExclusions" -> {"SetInfixInequality"}, (* this excludes errors for cases like: a = b==c *)
 					SourceConvention -> "SourceCharacterIndex"
 						};
 
@@ -62,8 +65,7 @@ CodeCheck[code_String, OptionsPattern[]]:=
 		 {"ErrorsDetected"->#=!={}
 		 ,"CodeInspector" -> Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}
 		 }&
-	)//EchoLabel["CodeCheck"]
-
+	)
 
 (* ::Subsection::Closed:: *)
 (*Helpers*)
@@ -90,61 +92,74 @@ ruleCodeInspectSeverityToLevel={"Fatal"->4,"Error"->3,"Warning"->2,"Remark"->1,"
 (* ::Section:: *)
 (*CodeFix*)
 
-CodeFix[
-		code_String
-		,kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->KeyValuePattern[{"InspectionObjects"->ios_}]}]
-		,params_:<||>
-		]:= fixPattern[code, generatePatternFromCodeCheck[kv]]
+(* CodeFix[code_String]:=CodeFix[code, CodeCheck[code]] *)
 
 CodeFix[
 		code_String
-		,kv:KeyValuePattern[{"ErrorsDetected"->False}]
+		,kvCI:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->_}]
 		,params_:<||>
-		]:={"FixedCode"->Missing["No errors detected"]}
+		]:=
+		CodeFix[{}, fixPattern[code, generatePatternFromCodeCheck[kvCI]]]
+
+CodeFix[
+		code_String
+		,kvCI:KeyValuePattern[{"ErrorsDetected"->False}]
+		,params_:<||>
+		]:= {"FixedCode"->Missing["No errors detected"]}
+
+CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->False}]]:=mergeFixes[kvFixPrev, kvFixNew]
+CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]]:=mergeFixes[kvFixPrev, kvFixNew]
+CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]]:=mergeFixes[kvFixPrev, kvFixNew]
+
+
+CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True}]]:=
+	With[{merged=mergeFixes[kvFixPrev, kvFixNew]}
+		,
+		generatePatternFromCodeCheck@CodeCheck[merged["FixedCode"]]
+		//
+		If[niter > recursionLimit
+			,{merged, "Success"->False, "RecursionLimitExceeded"->True}
+			,If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[qqqq=merged["FixedCode"],#]])]
+		]&
+	]
 
 generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->KeyValuePattern[{"InspectionObjects"->ios_}]}]]:=
-	 ios // Map[Apply[List]] // #[[All,{3,1}]]& // Sort //EchoLabel["CodeInspector pattern"]
+	 ios // Map[Apply[List]] // #[[All,{3,1}]]& // Sort
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
+
+lengthErrors[code_]:=CodeCheck[code]//generatePatternFromCodeCheck//Length
+lengthErrors[f_Failure]:=f
+
+
+mergeFixes[{}, newFix_] := {KeyDrop[newFix,"FixedPattern"], "FixedPatterns" ->{newFix["FixedPattern"]}} // Association
+
+mergeFixes[prevFix_, newFix_] :=
+ 	{
+		"Success" -> newFix["Success"],
+		"TotalFixes" -> Plus[prevFix[#], newFix[#]] &@"TotalFixes",
+		"LikelyFalsePositive" -> Or[prevFix[#], newFix[#]] &@"LikelyFalsePositive",
+		"SafeToEvaluate" -> And[prevFix[#], newFix[#]] &@"SafeToEvaluate",
+		"FixedPatterns" -> Append[prevFix["FixedPatterns"], newFix["FixedPattern"]],
+		"FixedCode" -> newFix["FixedCode"]
+	} // Association
 
 (* ::Subsection:: *)
 (*Fixes*)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-fixMixedPatterns[code_String, patList:{{_String, _String}..}]:=
  (Null (*todo if necessary*));
 
 $patternErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..}
 fixPattern[code_String, pat:$patternErrorCommaFatalExpectedOperand]:=
-	Module[
-			{fixComma},
-			(* try fix the error comma first*)
-			fixComma=fixPattern[code, Cases[pat, {"Error", "Comma"}], (*ignore:*){"Fatal", "ExpectedOperand"}]//Association(* //EchoLabel["Fixed comma"] *);
-			If[
-					fixComma["Success"]
-				,	fixPattern[fixComma["FixedCode"], Cases[pat, {"Fatal", "ExpectedOperand"}]]//Association
-				//	mergeFixes[fixComma,#]& (* //EchoLabel["Fixed operand"] *)
-				,	fixComma
-			]
-	]
-
-mergeFixes[a_, b_] :=
-	With[{ratio = Plus[a["SuccessRatio"], b["SuccessRatio"]]},
- 			{
-			"FixedCode" -> b["FixedCode"],
-   			"Success" -> (Rational @@ ratio === 1),
-   			"SuccessRatio" -> ratio,
-  			"LikelyFalsePositive" -> Or[a["LikelyFalsePositive"], b["LikelyFalsePositive"]],
-   			"SafeToEvaluate" -> And[a["SafeToEvaluate"], b["SafeToEvaluate"]],
-			"FixPattern"->Union[a["CodeInspectPattern"],b["CodeInspectPattern"]]
-   			}
-	]
+	(* try fix the error comma first*)
+		fixPattern[code, Cases[pat, {"Error", "Comma"}], (*ignore:*){"Fatal", "ExpectedOperand"}]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternErrorComma={{"Error","Comma"}..};
 fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 	Module[
-			{fixedCode, lenPat=Length@pat, ratio, falsePositive=Missing[], safe=Missing[], replaced=False, newPattern=Missing[]}
+			{fixedCode, success=False, lenPatLeft, falsePositive=Missing[], safe=Missing[], totalFixes=0}
 			,
 			(* Echo[pat,"Pattern:"]; *)
 
@@ -153,13 +168,13 @@ fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 				// 	ReplaceRepeated[
 						{
 							{a___,LeafNode[Token`Comma,",",_],(LeafNode[Whitespace," ",_]...),ErrorNode[Token`Error`InfixImplicitNull,"",_]}
-							:>((* Echo["deleting comma"]; *)replaced=True;{a})
+							:>((* Echo["deleting comma"]; *)totalFixes++;{a})
 							,
 							InfixNode[Comma,{a___,LeafNode[Token`Comma,",",_],(LeafNode[Whitespace," ",_]...),ErrorNode[Token`Error`InfixImplicitNull,"",_],LeafNode[Token`Comma,",",_],b__},_]
-							:>((* Echo["deleting comma inside"]; *)replaced=True;InfixNode[Comma,{a,LeafNode[Token`Comma,",",_],b},_])
+							:>((* Echo["deleting comma inside"]; *)totalFixes++;InfixNode[Comma,{a,LeafNode[Token`Comma,",",_],b},_])
 							,
 							InfixNode[Comma,{ErrorNode[Token`Error`PrefixImplicitNull,"",_],LeafNode[Token`Comma,",",_],b__},_]
-							:>((* Echo["deleting comma start"]; *)replaced=True;InfixNode[Comma,{b},_])
+							:>((* Echo["deleting comma start"]; *)totalFixes++;InfixNode[Comma,{b},_])
 						}
 					]
 				//	ToSourceCharacterString
@@ -167,36 +182,32 @@ fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 
 			fixedCode
 			// If[FailureQ@#
-				 	,	ratio={0,lenPat}
+				 	,	fixedCode=Missing["Fix failure"];
 				 	,	(
-						CodeCheck[#]
-				 		// 	generatePatternFromCodeCheck // DeleteCases[patToIgnore]
+						CodeCheck[#] // generatePatternFromCodeCheck // DeleteCases[patToIgnore]
 				   		// 	Switch[#
-									(* ############# *)
+									(* ----------------- *)
 				   			  		, {}
-							  		, ratio={lenPat,lenPat}; safe=True; falsePositive=False;
-							  		(* ############# *)
+							  		, success=True; safe=True; falsePositive=False;
+							  		(* ----------------- *)
 							  		, $patternErrorComma
-									, ratio={lenPat-Length@#,lenPat}
-									(* ; containsCommentsQ[fixedCode] *)(* //EchoLabel["contains comments"] *)
-									; lengthErrors[replaceCommaComments[fixedCode]](* //EchoLabel["replaced comments length"] *)
-										//If[!FailureQ@#(* //EchoLabel["Failure"] *)
-											, If[(lenPat-#)>ratio[[1]], safe=False; falsePositive=True; ratio={lenPat-#,lenPat}];
+									, (lenPatLeft=Length@#)
+										; lengthErrors[replaceCommaComments[fixedCode]]
+										//If[!FailureQ@#
+											, If[#===0, safe=False; falsePositive=True; success=True];
 										]&
-							 		(* ############# *)
-							  		,_ ,newPattern=#(* //EchoLabel["newPattern:"] *); fixedCode=Missing["New pattern after fix",newPattern];
+
 							]&
 						)
 				]&
 			;
-			{ "FixedCode"->fixedCode
-			, "Success"->(Rational@@ratio === 1)
-			, "SuccessRatio"->ratio
-			, "LikelyFalsePositive"->falsePositive
-			, "SafeToEvaluate"->safe
-			, "FixPattern"->pat
-			}
-			(* || (falsePositive=containsCommentsQ[#]), {#,falsePositive}, Missing["Failure","PatternToFix"->pat]]]& *)
+  			{ "Success" -> success
+   			, "TotalFixes" -> totalFixes
+   			, "LikelyFalsePositive" -> falsePositive
+   			, "SafeToEvaluate" -> safe
+   			, "FixedPattern" -> pat
+   			, "FixedCode" -> fixedCode
+   			} // Association
 	]
 
 replaceCommaComments[code_]:=
@@ -214,41 +225,45 @@ replaceCommaComments[code_]:=
 	]
 
 ruleCommaComment=	Alternatives[
-							InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
-										,(LeafNode[Whitespace," ",_]...)
-										,LeafNode[Token`Comment,comment_,_]
-										,(LeafNode[Whitespace," ",_]...)
-										,ErrorNode[Token`Error`InfixImplicitNull,"",_]
-										,LeafNode[Token`Comma,",",_],___},_]
-							,
-							InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
-										,(LeafNode[Whitespace," ",_]...)
-										,LeafNode[Token`Comment,comment_,_]
-										,(LeafNode[Whitespace," ",_]...)
-										,ErrorNode[Token`Error`InfixImplicitNull,"",_],___},_]
+									InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
+												,(LeafNode[Whitespace," ",_]...)
+												,LeafNode[Token`Comment,comment_,_]
+												,(LeafNode[Whitespace," ",_]...)
+												,ErrorNode[Token`Error`InfixImplicitNull,"",_]
+												,LeafNode[Token`Comma,",",_],___},_]
+									,
+									InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
+												,(LeafNode[Whitespace," ",_]...)
+												,LeafNode[Token`Comment,comment_,_]
+												,(LeafNode[Whitespace," ",_]...)
+												,ErrorNode[Token`Error`InfixImplicitNull,"",_],___},_]
 					]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
 fixPattern[code_String, pat:$patternFatalExpectedOperand, patToIgnore_:{}]:=
 	Module[
-			{fixedCode=Missing["Expected Operand (no place holder(s) detected)"], lenPat=Length@pat, ratio, falsePositive=Missing[], safe=Missing[]}
+			{
+			 fixedCode=Missing["Expected Operand (no place holder(s) detected)"]
+			,lenPat=Length@pat
+			,falsePositive=Missing[]
+			,safe=Missing[]
+			,success=False
+			}
 			,
 			Length@Cases[CodeConcreteParse[code],patExtraOperandEllipsisComment,Infinity]
 			//
 			If[#===lenPat
-				, ratio={lenPat,lenPat}; safe=False; falsePositive=True; fixedCode=code;
-				, ratio={#,lenPat};
+				, success=True; safe=False; falsePositive=True; fixedCode=code;
 			]&
 			;
-			{ "FixedCode"->fixedCode
-			, "Success"->(Rational@@ratio === 1)
-			, "SuccessRatio"->ratio
-			, "LikelyFalsePositive"->falsePositive
-			, "SafeToEvaluate"->safe
-			, "FixPattern"->pat
-			}
-			(* || (falsePositive=containsCommentsQ[#]), {#,falsePositive}, Missing["Failure","PatternToFix"->pat]]]& *)
+			{ "Success" -> success
+   			, "TotalFixes" -> 0
+   			, "LikelyFalsePositive" -> falsePositive
+   			, "SafeToEvaluate" -> safe
+   			, "FixedPattern" -> pat
+   			, "FixedCode" -> fixedCode
+   			} // Association
 	]
 
 
@@ -266,26 +281,24 @@ $patternFatalExpectedOperandFatalOpenSquare={{"Error", "ImplicitTimesFunction"}.
 
 fixPattern[code_String, pat:$patternFatalExpectedOperandFatalOpenSquare, patToIgnore_:{}]:=
 	Module[
-			{fixedCode=Missing["Subcase not handled"], lenPat=Length@pat, ratio, falsePositive=Missing[], safe=Missing[]}
+			{fixedCode=Missing[], success=False, falsePositive=Missing[], safe=Missing[], totalFixes=Missing[]}
 			,
-			Length@StringCases[	Alternatives[ 	 StringExpression["![", __, "](attachment://", __]
-												,StringExpression[__, "[", __, "](paclet:", __]
-								]
-			]
+			Length@StringCases[	code,	Alternatives[ 	 StringExpression["![", __, "](attachment://", __]
+														,StringExpression[__, "[", __, "](paclet:", __]
+										]]
 			//
 			If[#=!=0
-				, ratio={lenPat,lenPat}; safe=False; falsePositive=True; fixedCode=code;
-				, ratio={0,lenPat};
+				, success=True; fixedCode=Missing["Not WL code"]; safe=False; falsePositive=False; totalFixes=0;
+				, success=False; fixedCode=Missing["Unhandled subcase", pat];
 			]&
 			;
 			{ "FixedCode"->fixedCode
-			, "Success"->(Rational@@ratio === 1)
-			, "SuccessRatio"->ratio
+			, "Success"->success
+			, "TotalFixes"->totalFixes
 			, "LikelyFalsePositive"->falsePositive
 			, "SafeToEvaluate"->safe
-			, "FixPattern"->pat
-			}
-			(* || (falsePositive=containsCommentsQ[#]), {#,falsePositive}, Missing["Failure","PatternToFix"->pat]]]& *)
+			, "FixedPattern"->pat
+			} // Association
 	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
@@ -303,9 +316,7 @@ fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedClos
    			, codeTokenized
    			, wrongLeafNode
    			, codeFixed = Missing[]
-   			, fixSuccess = False
    			, success = False
-   			, newPat
    			}
   			,
 
@@ -314,11 +325,11 @@ fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedClos
   			(* looping on all GMC positions *)
   			Catch@
 			Do[
-    			posGMC = allGMCpos[[iGMCpos]] // EchoLabel["posGMC: "];
+    			posGMC = allGMCpos[[iGMCpos]];
     			gmc = Extract[ccp, posGMC];
     			newClosingBracket =	gmc[[1]] /.  {GroupSquare -> "]", GroupParen -> ")", List -> "}"};
     			wrongClosingBrackets = Alternatives["]", ")", "}"] // DeleteCases[newClosingBracket];
-    			posUC = Position[gmc, Token`Error`UnexpectedCloser] // EchoLabel[posUC];
+    			posUC = Position[gmc, Token`Error`UnexpectedCloser];
 
     			codeFixed =
 					If[	posUC === {}
@@ -327,56 +338,118 @@ fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedClos
 							codeTokenized = CodeTokenize[code, SourceConvention -> "SourceCharacterIndex"]
 							;wrongLeafNode = SelectFirst[codeTokenized, 	And[ #[[-1, 1, 2]] > gmc[[-1, 1, 2]]
 																				,MatchQ[#[[2]], wrongClosingBrackets]] &]
-											// EchoLabel["wrongleafnode"]
 							;ccp // ReplaceAll[wrongLeafNode -> (wrongLeafNode /. {wrongLeafNode[[2]] -> newClosingBracket})]
        					,
        					(* UC inside GMC *)
 							ReplaceAll[ccp,Extract[gmc, Most@posUC[[1]]] -> ErrorNode[Token`Error`UnexpectedCloser, newClosingBracket, _]]
        				] // ToSourceCharacterString
 				;
-    			fixSuccess = 	And[ 	codeFixed =!= FailureQ
+    			success = 	And[ 	codeFixed =!= FailureQ
 									,
 									MatchQ[
-											Diff[code, codeFixed]["Edits"]//EchoLabel["Diff edits"]
+											SequenceAlignment[code, codeFixed] // DeleteCases[#, _String, {1}] &
 											,
-											{{int_Integer -> wrongClosingBrackets, int_ -> newClosingBracket}}//EchoLabel["brackets"]
+											{{wrongClosingBrackets, newClosingBracket}}
 									]
-									//EchoLabel["Diff bracket edit"]
-        					]//EchoLabel["fixSuccess"]
+									(* //EchoLabel["Diff bracket edit"] *)
+        					]
 				;
-				If[fixSuccess, Throw[Null]]
+				If[success, Throw[Null]]
 				;
     		,
 			{iGMCpos, Length@allGMCpos}
 			]
 			;
-  			newPat = If[fixSuccess, generatePatternFromCodeCheck@CodeCheck[codeFixed], pat];
-			success = (newPat === {})
-			;
-
   			{ "Success" -> success
-   			, "TotalFixes" -> 1
+   			, "TotalFixes" -> If[success, 1, 0]
    			, "LikelyFalsePositive" -> False
    			, "SafeToEvaluate" -> If[success, True, False]
    			, "FixedPattern" -> pat
    			, "FixedCode" -> codeFixed
-			(* Control keys*)
-			, "FixSuccess"->fixSuccess
-   			, "RemainingPattern" -> newPat
-   			}
+   			} // Association
 	]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$patternFatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
+
+fixPattern[code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] :=
+	Module[
+			{
+			 fixedCode=Missing[]
+			,falsePositive=Missing[]
+			,safe=Missing[]
+			,success=False
+			,ccp
+			,errorNode
+			}
+			,
+			ccp=code // CodeConcreteParse
+			;
+			errorNode = Cases[ccp, f_[___, Token`Error`UnexpectedCloser, ___], Infinity]
+						// If[MatchQ[#,{__}], First@#, {}]&
+			;
+			If[errorNode==={}
+				, success=False;
+				, fixedCode= ReplaceAll[code // CodeConcreteParse, errorNode -> Sequence[]] // ToSourceCharacterString
+				  ;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{errorNode[[2]], ""}}]]
+				  ;If[success, safe=True; falsePositive=False;]
+			]
+			;
+			{ "Success" -> success
+   			, "TotalFixes" -> If[success, 1, 0]
+   			, "LikelyFalsePositive" -> falsePositive
+   			, "SafeToEvaluate" -> safe
+   			, "FixedPattern" -> pat
+   			, "FixedCode" -> fixedCode
+   			} // Association
+	]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$patternFatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
+
+fixPattern[code_String, pat : $patternFatalGroupMissingCloser, patToIgnore_ : {}] :=
+	Module[
+			{
+			 fixedCode=Missing[]
+			,falsePositive=Missing[]
+			,safe=Missing[]
+			,success=False
+			,ccp
+			,gmc
+			,closingBracket
+			}
+			,
+				ccp=code // CodeConcreteParse
+				;
+				gmc = Cases[ccp, _GroupMissingCloserNode, Infinity]
+							// If[MatchQ[#,{__}], First@#, {}]&
+				;
+				If[gmc==={}
+					, success=False;
+					, If[Echo[gmc[[-1, 1, 2]]] === Echo[CodeTokenize[code][[-1,-1, 1, 2]]]
+						,	closingBracket=gmc[[1]]/. {GroupSquare -> "]", GroupParen -> ")", List -> "}"}
+							;fixedCode=code<>closingBracket
+							;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{"",closingBracket}}]]
+							;If[success,safe=True; falsePositive=False; ]
+						,	fixedCode=Missing["Unhandled subcase"]
+							;success=False
+					];
+				]
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> falsePositive
+			, "SafeToEvaluate" -> safe
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Association
+	]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+
+fixPattern[_String, pat_]:={"Success"->False, "FixedCode"->Missing["Pattern not handled",pat]} // Association
+
 (*---------------------------------------------------*)
-
-
-
-lengthErrors[code_]:=CodeCheck[code]//generatePatternFromCodeCheck//Length
-lengthErrors[f_Failure]:=f
-
-fixPattern[_String, pat_]:={"FixedCode"->Missing["Pattern not handled",pat],"Success"->False}
-
-
-containsCommentsQ[s_String]:=StringContainsQ[s,","~~"(*"~~Except["("]~~Except["*"]~~__~~"*)"] (*TEMPORARY BAD TEST!!!!!! *)
-
 
 (* ::Chapter::Closed:: *)
 (*End*)
