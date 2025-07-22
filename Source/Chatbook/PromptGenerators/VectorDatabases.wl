@@ -213,12 +213,29 @@ $maxExtraFiles     = 20;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Remote Content Locations*)
-$baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
+$cdnBaseVectorDatabasesURL   = "https://files.wolframcdn.com/VectorDatabases";
+$cloudBaseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
 $vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
-    URLBuild @ { $baseVectorDatabasesURL, #, $vectorDatabases[ #, "Version" ], # <> ".zip" } &,
+    <|
+        "CDN"   -> makeDownloadURL[ $cdnBaseVectorDatabasesURL  , # ],
+        "Cloud" -> makeDownloadURL[ $cloudBaseVectorDatabasesURL, # ]
+    |> &,
     $vectorDBNames
 ];
+
+$vectorDBDownloadSizes := Enclose[
+    $vectorDBDownloadSizes = ConfirmMatch[ getDownloadSize @ #, _Integer? Positive, "Size" ] & /@ $vectorDBDownloadURLs,
+    throwInternalFailure
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDownloadURL*)
+makeDownloadURL // beginDefinition;
+makeDownloadURL[ base_String, name_String ] := makeDownloadURL[ base, name, $vectorDatabases[ name, "Version" ] ];
+makeDownloadURL[ base_String, name_String, version_String ] := URLBuild @ { base, name, version, name <> ".zip" };
+makeDownloadURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -580,13 +597,15 @@ downloadVectorDatabases[ ] :=
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
     Module[ { dir, lock, names, urls, sizes, tasks },
 
+        $extraDownloadTasks = Internal`Bag[ ];
+
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
         cleanupLegacyVectorDBFiles @ dir;
         names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
         urls  = KeyTake[ urls0, names ];
 
         lock  = FileNameJoin @ { dir, "download.lock" };
-        sizes = ConfirmMatch[ getDownloadSize /@ Values @ urls, { __? Positive }, "Sizes" ];
+        sizes = ConfirmMatch[ Values @ KeyTake[ $vectorDBDownloadSizes, names ], { __? Positive }, "Sizes" ];
 
         $downloadProgress = AssociationMap[ 0 &, names ];
         $progressText = "Downloading semantic search indices\[Ellipsis]";
@@ -597,6 +616,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
                 ,
                 tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
                 ConfirmMatch[ taskWait @ tasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
+                ConfirmMatch[ taskWait @ $extraDownloadTasks, { (_TaskObject|$Failed)... }, "TaskWait" ];
                 $progressText = "Unpacking files\[Ellipsis]";
                 ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
                 ,
@@ -638,6 +658,7 @@ cleanupLegacyVectorDBFiles // endDefinition;
 (*getDownloadSize*)
 getDownloadSize // beginDefinition;
 
+getDownloadSize[ KeyValuePattern[ "Cloud" -> url_String ] ] := getDownloadSize @ url;
 getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
 getDownloadSize[ obj: $$cloudObject ] := getDownloadSize[ obj, FileByteCount @ obj ];
 getDownloadSize[ obj_, size_Integer ] := size;
@@ -698,6 +719,7 @@ unpackVectorDatabase // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*taskWait*)
 taskWait // beginDefinition;
+taskWait[ tasks_Internal`Bag ] := taskWait @ Internal`BagPart[ tasks, All ];
 taskWait[ tasks_List ] := CheckAbort[ taskWait /@ tasks, Quiet[ TaskRemove /@ tasks ], PropagateAborts -> True ];
 taskWait[ task_TaskObject ] := taskWait[ task, task[ "TaskStatus" ] ];
 taskWait[ task_TaskObject, "Removed" ] := task;
@@ -712,7 +734,10 @@ downloadVectorDatabase // beginDefinition;
 downloadVectorDatabase[ dir_ ] :=
     downloadVectorDatabase[ dir, ## ] &;
 
-downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
+downloadVectorDatabase[ dir_, name_String, urls_Association ] :=
+    downloadVectorDatabase[ dir, name, urls[ "CDN" ], urls[ "Cloud" ] ];
+
+downloadVectorDatabase[ dir_, name_String, cdnURL_String, cloudURL_String ] := Enclose[
     Module[ { file, tmp },
 
         file = ConfirmBy[ FileNameJoin @ { dir, name<>".zip" }, StringQ, "File" ];
@@ -722,13 +747,13 @@ downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
         With[ { tmp = tmp, file = file },
             ConfirmMatch[
                 URLDownloadSubmit[
-                    url,
+                    cdnURL,
                     tmp,
                     HandlerFunctions -> <|
                         "TaskProgress" -> setDownloadProgress @ name,
-                        "TaskFinished" -> (RenameFile[ tmp, file ] &)
+                        "TaskFinished" -> checkVectorDatabaseDownload[ name, tmp, file, cloudURL ]
                     |>,
-                    HandlerFunctionsKeys -> { "ByteCountDownloaded" }
+                    HandlerFunctionsKeys -> { "ByteCountDownloaded", "StatusCode" }
                 ],
                 _TaskObject,
                 "Task"
@@ -739,6 +764,42 @@ downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
 ];
 
 downloadVectorDatabase // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkVectorDatabaseDownload*)
+checkVectorDatabaseDownload // beginDefinition;
+
+checkVectorDatabaseDownload[ name_, tmp_, file_, cloudURL_ ] :=
+    checkVectorDatabaseDownload[ name, tmp, file, cloudURL, # ] &;
+
+checkVectorDatabaseDownload[ name_, tmp_String, file_String, cloudURL_, KeyValuePattern[ "StatusCode" -> 200 ] ] :=
+    RenameFile[ tmp, file ];
+
+(* CDN download failed, so try cloud: *)
+checkVectorDatabaseDownload[
+    name_String,
+    tmp_String,
+    file_String,
+    cloudURL_String,
+    result_
+] := (
+    Quiet @ DeleteFile @ tmp;
+    Internal`StuffBag[
+        $extraDownloadTasks,
+        URLDownloadSubmit[
+            cloudURL,
+            tmp,
+            HandlerFunctions -> <|
+                "TaskProgress" -> setDownloadProgress @ name,
+                "TaskFinished" -> (RenameFile[ tmp, file ] &)
+            |>,
+            HandlerFunctionsKeys -> { "ByteCountDownloaded", "StatusCode" }
+        ]
+    ]
+);
+
+checkVectorDatabaseDownload // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1101,13 +1162,17 @@ vectorDBSearch // endDefinition;
 (*preprocessEmbeddingString*)
 preprocessEmbeddingString // beginDefinition;
 
-preprocessEmbeddingString[ s: _String | { ___String } ] := StringTrim @ StringDelete[
-    s,
-    {
-        Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ __ ~~ ")\"]\\)" ],
-        $leftSelectionIndicator,
-        $rightSelectionIndicator
-    }
+preprocessEmbeddingString[ s: _String | { ___String } ] := StringReplace[
+    StringTrim @ StringDelete[
+        s,
+        {
+            Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ __ ~~ ")\"]\\)" ],
+            $leftSelectionIndicator,
+            $rightSelectionIndicator
+        }
+    ],
+    Shortest[ "<speech-input>"~~___~~"<transcript>"~~transcript__~~"</transcript>"~~___~~"</speech-input>" ] :>
+        StringTrim @ transcript
 ];
 
 preprocessEmbeddingString // endDefinition;
@@ -1356,7 +1421,7 @@ toTinyVector // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $entityValueSnippets
+    Null
 ];
 
 End[ ];

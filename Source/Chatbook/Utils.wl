@@ -70,7 +70,7 @@ messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
 
         (* Check if the temporary messages should be included: *)
         temporary = ConfirmMatch[ OptionValue[ "IncludeTemporaryMessages" ], True|False, "Temporary" ];
-        If[ ! temporary, messages = DeleteCases[ messages, KeyValuePattern[ "Temporary" -> True ] ] ];
+        If[ ! temporary, messages = DeleteCases[ messages, _? temporaryMessageQ ] ];
         If[ messages === { }, Throw[ "" ] ];
 
         template = ConfirmMatch[

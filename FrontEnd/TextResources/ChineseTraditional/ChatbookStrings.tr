@@ -224,6 +224,11 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:958B\:59CB\:65B0\:589E\:6703\:8A71",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:958B\:555F\:6210\:7DB2\:8DEF\:804A\:5929\:7B46\:8A18\:672C",
 "WorkspaceSourcesOpenNotebooks" -> "\:958B\:555F\:7B46\:8A18\:672C",
+"WorkspaceHistoryPageTemplate" -> "Page `1` of `2`",
+"WorkspaceHistoryFirstPage" -> "First page",
+"WorkspaceHistoryPreviousPage" -> "Previous page",
+"WorkspaceHistoryNextPage" -> "Next page",
+"WorkspaceHistoryLastPage" -> "Last page",
 "WorkspaceHistoryTitle" -> "\:6B77\:53F2\:8A18\:9304",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:8907\:88FD\:56DE\:61C9\:81F3\:526A\:8CBC\:7C3F\[Ellipsis]",

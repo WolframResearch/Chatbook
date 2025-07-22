@@ -11,7 +11,7 @@ SetOptions[ TestReport, ProgressReporting -> False ];
 UsingFrontEnd @ TestReport @ FileNameJoin @ { DirectoryName[ $InputFileName, 2 ], "Tests/CurrentChatSettings.wlt" };
 
 (* Now run the actual tests: *)
-result = UsingFrontEnd @ checkResult @ Wolfram`PacletCICD`TestPaclet @ $defNB;
+result = UsingFrontEnd @ Block[ { messagePrint }, checkResult @ Wolfram`PacletCICD`TestPaclet @ $defNB ];
 
 EndPackage[ ];
 

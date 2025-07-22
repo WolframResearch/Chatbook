@@ -25,7 +25,7 @@ $instructions       = None;
 $$count = _Integer | UpTo[ _Integer ];
 $$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
-(* cSpell: ignore expressiontypes, imagesource, microsources, userinfoused, stepbystepcontenttype, downloadformatgroups *)
+(* cSpell: disable *)
 $$ignoredXMLTag = Alternatives[
     "datasources",
     "definitions",
@@ -35,13 +35,20 @@ $$ignoredXMLTag = Alternatives[
     "infos",
     "microsources",
     "notes",
+    "relatedqueries", (* TODO: this could be included in the result prompt *)
     "sources",
     "states",
     "stepbystepcontenttype",
     "userinfoused"
 ];
+(* cSpell: enable *)
 
 $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::UnhandledWolframAlphaXMLTag = "Unhandled Wolfram Alpha XML tag: ``";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -50,6 +57,7 @@ RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
     "AppID"             -> Automatic,
     "CacheResults"      -> False,
+    "Debug"             -> False,
     "Instructions"      -> None,
     "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
@@ -106,6 +114,7 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
     catchMine @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
+            $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -153,6 +162,7 @@ RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern
     catchMine @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
+            $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
             $wolframAlphaAppID = Replace[
                 OptionValue[ "AppID" ],
                 $$unspecified :> $wolframAlphaAppID
@@ -387,7 +397,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
     Module[
         {
             relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
-            auth, authOption, response, content
+            auth, authOption, response, content, queries
         },
 
         relevant = ConfirmMatch[
@@ -423,7 +433,14 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         systemMessage = <| "Role" -> "System", "Content" -> systemPrompt |>;
 
-        transcript = ConfirmBy[ getSmallContextString @ insertContextPrompt @ prompt, StringQ, "Transcript" ];
+        transcript = ConfirmBy[
+            getSmallContextString[
+                insertContextPrompt @ prompt,
+                "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
+            ],
+            StringQ,
+            "Transcript"
+        ];
 
         messages = ConfirmMatch[
             Flatten @ { systemMessage, $fewShotExamples, <| "Role" -> "User", "Content" -> transcript |> },
@@ -439,11 +456,22 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
-        ConfirmMatch[
+        queries = ConfirmMatch[
             DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], "[NONE]"|"" ],
             { ___String },
             "Queries"
-        ]
+        ];
+
+        addHandlerArguments[
+            "RelatedWolframAlphaResults" -> <|
+                "Messages"      -> messages,
+                "Response"      -> response,
+                "SampleQueries" -> $sampleQueries,
+                "Queries"       -> queries
+            |>
+        ];
+
+        queries
     ],
     throwInternalFailure
 ];
@@ -453,15 +481,21 @@ generateSuggestedQueries // endDefinition;
 
 generateSuggestedQueries0 // beginDefinition;
 
-generateSuggestedQueries0[ messages_, config_, opts___ ] := Enclose[
-    Module[ { response },
+generateSuggestedQueries0[ messages_, config0_, opts___ ] := Enclose[
+    Module[ { config, response },
 
-        response = ConfirmBy[
-            (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-            LLMServices`Chat[ messages, LLMConfiguration @ config, opts ],
-            AssociationQ,
-            "Response"
+        config = ConfirmMatch[
+            LLMConfiguration @ config0,
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Config"
         ];
+
+        (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
+        response = LLMServices`Chat[ messages, config, opts ];
+
+        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
+
+        response = ConfirmBy[ response, AssociationQ, "Response" ];
 
         If[ TrueQ @ $cacheResults,
             generateSuggestedQueries0[ messages, config, opts ] = response,
@@ -660,27 +694,30 @@ byteArrayToPodInformation // endDefinition;
 formatWolframAlphaResult // beginDefinition;
 
 formatWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String ] ] :=
-    TemplateApply[
-        $wolframAlphaResultTemplate,
-        { StringTrim @ query, makeWolframAlphaURL @ query, StringTrim @ res }
-    ];
+    formatWolframAlphaResult0[ query, makeWolframAlphaURL @ query, StringTrim @ res ];
 
 formatWolframAlphaResult[ query_String, _ ] :=
-    TemplateApply[
-        $wolframAlphaResultTemplate,
-        { StringTrim @ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] }
-    ];
+    formatWolframAlphaResult0[ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] ];
 
-formatWolframAlphaResult[ KeyValuePattern @ {
-    "Query"   -> query_String,
-    "URL"     -> url_String,
-    "Content" -> content_
-} ] := TemplateApply[
-    $wolframAlphaResultTemplate,
-    { StringTrim @ query, url, makeContentString @ content }
-];
+formatWolframAlphaResult[ KeyValuePattern @ { "Query" -> query_String, "URL" -> url_String, "Content" -> content_ } ] :=
+    formatWolframAlphaResult0[ query, url, makeContentString @ content ];
 
 formatWolframAlphaResult // endDefinition;
+
+
+formatWolframAlphaResult0 // beginDefinition;
+
+formatWolframAlphaResult0[ query_String, url_String, content_ ] :=
+    TemplateApply[
+        $wolframAlphaResultTemplate,
+        {
+            StringReplace[ StringTrim @ query, "'" -> "&#39;" ],
+            url,
+            content
+        }
+    ];
+
+formatWolframAlphaResult0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -741,7 +778,10 @@ relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCou
     Catch @ Module[ { queries, sampleQueries, content, result },
 
         queries = ConfirmMatch[
-            generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+            setServiceCaller[
+                generateSuggestedQueries[ messages, count, relatedCount, randomCount ],
+                "RelatedWolframAlphaResults"
+            ],
             { ___String },
             "Queries"
         ];
@@ -999,6 +1039,11 @@ parseXML[ s_String ] /; StringMatchQ[ s, WhitespaceCharacter... ] :=
 
 parseXML[ XMLElement[ $$ignoredXMLTag, _, _ ] ] :=
     { };
+
+parseXML[ XMLElement[ unhandledTag_String, _, _ ] ] := (
+    If[ TrueQ @ $wolframAlphaDebug, messagePrint[ "UnhandledWolframAlphaXMLTag", unhandledTag ] ];
+    { }
+);
 
 parseXML // endDefinition;
 
