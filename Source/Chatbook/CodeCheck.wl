@@ -119,7 +119,7 @@ CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True}]]:=
 		//
 		If[niter > recursionLimit
 			,{merged, "Success"->False, "RecursionLimitExceeded"->True}
-			,If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[qqqq=merged["FixedCode"],#]])]
+			,If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[merged["FixedCode"],#]])]
 		]&
 	]
 
@@ -402,47 +402,6 @@ fixPattern[code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] 
    			, "FixedPattern" -> pat
    			, "FixedCode" -> fixedCode
    			} // Association
-	]
-
-(* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
-
-fixPattern[code_String, pat : $patternFatalGroupMissingCloser, patToIgnore_ : {}] :=
-	Module[
-			{
-			 fixedCode=Missing[]
-			,falsePositive=Missing[]
-			,safe=Missing[]
-			,success=False
-			,ccp
-			,gmc
-			,closingBracket
-			}
-			,
-				ccp=code // CodeConcreteParse
-				;
-				gmc = Cases[ccp, _GroupMissingCloserNode, Infinity]
-							// If[MatchQ[#,{__}], First@#, {}]&
-				;
-				If[gmc==={}
-					, success=False;
-					, If[Echo[gmc[[-1, 1, 2]]] === Echo[CodeTokenize[code][[-1,-1, 1, 2]]]
-						,	closingBracket=gmc[[1]]/. {GroupSquare -> "]", GroupParen -> ")", List -> "}"}
-							;fixedCode=code<>closingBracket
-							;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{"",closingBracket}}]]
-							;If[success,safe=True; falsePositive=False; ]
-						,	fixedCode=Missing["Unhandled subcase"]
-							;success=False
-					];
-				]
-			;
-			{ "Success" -> success
-			, "TotalFixes" -> If[success, 1, 0]
-			, "LikelyFalsePositive" -> falsePositive
-			, "SafeToEvaluate" -> safe
-			, "FixedPattern" -> pat
-			, "FixedCode" -> fixedCode
-			} // Association
 	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
