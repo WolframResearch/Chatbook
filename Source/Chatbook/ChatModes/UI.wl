@@ -23,7 +23,7 @@ $initialInlineChatHeight     = UpTo[ 300 ];
 $inputFieldBox               = None;
 $inlineChatScrollPosition    = 0.0;
 $lastScrollPosition          = 0.0;
-$maxHistoryItems             = 25;
+$maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 
 $toolbarLabelStyle = "WorkspaceChatToolbarButtonLabel";
@@ -1806,17 +1806,20 @@ makeHistorySearchResults // endDefinition;
 showSearchResults // beginDefinition;
 
 showSearchResults[ nbo_, appName_, query_String ] := Enclose[
-    Module[ { chats, rows },
+    DynamicModule[ { chats, display },
         chats = ConfirmMatch[ SearchChats[ appName, query ], { ___Association }, "Chats" ];
-        rows = makeHistoryMenuItem[ Dynamic @ rows, nbo ] /@ chats;
-        Dynamic[
-            Grid[
-                rows,
-                Alignment -> { Left, Center },
-                Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
-            ],
-            TrackedSymbols :> { rows }
+        display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
+
+        DynamicWrapper[
+            Dynamic @ display,
+            display =
+                Grid[
+                    makeHistoryMenuItem[ Dynamic @ chats, nbo ] /@ chats,
+                    Alignment -> { Left, Center },
+                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+                ],
+            TrackedSymbols :> { chats }
         ]
     ],
     throwInternalFailure
@@ -1853,19 +1856,21 @@ historyDefaultView // beginDefinition;
 
 historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
     Catch @ Module[ { header, view },
-        header = ConfirmMatch[ makeHistoryHeader @ historySearchButton @ Dynamic @ searching, _Pane, "Header" ];
-        view = ConfirmMatch[ makeDefaultHistoryView @ nbo, _RawBoxes, "View" ];
+        DynamicModule[ { page = 1, totalPages = Style["\[FilledCircle]", color @ "NA_OverlayMenuPercolate" ] },
+            header = ConfirmMatch[ makeHistoryHeader @ historyPagination[ Dynamic @ searching, Dynamic @ page, Dynamic @ totalPages ], _Pane, "Header" ];
+            view = ConfirmMatch[ makeDefaultHistoryView[ nbo, Dynamic @ page, Dynamic @ totalPages ], _RawBoxes, "View" ];
 
-        Framed[
-            Column[
-                { header, view },
-                Alignment  -> Left,
-                Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
-                Dividers   -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
-            ],
-            RoundingRadius -> 3,
-            FrameMargins   -> 0,
-            FrameStyle     -> color @ "NA_OverlayMenuFrame"
+            Framed[
+                Column[
+                    { header, view },
+                    Alignment  -> Left,
+                    Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
+                    Dividers   -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
+                ],
+                RoundingRadius -> 3,
+                FrameMargins   -> 0,
+                FrameStyle     -> color @ "NA_OverlayMenuFrame"
+            ]
         ]
     ],
     throwInternalFailure
@@ -1875,10 +1880,90 @@ historyDefaultView // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*historyPagination*)
+historyPagination // beginDefinition;
+
+historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Grid[
+    { {
+        Grid[
+            { {
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryFirstPage",
+                    page = 1,
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryFirstPage" ],
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryPreviousPage",
+                    If[ IntegerQ @ page && page > 1, page -= 1 ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryPreviousPage" ],
+                With[{c1 = color @ "NA_OverlayMenuIcon_Blue", c2 = color @ "NA_OverlayMenuHistoryPaginationIcon"},
+                    Dynamic[
+                        Mouseover[
+                            PopupMenu[
+                                Dynamic[
+                                    None, (* keep this value different from all the possible values so the default appearance, defined below, is used *)
+                                    Function[ page = # ] ],
+                                If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
+                                Style[
+                                    Row[ { trExprTemplate["WorkspaceHistoryPageTemplate"][ <| "1" -> Dynamic[page], "2" -> Dynamic[totalPages] |> ] } ], (* This is what's actually displayed *)
+                                    FontColor -> c2],
+                                Appearance       -> None,
+                                BaseStyle        -> {FontSize -> 12},
+                                BaselinePosition -> Baseline,
+                                MenuStyle        -> { Magnification -> 1 } (* This affects the popup list's display as well as the main display *)
+                            ],
+                            PopupMenu[
+                                Dynamic[
+                                    None, (* keep this value different from all the possible values so the default appearance, defined below, is used *)
+                                    Function[ page = # ] ],
+                                If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
+                                Style[
+                                    Row[ { trExprTemplate["WorkspaceHistoryPageTemplate"][ <| "1" -> Dynamic[page], "2" -> Dynamic[totalPages] |> ] } ], (* This is what's actually displayed *)
+                                    FontColor -> c1],
+                                Appearance       -> None,
+                                BaseStyle        -> {FontSize -> 12},
+                                BaselinePosition -> Baseline,
+                                MenuStyle        -> { Magnification -> 1 } (* This affects the popup list's display as well as the main display *)
+                            ],
+                            BaselinePosition -> Baseline
+                        ],
+                        TrackedSymbols :> { totalPages }
+                    ]
+                ],
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryNextPage",
+                    If[ IntegerQ @ page && IntegerQ @ totalPages && page < totalPages, page += 1 ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryNextPage" ],
+                Button[
+                    chatbookIcon @ "WorkspaceHistoryLastPage",
+                    If[ IntegerQ @ totalPages, page = totalPages, Beep[]],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Tooltip          -> tr @ "WorkspaceHistoryLastPage" ]
+            } },
+            BaselinePosition -> { 1, 2 }
+        ],
+        historySearchButton @ Dynamic @ searching
+    } },
+    Alignment -> { Automatic, Baseline },
+    ItemSize -> { { Fit, Automatic } }
+];
+
+historyPagination // endDefinition;
+
+historySearchButton @ Dynamic @ searching
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeDefaultHistoryView*)
 makeDefaultHistoryView // beginDefinition;
 
-makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
+makeDefaultHistoryView[ nbo_NotebookObject, Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Enclose[
     RawBoxes @ ToBoxes @ DynamicModule[ { display },
         display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
 
@@ -1891,7 +1976,7 @@ makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
             Scrollbars         -> Automatic
         ],
 
-        Initialization            :> (display = catchAlways @ makeDefaultHistoryView0 @ nbo),
+        Initialization            :> (display = catchAlways @ makeDefaultHistoryView0[ nbo, Dynamic @ page, Dynamic @ totalPages ]),
         SynchronousInitialization -> False
     ],
     throwInternalFailure
@@ -1902,19 +1987,30 @@ makeDefaultHistoryView // endDefinition;
 
 makeDefaultHistoryView0 // beginDefinition;
 
-makeDefaultHistoryView0[ nbo_NotebookObject ] := Enclose[
-    DynamicModule[ { appName, chats, rows },
+makeDefaultHistoryView0[ nbo_NotebookObject, Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Enclose[
+    DynamicModule[ { appName, chats, display },
+        display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
         appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        rows = makeHistoryMenuItem[ Dynamic @ rows, nbo ] /@ chats;
-        Dynamic[
-            Grid[
-                rows,
-                Alignment -> { Left, Center },
-                Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
-            ],
-            TrackedSymbols :> { rows }
+        
+        DynamicWrapper[
+            Dynamic @ display,
+            display =
+                Grid[
+                    With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
+                        totalPages = Length @ pages;
+                        If[ totalPages == 0,
+                            { { "No history" } }
+                            ,
+                            If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
+                            makeHistoryMenuItem[ Dynamic @ chats, nbo ] /@ pages[[ page ]]
+                        ]
+                    ],
+                    Alignment -> { Left, Center },
+                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+                ],
+            TrackedSymbols :> { page, chats }
         ]
     ],
     throwInternalFailure
@@ -1962,10 +2058,10 @@ historySearchButton // endDefinition;
 (*makeHistoryMenuItem*)
 makeHistoryMenuItem // beginDefinition;
 
-makeHistoryMenuItem[ rows_Dynamic, nbo_NotebookObject ] :=
-    makeHistoryMenuItem[ rows, nbo, # ] &;
+makeHistoryMenuItem[ chats_Dynamic, nbo_NotebookObject ] :=
+    makeHistoryMenuItem[ chats, nbo, # ] &;
 
-makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] := Enclose[
+makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, chat_Association ] := Enclose[
     Module[ { title, date, timeString, default, hover },
         title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
         date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
@@ -2002,7 +2098,7 @@ makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] :=
                         Button[
                             $trashButtonLabel,
                             DeleteChat @ chat;
-                            removeChatFromRows[ Dynamic @ rows, chat ],
+                            removeChatFromRows[ Dynamic @ chats, chat ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ]
@@ -2030,18 +2126,8 @@ makeHistoryMenuItem // endDefinition;
 (*removeChatFromRows*)
 removeChatFromRows // beginDefinition;
 
-removeChatFromRows[ Dynamic[ rows_ ], KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
-    rows = DeleteCases[
-        rows,
-        {
-            Style[
-                __,
-                TaggingRules -> KeyValuePattern[ "ConversationUUID" -> uuid ],
-                ___
-            ],
-            ___
-        }
-    ];
+removeChatFromRows[ Dynamic[ chats_ ], KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    chats = DeleteCases[ chats, KeyValuePattern[ "ConversationUUID" -> uuid ] ];
 
 removeChatFromRows // endDefinition;
 

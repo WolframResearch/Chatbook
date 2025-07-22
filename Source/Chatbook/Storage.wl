@@ -597,7 +597,7 @@ prepareMessagesForSaving // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*dropTemporaryMessages*)
 dropTemporaryMessages // beginDefinition;
-dropTemporaryMessages[ messages_List ] := DeleteCases[ messages, KeyValuePattern[ "Temporary" -> True ] ];
+dropTemporaryMessages[ messages_List ] := DeleteCases[ messages, _? temporaryMessageQ ];
 dropTemporaryMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

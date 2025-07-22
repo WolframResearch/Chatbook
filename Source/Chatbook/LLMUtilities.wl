@@ -13,8 +13,8 @@ $llmSynthesizeAuthentication := If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
 
 $defaultLLMSynthesizeEvaluator :=
     If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
-        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4o-mini" |> |>,
-        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |>
+        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4.1-nano" |> |>,
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-nano" |> |>
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -121,6 +121,8 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
         keys = { "BodyChunk", "BodyChunkProcessed", "StatusCode", "EventName" };
 
         auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
 
         setServiceCaller @ LLMServices`ChatSubmit[
             messages,

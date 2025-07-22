@@ -24,6 +24,7 @@ $basePromptOrder = {
     "InlineSymbolLinks",
     "MessageConversionHeader",
     "ChatInputIndicator",
+    "NotebookAssistantSpeechInput",
     "WolframAlphaInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
@@ -82,6 +83,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "InlineSymbolLinks"                    -> { },
     "MessageConversionHeader"              -> { "NotebooksPreamble" },
     "ChatInputIndicator"                   -> { "MessageConversionHeader" },
+    "NotebookAssistantSpeechInput"         -> { "MessageConversionHeader" },
     "WolframAlphaInputIndicator"           -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"               -> { "MessageConversionHeader" },
     "ConversionGraphics"                   -> { "MessageConversionHeader" },
@@ -187,6 +189,10 @@ $basePromptComponents[ "ChatInputIndicator" ] = "\
 	* Users send you chat messages via special evaluatable \"ChatInput\" cells and will be indicated with the string \
 $$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
 but chat inputs represent the actual message from the user to you.";
+
+$basePromptComponents[ "NotebookAssistantSpeechInput" ] = "\
+* The user can send you recorded speech inputs which you will see as a <speech-input> element that includes an \
+automatically generated transcript. Since the transcript is automatically generated, it may not be 100% accurate.";
 
 $basePromptComponents[ "WolframAlphaInputIndicator" ] = "\
 	* Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \

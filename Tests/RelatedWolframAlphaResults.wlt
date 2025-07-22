@@ -26,6 +26,7 @@ VerificationTest[
 
 $defaultTestOptions = Sequence[
     "CacheResults" -> True,
+    "Debug"        -> True,
     LLMEvaluator -> <| "Model" -> { "OpenAI", "gpt-4o-mini" }, Authentication -> Verbatim[ Automatic ] |>
 ];
 
@@ -36,28 +37,28 @@ VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", $defaultTestOptions ],
     _String? (StringContainsQ @ ToString @ Prime[ 123456789 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults@@Tests/RelatedWolframAlphaResults.wlt:35,1-40,2"
+    TestID   -> "RelatedWolframAlphaResults@@Tests/RelatedWolframAlphaResults.wlt:36,1-41,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Prompt", $defaultTestOptions ],
     _String? (StringContainsQ @ ToString @ Prime[ 123456789 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-Prompt@@Tests/RelatedWolframAlphaResults.wlt:42,1-47,2"
+    TestID   -> "RelatedWolframAlphaResults-Prompt@@Tests/RelatedWolframAlphaResults.wlt:43,1-48,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Content", $defaultTestOptions ],
     { __Association },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-Content@@Tests/RelatedWolframAlphaResults.wlt:49,1-54,2"
+    TestID   -> "RelatedWolframAlphaResults-Content@@Tests/RelatedWolframAlphaResults.wlt:50,1-55,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "FullData", $defaultTestOptions ],
     KeyValuePattern @ { "Content" -> { __Association }, "SampleQueries" -> { ___, "is 73 prime?", ___ } },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-FullData@@Tests/RelatedWolframAlphaResults.wlt:56,1-61,2"
+    TestID   -> "RelatedWolframAlphaResults-FullData@@Tests/RelatedWolframAlphaResults.wlt:57,1-62,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -71,7 +72,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "is 73 prime?" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-All@@Tests/RelatedWolframAlphaResults.wlt:66,1-75,2"
+    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-All@@Tests/RelatedWolframAlphaResults.wlt:67,1-76,2"
 ]
 
 VerificationTest[
@@ -82,5 +83,41 @@ VerificationTest[
     ],
     _String? (StringFreeQ[ "is 73 prime?" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-None@@Tests/RelatedWolframAlphaResults.wlt:77,1-86,2"
+    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-None@@Tests/RelatedWolframAlphaResults.wlt:78,1-87,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Handler Data*)
+VerificationTest[
+    $ChatHandlerData = <| |>;
+    RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Prompt", $defaultTestOptions ];
+    $ChatHandlerData[ "RelatedWolframAlphaResults" ],
+    KeyValuePattern @ {
+        "Messages"      -> { __Association },
+        "Queries"       -> { __String },
+        "Response"      -> KeyValuePattern[ "Content" -> _String ],
+        "SampleQueries" -> { ___String }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:92,1-104,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Error Handling*)
+
+(* Specify an invalid model name to ensure LLMServices failures are returned to top-level: *)
+VerificationTest[
+    RelatedWolframAlphaResults[
+        "What's the 123456789th prime?",
+        "Prompt",
+        "CacheResults" -> True,
+        "Debug"        -> True,
+        LLMEvaluator   -> <| "Model" -> { "OpenAI", "invalid-model-name" }, Authentication -> Verbatim[ Automatic ] |>
+    ],
+    _Failure,
+    { ServiceExecute::apierr },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:111,1-123,2"
 ]

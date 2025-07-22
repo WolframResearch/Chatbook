@@ -150,7 +150,7 @@ Cell[
     CounterIncrements     -> { "ChatInputCount" },
     Evaluatable           -> True,
     MenuSortingValue      -> 1543,
-    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
+    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "=" -> "WolframAlphaShort", "*" -> "Item", ">" -> "ExternalLanguageDefault" },
     TaggingRules          -> <| "ChatNotebookSettings" -> <| |> |>,
     CellFrameLabels -> {
         {
@@ -265,7 +265,7 @@ Cell[
     CellFrameMargins  -> { { 0, Inherited }, { Inherited, Inherited } },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
+    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules      -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>,
     CellDingbat       -> Cell[
         BoxData @ RowBox @ {
@@ -312,7 +312,7 @@ Cell[
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
     MenuSortingValue  -> 1545,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput", "Backspace" -> "SideChat" },
+    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
@@ -345,7 +345,13 @@ Cell[
     TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
     CellTrayWidgets      -> <|
         "ChatWidget"   -> <| "Visible" -> False |>,
-        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtonsV, "ChatFeedback" ] |>
+        "ChatFeedback" -> <| "Content" ->
+            Cell[ BoxData @ ToBoxes @
+                PaneSelector[
+                    { True -> $feedbackButtonsV, False -> Graphics[ ImageSize -> 0 ] },
+                    Dynamic[ CurrentValue[ ParentCell @ EvaluationCell[ ], { TaggingRules, "ChatData" } ] =!= Inherited ],
+                    ImageSize -> Automatic ],
+                "ChatFeedback" ] |>
     |>,
     menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
 ]
@@ -464,7 +470,7 @@ Cell[
     CounterAssignments  -> { { "ChatInputCount", 0 } },
     FontSize            -> 6,
     ShowCellLabel       -> False,
-    StyleKeyMapping     -> { "~" -> "ChatBlockDivider", "'" -> "ChatInput" },
+    StyleKeyMapping     -> { "~" -> "ChatBlockDivider", "'" -> "ChatInput", "=" -> "WolframAlphaShort", "*" -> "Item", ">" -> "ExternalLanguageDefault" },
     TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>,
 
     CellEventActions -> {
