@@ -148,7 +148,6 @@ mergeFixes[prevFix_, newFix_] :=
 (*Fixes*)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
- (Null (*todo if necessary*));
 
 $patternErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..}
 fixPattern[code_String, pat:$patternErrorCommaFatalExpectedOperand]:=
