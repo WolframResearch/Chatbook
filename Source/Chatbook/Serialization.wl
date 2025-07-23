@@ -92,11 +92,13 @@ $$noCodeBlockStyle = Alternatives[
     "GuideFunctionsSubsection",
     "MoreAbout",
     "NotebookImage",
+    "Notes",
     "Picture",
     "PrimaryExamplesSection",
     "RelatedLinks",
     "TableNotes",
     "Template",
+    "Text",
     "TOCChapter",
     "Tutorials",
     "Usage",
@@ -337,7 +339,14 @@ $$ignoredCellStyle = Alternatives[
 
 $$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
     "FEBitmaps",
-    "SquarePlusIconSmall"|"SquarePlusIconMedium"
+    Alternatives[
+        "CirclePlusIconBitmap",
+        "CirclePlusIconScalable",
+        "CompactCloseButtonBitmap",
+        "CompactCloseButtonScalable",
+        "SquarePlusIconSmall",
+        "SquarePlusIconMedium"
+    ]
 ];
 
 $$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
@@ -349,7 +358,6 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
         StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
         DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
         DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
-        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ],
 
         (* Documentation structures: *)
         DynamicBox[
@@ -369,6 +377,16 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
                 ],
                 _,
                 _
+            ],
+            ___
+        ]
+        ,
+        DynamicBox[ ToBoxes @ If[ CurrentValue[ EvaluationCell[ ], "CellGroupOpen" ] =!= Closed, _, _ ], ___ ]
+        ,
+        ButtonBox[
+            __,
+            ButtonFunction :> Function[
+                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "AllOptionsTableHighlight" } ] = _
             ],
             ___
         ]
@@ -657,17 +675,17 @@ cellToString[ Cell[ a__, CellLabel -> label_String, b___ ] ] :=
 (* Item styles *)
 cellToString[ Cell[ a__, $$itemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "* "<>str ] /; StringQ @ str
     ];
 
 cellToString[ Cell[ a__, $$subItemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "\t* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "\t* "<>str ] /; StringQ @ str
     ];
 
 cellToString[ Cell[ a__, $$subSubItemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "\t\t* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "\t\t* "<>str ] /; StringQ @ str
     ];
 
 (* Cells showing raw data (ctrl-shift-e) *)
@@ -936,6 +954,7 @@ $globalStringReplacements = {
     "\[RightAssociation]"          -> "|>",
     "\[RightSkeleton]"             -> "\:00BB",
     "\[Rule]"                      -> "->",
+    "\[RuleDelayed]"               -> ":>",
     "\[LeftDoubleBracket]"         -> "[[",
     "\[RightDoubleBracket]"        -> "]]",
     "\n\n" ~~ Longest[ "\n".. ]    -> "\n\n",
@@ -1855,12 +1874,19 @@ boxToString[ TemplateBox[
     ___
 ] ] := inputFormString @ Unevaluated @ tabular;
 
+boxToString[ TemplateBox[ _, "TabularReferenceWrapper", ___ ] ] :=
+    "Tabular[...]";
+
 boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
 (* Reasoning Text *)
 boxToString[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
     "<think>\n" <> thoughts <> "\n</think>\n";
+
+(* System Modeler Boxes *)
+boxToString[ TemplateBox[ KeyValuePattern[ "model" -> Hold[ model_ ] ], "IOModel"|"SystemsModel", ___ ] ] :=
+    inputFormString @ Unevaluated @ model;
 
 (* Other *)
 boxToString[ box: TemplateBox[ args_, name_String, ___ ] ] /;
@@ -2552,6 +2578,9 @@ docUsageString[ row_List ] :=
 docUsageString[ (TextData|BoxData)[ boxes_, ___ ] ] :=
     docUsageString @ Flatten @ { boxes };
 
+docUsageString[ str_String ] :=
+    str;
+
 docUsageString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2825,6 +2854,9 @@ boxToString[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
 boxToString[ ProgressIndicatorBox[ args___ ] ] :=
     inputFormString @ Unevaluated @ ProgressIndicator @ args;
+
+boxToString[ PaneSelectorBox[ { ___, "Light" -> box_, ___ }, Dynamic[ AbsoluteCurrentValue @ LightDark, ___ ] ] ] :=
+    boxToString @ box;
 
 boxToString[ PaneSelectorBox[ { ___, False -> b_, ___ }, Dynamic[ CurrentValue[ "MouseOver" ], ___ ], ___ ] ] :=
     boxToString @ b;
