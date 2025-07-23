@@ -107,20 +107,24 @@ CodeFix[
 		,params_:<||>
 		]:= {"FixedCode"->Missing["No errors detected"]}
 
-CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->False}]]:=mergeFixes[kvFixPrev, kvFixNew]
-CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]]:=mergeFixes[kvFixPrev, kvFixNew]
-CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]]:=mergeFixes[kvFixPrev, kvFixNew]
 
-
-CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True}]]:=
-	With[{merged=mergeFixes[kvFixPrev, kvFixNew]}
-		,
-		generatePatternFromCodeCheck@CodeCheck[merged["FixedCode"]]
-		//
-		If[niter > recursionLimit
-			,{merged, "Success"->False, "RecursionLimitExceeded"->True}
-			,If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[merged["FixedCode"],#]])]
-		]&
+CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
+	With[{merged=mergeFixes[kvFixPrev, kvFixNew]},
+		If[	MatchQ[	kvFixNew	,Alternatives[	 KeyValuePattern[{"Success"->False}]
+												,KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]
+												,KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]]
+			]
+			,
+			merged
+			,
+			generatePatternFromCodeCheck@CodeCheck[merged["FixedCode"]]
+			//	If[	 niter > recursionLimit
+					,
+					{merged, "Success"->False, "RecursionLimitExceeded"->True}
+					,
+					If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[merged["FixedCode"],#]])]
+				]&
+		]
 	]
 
 generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->KeyValuePattern[{"InspectionObjects"->ios_}]}]]:=
@@ -137,10 +141,10 @@ mergeFixes[{}, newFix_] := {KeyDrop[newFix,"FixedPattern"], "FixedPatterns" ->{n
 mergeFixes[prevFix_, newFix_] :=
  	{
 		"Success" -> newFix["Success"],
-		"TotalFixes" -> Plus[prevFix[#], newFix[#]] &@"TotalFixes",
-		"LikelyFalsePositive" -> Or[prevFix[#], newFix[#]] &@"LikelyFalsePositive",
-		"SafeToEvaluate" -> And[prevFix[#], newFix[#]] &@"SafeToEvaluate",
-		"FixedPatterns" -> Append[prevFix["FixedPatterns"], newFix["FixedPattern"]],
+		"TotalFixes" -> Plus[prevFix[#], Lookup[newFix,#,0]] &@"TotalFixes",
+		"LikelyFalsePositive" -> Or[prevFix[#],Lookup[newFix,#,False]] &@"LikelyFalsePositive",
+		"SafeToEvaluate" -> And[prevFix[#], Lookup[newFix,#,False]] &@"SafeToEvaluate",
+		"FixedPatterns" -> Append[prevFix["FixedPatterns"],Lookup[newFix,"FixedPattern"]],
 		"FixedCode" -> newFix["FixedCode"]
 	} // Association
 
@@ -368,45 +372,17 @@ fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedClos
    			} // Association
 	]
 
-(* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
-
-fixPattern[code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] :=
-	Module[
-			{
-			 fixedCode=Missing[]
-			,falsePositive=Missing[]
-			,safe=Missing[]
-			,success=False
-			,ccp
-			,errorNode
-			}
-			,
-			ccp=code // CodeConcreteParse
-			;
-			errorNode = Cases[ccp, f_[___, Token`Error`UnexpectedCloser, ___], Infinity]
-						// If[MatchQ[#,{__}], First@#, {}]&
-			;
-			If[errorNode==={}
-				, success=False;
-				, fixedCode= ReplaceAll[code // CodeConcreteParse, errorNode -> Sequence[]] // ToSourceCharacterString
-				  ;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{errorNode[[2]], ""}}]]
-				  ;If[success, safe=True; falsePositive=False;]
-			]
-			;
-			{ "Success" -> success
-   			, "TotalFixes" -> If[success, 1, 0]
-   			, "LikelyFalsePositive" -> falsePositive
-   			, "SafeToEvaluate" -> safe
-   			, "FixedPattern" -> pat
-   			, "FixedCode" -> fixedCode
-   			} // Association
-	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
-fixPattern[_String, pat_]:={"Success"->False, "FixedCode"->Missing["Pattern not handled",pat]} // Association
-
+fixPattern[_String, pat_]:=
+							{ "Success" -> False
+							, "TotalFixes" -> 0
+							, "LikelyFalsePositive" -> False
+							, "SafeToEvaluate" -> False
+							, "FixedPattern" -> pat
+							, "FixedCode" -> Missing["Pattern not handled",pat]
+							} // Association
 (*---------------------------------------------------*)
 
 (* ::Chapter::Closed:: *)
