@@ -736,10 +736,12 @@ modelSelectCallback[
     Dynamic[ service_Symbol ],
     Dynamic[ model_Symbol ]
 ] := catchAlways @ Enclose[
-    model = selected;
 
     ensureServiceName @ service;
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
+
+    (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
+    model = If[ service === "LLMKit", Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1750,6 +1752,8 @@ extractModelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
+
+getServiceDefaultModel[ "LLMKit" ] := Automatic;
 
 getServiceDefaultModel[ service_String ] := Enclose[
     Module[ { lastSelected, name },
