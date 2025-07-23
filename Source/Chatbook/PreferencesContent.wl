@@ -1984,6 +1984,8 @@ resetChatPreferences[ "Tools" ] := expandScope[
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
+    CurrentChatSettings[ $preferencesScope, "Model" ] = Inherited;
+    CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Inherited;
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
