@@ -741,7 +741,7 @@ modelSelectCallback[
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
     (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
-    model = If[ service === "LLMKit", Automatic, selected ];
+    model = If[ MatchQ[ service, "LLMKit"|"Wolfram" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1753,7 +1753,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ "LLMKit" ] := Automatic;
+getServiceDefaultModel[ "LLMKit"|"Wolfram" ] := Automatic;
 
 getServiceDefaultModel[ service_String ] := Enclose[
     Module[ { lastSelected, name },
