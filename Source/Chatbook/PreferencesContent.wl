@@ -736,10 +736,12 @@ modelSelectCallback[
     Dynamic[ service_Symbol ],
     Dynamic[ model_Symbol ]
 ] := catchAlways @ Enclose[
-    model = selected;
 
     ensureServiceName @ service;
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
+
+    (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
+    model = If[ MatchQ[ service, "LLMKit"|"Wolfram" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1751,6 +1753,8 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
+getServiceDefaultModel[ "LLMKit"|"Wolfram" ] := Automatic;
+
 getServiceDefaultModel[ service_String ] := Enclose[
     Module[ { lastSelected, name },
         (* Get last selected models by service: *)
@@ -1980,6 +1984,8 @@ resetChatPreferences[ "Tools" ] := expandScope[
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
+    CurrentChatSettings[ $preferencesScope, "Model" ] = Inherited;
+    CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Inherited;
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
