@@ -18,10 +18,13 @@ $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVer
 $resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Documentation", $documentationSnippetVersion };
 
 $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "ResourceSystem" };
+
+$otherSnippetsCacheDirectory := $otherSnippetsCacheDirectory =
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Other" };
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
@@ -64,7 +67,7 @@ $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-11168610", "14-1-0-10549042" ];
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1096,8 +1099,15 @@ snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolfram
 snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://datarepository.wolframcloud.com/" ] :=
     snippetCacheFile[
         uri,
-        "DataRepository" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/" ],
+        "DataRepository/" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/"~~("resources/"|"") ],
         "ResourceSystem"
+    ];
+
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://paclets.com/" ] :=
+    snippetCacheFile[
+        uri,
+        "PacletRepository/" <> StringDelete[ uri, "https://paclets.com/" ],
+        "Other"
     ];
 
 snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
@@ -1117,6 +1127,7 @@ snippetCacheFile // endDefinition;
 snippetCacheDirectory // beginDefinition;
 snippetCacheDirectory[ "Documentation"  ] := $documentationSnippetsCacheDirectory;
 snippetCacheDirectory[ "ResourceSystem" ] := $resourceSnippetsCacheDirectory;
+snippetCacheDirectory[ "Other"          ] := $otherSnippetsCacheDirectory;
 snippetCacheDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
