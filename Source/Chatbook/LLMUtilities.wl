@@ -27,6 +27,38 @@ $$llmPrompt         = $$llmPromptItem | { $$llmPromptItem.. };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*llmChat*)
+llmChat // beginDefinition;
+
+llmChat[ messages: $$chatMessages ] :=
+    llmChat[ messages, <| |> ];
+
+llmChat[ messages: $$chatMessages, evaluator0_Association ] :=
+    Enclose @ Module[ { evaluator, config, auth, response },
+
+        evaluator = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+
+        config = ConfirmMatch[
+            LLMConfiguration @ evaluator,
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Config"
+        ];
+
+        auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
+
+        response = LLMServices`Chat[ messages, config, Authentication -> auth ];
+
+        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
+
+        response
+    ];
+
+llmChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*llmSynthesize*)
 llmSynthesize // beginDefinition;
 
@@ -80,21 +112,11 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
     Module[ { evaluator, prompt, messages, config, chunks, allowEmpty, handlers, keys, auth },
 
-        evaluator = Replace[
-            ConfirmBy[
-                <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
-                AssociationQ,
-                "Evaluator"
-            ],
-            Verbatim[ Verbatim ][ value_ ] :> value,
-            { 1 }
-        ];
-
-        prompt   = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
-        messages = { <| "Role" -> "User", "Content" -> prompt |> };
-        config   = LLMConfiguration @ evaluator;
-        chunks   = Internal`Bag[ ];
-
+        evaluator  = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+        prompt     = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
+        messages   = { <| "Role" -> "User", "Content" -> prompt |> };
+        config     = LLMConfiguration @ evaluator;
+        chunks     = Internal`Bag[ ];
         allowEmpty = MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ];
 
         handlers = <|
@@ -137,6 +159,28 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 ];
 
 llmSynthesizeSubmit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveLLMConfiguration*)
+resolveLLMConfiguration // beginDefinition;
+
+resolveLLMConfiguration[ evaluator_Association ] := Enclose[
+    ConfirmBy[
+        mergeChatSettings @ {
+            $defaultLLMSynthesizeEvaluator,
+            evaluator /. {
+                Verbatim[ Verbatim ][ value_ ] :> value,
+                Automatic -> Inherited
+            }
+        },
+        AssociationQ,
+        "Result"
+    ],
+    throwInternalFailure
+];
+
+resolveLLMConfiguration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
