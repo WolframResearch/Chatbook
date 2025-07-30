@@ -7,6 +7,7 @@ HoldComplete[
     `$defaultSources,
     `$maxNeighbors,
     `$maxSelectedSources,
+    `$versionString,
     `ensureChatMessages,
     `getSmallContextString,
     `insertContextPrompt,
