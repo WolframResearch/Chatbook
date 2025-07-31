@@ -25,7 +25,7 @@ $vectorDatabases = <| |>;
 (* ::Subsubsection::Closed:: *)
 (*DataRepositoryURIs*)
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -35,7 +35,7 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*DocumentationURIs*)
 $vectorDatabases[ "DocumentationURIs" ] = <|
-    "Version"         :> If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ],
+    "Version"         :> If[ $VersionNumber >= 14.3, "1.5.0", "1.4.0" ],
     "Bias"            -> 0.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -122,7 +122,7 @@ getEntityValueSnippets // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*FunctionRepositoryURIs*)
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -132,7 +132,7 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*NeuralNetRepositoryURIs*)
 $vectorDatabases[ "NeuralNetRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getNeuralNetRepositorySnippets,
     "Instructions"    -> None
@@ -153,7 +153,7 @@ IMPORTANT: Always use PacletSymbol to reference symbols from paclets in the pacl
 (anything from https://paclets.com).";
 
 $vectorDatabases[ "PacletRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 2.0,
     "SnippetFunction" -> getPacletRepositorySnippets,
     "Instructions"    -> { URL[ "paclet:ref/PacletSymbol#1" ], $pacletRepositoryInstructions }
@@ -170,7 +170,7 @@ getPacletRepositorySnippets // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*SourceSelector*)
 $vectorDatabases[ "SourceSelector" ] = <|
-    "Version"         -> "1.2.0",
+    "Version"         -> "1.3.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> Identity,
     "Instructions"    -> None
@@ -241,8 +241,10 @@ makeDownloadURL // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory[ "VectorDatabases" ];
+$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $versionString };
 $cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
+
+$versionString := StringReplace[ ToString @ $VersionNumber, { "."~~EndOfString :> "-0", "." -> "-" } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

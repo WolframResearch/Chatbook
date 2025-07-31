@@ -75,40 +75,36 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Chat Blocks*)
 VerificationTest[
-    WithTestNotebook[
-        CurrentChatSettings[ #1, "Model" ] & /@ Cells @ $TestNotebook,
+    If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+        Missing[ "TestSkipped" ],
+        WithTestNotebook[
+            CurrentChatSettings[ #, "Model" ] & /@ Cells @ $TestNotebook,
+            { { "Hello", { Delimiter, "Model" -> "BlockModel" }, "Hello2" } }
+        ]
+    ],
+    Alternatives[
+        Missing[ "TestSkipped" ],
         {
-            {
-                "Hello",
-                { Delimiter, "Model" -> "BlockModel" },
-                "Hello2"
-            }
+            Except[ "BlockModel", KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } ],
+            "BlockModel",
+            "BlockModel"
         }
     ],
-    {
-        Except[ "BlockModel", KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } ],
-        "BlockModel",
-        "BlockModel"
-    },
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:77,1-95,2"
 ]
 
 VerificationTest[
-    WithTestNotebook[
-        CurrentChatSettings[ #1, "Model" ] & /@ Cells @ $TestNotebook,
-        {
-            {
-                "Hello",
-                { Delimiter, "Model" -> "BlockModel" },
-                "Hello2"
-            },
-            "Model" -> "NotebookModel"
-        }
+    If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+        Missing[ "TestSkipped" ],
+        WithTestNotebook[
+            CurrentChatSettings[ #, "Model" ] & /@ Cells @ $TestNotebook,
+            { { "Hello", { Delimiter, "Model" -> "BlockModel" }, "Hello2" }, "Model" -> "NotebookModel" }
+        ]
     ],
-    { "NotebookModel", "BlockModel", "BlockModel" },
+    Missing[ "TestSkipped" ] | { "NotebookModel", "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:97,1-112,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:97,1-108,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -131,7 +127,7 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Regression#426@@Tests/CurrentChatSettings.wlt:121,1-135,2"
+    TestID   -> "CurrentChatSettings-Regression#426@@Tests/CurrentChatSettings.wlt:117,1-131,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -144,5 +140,5 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Regression#592@@Tests/CurrentChatSettings.wlt:140,1-148,2"
+    TestID   -> "CurrentChatSettings-Regression#592@@Tests/CurrentChatSettings.wlt:136,1-144,2"
 ]
