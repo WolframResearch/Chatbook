@@ -30,6 +30,8 @@ $defaultTestOptions = Sequence[
     LLMEvaluator -> <| "Model" -> { "OpenAI", "gpt-4o-mini" }, Authentication -> Verbatim[ Automatic ] |>
 ];
 
+GeneralUtilities`$DebugMode = True;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*RelatedWolframAlphaResults*)
@@ -37,28 +39,28 @@ VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", $defaultTestOptions ],
     _String? (StringContainsQ @ ToString @ Prime[ 123456789 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults@@Tests/RelatedWolframAlphaResults.wlt:36,1-41,2"
+    TestID   -> "RelatedWolframAlphaResults@@Tests/RelatedWolframAlphaResults.wlt:38,1-43,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Prompt", $defaultTestOptions ],
     _String? (StringContainsQ @ ToString @ Prime[ 123456789 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-Prompt@@Tests/RelatedWolframAlphaResults.wlt:43,1-48,2"
+    TestID   -> "RelatedWolframAlphaResults-Prompt@@Tests/RelatedWolframAlphaResults.wlt:45,1-50,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "Content", $defaultTestOptions ],
     { __Association },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-Content@@Tests/RelatedWolframAlphaResults.wlt:50,1-55,2"
+    TestID   -> "RelatedWolframAlphaResults-Content@@Tests/RelatedWolframAlphaResults.wlt:52,1-57,2"
 ]
 
 VerificationTest[
     RelatedWolframAlphaResults[ "What's the 123456789th prime?", "FullData", $defaultTestOptions ],
     KeyValuePattern @ { "Content" -> { __Association }, "SampleQueries" -> { ___, "is 73 prime?", ___ } },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-FullData@@Tests/RelatedWolframAlphaResults.wlt:57,1-62,2"
+    TestID   -> "RelatedWolframAlphaResults-FullData@@Tests/RelatedWolframAlphaResults.wlt:59,1-64,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -72,7 +74,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "is 73 prime?" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-All@@Tests/RelatedWolframAlphaResults.wlt:67,1-76,2"
+    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-All@@Tests/RelatedWolframAlphaResults.wlt:69,1-78,2"
 ]
 
 VerificationTest[
@@ -83,7 +85,7 @@ VerificationTest[
     ],
     _String? (StringFreeQ[ "is 73 prime?" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-None@@Tests/RelatedWolframAlphaResults.wlt:78,1-87,2"
+    TestID   -> "RelatedWolframAlphaResults-SampleQueryCount-None@@Tests/RelatedWolframAlphaResults.wlt:80,1-89,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -100,7 +102,7 @@ VerificationTest[
         "SampleQueries" -> { ___String }
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:92,1-104,2"
+    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:94,1-106,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -119,5 +121,7 @@ VerificationTest[
     _Failure,
     { ServiceExecute::apierr },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:111,1-123,2"
+    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:113,1-125,2"
 ]
+
+GeneralUtilities`$DebugMode = False;

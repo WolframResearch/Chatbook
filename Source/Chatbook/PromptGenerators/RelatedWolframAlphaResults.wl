@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxItems           = 5;
-$defaultConfig      = <| "StopTokens" -> { "[NONE]" } |>;
+$defaultConfig      = <| "StopTokens" -> { "[NONE]" }, "Model" -> <| "Name" -> "gpt-4o-mini" |> |>;
 $generatorLLMConfig = $defaultConfig;
 $usePromptHeader    = True;
 $multimodal         = True;
@@ -397,7 +397,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
     Module[
         {
             relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
-            auth, authOption, response, content, queries
+            response, content, queries
         },
 
         relevant = ConfirmMatch[
@@ -448,13 +448,9 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
             "Messages"
         ];
 
-        config     = <| $defaultConfig, $generatorLLMConfig |>;
-        auth       = Lookup[ config, "Authentication", Automatic ];
-        authOption = If[ auth === Automatic, Sequence @@ { }, Authentication -> auth ];
-
-        response = ConfirmBy[ generateSuggestedQueries0[ messages, config, authOption ], AssociationQ, "Response" ];
-
-        content = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
+        config   = ConfirmBy[ mergeChatSettings @ { $defaultConfig, $generatorLLMConfig }, AssociationQ, "Config" ];
+        response = ConfirmBy[ generateSuggestedQueries0[ messages, config ], AssociationQ, "Response" ];
+        content  = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
         queries = ConfirmMatch[
             DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], "[NONE]"|"" ],
@@ -481,24 +477,11 @@ generateSuggestedQueries // endDefinition;
 
 generateSuggestedQueries0 // beginDefinition;
 
-generateSuggestedQueries0[ messages_, config0_, opts___ ] := Enclose[
-    Module[ { config, response },
-
-        config = ConfirmMatch[
-            LLMConfiguration @ config0,
-            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
-            "Config"
-        ];
-
-        (* FIXME: need to add a chat function that uses the proper config in LLMUtilities.wl *)
-        response = LLMServices`Chat[ messages, config, opts ];
-
-        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
-
-        response = ConfirmBy[ response, AssociationQ, "Response" ];
-
+generateSuggestedQueries0[ messages_, config_ ] := Enclose[
+    Module[ { response },
+        response = ConfirmBy[ llmChat[ messages, config ], AssociationQ, "Response" ];
         If[ TrueQ @ $cacheResults,
-            generateSuggestedQueries0[ messages, config, opts ] = response,
+            generateSuggestedQueries0[ messages, config ] = response,
             response
         ]
     ],

@@ -232,6 +232,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `insertPersonaTemplate;
 `insertTrailingFunctionInputBox;
 `insertWLTemplate;
+`llmChat;
 `llmKitCheck;
 `llmSynthesize;
 `llmSynthesizeSubmit;
