@@ -170,10 +170,10 @@ fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 				CodeConcreteParse[code]
 				// 	ReplaceRepeated[
 						{
-							{a___,LeafNode[Token`Comma,",",_],(LeafNode[Whitespace," ",_]...),ErrorNode[Token`Error`InfixImplicitNull,"",_]}
+							{a___,LeafNode[Token`Comma,",",_], LeafNode[Whitespace | Token`Newline, __]... ,ErrorNode[Token`Error`InfixImplicitNull,"",_]}
 							:>((* Echo["deleting comma"]; *)totalFixes++;{a})
 							,
-							InfixNode[Comma,{a___,LeafNode[Token`Comma,",",_],(LeafNode[Whitespace," ",_]...),ErrorNode[Token`Error`InfixImplicitNull,"",_],LeafNode[Token`Comma,",",_],b__},_]
+							InfixNode[Comma,{a___,LeafNode[Token`Comma,",",_], LeafNode[Whitespace | Token`Newline, __]..., ErrorNode[Token`Error`InfixImplicitNull,"",_],LeafNode[Token`Comma,",",_],b__},_]
 							:>((* Echo["deleting comma inside"]; *)totalFixes++;InfixNode[Comma,{a,LeafNode[Token`Comma,",",_],b},_])
 							,
 							InfixNode[Comma,{ErrorNode[Token`Error`PrefixImplicitNull,"",_],LeafNode[Token`Comma,",",_],b__},_]
@@ -213,34 +213,25 @@ fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
    			} // Association
 	]
 
-replaceCommaComments[code_]:=
-	With[
-		{ccp=CodeConcreteParse[code]}
-		,
-		{
-		posComments=Select[
-							Position[ccp, LeafNode[Token`Comment,comment_,_]]
-							,MatchQ[ccp[[Sequence@@Drop[#,-2]]],ruleCommaComment]&
-					]
-		}
-		,
-		ReplaceAt[ccp,LeafNode[Token`Comment,comment_,s_]:>LeafNode[Symbol,"xxxx",s],posComments] // ToSourceCharacterString
-	]
-
-ruleCommaComment=	Alternatives[
-									InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
-												,(LeafNode[Whitespace," ",_]...)
-												,LeafNode[Token`Comment,comment_,_]
-												,(LeafNode[Whitespace," ",_]...)
-												,ErrorNode[Token`Error`InfixImplicitNull,"",_]
-												,LeafNode[Token`Comma,",",_],___},_]
-									,
-									InfixNode[	Comma,{___,LeafNode[Token`Comma,",",_]
-												,(LeafNode[Whitespace," ",_]...)
-												,LeafNode[Token`Comment,comment_,_]
-												,(LeafNode[Whitespace," ",_]...)
-												,ErrorNode[Token`Error`InfixImplicitNull,"",_],___},_]
-					]
+replaceCommaComments[code_]:=	(
+								CodeConcreteParse[code]
+								//
+							  	ReplaceRepeated[
+									InfixNode[Comma, {	a___, LeafNode[Token`Comma, ",", _],
+														PatternSequence[LeafNode[Whitespace | Token`Newline, __] ...,
+																		LeafNode[Token`Comment, _, _],
+																		LeafNode[Whitespace | Token`Newline, __] ...
+																		]..,
+														ErrorNode[Token`Error`InfixImplicitNull, "", _],
+														b___
+													}
+													, s_
+									] :>
+									InfixNode[Comma, {a, LeafNode[Token`Comma, ",", {}], LeafNode[Symbol, "xxxx", {}], b}, s]
+								]
+								//
+								ToSourceCharacterString
+								)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
