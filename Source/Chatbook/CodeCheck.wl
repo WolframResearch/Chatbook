@@ -197,7 +197,7 @@ fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 									, (lenPatLeft=Length@#)
 										; lengthErrors[replaceCommaComments[fixedCode]]
 										//If[!FailureQ@#
-											, If[#===0, safe=False; falsePositive=True; success=True];
+											, If[#===0, safe=False; falsePositive=True; success=True, fixedCode=Missing["Problem with the comments"]];
 										]&
 
 							]&
