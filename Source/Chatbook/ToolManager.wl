@@ -30,7 +30,7 @@ $activeBlue             = color @ "ManagerGridActiveBlue";
 CreateLLMToolManagerDialog // beginDefinition;
 Options[ CreateLLMToolManagerDialog ] = { "GlobalScopeOnly" -> False };
 
-CreateLLMToolManagerDialog[ args___, opts : OptionsPattern[ ] ] := createDialog[
+CreateLLMToolManagerDialog[ args___, opts : OptionsPattern[ ] ] /; True := createDialog[
     CreateLLMToolManagerPanel[ args, opts ],
     WindowTitle -> tr[ "ToolManagerTitle" ]
 ];
