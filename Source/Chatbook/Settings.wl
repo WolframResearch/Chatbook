@@ -258,7 +258,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
 (*gpt-5*)
 $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "HybridToolMethod"           -> False,
-    "MaxContextTokens"           -> 1047576,
+    "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
