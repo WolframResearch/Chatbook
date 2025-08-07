@@ -255,6 +255,21 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*gpt-5*)
+$modelAutoSettings[ Automatic, "GPT5" ] = <|
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 1047576,
+    "Multimodal"                 -> True,
+    "PresencePenalty"            -> Missing[ "NotSupported" ],
+    "StopTokens"                 -> Missing[ "NotSupported" ],
+    "Temperature"                -> 1,
+    "TokenizerName"              -> "gpt-4o",
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*OpenAI reasoning models*)
 
 (* Note: Max tokens are halved for these models in order to leave room for reasoning *)
