@@ -65,6 +65,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ReasoningEnabled"               -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,

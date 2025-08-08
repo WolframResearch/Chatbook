@@ -13,8 +13,10 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$defaultLLMKitService  := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
-$defaultLLMKitModelName = "gpt-4o-2024-08-06";
+$reasoningEnabled        = False;
+$defaultLLMKitService   := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
+$defaultLLMKitModelName := If[ TrueQ @ $reasoningEnabled, "o3-2025-04-16", "gpt-4o-2024-08-06" ];
+(* TODO: Migrate both to gpt-5 and use `reasoning_effort` parameter *)
 
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
@@ -727,7 +729,9 @@ resolveFullModelSpec[ model: KeyValuePattern[ "ResolvedModel" -> True ] ] :=
     model;
 
 resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
-    resolveFullModelSpec @ model;
+    Block[ { $reasoningEnabled = TrueQ @ settings[ "ReasoningEnabled" ] },
+        resolveFullModelSpec @ model
+    ];
 
 resolveFullModelSpec[ { service_String, name_ } ] :=
     resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
