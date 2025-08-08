@@ -23,7 +23,9 @@ Search Wolfram Language documentation for symbols and more. \
 Follow up search results with the documentation lookup tool to get the full information."; *)
 
 $documentationSearcherDescription = "\
-Discover relevant Wolfram Language documentation snippets using semantic search.";
+Discover relevant Wolfram Language documentation snippets. \
+This uses semantic search, so the context argument should be written in natural language (not a search query) \
+and contain as much detail as possible (up to 250 words).";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -37,9 +39,9 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
     "FormattingFunction" -> documentationSearchFormatter,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "query" -> <|
+        "context" -> <|
             "Interpreter" -> "String",
-            "Help"        -> "A natural language question or description of what you're trying to achieve",
+            "Help"        -> "A detailed summary of what you are trying to achieve or learn about.",
             "Required"    -> True
         |>
     }
@@ -53,7 +55,7 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
 (* ::Subsection::Closed:: *)
 (*documentationSearch*)
 documentationSearch // beginDefinition;
-documentationSearch[ KeyValuePattern[ "query" -> name_ ] ] := documentationSearch @ name;
+documentationSearch[ KeyValuePattern[ "context"|"query" -> name_ ] ] := documentationSearch @ name;
 documentationSearch[ names_List ] := StringRiffle[ documentationSearch /@ names, "\n\n" ];
 documentationSearch[ name_String ] /; NameQ[ "System`" <> name ] := documentationLookup @ name;
 documentationSearch[ query_String ] := documentationRAGSearch @ query;

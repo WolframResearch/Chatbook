@@ -1141,7 +1141,7 @@ fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
      Module[ { count, text, $results, tasks },
         count = Length @ uris;
 
-        text = If[ $EvaluationEnvironment === "Session",
+        text = If[ $EvaluationEnvironment === "Session" && $Notebooks,
                    ConfirmBy[
                        If[ count === 1,
                            trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
