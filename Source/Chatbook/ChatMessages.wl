@@ -925,7 +925,7 @@ expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
             string,
             {
                 md: Shortest[ "MarkdownImageBox[\"" ~~ link: ("![" ~~ __ ~~ "](" ~~ uri__ ~~ ")") ~~ "\"]" ] /;
-                    expressionURIQ @ uri :> {
+                    graphicsURIQ @ uri :> {
                         md,
                         ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], graphicsQ, "MarkdownImageBox" ]
                     },
