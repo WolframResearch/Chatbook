@@ -603,6 +603,11 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
         cleanupLegacyVectorDBFiles @ dir;
+
+        (* Try unpacking any zip files that might be left over from previous install attempts: *)
+        Quiet @ catchAlways @ tryUnpackingVectorDatabases @ dir;
+
+        (* Download any remaining vector databases: *)
         names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
         urls  = KeyTake[ urls0, names ];
 
@@ -677,6 +682,26 @@ getDownloadSize[ obj_, $Failed ] := throwFailureToChatOutput @ Failure[
 ];
 
 getDownloadSize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryUnpackingVectorDatabases*)
+tryUnpackingVectorDatabases // beginDefinition;
+tryUnpackingVectorDatabases[ dir_? DirectoryQ ] := Scan[ tryUnpackingVectorDatabase, FileNames[ "*.zip", dir ] ];
+tryUnpackingVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryUnpackingVectorDatabase*)
+tryUnpackingVectorDatabase // beginDefinition;
+
+tryUnpackingVectorDatabase[ zip_? FileExistsQ ] :=
+    Quiet @ With[ { res = catchAlways @ unpackVectorDatabase @ zip },
+        If[ FailureQ @ res, DeleteFile @ zip ];
+        res
+    ];
+
+tryUnpackingVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
