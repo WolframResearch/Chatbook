@@ -53,7 +53,9 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 												,(*1/4*)"Remark"
 												,(*0/4*)"ImplicitTimes","Formatting" ,"Scoping"
 												},
-					"TagExclusions" -> {"SetInfixInequality"}, (* this excludes errors for cases like: a = b==c *)
+					"TagExclusions" -> {"SetInfixInequality" 		(* cases like: a = b==c *)
+										,"ImplicitTimesPseudoCall"	(* cases like: a (b+c)*)
+										},
 					SourceConvention -> "SourceCharacterIndex"
 						};
 
