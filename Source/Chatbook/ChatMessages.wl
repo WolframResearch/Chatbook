@@ -76,14 +76,16 @@ $fallbackTokenizer = "generic";
 AugmentChatMessages // beginDefinition;
 
 AugmentChatMessages // Options = {
-    "ExcludedBasePrompts" -> { },
-    "ToolMethod"          -> "Service"
+    "ToolMethod" -> "Service"
 };
 
 AugmentChatMessages[ messages_, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ AugmentChatMessages[ messages, Automatic, opts ];
 
 AugmentChatMessages[ messages_, $$unspecified, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ AugmentChatMessages[ messages, $currentChatSettings, opts ];
+
+AugmentChatMessages[ messages_, None, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ AugmentChatMessages[ messages, CurrentChatSettings @ $FrontEnd, opts ];
 
 AugmentChatMessages[ messages_, settings_, opts: OptionsPattern[ ] ] :=
@@ -104,14 +106,13 @@ augmentChatMessages[ messages_, persona_String, opts_Association? AssociationQ ]
     augmentChatMessages[ messages, <| "LLMEvaluator" -> persona |>, opts ];
 
 augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := Enclose[
-    Module[ { merged, resolved, excludedBasePrompts, messages },
+    Module[ { resolved, excludedBasePrompts, messages },
         If[ ! MatchQ[ messages0, $$chatMessages ], throwFailure[ "InvalidMessageList", messages0 ] ];
         If[ ! AssociationQ @ settings, throwFailure[ "InvalidChatSettings", settings ] ];
 
-        merged = ConfirmBy[ mergeChatSettings @ { $defaultChatSettings, opts, settings }, AssociationQ, "Merged" ];
-        resolved = ConfirmBy[ resolveAutoSettings @ merged, AssociationQ, "Resolved" ];
+        resolved = ConfirmBy[ toChatSettings[ opts, settings ], AssociationQ, "Resolved" ];
 
-        excludedBasePrompts = Lookup[ opts, "ExcludedBasePrompts", { } ];
+        excludedBasePrompts = Lookup[ resolved, "ExcludedBasePrompts", { } ];
         If[ ! MatchQ[ excludedBasePrompts, { ___String } ],
             throwFailure[ "InvalidExcludedBasePrompts", excludedBasePrompts ]
         ];
@@ -139,6 +140,24 @@ augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := 
 ];
 
 augmentChatMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toChatSettings*)
+toChatSettings // beginDefinition;
+
+toChatSettings[ opts_, settings_ ] /; AssociationQ @ $currentChatSettings :=
+    $currentChatSettings;
+
+toChatSettings[ opts_, settings_ ] := Enclose[
+    Module[ { merged },
+        merged = ConfirmBy[ mergeChatSettings @ { $defaultChatSettings, opts, settings }, AssociationQ, "Merged" ];
+        ConfirmBy[ resolveAutoSettings @ KeyDrop[ merged, "ResolvedAutoSettings" ], AssociationQ, "Resolved" ]
+    ],
+    throwInternalFailure
+];
+
+toChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

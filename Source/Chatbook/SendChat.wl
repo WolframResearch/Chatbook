@@ -35,6 +35,120 @@ $buffer            = "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*AgentEvaluate*)
+AgentEvaluate // beginDefinition;
+AgentEvaluate // Options = {
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" }
+};
+
+AgentEvaluate[ messages_, opts: OptionsPattern[ ] ] :=
+    catchMine @ chatEvaluateHeadless[ messages, optionsAssociation[ AgentEvaluate, opts ] ];
+
+AgentEvaluate[ messages_, persona_String, opts: OptionsPattern[ ] ] :=
+    catchMine @ AgentEvaluate[ messages, <| "LLMEvaluator" -> persona |>, opts ];
+
+AgentEvaluate[ messages_, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ chatEvaluateHeadless[ messages, <| optionsAssociation[ AgentEvaluate, opts ], settings |> ];
+
+AgentEvaluate // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluateHeadless*)
+chatEvaluateHeadless // beginDefinition;
+
+chatEvaluateHeadless[ messages0_, settings_? AssociationQ ] := Enclose[
+    ChatEvaluationBlock[
+        Module[ { messages, as, container },
+            messages = ConfirmMatch[ ensureChatMessages @ messages0, $$chatMessages, "Messages" ];
+            as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ];
+            waitForLastTask @ $CurrentChatSettings;
+            container = ConfirmBy[ as[ "Container" ], AssociationQ, "Container" ];
+            StringTrim @ ConfirmBy[ container[ "FullContent" ], StringQ, "ResultString" ]
+        ],
+        settings
+    ],
+    throwInternalFailure
+];
+
+chatEvaluateHeadless // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sendChatHeadless*)
+sendChatHeadless // beginDefinition;
+
+sendChatHeadless[ messages_ ] :=
+    sendChatHeadless[ messages, $CurrentChatSettings ];
+
+sendChatHeadless[ messages0_, settings0_ ] := Enclose[
+    Module[ { settings, container, cellObject, messages, data, persona, task },
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+
+        $finishReason = None;
+        $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+
+        ConfirmBy[ initializeProgressContainer @ container, AssociationQ, "InitializeProgress" ];
+        Quiet @ TaskRemove @ $lastTask;
+        cellObject = None;
+
+        { messages, data } = Reap[
+            ConfirmMatch[
+                LogChatTiming @ AugmentChatMessages[ messages0, settings ],
+                { __Association },
+                "ConstructMessages"
+            ],
+            $chatDataTag
+        ];
+
+        data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
+
+        If[ data[ "RawOutput" ],
+            persona = ConfirmBy[ GetCachedPersonaData[ "RawModel" ], AssociationQ, "NonePersona" ];
+            If[ AssociationQ @ settings[ "LLMEvaluator" ],
+                settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
+                settings = Association[ settings, persona ]
+            ];
+            $currentChatSettings = settings;
+        ];
+
+        AppendTo[ settings, "Data" -> data ];
+        $debugLog = Internal`Bag[ ];
+
+        applyHandlerFunction[
+            settings,
+            "ChatPre",
+            <|
+                "EvaluationCell" -> None,
+                "Messages"       -> messages,
+                "CellObject"     -> cellObject,
+                "Container"      :> container
+            |>
+        ];
+
+        task = $lastTask = chatSubmit[
+            container,
+            prepareMessagesForLLM[ settings, messages ],
+            cellObject,
+            settings
+        ];
+
+        addHandlerArguments[ "Task" -> task ];
+
+        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
+
+        <|
+            "TaskObject" -> task,
+            "Container"  :> container
+        |>
+    ],
+    throwInternalFailure
+];
+
+sendChatHeadless // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*SendChat*)
 
 (* ::**************************************************************************************************************:: *)
@@ -746,6 +860,7 @@ chatSubmit // beginDefinition;
 chatSubmit // Attributes = { HoldFirst };
 
 chatSubmit[ args__ ] := Quiet[
+    If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall = False;
     rasterizeBlock @ chatSubmit0 @ args,
     {
@@ -803,7 +918,8 @@ chatSubmit0[
 
         content = extractBodyChunks @ chunks;
 
-        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> content |> ];
+        writeChunk[ <| "ExtractedBodyChunks" -> content |>, Dynamic @ container, cellObject ];
+
         logUsage @ container;
         trimStopTokens[ container, stop ];
         checkResponse[ settings, Unevaluated @ container, cellObject, <| |> ];
@@ -940,10 +1056,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
                     },
-                    bodyChunkHandler[ #1 ];
-                    Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
-                    checkFinishReason[ #1 ];
-                    writeChunk[ Dynamic @ container, cellObject, #1 ]
+                    With[ { as = <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |> },
+                        bodyChunkHandler[ as ];
+                        Internal`StuffBag[ $debugLog, $lastStatus = as ];
+                        checkFinishReason[ as ];
+                        writeChunk[ as, Dynamic @ container, cellObject ]
+                    ]
                 ]
             ],
             "TaskFinished" -> Function @ catchAlways[
@@ -1008,6 +1126,7 @@ checkFinishReason // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*feTaskQ*)
 feTaskQ // beginDefinition;
+feTaskQ[ settings_ ] /; $chatEvaluationBlock := False;
 feTaskQ[ settings_ ] := feTaskQ[ settings, settings[ "NotebookWriteMethod" ] ];
 feTaskQ[ settings_, "ServiceLink"    ] := False;
 feTaskQ[ settings_, "PreemptiveLink" ] := True;
@@ -1028,24 +1147,22 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, as: KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
-    With[ { strings = extractBodyChunks @ chunks },
-        Which[
-            FailureQ @ strings,
-                throwFailureToChatOutput @ strings,
-            MatchQ[ strings, { __String } ],
-                With[ { chunk = StringJoin @ strings }, writeChunk0[ container, cell, chunk, chunk ] ],
-            True,
-                Null
-        ]
+writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_, cell_ ] :=
+    Which[
+        FailureQ @ strings,
+            throwFailureToChatOutput @ strings,
+        MatchQ[ strings, { __String } ],
+            With[ { chunk = StringJoin @ strings }, writeChunk0[ container, cell, chunk, chunk ] ],
+        True,
+            Null
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunk" -> chunk_String ] ] :=
-    writeChunk[ container, cell, $buffer <> chunk ];
+writeChunk[ KeyValuePattern[ "BodyChunk" -> chunk_String ], container_, cell_ ] :=
+    writeChunk[ $buffer <> chunk, container, cell ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ container_, cell_, chunk_String ] :=
+writeChunk[ chunk_String, container_, cell_ ] :=
     Module[ { ws, sep, parts, buffer },
         ws      = WhitespaceCharacter...;
         sep     = "\n\n" | "\r\n\r\n";
@@ -1301,6 +1418,9 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
+writeResult[ settings_, container_, cell_, as_ ] /; $chatEvaluationBlock :=
+    Null;
+
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
     Catch @ Module[ { log, processed, body, data },
 
@@ -1519,6 +1639,12 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
         (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
+
+        applyHandlerFunction[
+            settings,
+            "ToolResponseGenerated",
+            <| "ToolResponse" -> toolResponse, "ToolResponseString" -> output |>
+        ];
 
         messages = ConfirmMatch[
             removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
@@ -2369,10 +2495,10 @@ getToolFormatter // beginDefinition;
 getToolFormatter[ as_? AssociationQ ] :=
     getToolFormatter[ as, getProcessingFunction[ as, "FormatToolCall" ] ];
 
-getToolFormatter[ as_, func_ ] := (
+getToolFormatter[ as_, func_ ] := Function[
     $ChatHandlerData[ "EventName" ] = "FormatToolCall";
     func @ ##
-) &;
+];
 
 getToolFormatter // endDefinition;
 
