@@ -11,6 +11,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Config*)
 
 $basePromptOrder = {
+    "AgentOnePersona",
     "GeneralInstructionsHeader",
     "NotebooksPreamble",
     "AutoAssistant",
@@ -119,6 +120,10 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
 (* ::Section::Closed:: *)
 (*Base Prompt Components*)
 $basePromptComponents = <| |>;
+
+$basePromptComponents[ "AgentOnePersona" ] = "\
+You are a helpful assistant named \"Wolfram Agent One\".
+You specialize in Wolfram Language and Wolfram|Alpha, but you can help with any topic.";
 
 $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 # General Instructions
