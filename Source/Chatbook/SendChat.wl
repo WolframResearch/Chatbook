@@ -881,7 +881,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
-        ]
+        ] // dropModelUnsupportedParameters[ as ]
     ];
 
 makeLLMConfiguration[ as_Association ] :=
@@ -890,10 +890,30 @@ makeLLMConfiguration[ as_Association ] :=
         DeleteMissing @ Association[
             KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
             "StopTokens" -> makeStopTokens @ as
-        ]
+        ] // dropModelUnsupportedParameters[ as ]
     ];
 
 makeLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropModelUnsupportedParameters*)
+dropModelUnsupportedParameters // beginDefinition;
+
+dropModelUnsupportedParameters[ as_Association ] :=
+    With[ { model = as[ "Model" ] },
+        LogChatTiming @ dropModelUnsupportedParameters[ model, # ] &
+    ];
+
+dropModelUnsupportedParameters[ model_, config_Association ] := Enclose[
+    Module[ { drop },
+        drop = ConfirmMatch[ modelUnsupportedParameters[ model, config ], { ___String }, "Drop" ];
+        KeyDrop[ config, drop ]
+    ],
+    throwInternalFailure
+];
+
+dropModelUnsupportedParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
