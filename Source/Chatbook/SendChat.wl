@@ -38,7 +38,8 @@ $buffer            = "";
 (*AgentEvaluate*)
 AgentEvaluate // beginDefinition;
 AgentEvaluate // Options = {
-    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" }
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
+    "LLMEvaluator"        -> "AgentOne"
 };
 
 AgentEvaluate[ messages_, opts: OptionsPattern[ ] ] :=
