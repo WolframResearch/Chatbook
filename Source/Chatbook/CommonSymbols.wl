@@ -123,6 +123,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `attachWorkspaceChatInput;
 `autoAssistQ;
 `autoCorrect;
+`autoModelSetting;
 `boxDataQ;
 `cachedTokenizer;
 `cellFlatten;
