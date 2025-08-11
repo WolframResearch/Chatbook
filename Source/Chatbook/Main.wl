@@ -40,6 +40,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$WorkspaceChatInput;
 `AbsoluteCurrentChatSettings;
 `AddChatToSearchIndex;
+`AgentEvaluate;
 `AppendURIInstructions;
 `AugmentChatMessages;
 `BasePrompt;
@@ -221,6 +222,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
     "AddChatToSearchIndex",
+    "AgentEvaluate",
     "AppendURIInstructions",
     "AugmentChatMessages",
     "BasePrompt",
