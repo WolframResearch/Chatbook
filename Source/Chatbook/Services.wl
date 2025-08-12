@@ -15,16 +15,17 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmKit               := $llmKit = $VersionNumber >= 14.1;
-$llmKitService        := LogChatTiming @ getLLMKitService[ ];
-$fallbackLLMKitService = If[serviceFrameworkAvailable[ ], "LLMKitAzureOpenAI", "AzureOpenAI" ];
-$allowConnectionDialog = True;
-$enableLLMServices     = Automatic;
-$modelListCache        = <| |>;
-$modelSortOrder        = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
-$servicesLoaded        = False;
-$useLLMServices       := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
-$serviceCache          = None;
+$llmKit                := $llmKit = $VersionNumber >= 14.1;
+$llmKitService         := LogChatTiming @ getLLMKitService[ ];
+$fallbackLLMKitService := $llmKitPrefix <> "AzureOpenAI";
+$llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
+$allowConnectionDialog  = True;
+$enableLLMServices      = Automatic;
+$modelListCache         = <| |>;
+$modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
+$servicesLoaded         = False;
+$useLLMServices        := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
+$serviceCache           = None;
 
 $llmServicesAvailable := $llmServicesAvailable = (
     PacletInstall[ "Wolfram/LLMFunctions" ];
