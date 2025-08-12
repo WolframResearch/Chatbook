@@ -897,26 +897,6 @@ makeLLMConfiguration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dropModelUnsupportedParameters*)
-dropModelUnsupportedParameters // beginDefinition;
-
-dropModelUnsupportedParameters[ as_Association ] :=
-    With[ { model = as[ "Model" ] },
-        LogChatTiming @ dropModelUnsupportedParameters[ model, # ] &
-    ];
-
-dropModelUnsupportedParameters[ model_, config_Association ] := Enclose[
-    Module[ { drop },
-        drop = ConfirmMatch[ modelUnsupportedParameters[ model, config ], { ___String }, "Drop" ];
-        KeyDrop[ config, drop ]
-    ],
-    throwInternalFailure
-];
-
-dropModelUnsupportedParameters // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*chatHandlerFunctionsKeys*)
 chatHandlerFunctionsKeys // beginDefinition;
 chatHandlerFunctionsKeys[ as_? AssociationQ ] := chatHandlerFunctionsKeys[ as, as[ "HandlerFunctionsKeys" ] ];
