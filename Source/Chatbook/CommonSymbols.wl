@@ -162,6 +162,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `discourageExtraToolCallsQ;
 `displayInlineChat;
 `documentationSearchAPI;
+`dropModelUnsupportedParameters;
 `dynamicAutoFormatQ;
 `dynamicSplitQ;
 `errorMessageBox;
