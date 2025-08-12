@@ -90,7 +90,7 @@ llmKitCheck0 // endDefinition;
 (*getLLMKitService*)
 getLLMKitService // beginDefinition;
 getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
-getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := If[serviceFrameworkAvailable[ ], "LLMKit", "" ] <> service;
+getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := $llmKitPrefix <> service;
 getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
 getLLMKitService[ _ ] := $fallbackLLMKitService;
 getLLMKitService // endDefinition;
@@ -101,13 +101,17 @@ getLLMKitService // endDefinition;
 getUpdatedLLMKitService // beginDefinition;
 
 getUpdatedLLMKitService[ ] := Enclose[
-    LLMSynthesize;
-    Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-    getUpdatedLLMKitService[ ] = If[serviceFrameworkAvailable[ ], "LLMKit", "" ] <> ConfirmBy[
-        Wolfram`LLMFunctions`Common`$LLMKitInfo[ "currentProvider" ],
-        StringQ,
-        "LLMKitService"
-    ]
+    Module[ { provider, service },
+        LLMSynthesize;
+        Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
+        provider = ConfirmBy[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "currentProvider" ], StringQ, "Provider" ];
+        service = ConfirmBy[ $llmKitPrefix <> provider, StringQ, "Service" ];
+        If[ TrueQ @ $mxFlag,
+            service, (* Never cache result if building MX file *)
+            getUpdatedLLMKitService[ ] = service
+        ]
+    ],
+    throwInternalFailure
 ];
 
 getUpdatedLLMKitService // endDefinition;
@@ -117,8 +121,13 @@ getUpdatedLLMKitService // endDefinition;
 (*serviceFrameworkAvailable*)
 serviceFrameworkAvailable // beginDefinition;
 
-serviceFrameworkAvailable[ ] := serviceFrameworkAvailable[ ] =
-    serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ];
+serviceFrameworkAvailable[ ] :=
+    With[ { res = serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ] },
+        If[ TrueQ @ $mxFlag,
+            res, (* Never cache result if building MX file *)
+            serviceFrameworkAvailable[ ] = res
+        ]
+    ];
 
 serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
     Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
