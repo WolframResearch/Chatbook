@@ -61,8 +61,8 @@ $defaultPods           := toolOptionValue[ "WolframAlpha", "DefaultPods"     ];
 $foldPods              := toolOptionValue[ "WolframAlpha", "FoldPods"        ];
 $maximumWAPodByteCount := toolOptionValue[ "WolframAlpha", "MaxPodByteCount" ];
 
-$moreDetailsPlusIcon  = RawBoxes @ TemplateBox[ { RGBColor[ "#678e9c" ] }, "DiscardedMaterialOpenerIcon" ];
-$moreDetailsMinusIcon = RawBoxes @ TemplateBox[ { RGBColor[ "#678e9c" ] }, "DiscardedMaterialCloserIcon" ];
+$moreDetailsPlusIcon  := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialOpenerIcon" ];
+$moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialCloserIcon" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -277,9 +277,9 @@ formatWolframAlphaPods[ query_, grouped_Association, dynamic_ ] := Enclose[
 
         framed = Framed[
             Column[ formatted, Alignment -> Left, Spacings -> { { }, { { 1 }, -2 -> 0.5, -1 -> 0 } } ],
-            Background     -> GrayLevel[ 1 ],
+            Background     -> None,
             FrameMargins   -> 0,
-            FrameStyle     -> GrayLevel[ 1 ],
+            FrameStyle     -> None,
             RoundingRadius -> 0,
             TaggingRules   -> <| "WolframAlphaPods" -> True |>
         ];
@@ -352,9 +352,9 @@ formatPod // beginDefinition;
 
 formatPod[ content_List ] := Framed[
     Column[ formatPodItem /@ content, Alignment -> Left ],
-    Background     -> White,
+    Background     -> None,
     FrameMargins   -> 5,
-    FrameStyle     -> GrayLevel[ 0.8 ],
+    FrameStyle     -> color @ "WolframAlphaToolPodFrame",
     ImageSize      -> { Scaled[ 1 ], Automatic },
     ImageMargins   -> If[ $CloudEvaluation, { { 0, 25 }, { 0, 0 } }, 0 ],
     RoundingRadius -> 3
@@ -371,7 +371,7 @@ formatPodItem[ key_ -> value_ ] :=
     formatPodItem[ key, value ];
 
 formatPodItem[ { _, "Title" }, title_String ] :=
-    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> RGBColor[ "#678e9c" ], FontSize -> 12 ];
+    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> color @ "WolframAlphaTool_Blue", FontSize -> 12 ];
 
 formatPodItem[ { _, "Cell" }, cell_ ] /; ByteCount @ cell > $maximumWAPodByteCount :=
     Pane[
@@ -434,11 +434,11 @@ podShowMoreDetailsButton[ Dynamic[ expand_ ] ] := Button[
             Style[
                 Row @ { $moreDetailsPlusIcon, " Show more details" },
                 "Text",
-                FontColor -> RGBColor[ "#678e9c" ],
+                FontColor -> color @ "WolframAlphaTool_Blue",
                 FontSize  -> 12
             ],
             FrameMargins   -> { { 6, 6 }, { 2, 2 } },
-            FrameStyle     -> RGBColor[ "#678e9c" ],
+            FrameStyle     -> color @ "WolframAlphaTool_Blue",
             RoundingRadius -> 3
         ],
         "LinkHand"
@@ -461,11 +461,11 @@ podHideMoreDetailsButton[ Dynamic[ expand_ ] ] := Button[
             Style[
                 Row @ { $moreDetailsMinusIcon, " Hide more details" },
                 "Text",
-                FontColor -> RGBColor[ "#678e9c" ],
+                FontColor -> color @ "WolframAlphaTool_Blue",
                 FontSize  -> 12
             ],
             FrameMargins   -> { { 6, 6 }, { 2, 2 } },
-            FrameStyle     -> RGBColor[ "#678e9c" ],
+            FrameStyle     -> color @ "WolframAlphaTool_Blue",
             RoundingRadius -> 3
         ],
         "LinkHand"
