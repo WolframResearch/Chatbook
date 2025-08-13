@@ -27,7 +27,7 @@ VerificationTest[
 $defaultTestOptions = Sequence[
     "CacheResults" -> True,
     "Debug"        -> True,
-    LLMEvaluator -> <| "Model" -> { "OpenAI", "gpt-4o-mini" }, Authentication -> Verbatim[ Automatic ] |>
+    LLMEvaluator -> <| "Model" -> { "OpenAI", "gpt-4o-mini" }, Authentication -> Automatic |>
 ];
 
 GeneralUtilities`$DebugMode = True;
