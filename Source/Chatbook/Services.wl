@@ -101,10 +101,12 @@ getLLMKitService // endDefinition;
 getUpdatedLLMKitService // beginDefinition;
 
 getUpdatedLLMKitService[ ] := Enclose[
-    Module[ { provider, service },
+    Catch @ Module[ { provider, info, service },
         LLMSynthesize;
         Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-        provider = ConfirmBy[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "currentProvider" ], StringQ, "Provider" ];
+        info = ConfirmMatch[ Wolfram`LLMFunctions`Common`$LLMKitInfo, _Association|None, "Info" ];
+        If[ info === None, Throw @ $fallbackLLMKitService ];
+        provider = ConfirmBy[ info[ "currentProvider" ], StringQ, "Provider" ];
         service = ConfirmBy[ $llmKitPrefix <> provider, StringQ, "Service" ];
         If[ TrueQ @ $mxFlag,
             service, (* Never cache result if building MX file *)
