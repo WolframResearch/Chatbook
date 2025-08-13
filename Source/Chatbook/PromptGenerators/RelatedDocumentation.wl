@@ -446,7 +446,7 @@ filterSnippets[
 filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] := Enclose[
     Catch @ Module[
         {
-            results, inserted, transcript, xml,
+            results, inserted, transcript, xml, ids,
             instructions, response, uriToSnippet, uris, selected, pages
         },
 
@@ -456,13 +456,15 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
+        ids = ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
                 <|
                     "FilteredCount" -> filterCount,
                     "Snippets"      -> StringRiffle[ xml, "\n\n" ],
-                    "Transcript"    -> transcript
+                    "Transcript"    -> transcript,
+                    "SnippetIDs"    -> StringRiffle[ ids, "\n" ]
                 |>
             ],
             StringQ,
@@ -613,7 +615,10 @@ Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or
 If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
 A snippet does not need to exactly answer the user's message in full in order to be relevant.
-Respond only in the specified format and do not include any other text.\
+Respond only in the specified format and do not include any other text.
+
+Reminder: These are the available snippet IDs:
+%%SnippetIDs%%\
 ", Delimiters -> "%%" ];
 
 
