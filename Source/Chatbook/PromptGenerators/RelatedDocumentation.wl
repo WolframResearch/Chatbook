@@ -232,7 +232,7 @@ RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer, opts: Op
     ];
 
 RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[
+    catchMine @ withChatState @ Block[
         {
             $rerankMethod = Replace[
                 OptionValue[ "RerankMethod" ],
