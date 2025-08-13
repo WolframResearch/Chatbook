@@ -166,16 +166,14 @@ llmSynthesizeSubmit // endDefinition;
 resolveLLMConfiguration // beginDefinition;
 
 resolveLLMConfiguration[ evaluator_Association ] := Enclose[
-    ConfirmBy[
-        mergeChatSettings @ {
-            $defaultLLMSynthesizeEvaluator,
-            evaluator /. {
-                Verbatim[ Verbatim ][ value_ ] :> value,
-                Automatic -> Inherited
-            }
-        },
-        AssociationQ,
-        "Result"
+    Module[ { config },
+        config = KeyMap[ ToString, evaluator /. { Verbatim[ Verbatim ][ value_ ] :> value, Automatic -> Inherited } ];
+        If[ $chatState && Lookup[ config, "Authentication", "LLMKit" ] =!= "LLMKit", $llmKit = False ];
+        ConfirmBy[
+            mergeChatSettings @ { $defaultLLMSynthesizeEvaluator, config },
+            AssociationQ,
+            "Result"
+        ]
     ],
     throwInternalFailure
 ];

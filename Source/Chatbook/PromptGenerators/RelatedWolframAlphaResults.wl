@@ -111,7 +111,7 @@ RelatedWolframAlphaResults[ prompt_, property_, Automatic, opts: OptionsPattern[
 (* ::Subsubsection::Closed:: *)
 (*Prompt*)
 RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[
+    catchMine @ withChatState @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
@@ -159,7 +159,7 @@ RelatedWolframAlphaResults[ prompt_, "Content", n_Integer, opts: OptionsPattern[
 (* ::Subsubsection::Closed:: *)
 (*FullData*)
 RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[
+    catchMine @ withChatState @ Block[
         {
             $cacheResults = TrueQ @ OptionValue[ "CacheResults" ],
             $wolframAlphaDebug = TrueQ @ OptionValue[ "Debug" ],
