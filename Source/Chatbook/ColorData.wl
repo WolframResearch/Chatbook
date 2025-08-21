@@ -2383,6 +2383,20 @@ Dispatch[{
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> ""
 	|>,
+	"WolframAlphaTool_Blue" -> <|
+		 "Light"  -> RGBColor[0.4039215, 0.5568627, 0.6117647],
+		 "Dark"   -> RGBColor[0.5960784, 0.7803921, 0.8392156],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"WolframAlphaToolPodFrame" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.3137],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"WorkspaceDefaultUserIconBackground_1" -> <|
 		 "Light"  -> RGBColor[0.8392156, 0.9215686, 0.9647058],
 		 "Dark"   -> RGBColor[0.145098, 0.2352941, 0.3294117],
