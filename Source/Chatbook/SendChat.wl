@@ -998,7 +998,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
-        ]
+        ] // dropModelUnsupportedParameters[ as ]
     ];
 
 makeLLMConfiguration[ as_Association ] :=
@@ -1007,7 +1007,7 @@ makeLLMConfiguration[ as_Association ] :=
         DeleteMissing @ Association[
             KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
             "StopTokens" -> makeStopTokens @ as
-        ]
+        ] // dropModelUnsupportedParameters[ as ]
     ];
 
 makeLLMConfiguration // endDefinition;

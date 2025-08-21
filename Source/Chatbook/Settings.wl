@@ -263,7 +263,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
-    "Temperature"                -> 1,
+    "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
@@ -388,6 +388,39 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
         ];
 
 autoModelSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dropModelUnsupportedParameters*)
+dropModelUnsupportedParameters // beginDefinition;
+
+dropModelUnsupportedParameters[ as_Association ] :=
+    With[ { model = as[ "Model" ] },
+        LogChatTiming @ dropModelUnsupportedParameters[ model, # ] &
+    ];
+
+dropModelUnsupportedParameters[ model_Association, config_Association ] := Enclose[
+    Module[ { drop },
+        drop = ConfirmMatch[ modelUnsupportedParameters[ model, config ], { ___String }, "Drop" ];
+        KeyDrop[ config, drop ]
+    ],
+    throwInternalFailure
+];
+
+dropModelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelUnsupportedParameters*)
+modelUnsupportedParameters // beginDefinition;
+
+modelUnsupportedParameters[ as_, keys: { ___String } ] :=
+    Select[ keys, autoModelSetting[ as, # ] === Missing[ "NotSupported" ] & ];
+
+modelUnsupportedParameters[ as_, config_Association ] :=
+    modelUnsupportedParameters[ as, Keys @ config ];
+
+modelUnsupportedParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

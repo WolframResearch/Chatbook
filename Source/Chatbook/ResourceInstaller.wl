@@ -292,7 +292,28 @@ ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Encl
     Module[ { url },
 
         url = ConfirmMatch[
-            DefinitionNotebookClient`FancyInputString[ "Prompt", tr[ "ResourceInstallerFromURLPrompt" ] ], (* FIXME: needs custom dialog *)
+            DialogInput[
+                {
+                    ExpressionCell[
+                        Style[ tr @ "ResourceInstallerFromURLPrompt", "DialogHeader" ],
+                        "DialogHeader",
+                        CellMargins -> Inherited ],
+                    ExpressionCell[ "", "DialogDelimiter", CellMargins -> Inherited],
+                    ExpressionCell[
+                        InputField[ Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "URL" } ], String, ImageSize -> Scaled[ 1. ] ],
+                        "DialogBody",
+                        CellMargins -> Inherited ],
+                    ExpressionCell[ "", "DialogDelimiter", CellMargins -> Inherited ],
+                    ExpressionCell[
+                        Pane[
+                            ChoiceButtons[ { DialogReturn @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "URL" } ], DialogReturn @ $Canceled } ],
+                            FrameMargins -> { { 0, 0 }, { 3, 0 } } ],
+                        "DialogFooter",
+                        CellMargins -> { { Inherited, Inherited }, { Inherited, 4 } },
+                        TextAlignment -> Right ]
+                },
+                WindowSize -> { 500, All }
+            ],
             _String|$Canceled,
             "InputString"
         ];
