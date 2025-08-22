@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Symbols defined in this file*)
+`$mxFlag;
 `$closedChatCellOptions;
 `$cloudNotebooks;
 `$debug;
@@ -29,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$serviceCaller;
 `$$cloudObject;
 `$$optionsSequence;
 `$$size;

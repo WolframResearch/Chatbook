@@ -25,7 +25,7 @@ $vectorDatabases = <| |>;
 (* ::Subsubsection::Closed:: *)
 (*DataRepositoryURIs*)
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -35,7 +35,7 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*DocumentationURIs*)
 $vectorDatabases[ "DocumentationURIs" ] = <|
-    "Version"         :> If[ $VersionNumber >= 14.2, "1.4.0", "1.3.0" ],
+    "Version"         :> If[ $VersionNumber >= 14.3, "1.5.0", "1.4.0" ],
     "Bias"            -> 0.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -122,7 +122,7 @@ getEntityValueSnippets // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*FunctionRepositoryURIs*)
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getSnippets,
     "Instructions"    -> None
@@ -132,7 +132,7 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*NeuralNetRepositoryURIs*)
 $vectorDatabases[ "NeuralNetRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getNeuralNetRepositorySnippets,
     "Instructions"    -> None
@@ -153,7 +153,7 @@ IMPORTANT: Always use PacletSymbol to reference symbols from paclets in the pacl
 (anything from https://paclets.com).";
 
 $vectorDatabases[ "PacletRepositoryURIs" ] = <|
-    "Version"         -> "1.0.0",
+    "Version"         -> "1.1.0",
     "Bias"            -> 2.0,
     "SnippetFunction" -> getPacletRepositorySnippets,
     "Instructions"    -> { URL[ "paclet:ref/PacletSymbol#1" ], $pacletRepositoryInstructions }
@@ -170,7 +170,7 @@ getPacletRepositorySnippets // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*SourceSelector*)
 $vectorDatabases[ "SourceSelector" ] = <|
-    "Version"         -> "1.2.0",
+    "Version"         -> "1.3.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> Identity,
     "Instructions"    -> None
@@ -241,8 +241,10 @@ makeDownloadURL // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory[ "VectorDatabases" ];
+$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $versionString };
 $cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
+
+$versionString := StringReplace[ ToString @ $VersionNumber, { "."~~EndOfString :> "-0", "." -> "-" } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -601,6 +603,11 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
         cleanupLegacyVectorDBFiles @ dir;
+
+        (* Try unpacking any zip files that might be left over from previous install attempts: *)
+        Quiet @ catchAlways @ tryUnpackingVectorDatabases @ dir;
+
+        (* Download any remaining vector databases: *)
         names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
         urls  = KeyTake[ urls0, names ];
 
@@ -675,6 +682,26 @@ getDownloadSize[ obj_, $Failed ] := throwFailureToChatOutput @ Failure[
 ];
 
 getDownloadSize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryUnpackingVectorDatabases*)
+tryUnpackingVectorDatabases // beginDefinition;
+tryUnpackingVectorDatabases[ dir_? DirectoryQ ] := Scan[ tryUnpackingVectorDatabase, FileNames[ "*.zip", dir ] ];
+tryUnpackingVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryUnpackingVectorDatabase*)
+tryUnpackingVectorDatabase // beginDefinition;
+
+tryUnpackingVectorDatabase[ zip_? FileExistsQ ] :=
+    Quiet @ With[ { res = catchAlways @ unpackVectorDatabase @ zip },
+        If[ FailureQ @ res, DeleteFile @ zip ];
+        res
+    ];
+
+tryUnpackingVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -996,7 +1023,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
     Catch @ Module[
         {
-            messages,
+            messages, lastMessage,
             conversationString, lastMessageString, selectionString,
             conversationResults, lastMessageResults, selectionResults,
             combined, n, merged
@@ -1011,6 +1038,12 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
 
         If[ messages === { }, Throw @ { } ];
 
+        lastMessage = ConfirmMatch[
+            FirstCase[ Reverse @ messages, KeyValuePattern[ "Role" -> "User" ] ],
+            $$chatMessage,
+            "LastMessage"
+        ];
+
         conversationString = ConfirmBy[
             preprocessEmbeddingString @ getSmallContextString[
                 messages,
@@ -1022,7 +1055,7 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
 
         lastMessageString = ConfirmBy[
             preprocessEmbeddingString @ getSmallContextString[
-                { Last @ messages },
+                { lastMessage },
                 "IncludeSystemMessage"  -> True,
                 "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
             ],
