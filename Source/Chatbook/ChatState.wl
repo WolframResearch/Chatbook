@@ -8,6 +8,51 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Error Messages*)
+Chatbook::InvalidServiceCaller = "Invalid value for option `ServiceCaller`: `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatEvaluationBlock*)
+ChatEvaluationBlock // beginDefinition;
+ChatEvaluationBlock // Attributes = { HoldFirst };
+ChatEvaluationBlock // Options = { "ServiceCaller" -> None };
+
+ChatEvaluationBlock[ eval_, opts: OptionsPattern[ ] ] :=
+    catchMine @ ChatEvaluationBlock[ eval, <| |>, opts ];
+
+ChatEvaluationBlock[ eval_, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ Block[ { $chatEvaluationBlock = True },
+        chatEvaluationBlock[ eval, settings, OptionValue[ "ServiceCaller" ] ]
+    ];
+
+ChatEvaluationBlock // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluationBlock*)
+chatEvaluationBlock // beginDefinition;
+chatEvaluationBlock // Attributes = { HoldFirst };
+
+chatEvaluationBlock[ eval_, settings_Association, caller: $$serviceCaller ] :=
+    setServiceCaller[
+        chatEvaluationBlock[ eval, settings, None ],
+        caller
+    ];
+
+chatEvaluationBlock[ eval_, settings_Association, None ] :=
+    withChatState[
+        resolveAutoSettings @ mergeChatSettings @ { $defaultChatSettings, settings };
+        eval
+    ];
+
+chatEvaluationBlock[ eval_, settings_, caller_ ] :=
+    throwFailure[ "InvalidServiceCaller", caller ];
+
+chatEvaluationBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Chat State Evaluation Wrappers*)
 
 (* ::**************************************************************************************************************:: *)
