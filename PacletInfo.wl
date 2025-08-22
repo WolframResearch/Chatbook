@@ -46,6 +46,7 @@ PacletObject[ <|
         },
         { "LLMConfiguration",
             "Personas" -> {
+                "AgentOne",
                 "PlainChat",
                 "CodeAssistant",
                 "CodeWriter",
