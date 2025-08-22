@@ -1023,7 +1023,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
     Catch @ Module[
         {
-            messages,
+            messages, lastMessage,
             conversationString, lastMessageString, selectionString,
             conversationResults, lastMessageResults, selectionResults,
             combined, n, merged
@@ -1038,6 +1038,12 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
 
         If[ messages === { }, Throw @ { } ];
 
+        lastMessage = ConfirmMatch[
+            FirstCase[ Reverse @ messages, KeyValuePattern[ "Role" -> "User" ] ],
+            $$chatMessage,
+            "LastMessage"
+        ];
+
         conversationString = ConfirmBy[
             preprocessEmbeddingString @ getSmallContextString[
                 messages,
@@ -1049,7 +1055,7 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
 
         lastMessageString = ConfirmBy[
             preprocessEmbeddingString @ getSmallContextString[
-                { Last @ messages },
+                { lastMessage },
                 "IncludeSystemMessage"  -> True,
                 "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
             ],
