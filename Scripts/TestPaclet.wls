@@ -18,7 +18,7 @@ If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
     GeneralUtilities`$DebugMode = True;
     ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ];
     If[ FileExistsQ @ $ccsTests,
-        cicd`ConsoleLog[ "Skipping CurrentChatSettings.wlt" ];
+        Wolfram`PacletCICD`ConsoleLog[ "Skipping CurrentChatSettings.wlt" ];
         RenameFile[ $ccsTests, $ccsTests <> ".skipped" ]
     ];
     SetOptions[
