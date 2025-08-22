@@ -63,7 +63,7 @@ chatEvaluateHeadless[ messages0_, settings_? AssociationQ ] := Enclose[
         Module[ { messages, as, container },
             messages = ConfirmMatch[ ensureChatMessages @ messages0, $$chatMessages, "Messages" ];
             as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ];
-            waitForLastTask @ $CurrentChatSettings;
+            catchAlways @ waitForLastTask @ $CurrentChatSettings;
             container = ConfirmBy[ as[ "Container" ], AssociationQ, "Container" ];
             StringTrim @ ConfirmBy[ container[ "FullContent" ], StringQ, "ResultString" ]
         ],
@@ -266,7 +266,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
 
-        If[ task === $Canceled, StopChat @ cellObject ];
+        If[ task === $Canceled, throwTop @ StopChat @ cellObject ];
 
         task
     ],
@@ -1694,7 +1694,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         applyHandlerFunction[ settings, "ToolResponseReceived", <| "ToolResponse" -> toolResponse |> ];
 
-        If[ ! sendToolResponseQ[ settings, toolResponse ], StopChat @ cell ];
+        If[ ! sendToolResponseQ[ settings, toolResponse ], throwTop @ StopChat @ cell ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
 
@@ -1705,7 +1705,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
 
-        If[ task === $Canceled, StopChat @ cell ];
+        If[ task === $Canceled, throwTop @ StopChat @ cell ];
 
         task
     ] // LogChatTiming[ "ToolEvaluation" ],
