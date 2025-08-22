@@ -17,10 +17,6 @@ $ccsTests        = FileNameJoin @ { $testDir, "CurrentChatSettings.wlt" };
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
     GeneralUtilities`$DebugMode = True;
     ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ];
-    If[ FileExistsQ @ $ccsTests,
-        Wolfram`PacletCICD`ConsoleLog[ "Skipping CurrentChatSettings.wlt" ];
-        RenameFile[ $ccsTests, $ccsTests <> ".skipped" ]
-    ];
     SetOptions[
         TestReport,
         HandlerFunctions -> <| "TestCreated" -> Function[ Print[ "Test Created: ", #[ "TestObject" ][ "TestID" ] ] ] |>,
