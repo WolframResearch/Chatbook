@@ -19,7 +19,7 @@ If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
     ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ];
     SetOptions[
         TestReport,
-        HandlerFunctions -> <| "TestCreated" -> Function[ Print[ "Test Created: ", #[ "TestObject" ][ "TestID" ] ] ] |>,
+        HandlerFunctions -> <| "TestCreated" -> Function @ Print[ "\tTesting: ", #[ "TestObject" ][ "TestID" ] ] |>,
         HandlerFunctionsKeys -> { "TestObject" }
     ]
 ];
