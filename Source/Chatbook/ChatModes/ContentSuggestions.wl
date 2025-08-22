@@ -1388,6 +1388,7 @@ suggestionServiceExecute // beginDefinition;
 suggestionServiceExecute[ service_, args___ ] := Enclose[
     Module[ { auth, result, cleanup },
         auth = $suggestionsAuthentication;
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
 
         result = Quiet[
             ServiceExecute[ service, args, Authentication -> auth ],

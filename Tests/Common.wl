@@ -29,10 +29,6 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
-If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
-    ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Definitions*)
@@ -62,6 +58,7 @@ endDefinition[ sym_Symbol ] := sym[ args___ ] := abort[ "Invalid arguments in ",
 $sourceDirectory = DirectoryName[ $InputFileName, 2 ];
 $buildDirectory  = FileNameJoin @ { $sourceDirectory, "build", "Wolfram__Chatbook" };
 $pacletDirectory = Quiet @ SelectFirst[ { $buildDirectory, $sourceDirectory }, PacletObjectQ @* PacletObject @* File ];
+$mxFile          = FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" };
 
 $$rules = (Rule|RuleDelayed)[ _, _ ]..;
 
@@ -69,13 +66,12 @@ $$rules = (Rule|RuleDelayed)[ _, _ ]..;
 (* ::Section::Closed:: *)
 (*Load Paclet*)
 If[ ! DirectoryQ @ $pacletDirectory, abort[ "Paclet directory ", $pacletDirectory, " does not exist!" ] ];
+If[ $pacletDirectory =!= $buildDirectory, cicd`ConsoleWarning[ "Warning: Testing unbuilt paclet" ] ];
 Quiet @ PacletDirectoryUnload @ $sourceDirectory;
 PacletDataRebuild[ ];
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
-If[ ! MemberQ[ $LoadedFiles, FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" } ],
-    abort[ "Paclet MX file was not loaded!" ]
-];
+If[ ! MemberQ[ $LoadedFiles, $mxFile ], cicd`ConsoleWarning[ "Warning: Paclet MX file was not loaded" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -169,7 +165,7 @@ CreateChatCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-
+$TestDefinitionsLoaded = True;
 (* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];

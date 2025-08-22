@@ -40,7 +40,9 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$WorkspaceChatInput;
 `AbsoluteCurrentChatSettings;
 `AddChatToSearchIndex;
+`AgentEvaluate;
 `AppendURIInstructions;
+`AugmentChatMessages;
 `BasePrompt;
 `CachedBoxes;
 `CellToChatMessage;
@@ -49,6 +51,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ChatbookAction;
 `ChatbookFilesDirectory;
 `ChatCellEvaluate;
+`ChatEvaluationBlock;
 `ChatMessageToCell;
 `ConvertChatNotebook;
 `CreateChatDrivenNotebook;
@@ -219,7 +222,9 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
     "AddChatToSearchIndex",
+    "AgentEvaluate",
     "AppendURIInstructions",
+    "AugmentChatMessages",
     "BasePrompt",
     "CachedBoxes",
     "CellToChatMessage",
@@ -228,6 +233,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "ChatbookAction",
     "ChatbookFilesDirectory",
     "ChatCellEvaluate",
+    "ChatEvaluationBlock",
     "ChatMessageToCell",
     "ConvertChatNotebook",
     "CreateChatDrivenNotebook",

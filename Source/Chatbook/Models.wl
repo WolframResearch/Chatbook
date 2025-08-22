@@ -411,7 +411,9 @@ chooseModelFamily[ as_Association ] :=
                     {
                         Except[ WordCharacter ],
                         "Mini",
+                        "Nano",
                         "Turbo",
+                        "Pro",
                         DigitCharacter..~~"k"~~EndOfString,
                         "00"~~DigitCharacter~~EndOfString,
                         "Nightly"~~EndOfString,

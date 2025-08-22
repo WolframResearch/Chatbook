@@ -746,6 +746,9 @@ StopChat[ cell0_CellObject ] := Enclose[
     throwInternalFailure
 ];
 
+StopChat[ None ] :=
+    removeTask @ $lastTask;
+
 StopChat[ $Failed ] :=
     With[ { cell = rootEvaluationCell[ ] },
         If[ MatchQ[ cell, _CellObject ], StopChat @ cell ]
