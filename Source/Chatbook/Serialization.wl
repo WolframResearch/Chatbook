@@ -397,7 +397,7 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
         ,
         Cell[ __, "NotesThumbnails", ___ ]
         ,
-        Cell[ __, "TutorialJumpBox", ___ ]
+        Cell[ __, "TechNoteJumpBox"|"TutorialJumpBox", ___ ]
         ,
         Cell[ __, $$ignoredCellStyle, ___ ]
     ]
@@ -975,8 +975,10 @@ $$titleStyle = Alternatives[
     "HowToTitle",
     "ObjectName",
     "ObjectNameAlt",
+    "TechNoteTitle",
     "Title",
-    "TOCDocumentTitle"
+    "TOCDocumentTitle",
+    "TutorialTitle"
 ];
 
 $$sectionStyle = Alternatives[
@@ -1012,6 +1014,7 @@ $$sectionStyle = Alternatives[
     "ProgramSection",
     "Section",
     "Subtitle",
+    "TechNoteSection",
     "TechNotesSection",
     "WorkflowHeader",
     "WorkflowNotesSection"
@@ -1148,8 +1151,15 @@ $$realString = With[ { d1 = DigitCharacter.., d2 = DigitCharacter... },
 ];
 
 boxToString[ s_String? (StringMatchQ[ $$realString ]) ] :=
-    With[ { held = Quiet @ ToExpression[ s, InputForm, HoldComplete ] },
-        ToString[ ReleaseHold @ held, OutputForm ] /; MatchQ[ held, HoldComplete[ _Real ] ]
+    Catch @ Module[ { held, number, res },
+        held = Quiet @ ToExpression[ s, InputForm, HoldComplete ];
+        If[ ! MatchQ[ held, HoldComplete[ _Real ] ], Throw @ s ];
+        number = ReleaseHold @ held;
+        res = ToString[ number, OutputForm ];
+        If[ StringContainsQ[ res, "\n" ],
+            ToString[ number, InputForm ],
+            res
+        ]
     ];
 
 (* Long name characters: *)
@@ -2222,13 +2232,15 @@ gridFlatten // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Tables*)
-boxToString[ GridBox[ { { box_ } }, ___ ] ] :=
+$simplifyTables = True;
+
+boxToString[ GridBox[ { { box_ } }, ___ ] ] /; $simplifyTables :=
     boxToString @ box;
 
-boxToString[ GridBox[ { row: { ___ } }, ___ ] ] :=
+boxToString[ GridBox[ { row: { ___ } }, ___ ] ] /; $simplifyTables :=
     boxToString @ RowBox @ Riffle[ row, "\t" ];
 
-boxToString[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] :=
+boxToString[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] /; $simplifyTables :=
     StringRiffle[ boxToString /@ items, "\n" ];
 
 (* Columns combined via row: *)
@@ -2515,8 +2527,8 @@ boxToString[ Cell[ a_, "InlineGuideFunctionListing", ___ ] ] :=
                 Except[ "\n" ]..,
                 EndOfLine
             ] :> StringRiffle[
-                DeleteCases[ StringTrim @ StringSplit[ inline, "\[FilledVerySmallSquare]" ], "" ],
-                " \[FilledVerySmallSquare] "
+                "* " <> # & /@ StringSplit[ inline, Whitespace~~"\[FilledVerySmallSquare]"~~Whitespace ],
+                "\n"
             ]
         ] /; StringQ @ str
     ];
@@ -2585,6 +2597,18 @@ docUsageString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
+(*Tutorial Pages*)
+boxToString[ Cell[ boxes_, "TechNoteCaption", ___ ] ] :=
+    "*" <> StringTrim @ boxToString @ boxes <> "*";
+
+boxToString[ Cell[ boxes_, "TechNoteTableText", ___ ] ] :=
+    StringDelete[ boxToString @ boxes, StartOfString~~("\[FilledSmallSquare]"|WhitespaceCharacter).. ];
+
+boxToString[ Cell[ boxes_, "DefinitionBox", ___ ] ] :=
+    Block[ { $simplifyTables = False }, boxToString @ boxes ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
 (*SeeAlso*)
 boxToString[
     Cell[ __, "SeeAlsoSection", ___, TaggingRules -> KeyValuePattern[ "SeeAlsoGrid" -> grid_ ], ___ ]
@@ -2616,10 +2640,10 @@ seeAlsoSection // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
 (*Related Links / More About*)
-$$relatedGuideSection     = "MoreAboutSection"|"GuideMoreAboutSection"|"FeaturedExampleMoreAboutSection";
+$$relatedGuideSection     = "MoreAboutSection"|"GuideMoreAboutSection"|"FeaturedExampleMoreAboutSection"|"TutorialMoreAboutSection";
 $$relatedWorkflowsSection = "RelatedWorkflowsSection"|"GuideRelatedWorkflowsSection"|"GuideWorkflowGuidesSection";
 $$relatedTutorialSection  = "TutorialsSection"|"GuideTutorialsSection"|"RelatedTutorialsSection";
-$$relatedLinksSection     = "RelatedLinksSection"|"GuideRelatedLinksSection";
+$$relatedLinksSection     = "RelatedLinksSection"|"GuideRelatedLinksSection"|"TutorialRelatedLinksSection";
 
 boxToString[ Cell[ grid_, $$relatedGuideSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedGuideSection, "Related Guides" ];
