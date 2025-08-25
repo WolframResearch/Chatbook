@@ -34,13 +34,23 @@ Begin[ "`Private`" ];
 
 $FixRecursionLimit=10;
 
-CodeCheckFix[code_String]:= (
+(*Possible targets*)
+$AssistantPattern="Assistant";
+$EvaluatorPattern="Evaluator";
+
+Options[CodeCheckFix] = {"Target"->$AssistantPattern}
+
+CodeCheckFix[code_String, OptionsPattern[]]:= (
 	Needs[ "CodeInspector`" -> None ];
 	Needs[ "CodeParser`" -> None ];
-	CodeCheck[code] // { #
-						,Block[{niter=0,recursionLimit=$FixRecursionLimit},CodeFix[code,#]]
-						,"OriginalCode"->code
-						}&
+	Block[{niter=0, recursionLimit=$FixRecursionLimit, $target=OptionValue["Target"]},
+	CodeCheck[$target][code] // {#
+								,
+								CodeFix[$target][code,#]
+								,
+								"OriginalCode"->code
+								}&
+	]
 	// Association
 )
 
@@ -60,7 +70,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 						};
 
 
-CodeCheck[code_String, OptionsPattern[]]:=
+CodeCheck[target_][code_String, OptionsPattern[]]:=
 	(
 		 CodeInspect[code, Sequence@@Options[CodeCheck]]
 		 //
@@ -96,21 +106,21 @@ ruleCodeInspectSeverityToLevel={"Fatal"->4,"Error"->3,"Warning"->2,"Remark"->1,"
 
 (* CodeFix[code_String]:=CodeFix[code, CodeCheck[code]] *)
 
-CodeFix[
+CodeFix[target_][
 		code_String
 		,kvCI:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->_}]
 		,params_:<||>
 		]:=
-		CodeFix[{}, fixPattern[code, generatePatternFromCodeCheck[kvCI]]]
+		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]]]
 
-CodeFix[
+CodeFix[target_][
 		code_String
 		,kvCI:KeyValuePattern[{"ErrorsDetected"->False}]
 		,params_:<||>
 		]:= {"FixedCode"->Missing["No errors detected"]}
 
 
-CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
+CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
 	With[{merged=mergeFixes[kvFixPrev, kvFixNew]},
 		If[	MatchQ[	kvFixNew	,Alternatives[	 KeyValuePattern[{"Success"->False}]
 												,KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]
@@ -119,12 +129,12 @@ CodeFix[kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
 			,
 			merged
 			,
-			generatePatternFromCodeCheck@CodeCheck[merged["FixedCode"]]
+			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]]
 			//	If[	 niter > recursionLimit
 					,
 					{merged, "Success"->False, "RecursionLimitExceeded"->True}
 					,
-					If[#==={}, merged, (niter++; CodeFix[merged, fixPattern[merged["FixedCode"],#]])]
+					If[#==={}, merged, (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
 				]&
 		]
 	]
@@ -134,7 +144,7 @@ generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeIn
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
 
-lengthErrors[code_]:=CodeCheck[code]//generatePatternFromCodeCheck//Length
+lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
 lengthErrors[f_Failure]:=f
 
 
@@ -156,13 +166,13 @@ mergeFixes[prevFix_, newFix_] :=
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
 $patternErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..}
-fixPattern[code_String, pat:$patternErrorCommaFatalExpectedOperand]:=
+fixPattern[target_][code_String, pat:$patternErrorCommaFatalExpectedOperand]:=
 	(* try fix the error comma first*)
-		fixPattern[code, Cases[pat, {"Error", "Comma"}], (*ignore:*){"Fatal", "ExpectedOperand"}]
+		fixPattern[target][code, Cases[pat, {"Error", "Comma"}], (*ignore:*){"Fatal", "ExpectedOperand"}]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternErrorComma={{"Error","Comma"}..};
-fixPattern[code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
+fixPattern[target_][code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 	Module[
 			{fixedCode, success=False, lenPatLeft, falsePositive=Missing[], safe=Missing[], totalFixes=0}
 			,
@@ -237,7 +247,7 @@ replaceCommaComments[code_]:=	(
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
-fixPattern[code_String, pat:$patternFatalExpectedOperand, patToIgnore_:{}]:=
+fixPattern[target_][code_String, pat:$patternFatalExpectedOperand, patToIgnore_:{}]:=
 	Module[
 			{
 			 fixedCode=Missing["Expected Operand (no place holder(s) detected)"]
@@ -275,7 +285,7 @@ patExtraOperandEllipsisComment=
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalExpectedOperandFatalOpenSquare={{"Error", "ImplicitTimesFunction"}...,{"Fatal", "ExpectedOperand"}.., {"Fatal", "OpenSquare"}..};
 
-fixPattern[code_String, pat:$patternFatalExpectedOperandFatalOpenSquare, patToIgnore_:{}]:=
+fixPattern[target_][code_String, pat:$patternFatalExpectedOperandFatalOpenSquare, patToIgnore_:{}]:=
 	Module[
 			{fixedCode=Missing[], success=False, falsePositive=Missing[], safe=Missing[], totalFixes=Missing[]}
 			,
@@ -300,7 +310,7 @@ fixPattern[code_String, pat:$patternFatalExpectedOperandFatalOpenSquare, patToIg
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalGroupMissingCloserFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}, ___, {"Fatal", "UnexpectedCloser"}, ___};
 
-fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}] :=
+fixPattern[target_][code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}] :=
  	Module[	{
    			  ccp = CodeConcreteParse[code, SourceConvention -> "SourceCharacterIndex"]
    			, allGMCpos
@@ -365,10 +375,85 @@ fixPattern[code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedClos
    			} // Association
 	]
 
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$patternFatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
+
+fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] :=
+	Module[
+			{
+			 fixedCode=Missing[]
+			,falsePositive=Missing[]
+			,safe=Missing[]
+			,success=False
+			,ccp
+			,errorNode
+			}
+			,
+			ccp=code // CodeConcreteParse
+			;
+			errorNode = Cases[ccp, f_[___, Token`Error`UnexpectedCloser, ___], Infinity]
+						// If[MatchQ[#,{__}], First@#, {}]&
+			;
+			If[errorNode==={}
+				, success=False;
+				, fixedCode= ReplaceAll[code // CodeConcreteParse, errorNode -> Sequence[]] // ToSourceCharacterString
+				  ;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{errorNode[[2]], ""}}]]
+				  ;If[success, safe=True; falsePositive=False;]
+			]
+			;
+			{ "Success" -> success
+   			, "TotalFixes" -> If[success, 1, 0]
+   			, "LikelyFalsePositive" -> falsePositive
+   			, "SafeToEvaluate" -> safe
+   			, "FixedPattern" -> pat
+   			, "FixedCode" -> fixedCode
+   			} // Association
+	]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$patternFatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
+
+fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser, patToIgnore_ : {}] :=
+	Module[
+			{
+			 fixedCode=Missing[]
+			,falsePositive=Missing[]
+			,safe=Missing[]
+			,success=False
+			,ccp
+			,gmc
+			,closingBracket
+			}
+			,
+				ccp=code // CodeConcreteParse
+				;
+				gmc = Cases[ccp, _GroupMissingCloserNode, Infinity]
+							// If[MatchQ[#,{__}], First@#, {}]&
+				;
+				If[gmc==={}
+					, success=False;
+					, If[Echo[gmc[[-1, 1, 2]]] === Echo[CodeTokenize[code][[-1,-1, 1, 2]]]
+						,	closingBracket=gmc[[1]]/. {GroupSquare -> "]", GroupParen -> ")", List -> "}"}
+							;fixedCode=code<>closingBracket
+							;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{"",closingBracket}}]]
+							;If[success,safe=True; falsePositive=False; ]
+						,	fixedCode=Missing["Unhandled subcase"]
+							;success=False
+					];
+				]
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> falsePositive
+			, "SafeToEvaluate" -> safe
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Association
+	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
-fixPattern[_String, pat_]:=
+fixPattern[target_][_String, pat_]:=
 							{ "Success" -> False
 							, "TotalFixes" -> 0
 							, "LikelyFalsePositive" -> False
@@ -387,7 +472,7 @@ fixPattern[_String, pat_]:=
 (* ::Section::Closed:: *)
 (*End Private*)
 
-
+ifn = $InputFileName
 End[ ];
 
 
