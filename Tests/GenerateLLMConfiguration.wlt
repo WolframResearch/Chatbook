@@ -69,9 +69,8 @@ VerificationTest[
         GenerateLLMConfiguration[ "NotebookAssistant", <| "Tools" -> { "WebSearcher" } |> ][ "Tools" ]
     ],
     { "WebSearcher" },
-    False,
     SameTest -> MatchQ,
-    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:66,1-75,2"
+    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:66,1-74,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -81,21 +80,21 @@ VerificationTest[
     model = GenerateLLMConfiguration[ "NotebookAssistant" ][ "Model" ],
     KeyValuePattern[ "Authentication" -> "LLMKit" ],
     SameTest -> MatchQ,
-    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:80,1-85,2"
+    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:79,1-84,2"
 ]
 
 VerificationTest[
     model[ "Service" ],
-    _String? (StringStartsQ[ "LLMKit" ]),
+    If[ $VersionNumber >= 14.3, _String? (StringStartsQ[ "LLMKit" ]), _String ],
     SameTest -> MatchQ,
-    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:87,1-92,2"
+    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:86,1-91,2"
 ]
 
 VerificationTest[
     model[ "Name" ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:94,1-99,2"
+    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:93,1-98,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -106,5 +105,5 @@ VerificationTest[
     Failure[ "GenerateLLMConfiguration::PersonaNotFound", _ ],
     { GenerateLLMConfiguration::PersonaNotFound },
     SameTest -> MatchQ,
-    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:104,1-110,2"
+    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:103,1-109,2"
 ]
