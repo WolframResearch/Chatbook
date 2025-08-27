@@ -364,6 +364,12 @@ formatToolCallExample[ name_String, params_Association, "Simple" ] := Enclose[
     throwInternalFailure
 ];
 
+formatToolCallExample[ name_String, params_Association, "Service" ] :=
+    TemplateApply[
+        "TOOLCALL: `1`\n`2`",
+        { toMachineToolName @ name, Developer`WriteRawJSONString @ params }
+    ];
+
 formatToolCallExample[ name_String, params_Association, _ ] :=
     TemplateApply[
         "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
