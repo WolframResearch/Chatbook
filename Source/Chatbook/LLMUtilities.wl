@@ -3,8 +3,9 @@
 BeginPackage[ "Wolfram`Chatbook`LLMUtilities`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -16,6 +17,16 @@ $defaultLLMSynthesizeEvaluator :=
         <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4.1-nano" |> |>,
         <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-nano" |> |>
     ];
+
+$defaultConfigPersona = "NotebookAssistant";
+
+$defaultConfigSettings = <|
+    "LLMEvaluator"        -> $defaultConfigPersona,
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
+    "ToolPrePrompt"       -> "",
+    "ToolListingPrompt"   -> "",
+    "ToolPostPrompt"      -> ""
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -422,6 +433,117 @@ apiFailureQ // beginDefinition;
 apiFailureQ[ Failure[ "APIError", KeyValuePattern[ "StatusCode" -> Except[ 100|200, _Integer ] ] ] ] := True;
 apiFailureQ[ _ ] := False;
 apiFailureQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GenerateLLMConfiguration*)
+GenerateLLMConfiguration // beginDefinition;
+
+GenerateLLMConfiguration[ ] :=
+    catchMine @ GenerateLLMConfiguration @ Automatic;
+
+GenerateLLMConfiguration[ name: _String|Automatic ] :=
+    catchMine @ GenerateLLMConfiguration[ name, <| |> ];
+
+GenerateLLMConfiguration[ name: _String|Automatic, opts_? AssociationQ ] :=
+    catchMine @ generateLLMConfiguration[ getConfigName @ name, opts ];
+
+GenerateLLMConfiguration[ settings_? AssociationQ ] :=
+    catchMine @ GenerateLLMConfiguration[ getConfigName @ settings, settings ];
+
+GenerateLLMConfiguration // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getConfigName*)
+getConfigName // beginDefinition;
+getConfigName[ KeyValuePattern[ "LLMEvaluator"|"LLMEvaluatorName" -> name_ ] ] := getConfigName @ name;
+getConfigName[ KeyValuePattern[ "LLMEvaluator" -> as_Association? AssociationQ ] ] := getConfigName @ as;
+getConfigName[ name_String ] := name;
+getConfigName[ Automatic|_Association ] := $defaultConfigPersona;
+getConfigName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*generateLLMConfiguration*)
+generateLLMConfiguration // beginDefinition;
+
+generateLLMConfiguration[ name_String, as_Association? AssociationQ ] := Enclose[
+    Module[ { persona, evaluator, settings },
+        persona = ConfirmMatch[ GetCachedPersonaData @ name, _Missing|_Association, "Persona" ];
+        If[ MissingQ @ persona, throwFailure[ "PersonaNotFound", name ] ];
+        evaluator = ConfirmBy[ mergeChatSettings @ { persona, as }, AssociationQ, "Evaluator" ];
+        settings = ConfirmBy[ <| $defaultConfigSettings, "LLMEvaluator" -> evaluator |>, AssociationQ, "Settings" ];
+        ConfirmMatch[
+            ChatEvaluationBlock[ constructLLMConfiguration[ ], settings ],
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+generateLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*constructLLMConfiguration*)
+constructLLMConfiguration // beginDefinition;
+
+constructLLMConfiguration[ ] := Enclose[
+    Module[ { settings, promptGenerators, messages0, messages, prompts, tools, config },
+
+        settings = ConfirmBy[ $CurrentChatSettings, AssociationQ, "Settings" ];
+        $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] = "Service";
+        promptGenerators = ConfirmMatch[ settings[ "PromptGenerators" ], { ___LLMPromptGenerator }, "Generators" ];
+        messages0 = ConfirmMatch[ Flatten @ { makeCurrentRole @ settings }, $$chatMessages, "Messages0" ];
+
+        messages = ConfirmMatch[
+            constructMessages[ <| settings, "PromptGenerators" -> { } |>, messages0 ],
+            $$chatMessages,
+            "Messages"
+        ] /. s_String :> RuleCondition @ StringReplace[ s, "\n/end" -> "" ];
+
+        prompts = ConfirmMatch[
+            Flatten @ { messages[[ All, "Content" ]], promptGenerators },
+            { (_String|_LLMPromptGenerator)... },
+            "Prompts"
+        ];
+
+        tools = ConfirmMatch[ addToolPostProcessing /@ settings[ "Tools" ], { ___LLMTool }, "Tools" ];
+        config = ConfirmMatch[ makeLLMConfiguration @ settings, _LLMConfiguration, "Config" ];
+
+        LLMConfiguration @ <|
+            config[ "Data" ],
+            "StopTokens" -> Automatic,
+            "Prompts"    -> prompts,
+            "Tools"      -> tools
+        |>
+    ],
+    throwInternalFailure
+];
+
+constructLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addToolPostProcessing*)
+addToolPostProcessing // beginDefinition;
+
+addToolPostProcessing[ tool_LLMTool ] :=
+    addToolPostProcessing @ tool[ "Data" ];
+
+addToolPostProcessing[ as: KeyValuePattern[ "Function" -> f_ ] ] :=
+    LLMTool @ <|
+        as,
+        "Function" -> Composition[ Replace[ KeyValuePattern[ "String" -> s_String ] :> s ], f ]
+    |>;
+
+(* Names are not resolved to LLMTools when tools are disabled: *)
+addToolPostProcessing[ _String|ParentList ] :=
+    Nothing;
+
+addToolPostProcessing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

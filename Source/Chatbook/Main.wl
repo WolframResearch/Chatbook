@@ -67,6 +67,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatWolframAlphaPods;
 `GenerateChatTitle;
 `GenerateChatTitleAsynchronous;
+`GenerateLLMConfiguration;
 `GetAttachments;
 `GetChatHistory;
 `GetExpressionURI;
@@ -249,6 +250,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "FormatWolframAlphaPods",
     "GenerateChatTitle",
     "GenerateChatTitleAsynchronous",
+    "GenerateLLMConfiguration",
     "GetAttachments",
     "GetChatHistory",
     "GetExpressionURI",
