@@ -241,6 +241,8 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             ]
         ];
 
+        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
+
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
