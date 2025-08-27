@@ -1057,23 +1057,6 @@ Join[
 			filterPersonas @ targetObj
 		]
 	],
-	ConfirmReplace[
-		containerType,
-		{
-			"Input" | "Toolbar" -> {},
-			"Delimiter" :> {
-				<| "Type" -> "Delimiter" |>,
-				<|
-					"Type"   -> "Button",
-					"Label"  -> tr @ "UIChatBlockSettings",
-					"Icon"   -> getIcon @ "ChatBlockSettingsMenuIcon",
-					"Action" :> (
-						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatBlockSettings", targetObj ];)
-				|>
-			}
-		}
-	],
 	{
 		<| "Type" -> "Delimiter" |>,
 		<|

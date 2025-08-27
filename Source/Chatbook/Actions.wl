@@ -919,7 +919,7 @@ openChatOutputMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*openChatSectionDialog*)
 openChatSectionDialog // beginDefinition;
-openChatSectionDialog[ cell0_CellObject ] := createChatContextDialog @ parentCell @ cell0;
+openChatSectionDialog[ cell0_CellObject ] := createChatContextDialog @ cell0;
 openChatSectionDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -927,57 +927,193 @@ openChatSectionDialog // endDefinition;
 (*createChatContextDialog*)
 createChatContextDialog // beginDefinition;
 
-createChatContextDialog[ cell_CellObject ] :=
-    Module[ { text, textCell, cellFunc, cellFuncCell, postFunc, postFuncCell, cells, nbo },
-
-        text = AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatContextPreprompt" } ];
-        textCell = If[ StringQ @ text, Cell[ text, "Text", CellID -> 1, CellTags -> { "NonDefault" } ], Missing[ ] ];
-
-        cellFunc = AbsoluteCurrentValue[
-            cell,
-            { TaggingRules, "ChatNotebookSettings", "CellToMessageFunction" }
-        ];
-        cellFuncCell = Cell[ BoxData @ ToBoxes @ cellFunc, "Input", CellID -> 2, CellTags -> { "NonDefault" } ];
-
-        postFunc     = AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatPost" } ];
-        postFuncCell = Cell[ BoxData @ ToBoxes @ postFunc, "Input", CellID -> 3, CellTags -> { "NonDefault" } ];
-
-        cells = TemplateApply[
-            $chatContextDialogTemplateCells,
-            DeleteMissing @ <|
-                "ChatContextPreprompt"  -> textCell,
-                "CellToMessageFunction" -> cellFuncCell,
-                "ChatPost"              -> postFuncCell,
-                "DialogButtons"         -> chatContextDialogButtons @ cell
-            |>
-        ];
-
-        nbo = NotebookPut @ Notebook[
-            cells,
-            StyleDefinitions -> $chatContextDialogStyles,
-            CreateCellID     -> True,
-            Saveable         -> False
-        ];
-
-        SelectionMove[ nbo, After, Notebook, AutoScroll -> False ]
+createChatContextDialog[ cell_CellObject ] := NotebookPut @
+    Notebook[ Flatten @
+        {
+            Cell[
+                TextData[{
+                    Cell @ BoxData @ ToBoxes @ chatbookIcon["ChatBlockSettingsDialogIcon", False],
+                    "  ",
+                    "Chat Context Settings" } ], (* FIXME:TR *)
+                "DialogHeader" ],
+            Cell[ "", "DialogDelimiter" ],
+            chatContextDialogChatContextPreprompt @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatContextPreprompt" } ],
+            chatContextDialogCellToMessageFunction @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellToMessageFunction" } ],
+            chatContextDialogChatPost @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatPost" } ],
+            Cell[ "", "DialogDelimiter", CellMargins -> { { Inherited, Inherited }, { Inherited, 20 } } ],
+            Cell[
+                BoxData @ ToBoxes @
+                    ChoiceButtons[
+                        {
+                            NotebookTools`Mousedown[
+                                Framed[ Style[ tr @ "OKButton", "DialogTextBasic" ], BaseStyle -> { "ButtonRed1Normal",  LineBreakWithin -> False } ],
+                                Framed[ Style[ tr @ "OKButton", "DialogTextBasic" ], BaseStyle -> { "ButtonRed1Hover",   LineBreakWithin -> False } ],
+                                Framed[ Style[ tr @ "OKButton", "DialogTextBasic" ], BaseStyle -> { "ButtonRed1Pressed", LineBreakWithin -> False } ]
+                            ],
+                            NotebookTools`Mousedown[
+                                Framed[ Style[ tr @ "CancelButton", "DialogTextBasic" ], BaseStyle -> { "ButtonGray1Normal",  LineBreakWithin -> False } ],
+                                Framed[ Style[ tr @ "CancelButton", "DialogTextBasic" ], BaseStyle -> { "ButtonGray1Hover",   LineBreakWithin -> False } ],
+                                Framed[ Style[ tr @ "CancelButton", "DialogTextBasic" ], BaseStyle -> { "ButtonGray1Pressed", LineBreakWithin -> False } ]
+                            ]
+                        },
+                        {
+                            DialogReturn @ setChatSectionSettings[ cell, scrapeChatContextDialog @ EvaluationNotebook[ ] ],
+                            DialogReturn @ $Canceled
+                        },
+                        {
+                            {
+                                Appearance -> FrontEndResource[ "FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance" ],
+                                ImageSize  -> Automatic,
+                                Method     -> "Queued"
+                            },
+                            {
+                                Appearance -> FrontEndResource[ "FEExpressions", "CancelSuppressMouseDownNinePatchAppearance" ],
+                                ImageSize -> Automatic
+                            },
+                            (* ButtonBox options *)
+                            ImageMargins -> { { 2, 2 }, { 10, 0 } } (* bug in WindowSize -> All cuts off the bottom cell margin, so put it in the button instead *)
+                        }
+                    ],
+                "DialogFooter",
+                TextAlignment -> Right
+            ]
+        },
+        StyleDefinitions -> "Dialog.nb",
+        Saveable         -> False,
+        WindowSize       -> { 500, All }
     ];
 
 createChatContextDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatContextDialogButtons*)
-chatContextDialogButtons // beginDefinition;
+(*chatContextDialogChatContextPreprompt*)
+chatContextDialogChatContextPreprompt // beginDefinition;
 
-chatContextDialogButtons[ cell_CellObject ] := Cell[
-    BoxData @ $chatContextDialogButtons[
-        DialogReturn @ setChatSectionSettings[ cell, scrapeChatContextDialog @ EvaluationNotebook[ ] ],
-        DialogReturn @ $Canceled
-    ],
-    "DialogButtons"
-];
+chatContextDialogChatContextPreprompt[ existingSetting_ ] := {
+    chatContextDialogInputHeader[ trRaw @ "ChatContextDialogSystemPromptText", trRaw @ "ChatContextDialogDescription" ],
+    Cell[ BoxData @ ToBoxes @
+        DynamicModule[
+            {
+                fieldContent,
+                defaultString = StringJoin[
+                    "You are a helpful Wolfram Language programming assistant. ",
+                    "Your job is to offer Wolfram Language code suggestions based on previous inputs and offer code suggestions to fix errors." ]
+            },
+            DynamicWrapper[
+                InputField[
+                    Dynamic @ fieldContent,
+                    String,
+                    BaseStyle         -> { "DialogText", FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ] },
+                    ContinuousAction  -> False,
+                    FrameMargins      -> 4,
+                    ImageSize         -> Scaled[ 1 ],
+                    ReturnEntersInput -> False,
+                    TrapEnterKey      -> True
+                ],
+                If[fieldContent =!= defaultString,
+                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> fieldContent, "NonDefault" -> True }],
+                TrackedSymbols :> { fieldContent }
+            ],
+            Initialization :> (
+                If[ StringQ @ existingSetting,
+                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> (fieldContent = existingSetting), "NonDefault" -> True }
+                    ,
+                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> (fieldContent = defaultString), "NonDefault" -> False }                      
+                ])
+        ],
+        "DialogBody", "InputTextActive",
+        CellMargins    -> { { Inherited, Inherited }, { 0, 0 } },
+        CellTags       -> "Input"
+    ]
+}
 
-chatContextDialogButtons // endDefinition;
+chatContextDialogChatContextPreprompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatContextDialogInputFormCell*)
+chatContextDialogInputFormCell // beginDefinition;
+
+chatContextDialogInputFormCell[ existingSetting_, tag_String ] := 
+    Cell[ BoxData @ ToBoxes @
+        DynamicModule[ { fieldContent, defaultExpr = Hold[ #& ] },
+            DynamicWrapper[
+                InputField[
+                    Dynamic @ fieldContent,
+                    Hold[Expression], (* Can't be ContinuousAction -> True *)
+                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ], ShowSyntaxStyles -> True},
+                    FrameMargins      -> 4,
+                    ImageSize         -> Scaled[ 1 ],
+                    ReturnEntersInput -> False,
+                    TrapEnterKey      -> True
+                ]
+                ,
+                If[ fieldContent =!= defaultExpr,
+                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = {
+                        tag          -> Replace[ fieldContent, { Hold[ f_Function ] :> f, Hold[ else_ ] :> Function[ else[#] ] } ],
+                        "NonDefault" -> True } ]
+                ,
+                TrackedSymbols :> { fieldContent }
+            ],
+            Initialization :> With[
+                {
+                    updatedSetting = Replace[
+                        existingSetting,
+                        {
+                            Inherited -> Function[ # ],
+                            Hold[ f_Function ] :> f,
+                            expr:Except[ _Function ] :> Function[ expr[ # ] ] } ]
+                },
+                CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { tag -> updatedSetting, "NonDefault" -> (Hold[ updatedSetting ] =!= defaultExpr) };
+                fieldContent = Hold @ updatedSetting
+            ]
+        ],
+        "DialogBody",
+        CellMargins -> { { Inherited, Inherited }, { 0, 0 } },
+        CellTags    -> "Input"
+    ]
+
+chatContextDialogInputFormCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatContextDialogCellToMessageFunction*)
+chatContextDialogCellToMessageFunction // beginDefinition;
+
+chatContextDialogCellToMessageFunction[ existingSetting_ ] := {
+    chatContextDialogInputHeader[ trRaw @ "ChatContextDialogCellProcessingFunction", trRaw @ "ChatContextDialogDescription" ],
+    chatContextDialogInputFormCell[ existingSetting, "CellToMessageFunction" ]
+}
+
+chatContextDialogCellToMessageFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatContextDialogChatPost*)
+chatContextDialogChatPost // beginDefinition;
+
+chatContextDialogChatPost[ existingSetting_ ] := {
+    chatContextDialogInputHeader[ trRaw @ "ChatContextDialogCellPostEvaluationFunction", trRaw @ "ChatContextDialogDescription" ],
+    chatContextDialogInputFormCell[ existingSetting, "ChatPost" ]
+}
+
+chatContextDialogChatPost // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatContextDialogInputHeader*)
+chatContextDialogInputHeader // beginDefinition;
+
+chatContextDialogInputHeader[ text_, tooltip_ ] :=
+Cell[
+    TextData[ { text, " ", Cell @ BoxData @ ToBoxes @ fancyTooltip[ chatbookIcon[ "MoreInfoIcon", False ], tooltip ] } ],
+    "DialogHeader",
+    CellMargins -> { { Inherited, Inherited }, { 4, Inherited } },
+    FontSize    -> 16
+]
+
+chatContextDialogInputHeader // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -999,76 +1135,21 @@ setChatSectionSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$chatContextDialogButtons*)
-$chatContextDialogButtons := getAsset[ "ChatContextDialogButtons" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$chatContextDialogTemplateCells*)
-$chatContextDialogTemplateCells := getAsset[ "ChatContextDialogCellsTemplate" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$chatContextDialogStyles*)
-$chatContextDialogStyles := getAsset[ "ChatContextDialogStyles" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*scrapeChatContextDialog*)
 scrapeChatContextDialog // beginDefinition;
 
 scrapeChatContextDialog[ nbo_NotebookObject ] :=
-    Enclose @ Module[ { text, cellProcFunction, postFunction },
-
-        text = ConfirmMatch[ scrape[ nbo, "ChatContextPreprompt", "Strings" ], { ___String } ];
-
-        cellProcFunction = ConfirmMatch[
-            scrape[
-                nbo,
-                "CellToMessageFunction",
-                "Expression",
-                KeyTake @ { "Result", "Definitions" },
-                "TargetContext"      -> $Context,
-                "IncludeDefinitions" -> True
-            ],
-            KeyValuePattern[ "Result" -> _ ]
-        ];
-
-        postFunction = ConfirmMatch[
-            scrape[
-                nbo,
-                "ChatPost",
-                "Expression",
-                KeyTake @ { "Result", "Definitions" },
-                "TargetContext"      -> $Context,
-                "IncludeDefinitions" -> True
-            ],
-            KeyValuePattern[ "Result" -> _ ]
-        ];
-
-        DeleteMissing @ <|
-            "ChatContextPreprompt"  -> StringRiffle[ text, "\n\n" ],
-            "CellToMessageFunction" -> cellProcFunction[ "Result" ],
-            "ChatPost"              -> postFunction[ "Result" ]
-        |>
+    Association @ Join[
+        Map[
+            KeyDrop[ "NonDefault" ],
+            Select[
+                CurrentValue[ Cells[ nbo, CellTags -> "Input" ], TaggingRules ],
+                Lookup[ #, "NonDefault", False, TrueQ ]&
+            ]
+        ]
     ];
 
 scrapeChatContextDialog // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*scrape*)
-scrape // beginDefinition;
-
-scrape[ nbo_, prop_, validator__ ] :=
-    DefinitionNotebookClient`GeneralValidator[ "ChatContextDialog", validator ][
-        <|
-            "Metadata" -> <| "NotebookObject" -> nbo |>,
-            "Content"  -> DefinitionNotebookClient`ScrapeSection[ "ChatContextDialog", nbo, prop ]
-        |>
-    ];
-
-scrape // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

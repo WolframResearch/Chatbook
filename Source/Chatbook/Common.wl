@@ -82,6 +82,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chatbookExpression;
 `inlineChatbookExpressions;
 `chatbookIcon;
+`fancyTooltip;
 `inlineTemplateBox;
 `inlineTemplateBoxes;
 `sufficientVersionQ;
