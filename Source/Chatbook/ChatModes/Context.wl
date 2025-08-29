@@ -16,6 +16,8 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
+$contextPrompt              = None;
+$selectionPrompt            = None;
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \

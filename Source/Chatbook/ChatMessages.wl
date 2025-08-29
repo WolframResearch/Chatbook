@@ -14,6 +14,13 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Error Messages*)
+Chatbook::InvalidMessageList         = "The value `1` is not a valid list of chat messages.";
+Chatbook::InvalidChatSettings        = "The value `1` is not a valid chat settings specification.";
+Chatbook::InvalidExcludedBasePrompts = "The value `1` is not a valid list of excluded base prompts.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Configuration*)
 $maxMMImageSize              = 512;
 $multimodalMessages          = False;
@@ -65,6 +72,95 @@ $fallbackTokenizer = "generic";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*AugmentChatMessages*)
+AugmentChatMessages // beginDefinition;
+
+AugmentChatMessages // Options = {
+    "ToolMethod" -> "Service"
+};
+
+AugmentChatMessages[ messages_, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ AugmentChatMessages[ messages, Automatic, opts ];
+
+AugmentChatMessages[ messages_, $$unspecified, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ AugmentChatMessages[ messages, $currentChatSettings, opts ];
+
+AugmentChatMessages[ messages_, None, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ AugmentChatMessages[ messages, CurrentChatSettings @ $FrontEnd, opts ];
+
+AugmentChatMessages[ messages_, settings_, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ augmentChatMessages[
+        ensureChatMessages @ messages,
+        settings,
+        optionsAssociation[ AugmentChatMessages, opts ]
+    ];
+
+AugmentChatMessages // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*augmentChatMessages*)
+augmentChatMessages // beginDefinition;
+
+augmentChatMessages[ messages_, persona_String, opts_Association? AssociationQ ] :=
+    augmentChatMessages[ messages, <| "LLMEvaluator" -> persona |>, opts ];
+
+augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := Enclose[
+    Module[ { resolved, excludedBasePrompts, messages },
+        If[ ! MatchQ[ messages0, $$chatMessages ], throwFailure[ "InvalidMessageList", messages0 ] ];
+        If[ ! AssociationQ @ settings, throwFailure[ "InvalidChatSettings", settings ] ];
+
+        resolved = ConfirmBy[ toChatSettings[ opts, settings ], AssociationQ, "Resolved" ];
+
+        excludedBasePrompts = Lookup[ resolved, "ExcludedBasePrompts", { } ];
+        If[ ! MatchQ[ excludedBasePrompts, { ___String } ],
+            throwFailure[ "InvalidExcludedBasePrompts", excludedBasePrompts ]
+        ];
+
+        resolved[ "BasePrompt" ] = ConfirmMatch[
+            DeleteCases[
+                Select[ Flatten @ { resolved[ "BasePrompt" ] }, StringQ ],
+                Alternatives @@ excludedBasePrompts
+            ],
+            { ___String },
+            "ResolvedBasePrompt"
+        ];
+
+        messages = ConfirmMatch[
+            Flatten @ { makeCurrentRole @ resolved, messages0 },
+            $$chatMessages,
+            "Messages"
+        ];
+
+        removeBasePrompt @ excludedBasePrompts;
+
+        ConfirmMatch[ constructMessages[ resolved, messages ], $$chatMessages, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+augmentChatMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toChatSettings*)
+toChatSettings // beginDefinition;
+
+toChatSettings[ opts_, settings_ ] /; AssociationQ @ $currentChatSettings :=
+    $currentChatSettings;
+
+toChatSettings[ opts_, settings_ ] := Enclose[
+    Module[ { merged },
+        merged = ConfirmBy[ mergeChatSettings @ { $defaultChatSettings, opts, settings }, AssociationQ, "Merged" ];
+        ConfirmBy[ resolveAutoSettings @ KeyDrop[ merged, "ResolvedAutoSettings" ], AssociationQ, "Resolved" ]
+    ],
+    throwInternalFailure
+];
+
+toChatSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*CellToChatMessage*)
 CellToChatMessage // Options = { "Role" -> Automatic };
 
@@ -94,6 +190,16 @@ CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsP
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Message Construction*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureChatMessages*)
+ensureChatMessages // beginDefinition;
+ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
+ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
+ensureChatMessages[ messages: $$chatMessages ] := messages;
+ensureChatMessages[ other_ ] /; ! TrueQ @ $chatState := throwFailure[ "InvalidPrompt", other ];
+ensureChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -134,6 +240,8 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
                 { 1 }
             ]
         ];
+
+        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[

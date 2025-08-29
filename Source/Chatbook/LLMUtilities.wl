@@ -3,8 +3,9 @@
 BeginPackage[ "Wolfram`Chatbook`LLMUtilities`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -17,6 +18,16 @@ $defaultLLMSynthesizeEvaluator :=
         <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-nano" |> |>
     ];
 
+$defaultConfigPersona = "NotebookAssistant";
+
+$defaultConfigSettings = <|
+    "LLMEvaluator"        -> $defaultConfigPersona,
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
+    "ToolPrePrompt"       -> "",
+    "ToolListingPrompt"   -> "",
+    "ToolPostPrompt"      -> ""
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*LLM Utilities*)
@@ -24,6 +35,38 @@ $$llmPromptString   = $$string   | KeyValuePattern @ { "Type" -> "Text" , "Data"
 $$llmPromptGraphics = $$graphics | KeyValuePattern @ { "Type" -> "Image", "Data" -> $$graphics };
 $$llmPromptItem     = $$llmPromptString | $$llmPromptGraphics;
 $$llmPrompt         = $$llmPromptItem | { $$llmPromptItem.. };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmChat*)
+llmChat // beginDefinition;
+
+llmChat[ messages: $$chatMessages ] :=
+    llmChat[ messages, <| |> ];
+
+llmChat[ messages: $$chatMessages, evaluator0_Association ] :=
+    Enclose @ Module[ { evaluator, config, auth, response },
+
+        evaluator = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+
+        config = ConfirmMatch[
+            LLMConfiguration @ evaluator,
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Config"
+        ];
+
+        auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+
+        If[ auth === "LLMKit", llmKitCheck[ ] ];
+
+        response = LLMServices`Chat[ messages, config, Authentication -> auth ];
+
+        If[ FailureQ @ response, throwFailureToChatOutput @ response ];
+
+        response
+    ];
+
+llmChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -80,21 +123,11 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
     Module[ { evaluator, prompt, messages, config, chunks, allowEmpty, handlers, keys, auth },
 
-        evaluator = Replace[
-            ConfirmBy[
-                <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
-                AssociationQ,
-                "Evaluator"
-            ],
-            Verbatim[ Verbatim ][ value_ ] :> value,
-            { 1 }
-        ];
-
-        prompt   = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
-        messages = { <| "Role" -> "User", "Content" -> prompt |> };
-        config   = LLMConfiguration @ evaluator;
-        chunks   = Internal`Bag[ ];
-
+        evaluator  = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+        prompt     = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
+        messages   = { <| "Role" -> "User", "Content" -> prompt |> };
+        config     = LLMConfiguration @ evaluator;
+        chunks     = Internal`Bag[ ];
         allowEmpty = MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ];
 
         handlers = <|
@@ -137,6 +170,26 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 ];
 
 llmSynthesizeSubmit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveLLMConfiguration*)
+resolveLLMConfiguration // beginDefinition;
+
+resolveLLMConfiguration[ evaluator_Association ] := Enclose[
+    Module[ { config },
+        config = KeyMap[ ToString, evaluator /. { Verbatim[ Verbatim ][ value_ ] :> value, Automatic -> Inherited } ];
+        If[ $chatState && Lookup[ config, "Authentication", "LLMKit" ] =!= "LLMKit", $llmKit = False ];
+        ConfirmBy[
+            mergeChatSettings @ { $defaultLLMSynthesizeEvaluator, config },
+            AssociationQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+resolveLLMConfiguration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -380,6 +433,117 @@ apiFailureQ // beginDefinition;
 apiFailureQ[ Failure[ "APIError", KeyValuePattern[ "StatusCode" -> Except[ 100|200, _Integer ] ] ] ] := True;
 apiFailureQ[ _ ] := False;
 apiFailureQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GenerateLLMConfiguration*)
+GenerateLLMConfiguration // beginDefinition;
+
+GenerateLLMConfiguration[ ] :=
+    catchMine @ GenerateLLMConfiguration @ Automatic;
+
+GenerateLLMConfiguration[ name: _String|Automatic ] :=
+    catchMine @ GenerateLLMConfiguration[ name, <| |> ];
+
+GenerateLLMConfiguration[ name: _String|Automatic, opts_? AssociationQ ] :=
+    catchMine @ generateLLMConfiguration[ getConfigName @ name, opts ];
+
+GenerateLLMConfiguration[ settings_? AssociationQ ] :=
+    catchMine @ GenerateLLMConfiguration[ getConfigName @ settings, settings ];
+
+GenerateLLMConfiguration // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getConfigName*)
+getConfigName // beginDefinition;
+getConfigName[ KeyValuePattern[ "LLMEvaluator"|"LLMEvaluatorName" -> name_ ] ] := getConfigName @ name;
+getConfigName[ KeyValuePattern[ "LLMEvaluator" -> as_Association? AssociationQ ] ] := getConfigName @ as;
+getConfigName[ name_String ] := name;
+getConfigName[ Automatic|_Association ] := $defaultConfigPersona;
+getConfigName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*generateLLMConfiguration*)
+generateLLMConfiguration // beginDefinition;
+
+generateLLMConfiguration[ name_String, as_Association? AssociationQ ] := Enclose[
+    Module[ { persona, evaluator, settings },
+        persona = ConfirmMatch[ GetCachedPersonaData @ name, _Missing|_Association, "Persona" ];
+        If[ MissingQ @ persona, throwFailure[ "PersonaNotFound", name ] ];
+        evaluator = ConfirmBy[ mergeChatSettings @ { persona, as }, AssociationQ, "Evaluator" ];
+        settings = ConfirmBy[ <| $defaultConfigSettings, "LLMEvaluator" -> evaluator |>, AssociationQ, "Settings" ];
+        ConfirmMatch[
+            ChatEvaluationBlock[ constructLLMConfiguration[ ], settings ],
+            HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+generateLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*constructLLMConfiguration*)
+constructLLMConfiguration // beginDefinition;
+
+constructLLMConfiguration[ ] := Enclose[
+    Module[ { settings, promptGenerators, messages0, messages, prompts, tools, config },
+
+        settings = ConfirmBy[ $CurrentChatSettings, AssociationQ, "Settings" ];
+        $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] = "Service";
+        promptGenerators = ConfirmMatch[ settings[ "PromptGenerators" ], { ___LLMPromptGenerator }, "Generators" ];
+        messages0 = ConfirmMatch[ Flatten @ { makeCurrentRole @ settings }, $$chatMessages, "Messages0" ];
+
+        messages = ConfirmMatch[
+            constructMessages[ <| settings, "PromptGenerators" -> { } |>, messages0 ],
+            $$chatMessages,
+            "Messages"
+        ] /. s_String :> RuleCondition @ StringReplace[ s, "\n/end" -> "" ];
+
+        prompts = ConfirmMatch[
+            Flatten @ { messages[[ All, "Content" ]], promptGenerators },
+            { (_String|_LLMPromptGenerator)... },
+            "Prompts"
+        ];
+
+        tools = ConfirmMatch[ addToolPostProcessing /@ settings[ "Tools" ], { ___LLMTool }, "Tools" ];
+        config = ConfirmMatch[ makeLLMConfiguration @ settings, _LLMConfiguration, "Config" ];
+
+        LLMConfiguration @ <|
+            config[ "Data" ],
+            "StopTokens" -> Automatic,
+            "Prompts"    -> prompts,
+            "Tools"      -> tools
+        |>
+    ],
+    throwInternalFailure
+];
+
+constructLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addToolPostProcessing*)
+addToolPostProcessing // beginDefinition;
+
+addToolPostProcessing[ tool_LLMTool ] :=
+    addToolPostProcessing @ tool[ "Data" ];
+
+addToolPostProcessing[ as: KeyValuePattern[ "Function" -> f_ ] ] :=
+    LLMTool @ <|
+        as,
+        "Function" -> Composition[ Replace[ KeyValuePattern[ "String" -> s_String ] :> s ], f ]
+    |>;
+
+(* Names are not resolved to LLMTools when tools are disabled: *)
+addToolPostProcessing[ _String|ParentList ] :=
+    Nothing;
+
+addToolPostProcessing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

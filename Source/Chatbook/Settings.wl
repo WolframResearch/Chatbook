@@ -36,6 +36,7 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
+    "ExcludedBasePrompts"            -> { },
     "ExperimentalFeatures"           -> Automatic,
     "ForceSynchronous"               -> Automatic,
     "FrequencyPenalty"               -> 0.1,
@@ -255,6 +256,21 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*gpt-5*)
+$modelAutoSettings[ Automatic, "GPT5" ] = <|
+    "HybridToolMethod"           -> False,
+    "MaxContextTokens"           -> 400000,
+    "Multimodal"                 -> True,
+    "PresencePenalty"            -> Missing[ "NotSupported" ],
+    "StopTokens"                 -> Missing[ "NotSupported" ],
+    "Temperature"                -> Missing[ "NotSupported" ],
+    "TokenizerName"              -> "gpt-4o",
+    "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolMethod"                 -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*OpenAI reasoning models*)
 
 (* Note: Max tokens are halved for these models in order to leave room for reasoning *)
@@ -372,6 +388,39 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
         ];
 
 autoModelSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dropModelUnsupportedParameters*)
+dropModelUnsupportedParameters // beginDefinition;
+
+dropModelUnsupportedParameters[ as_Association ] :=
+    With[ { model = as[ "Model" ] },
+        LogChatTiming @ dropModelUnsupportedParameters[ model, # ] &
+    ];
+
+dropModelUnsupportedParameters[ model_Association, config_Association ] := Enclose[
+    Module[ { drop },
+        drop = ConfirmMatch[ modelUnsupportedParameters[ model, config ], { ___String }, "Drop" ];
+        KeyDrop[ config, drop ]
+    ],
+    throwInternalFailure
+];
+
+dropModelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelUnsupportedParameters*)
+modelUnsupportedParameters // beginDefinition;
+
+modelUnsupportedParameters[ as_, keys: { ___String } ] :=
+    Select[ keys, autoModelSetting[ as, # ] === Missing[ "NotSupported" ] & ];
+
+modelUnsupportedParameters[ as_, config_Association ] :=
+    modelUnsupportedParameters[ as, Keys @ config ];
+
+modelUnsupportedParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1088,8 +1137,38 @@ getLLMEvaluator // endDefinition;
 getNamedLLMEvaluator // beginDefinition;
 getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPersonaData @ name ];
 getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
+getNamedLLMEvaluator[ name_String, _Missing ] := tryPromptRepositoryPersona @ name;
 getNamedLLMEvaluator[ name_String, _ ] := name;
 getNamedLLMEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryPromptRepositoryPersona*)
+tryPromptRepositoryPersona // beginDefinition;
+
+tryPromptRepositoryPersona[ name_String ] := Enclose[
+    Catch @ Module[ { ro, config, persona, prompts },
+
+        ro = Block[ { PrintTemporary }, Quiet @ ResourceObject[ "Prompt" -> name ] ];
+        If[ ! MatchQ[ ro, _ResourceObject ], Throw @ name ];
+
+        config = ro[ "LLMConfiguration" ][ "Data" ];
+        If[ ! AssociationQ @ config, Throw @ name ];
+
+        persona = DeleteCases[ config, $$unspecified ];
+
+        prompts = Replace[ persona[ "Prompts" ], _Missing :> { } ];
+
+        If[ MatchQ[ prompts, _List|_String|_TemplateObject|_LLMPromptGenerator ],
+            persona[ "Prompts" ] = Flatten @ { prompts }
+        ];
+
+        tryPromptRepositoryPersona[ name ] = Append[ persona, "LLMEvaluatorName" -> name ]
+    ],
+    throwInternalFailure
+];
+
+tryPromptRepositoryPersona // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1116,10 +1195,11 @@ toolsEnabledQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*dynamicSplitQ*)
 dynamicSplitQ // beginDefinition;
+dynamicSplitQ[ _ ] /; $chatEvaluationBlock := False;
 dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
 dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
 dynamicSplitQ[ "PartialDynamic"|"Automatic"|"Inherited" ] := True;
-dynamicSplitQ[ "FullDynamic"|"Dynamic" ] := False;
+dynamicSplitQ[ "FullDynamic"|"Dynamic"|"None" ] := False;
 dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
 dynamicSplitQ // endDefinition;
 

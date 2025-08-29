@@ -4,8 +4,8 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                         ];
-Needs[ "Wolfram`Chatbook`Common`"                  ];
 Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
+Needs[ "Wolfram`Chatbook`Common`"                  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -18,10 +18,13 @@ $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVer
 $resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
 
 $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Documentation", $documentationSnippetVersion };
 
 $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "ResourceSystem" };
+
+$otherSnippetsCacheDirectory := $otherSnippetsCacheDirectory =
+    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Other" };
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
@@ -64,7 +67,7 @@ $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.2, "14-2-0-11168610", "14-1-0-10549042" ];
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -229,7 +232,7 @@ RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer, opts: Op
     ];
 
 RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[
+    catchMine @ withChatState @ Block[
         {
             $rerankMethod = Replace[
                 OptionValue[ "RerankMethod" ],
@@ -443,7 +446,7 @@ filterSnippets[
 filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] := Enclose[
     Catch @ Module[
         {
-            results, inserted, transcript, xml,
+            results, inserted, transcript, xml, ids,
             instructions, response, uriToSnippet, uris, selected, pages
         },
 
@@ -453,13 +456,15 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
+        ids = ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
                 <|
                     "FilteredCount" -> filterCount,
                     "Snippets"      -> StringRiffle[ xml, "\n\n" ],
-                    "Transcript"    -> transcript
+                    "Transcript"    -> transcript,
+                    "SnippetIDs"    -> StringRiffle[ ids, "\n" ]
                 |>
             ],
             StringQ,
@@ -610,7 +615,10 @@ Choose up to %%FilteredCount%% of the most relevant snippets. Skip irrelevant or
 If there are multiple snippets that express the same idea, you should prefer the one that is easiest to understand.
 If no relevant pages exist, only respond with the assistant type.
 A snippet does not need to exactly answer the user's message in full in order to be relevant.
-Respond only in the specified format and do not include any other text.\
+Respond only in the specified format and do not include any other text.
+
+Reminder: These are the available snippet IDs:
+%%SnippetIDs%%\
 ", Delimiters -> "%%" ];
 
 
@@ -1096,8 +1104,15 @@ snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolfram
 snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://datarepository.wolframcloud.com/" ] :=
     snippetCacheFile[
         uri,
-        "DataRepository" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/" ],
+        "DataRepository/" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/"~~("resources/"|"") ],
         "ResourceSystem"
+    ];
+
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://paclets.com/" ] :=
+    snippetCacheFile[
+        uri,
+        "PacletRepository/" <> StringDelete[ uri, "https://paclets.com/" ],
+        "Other"
     ];
 
 snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
@@ -1117,6 +1132,7 @@ snippetCacheFile // endDefinition;
 snippetCacheDirectory // beginDefinition;
 snippetCacheDirectory[ "Documentation"  ] := $documentationSnippetsCacheDirectory;
 snippetCacheDirectory[ "ResourceSystem" ] := $resourceSnippetsCacheDirectory;
+snippetCacheDirectory[ "Other"          ] := $otherSnippetsCacheDirectory;
 snippetCacheDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
