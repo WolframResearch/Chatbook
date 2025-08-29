@@ -1007,7 +1007,7 @@ toHeldExpression // endDefinition;
 preprocessSandboxString // beginDefinition;
 
 preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringReplace[
-    s,
+    autoCorrect @ s,
     {
         "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",

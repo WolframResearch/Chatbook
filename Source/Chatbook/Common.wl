@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Symbols defined in this file*)
+`$mxFlag;
 `$closedChatCellOptions;
 `$cloudNotebooks;
 `$debug;
@@ -29,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$serviceCaller;
 `$$cloudObject;
 `$$optionsSequence;
 `$$size;
@@ -80,6 +82,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chatbookExpression;
 `inlineChatbookExpressions;
 `chatbookIcon;
+`fancyTooltip;
 `inlineTemplateBox;
 `inlineTemplateBoxes;
 `sufficientVersionQ;
@@ -255,6 +258,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
     "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
     "PersonaDirectoryNotFound"        -> "The directory `2` for persona `1` was not found.",
+    "PersonaNotFound"                 -> "Persona `1` not found.",
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",

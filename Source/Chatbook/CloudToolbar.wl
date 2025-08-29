@@ -307,7 +307,7 @@ insertCellStyle[ style_String, nbo_NotebookObject ] := Enclose[
     Module[ { tag, cell, cellObject },
         tag = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
         cell = Cell[ "", style, CellTags -> tag ];
-        SelectionMove[ nbo, After, Notebook ];
+        SelectionMove[ nbo, After, Cell ]; (* prevents inline cells *)
         NotebookWrite[ nbo, cell ];
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> tag ], $Failed ], _CellObject, "CellObject" ];
         If[ style =!= "ChatDelimiter", SelectionMove[ cellObject, Before, CellContents ] ];

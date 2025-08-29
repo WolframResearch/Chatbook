@@ -92,11 +92,13 @@ $$noCodeBlockStyle = Alternatives[
     "GuideFunctionsSubsection",
     "MoreAbout",
     "NotebookImage",
+    "Notes",
     "Picture",
     "PrimaryExamplesSection",
     "RelatedLinks",
     "TableNotes",
     "Template",
+    "Text",
     "TOCChapter",
     "Tutorials",
     "Usage",
@@ -337,7 +339,14 @@ $$ignoredCellStyle = Alternatives[
 
 $$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
     "FEBitmaps",
-    "SquarePlusIconSmall"|"SquarePlusIconMedium"
+    Alternatives[
+        "CirclePlusIconBitmap",
+        "CirclePlusIconScalable",
+        "CompactCloseButtonBitmap",
+        "CompactCloseButtonScalable",
+        "SquarePlusIconSmall",
+        "SquarePlusIconMedium"
+    ]
 ];
 
 $$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
@@ -349,7 +358,6 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
         StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
         DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ],
         DynamicBox[ FEPrivate`ImportImage @ ignored, ___ ],
-        DynamicBox[ If[ _, FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ], _ ], ___ ],
 
         (* Documentation structures: *)
         DynamicBox[
@@ -373,13 +381,23 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
             ___
         ]
         ,
+        DynamicBox[ ToBoxes @ If[ CurrentValue[ EvaluationCell[ ], "CellGroupOpen" ] =!= Closed, _, _ ], ___ ]
+        ,
+        ButtonBox[
+            __,
+            ButtonFunction :> Function[
+                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "AllOptionsTableHighlight" } ] = _
+            ],
+            ___
+        ]
+        ,
         DynamicBox[ If[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ShowCitation" } ] === False, _, _ ], ___ ]
         ,
         TemplateBox[ { ___ }, "ExampleJumpLink"|"OptsTableJumpLink", ___ ]
         ,
         Cell[ __, "NotesThumbnails", ___ ]
         ,
-        Cell[ __, "TutorialJumpBox", ___ ]
+        Cell[ __, "TechNoteJumpBox"|"TutorialJumpBox", ___ ]
         ,
         Cell[ __, $$ignoredCellStyle, ___ ]
     ]
@@ -657,17 +675,17 @@ cellToString[ Cell[ a__, CellLabel -> label_String, b___ ] ] :=
 (* Item styles *)
 cellToString[ Cell[ a__, $$itemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "* "<>str ] /; StringQ @ str
     ];
 
 cellToString[ Cell[ a__, $$subItemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "\t* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "\t* "<>str ] /; StringQ @ str
     ];
 
 cellToString[ Cell[ a__, $$subSubItemStyle, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, "Text", b ] },
-        "\t\t* "<>str /; StringQ @ str
+        If[ StringTrim @ str === "", "", "\t\t* "<>str ] /; StringQ @ str
     ];
 
 (* Cells showing raw data (ctrl-shift-e) *)
@@ -936,6 +954,7 @@ $globalStringReplacements = {
     "\[RightAssociation]"          -> "|>",
     "\[RightSkeleton]"             -> "\:00BB",
     "\[Rule]"                      -> "->",
+    "\[RuleDelayed]"               -> ":>",
     "\[LeftDoubleBracket]"         -> "[[",
     "\[RightDoubleBracket]"        -> "]]",
     "\n\n" ~~ Longest[ "\n".. ]    -> "\n\n",
@@ -956,8 +975,10 @@ $$titleStyle = Alternatives[
     "HowToTitle",
     "ObjectName",
     "ObjectNameAlt",
+    "TechNoteTitle",
     "Title",
-    "TOCDocumentTitle"
+    "TOCDocumentTitle",
+    "TutorialTitle"
 ];
 
 $$sectionStyle = Alternatives[
@@ -993,6 +1014,7 @@ $$sectionStyle = Alternatives[
     "ProgramSection",
     "Section",
     "Subtitle",
+    "TechNoteSection",
     "TechNotesSection",
     "WorkflowHeader",
     "WorkflowNotesSection"
@@ -1129,8 +1151,15 @@ $$realString = With[ { d1 = DigitCharacter.., d2 = DigitCharacter... },
 ];
 
 boxToString[ s_String? (StringMatchQ[ $$realString ]) ] :=
-    With[ { held = Quiet @ ToExpression[ s, InputForm, HoldComplete ] },
-        ToString[ ReleaseHold @ held, OutputForm ] /; MatchQ[ held, HoldComplete[ _Real ] ]
+    Catch @ Module[ { held, number, res },
+        held = Quiet @ ToExpression[ s, InputForm, HoldComplete ];
+        If[ ! MatchQ[ held, HoldComplete[ _Real ] ], Throw @ s ];
+        number = ReleaseHold @ held;
+        res = ToString[ number, OutputForm ];
+        If[ StringContainsQ[ res, "\n" ],
+            ToString[ number, InputForm ],
+            res
+        ]
     ];
 
 (* Long name characters: *)
@@ -1855,12 +1884,19 @@ boxToString[ TemplateBox[
     ___
 ] ] := inputFormString @ Unevaluated @ tabular;
 
+boxToString[ TemplateBox[ _, "TabularReferenceWrapper", ___ ] ] :=
+    "Tabular[...]";
+
 boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
 (* Reasoning Text *)
 boxToString[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
     "<think>\n" <> thoughts <> "\n</think>\n";
+
+(* System Modeler Boxes *)
+boxToString[ TemplateBox[ KeyValuePattern[ "model" -> Hold[ model_ ] ], "IOModel"|"SystemsModel", ___ ] ] :=
+    inputFormString @ Unevaluated @ model;
 
 (* Other *)
 boxToString[ box: TemplateBox[ args_, name_String, ___ ] ] /;
@@ -2196,13 +2232,15 @@ gridFlatten // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Tables*)
-boxToString[ GridBox[ { { box_ } }, ___ ] ] :=
+$simplifyTables = True;
+
+boxToString[ GridBox[ { { box_ } }, ___ ] ] /; $simplifyTables :=
     boxToString @ box;
 
-boxToString[ GridBox[ { row: { ___ } }, ___ ] ] :=
+boxToString[ GridBox[ { row: { ___ } }, ___ ] ] /; $simplifyTables :=
     boxToString @ RowBox @ Riffle[ row, "\t" ];
 
-boxToString[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] :=
+boxToString[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] /; $simplifyTables :=
     StringRiffle[ boxToString /@ items, "\n" ];
 
 (* Columns combined via row: *)
@@ -2489,8 +2527,8 @@ boxToString[ Cell[ a_, "InlineGuideFunctionListing", ___ ] ] :=
                 Except[ "\n" ]..,
                 EndOfLine
             ] :> StringRiffle[
-                DeleteCases[ StringTrim @ StringSplit[ inline, "\[FilledVerySmallSquare]" ], "" ],
-                " \[FilledVerySmallSquare] "
+                "* " <> # & /@ StringSplit[ inline, Whitespace~~"\[FilledVerySmallSquare]"~~Whitespace ],
+                "\n"
             ]
         ] /; StringQ @ str
     ];
@@ -2552,7 +2590,22 @@ docUsageString[ row_List ] :=
 docUsageString[ (TextData|BoxData)[ boxes_, ___ ] ] :=
     docUsageString @ Flatten @ { boxes };
 
+docUsageString[ str_String ] :=
+    str;
+
 docUsageString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*Tutorial Pages*)
+boxToString[ Cell[ boxes_, "TechNoteCaption", ___ ] ] :=
+    "*" <> StringTrim @ boxToString @ boxes <> "*";
+
+boxToString[ Cell[ boxes_, "TechNoteTableText", ___ ] ] :=
+    StringDelete[ boxToString @ boxes, StartOfString~~("\[FilledSmallSquare]"|WhitespaceCharacter).. ];
+
+boxToString[ Cell[ boxes_, "DefinitionBox", ___ ] ] :=
+    Block[ { $simplifyTables = False }, boxToString @ boxes ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -2587,10 +2640,10 @@ seeAlsoSection // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
 (*Related Links / More About*)
-$$relatedGuideSection     = "MoreAboutSection"|"GuideMoreAboutSection"|"FeaturedExampleMoreAboutSection";
+$$relatedGuideSection     = "MoreAboutSection"|"GuideMoreAboutSection"|"FeaturedExampleMoreAboutSection"|"TutorialMoreAboutSection";
 $$relatedWorkflowsSection = "RelatedWorkflowsSection"|"GuideRelatedWorkflowsSection"|"GuideWorkflowGuidesSection";
 $$relatedTutorialSection  = "TutorialsSection"|"GuideTutorialsSection"|"RelatedTutorialsSection";
-$$relatedLinksSection     = "RelatedLinksSection"|"GuideRelatedLinksSection";
+$$relatedLinksSection     = "RelatedLinksSection"|"GuideRelatedLinksSection"|"TutorialRelatedLinksSection";
 
 boxToString[ Cell[ grid_, $$relatedGuideSection, ___ ] ] :=
     relatedLinksSection[ grid, $$relatedGuideSection, "Related Guides" ];
@@ -2825,6 +2878,9 @@ boxToString[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
 boxToString[ ProgressIndicatorBox[ args___ ] ] :=
     inputFormString @ Unevaluated @ ProgressIndicator @ args;
+
+boxToString[ PaneSelectorBox[ { ___, "Light" -> box_, ___ }, Dynamic[ AbsoluteCurrentValue @ LightDark, ___ ] ] ] :=
+    boxToString @ box;
 
 boxToString[ PaneSelectorBox[ { ___, False -> b_, ___ }, Dynamic[ CurrentValue[ "MouseOver" ], ___ ], ___ ] ] :=
     boxToString @ b;

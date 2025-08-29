@@ -228,8 +228,8 @@ buildVectorDatabase[ name_String ] :=
 
         src = ConfirmBy[ getVectorDBSourceFile @ name, FileExistsQ, "File" ];
 
-        DeleteFile /@ FileNames[ { "*.wxf", "*.usearch" }, dir ];
-        ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch" }, dir ] === { }, "ClearedFilesCheck" ];
+        DeleteFile /@ FileNames[ { "*.wxf", "*.usearch", "*.wl" }, dir ];
+        ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch", "*.wl" }, dir ] === { }, "ClearedFilesCheck" ];
 
         db = ConfirmMatch[
             CreateVectorDatabase[
@@ -491,8 +491,8 @@ BuildSourceSelector[ names: { ___String } ] := Enclose @ inDBDirectory @
             "Relative"
         ];
 
-        DeleteFile /@ FileNames[ { "*.wxf", "*.usearch" }, dir ];
-        ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch" }, dir ] === { }, "ClearedFilesCheck" ];
+        DeleteFile /@ FileNames[ { "*.wxf", "*.usearch", "*.wl" }, dir ];
+        ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch", "*.wl" }, dir ] === { }, "ClearedFilesCheck" ];
 
         ConfirmMatch[
             CreateVectorDatabase[

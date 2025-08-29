@@ -997,6 +997,27 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
+	"IconsMoreInfo_1" -> <|
+		 "Light"  -> GrayLevel[0.62744],
+		 "Dark"   -> GrayLevel[0.6772496],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsMoreInfo_2" -> <|
+		 "Light"  -> GrayLevel[0.5],
+		 "Dark"   -> GrayLevel[0.7862825],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsMoreInfo_3" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0999191],
+		 "Method" -> "Content",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"IconsPersonaFromURL_1" -> <|
 		 "Light"  -> GrayLevel[1.],
 		 "Dark"   -> GrayLevel[0.0980392],
@@ -2381,6 +2402,20 @@ Dispatch[{
 		 "Dark"   -> GrayLevel[0.9198307],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
+	"WolframAlphaTool_Blue" -> <|
+		 "Light"  -> RGBColor[0.4039215, 0.5568627, 0.6117647],
+		 "Dark"   -> RGBColor[0.5960784, 0.7803921, 0.8392156],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"WolframAlphaToolPodFrame" -> <|
+		 "Light"  -> GrayLevel[0.8],
+		 "Dark"   -> GrayLevel[0.3137],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"WorkspaceDefaultUserIconBackground_1" -> <|
