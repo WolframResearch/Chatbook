@@ -461,16 +461,17 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split },
+    Module[ { messages, newRoles, replaced, split, stringResults },
 
-        messages = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
-        newRoles = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
-        replaced = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
-        split    = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
+        messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
+        newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
+        replaced      = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
+        split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
+        stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> split ];
+        addHandlerArguments[ "SubmittedMessages" -> stringResults ];
 
-        split
+        stringResults
     ],
     throwInternalFailure
 ];
@@ -496,6 +497,19 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     ];
 
 prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeStringResults*)
+makeStringResults // beginDefinition;
+
+makeStringResults[ _, messages_List ] := ReplaceAll[
+    messages,
+    HoldPattern @ LLMToolResponse[ as: KeyValuePattern[ "Output" -> KeyValuePattern[ "String" -> s_String ] ], a___ ] :>
+        RuleCondition @ LLMToolResponse[ <| as, "Output" -> s |>, a ]
+];
+
+makeStringResults // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
