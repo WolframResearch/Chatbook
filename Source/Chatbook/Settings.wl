@@ -443,7 +443,9 @@ $DefaultChatHandlerFunctions = <|
     "ChatPost"              :> $ChatPost,
     "ChatPre"               :> $ChatPre,
     "ToolRequestReceived"   -> None,
-    "ToolResponseGenerated" -> None
+    "ToolResponseGenerated" -> None,
+    "PromptGeneratorStart"  -> None,
+    "PromptGeneratorEnd"    -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)
