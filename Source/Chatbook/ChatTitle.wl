@@ -10,13 +10,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxTitleLength         = 30;
-$hardMaxTitleLength     = 100;
+$hardMaxTitleLength     = 40;
 $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
 
 $titlePrompt := "\
 Please come up with a meaningful window title for the current chat conversation using no more than \
-"<>ToString[$maxTitleLength-30]<>" characters.
+"<>ToString[$maxTitleLength]<>" characters.
 The title should be specific to the topics discussed in the chat.
 Do not give generic titles such as \"Chat\", \"Transcript\", or \"Chat Transcript\".
 Respond only with the title and nothing else.
