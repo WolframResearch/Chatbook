@@ -35,10 +35,17 @@ Remember, respond only with the title and nothing else.";
 (* ::Section::Closed:: *)
 (*GenerateChatTitle*)
 GenerateChatTitle // beginDefinition;
-GenerateChatTitle // Options = { "Temperature" -> 0.7 };
+GenerateChatTitle // Options = {
+    "Temperature" -> 0.7,
+    "MaxLength"   -> $maxTitleLength
+};
 
 GenerateChatTitle[ messages: $$chatMessages, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ generateChatTitle[ messages, OptionValue[ "Temperature" ] ];
+    catchMine @ LogChatTiming @ generateChatTitle[
+        messages,
+        OptionValue[ "Temperature" ],
+        OptionValue[ "MaxLength"   ]
+    ];
 
 GenerateChatTitle // endExportedDefinition;
 
@@ -46,6 +53,11 @@ GenerateChatTitle // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*generateChatTitle*)
 generateChatTitle // beginDefinition;
+
+generateChatTitle[ messages_, temperature_, maxLength_Integer? Positive ] :=
+    Block[ { $hardMaxTitleLength = maxLength },
+        generateChatTitle[ messages, temperature ]
+    ];
 
 generateChatTitle[ messages_, temperature_ ] := Enclose[
     Module[ { title, task },
@@ -114,7 +126,7 @@ generateChatTitleAsync // endDefinition;
 postProcessChatTitle // beginDefinition;
 
 postProcessChatTitle[ title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] := Enclose[
-    Module[ { title },
+    Module[ { title, length },
 
         title = ConfirmBy[
             StringReplace[
@@ -127,12 +139,20 @@ postProcessChatTitle[ title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] :=
 
         ConfirmAssert[ StringQ @ title && StringLength @ title > 0, "StringCheck" ];
 
+        length = ConfirmBy[ titleLength @ title, NumberQ, "Length" ];
+
         Which[
             StringContainsQ[ title, "\n"|"```" ],
-            Failure[ "TitleCharacters", <| "MessageTemplate" -> "Unexpected characters in generated title." |> ],
+            Failure[
+                "TitleCharacters",
+                <| "MessageTemplate" -> "Unexpected characters in generated title.", "Title" -> title |>
+            ],
 
-            StringLength @ title > $hardMaxTitleLength,
-            Failure[ "TitleLength", <| "MessageTemplate" -> "Generated title exceeds the maximum length." |> ],
+            length > $hardMaxTitleLength,
+            Failure[
+                "TitleLength",
+                <| "MessageTemplate" -> "Generated title exceeds the maximum length.", "Title" -> title |>
+            ],
 
             True,
             title
@@ -148,6 +168,17 @@ postProcessChatTitle[ failure: Failure[ "APIError", _ ], _ ] :=
     throwFailureToChatOutput @ failure;
 
 postProcessChatTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*titleLength*)
+(* Checking the length of the title needs to be a mix of both string length and token counts because the LLM will
+   have an idea of the character length for some words, but for others it will not, in which case token counting
+   is more appropriate. This will avoid higher error probabilities for some titles that have particularly wide tokens,
+   e.g. " Histogram" is a single token. *)
+titleLength // beginDefinition;
+titleLength[ title_String ] := StringLength @ title / 2.0 + Length @ cachedTokenizer[ "gpt-4o" ][ title ] * 1.5;
+titleLength // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
