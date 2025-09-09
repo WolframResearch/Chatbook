@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxTitleLength         = 30;
-$hardMaxTitleLength     = 45;
+$hardMaxTitleLength     = 50; (* Use 40 for gpt-4o-mini *)
 $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
 $tokenLengthMultiplier  = 3.0;
@@ -199,12 +199,18 @@ postProcessChatTitle[ maxLength_Integer? Positive, title0_String, KeyValuePatter
         length = ConfirmBy[ titleLength @ clean, NumberQ, "Length" ];
 
         Which[
+            (* This test is meant to catch outputs where the LLM attempted to directly answer the user's query in the
+               transcript instead of writing a title. This might not be necessary anymore since the prompting has been
+               improved. *)
             StringContainsQ[ clean, "\n"|"```" ],
             Failure[
                 "TitleCharacters",
                 <| "MessageTemplate" -> "Unexpected characters in generated title.", "Title" -> clean |>
             ],
 
+            (* This test is meant to catch outputs where the LLM didn't understand the instructions and returned
+               something like "Sure, here's a title for you: ...". This might not be necessary anymore since the
+               prompting has been improved. *)
             length > maxLength,
             Failure[
                 "TitleLength",

@@ -712,7 +712,7 @@ generateTitleCached0[ hash_Integer, messages_ ] :=
 
 generateTitleCached0[ hash_Integer, messages_ ] := Enclose[
     Catch @ Module[ { title },
-        title = ConfirmMatch[ GenerateChatTitle[ messages, "MaxLength" -> 45 ], _String|_Failure, "Title" ];
+        title = ConfirmMatch[ GenerateChatTitle @ messages, _String|_Failure, "Title" ];
 
         $lastGeneratedTitle = title;
         $lastRegeneratedTitle = None;
