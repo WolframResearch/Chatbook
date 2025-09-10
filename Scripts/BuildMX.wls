@@ -176,12 +176,12 @@ cicd`ConsoleLog @ SequenceForm[ "MX target directory: ", $mxDir  ];
 cicd`ConsoleLog @ SequenceForm[ "Building MX file: "   , $mxFile ];
 
 (* workaround for bug 425251 *)
-Cases[
-    DownValues @ Experimental`ValueFunction,
-    HoldPattern @ RuleDelayed[
-        Verbatim[ HoldPattern ][ Experimental`ValueFunction[ s_Symbol ] ],
-        _
-    ] :> Unset @ Experimental`ValueFunction @ s
+Scan[
+    Function @ Cases[
+        DownValues @ #,
+        HoldPattern[ Verbatim[ HoldPattern ][ #[ s_Symbol ] ] :> _ ] :> Unset @ #[ s ]
+    ],
+    { Experimental`ValueFunction, Experimental`DelayedValueFunction }
 ];
 
 DumpSave[ $mxFile, { "Wolfram`Chatbook`" }, "SymbolAttributes" -> False ];
