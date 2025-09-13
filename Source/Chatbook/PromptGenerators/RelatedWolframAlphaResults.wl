@@ -337,6 +337,8 @@ relatedWolframAlphaResultsPrompt[
 
         If[ content === { }, Throw[ "" ] ];
 
+        addHandlerArguments[ "RelatedWolframAlphaResults" -> <| "Content" -> content |> ];
+
         strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
 
         resultsString = StringRiffle[ strings, "\n\n" ];
