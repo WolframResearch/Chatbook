@@ -115,7 +115,7 @@ relatedDocumentationGenerator // beginDefinition;
 
 relatedDocumentationGenerator[ messages: $$chatMessages ] :=
     If[ TrueQ @ $filterDocumentationRAG,
-        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 50, "FilterResults" -> True ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
 
