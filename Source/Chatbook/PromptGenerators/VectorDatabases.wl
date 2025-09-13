@@ -194,7 +194,7 @@ $allowDownload   = True;
 $cacheEmbeddings = True;
 
 $embeddingDimension      = 384;
-$maxNeighbors            = 100;
+$maxNeighbors            = 250;
 $maxEmbeddingDistance    = 150.0;
 $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
