@@ -238,6 +238,7 @@ $modelAutoSettings[ Automatic ] = <| |>;
 (*gpt-4o*)
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 128000,
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Automatic
 |>;
