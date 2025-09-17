@@ -247,8 +247,8 @@ cloudCellInsertMenu[ ] := ActionMenu[
     },
     {
         insertStyleMenuItem[ "ChatInputIcon", "ChatInput", "'" ],
-        insertStyleMenuItem[ "SideChatIcon", "SideChat", "' '" ],
-        insertStyleMenuItem[ "ChatSystemIcon", "ChatSystemInput", "' ' '" ],
+        insertStyleMenuItem[ "SideChatIcon", "SideChat", "" ],
+        insertStyleMenuItem[ "ChatSystemIcon", "ChatSystemInput", "" ],
         Delimiter,
         insertStyleMenuItem[ None, "ChatDelimiter", "~" ],
         insertStyleMenuItem[ None, "ChatBlockDivider", "~ ~" ]
