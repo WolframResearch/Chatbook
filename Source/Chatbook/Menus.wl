@@ -12,6 +12,7 @@ BeginPackage[ "Wolfram`Chatbook`Menus`" ];
 HoldComplete[
     `AttachSubmenu;
     `MakeMenu;
+    `MakeSideBarMenu;
 ];
 
 Needs[ "GeneralUtilities`" -> None ];
@@ -27,6 +28,10 @@ AttachSubmenu[parentMenu$, submenu$] attaches submenu$ to parentMenu$, taking
 care to attach to the left or right side based on heuristic for available space.
 "];
 
+GeneralUtilities`SetUsage[MakeSideBarMenu, "
+MakeSideBarMenu[Dynamic[pane], $$] returns an expression representing a menu of actions where pane refers to the top-menu's state.
+"];
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Common`"     ];
@@ -36,6 +41,510 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $submenuItems = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*MakeSideBarMenu*)
+MakeSideBarMenu // beginDefinition;
+
+MakeSideBarMenu[ sideBarCell_CellObject, items_List ] :=
+With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75, 1.] },
+    DynamicModule[ { generatedMenu, aiPane, modelPaneLabel },
+        PaneSelector[
+            {
+                "Main" -> 
+                    Column[
+                        {
+                            linkTrailFrame[ "AI Settings", CurrentValue[ sideBarCell, CellTags ] = "ResetToMain" ],
+                            scrollablePane[
+                                Column[
+                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ items,
+                                    Spacings -> { 0, 0 } ],
+                                mag, 90, en ] },
+                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                    ],
+                "Services" ->
+                    Dynamic @ Column[
+                        {
+                            linkTrailFrame[ "Models", aiPane = "Main" ],
+                            scrollablePane[
+                                Column[
+                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ Wolfram`Chatbook`UI`Private`createServiceMenu[ en ],
+                                    Spacings -> { 0, 0 } ],
+                                mag, 90, en ] },
+                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                    ],
+                "ModelNames" ->
+                    Dynamic @ Column[
+                        {
+                            linkTrailFrame[ Dynamic[modelPaneLabel], aiPane = "Services" ],
+                            scrollablePane[
+                                Column[
+                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ generatedMenu,
+                                    Spacings -> { 0, 0 } ],
+                                mag, 90, en ] },
+                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                    ],
+
+                (* some day this meny may depend on the model (service) and model name... *)
+                "AdvancedSettings" ->
+                    Column[
+                        {
+                            linkTrailFrame[ "Advanced Settings", aiPane = "Main" ],
+                            scrollablePane[
+                                Column[
+                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en ],
+                                    Spacings -> { 0, 0 } ],
+                                mag, 90, en ] },
+                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                    ]
+            },
+            Dynamic @ aiPane,
+            ImageSize -> Automatic
+        ],
+        Initialization :> (aiPane = "Main")
+    ]
+]
+
+MakeSideBarMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*side bar UI elements*)
+
+(* ::**************************************************************************************************************:: *)
+linkTrailFrame // beginDefinition;
+
+Attributes[ linkTrailFrame ] = { HoldRest };
+
+linkTrailFrame[ text_, action_ ] :=
+Framed[
+    Grid[
+        { {
+            Button[
+                buttonAppearance[ "\[LeftArrow]", 0, { 18, 18 } ],
+                action,
+                Appearance       -> "Suppressed",
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic,
+                Method           -> "Queued"],
+            Pane[ text, Alignment -> Center, ImageSize -> Scaled[ 1. ] ]
+        } },
+        BaselinePosition -> { { 1, 2 }, Baseline },
+        BaseStyle        -> { FontFamily -> "Source Sans Pro", FontSize -> 14 } ],
+    Alignment        -> { Left, Center },
+    Background       -> Transparent,
+    BaselinePosition -> Baseline,
+    FrameMargins     -> { { 10, 0 }, { 0, 0 } },
+    FrameStyle       -> Transparent,
+    ImageSize        -> { Scaled[ 1. ], 30 } ]
+
+linkTrailFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+scrollablePane // beginDefinition;
+
+scrollablePane[ content_, mag_, extraHeightRemoved_, sideBarNotebook_NotebookObject ] :=
+DynamicModule[ { height },
+    DynamicWrapper[
+        Pane[
+            content,
+            AppearanceElements -> { },
+            Scrollbars         -> { False, Automatic },
+            ImageSize          -> Dynamic[ { Scaled[ 1. ], height } ] ],
+        
+        (* only change the allowed height if dynamic updating is enabled *)
+        If[ MatchQ[ CurrentValue[ sideBarNotebook, DynamicUpdating ], True | Automatic ],
+            height = (AbsoluteCurrentValue[ "ViewSize" ][[ 2 ]]/mag - extraHeightRemoved) (* ViewSize is a 15.0 addition *)
+        ]
+    ]
+]
+
+scrollablePane // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+buttonAppearanceBasic // beginDefinition;
+
+buttonAppearanceBasic[ label_, frameStyle_, frameMargins_ : Automatic, size_ : Automatic ] :=
+Framed[
+    label,
+    Alignment        -> { Center, Center },
+    BaselinePosition -> Baseline,
+    FrameMargins     -> frameMargins,
+    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameStyle ],
+    ImageSize        -> size,
+    RoundingRadius   -> 2]
+ 
+buttonAppearanceBasic // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+buttonAppearance // beginDefinition;
+
+$FrameColor             = LightDarkSwitched[GrayLevel[0.785], GrayLevel[0.5059]];
+$FrameColorHover        = LightDarkSwitched[Lighter @ $FrameColor[[1]], Lighter @ $FrameColor[[2]]];
+$FrameColorPressed      = LightDarkSwitched[Darker @ $FrameColor[[1]], Darker @ $FrameColor[[2]]];
+
+buttonAppearance[ label_, frameMargins_ : Automatic, size_ : Automatic ] :=
+NotebookTools`Mousedown[
+    buttonAppearanceBasic[ label, $FrameColor,        frameMargins, size ],
+    buttonAppearanceBasic[ label, $FrameColorHover,   frameMargins, size ],
+    buttonAppearanceBasic[ label, $FrameColorPressed, frameMargins, size ],
+    BaselinePosition -> Baseline
+]
+
+buttonAppearance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+resetButtonAppearanceBasic // beginDefinition;
+
+resetButtonAppearanceBasic[ styles__ ] := Graphics[ { styles, Disk[ ] }, ImageSize -> { 15, 15 }, BaselinePosition -> (Center -> Center) ]
+
+resetButtonAppearanceBasic // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+resetButtonAppearance // beginDefinition;
+
+$ResetButtonDefault     = LightDarkSwitched[Blue, RGBColor[0.6807978853126149, 0.6819646729539649, 0.99698961229365]]
+$ResetButtonHover       = LightDarkSwitched[Lighter @ $ResetButtonDefault[[1]], Lighter @ $ResetButtonDefault[[2]]];
+$ResetButtonPressed     = LightDarkSwitched[Darker @ $ResetButtonDefault[[1]], Darker @ $ResetButtonDefault[[2]]];
+
+resetButtonAppearance[ ] :=
+NotebookTools`Mousedown[
+    resetButtonAppearanceBasic[ $ResetButtonDefault ],
+    resetButtonAppearanceBasic[ $ResetButtonHover   ],
+    resetButtonAppearanceBasic[ $ResetButtonPressed ],
+    BaselinePosition -> Baseline
+]
+
+resetButtonAppearance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+resetButton // beginDefinition;
+
+(* 464865: dynamic conditions based on CurrentValue[..., {"Options", ...}] may not refresh so do it manually.
+    The trigger is a DM variable external to this control because we must pass state between two grid elements. *)
+resetButton[ Hold @ forceUpdate_, Hold @ condition_, Hold @ action_ ] :=
+PaneSelector[
+    {
+        True ->
+            Button[
+                resetButtonAppearance[ ],
+                action; forceUpdate = RandomReal[ ],
+                Appearance       -> "Suppressed",
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic,
+                Method           -> "Queued"
+            ],
+        False -> Graphics[ Background -> None, BaselinePosition -> (Center -> Center), ImageSize -> { 1, 1 } ] },
+    Dynamic[ forceUpdate; condition ],
+    BaselinePosition -> Baseline,
+    FrameMargins     -> { { 10, 0 }, { 0, 0 } },
+    ImageSize        -> { 25, Automatic }
+]
+
+resetButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+addResetButton // beginDefinition;
+
+addResetButton[ spec_, content_ ] :=
+If[ KeyExistsQ[ spec, "ResetCondition" ],
+    DynamicModule[ { forceUpdate },
+        Grid[
+            {
+                {
+                    resetButton[ Hold @ forceUpdate, Lookup[ spec, "ResetCondition", Hold @ Null, Hold ], Lookup[ spec, "ResetAction", Hold @ Null, Hold ] ],
+                    content } },
+            BaseStyle        -> Lookup[ spec, "ResetCondition", Automatic, Function[ Null, Dynamic[ { FontWeight -> If[ #, Bold, Automatic ] } ], HoldFirst ] ],
+            BaselinePosition -> { { 1, 1 }, Baseline }
+        ]
+    ],
+    Grid[
+        { { Pane["", ImageSize -> { 25, Automatic } ], content } },
+        BaselinePosition -> { { 1, 1 }, Baseline } ]
+]
+
+addResetButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sideBarMenuItem*)
+sideBarMenuItem // beginDefinition;
+
+Attributes[ sideBarMenuItem ] = { HoldRest };
+
+sideBarMenuItem[ spec: KeyValuePattern[ "Type" -> type_String ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
+Switch[ type,
+    "Button",    sideBarMenuItemButton[ spec, sideBarNotebook ],
+    "Custom",    sideBarMenuItemCustom[ spec ],
+    "Delayed",   sideBarMenuItemDelayed[ spec, generatedMenu, aiPane, modelPaneLabel, sideBarNotebook ],
+    "Delimiter", sideBarMenuDelimiter[ ],
+    "Header",    sideBarMenuSectionHeader[ spec ],
+    "Refresh",   sideBarMenuRefresh[ spec, generatedMenu ],
+    "Submenu",   sideBarMenuItemSubmenuGenerator[ spec, generatedMenu, aiPane, modelPaneLabel, sideBarNotebook ],
+    "Setter",    sideBarMenuItemSetter[ spec, sideBarNotebook ],
+    _,           None
+]
+
+sideBarMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemButton*)
+sideBarMenuItemButton // beginDefinition
+
+Attributes[ sideBarMenuItemButton ] = { HoldRest };
+
+sideBarMenuItemButton[ spec : KeyValuePattern[ "Action" :> eval_ ], sideBarNotebook_ ] :=
+Module[ { icon, label },
+    label = Lookup[ spec, "Label", "" ];
+    icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
+    
+    addResetButton[
+        spec, 
+        Button[
+            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            eval,
+            Appearance -> $suppressButtonAppearance,
+            Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            Method     -> Lookup[ spec, "Method", "Queued" ]
+        ]
+    ]
+]
+
+sideBarMenuItemButton // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemCustom*)
+sideBarMenuItemCustom // beginDefinition
+
+sideBarMenuItemCustom[ spec_Association?AssociationQ ] := addResetButton[ spec, Lookup[ spec, "Content", None ] ]
+
+sideBarMenuItemCustom // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemDelayed*)
+sideBarMenuItemDelayed // beginDefinition
+
+Attributes[ sideBarMenuItemDelayed ] = { HoldRest };
+
+sideBarMenuItemDelayed[ spec : KeyValuePattern[ "FinalMenu" :> eval_ ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
+DynamicModule[ { display },
+    display =
+        Column @
+            Map[
+                sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, sideBarNotebook ]&,
+                Lookup[ spec, "InitialMenu", { } ]
+            ];
+
+    Dynamic @ display,
+
+    Initialization :> (
+        display =
+            Column @
+                Map[
+                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, sideBarNotebook ]&,
+                    eval
+                ]
+    ),
+
+    SynchronousInitialization -> False,
+    InheritScope -> True
+]
+
+sideBarMenuItemDelayed // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuDelimiter*)
+sideBarMenuDelimiter // beginDefinition
+
+sideBarMenuDelimiter[ ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ]
+
+sideBarMenuDelimiter // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuSectionHeader*)
+sideBarMenuSectionHeader // beginDefinition
+
+sideBarMenuSectionHeader[ spec_Association?AssociationQ ] :=
+Module[ { label },
+    label = Lookup[ spec, "Label", "" ];
+
+    (* This is effectively the "ChatMenuSection" TemplateBox but with reduced margins *)
+    Framed[
+        Grid[
+            { {
+                    Pane[
+                        Style[ addResetButton[ spec, label ], "ChatMenuSectionLabel" ],
+                        FrameMargins     -> 0,
+                        ImageMargins     -> 0,
+                        BaselinePosition -> Baseline,
+                        ImageSize        -> Full
+                    ]
+            } },
+            Alignment -> { Left, Baseline },
+            Spacings  -> { 0, 0 }
+        ],
+        Background       -> color @ "ChatMenuSectionBackground",
+        BaselinePosition -> Baseline,
+        FrameMargins     -> { { -1, 2 }, { 2, 2 } },
+        FrameStyle       -> None,
+        ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+        ImageSize        -> Full,
+        RoundingRadius   -> 0
+    ]
+]
+
+sideBarMenuSectionHeader // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuRefresh*)
+sideBarMenuRefresh // beginDefinition
+
+Attributes[ sideBarMenuRefresh ] = { HoldRest };
+
+sideBarMenuRefresh[ spec : KeyValuePattern[ { "InitialMenu" :> start_, "FinalMenu" :> end_ } ], generatedMenu_ ] :=
+Module[ { label },
+    label = Lookup[ spec, "Label", "" ];
+    
+    Button[
+        RawBoxes @ TemplateBox[ { ToBoxes @ Spacer[ 0 ], ToBoxes @ label }, "ChatMenuItem" ],
+        generatedMenu = start; generatedMenu = end,
+        Appearance -> $suppressButtonAppearance,
+        Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+        Method     -> Lookup[ spec, "Method", "Queued" ]
+    ]
+]
+
+sideBarMenuRefresh // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemSubmenuGenerator*)
+sideBarMenuItemSubmenuGenerator // beginDefinition
+
+Attributes[ sideBarMenuItemSubmenuGenerator ] = { HoldRest };
+
+sideBarMenuItemSubmenuGenerator[ spec : KeyValuePattern[ { "MenuTag" -> tag_String, "Menu" :> menu_, "Category" -> "Service" } ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
+Module[ { icon, label },
+    label = submenuLabel @ Lookup[ spec, "Label", "" ];
+    icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
+    
+    addResetButton[
+        spec,
+        Button[
+            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            (
+                generatedMenu = menu;
+                aiPane = "ModelNames";
+                modelPaneLabel = tag),
+            Appearance -> $suppressButtonAppearance,
+            Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            Method     -> Lookup[ spec, "Method", "Queued" ]
+        ]
+    ]
+]
+
+sideBarMenuItemSubmenuGenerator[ spec : KeyValuePattern[ "MenuTag" -> tag_String ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
+Module[ { icon, label },
+    label = submenuLabel @ Lookup[ spec, "Label", "" ];
+    icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
+    
+    addResetButton[
+        spec,
+        Button[
+            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            aiPane = tag,
+            Appearance -> $suppressButtonAppearance,
+            Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            Method     -> Lookup[ spec, "Method", "Queued" ]
+        ]
+    ]
+]
+
+sideBarMenuItemSubmenuGenerator // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemSetter*)
+sideBarMenuItemSetter // beginDefinition
+
+Attributes[ sideBarMenuItemSetter ] = { HoldRest };
+
+sideBarMenuItemSetter[ spec : KeyValuePattern[ "Action" :> eval_ ], sideBarNotebook_ ] :=
+Module[ { icon, label },
+    label = Lookup[ spec, "Label", "" ];
+    icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
+    
+    addResetButton[
+        spec, 
+        Button[
+            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            eval,
+            Appearance -> $suppressButtonAppearance,
+            Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            Method     -> Lookup[ spec, "Method", "Queued" ]
+        ]
+    ]
+]
+
+sideBarMenuItemSetter // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sideBarMenuItemIcon*)
+sideBarMenuItemIcon // beginDefinition
+
+Attributes[ sideBarMenuItemIcon ] = { HoldRest };
+
+(* The sideBar is persistent so keep the check marks up-to-date in all categories *)
+(* Note: we've deemed it looks best to have the check mark always darker in color regardless of whether it's inherited *)
+sideBarMenuItemIcon[ spec_Association?AssociationQ, sideBarNotebook_ ] :=
+With[ { val = Lookup[ spec, "Value", None ], c1 = color @ "ChatMenuItemCheckmarkTrue", c2 = color @ "ChatMenuItemCheckmarkInherited" },
+Row[ Flatten @ {
+    Switch[ Lookup[ spec, "Category", None ],
+        "Persona",
+            Dynamic[
+                Function[
+                    If[ #1 === Inherited,
+                        If[ #2 === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ],
+                        If[ #1 === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ] ]
+                ][
+                    CurrentValue[ sideBarNotebook , { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ],
+                    Wolfram`Chatbook`CurrentChatSettings[ sideBarNotebook , "LLMEvaluator" ] ]
+            ],
+        "Service",
+            Dynamic[
+                Function[
+                    If[ #1 === Inherited,
+                        If[ Lookup[ #2, "Service", None ] === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ],
+                        If[ Lookup[ #1, "Service", None ] === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ] ]
+                ][
+                    CurrentValue[ sideBarNotebook , { TaggingRules, "ChatNotebookSettings", "Model" } ],
+                    Wolfram`Chatbook`CurrentChatSettings[ sideBarNotebook , "Model" ] ]
+            ],
+        "ModelName",
+            Dynamic[
+                Function[
+                    If[ #1 === Inherited,
+                        If[ Lookup[ #2, "Name", None ] === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ],
+                        If[ Lookup[ #1, "Name", None ] === val, Style[ "\[Checkmark]", FontColor -> c1 ], Style[ "\[Checkmark]", ShowContents -> False ] ] ]
+                ][
+                    CurrentValue[ sideBarNotebook , { TaggingRules, "ChatNotebookSettings", "Model" } ],
+                    Wolfram`Chatbook`CurrentChatSettings[ sideBarNotebook , "Model" ] ]
+            ],
+        None,
+            "" ],
+    Lookup[ spec, "Icon", { " ", resizeMenuIcon @ Graphics[ Background -> Red ] }, Replace[ #, { None :> Nothing, _ :> { " ", resizeMenuIcon @ # } } ]& ]
+} ]
+]
+
+sideBarMenuItemIcon // endDefinition
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -218,7 +727,7 @@ addSubmenuHandler[
             Column @
                 Map[
                     menuItem[ Dynamic @ rootMenuCell, Dynamic @ subMenuCell, Dynamic @ display, #, menuWidth ]&,
-                    Lookup[ spec, "InitialMenu", {} ]
+                    Lookup[ spec, "InitialMenu", { } ]
                 ];
 
         Dynamic @ display,

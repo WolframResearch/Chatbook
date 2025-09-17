@@ -23,6 +23,10 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
+GeneralUtilities`SetUsage[CreateSideBarContent, "
+CreateSideBarContent[ sideBarCell ] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' sidebar menu, passing in the CellObject of the side bar.
+"]
+
 Begin["`Private`"]
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -52,6 +56,137 @@ MakeChatCloudDockedCellContents[] := makeChatCloudDockedCellContents[ ];
 (* ::Section::Closed:: *)
 (*Preferences Panel*)
 CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "Preferences" } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+	nbObj,
+	isChatEnabled
+},
+	(* This menu is kernel-generated, so calculate variables once before the DM displayed content, and pass them on as needed *)
+	nbObj = EvaluationNotebook[ ];
+	isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
+
+	mainSideBarMenuContent[ True, sideBarCell, nbObj, isChatEnabled ],
+
+	InheritScope -> True
+] /; TrueQ @ alreadyLoadedMenuQ;
+
+(*
+	The percolator only appears the first time the menu loads when invoked from the default toolbar.
+	Note that it can quickly flash if the LLM models were first loaded elsewhere, like when creating a new ChatInput cell,
+	but that's an OK compromise. *)
+CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+	nbObj,
+	isChatEnabled,
+	display
+},
+	(* Show the progress indicator as soon as possible *)
+	display =
+		Pane[
+			Column @ {
+				Style[ tr @ "UIInitializeChatbook", "ChatMenuLabel" ],
+				ProgressIndicator[ Appearance -> "Percolate" ]
+			},
+			ImageMargins -> 5
+		];
+
+	Dynamic[ display ],
+
+	Initialization :> (
+		nbObj = EvaluationNotebook[ ];
+		isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
+		display = mainSideBarMenuContent[ False, sideBarCell, nbObj, isChatEnabled ];
+		alreadyLoadedMenuQ = True
+	),
+
+	SynchronousInitialization -> False,
+
+	InheritScope -> True
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mainSideBarMenuContent*)
+
+mainSideBarMenuContent // beginDefinition;
+
+Attributes[mainSideBarMenuContent] = {HoldRest};
+
+mainSideBarMenuContent[ alreadyLoadedMenuQ_, sideBarCell_, nbObj_, isChatEnabled_ ] :=
+PaneSelector[
+	{
+		True -> If[ alreadyLoadedMenuQ,
+			((* Creating the menu is expensive even if it's already loaded once before.
+				The Dynamic means we only create it when it is first displayed.
+				So if the False case of this PaneSelector happens first, then createChatNotEnabledToolbar won't take time to load. *)
+				Dynamic[ makeSideBarMenuContent[ sideBarCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
+			),
+			(* If the menu is generating for the first time then we can't have the Dynamic here or else it competes with Dynamic[display] *)
+			makeSideBarMenuContent[ sideBarCell, nbObj ]
+		],
+		False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
+	},
+	Dynamic @ isChatEnabled,
+	ImageSize -> Automatic
+]
+
+mainSideBarMenuContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeSideBarMenuContent*)
+
+makeSideBarMenuContent // beginDefinition;
+
+makeSideBarMenuContent[ sideBarCell_CellObject, nbObj_NotebookObject ] := Enclose[
+	Module[ { items, new },
+
+		items = ConfirmBy[ makeChatActionMenu[ "SideBar", nbObj ], ListQ, "Items" ];
+
+		new = Join[ 
+			{ <|
+				 "Type"           -> "Custom",
+				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSideBar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
+				 "ResetAction"    :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = Inherited),
+				 "ResetCondition" :> (AbsoluteCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
+			|> },
+			items ];
+
+		MakeSideBarMenu[ sideBarCell, new ]
+	],
+	throwInternalFailure
+];
+
+makeSideBarMenuContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*backButtonAppearance*)
+backButtonAppearanceBasic // beginDefinition;
+
+backButtonAppearanceBasic[ label_, frameStyle_, frameMargins_, size_ ] :=
+Framed[
+    label,
+    Alignment -> { Center, Center },
+    BaselinePosition -> Baseline,
+    FrameMargins -> frameMargins,
+    FrameStyle -> Directive[ AbsoluteThickness[ 1 ], frameStyle ],
+    ImageSize -> size,
+    RoundingRadius -> 2 ]
+
+backButtonAppearanceBasic // endDefinition;
+
+backButtonAppearance // beginDefinition;
+
+backButtonAppearance[ label_, frameMargins_, size_ ] :=
+NotebookTools`Mousedown[
+    backButtonAppearanceBasic[ label, GrayLevel[ 0.785 ], frameMargins, size ],
+    backButtonAppearanceBasic[ label, Lighter @ GrayLevel[ 0.785 ], frameMargins, size ],
+    backButtonAppearanceBasic[ label, Darker @ GrayLevel[ 0.785 ], frameMargins, size ],
+    BaselinePosition -> Baseline ]
+
+backButtonAppearance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -324,6 +459,33 @@ makeAutomaticResultAnalysisCheckbox[
 		True,
 		195
 	]
+]
+
+SetFallthroughError[makeAutomaticResultAnalysisCheckboxSideBar]
+
+(* the side bar changes the notebook-level setting regardless of the $FrontEndSession value *)
+makeAutomaticResultAnalysisCheckboxSideBar[ nbo_NotebookObject ] :=
+labeledCheckbox[
+	autoAssistQ @ nbo,
+	Function[ { newValue }, CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = newValue$ ],
+	(* We can only get the tooltip to glue itself to the text by first literalizing the text resource as a string before typesetting to RowBox. *)
+	Style[
+		Row[
+			{
+				FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+				Spacer[ 3 ],
+				Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+			},
+			"\[NoBreak]",
+			StripOnInput -> True
+		],
+		FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+			color @ "ChatMenuCheckboxLabelFontHover",
+			color @ "ChatMenuCheckboxLabelFont"
+		])
+	],
+	True,
+	400
 ]
 
 (*====================================*)
@@ -1029,12 +1191,17 @@ filterPersonas // endDefinition;
 SetFallthroughError[makeChatActionMenu]
 
 makeChatActionMenu[
-	containerType: "Input" | "Delimiter" | "Toolbar",
+	containerType: "Input" | "Delimiter" | "Toolbar" | "SideBar",
 	targetObj : _CellObject | _NotebookObject
 ] :=
 Join[
 	{
-		<| "Type" -> "Header", "Label" -> tr @ "UIPersonas" |>
+		<|
+			"Type"           -> "Header",
+			"Label"          -> tr @ "UIPersonas",
+			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = Inherited),
+			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+		|>
 	},
 	With[
 		{
@@ -1052,7 +1219,9 @@ Join[
 					(* If we're changing the persona set on a cell, ensure that we are not showing
 						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
 					If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
-				)
+				),
+				"Value"    -> persona,
+				"Category" -> "Persona"
 			|>,
 			filterPersonas @ targetObj
 		]
@@ -1082,7 +1251,9 @@ Join[
 			"Icon"    -> getIcon @ "ChatBlockSettingsMenuIcon",
 			"MenuTag" -> "Services",
 			"Menu"    :> createServiceMenu @ targetObj,
-			"Width"   -> 150
+			"Width"    -> 150,
+			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] = Inherited),
+			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =!= Inherited)
 		|>,
 		<|
 			"Type"    -> "Submenu",
@@ -1157,7 +1328,9 @@ wolframServiceMenuItem[ targetObj_, model_ ] :=
 	"Label"  -> "Wolfram",
 	"Icon"   -> serviceIcon[ model, "Wolfram" ],
 	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
-	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
+	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ]),
+	"Value"    -> "LLMKit",
+	"Category" -> "Service"
 |>
 
 wolframServiceMenuItem // endDefinition;
@@ -1236,7 +1409,9 @@ createServiceItem[ obj_, model_, service_String ] := <|
     "Menu"    :> dynamicModelMenu[ obj, model, service ],
     "MenuTag" -> service,
     "Width"   -> 280,
-    "Check"   -> serviceIconCheck[ model, service ]
+    "Check"   -> serviceIconCheck[ model, service ],
+    "Value"    -> service,
+    "Category" -> "Service"
 |>;
 
 createServiceItem // endDefinition;
@@ -1373,7 +1548,9 @@ makeServiceModelMenu[ obj_, currentModel_, service_String, Missing[ "NotConnecte
 		"Type"        -> "Refresh",
 		"Label"       -> tr @ "UIModelsNoList",
 		"InitialMenu" :> (simpleModelMenuDisplay[ service, ProgressIndicator[ Appearance -> "Percolate" ] ]),
-		"FinalMenu"   :> (makeServiceModelMenu[ obj, currentModel, service, getServiceModelList @ service ])
+		"FinalMenu"   :> (makeServiceModelMenu[ obj, currentModel, service, getServiceModelList @ service ]),
+		"Value"       -> None,
+		"Category"    -> "ModelName"
 	|>
 }
 
@@ -1384,7 +1561,9 @@ makeServiceModelMenu[ obj_, currentModel_, service_String, Missing[ "NoModelList
 		"Type"   -> "Setter",
 		"Label"  -> "Automatic",
 		(* TODO: this could probably prompt the user with an InputField to enter a name: *)
-		"Action" :> setModel[ obj, <| "Service" -> service, "Name" -> Automatic |> ]
+		"Action" :> setModel[ obj, <| "Service" -> service, "Name" -> Automatic |> ],
+		"Value"  -> None,
+		"Category" -> "ModelName"
 	|>
 }
 
@@ -1462,7 +1641,9 @@ modelMenuItem[
 	"Label"  -> displayName,
 	"Icon"   -> None,
 	"Check"  -> modelSelectionCheckmark[ currentModel, name ],
-	"Action" :> (setModel[ obj, model ])
+	"Action" :> (setModel[ obj, model ]),
+	"Value"    -> name,
+	"Category" -> "ModelName"
 |>;
 
 modelMenuItem // endDefinition;
@@ -1516,7 +1697,7 @@ currentValueOrigin // beginDefinition;
 		specified CellObject.
 *)
 currentValueOrigin[
-	targetObj : _CellObject | _NotebookObject,
+	targetObj : _CellObject,
 	keyPath_List
 ] := Module[{
 	value,
@@ -1537,6 +1718,18 @@ currentValueOrigin[
 			{"Inherited", value},
 		True,
 			{"Inline", inlineValue}
+	]
+]
+
+currentValueOrigin[
+	nbObj_NotebookObject,
+	keyPath: { TaggingRules, "ChatNotebookSettings", key_ }
+] := Module[ { value },
+	value = CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", key } ];
+
+	If[ value === Inherited,
+		{ "Inherited", CurrentChatSettings[ nbObj, key ] },
+		{ "Inline", value }
 	]
 ]
 
