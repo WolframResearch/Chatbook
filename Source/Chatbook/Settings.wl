@@ -18,6 +18,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 $defaultChatSettings = <|
     "AllowSelectionContext"          -> Automatic,
+    "AppendCitations"                -> Automatic,
     "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
@@ -440,13 +441,15 @@ $DefaultModel :=
 (* ::Subsection::Closed:: *)
 (*Handler Functions*)
 $DefaultChatHandlerFunctions = <|
+    "AppendCitationsEnd"    -> None,
+    "AppendCitationsStart"  -> None,
     "ChatAbort"             :> $ChatAbort,
     "ChatPost"              :> $ChatPost,
     "ChatPre"               :> $ChatPre,
-    "ToolRequestReceived"   -> None,
-    "ToolResponseGenerated" -> None,
+    "PromptGeneratorEnd"    -> None,
     "PromptGeneratorStart"  -> None,
-    "PromptGeneratorEnd"    -> None
+    "ToolRequestReceived"   -> None,
+    "ToolResponseGenerated" -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)

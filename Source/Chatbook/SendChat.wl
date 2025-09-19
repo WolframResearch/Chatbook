@@ -461,17 +461,18 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults },
+    Module[ { messages, newRoles, replaced, split, stringResults, noSources },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
         replaced      = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
         split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
+        noSources     = ConfirmMatch[ removeSources @ stringResults, { ___Association }, "NoSources" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> stringResults ];
+        addHandlerArguments[ "SubmittedMessages" -> noSources ];
 
-        stringResults
+        noSources
     ],
     throwInternalFailure
 ];
@@ -497,6 +498,18 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     ];
 
 prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeSources*)
+removeSources // beginDefinition;
+
+removeSources[ messages_ ] := ReplaceAll[
+    messages,
+    s_String :> RuleCondition @ StringDelete[ s, "<wolfram-sources>" ~~ ___ ~~ "</wolfram-sources>" ]
+];
+
+removeSources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1408,16 +1421,16 @@ checkResponse // beginDefinition;
 
 checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
     If[ TrueQ @ $AutomaticAssistance,
-        writeResult[ settings, container, cell, as ],
-        $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
+        writeResult[ settings, Unevaluated @ container, cell, as ],
+        $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
     ];
 
 (* FIXME: Look for "finish_reason":"stop" and check if response ends in a WL code block.
           If it does, process it as a tool call, since it wrote /exec after the code block. *)
 checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
     If[ TrueQ @ $AutomaticAssistance,
-        writeResult[ settings, container, cell, as ],
-        $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
+        writeResult[ settings, Unevaluated @ container, cell, as ],
+        $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
@@ -1433,11 +1446,15 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
-writeResult[ settings_, container_, cell_, as_ ] /; $chatEvaluationBlock :=
-    Null;
+writeResult[ settings_, container_, cell_, as_ ] /; $chatEvaluationBlock := (
+    appendCitations[ Unevaluated @ container, settings ];
+    Null
+);
 
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
     Catch @ Module[ { log, processed, body, data },
+
+        appendCitations[ Unevaluated @ container, settings ];
 
         If[ TrueQ @ $AutomaticAssistance,
             NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
