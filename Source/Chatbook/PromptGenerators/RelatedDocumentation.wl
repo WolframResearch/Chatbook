@@ -503,6 +503,14 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             "Pages"
         ];
 
+        KeyValueMap[
+            AddToSources,
+            KeyTake[
+                <| #Value -> #Snippet & /@ DeleteCases[ results, KeyValuePattern[ "Type" -> "Instructions" ] ] |>,
+                selected
+            ]
+        ];
+
         addHandlerArguments[
             "RelatedDocumentation" -> <|
                 "Results"      -> uris,
@@ -781,6 +789,20 @@ snippetXML // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*uriToSnippetID*)
 uriToSnippetID // beginDefinition;
+
+uriToSnippetID[ URL[ uri_String ] ] :=
+    uriToSnippetID @ uri;
+
+uriToSnippetID[ uri_String ] /; StringStartsQ[ uri, "https://www.wolframalpha.com/input?i=" ] := Enclose[
+    Module[ { base, counter, id },
+        base = "WA";
+        counter = ConfirmBy[ getSnippetIDCounter[ uri, base ], IntegerQ, "Counter" ];
+        id = base <> "-" <> ToString @ counter;
+        snippetIDToURI[ id ] = uri;
+        uriToSnippetID[ uri ] = id
+    ],
+    throwInternalFailure
+];
 
 uriToSnippetID[ uri_String ] := Enclose[
     Module[ { split, base, counter, id },

@@ -77,7 +77,7 @@ getWolframAlphaText[ as_Association ] :=
     getWolframAlphaText[ as[ "query" ], as[ "steps" ] ];
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
-    Module[ { result, data, string },
+    Module[ { result, data, string, url },
         result = wolframAlpha[ query, steps ];
         data = WolframAlpha[
             query,
@@ -85,6 +85,8 @@ getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
             PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
         ];
         string = getWolframAlphaText[ query, steps, data ];
+        url = StringReplace[ URLBuild[ "https://www.wolframalpha.com/input", <| "i" -> query |> ], "%20" -> "+" ];
+        AddToSources[ url, string ];
         getWolframAlphaText[ query, steps ] = <| "Result" -> result, "String" -> string |>
     ];
 
