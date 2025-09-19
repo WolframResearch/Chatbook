@@ -11,7 +11,8 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxItems           = 5;
-$defaultConfig      = <| "StopTokens" -> { "[NONE]" }, "Model" -> <| "Name" -> "gpt-4o-mini" |> |>;
+$stopTokens         = { "[NONE]", "[WL]" };
+$defaultConfig      = <| "StopTokens" -> $stopTokens, "Model" -> <| "Name" -> "gpt-4o-mini" |> |>;
 $generatorLLMConfig = $defaultConfig;
 $usePromptHeader    = True;
 $multimodal         = True;
@@ -44,6 +45,8 @@ $$ignoredXMLTag = Alternatives[
 (* cSpell: enable *)
 
 $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
+
+$$emptyResponse = Alternatives @@ Append[ $stopTokens, "" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -201,7 +204,9 @@ RelatedWolframAlphaResults // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*$promptTemplate*)
 (* TODO: explain the transcript *)
-$promptTemplate = StringTemplate[ "\
+$promptTemplate := If[ TrueQ @ usingDocumentationQ[ ], $promptTemplateWithWL, $promptTemplateNoWL ];
+
+$promptTemplateNoWL = StringTemplate[ "\
 Your task is to write Wolfram Alpha queries that could help provide relevant info needed to answer a user's prompt.
 
 Here are some examples of valid Wolfram Alpha queries to give you a sense of what kinds of things it can handle:
@@ -212,6 +217,21 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
 e.g. casual conversation.
+
+`Instructions`" ];
+
+$promptTemplateWithWL = StringTemplate[ "\
+Your task is to write Wolfram Alpha queries that could help provide relevant info needed to answer a user's prompt.
+
+Here are some examples of valid Wolfram Alpha queries to give you a sense of what kinds of things it can handle:
+<examples>
+`Examples`
+</examples>
+
+Reply with up to `MaxItems` queries each on a separate line and nothing else. \
+Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
+e.g. casual conversation.
+Reply with [WL] if the user's prompt would be better answered with Wolfram Language documentation instead.
 
 `Instructions`" ];
 
@@ -269,7 +289,7 @@ $fewShotExamples := makeMessagePairs @ {
     },
     {
         "Hello",
-        { }
+        None
     },
     {
         (* cSpell: ignore pokeman *)
@@ -279,6 +299,10 @@ $fewShotExamples := makeMessagePairs @ {
     {
         "tell me some neat facts about NYC",
         { "New York City, New York" }
+    },
+    {
+        "How can I split a list into triples but allow fewer items at the end?",
+        Missing[ "WolframLanguage" ]
     },
     {
         "Show me a picture of a cat",
@@ -299,15 +323,36 @@ makeMessagePairs[ input_String, outputs: { __String } ] := Flatten @ {
     <| "Role" -> "Assistant", "Content" -> StringRiffle[ Take[ outputs, UpTo @ $maxItems ], "\n" ] |>
 };
 
-makeMessagePairs[ input_String, { } ] := Flatten @ {
+makeMessagePairs[ input_String, None ] := Flatten @ {
     <| "Role" -> "User"     , "Content" -> input    |>,
     <| "Role" -> "Assistant", "Content" -> "[NONE]" |>
 };
+
+makeMessagePairs[ input_String, Missing[ "WolframLanguage" ] ] :=
+    If[ TrueQ @ usingDocumentationQ[ ],
+        Flatten @ {
+            <| "Role" -> "User"     , "Content" -> input |>,
+            <| "Role" -> "Assistant", "Content" -> "[WL]" |>
+        },
+        { }
+    ];
 
 makeMessagePairs[ pairs_List ] :=
     Flatten[ makeMessagePairs /@ pairs ];
 
 makeMessagePairs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usingDocumentationQ*)
+usingDocumentationQ // beginDefinition;
+usingDocumentationQ[ ] := usingDocumentationQ @ $ChatHandlerData[ "ChatNotebookSettings", "PromptGenerators" ];
+usingDocumentationQ[ generators_List ] := AnyTrue[ generators, usingDocumentationQ ];
+usingDocumentationQ[ HoldPattern @ LLMPromptGenerator[ as_, ___ ] ] := usingDocumentationQ @ as;
+usingDocumentationQ[ KeyValuePattern[ "Name" -> name_String ] ] := usingDocumentationQ @ name;
+usingDocumentationQ[ "RelatedDocumentation" ] := True;
+usingDocumentationQ[ _ ] := False;
+usingDocumentationQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -324,7 +369,8 @@ relatedWolframAlphaResultsPrompt[
     relatedCount_,
     randomCount_
 ] := Enclose[
-    Catch @ Module[ { contentAndQueries, content, queries, strings, resultsString, sampleString },
+    Catch @ Module[
+        { contentAndQueries, content, queries, strings, sourceURLs, sourceStrings, resultsString, sampleString },
 
         contentAndQueries = ConfirmMatch[
             relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ],
@@ -340,6 +386,27 @@ relatedWolframAlphaResultsPrompt[
         addHandlerArguments[ "RelatedWolframAlphaResults" -> <| "Content" -> content |> ];
 
         strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { __String }, "Strings" ];
+
+        sourceURLs = ConfirmMatch[ content[[ All, "URL" ]], { ___String }, "SourceURLs" ];
+        sourceStrings = ConfirmMatch[
+            StringTrim @ StringReplace[
+                strings,
+                {
+                    "<result query=" ~~ query: Except[ "\n" ].. ~~ " url=" ~~ Except[ "\n" ].. ~~ ">" :>
+                        "# Query\n\n" <> StringTrim[ query, "'"|"\"" ],
+                    "</result>" -> ""
+                }
+            ],
+            { ___String },
+            "SourceStrings"
+        ];
+
+        ConfirmAssert[ Length @ sourceURLs === Length @ sourceStrings, "SourceLengthCheck" ];
+
+        KeyValueMap[
+            AddToSources,
+            Select[ AssociationThread[ sourceURLs -> sourceStrings ], ! StringEndsQ[ #, "No Results Found" ] & ]
+        ];
 
         resultsString = StringRiffle[ strings, "\n\n" ];
         sampleString  = ConfirmBy[ createSampleQueryPrompt[ queries, $sampleQueryCount ], StringQ, "Sample" ];
@@ -455,7 +522,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
         content  = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
 
         queries = ConfirmMatch[
-            DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], "[NONE]"|"" ],
+            DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], $$emptyResponse ],
             { ___String },
             "Queries"
         ];
