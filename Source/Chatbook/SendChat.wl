@@ -506,7 +506,7 @@ removeSources // beginDefinition;
 
 removeSources[ messages_ ] := ReplaceAll[
     messages,
-    s_String :> RuleCondition @ StringDelete[ s, "<wolfram-sources>" ~~ ___ ~~ "</wolfram-sources>" ]
+    s_String :> RuleCondition @ StringTrim @ StringDelete[ s, "<wolfram-sources>" ~~ ___ ~~ "</wolfram-sources>" ]
 ];
 
 removeSources // endDefinition;
