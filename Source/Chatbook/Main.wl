@@ -40,6 +40,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$WorkspaceChatInput;
 `AbsoluteCurrentChatSettings;
 `AddChatToSearchIndex;
+`AddToSources;
 `AgentEvaluate;
 `AppendURIInstructions;
 `AugmentChatMessages;
@@ -67,6 +68,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatWolframAlphaPods;
 `GenerateChatTitle;
 `GenerateChatTitleAsynchronous;
+`GenerateCitations;
 `GenerateLLMConfiguration;
 `GetAttachments;
 `GetChatHistory;
@@ -146,6 +148,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`ChatState`",
     "Wolfram`Chatbook`ChatTitle`",
+    "Wolfram`Chatbook`Citations`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`CodeCheck`",
     "Wolfram`Chatbook`ColorData`",
@@ -223,6 +226,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
     "AddChatToSearchIndex",
+    "AddToSources",
     "AgentEvaluate",
     "AppendURIInstructions",
     "AugmentChatMessages",
@@ -250,6 +254,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "FormatWolframAlphaPods",
     "GenerateChatTitle",
     "GenerateChatTitleAsynchronous",
+    "GenerateCitations",
     "GenerateLLMConfiguration",
     "GetAttachments",
     "GetChatHistory",
