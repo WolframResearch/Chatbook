@@ -98,7 +98,7 @@ MapThread[
                             _[ CellFrameLabelMargins, _ ] :> None,
                             _[ CellFrameLabels, { { c_Cell, _ }, _ } ] :> {
                                 CellFrameLabels -> None,
-                                Initialization :> AttachCell[ EvaluationCell[ ], c, { Left, Top }, Offset[ { 0 , -15 }, 0 ], { Center, Top } ] } },
+                                Initialization :> AttachCell[ EvaluationCell[ ], c, { Left, Top }, Offset[ { -5 , -5 }, 0 ], { Center, Top } ] } },
                         1],
             _, Null];
         
