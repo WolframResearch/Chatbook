@@ -345,6 +345,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
+    "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
