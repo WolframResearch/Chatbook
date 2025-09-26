@@ -297,7 +297,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `removeCellAccents;
 `removeChatMenus;
 `removeToolPreferencePrompt;
-`renameCodeAssistanceFiles;
 `replaceCellContext;
 `resizeMenuIcon;
 `resizeMultimodalImage;
