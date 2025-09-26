@@ -218,6 +218,13 @@ cellObjectQ[ ___             ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*cellTaggedQ*)
+cellTaggedQ[ cell_CellObject, tag_String       ] := cellTaggedQ[ cell, { tag } ];
+cellTaggedQ[ cell_CellObject, { tags__String } ] := MemberQ[ Flatten @ List @ CurrentValue[ cell, CellTags ], Alternatives @@ tags ];
+cellTaggedQ[ ___                               ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*checkEvaluationCell*)
 checkEvaluationCell // beginDefinition;
 checkEvaluationCell[ cell_ ] /; $checkEvaluationCell := rootEvaluationCell @ cell;
@@ -565,6 +572,7 @@ fromFETimestamp // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
+parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SideBarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *)
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
