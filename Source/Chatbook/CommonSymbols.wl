@@ -138,6 +138,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `cellReference;
 `cellsToChatNB;
 `cellStyles;
+`cellTaggedQ;
 `channelCleanup;
 `chatExcludedQ;
 `chatHandlerFunctionsKeys;
