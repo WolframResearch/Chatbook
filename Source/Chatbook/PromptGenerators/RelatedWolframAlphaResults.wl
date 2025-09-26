@@ -249,14 +249,16 @@ and should be used to help answer the user's query using factual information.
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$citationHint*)
-$citationHint = "
+$citationHint := If[ TrueQ @ $ChatHandlerData[ "ChatNotebookSettings", "AppendCitations" ], "", $citationHint0 ];
+
+$citationHint0 = "
 
 If you use any information from these results, you should cite the relevant URL with a markdown link in your response.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$markdownHint*)
-$markdownHint = "
+$markdownHint := "
 
 ======
 
