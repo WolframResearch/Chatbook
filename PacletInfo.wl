@@ -48,13 +48,14 @@ PacletObject[ <|
             "Personas" -> {
                 "AgentOne",
                 "AgentOneCoder",
-                "PlainChat",
+                "Birdnardo",
                 "CodeAssistant",
                 "CodeWriter",
                 "NotebookAssistant",
+                "PlainChat",
                 "RawModel",
                 "Wolfie",
-                "Birdnardo"
+                "WolframAlpha"
             }
         },
         { "FrontEnd",
