@@ -1641,7 +1641,7 @@ boxToString[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ] ] /; ! 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Code Blocks*)
-boxToString[ TemplateBox[ { code_, language_ }, "ChatCodeBlockTemplate", ___ ] ] :=
+boxToString[ TemplateBox[ { code_, language_ }, "ChatCodeBlockTemplate" | "NotebookAssistant`SideBar`ChatCodeBlockTemplate", ___ ] ] :=
     Block[ { $escapeMarkdown = False },
         "\n" <> cellToString @ Replace[ code, Cell @ BoxData[ c_Cell, ___ ] :> c ] <> "\n"
     ];
@@ -3038,7 +3038,7 @@ boxToString[ Cell[
     ___
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> boxToString @ box <> "\n```" ];
 
-boxToString[ Cell[ BoxData[ b: TemplateBox[ _, "ChatCodeBlockTemplate", ___ ], ___ ], "ChatCodeBlock", ___ ] ] :=
+boxToString[ Cell[ BoxData[ b: TemplateBox[ _, "ChatCodeBlockTemplate" | "NotebookAssistant`SideBar`ChatCodeBlockTemplate", ___ ], ___ ], "ChatCodeBlock", ___ ] ] :=
     boxToString @ b;
 
 boxToString[ Cell[ BoxData[ boxes_, ___ ], "ChatCodeBlock", ___ ] ] :=

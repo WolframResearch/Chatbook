@@ -1330,7 +1330,8 @@ $templateBoxDisplayFunctions := Enclose[
 (*templateBox*)
 $$inlineTemplateBoxName = Alternatives[
     "ChatCodeBlockButtonPanel",
-    "ChatCodeBlockTemplate"
+    "ChatCodeBlockTemplate",
+    "NotebookAssistant`SideBar`ChatCodeBlockTemplate"
 ];
 
 
