@@ -115,8 +115,8 @@ $defaultAppName       = "Default";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
-$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
-$chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError" };
+$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput", "NotebookAssistant`SideBar`ChatInput" };
+$chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError", "NotebookAssistant`SideBar`ChatOutput" };
 $excludeHistoryStyles = { "SideChat" };
 $nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",
                           "ChatMenu", "ChatWidget", "InheritFromParent"
@@ -870,6 +870,7 @@ chatbookServiceCaller // beginDefinition;
 chatbookServiceCaller[ ] := Flatten @ {
     If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
     If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
+    If[ TrueQ @ $SideBarChat, "WorkspaceChat", Nothing ],
     Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
 };
 

@@ -87,26 +87,122 @@ MapThread[
                     Replace[ optionsList,
                         {
                             _[ CellFrameLabelMargins, _ ] :> None,
-                            _[ CellFrameLabels, { { _, c_Cell }, _ } ] :> {
-                                CellFrameLabels -> None,
-                                Initialization :> AttachCell[ EvaluationCell[ ], c, { Right, Top }, Offset[ { 0, -5 }, 0 ], { Center, Top } ] } },
+                            _[ CellFrameLabels, { { _, c_Cell }, _ } ] :> { CellFrameLabels -> None } },
                         1],
             "ChatOutput",
                 optionsList = Flatten @
                     Replace[ optionsList,
                         {
                             _[ CellFrameLabelMargins, _ ] :> None,
-                            _[ CellFrameLabels, { { c_Cell, _ }, _ } ] :> {
-                                CellFrameLabels -> None,
-                                Initialization :> AttachCell[ EvaluationCell[ ], c, { Left, Top }, Offset[ { -5 , -5 }, 0 ], { Center, Top } ] } },
+                            _[ CellFrameLabels, { { c_Cell, _ }, _ } ] :> { CellFrameLabels -> None } },
                         1],
-            _, Null];
+            "WorkspaceChatToolbarTitle",
+                optionsList = { FontColor -> color @ "NA_ToolbarTitleFont", FontSize  -> 12 },
+            _,
+                Null];
         
-        Cell[
-            StyleData[
-                "NotebookAssistant`SideBar`" <> #2,
-                If[ a === { }, Sequence @@ { }, StyleDefinitions -> StyleData[ #2 ] ] ],
-            Sequence @@ optionsList ]
+        Switch[ #2,
+            "AssistantMessageBox",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
+                Cell[
+                    StyleData[ "NotebookAssistant`SideBar`AssistantMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
+                    TemplateBoxOptions -> {
+                        DisplayFunction -> Function @ Evaluate @ OverlayBox[
+                            {
+                                TagBox[
+                                    FrameBox[
+                                        #,
+                                        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                                        Background     -> color @ "NA_AssistantMessageBoxBackground",
+                                        FrameMargins   -> 8,
+                                        FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ],
+                                        ImageMargins   -> { { 15, 15 }, { 30, 12 } }, (* TWEAK: workaround for an inline cell, WorkspaceChat.nb's CellOutput style's CellMargins *)
+                                        ImageSize      -> { Scaled[ 1 ], Automatic },
+                                        RoundingRadius -> 8,
+                                        StripOnInput   -> False
+                                    ],
+                                    EventHandlerTag @ {
+                                        "MouseEntered" :>
+                                            If[ TrueQ @ $CloudEvaluation,
+                                                Null,
+                                                With[ { cell = EvaluationCell[ ] },
+                                                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                                                ]
+                                            ],
+                                        Method         -> "Preemptive",
+                                        PassEventsDown -> Automatic,
+                                        PassEventsUp   -> True
+                                    }
+                                ],
+                                (* This used to be a CellFrameLabel within the ChatOutput style, but that option isn't supported in inline cells in the side bar *)
+                                PaneBox[
+                                    DynamicBox[
+                                        ToBoxes[
+                                            Needs[ "Wolfram`Chatbook`" -> None ];
+                                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
+                                            StandardForm
+                                        ],
+                                        SingleEvaluation -> True
+                                    ],
+                                    FrameMargins -> { { 5, 0 }, { 0, 23 } }  (* TWEAK: push down the icon to align in the overlay *)
+                                ]
+                            },
+                            All,
+                            1,
+                            Alignment -> { Left, Top }
+                        ]
+                    }
+                ],
+
+            "UserMessageBox",
+                Cell[
+                    StyleData[ "NotebookAssistant`SideBar`UserMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
+                    TemplateBoxOptions -> {
+                        DisplayFunction -> Function @ Evaluate @ OverlayBox[
+                            {
+                                PaneBox[
+                                    FrameBox[
+                                        #,
+                                        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                                        Background     -> color @ "UserMessageBoxBackground",
+                                        FrameMargins   -> { { 8, 15 }, { 8, 8 } },
+                                        FrameStyle     -> color @ "UserMessageBoxFrame",
+                                        RoundingRadius -> 8,
+                                        StripOnInput   -> False
+                                    ],
+                                    Alignment    -> Right,
+                                    ImageMargins -> { { 15, 15 }, { 5, 10 } }, (* TWEAK: workaround for an inline cell, WorkspaceChat.nb's CellInput style's CellMargins *)
+                                    ImageSize    -> { Full, Automatic }
+                                ],
+                                PaneBox[
+                                    DynamicBox[
+                                        ToBoxes[
+                                            Needs[ "Wolfram`Chatbook`" -> None ];
+                                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UserMessageLabel" ],
+                                            StandardForm
+                                        ],
+                                        SingleEvaluation -> True
+                                    ],
+                                    FrameMargins -> { { 0, 5 }, { 0, 20 } }
+                                ]
+                            },
+                            All,
+                            1,
+                            Alignment -> { Right, Top }
+                        ]
+                    }
+                ],
+
+            _,
+                Cell[
+                    StyleData[
+                        "NotebookAssistant`SideBar`" <> StringReplace[ #2, StartOfString ~~ "WorkspaceChat" -> "" ],
+                        Which[
+                            #2 === "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "NotebookAssistant`SideBar`ToolbarButtonLabel" ],
+                            a === { }, Sequence @@ { },
+                            True, StyleDefinitions -> StyleData[ #2 ] ] ],
+                    Sequence @@ optionsList ]
+        ]
     ]&,
     (Transpose @ fails) ]
 

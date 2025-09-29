@@ -276,7 +276,8 @@ $evaluatedChatInputDingbat = Cell[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$fromWorkspaceChatConversionRules*)
-$fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
+$fromWorkspaceChatConversionRules := {
+    (* Workspace chat *)
     Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
@@ -285,13 +286,23 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
     ,
     Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], "ChatOutput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatOutput" ]
+    ,
+    (* side bar chat *)
+    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "NotebookAssistant`SideBar`UserMessageBox", ___ ], "NotebookAssistant`SideBar`ChatInput", ___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatInput" ]
+    ,
+    Cell[ BoxData @ TemplateBox[ { text_ }, "NotebookAssistant`SideBar`UserMessageBox", ___ ], "NotebookAssistant`SideBar`ChatInput", ___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatInput" ]
+    ,
+    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "NotebookAssistant`SideBar`AssistantMessageBox", ___ ], "NotebookAssistant`SideBar`ChatOutput", ___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatOutput" ]
 };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $fromWorkspaceChatConversionRules
+    Null
 ];
 
 End[ ];

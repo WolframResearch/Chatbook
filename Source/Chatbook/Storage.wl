@@ -49,6 +49,7 @@ $$appSpec = $$string | All | _NotebookObject;
 
 $generatedTitleCache = <| |>;
 
+$appContainer = "Workspace";
 $savingNotebook = None;
 
 (* ::**************************************************************************************************************:: *)
@@ -284,9 +285,9 @@ SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ 
 
 (* Save from a notebook: *)
 SaveChat[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[ { $savingNotebook = nbo },
+    catchMine @ Block[ { $savingNotebook = nbo, $appContainer = resolveAppContainer[ $evaluationCell, nbo ] },
         LogChatTiming @ saveChat[
-            chat,
+            nbo,
             ensureConversationUUID @ nbo,
             OptionValue[ "AutoGenerateTitle" ],
             OptionValue[ "AutoSaveOnly" ]
@@ -295,7 +296,7 @@ SaveChat[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
 
 (* Save from a notebook with custom settings: *)
 SaveChat[ nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[ { $savingNotebook = nbo },
+    catchMine @ Block[ { $savingNotebook = nbo, $appContainer = resolveAppContainer[ $evaluationCell, nbo ] },
         LogChatTiming @ saveChat[
             nbo,
             ensureConversationUUID[ nbo, settings ],
@@ -306,7 +307,7 @@ SaveChat[ nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
 
 (* Called at the end of chat evaluations if AutoSaveConversations is true and ensures notebook has a UUID: *)
 SaveChat[ nbo_NotebookObject, messages_, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ Block[ { $savingNotebook = nbo },
+    catchMine @ Block[ { $savingNotebook = nbo, $appContainer = resolveAppContainer[ $evaluationCell, nbo ] },
         SaveChat[ messages, ensureConversationUUID[ nbo, settings ], opts ]
     ];
 
@@ -328,13 +329,14 @@ ensureConversationUUID[ nbo_NotebookObject ] :=
     ensureConversationUUID[ nbo, <| |> ];
 
 ensureConversationUUID[ nbo_NotebookObject, settings0_Association ] := Enclose[
-    Module[ { settings, uuid },
-        settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ nbo, settings0 |>, AssociationQ, "Settings" ];
+    Module[ { settings, uuid, appContainer },
+        appContainer = If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "SideBarCell" ], $appContainer, nbo ];
+        settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ appContainer, settings0 |>, AssociationQ, "Settings" ];
         uuid = settings[ "ConversationUUID" ];
         If[ ! StringQ @ uuid,
             uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
             settings[ "ConversationUUID" ] = uuid;
-            ConfirmBy[ CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid, StringQ, "SetUUID" ];
+            ConfirmBy[ CurrentChatSettings[ appContainer, "ConversationUUID" ] = uuid, StringQ, "SetUUID" ];
         ];
         settings
     ],
@@ -349,8 +351,12 @@ ensureConversationUUID // endDefinition;
 saveChat // beginDefinition;
 
 saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
-    Catch @ Module[ { cellObjects, cells, messages },
-        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
+    Catch @ Module[ { cellObjects, cells, messages, cellsContainer },
+        If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "SideBarCell" ],
+            cellsContainer = First[ Cells[ $appContainer, CellTags -> "SideBarScrollingContentCell" ], Throw @ Missing[ "NoCells" ] ]
+            ,
+            cellsContainer = nbo ];
+        cellObjects = ConfirmMatch[ Cells @ cellsContainer, { ___CellObject }, "CellObjects" ];
         If[ cellObjects === { }, Throw @ Missing[ "NoCells" ] ];
         cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
         messages = ConfirmMatch[ CellToChatMessage[ #, settings ] & /@ cells, $$chatMessages, "Messages" ];
@@ -431,7 +437,7 @@ saveChat0[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ AddChatToSearchIndex @ as, _Success | Missing[ "NoSemanticSearch" ], "AddToSearchIndex" ];
 
-        setChatDisplayTitle[ $savingNotebook, metadata ];
+        setChatDisplayTitle[ $savingNotebook, $appContainer, metadata ];
 
         updateDynamics[ "SavedChats" ];
 
@@ -468,7 +474,14 @@ autoSaveQ // endDefinition;
 (*setChatDisplayTitle*)
 setChatDisplayTitle // beginDefinition;
 
-setChatDisplayTitle[ nbo_NotebookObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
+(* 15.0: side bar chat is a single CellObject *)
+setChatDisplayTitle[ nbo_NotebookObject, c_CellObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
+    If[ title =!= $defaultConversationTitle,
+        CurrentValue[ c, { TaggingRules, "ConversationTitle" } ] = title;
+        writeSideBarChatSubDockedCell[ nbo, c, WindowTitle ]
+    ];
+
+setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
         writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ]
