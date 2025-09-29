@@ -83,6 +83,8 @@ $$noCodeBlockStyle = Alternatives[
     "AnnotatedOutput",
     "ChatInput",
     "ChatOutput",
+    "NotebookAssistant`SideBar`ChatInput",
+    "NotebookAssistant`SideBar`ChatOutput",
     "DisplayFormula",
     "DisplayFormulaNumbered",
     "ExampleSection",
@@ -244,6 +246,10 @@ $templateBoxRules = <|
     "URLArgument"                  -> First,
     "UserMessageBox"               -> First,
 
+    (* Side bar *)
+    "NotebookAssistant`SideBar`AssistantMessageBox" -> First,
+    "NotebookAssistant`SideBar`UserMessageBox"      -> First,
+    
     (* Color swatches: *)
     "CMYKColorSwatchTemplate"      -> inputFormString @* Lookup[ "color" ],
     "GrayLevelColorSwatchTemplate" -> inputFormString @* Lookup[ "color" ],
@@ -700,7 +706,7 @@ cellToString[ Cell[ a__, $$subSubItemStyle, b___ ] ] :=
 (* Cells showing raw data (ctrl-shift-e) *)
 cellToString[ Cell[ RawData[ str_String ], ___ ] ] :=
     Catch @ Module[ { held },
-        If[ ! TrueQ @ $WorkspaceChat, needsBasePrompt[ "Notebooks" ]; Throw @ str ];
+        If[ ! TrueQ[ $WorkspaceChat || $SideBarChat ], needsBasePrompt[ "Notebooks" ]; Throw @ str ];
         held = Quiet @ ToExpression[ str, InputForm, HoldComplete ];
         If[ MatchQ[ held, HoldComplete[ _Cell ] ],
             cellToString @@ held,

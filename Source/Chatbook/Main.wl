@@ -35,6 +35,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$NotebookAssistanceInputs;
 `$RelatedDocumentationSources;
 `$SandboxKernel;
+`$SideBarChat;
+`$SideBarChatInput;
 `$ToolFunctions;
 `$WorkspaceChat;
 `$WorkspaceChatInput;
@@ -223,6 +225,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$LastChatbookFailure",
     "$LastChatbookFailureText",
     "$NotebookAssistanceInputs",
+    "SideBarChat",
     "$ToolFunctions",
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",

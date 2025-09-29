@@ -57,6 +57,69 @@ evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*evaluateSideBarChat*)
+evaluateSideBarChat // beginDefinition;
+
+evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, Dynamic[ input_ ] ] := Enclose[
+    Catch @ Module[ { text, uuid, cell, cellObject, scrollablePaneCell, lastDockedCell, lastContentCell },
+
+        If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
+        text = makeBoxesInputMoreTextLike @ input;
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+
+        cell = Cell[
+            BoxData @ TemplateBox[
+                { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
+                "NotebookAssistant`SideBar`UserMessageBox"
+            ],
+            "NotebookAssistant`SideBar`ChatInput",
+            (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
+                However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
+            CellTags -> uuid 
+        ];
+
+        input = "";
+
+        (* find the last top cell, or docked cell if there are no content cells *)
+        (* all old top-cells are within an inline cell that scrolls. Overwrite that cell if it exists, otherwise create it anew *)
+        scrollablePaneCell = First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
+        If[ MissingQ @ scrollablePaneCell,
+            lastDockedCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarDockedCell" ], $Failed ], _CellObject, "SideBarDockedCell" ];
+            WithCleanup[
+                CurrentValue[ sideBarCell, Editable ] = True
+                ,
+                FrontEndExecute[ {
+                    FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sideBarScrollingCell[ nbo, { cell } ] } ] ] } ]
+                ,
+                CurrentValue[ sideBarCell, Editable ] = Inherited
+            ];
+            scrollablePaneCell = ConfirmMatch[ First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSideBarScrollableCell" ];
+            , (* ELSE *)
+            (* The scrolling pane cell should only exist if it contains content. If it exists without content then something has gone wrong. *)
+            lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SideBarTopCell" ], $Failed ], _CellObject, "NoSideBarScrollingContentCell" ];
+            WithCleanup[
+                CurrentValue[ sideBarCell, Editable ] = True
+                ,
+                FrontEndExecute[ {
+                    FrontEnd`SelectionMove[ lastContentCell, After, Cell, AutoScroll -> True ],
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", cell } ] ] } ]
+                ,
+                CurrentValue[ sideBarCell, Editable ] = Inherited
+            ]
+        ];
+
+        cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SideBarChatInputCellObject" ];
+        CurrentValue[ cellObject, CellTags ] = "SideBarTopCell";
+        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+    ],
+    throwInternalFailure
+];
+
+evaluateSideBarChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*evaluateInlineChat*)
 evaluateInlineChat // beginDefinition;
 
@@ -92,7 +155,7 @@ evaluateInlineChat[
             result = ConfirmMatch[
                 Internal`InheritedBlock[ { currentChatSettings },
                     currentChatSettings[ root ] := currentChatSettings[ cell ];
-                    ChatCellEvaluate @ root
+                    ChatCellEvaluate[ root, nbo ]
                 ],
                 _ChatObject|Null,
                 "ChatCellEvaluate"

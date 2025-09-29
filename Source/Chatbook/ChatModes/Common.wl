@@ -19,6 +19,9 @@ HoldComplete[
     `moveChatInputToTop,
     `moveToInlineChatInputField,
     `scrollInlineChat,
+    `sideBarCellObject,
+    `sideBarChatInputCell,
+    `sideBarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
     `validInputStringQ

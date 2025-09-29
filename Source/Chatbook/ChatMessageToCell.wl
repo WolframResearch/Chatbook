@@ -105,16 +105,19 @@ ReplaceRepeated[
     Cell[
         BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "NotebookAssistant`SideBar`AssistantMessageBox" ],
         "NotebookAssistant`SideBar`ChatOutput",
-        $chatOutputOptions
+        $chatOutputOptions,
+        CellTags -> "SideBarTopCell"
     ],
-    {(* So far there's only one TemplateBox that is redefined in the Sidebar *)
-        TemplateBox[a_, b : Alternatives[ "ChatCodeBlockTemplate" ], c___] :> TemplateBox[a, "NotebookAssistant`SideBar`" <> b, c]
+    {(* So far there's only one TemplateBox that is redefined in the Sidebar compared with ChatOuput within the notebook *)
+        TemplateBox[a_, b : Alternatives[ "ChatCodeBlockTemplate" ], c___] :> RuleCondition[ TemplateBox[a, "NotebookAssistant`SideBar`" <> b, c], True ]
     }
 ];
 wrapCellContent[ text_, "System"   , "SideBar" ] := Nothing; (* System inputs shouldn't appear in sidebar chat *)
-wrapCellContent[ text_, "User"     , "SideBar" ] := Cell[
+wrapCellContent[ text_, "User"     , "SideBar" ] :=
+Cell[
     BoxData @ TemplateBox[ { Cell[ simplerTextData @ text, $selectableOptions ] }, "NotebookAssistant`SideBar`UserMessageBox" ],
-    "NotebookAssistant`SideBar`ChatInput"
+    "NotebookAssistant`SideBar`ChatInput",
+    CellTags -> "SideBarTopCell"
 ];
 
 wrapCellContent[ text_, "Assistant", "Workspace" ] := workspaceOutput @ text;

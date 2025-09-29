@@ -75,12 +75,14 @@ ChatbookAction[ "DisableAssistance"            , args___ ] := catchMine @ Disabl
 ChatbookAction[ "DisplayInlineChat"            , args___ ] := catchMine @ displayInlineChat @ args;
 ChatbookAction[ "EvaluateChatInput"            , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "EvaluateInlineChat"           , args___ ] := catchMine @ evaluateInlineChat @ args;
+ChatbookAction[ "EvaluateSideBarChat"          , args___ ] := catchMine @ evaluateSideBarChat @ args;
 ChatbookAction[ "EvaluateWorkspaceChat"        , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
 ChatbookAction[ "ExclusionToggle"              , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "ExplodeDuplicate"             , args___ ] := catchMine @ ExplodeDuplicate @ args;
 ChatbookAction[ "ExplodeInPlace"               , args___ ] := catchMine @ ExplodeInPlace @ args;
 ChatbookAction[ "InsertCodeBelow"              , args___ ] := catchMine @ insertCodeBelow @ args;
 ChatbookAction[ "InsertInlineReference"        , args___ ] := catchMine @ InsertInlineReference @ args;
+ChatbookAction[ "MakeSideBarChatDockedCell"    , args___ ] := catchMine @ makeSideBarChatDockedCell @ args;
 ChatbookAction[ "MakeWorkspaceChatDockedCell"  , args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
 ChatbookAction[ "MoveToChatInputField"         , args___ ] := catchMine @ moveToChatInputField @ args;
 ChatbookAction[ "OpenChatBlockSettings"        , args___ ] := catchMine @ OpenChatBlockSettings @ args;
@@ -445,11 +447,11 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
             $lastMessages       = None;
             $nextTaskEvaluation = None;
             $enableLLMServices  = settings[ "EnableLLMServices" ];
-            clearMinimizedChats @ nbo;
+            (* clearMinimizedChats @ nbo; *) (* this occurs within sendChat when determining $selectedChatCells *)
 
             (* Send chat while listening for an abort: *)
             CheckAbort[
-                sendChat[ evalCell, nbo, settings ] // LogChatTiming[ "SendChat" ];
+                sendChat[ evalCell, nbo, resolveAppContainer[ evalCell, nbo ], settings ] // LogChatTiming[ "SendChat" ];
                 waitForLastTask @ settings
                 ,
                 (* The user has issued an abort: *)
@@ -461,8 +463,6 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                         removeTask @ $lastTask
                     ]
                 ]
-                ,
-                PropagateAborts -> False
             ];
 
             blockChatObject[
@@ -1296,6 +1296,49 @@ chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*resolveAppContainer*)
+resolveAppContainer // beginDefinition;
+
+resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
+    Module[ { tags },
+        Which[
+            TrueQ @ $WorkspaceChat || MatchQ[ CurrentValue[ nbo, StyleDefinitions ], FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", ___ ] ],
+                "Workspace",
+
+            TrueQ @ $InlineChat,
+                "Inline",
+
+            tags = Flatten @ List @ AbsoluteCurrentValue[ c, CellTags ];
+            TrueQ @ $SideBarChat || AnyTrue[ tags, StringStartsQ[ "SideBar" ] ],
+                ConfirmMatch[
+                    Which[
+                        MemberQ[ tags, Alternatives[ "SideBarCell" ] ],
+                            c,
+                        MemberQ[ tags, Alternatives[ "SideBarChatInputCell", "SideBarDockedCell", "SideBarSubDockedCell", "SideBarScrollingContentCell" ] ],
+                            ParentCell @ c,
+                        MemberQ[ tags, Alternatives[ "SideBarTopCell" ] ],
+                            ParentCell @ ParentCell @ c,
+                        True,
+                            None
+                    ],
+                    _CellObject,
+                    "SideBarAppContainer"
+                ],
+
+            CurrentValue[ nbo, StyleDefinitions ] === "Chatbook.nb",
+                "Chatbook",
+
+            True,
+                Confirm[ $Failed, "ResolveAppContainer" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+resolveAppContainer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*SendChat*)
 SendChat // beginDefinition;
 
@@ -1313,26 +1356,26 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
+SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatStateAndFEObjects[
+SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_, Automatic ] := withChatStateAndFEObjects[
     { evalCell, nbo },
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
             $alwaysOpen = TrueQ[ $alwaysOpen || $autoOpen ];
             $enableLLMServices  = settings[ "EnableLLMServices" ];
-            sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
+            sendChat[ evalCell, nbo, resolveAppContainer[ evalCell, nbo ], addCellStyleSettings[ settings, styles ] ]
         ]
     ]
 ];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatStateAndFEObjects[
+SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_, minimized_ ] := withChatStateAndFEObjects[
     { evalCell, nbo },
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         $enableLLMServices  = settings[ "EnableLLMServices" ];
-        sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
+        sendChat[ evalCell, nbo, resolveAppContainer[ evalCell, nbo ], addCellStyleSettings[ settings, evalCell ] ]
     ]
 ];
 

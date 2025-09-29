@@ -9839,7 +9839,36 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    CurrentValue["MouseOver"]],
   BaselinePosition->(Top -> Scaled[0.9]),
   FrameMargins->0,
-  ImageSize->Automatic]
+  ImageSize->Automatic],
+
+"NotebookAssistantSideBarCell" -> Cell[BoxData[{
+ DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+     Cell[
+      BoxData[
+       ToBoxes[
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "MakeSideBarChatDockedCell"]]], CellTags -> "SideBarDockedCell", 
+      Magnification -> Dynamic[0.85 AbsoluteCurrentValue[
+          FrontEnd`EvaluationNotebook[], Magnification]]]], StandardForm],
+  DestroyAfterEvaluation->True], "\n", 
+ DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+     Symbol["Wolfram`Chatbook`ChatModes`Common`sideBarChatInputCell"][]], 
+   StandardForm],
+  DestroyAfterEvaluation->True]}],
+ CellMargins->{{0, -4}, {0, 0}},
+ Initialization:>AttachCell[
+   EvaluationCell[], 
+   Cell["", CellTags -> "SideBarAttachedHelperCell"], {Left, Top}, 0, {
+   Left, Top}],
+ CellFrameMargins->0,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ Magnification->1.,
+ Background->LightDarkSwitched[
+   GrayLevel[1], 
+   GrayLevel[0.0999191]],
+ CellTags->
+  "SideBarCell",ExpressionUUID->"9790bc45-33d1-a14f-820d-985645bbd791"]
 }
 @|
 @|
