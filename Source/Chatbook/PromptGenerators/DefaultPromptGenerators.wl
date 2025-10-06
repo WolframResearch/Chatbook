@@ -24,13 +24,11 @@ Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
-$defaultPromptGenerators := $defaultPromptGenerators = <|
+$defaultPromptGenerators := $defaultPromptGenerators = insertPromptGeneratorNames @ <|
     "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator      , "Messages" ],
     "RelatedWolframAlphaResults" -> LLMPromptGenerator[ relatedWolframAlphaResultsGenerator, "Messages" ],
     "WebSearch"                  -> LLMPromptGenerator[ webSearchGenerator                 , "Messages" ]
 |>;
-
-(* TODO: update RelatedWolframAlphaQueries to support same argument types as RelatedDocumentation *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -117,7 +115,7 @@ relatedDocumentationGenerator // beginDefinition;
 
 relatedDocumentationGenerator[ messages: $$chatMessages ] :=
     If[ TrueQ @ $filterDocumentationRAG,
-        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 50, "FilterResults" -> True ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
 
@@ -198,10 +196,28 @@ makePromptGeneratorData // endDefinition;
 (*applyPromptGenerator*)
 applyPromptGenerator // beginDefinition;
 
-applyPromptGenerator[ gen: HoldPattern[ _LLMPromptGenerator ], data_Association ] :=
-    formatGeneratedPrompt @ LogChatTiming[ gen @ data, "ApplyPromptGenerator" ];
+applyPromptGenerator[ gen: HoldPattern[ _LLMPromptGenerator ], data_Association ] := Enclose[
+    Module[ { settings, name, as, result },
+        settings = ConfirmBy[ $CurrentChatSettings, AssociationQ, "Settings" ];
+        name = ConfirmMatch[ getPromptGeneratorName @ gen, _String | _Missing, "Name" ];
+        as = <| "PromptGenerator" -> gen, "PromptGeneratorData" -> data, "PromptGeneratorName" -> name |>;
+        applyHandlerFunction[ settings, "PromptGeneratorStart", as ];
+        result = formatGeneratedPrompt @ LogChatTiming[ gen @ data, "ApplyPromptGenerator" ];
+        applyHandlerFunction[ settings, "PromptGeneratorEnd", <| as, "PromptGeneratorResult" -> result |> ];
+        result
+    ],
+    throwInternalFailure
+];
 
 applyPromptGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPromptGeneratorName*)
+getPromptGeneratorName // beginDefinition;
+getPromptGeneratorName[ HoldPattern @ LLMPromptGenerator[ as_, ___ ] ] := getPromptGeneratorName @ as;
+getPromptGeneratorName[ gen_Association ] := Lookup[ gen, "Name", Missing[ "NotAvailable" ] ];
+getPromptGeneratorName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -214,6 +230,19 @@ formatGeneratedPrompt[ KeyValuePattern @ { "Type" -> "Image", "Data" -> image_? 
 formatGeneratedPrompt[ _Missing | None ] := "";
 formatGeneratedPrompt[ expr_ ] := FormatToolResponse @ expr;
 formatGeneratedPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertPromptGeneratorNames*)
+insertPromptGeneratorNames // beginDefinition;
+
+insertPromptGeneratorNames[ generators_Association ] :=
+    Association @ KeyValueMap[ #1 -> insertPromptGeneratorNames[ #1, #2 ] &, generators ];
+
+insertPromptGeneratorNames[ name_String, HoldPattern @ LLMPromptGenerator[ as_Association, a___ ] ] :=
+    LLMPromptGenerator[ <| as, "Name" -> name |>, a ];
+
+insertPromptGeneratorNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

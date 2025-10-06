@@ -14,8 +14,8 @@ $llmSynthesizeAuthentication := If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
 
 $defaultLLMSynthesizeEvaluator :=
     If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
-        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4.1-nano" |> |>,
-        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-nano" |> |>
+        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4o-mini" |> |>,
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |>
     ];
 
 $defaultConfigPersona = "NotebookAssistant";
@@ -220,7 +220,7 @@ makeInvalidResponseFailure // endDefinition;
 truncatePrompt // beginDefinition;
 
 truncatePrompt[ string_String, evaluator_ ] :=
-    stringTrimMiddle[ string, modelContextLimit @ evaluator ];
+    stringTrimMiddle[ string, modelContextStringLimit @ evaluator ];
 
 truncatePrompt[ { strings___String }, evaluator_ ] :=
     truncatePrompt[ StringJoin @ strings, evaluator ];
@@ -231,7 +231,7 @@ truncatePrompt[ prompts: { ($$string|$$graphics).. }, evaluator_ ] := Enclose[
         stringCount = Count[ prompts, _String ];
         images = Cases[ prompts, $$graphics ];
         imageCount = Length @ images;
-        budget = ConfirmBy[ modelContextLimit @ evaluator, IntegerQ, "Budget" ];
+        budget = ConfirmBy[ modelContextStringLimit @ evaluator, IntegerQ, "Budget" ];
         imageBudget = Max[ 512, 2^(13 - imageCount) ];
         resized = Replace[ prompts, i: $$graphics :> resizePromptImage[ i, imageBudget ], { 1 } ];
         imageTokens = Total @ Cases[ resized, i: $$graphics :> imageTokenCount @ i ];
@@ -279,13 +279,15 @@ resizePromptImage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*modelContextLimit*)
-modelContextLimit // beginDefinition;
-modelContextLimit[ KeyValuePattern[ "Model" -> model_ ] ] := modelContextLimit @ model;
-modelContextLimit[ KeyValuePattern[ "Name" -> model_String ] ] := modelContextLimit @ model;
-modelContextLimit[ "gpt-4-turbo"|"gpt-4o"|"gpt-4o-mini" ] := 200000;
-modelContextLimit[ _ ] := 8000;
-modelContextLimit // endDefinition;
+(*modelContextStringLimit*)
+modelContextStringLimit // beginDefinition;
+
+modelContextStringLimit[ model_ ] :=
+    With[ { tokens = autoModelSetting[ model, "MaxContextTokens" ] },
+        If[ NumberQ @ tokens, tokens * 2, 8000 ]
+    ];
+
+modelContextStringLimit // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

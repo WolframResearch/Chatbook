@@ -12,6 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 $basePromptOrder = {
     "AgentOnePersona",
+    "AgentOneCoderPersona",
     "GeneralInstructionsHeader",
     "NotebooksPreamble",
     "AutoAssistant",
@@ -122,8 +123,14 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
 $basePromptComponents = <| |>;
 
 $basePromptComponents[ "AgentOnePersona" ] = "\
-You are a helpful assistant named \"Wolfram Agent One\".
+You are a helpful assistant named \"Wolfram Agent One\" that utilizes Wolfram Language and Wolfram|Alpha to help the user.
+Assume the user does not have access to Wolfram Language unless it's clear from the context that they do.
 You specialize in Wolfram Language and Wolfram|Alpha, but you can help with any topic.";
+
+$basePromptComponents[ "AgentOneCoderPersona" ] = "\
+You are a helpful assistant named \"Wolfram Agent One Coder\" that utilizes Wolfram Language to help the user.
+You can assume that the user has access to Wolfram Language and is able to evaluate code.
+You specialize in Wolfram Language, but you can help with any topic.";
 
 $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 # General Instructions
@@ -427,7 +434,7 @@ withBasePromptBuilder // endDefinition;
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
-needsBasePrompt[ $$unspecified ] := Null;
+needsBasePrompt[ $$unspecified|ParentList ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
 needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;

@@ -18,6 +18,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 $defaultChatSettings = <|
     "AllowSelectionContext"          -> Automatic,
+    "AppendCitations"                -> Automatic,
     "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
@@ -238,6 +239,7 @@ $modelAutoSettings[ Automatic ] = <| |>;
 (*gpt-4o*)
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 128000,
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Automatic
 |>;
@@ -343,6 +345,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*Defaults*)
 $modelAutoSettings[ Automatic, Automatic ] = <|
+    "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
@@ -439,9 +442,13 @@ $DefaultModel :=
 (* ::Subsection::Closed:: *)
 (*Handler Functions*)
 $DefaultChatHandlerFunctions = <|
+    "AppendCitationsEnd"    -> None,
+    "AppendCitationsStart"  -> None,
     "ChatAbort"             :> $ChatAbort,
     "ChatPost"              :> $ChatPost,
     "ChatPre"               :> $ChatPre,
+    "PromptGeneratorEnd"    -> None,
+    "PromptGeneratorStart"  -> None,
     "ToolRequestReceived"   -> None,
     "ToolResponseGenerated" -> None
 |>;

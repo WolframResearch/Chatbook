@@ -1512,12 +1512,11 @@ createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := En
                         Overlay[ { icon, Graphics[ Background -> color @ "PreferencesContentServicesIconFade_1", ImageSize -> { 21, 21 } ] } ],
                         icon ],
                     Style[ service, FontColor -> color @ "PreferencesContentServicesIconFade_2", FontOpacity -> If[ type === "None", 0.5, 1 ] ],
-                    "",
+                    Pane[ "", ImageSize -> Scaled[ 1. ] ],
                     connectOrDisconnectButton[ service, type, icon, Dynamic @ display ]
                 }
             },
             Alignment -> { Left, Baseline },
-            ItemSize -> { { Automatic, Automatic, Fit, Automatic } },
             Spacings -> { 0, Automatic }
         ];
     ],
