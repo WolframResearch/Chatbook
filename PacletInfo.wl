@@ -41,7 +41,8 @@ PacletObject[ <|
                 { "Icons"               , "Icons.wxf"                },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },
-                { "Tokenizers"          , "Tokenizers"               }
+                { "Tokenizers"          , "Tokenizers"               },
+                { "SyntaxInformationDB" , "argsDB.wxf"}
             }
         },
         { "LLMConfiguration",
