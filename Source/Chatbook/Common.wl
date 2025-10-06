@@ -609,7 +609,6 @@ catchTop[ eval_, sym_Symbol ] :=
             catchTopAs           = (#1 &) &
         },
         $chatStartTime = AbsoluteTime[ ];
-        renameCodeAssistanceFiles[ ]; (* TODO: this is temporary *)
         Catch[ setServiceCallerAndID[ eval, $chatEvaluationID ], $catchTopTag ]
     ];
 

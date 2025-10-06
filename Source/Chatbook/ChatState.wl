@@ -83,6 +83,7 @@ withChatState[ eval_ ] :=
             $thinkingEnd                  = None,
             $useRasterCache               = True,
             $includeStackTrace            = True,
+            $sources                      = <| |>,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

@@ -1019,7 +1019,7 @@ chatContextDialogChatContextPreprompt[ existingSetting_ ] := {
                 If[ StringQ @ existingSetting,
                     CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> (fieldContent = existingSetting), "NonDefault" -> True }
                     ,
-                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> (fieldContent = defaultString), "NonDefault" -> False }                      
+                    CurrentValue[ FrontEnd`EvaluationCell[ ], TaggingRules ] = { "ChatContextPreprompt" -> (fieldContent = defaultString), "NonDefault" -> False }
                 ])
         ],
         "DialogBody", "InputTextActive",
@@ -1035,7 +1035,7 @@ chatContextDialogChatContextPreprompt // endDefinition;
 (*chatContextDialogInputFormCell*)
 chatContextDialogInputFormCell // beginDefinition;
 
-chatContextDialogInputFormCell[ existingSetting_, tag_String ] := 
+chatContextDialogInputFormCell[ existingSetting_, tag_String ] :=
     Cell[ BoxData @ ToBoxes @
         DynamicModule[ { fieldContent, defaultExpr = Hold[ #& ] },
             DynamicWrapper[

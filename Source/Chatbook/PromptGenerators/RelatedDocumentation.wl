@@ -57,7 +57,7 @@ $sourceAliases = <|
 
 $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 20;
+$unfilteredItemsPerSource = 50;
 
 $filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
@@ -200,17 +200,19 @@ RelatedDocumentation[
 ] :=
     catchMine @ Enclose[
         (* TODO: filter results *)
-        Take[
-            ConfirmBy[
-                vectorDBSearch[
-                    LogChatTiming @ getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
-                    prompt,
-                    property
-                ] // LogChatTiming[ "OuterVectorDBSearch" ],
-                ListQ,
-                "Results"
-            ],
-            UpTo @ n
+        Block[ { $maxNeighbors = Max[ n * 5, 100 ] },
+            Take[
+                ConfirmBy[
+                    vectorDBSearch[
+                        LogChatTiming @ getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+                        prompt,
+                        property
+                    ] // LogChatTiming[ "OuterVectorDBSearch" ],
+                    ListQ,
+                    "Results"
+                ],
+                UpTo @ n
+            ]
         ],
         throwInternalFailure
     ];
@@ -256,7 +258,7 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
             ensureChatMessages @ prompt,
             n,
             MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
-            Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
+            Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 5 ] ]
         ]
     ];
 
@@ -273,7 +275,7 @@ RelatedDocumentation // endDefinition;
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 100;
+getMaxItems[ Infinity, _ ] := 250;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
@@ -499,6 +501,14 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             DeleteDuplicates @ Flatten @ Lookup[ uriToSnippet, selected ],
             { ___String },
             "Pages"
+        ];
+
+        KeyValueMap[
+            AddToSources,
+            KeyTake[
+                <| #Value -> #Snippet & /@ DeleteCases[ results, KeyValuePattern[ "Type" -> "Instructions" ] ] |>,
+                selected
+            ]
         ];
 
         addHandlerArguments[
@@ -779,6 +789,20 @@ snippetXML // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*uriToSnippetID*)
 uriToSnippetID // beginDefinition;
+
+uriToSnippetID[ URL[ uri_String ] ] :=
+    uriToSnippetID @ uri;
+
+uriToSnippetID[ uri_String ] /; StringStartsQ[ uri, "https://www.wolframalpha.com/input?i=" ] := Enclose[
+    Module[ { base, counter, id },
+        base = "WA";
+        counter = ConfirmBy[ getSnippetIDCounter[ uri, base ], IntegerQ, "Counter" ];
+        id = base <> "-" <> ToString @ counter;
+        snippetIDToURI[ id ] = uri;
+        uriToSnippetID[ uri ] = id
+    ],
+    throwInternalFailure
+];
 
 uriToSnippetID[ uri_String ] := Enclose[
     Module[ { split, base, counter, id },

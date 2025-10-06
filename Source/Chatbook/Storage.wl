@@ -711,17 +711,24 @@ generateTitleCached0[ hash_Integer, messages_ ] :=
     ];
 
 generateTitleCached0[ hash_Integer, messages_ ] := Enclose[
-    Module[ { title },
+    Catch @ Module[ { title },
         title = ConfirmMatch[ GenerateChatTitle @ messages, _String|_Failure, "Title" ];
 
         $lastGeneratedTitle = title;
         $lastRegeneratedTitle = None;
 
-        (* retry once if first attempt failed using higher temperature: *)
+        (* retry once if first attempt failed using higher temperature and relaxed length constraint: *)
         If[ FailureQ @ title,
-            title = ConfirmBy[ GenerateChatTitle[ messages, "Temperature" -> 1.0 ], StringQ, "Retry" ];
+            title = ConfirmMatch[
+                GenerateChatTitle[ messages, "MaxLength" -> 60, "Temperature" -> 1.0 ],
+                _String|_Failure,
+                "Retry"
+            ];
             $lastRegeneratedTitle = title
         ];
+
+        (* if it's still failing, just return a default title *)
+        If[ FailureQ @ title, Throw[ "Untitled Chat" ] ];
 
         $generatedTitleCache[ hash ] = title
     ],
