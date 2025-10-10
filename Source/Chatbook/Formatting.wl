@@ -4,8 +4,9 @@
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"           ];
+Needs[ "Wolfram`Chatbook`Common`"    ];
+Needs[ "Wolfram`Chatbook`CodeCheck`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -2213,9 +2214,34 @@ wlStringToBoxes // beginDefinition;
 wlStringToBoxes[ string_String ] /; $dynamicText := formatSpecialBoxes @ string;
 
 wlStringToBoxes[ string_String ] :=
-    formatSpecialBoxes @ inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
+    string // RightComposition[
+        preprocessSandboxString,
+        autoCorrectWLCodeBlock,
+        stringToBoxes,
+        inlineExpressionURIs,
+        formatSpecialBoxes
+    ];
 
 wlStringToBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoCorrectWLCodeBlock*)
+autoCorrectWLCodeBlock // beginDefinition;
+
+autoCorrectWLCodeBlock[ code_String ] := Enclose[
+    Module[ { checked, corrected },
+        checked = ConfirmBy[ CodeCheckFix @ code, AssociationQ, "CodeCheckFix" ];
+        corrected = ConfirmBy[ autoCorrectWLCodeBlock @ checked, StringQ, "Result" ];
+        autoCorrectWLCodeBlock[ code ] = corrected
+    ],
+    throwInternalFailure
+];
+
+autoCorrectWLCodeBlock[ KeyValuePattern @ { "OriginalCode" -> code_String, "FixedCode" -> _Missing } ] := code;
+autoCorrectWLCodeBlock[ KeyValuePattern[ "FixedCode" -> fixed_String ] ] := fixed;
+
+autoCorrectWLCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
