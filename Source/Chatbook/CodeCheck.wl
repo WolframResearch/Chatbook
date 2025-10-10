@@ -13,8 +13,6 @@
 
 BeginPackage["Wolfram`Chatbook`CodeCheck`"]; (**)
 
-Wolfram`Chatbook`CodeCheck`$Debug=False
-
 Needs["CodeInspector`"]
 Needs["CodeParser`"]
 
@@ -33,9 +31,14 @@ Begin[ "`Private`" ];
 (* ::Section:: *)
 (*CodeCheckFix*)
 
-$argsDB := $argsDB = Import[FileNameJoin[{PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformationDB"]}]]
 
-Echo[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformationDB"]," paclet assets"];
+(*Syntax informations to check System functions arguments*)
+$syntargs := $syntargs = 	{Import[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformation"]]
+							(*temporarily adding missing info from SyntaxInformation*)
+							,"With" -> {__}
+							,"EchoLabel" -> {_}
+							,"EchoFunction"->{_,_:""}
+							} // Association
 
 $FixRecursionLimit=10;
 
@@ -162,11 +165,8 @@ mergeFixes[prevFix_, newFix_] :=
 		"LikelyFalsePositive" -> Or[prevFix[#],Lookup[newFix,#,False]] &@"LikelyFalsePositive",
 		"SafeToEvaluate" -> And[prevFix[#], Lookup[newFix,#,False]] &@"SafeToEvaluate",
 		"FixedPatterns" -> Append[prevFix["FixedPatterns"],Lookup[newFix,"FixedPattern"]],
-		"FixedCode" -> newFix["FixedCode"],
-		"AllCodeScore" -> newFix["AllCodeScore"],
-		"AllCodeNoScore" -> newFix["AllCodeNoScore"]
-	} // Association
-
+		"FixedCode" -> newFix["FixedCode"]
+	} // Flatten // Association
 (* ::Subsection:: *)
 (*Fixes*)
 
@@ -206,7 +206,7 @@ fixPattern[target_][code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 			// If[FailureQ@#
 				 	,	fixedCode=Missing["Fix failure"];
 				 	,	(
-						CodeCheck[#] // generatePatternFromCodeCheck // DeleteCases[patToIgnore]
+						CodeCheck[target][#] // generatePatternFromCodeCheck // DeleteCases[patToIgnore] // decholabel["Comma check:"]
 				   		// 	Switch[#
 									(* ----------------- *)
 				   			  		, {}
@@ -386,36 +386,53 @@ fixPattern[target_][code_String, pat : $patternFatalGroupMissingCloserFatalUnexp
 $patternFatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
 
 fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] :=
-	Module[
-			{
-			 fixedCode=Missing[]
-			,falsePositive=Missing[]
-			,safe=Missing[]
-			,success=False
-			,ccp
-			,errorNode
-			}
-			,
-			ccp=code // CodeConcreteParse
-			;
-			errorNode = Cases[ccp, f_[___, Token`Error`UnexpectedCloser, ___], Infinity]
-						// If[MatchQ[#,{__}], First@#, {}]&
-			;
-			If[errorNode==={}
-				, success=False;
-				, fixedCode= ReplaceAll[code // CodeConcreteParse, errorNode -> Sequence[]] // ToSourceCharacterString
-				  ;success=TrueQ[SequenceAlignment[code, fixedCode] // DeleteCases[#,_String, {1}] & // MatchQ[{{errorNode[[2]], ""}}]]
-				  ;If[success, safe=True; falsePositive=False;]
-			]
-			;
-			{ "Success" -> success
-   			, "TotalFixes" -> If[success, 1, 0]
-   			, "LikelyFalsePositive" -> falsePositive
-   			, "SafeToEvaluate" -> safe
-   			, "FixedPattern" -> pat
-   			, "FixedCode" -> fixedCode
-   			} // Association
-	]
+	Module[{success,fixedCode,allCodeScore,allCodeNoScore},
+	With[
+		{
+		ccp=CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"],
+		codetoken=CodeTokenize[code,SourceConvention->"SourceCharacterIndex"]
+		}
+		,
+		{errorNode=Cases[ccp,f_[___,Token`Error`UnexpectedCloser,___],Infinity]//If[MatchQ[#,{__}],First@#,{}]&}
+		,
+		{bracket=errorNode[[2]]}
+		,
+		{allbrackets=Cases[codetoken,LeafNode[_,bracket,so_]:>so]//Select[#[[1,2]]<=errorNode[[3,1,1]]&]}
+		,
+		{
+		excludedRanges=Cases[ccp,GroupNode[Except[bracket/.{"]"->GroupSquare,")"->GroupParen,"}"->List},_],_,so_]:>so,Infinity]
+						//Select[#[[1,2]]<errorNode[[3,1,1]]&]}
+		,
+		{
+		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]
+		}
+		,
+		fixedCode=
+					Map[(DeleteCases[codetoken,LeafNode[_,bracket,#]]//Map[ToSourceCharacterString]//StringJoin)&,finalBrackets]
+					//
+					DeleteDuplicates // dechofunction["Number of possible fixes",Length]
+					//
+					Reverse // (allCodeNoScore=#)&
+					//
+					(allCodeScore=scoreAndSort[#])& (*Adding scores*)
+					//
+					SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&//
+					decholabel["final fix:"]//
+					Last
+
+		;success=If[MissingQ@fixedCode,False,True]
+		;
+		{ "Success" -> success
+		, "TotalFixes" -> If[success, 1, 0]
+		, "LikelyFalsePositive" -> If[success, False, True]
+		, "SafeToEvaluate" -> If[success, True, False]
+		, "FixedPattern" -> pat
+		, "FixedCode" -> fixedCode
+		, If[Wolfram`Chatbook`CodeCheck`$Debug,
+			{"AllCodeScore" -> Iconize@allCodeScore, "AllCodeNoScore" -> Iconize@allCodeNoScore},{}]
+		} // Flatten // Association
+]]
+
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $patternFatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
@@ -451,7 +468,7 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 							Cases[#,GroupNode[missingBracketType,__,so_]:>so,Infinity]&,
 
 			gnsoOtherType=	gmcn//
-							ReplaceAll[GroupNode[t_,a__,so_]:>{"get",t,so}]//
+							ReplaceAll[GroupNode[t_,__,Except[<|Source->{_,gmcn[[-1,-1,-1]]}|>,so_]]:>{"get",t,so}]//
 							Cases[#,{"get",Except[missingBracketType,t_],so_}:>so,Infinity]&
 			}
 			,
@@ -470,8 +487,9 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 						DeleteDuplicates // dechofunction["Number of possible fixes",Length] //
 						Reverse // (allCodeNoScore=#)& //
 						(allCodeScore=scoreAndSort[#])&//  (*Adding scores*)
-						SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}& ]&//
-						Last[#,Missing["No fix found"]]&
+						SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&//
+						decholabel["final fix:"]//
+						Last
 
 			;success=If[MissingQ@fixedCode,False,True]
 			;
@@ -481,9 +499,9 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 			, "SafeToEvaluate" -> If[success, True, False]
 			, "FixedPattern" -> pat
 			, "FixedCode" -> fixedCode
-			, "AllCodeScore" -> Iconize@allCodeScore
-			, "AllCodeNoScore" -> Iconize@allCodeNoScore
-			} // Association
+			, If[Wolfram`Chatbook`CodeCheck`$Debug,
+				{"AllCodeScore" -> Iconize@allCodeScore, "AllCodeNoScore" -> Iconize@allCodeNoScore},{}]
+			} // Flatten // Association
 	]]
 
 
@@ -492,10 +510,10 @@ scoreAndSort[codes:{_String..}]:=Map[{scoreArgs@#,#}&,codes]//ReverseSortBy[{Fir
 scoreArgs[code_String]:=Cases[CodeConcreteParse[code], CallNode[List@LeafNode[_, funcname_, _], _, _], {0, Infinity}] //
 						scoreArgsCallNode
 
-scoreArgsCallNode[cn:{_CallNode..}]:=scoreArgsCallNode/@cn //EchoFunction["callnodes subscores:",{#,Total@#}&]//Total
-scoreArgsCallNode[cn_CallNode]:=$argsDB@funcNameCallNode[cn]//
+scoreArgsCallNode[cn:{_CallNode..}]:=scoreArgsCallNode/@cn //dechofunction["callnodes subscores:",{#,Total@#}&]//Total
+scoreArgsCallNode[cn_CallNode]:=$syntargs@funcNameCallNode[cn]//
 								If[MissingQ@#, Nothing, scoreArgsPattern[argsCallNode@cn,#]]&//
-								If[#===0,Echo[funcNameCallNode[cn],"Score: failed match:"];#,#]&
+								If[#===0,decho[funcNameCallNode[cn],"Score: failed match:"];#,#]&
 
 scoreArgsPattern[expr:{___,Rule..}, pattern:{___,Verbatim[Rule...]}]:=
 	Block[{$rules,$whole},
@@ -507,7 +525,7 @@ scoreArgsPattern[expr:{___,Rule..}, pattern:{___,Verbatim[Rule...]}]:=
 								):> {$whole,Length@{$rules}}
 				},
 				Cases[expr,pattRules,{0}]]//
-				ReplaceAll[{{}->0,{{_,len_}}:>1+len/4}]]
+				ReplaceAll[{{}->0,{{_,len_}}:>1+len/4.}]]
 
 scoreArgsPattern[expr_, pattern_]:= MatchQ[expr, pattern]//Boole
 
@@ -546,35 +564,42 @@ checkFunctionsSyntax[code_String]:=
 		code//
 		CodeParse//
 		Cases[#,CallNode[LeafNode[_,funcname_,_], _,_],{0,Infinity}]&//
-		EchoFunction[Length]//
-		Map[If[scoreArgsCallNodeCP@#===1,Nothing,#]&]//
-		ReplaceAll[CallNode[_,_,so_]:>so]//
-		Map[(Cases[cpp, CallNode[_,_,#],Infinity]//First//ToSourceCharacterString)&]
+		Map[If[scoreArgsCallNodeCP[#]===False,#,Nothing]&]//
+		ReplaceAll[CallNode[_,_,so_]:>so]//decholabel["all so:"]//
+		dechofunction["Number of syntax problems found:", Length]//
+		Map[(Cases[cpp, cn:Alternatives[
+							_[{LeafNode[Symbol,funcname_String,_]},_,#],
+							_[_,{LeafNode[Symbol,funcname_String,_], ___},#], 	(*BinaryNode*)
+							_[funcname_,_,#]									(*BinaryNode*)
+						]:>{funcname,ToSourceCharacterString@cn},Infinity]//
+			First)&]
 	]
 
 scoreArgsCallNodeCP[cn:{_CallNode..}]:=scoreArgsCallNodeCP/@cn //Total
-scoreArgsCallNodeCP[cn_CallNode]:=checkArgsCallNodeCP[cn]//Boole
-checkArgsCallNodeCP[cn_CallNode]:=$argsDB@funcNameCallNodeCP[cn]//EchoLabel["funcname"]//If[MissingQ@#,Nothing,MatchQ[argsCallNodeCP@cn,#]]&
+scoreArgsCallNodeCP[cn_CallNode]:=checkArgsCallNodeCP[cn]
+checkArgsCallNodeCP[cn_CallNode]:=$syntargs@funcNameCallNodeCP[cn]//If[MissingQ@#,Null,MatchQ[argsCallNodeCP@cn,#]]&
 
 argsCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],args_List,_]]:=
 	Replace[args,CallNode[LeafNode[Symbol,"List",_],a_List,_]:>a,Infinity]//
 	Replace[#,CallNode[LeafNode[Symbol,"Rule"|"RuleDelayed",_],__]:>Rule,Infinity]&//
-	Replace[#,{Rule}:>Rule,Infinity]&//Replace[#,Except[Rule,_]->"arg",Infinity]&;
+	Replace[#,{Rule}:>Rule,Infinity]&//
+	Replace[#,{a__,CallNode[LeafNode[Symbol, "BlankNullSequence", <||>], {}, _]}:>{a,Rule}]&//
+	Replace[#,Except[Rule,_]->"arg",Infinity]&;
 
 funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname
 
 (*---------------------------------------------------*)
 
 
+(*------- For debugging*)
+decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],Echo[x, mess], x]
 
-decho[x_,mess___] := Echo[x,mess] /; TrueQ[Echo@Wolfram`Chatbook`CodeCheck`$Debug]
-decho[x_, ___] := x
+decholabel[mess_String][x_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],EchoLabel[mess][x],x]
 
-decholabel[mess_String] := EchoLabel[mess] /; TrueQ[Echo@Wolfram`Chatbook`CodeCheck`$Debug]
-decholabel[_String][x_] := x
+dechofunction[a__][b_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],EchoFunction[a][b],b]
 
-dechofunction[a_] := EchoFunction[a] /; TrueQ[Echo@Wolfram`Chatbook`CodeCheck`$Debug]
-dechofunction[__][x_]:=x
+Wolfram`Chatbook`CodeCheck`$Debug=False
+
 (* ::Chapter::Closed:: *)
 (*End*)
 
