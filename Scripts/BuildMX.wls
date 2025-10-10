@@ -1,6 +1,11 @@
 #!/usr/bin/env wolframscript
 
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
+
+activePaclets = PacletFind["Wolfram/Chatbook"];
+
+PacletDisable /@ activePaclets
+
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -195,6 +200,8 @@ result = If[ ! FileExistsQ @ $mxFile,
          ];
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+PacletEnable /@ activePaclets
 
 EndPackage[ ];
 
