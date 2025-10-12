@@ -28,6 +28,7 @@ $cloudLineNumber           = 1;
 $cloudSession              = None;
 $maxSandboxMessages        = 10;
 $maxMessageParameterLength = 100;
+$toolOutputPageWidth       = 100;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -96,6 +97,7 @@ WolframLanguageToolEvaluate // Options = {
     "MaxCharacterCount"     -> 10000,
     Line                    -> Automatic,
     Method                  -> Automatic,
+    PageWidth               -> $toolOutputPageWidth,
     TimeConstraint          -> 60
 };
 
@@ -145,6 +147,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendRetryNotice        = getOption[ "AppendRetryNotice"    , opts ],
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
+            $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
             $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $Line                     = getOption[ "Line"                 , opts ]
@@ -174,6 +177,10 @@ getOption[ "AppendURIInstructions", append_ ] := throwFailure[ "InvalidOptionVal
 getOption[ "Method", $$unspecified ] := Automatic;
 getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
 getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
+
+getOption[ "PageWidth", $$unspecified ] := $toolOutputPageWidth;
+getOption[ "PageWidth", width: $$size ] := Floor @ width;
+getOption[ "PageWidth", width_ ] := throwFailure[ "InvalidOptionValue", "PageWidth", width ];
 
 getOption[ "MaxCharacterCount", $$unspecified ] := Infinity;
 getOption[ "MaxCharacterCount", count_Integer? Positive ] := count;
@@ -1009,6 +1016,8 @@ preprocessSandboxString // beginDefinition;
 preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringReplace[
     autoCorrect @ s,
     {
+        "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" :>
+            "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" /; StringFreeQ[ query, "[" | "]" ] :>
@@ -1262,7 +1271,7 @@ expandAmbiguityLists // endDefinition;
 (*smallExpressionString*)
 smallExpressionString // beginDefinition;
 smallExpressionString // Attributes = { HoldAllComplete };
-smallExpressionString[ expr_ ] := smallExpressionString[ expr, 100 ];
+smallExpressionString[ expr_ ] := smallExpressionString[ expr, $toolOutputPageWidth ];
 smallExpressionString[ expr_, n_ ] := stringTrimMiddle[ ToString[ Unevaluated @ expr, InputForm ], n ];
 smallExpressionString // endDefinition;
 
@@ -1923,31 +1932,37 @@ sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result
         Flatten @ HoldComplete @ result
     ];
 
-sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
-    With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
-        If[ StringLength @ string < $toolResultStringLength,
-            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            stringTrimMiddle[ string, $toolResultStringLength ]
+sandboxResultString0[ expr_HoldComplete ] :=
+    With[ { string = sandboxResultString1 @ expr },
+        If[ StringContainsQ[ string, "\n" ],
+            "\n" <> string,
+            string
         ]
     ];
-
-sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
-    With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
-        If[ StringLength @ string < $toolResultStringLength,
-            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            fixLineEndings @ ToString[
-                Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
-                OutputForm,
-                PageWidth -> 100
-            ]
-        ]
-    ];
-
-sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
-
-sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
 sandboxResultString0 // endDefinition;
+
+
+sandboxResultString1 // beginDefinition;
+
+sandboxResultString1[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
+    sandboxResultString2 @ ToString[ Unevaluated @ expr, PageWidth -> $toolOutputPageWidth ];
+
+sandboxResultString1[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
+    sandboxResultString2 @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> $toolOutputPageWidth ];
+
+sandboxResultString1[ HoldComplete[ ___, expr_ ] ] :=
+    makeExpressionURI @ Unevaluated @ expr;
+
+sandboxResultString1[ HoldComplete[ ] ] :=
+    "Null";
+
+sandboxResultString1 // endDefinition;
+
+
+sandboxResultString2 // beginDefinition;
+sandboxResultString2[ str_String ] := stringTrimMiddle[ fixLineEndings @ str, $toolResultStringLength ];
+sandboxResultString2 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
