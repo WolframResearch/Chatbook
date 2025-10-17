@@ -80,11 +80,42 @@ makeExpressionURI[ scheme_, Automatic, expr_ ] :=
 
 makeExpressionURI[ scheme_, label_, expr_ ] :=
     With[ { id = "content-" <> tinyHash @ Unevaluated @ expr },
-        $attachments[ id ] = HoldComplete @ expr;
+        $attachments[ id ] = expandMarkdownExpressions @ HoldComplete @ expr;
         "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
     ];
 
 makeExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandMarkdownExpressions*)
+expandMarkdownExpressions // beginDefinition;
+
+expandMarkdownExpressions[ expr_ ] := ReplaceRepeated[
+    expr,
+    {
+        markdownExpression[ uri_String ] :> RuleCondition @ GetExpressionURI[ uri, heldMarkdownExpression ],
+        heldMarkdownExpression[ e___ ] :> e
+    }
+];
+
+expandMarkdownExpressions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*markdownExpression*)
+markdownExpression // ClearAll;
+
+Scan[
+    Function[ markdownExpression /: Format[ markdownExpression[ str_String ], # ] := OutputForm @ str ],
+    $OutputForms
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*heldMarkdownExpression*)
+heldMarkdownExpression // ClearAll;
+heldMarkdownExpression // Attributes = { HoldAllComplete };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

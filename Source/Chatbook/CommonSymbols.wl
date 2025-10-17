@@ -260,6 +260,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeToolConfiguration;
 `makeToolResponseString;
 `makeWorkspaceChatDockedCell;
+`markdownExpression;
 `menuMagnification;
 `mergeChatSettings;
 `mergeCodeBlocks;
