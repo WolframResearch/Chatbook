@@ -202,7 +202,7 @@ getToolByShortName // endDefinition;
 (*toolName*)
 toolName // beginDefinition;
 toolName[ tool_ ] := toolName[ tool, Automatic ];
-toolName[ tool: $$llmTool, type_ ] := toolName[ tool type ] = toolName[ toolData @ tool, type ];
+toolName[ tool: $$llmTool, type_ ] := toolName[ tool, type ] = toolName[ toolData @ tool, type ];
 toolName[ KeyValuePattern[ "CanonicalName" -> name_String ], "Canonical" ] := name;
 toolName[ KeyValuePattern[ "DisplayName" -> name_String ], "Display" ] := name;
 toolName[ KeyValuePattern[ "Name" -> name_String ], type_ ] := toolName[ name, type ];
