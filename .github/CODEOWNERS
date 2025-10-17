@@ -16,6 +16,6 @@
 /Source/Chatbook/UI.wl @KMDaily
 
 # Automatic code correction
-/Assets/SyntaxArguments.wxf cpakleza@wolfram.com
-/Source/Chatbook/CodeCheck.wl cpakleza@wolfram.com
-/Tests/CodeCheck.wlt cpakleza@wolfram.com
+# /Assets/SyntaxArguments.wxf cpakleza@wolfram.com
+# /Source/Chatbook/CodeCheck.wl cpakleza@wolfram.com
+# /Tests/CodeCheck.wlt cpakleza@wolfram.com
