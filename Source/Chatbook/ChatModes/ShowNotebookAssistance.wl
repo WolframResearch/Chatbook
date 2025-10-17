@@ -17,7 +17,7 @@ $notebookAssistanceBaseSettings = <|
     "AppName"                   -> "NotebookAssistance",
     "LLMEvaluator"              -> "NotebookAssistant",
     "MaxContextTokens"          -> 2^15,
-    "MaxToolResponses"          -> 3,
+    "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"          -> { "RelatedDocumentation" },
     "ServiceCaller"             -> "NotebookAssistance",
