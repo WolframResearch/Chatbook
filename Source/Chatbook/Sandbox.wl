@@ -86,6 +86,8 @@ $$outputForm := $$outputForm = Alternatives @@ $OutputForms;
 
 $nlpData = <| |>;
 
+$$simpleTemplateBoxName = "Entity"|"EntityClass"|"EntityProperty"|"DateObject"|"Quantity";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*WolframLanguageToolEvaluate*)
@@ -97,7 +99,7 @@ WolframLanguageToolEvaluate // Options = {
     "MaxCharacterCount"     -> 10000,
     Line                    -> Automatic,
     Method                  -> Automatic,
-    PageWidth               -> $toolOutputPageWidth,
+    PageWidth               -> Infinity,
     TimeConstraint          -> 60
 };
 
@@ -1911,7 +1913,10 @@ sandboxResult // endDefinition;
 sandboxResultString // beginDefinition;
 
 sandboxResultString[ result_, packets_ ] :=
-    mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+    mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ sandboxResultString0[
+        preprocessForResultString @ result,
+        packets
+    ];
 
 sandboxResultString // endDefinition;
 
@@ -1963,6 +1968,21 @@ sandboxResultString1 // endDefinition;
 sandboxResultString2 // beginDefinition;
 sandboxResultString2[ str_String ] := stringTrimMiddle[ fixLineEndings @ str, $toolResultStringLength ];
 sandboxResultString2 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessForResultString*)
+preprocessForResultString // beginDefinition;
+
+preprocessForResultString[ expr_ ] := ReplaceAll[
+    expr,
+    {
+        gfx_? graphicsQ :>
+            RuleCondition @ markdownExpression @ MakeExpressionURI[ ToString @ Head @ Unevaluated @ gfx, gfx ]
+    }
+];
+
+preprocessForResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2126,12 +2146,17 @@ simpleResultQ // endDefinition;
 (*simpleFormattingQ*)
 simpleFormattingQ // beginDefinition;
 simpleFormattingQ // Attributes = { HoldAllComplete };
+
 simpleFormattingQ[ _String ] := True;
-simpleFormattingQ[ e_ ] := simpleFormattingQ[ HoldPattern @ Verbatim[ e ] ] = simpleFormattingQ0 @ MakeBoxes @ e;
+
+simpleFormattingQ[ e_ ] := simpleFormattingQ[ HoldPattern @ Verbatim[ e ] ] =
+    simpleFormattingQ0[ Unevaluated @ MakeBoxes @ e /. markdownExpression[ str_String ] :> str ];
+
 simpleFormattingQ // endDefinition;
 
 simpleFormattingQ0 // beginDefinition;
 simpleFormattingQ0[ _String ] := True;
+simpleFormattingQ0[ TemplateBox[ _, $$simpleTemplateBoxName, ___ ] ] := True;
 simpleFormattingQ0[ RowBox[ boxes_List ] ] := AllTrue[ boxes, simpleFormattingQ0 ];
 simpleFormattingQ0[ ___ ] := False;
 simpleFormattingQ0 // endDefinition;
