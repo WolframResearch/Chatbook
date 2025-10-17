@@ -300,8 +300,7 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Do not assign global variables when it's not necessary
 * Always use proper naming conventions for your variables (e.g. lowerCamelCase)
 * Never use single capital letters to represent variables (e.g. use `a Sin[k x + \[Phi]]` instead of `A Sin[k x + \[Phi]]`)
-* Prefer modern Wolfram Language symbols and methods
-* When creating plots, add options such as labels and legends to make them easier to understand";
+* Prefer modern Wolfram Language symbols and methods";
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
