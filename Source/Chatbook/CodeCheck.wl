@@ -33,7 +33,7 @@ Begin[ "`Private`" ];
 
 
 (*Syntax informations to check System functions arguments*)
-$syntargs := $syntargs = 	{Import[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformation"]]
+$syntargs := $syntargs = 	{Import[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformation"], "WXF"]
 							(*temporarily adding missing info from SyntaxInformation*)
 							,"With" -> {__}
 							,"EchoLabel" -> {_}
