@@ -2243,6 +2243,16 @@ boxToString[ GridBox[ { row: { ___ } }, ___ ] ] /; $simplifyTables :=
 boxToString[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] /; $simplifyTables :=
     StringRiffle[ boxToString /@ items, "\n" ];
 
+(* Columns with headings: *)
+boxToString[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
+    Block[ { $columnHeadings = True }, boxToString @ grid ];
+
+boxToString[ GridBox[ grid_, a___, GridBoxDividers -> { ___, "Rows" -> { False, True, False... }, ___ }, b___ ] ] :=
+    Block[ { $columnHeadings = True }, boxToString @ GridBox[ grid, a, b ] ];
+
+boxToString[ GridBox[ grid_, a___, GridBoxDividers -> { ___, "RowsIndexed" -> { 2 -> _ }, ___ }, b___ ] ] :=
+    Block[ { $columnHeadings = True }, boxToString @ GridBox[ grid, a, b ] ];
+
 (* Columns combined via row: *)
 boxToString[ box: GridBox[ grids: { { GridBox[ _? MatrixQ, ___ ].. } }, ___ ] ] :=
     Module[ { subGrids, dim, reshaped, spliced },
@@ -2281,9 +2291,6 @@ boxToString[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
             ]
         ) /; AllTrue[ strings, StringQ, 2 ]
     ];
-
-boxToString[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
-    Block[ { $columnHeadings = True }, boxToString @ grid ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
