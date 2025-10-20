@@ -57,8 +57,8 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Tools*)
 VerificationTest[
-    #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ],
-    { OrderlessPatternSequence[ "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" ] },
+    Sort[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ] ],
+    { "CreateNotebook", "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" },
     SameTest -> MatchQ,
     TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:59,1-64,2"
 ]
