@@ -991,7 +991,7 @@ toSandboxExpression[ s_String ] := $lastSandboxExpression =
     ];
 
 toSandboxExpression[ s_, expr_HoldComplete ] :=
-    expandSandboxMacros @ expr;
+    expr;
 
 toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
     Module[ { new, held },
@@ -1042,7 +1042,7 @@ toSandboxExpression // endDefinition;
 toHeldExpression // beginDefinition;
 
 toHeldExpression[ s_String ] :=
-    Replace[
+    expandSandboxMacros @ Replace[
         DeleteCases[ Quiet @ ToExpression[ s, InputForm, HoldComplete ], Null ],
         {
             HoldComplete[ xs__, CompoundExpression[ x_, Null ] ] :> Replace[
@@ -1118,6 +1118,8 @@ expandSandboxMacros[ expr_HoldComplete ] := Enclose[
     ],
     throwInternalFailure
 ];
+
+expandSandboxMacros[ $Failed ] := $Failed;
 
 expandSandboxMacros // endDefinition;
 
