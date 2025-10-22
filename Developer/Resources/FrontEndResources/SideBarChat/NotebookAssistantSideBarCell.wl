@@ -28,8 +28,10 @@ Cell[
 	CellFrameMargins -> 0,
 	CellMargins      -> { { 0, -4 }, { 0, 0 } },
 	CellTags         -> "SideBarCell",
+	Editable         -> True,
     Initialization   :> AttachCell[ EvaluationCell[ ], Cell[ "", CellTags -> "SideBarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ],
     LineIndent       -> 0,
     LineSpacing      -> { 1, 0 },
-    Magnification    -> 1.
+    Magnification    -> 1.,
+    Selectable       -> False
 ]

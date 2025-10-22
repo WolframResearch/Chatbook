@@ -1412,14 +1412,10 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
             With[ { boxObject = boxObject, write = write, sideBarCell = sideBarCellObject @ nbo },
                 splitDynamicTaskFunction @ 
                 WithCleanup[
-                    CurrentValue[ sideBarCell, Editable ] = True
-                    ,
-                    NotebookWrite[
-                        System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                        write,
-                        None,
-                        AutoScroll -> False
-                    ]
+                    FrontEndExecute[ {
+                        FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                        FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ]
+                    } ]
                     ,
                     CurrentValue[ sideBarCell, Editable ] = Inherited
                 ]
@@ -2324,21 +2320,22 @@ WriteChatOutputCell[
     new_Cell,
     info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
 ] /; TrueQ[ $SideBarChat ] := Enclose[
-    Module[ { output, sideBarCell },
+    Module[ { input, output, sideBarCell },
+        input = PreviousCell[ cell, CellStyle -> "NotebookAssistant`SideBar`ChatInput" ];
         sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
+        ConfirmMatch[ cellTaggedQ[ sideBarCell, "SideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
         WithCleanup[
-            CurrentValue[ sideBarCell, Editable ] = True
-            ,
-            NotebookWrite[ cell, new, None, AutoScroll -> False ]
+            FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
+            } ]
             ,
             CurrentValue[ sideBarCell, Editable ] = Inherited
         ];
-        (* drill down twice to get the new output CellObject *)
-        output = ConfirmBy[ First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], $Failed ], _CellObject, "SideBarScrollingContentCellWriteChatOutputCell" ];
-        output = ConfirmBy[ Last[ Cells[ output, CellTags -> uuid ], $Failed ], _CellObject, "SideBarTopCellWriteChatOutputCell" ];
-        $lastChatOutput = output;
+        output = NextCell[ input, CellTags -> uuid ];
         (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
         CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
+        $lastChatOutput = output;
         attachChatOutputMenu @ output;
         scrollOutput[ TrueQ @ scroll, output ];
     ],
@@ -3181,9 +3178,10 @@ writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SideBarChat ] := Enclose[
     (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell if in a side bar chat *)
     With[ { sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ] },
         createFETask @ WithCleanup[
-            CurrentValue[ sideBarCell, Editable ] = True
-            ,
-            NotebookWrite[ cell, errorCell @ as ]
+            FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`NotebookWrite[ cell, errorCell @ as ]
+            } ]
             ,
             CurrentValue[ sideBarCell, Editable ] = Inherited
         ];
