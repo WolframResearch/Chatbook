@@ -111,9 +111,10 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
         If[ ! FailureQ @ subDockedCell,
             (* if the sub-cell already exists then rewrite it *)
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
-                NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression @ content ]
+                FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression @ content ]
+                } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
             ]
@@ -121,11 +122,11 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
             (* else, write a new sub-cell after the last docked cell *)
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarDockedCell" ], $Failed ], _CellObject, "SideBarDockedCell" ];
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
                 FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression @ content } ] ] } ]
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression @ content } ] ]
+                } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
             ]
@@ -160,9 +161,8 @@ removeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject ] := 
     subDockedCell = First[ Cells[ sideBarCell, CellTags -> "SideBarSubDockedCell" ], Missing @ "NoSideBarSubDockedCell" ];
     If[ ! MissingQ @ subDockedCell,
         WithCleanup[
-            CurrentValue[ sideBarCell, Editable ] = True
-            ,
             FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                 FrontEnd`SelectionMove[ subDockedCell, Before, Cell ],
                 FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
                 FrontEnd`NotebookDelete @ subDockedCell } ]
@@ -180,9 +180,8 @@ removeSideBarChatSubDockedCell // endDefinition;
 removeSideBarTopCell // beginDefinition;
 
 removeSideBarTopCell[ nbo_NotebookObject, sideBarTopCell_CellObject ] := WithCleanup[
-    CurrentValue[ sideBarCell, Editable ] = True
-    ,
     FrontEndExecute[ {
+        FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
         FrontEnd`SelectionMove[ sideBarTopCell, Before, Cell ],
         FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the top cell *)
         FrontEnd`NotebookDelete @ sideBarTopCell } ]
@@ -201,9 +200,8 @@ removeSideBarScrollingContentCell[ nbo_NotebookObject, sideBarCell_CellObject ] 
     scrollablePaneCell = First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoScrollingSideBarCell" ];
     If[ ! MissingQ @ scrollablePaneCell,
         WithCleanup[
-            CurrentValue[ sideBarCell, Editable ] = True
-            ,
             FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                 FrontEnd`SelectionMove[ scrollablePaneCell, Before, Cell ],
                 FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the top cell *)
                 FrontEnd`NotebookDelete @ scrollablePaneCell } ]
@@ -567,7 +565,6 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                 Grid[
                     {
                         {
-                            RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
                                     Dynamic @ fieldContent,
@@ -617,8 +614,7 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                             ]
                         },
                         {
-                            Spacer[ 0 ],
-                            Item[ Dynamic @ focusedNotebookDisplay @ thisNB, Alignment -> Left ],
+                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, sideBarCell ], Alignment -> Left ],
                             SpanFromLeft
                         }
                     },
@@ -646,8 +642,7 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> "SideBarChatInputCell" ,
-    Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ],
-    Selectable    -> True
+    Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
 sideBarChatInputCell // endDefinition;
@@ -751,7 +746,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                         },
                         {
                             Spacer[ 0 ],
-                            Item[ Dynamic @ focusedNotebookDisplay @ thisNB, Alignment -> Left ],
+                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, None ], Alignment -> Left ],
                             SpanFromLeft
                         }
                     },
@@ -2571,7 +2566,7 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
         writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ];
         restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
-    ] // withLoadingOverlay[ { nbo, None } ]
+    ] // withLoadingOverlay[ { nbo, None } ],
     throwInternalFailure
 ];
 
@@ -2590,9 +2585,8 @@ loadConversation[ nbo_NotebookObject, sideBarCell_CellObject, id_ ] := Enclose[
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarDockedCell" ], $Failed ], _CellObject, "SideBarDockedCell" ];
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
                 FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
                     FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sideBarScrollingCell[ nbo, cells ] } ] ]
                 } ]
@@ -2601,9 +2595,10 @@ loadConversation[ nbo_NotebookObject, sideBarCell_CellObject, id_ ] := Enclose[
             ]
             , (* ELSE *)
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
-                NotebookWrite[ scrollablePaneCell, sideBarScrollingCell[ nbo, cells ] ]
+                FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`NotebookWrite[ scrollablePaneCell, sideBarScrollingCell[ nbo, cells ] ]
+                } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
             ]

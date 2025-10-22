@@ -6823,7 +6823,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
+      ImageSizeCache->{4.5, {2.252197265625, 6.126708984375}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9855,6 +9855,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
      Symbol["Wolfram`Chatbook`ChatModes`Common`sideBarChatInputCell"][]], 
    StandardForm],
   DestroyAfterEvaluation->True]}],
+ Editable->True,
+ Selectable->False,
  CellMargins->{{0, -4}, {0, 0}},
  Initialization:>AttachCell[
    EvaluationCell[], 
@@ -9868,7 +9870,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[1], 
    GrayLevel[0.0999191]],
  CellTags->
-  "SideBarCell",ExpressionUUID->"9790bc45-33d1-a14f-820d-985645bbd791"]
+  "SideBarCell",ExpressionUUID->"37e5c391-ca5f-2041-94d7-1e24bf08ca88"]
 }
 @|
 @|

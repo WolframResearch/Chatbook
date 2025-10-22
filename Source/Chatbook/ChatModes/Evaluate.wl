@@ -86,9 +86,8 @@ evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, Dynamic[ input_
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarDockedCell" ], $Failed ], _CellObject, "SideBarDockedCell" ];
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
                 FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
                     FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sideBarScrollingCell[ nbo, { cell } ] } ] ] } ]
                 ,
@@ -99,9 +98,8 @@ evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, Dynamic[ input_
             (* The scrolling pane cell should only exist if it contains content. If it exists without content then something has gone wrong. *)
             lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SideBarTopCell" ], $Failed ], _CellObject, "NoSideBarScrollingContentCell" ];
             WithCleanup[
-                CurrentValue[ sideBarCell, Editable ] = True
-                ,
                 FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastContentCell, After, Cell, AutoScroll -> True ],
                     FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", cell } ] ] } ]
                 ,

@@ -713,9 +713,8 @@ cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ 
         (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell *)
         sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ];
         WithCleanup[
-            CurrentValue[ sideBarCell, Editable ] = True
-            ,
             FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                 FrontEnd`SelectionMove[ target, After, Cell, AutoScroll -> True ],
                 FrontEnd`NotebookWrite[ parentNotebook @ target, RowBox[ { "\n", cell } ] ]
             } ]
