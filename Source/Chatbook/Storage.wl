@@ -222,13 +222,8 @@ restoreAttachments // beginDefinition;
 restoreAttachments[ KeyValuePattern[ "Attachments" -> attachments_Association ] ] :=
     Association @ KeyValueMap[ # -> restoreAttachments @ ## &, attachments ];
 
-restoreAttachments[ "Expressions", expressions_Association ] := Enclose[
-    $attachments = ConfirmBy[ <| $attachments, expressions |>, AssociationQ, "Attachments" ],
-    throwInternalFailure
-];
-
-restoreAttachments[ "ToolCalls", toolCalls_Association ] := Enclose[
-    $toolEvaluationResults = ConfirmBy[ <| $toolEvaluationResults, toolCalls |>, AssociationQ, "ToolCalls" ],
+restoreAttachments[ type: "Expressions"|"ToolCalls", as_Association ] := Enclose[
+    ConfirmBy[ LoadAttachments[ type, as ], AssociationQ, "LoadAttachments" ],
     throwInternalFailure
 ];
 

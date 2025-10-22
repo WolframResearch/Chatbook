@@ -340,6 +340,9 @@ GetAttachments[ messages_ ] :=
 GetAttachments[ messages: $$chatMessages|None, prop: $$attachmentProperty|All ] :=
     catchMine @ getAttachments[ messages, prop ];
 
+GetAttachments[ content_, prop: $$attachmentProperty|All ] :=
+    catchMine @ getAttachments[ ensureChatMessages @ content, prop ];
+
 GetAttachments // endExportedDefinition;
 
 (* TODO: this should identify expression and tool call keys from earlier sessions and give Missing[...] for those *)
@@ -377,6 +380,31 @@ getAttachments[ messages_, prop: $$attachmentProperty ] := Enclose[
 ];
 
 getAttachments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LoadAttachments*)
+LoadAttachments // beginDefinition;
+LoadAttachments[ as_Association ] := catchMine @ LoadAttachments[ "Expressions", as ];
+LoadAttachments[ type: "Expressions"|"ToolCalls", as_Association ] := catchMine @ loadAttachments[ type, as ];
+LoadAttachments // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadAttachments*)
+loadAttachments // beginDefinition;
+
+loadAttachments[ "Expressions", expressions_Association ] := Enclose[
+    $attachments = ConfirmBy[ <| $attachments, expressions |>, AssociationQ, "Attachments" ],
+    throwInternalFailure
+];
+
+loadAttachments[ "ToolCalls", toolCalls_Association ] := Enclose[
+    $toolEvaluationResults = ConfirmBy[ <| $toolEvaluationResults, toolCalls |>, AssociationQ, "ToolCalls" ],
+    throwInternalFailure
+];
+
+loadAttachments // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
