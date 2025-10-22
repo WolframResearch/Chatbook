@@ -20,6 +20,16 @@ $keepAllImages      = False;
 $wolframAlphaAppID  = None;
 $instructions       = None;
 
+$timeouts = <|
+    "URLSubmit"   -> 25,
+    "TaskWait"    -> 30,
+    "AlphaScan"   -> 5,
+    "AlphaPod"    -> 4,
+    "AlphaFormat" -> 8,
+    "AlphaParse"  -> 5,
+    "AlphaTotal"  -> 20
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Argument Patterns*)
@@ -597,10 +607,12 @@ getAllWolframAlphaResults[ queries: { ___String } ] := Enclose[
         ];
 
         { waitTime, waitResult } = ConfirmMatch[
-            AbsoluteTiming @ TaskWait[ tasks, TimeConstraint -> 30 ],
+            AbsoluteTiming @ TaskWait[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ],
             { _Real, { ___ } },
             "TaskWait"
         ];
+
+        Quiet[ TaskRemove /@ tasks ];
 
         { formatTime, strings } = ConfirmMatch[
             AbsoluteTiming @ KeyValueMap[ formatWolframAlphaResult, results[ "Queries" ] ],
@@ -645,7 +657,7 @@ submitQuery[ assoc_, query_String ] :=
             url,
             HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
             HandlerFunctions     -> <| "TaskFinished" -> setResult[ assoc, query, AbsoluteTime[ ] ] |>,
-            TimeConstraint       -> 30
+            TimeConstraint       -> $timeouts[ "URLSubmit" ]
         ];
 
         assoc[ query, "Query" ] = query;
@@ -787,6 +799,9 @@ makeContentString[ content: { ___Association } ] :=
 makeContentString[ KeyValuePattern[ "Type" -> "Error" ] ] :=
     "No Results Found";
 
+makeContentString[ $TimedOut ] :=
+    "Request timed out";
+
 makeContentString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -869,7 +884,8 @@ getWolframAlphaAPIContent[ queries: { ___String } ] := Enclose[
     Module[ { results, tasks },
         results = <| |>;
         tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
-        TaskWait[ tasks, TimeConstraint -> 30 ];
+        TaskWait[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ];
+        Quiet[ TaskRemove /@ tasks ];
         If[ TrueQ @ $cacheResults,
             getWolframAlphaAPIContent[ queries ] = results,
             results
@@ -889,26 +905,32 @@ submitXMLRequest // Attributes = { HoldFirst };
 submitXMLRequest[ assoc_ ] :=
     submitXMLRequest[ assoc, # ] &;
 
-(* cSpell: ignore sbsmode, podstate *)
+(* cSpell: ignore sbsmode, podstate, scantimeout, podtimeout, formattimeout, parsetimeout, totaltimeout *)
 submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Enclose[
     Module[ { request, task },
 
         If[ ! AssociationQ @ assoc, assoc = <| |> ];
         If[ ! AssociationQ @ assoc @ query, assoc @ query = <| |> ];
-        assoc[ query, "Query" ] = query;
-        assoc[ query, "URL"   ] = makeWolframAlphaURL @ query;
+        assoc[ query, "Query"   ] = query;
+        assoc[ query, "URL"     ] = makeWolframAlphaURL @ query;
+        assoc[ query, "Content" ] = $TimedOut;
 
         request = HTTPRequest[
             "https://api.wolframalpha.com/v2/query",
             <|
                 "Query" -> {
-                    "input"       -> query,
-                    "reinterpret" -> False,
-                    "appid"       -> $wolframAlphaAppID,
-                    "format"      -> "image,plaintext",
-                    "output"      -> "xml",
-                    "sbsmode"     -> "StepByStepDetails",
-                    "podstate"    -> "Step-by-step solution,Show all steps"
+                    "input"         -> query,
+                    "reinterpret"   -> False,
+                    "appid"         -> $wolframAlphaAppID,
+                    "format"        -> "image,plaintext",
+                    "output"        -> "xml",
+                    "sbsmode"       -> "StepByStepDetails",
+                    "podstate"      -> "Step-by-step solution,Show all steps",
+                    "scantimeout"   -> $timeouts[ "AlphaScan"   ],
+                    "podtimeout"    -> $timeouts[ "AlphaPod"    ],
+                    "formattimeout" -> $timeouts[ "AlphaFormat" ],
+                    "parsetimeout"  -> $timeouts[ "AlphaParse"  ],
+                    "totaltimeout"  -> $timeouts[ "AlphaTotal"  ]
                 }
             |>
         ];
@@ -917,7 +939,7 @@ submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Encl
             request,
             HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
             HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
-            TimeConstraint       -> 30
+            TimeConstraint       -> $timeouts[ "URLSubmit" ]
         ];
 
         ConfirmMatch[ task, _TaskObject, "Task" ]
@@ -950,7 +972,7 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
             url,
             HandlerFunctionsKeys -> { "StatusCode", "BodyByteArray" },
             HandlerFunctions     -> <| "TaskFinished" -> setXMLResult @ assoc @ query |>,
-            TimeConstraint       -> 30
+            TimeConstraint       -> $timeouts[ "URLSubmit" ]
         ];
 
         ConfirmMatch[ task, _TaskObject, "Task" ]
@@ -996,6 +1018,9 @@ setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> 200, "BodyByteArr
     ],
     throwInternalFailure
 ];
+
+setXMLResult[ result_, as: KeyValuePattern @ { "StatusCode" -> _Missing, "BodyByteArray" -> _Missing } ] :=
+    result = <| result, as, "Content" -> $TimedOut |>;
 
 setXMLResult // endDefinition;
 
