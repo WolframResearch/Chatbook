@@ -14,7 +14,14 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::VectorDatabaseCloudDownload = "\
+Warning: Local vector databases are out of date. Downloading updated vector databases...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Configuration*)
+$suppressDownloadWarning = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -511,17 +518,27 @@ registerVectorDatabase // endDefinition;
 (*InstallVectorDatabases*)
 InstallVectorDatabases // beginDefinition;
 
-InstallVectorDatabases[ ] := catchMine @ Enclose[
-    Block[ { $pacletVectorDBDirectory = None },
-        Success[
-            "VectorDatabasesInstalled",
-            <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
-        ]
+InstallVectorDatabases[ ] :=
+    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True },
+        installVectorDatabases[ ]
+    ];
+
+InstallVectorDatabases // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*installVectorDatabases*)
+installVectorDatabases // beginDefinition;
+
+installVectorDatabases[ ] := Enclose[
+    Module[ { dir },
+        dir = ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ];
+        Success[ "VectorDatabasesInstalled", <| "Location" -> dir |> ]
     ],
     throwInternalFailure
 ];
 
-InstallVectorDatabases // endExportedDefinition;
+installVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -607,6 +624,8 @@ downloadVectorDatabases[ ] :=
 
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
     Module[ { dir, lock, names, urls, sizes, tasks },
+
+        If[ $CloudEvaluation && ! TrueQ @ $suppressDownloadWarning, messagePrint[ "VectorDatabaseCloudDownload" ] ];
 
         $extraDownloadTasks = Internal`Bag[ ];
 
