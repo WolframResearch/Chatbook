@@ -592,13 +592,13 @@ funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname
 
 
 (*------- For debugging*)
-decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],Echo[x, mess], x]
+decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Echo[x, mess], x]
 
-decholabel[mess_String][x_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],EchoLabel[mess][x],x]
+decholabel[mess_String][x_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],EchoLabel[mess][x],x]
 
-dechofunction[a__][b_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$Debug],EchoFunction[a][b],b]
+dechofunction[a__][b_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],EchoFunction[a][b],b]
 
-Wolfram`Chatbook`CodeCheck`$Debug=False
+Wolfram`Chatbook`CodeCheck`$CodeCheckDebug=False
 
 (* ::Chapter::Closed:: *)
 (*End*)
