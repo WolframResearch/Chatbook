@@ -536,16 +536,25 @@ $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall
 getVectorDBDirectory // beginDefinition;
 
 getVectorDBDirectory[ ] := Enclose[
-    If[ $CloudEvaluation, cleanupLegacyVectorDBFiles @ $localVectorDBDirectory ];
-    $vectorDBDirectory = SelectFirst[
-        {
+    Module[ { sources, dir },
+        sources = {
             $pacletVectorDBDirectory,
             If[ $CloudEvaluation, $cloudVectorDBDirectory, Nothing ],
             $localVectorDBDirectory
-        },
-        vectorDBDirectoryQ,
-        (* TODO: need a version of this that prompts the user with a dialog asking them to download *)
-        ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
+        };
+
+        dir = SelectFirst[
+            sources,
+            vectorDBDirectoryQ,
+            ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
+        ];
+
+        If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
+            (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
+            Quiet @ DeleteDirectory[ ChatbookFilesDirectory[ "VectorDatabases" ], DeleteContents -> True ]
+        ];
+
+        $vectorDBDirectory = dir
     ],
     throwInternalFailure
 ];
@@ -644,21 +653,6 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 ];
 
 downloadVectorDatabases // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cleanupLegacyVectorDBFiles*)
-cleanupLegacyVectorDBFiles // beginDefinition;
-
-cleanupLegacyVectorDBFiles[ dir_String ] := cleanupLegacyVectorDBFiles[ dir ] = Quiet @ Map[
-    DeleteDirectory[ #1, DeleteContents -> True ] &,
-    Join[
-        Select[ FileNames[ DigitCharacter.. ~~ "." ~~ DigitCharacter.. ~~ "." ~~ DigitCharacter.., dir ], DirectoryQ ],
-        Select[ FileNames[ $vectorDBNames, dir ], DirectoryQ[ # ] && ! vectorDBDirectoryQ0[ # ] & ]
-    ]
-];
-
-cleanupLegacyVectorDBFiles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
