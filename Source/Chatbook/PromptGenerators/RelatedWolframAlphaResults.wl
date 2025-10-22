@@ -753,8 +753,8 @@ formatWolframAlphaResult[ query_String, KeyValuePattern[ "String" -> res_String 
 formatWolframAlphaResult[ query_String, _ ] :=
     formatWolframAlphaResult0[ query, makeWolframAlphaURL @ query, Missing[ "No Results Found" ] ];
 
-formatWolframAlphaResult[ KeyValuePattern @ { "Query" -> query_String, "URL" -> url_String, "Content" -> content_ } ] :=
-    formatWolframAlphaResult0[ query, url, makeContentString @ content ];
+formatWolframAlphaResult[ as: KeyValuePattern @ { "Query" -> query_String, "URL" -> url_String } ] :=
+    formatWolframAlphaResult0[ query, url, makeContentString @ Lookup[ as, "Content" ] ];
 
 formatWolframAlphaResult // endDefinition;
 
@@ -785,6 +785,9 @@ makeContentString[ content: { ___Association } ] :=
     ];
 
 makeContentString[ KeyValuePattern[ "Type" -> "Error" ] ] :=
+    "No Results Found";
+
+makeContentString[ _Missing ] :=
     "No Results Found";
 
 makeContentString // endDefinition;
