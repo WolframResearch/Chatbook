@@ -71,6 +71,19 @@ EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\
 {\"property canonical name\", ...}, \"Association\"]
 ```
 
+The full set of valid values for the third argument of `EntityValue` are:
+
+| Value | Description |
+| ----- | --- |
+| \"EntityAssociation\" | an association of entities and entity-property values |
+| \"PropertyAssociation\" | an association of properties and entity-property values |
+| \"EntityPropertyAssociation\" | an association in which the specified entities are keys, and values are a nested association of properties and entity-property values |
+| \"PropertyEntityAssociation\" | an association in which the specified properties are keys, and values are a nested association of entities and entity-property values |
+| \"Dataset\" | a dataset in which the specified entities are keys, and values are an association of property names and entity-property values |
+| \"Association\" | a nested association with entity keys on the first level and property keys on the second level |
+| \"NonMissingPropertyAssociation\" | an association of properties and entity-property values with the missing values dropped |
+| \"NonMissingEntityAssociation\" | an association of entities and entity-property values with the missing values dropped |
+
 # Filtering entities by property values
 
 If an `EntityProperty` can be used to perform an `EntityClass` lookup, use this syntax with specified patterns for \
