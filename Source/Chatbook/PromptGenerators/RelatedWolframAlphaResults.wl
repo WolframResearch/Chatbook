@@ -1048,8 +1048,10 @@ formatNaturalLanguageInput // endDefinition;
 (*makeInterpretationCode*)
 makeInterpretationCode // beginDefinition;
 
-makeInterpretationCode[ query0_String, code_String ] := Enclose[
-    Module[ { query, input },
+makeInterpretationCode[ query0_String, code0_String ] := Enclose[
+    Module[ { code, query, input },
+
+        code = ConfirmBy[ rewriteEntityValueCode @ code0, StringQ, "Code" ];
 
         query = StringRiffle @ DeleteCases[ StringTrim @ StringSplit[ query0, { "\\|", "\n" } ], "" ];
 
@@ -1078,6 +1080,35 @@ In[1]:= %%Input%%
 
 During evaluation of In[1]:= [INFO] Interpreted \"%%Query%%\" as: %%Code%%
 ```", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteEntityValueCode*)
+rewriteEntityValueCode // beginDefinition;
+
+rewriteEntityValueCode[ code_String ] :=
+    If[ StringContainsQ[ code, "Entity[" ],
+        rewriteEntityValueCode[ code, Quiet @ ToExpression[ code, InputForm, HoldComplete ] ],
+        code
+    ];
+
+rewriteEntityValueCode[ code_, held_HoldComplete ] := Enclose[
+    Catch @ Module[ { replaced },
+        replaced = held /. HoldPattern[ (e_Entity)[ p: _EntityProperty | _String ] ] :> EntityValue[ e, p ];
+        If[ replaced === held, Throw @ code ];
+        ConfirmBy[
+            Replace[ replaced, HoldComplete[ e_ ] :> ToString[ Unevaluated @ e, InputForm ] ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+rewriteEntityValueCode[ code_, _ ] :=
+    code;
+
+rewriteEntityValueCode // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
