@@ -61,10 +61,10 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                                     sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ items,
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
-                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                        ItemSize -> Automatic, Spacings -> { 0, 0 }, Alignment -> Left
                     ],
                 "Services" ->
-                    Dynamic @ Column[
+                    Dynamic @ Column[(* oddity: dynamic column doesn't get the spacings right, leaving a gap, so close the gap by hand *)
                         {
                             linkTrailFrame[ "Models", aiPane = "Main" ],
                             scrollablePane[
@@ -72,7 +72,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                                     sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ Wolfram`Chatbook`UI`Private`createServiceMenu[ en ],
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
-                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                        BaseStyle -> FontSize -> 1, ItemSize -> Automatic, Spacings -> { 0, -4 }, Alignment -> Left
                     ],
                 "ModelNames" ->
                     Dynamic @ Column[
@@ -83,7 +83,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                                     sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ generatedMenu,
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
-                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                        BaseStyle -> FontSize -> 1, ItemSize -> Automatic, Spacings -> { 0, -4 }, Alignment -> Left
                     ],
 
                 (* some day this meny may depend on the model (service) and model name... *)
@@ -96,7 +96,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                                     sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en ],
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
-                        ItemSize -> Automatic, Spacings -> 0, Alignment -> Left
+                        ItemSize -> Automatic, Spacings -> { 0, 0 }, Alignment -> Left
                     ]
             },
             Dynamic @ aiPane,
@@ -112,32 +112,135 @@ MakeSideBarMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*side bar UI elements*)
 
+
+(* side bar is 15.0+ and thus supports LightDarkSwitched *)
+$ControlFontColorDefault = LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ];
+$ControlFontColorHover   = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ];
+$ControlFontColorPressed = LightDarkSwitched[ RGBColor[ "#0E7FB1" ], RGBColor[ "#4ABEF3" ] ];
+$DividerColor            = LightDarkSwitched @ GrayLevel[ 0.9098 ];
+$FrameColorDefault       = LightDarkSwitched[ GrayLevel[ 0.749 ], GrayLevel[ 0.5495 ] ];
+$FrameColorHover         = LightDarkSwitched[ RGBColor[ "#8BCCE9" ], RGBColor[ "#7BBBD6" ] ];
+$FrameColorPressed       = LightDarkSwitched[ RGBColor[ "#67A3BE" ], RGBColor[ "#6390A6" ] ];
+$MainBackground          = LightDarkSwitched[ GrayLevel[ 0.97647 ], GrayLevel[ 0.17974 ] ];
+$MatchContentBackground  = ThemeColor[ "Background" ];
+$NavigationColorDefault  = LightDarkSwitched[ RGBColor[ "#2285C3" ], RGBColor[ "#8BCAF9" ] ];
+$NavigationColorHover    = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#B2DCFB" ] ];
+$NavigationColorPressed  = LightDarkSwitched[ RGBColor[ "#2285C3" ], RGBColor[ "#8BCAF9" ] ];
+$ResetButtonHover        = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ];
+$ResetButtonPressed      = LightDarkSwitched[ RGBColor[ "#0E7FB1" ], RGBColor[ "#4ABEF3" ] ];
+$TransparentBackground   = Transparent;
+
+
+(* ::**************************************************************************************************************:: *)
+backButtonAppearanceBasic // beginDefinition;
+
+(* crossing streams a bit here with the NotebookToolbar paclet... *)
+backButtonAppearanceBasic[ iconColor_, bgColor_, frameColor_ ] :=
+Framed[
+    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "NPBackArrowIcon" ][ iconColor ] ] ],
+    Alignment        -> { Center, Center },
+    Background       -> bgColor,
+    BaselinePosition -> Baseline,
+    FrameMargins     -> 0,
+    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+    ImageSize        -> { 22, 22 },
+    RoundingRadius   -> 4
+]
+
+backButtonAppearanceBasic // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+chatMenuItemAppearanceBasic // beginDefinition;
+
+chatMenuItemAppearanceBasic[ icon_, text_, bgColor_, frameColor_, fontColor_, navIconColor_, includeNavArrowQ_ ] :=
+Framed[
+    Grid[
+        { {
+            icon,
+            Spacer[ 12 ],
+            If[ includeNavArrowQ,
+                Item[ Style[ text, FontColor -> fontColor ], ItemSize -> Fit, Alignment -> Left ],
+                Style[ text, FontColor -> fontColor ] ],
+            If[ includeNavArrowQ,
+                Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "NPForwardArrowIcon" ][ navIconColor ] ] ],
+                Nothing ]
+        } },
+        Alignment        -> { Left, Center },
+        BaselinePosition -> { { 1, 3 }, Baseline },
+        ItemSize         -> { { Automatic, Automatic, Automatic } },
+        Spacings         -> { 0, 0 }
+    ],
+    Alignment        -> { Left, Center },
+    Background       -> bgColor,
+    BaselinePosition -> Baseline,
+    FrameMargins     -> { { 4, 4 }, { 2, 2 } },
+    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+    ImageMargins     -> { { 0, 7 }, { 0, 0 } },
+    ImageSize        -> Scaled[ 1. ],
+    RoundingRadius   -> 4
+]
+
+chatMenuItemAppearanceBasic // endDefinition;
+
+
+chatMenuItemAppearance // beginDefinition;
+
+(* crossing streams a bit here with the NotebookToolbar paclet... *)
+chatMenuItemAppearance[ icon_, text_, includeNavArrowQ_:False ] :=
+NotebookTools`Mousedown[
+    chatMenuItemAppearanceBasic[ icon, text, $TransparentBackground,  $TransparentBackground, $ControlFontColorDefault, $NavigationColorDefault, includeNavArrowQ ],
+    chatMenuItemAppearanceBasic[ icon, text, $MatchContentBackground, $FrameColorHover,       $ControlFontColorHover,   $NavigationColorHover,   includeNavArrowQ ],
+    chatMenuItemAppearanceBasic[ icon, text, $MatchContentBackground, $FrameColorPressed,     $ControlFontColorPressed, $NavigationColorPressed, includeNavArrowQ ],
+    BaselinePosition -> Baseline
+]
+
+chatMenuItemAppearance // endDefinition;
+
+
 (* ::**************************************************************************************************************:: *)
 linkTrailFrame // beginDefinition;
 
 Attributes[ linkTrailFrame ] = { HoldRest };
 
 linkTrailFrame[ text_, action_ ] :=
-Framed[
-    Grid[
-        { {
-            Button[
-                buttonAppearance[ "\[LeftArrow]", 0, { 18, 18 } ],
-                action,
-                Appearance       -> "Suppressed",
-                BaselinePosition -> Baseline,
-                ImageSize        -> Automatic,
-                Method           -> "Queued"],
-            Pane[ text, Alignment -> Center, ImageSize -> Scaled[ 1. ] ]
-        } },
-        BaselinePosition -> { { 1, 2 }, Baseline },
-        BaseStyle        -> { FontFamily -> "Source Sans Pro", FontSize -> 14 } ],
-    Alignment        -> { Left, Center },
-    Background       -> Transparent,
-    BaselinePosition -> Baseline,
-    FrameMargins     -> { { 10, 0 }, { 0, 0 } },
-    FrameStyle       -> Transparent,
-    ImageSize        -> { Scaled[ 1. ], 30 } ]
+Overlay[
+    {
+        Framed[
+            Grid[
+                { {
+                    Button[
+                        NotebookTools`Mousedown[
+                            backButtonAppearanceBasic[ $NavigationColorDefault, $MatchContentBackground, $FrameColorDefault ],
+                            backButtonAppearanceBasic[ $NavigationColorHover,   $MatchContentBackground, $FrameColorHover ],
+                            backButtonAppearanceBasic[ $NavigationColorPressed, $MatchContentBackground, $FrameColorPressed ],
+                            BaselinePosition -> Baseline
+                        ],
+                        action,
+                        Appearance       -> "Suppressed",
+                        BaselinePosition -> Baseline,
+                        ImageSize        -> Automatic,
+                        Method           -> "Queued"
+                    ],
+                    text
+                } },
+                BaselinePosition -> { { 1, 2 }, Baseline },
+                BaseStyle        -> { FontFamily -> "Source Sans Pro", FontSize -> 14 }
+            ],
+            Alignment        -> { Left, Center },
+            Background       -> $MainBackground,
+            BaselinePosition -> Baseline,
+            FrameMargins     -> { { 9, 0 }, { 0, 0 } },
+            FrameStyle       -> $MainBackground,
+            ImageSize        -> { Scaled[ 1. ], 30 }
+        ],
+        Graphics[Background -> $DividerColor, ImageSize -> { Scaled[ 1 ], 1 }, AspectRatio -> Full ]
+    },
+    { 1, 2 },
+    1,
+    Alignment -> { Left, Bottom }
+]
+
 
 linkTrailFrame // endDefinition;
 
@@ -150,6 +253,7 @@ DynamicModule[ { height },
         Pane[
             content,
             AppearanceElements -> { },
+            FrameMargins       -> { { 0, 0 }, { 4, 0 } },
             Scrollbars         -> { False, Automatic },
             ImageSize          -> Dynamic[ { Scaled[ 1. ], height } ] ],
         
@@ -163,56 +267,31 @@ DynamicModule[ { height },
 scrollablePane // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-buttonAppearanceBasic // beginDefinition;
-
-buttonAppearanceBasic[ label_, frameStyle_, frameMargins_ : Automatic, size_ : Automatic ] :=
-Framed[
-    label,
-    Alignment        -> { Center, Center },
-    BaselinePosition -> Baseline,
-    FrameMargins     -> frameMargins,
-    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameStyle ],
-    ImageSize        -> size,
-    RoundingRadius   -> 2]
- 
-buttonAppearanceBasic // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-buttonAppearance // beginDefinition;
-
-$FrameColor             = LightDarkSwitched[GrayLevel[0.785], GrayLevel[0.5059]];
-$FrameColorHover        = LightDarkSwitched[Lighter @ $FrameColor[[1]], Lighter @ $FrameColor[[2]]];
-$FrameColorPressed      = LightDarkSwitched[Darker @ $FrameColor[[1]], Darker @ $FrameColor[[2]]];
-
-buttonAppearance[ label_, frameMargins_ : Automatic, size_ : Automatic ] :=
-NotebookTools`Mousedown[
-    buttonAppearanceBasic[ label, $FrameColor,        frameMargins, size ],
-    buttonAppearanceBasic[ label, $FrameColorHover,   frameMargins, size ],
-    buttonAppearanceBasic[ label, $FrameColorPressed, frameMargins, size ],
-    BaselinePosition -> Baseline
-]
-
-buttonAppearance // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 resetButtonAppearanceBasic // beginDefinition;
 
-resetButtonAppearanceBasic[ styles__ ] := Graphics[ { styles, Disk[ ] }, ImageSize -> { 15, 15 }, BaselinePosition -> (Center -> Center) ]
+(* crossing streams a bit here with the NotebookToolbar paclet... *)
+resetButtonAppearanceBasic[ iconColor_, bgColor_, frameColor_ ] :=
+Framed[
+    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "NPResetIcon" ][ iconColor ] ] ],
+    Alignment        -> { Center, Center },
+    Background       -> bgColor,
+    BaselinePosition -> Baseline,
+    FrameMargins     -> 0,
+    FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+    ImageSize        -> { 16, 16 },
+    RoundingRadius   -> 4
+]
 
 resetButtonAppearanceBasic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 resetButtonAppearance // beginDefinition;
 
-$ResetButtonDefault     = LightDarkSwitched[Blue, RGBColor[0.6807978853126149, 0.6819646729539649, 0.99698961229365]]
-$ResetButtonHover       = LightDarkSwitched[Lighter @ $ResetButtonDefault[[1]], Lighter @ $ResetButtonDefault[[2]]];
-$ResetButtonPressed     = LightDarkSwitched[Darker @ $ResetButtonDefault[[1]], Darker @ $ResetButtonDefault[[2]]];
-
 resetButtonAppearance[ ] :=
 NotebookTools`Mousedown[
-    resetButtonAppearanceBasic[ $ResetButtonDefault ],
-    resetButtonAppearanceBasic[ $ResetButtonHover   ],
-    resetButtonAppearanceBasic[ $ResetButtonPressed ],
+    resetButtonAppearanceBasic[ $ResetButtonPressed, $TransparentBackground,  $TransparentBackground] ,
+    resetButtonAppearanceBasic[ $ResetButtonHover,   $MatchContentBackground, $FrameColorHover ],
+    resetButtonAppearanceBasic[ $ResetButtonPressed, $MatchContentBackground, $FrameColorPressed ],
     BaselinePosition -> Baseline
 ]
 
@@ -227,18 +306,21 @@ resetButton[ Hold @ forceUpdate_, Hold @ condition_, Hold @ action_ ] :=
 PaneSelector[
     {
         True ->
-            Button[
-                resetButtonAppearance[ ],
-                action; forceUpdate = RandomReal[ ],
-                Appearance       -> "Suppressed",
-                BaselinePosition -> Baseline,
-                ImageSize        -> Automatic,
-                Method           -> "Queued"
+            fancyTooltip[
+                Button[
+                    resetButtonAppearance[ ],
+                    action; forceUpdate = RandomReal[ ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    ImageSize        -> Automatic,
+                    Method           -> "Queued"
+                ],
+                Dynamic[ FEPrivate`FrontEndResource[ "NotebookToolbarStrings", "NPResetInheritanceTooltip" ] ]
             ],
         False -> Graphics[ Background -> None, BaselinePosition -> (Center -> Center), ImageSize -> { 1, 1 } ] },
     Dynamic[ forceUpdate; condition ],
     BaselinePosition -> Baseline,
-    FrameMargins     -> { { 10, 0 }, { 0, 0 } },
+    FrameMargins     -> { { 9, 0 }, { 0, 0 } },
     ImageSize        -> { 25, Automatic }
 ]
 
@@ -256,12 +338,14 @@ If[ KeyExistsQ[ spec, "ResetCondition" ],
                     resetButton[ Hold @ forceUpdate, Lookup[ spec, "ResetCondition", Hold @ Null, Hold ], Lookup[ spec, "ResetAction", Hold @ Null, Hold ] ],
                     content } },
             BaseStyle        -> Lookup[ spec, "ResetCondition", Automatic, Function[ Null, Dynamic[ { FontWeight -> If[ #, Bold, Automatic ] } ], HoldFirst ] ],
-            BaselinePosition -> { { 1, 1 }, Baseline }
+            BaselinePosition -> { { 1, 1 }, Baseline },
+            Spacings         -> { 0, 0 }
         ]
     ],
     Grid[
         { { Pane["", ImageSize -> { 25, Automatic } ], content } },
-        BaselinePosition -> { { 1, 1 }, Baseline } ]
+        BaselinePosition -> { { 1, 1 }, Baseline },
+        Spacings         -> { 0, 0 } ]
 ]
 
 addResetButton // endDefinition;
@@ -303,10 +387,11 @@ Module[ { icon, label },
     addResetButton[
         spec, 
         Button[
-            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            chatMenuItemAppearance[ icon, label ],
             eval,
             Appearance -> $suppressButtonAppearance,
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ]
     ]
@@ -376,25 +461,33 @@ Module[ { label },
 
     (* This is effectively the "ChatMenuSection" TemplateBox but with reduced margins *)
     Framed[
-        Grid[
-            { {
-                    Pane[
-                        Style[ addResetButton[ spec, label ], "ChatMenuSectionLabel" ],
-                        FrameMargins     -> 0,
-                        ImageMargins     -> 0,
-                        BaselinePosition -> Baseline,
-                        ImageSize        -> Full
-                    ]
-            } },
-            Alignment -> { Left, Baseline },
-            Spacings  -> { 0, 0 }
+        Overlay[
+            {
+                Grid[
+                    { {
+                            Pane[
+                                Style[ addResetButton[ spec, label ], "ChatMenuSectionLabel" ],
+                                FrameMargins     -> { { 0, 0 }, { 0, 7 } },
+                                ImageMargins     -> 0,
+                                BaselinePosition -> Baseline,
+                                ImageSize        -> Scaled[ 1. ]
+                            ]
+                    } },
+                    Alignment -> { Left, Baseline },
+                    Spacings  -> { 0, 0 }
+                ],
+                Graphics[ Background -> $DividerColor, ImageSize -> { Scaled[ 1 ], 1 }, AspectRatio -> Full ]
+            },
+            { 1, 2 },
+            1,
+            Alignment -> { Left, Top }
         ],
-        Background       -> color @ "ChatMenuSectionBackground",
+        Background       -> $TransparentBackground,
         BaselinePosition -> Baseline,
         FrameMargins     -> { { -1, 2 }, { 2, 2 } },
-        FrameStyle       -> None,
+        FrameStyle       -> $TransparentBackground,
         ImageMargins     -> { { 0, 0 }, { 0, 0 } },
-        ImageSize        -> Full,
+        ImageSize        -> Scaled[ 1. ],
         RoundingRadius   -> 0
     ]
 ]
@@ -413,10 +506,11 @@ Module[ { label },
     label = Lookup[ spec, "Label", "" ];
     
     Button[
-        RawBoxes @ TemplateBox[ { ToBoxes @ Spacer[ 0 ], ToBoxes @ label }, "ChatMenuItem" ],
+        chatMenuItemAppearance[ "", label ],
         generatedMenu = start; generatedMenu = end,
         Appearance -> $suppressButtonAppearance,
         Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+        ImageSize  -> Automatic,
         Method     -> Lookup[ spec, "Method", "Queued" ]
     ]
 ]
@@ -432,19 +526,20 @@ Attributes[ sideBarMenuItemSubmenuGenerator ] = { HoldRest };
 
 sideBarMenuItemSubmenuGenerator[ spec : KeyValuePattern[ { "MenuTag" -> tag_String, "Menu" :> menu_, "Category" -> "Service" } ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
 Module[ { icon, label },
-    label = submenuLabel @ Lookup[ spec, "Label", "" ];
+    label = Lookup[ spec, "Label", "" ];
     icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
     
     addResetButton[
         spec,
         Button[
-            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            chatMenuItemAppearance[ icon, label, True ],
             (
                 generatedMenu = menu;
                 aiPane = "ModelNames";
                 modelPaneLabel = tag),
             Appearance -> $suppressButtonAppearance,
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ]
     ]
@@ -452,16 +547,17 @@ Module[ { icon, label },
 
 sideBarMenuItemSubmenuGenerator[ spec : KeyValuePattern[ "MenuTag" -> tag_String ], generatedMenu_, aiPane_, modelPaneLabel_, sideBarNotebook_ ] :=
 Module[ { icon, label },
-    label = submenuLabel @ Lookup[ spec, "Label", "" ];
+    label = Lookup[ spec, "Label", "" ];
     icon = sideBarMenuItemIcon[ spec, sideBarNotebook ];
     
     addResetButton[
         spec,
         Button[
-            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            chatMenuItemAppearance[ icon, label, True ],
             aiPane = tag,
             Appearance -> $suppressButtonAppearance,
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ]
     ]
@@ -484,10 +580,11 @@ Module[ { icon, label },
     addResetButton[
         spec, 
         Button[
-            RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
+            chatMenuItemAppearance[ icon, label ],
             eval,
             Appearance -> $suppressButtonAppearance,
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
+            ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ]
     ]
@@ -931,6 +1028,20 @@ addSubmenuHandler[ expr_, Dynamic[ subMenuCell_ ] ] := EventHandler[
 addSubmenuHandler[ expr_ ] := expr;
 
 addSubmenuHandler // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sideBarSubMenuLabel*)
+sideBarSubMenuLabel // beginDefinition;
+
+sideBarSubMenuLabel[ label_ ] := Grid[
+    { {
+        Item[ label, ItemSize -> Fit, Alignment -> Left ],
+        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Triangle" ] } },
+    Spacings -> 0
+];
+
+sideBarSubMenuLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
