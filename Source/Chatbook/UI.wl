@@ -88,7 +88,8 @@ CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
 				Style[ tr @ "UIInitializeChatbook", "ChatMenuLabel" ],
 				ProgressIndicator[ Appearance -> "Percolate" ]
 			},
-			ImageMargins -> 5
+			ImageMargins -> 5,
+			ImageSize    -> Scaled[1.]
 		];
 
 	Dynamic[ display ],
@@ -465,27 +466,45 @@ SetFallthroughError[makeAutomaticResultAnalysisCheckboxSideBar]
 
 (* the side bar changes the notebook-level setting regardless of the $FrontEndSession value *)
 makeAutomaticResultAnalysisCheckboxSideBar[ nbo_NotebookObject ] :=
-labeledCheckbox[
-	autoAssistQ @ nbo,
-	Function[ { newValue }, CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = newValue$ ],
-	(* We can only get the tooltip to glue itself to the text by first literalizing the text resource as a string before typesetting to RowBox. *)
-	Style[
-		Row[
-			{
-				FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
-				Spacer[ 3 ],
-				Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
-			},
-			"\[NoBreak]",
-			StripOnInput -> True
-		],
-		FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-			color @ "ChatMenuCheckboxLabelFontHover",
-			color @ "ChatMenuCheckboxLabelFont"
-		])
-	],
-	True,
-	400
+Pane[ #, FrameMargins -> { { 0, 0 }, { 7, 7 } } ]& @
+DynamicModule[ { value = TrueQ @ initialValue },
+	Row[
+		{
+			Checkbox[
+				Dynamic[ value, Function[ value = #; CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = # ] ],
+				{False, True}
+			],
+			Spacer[3],
+			EventHandler[
+				Style[
+					Row[
+						{
+							FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+							Spacer[ 3 ],
+							Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+						},
+						"\[NoBreak]",
+						StripOnInput -> True
+					],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					])
+				],
+				"MouseClicked" :> (CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = value = ! value)
+			]
+		},
+		BaseStyle -> {
+			"Text",
+			FontFamily         -> "Source Sans Pro",
+			FontSize           -> 12,
+			FontSlant          -> Plain,
+			CheckboxBoxOptions -> { ImageMargins -> 0 },
+			LineBreakWithin    -> False
+		},
+		StripOnInput -> True
+	]
+
 ]
 
 (*====================================*)
