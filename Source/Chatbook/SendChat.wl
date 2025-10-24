@@ -2315,24 +2315,30 @@ openChatCell // endDefinition;
 WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
     writeInlineChatOutputCell[ cell, new, info ];
 
+(* $SideBarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
 WriteChatOutputCell[
     cell_CellObject,
     new_Cell,
     info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
-] /; TrueQ[ $SideBarChat ] := Enclose[
-    Module[ { input, output, sideBarCell },
-        input = PreviousCell[ cell, CellStyle -> "NotebookAssistant`SideBar`ChatInput" ];
-        sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
-        ConfirmMatch[ cellTaggedQ[ sideBarCell, "SideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
-        WithCleanup[
-            FrontEndExecute[ {
-                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
-                FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
-            } ]
+] := Enclose[
+    Module[ { output, input, sideBarQ, sideBarCell },
+        sideBarQ = cellTaggedQ[ cell, "SideBarTopCell" ];
+        input = PreviousCell[ cell, CellStyle -> If[ sideBarQ, "NotebookAssistant`SideBar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
+        If[ sideBarQ,
+            sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
+            ConfirmMatch[ cellTaggedQ[ sideBarCell, "SideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
+            WithCleanup[
+                FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
+                } ]
+                ,
+                CurrentValue[ sideBarCell, Editable ] = Inherited
+            ]
             ,
-            CurrentValue[ sideBarCell, Editable ] = Inherited
+            NotebookWrite[ cell, new, None, AutoScroll -> False ]
         ];
-        output = NextCell[ input, CellTags -> uuid ];
+        output = NextCell[ input, CellTags -> uuid ]; (* we set the uuid previously *)
         (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
         CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
         $lastChatOutput = output;
@@ -2341,22 +2347,6 @@ WriteChatOutputCell[
     ],
     throwInternalFailure
 ];
-
-WriteChatOutputCell[
-    cell_CellObject,
-    new_Cell,
-    info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
-] :=
-    Module[ { output, input },
-        input = PreviousCell[ cell, CellStyle -> "ChatInput" ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
-        NotebookWrite[ cell, new, None, AutoScroll -> False ];
-        output = NextCell[ input, CellTags -> uuid ]; (* we set the uuid previously, or we could use CellStyle -> "ChatOutput" *)
-        (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
-        CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
-        $lastChatOutput = output;
-        attachChatOutputMenu @ output;
-        scrollOutput[ TrueQ @ scroll, output ];
-    ];
 
 WriteChatOutputCell[ args___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", WriteChatOutputCell, HoldForm @ WriteChatOutputCell @ args ];
