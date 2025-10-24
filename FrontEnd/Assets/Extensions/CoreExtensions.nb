@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.4.35.3969692827"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.4.48.3970292736"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4154,7 +4154,8 @@ Notebook[
               Quiet[Needs["Wolfram`Chatbook`" -> None]];
               Symbol["Wolfram`Chatbook`ChatbookAction"][
                "AttachAssistantMessageButtons",
-               Wolfram`ChatNB`cell
+               Wolfram`ChatNB`cell,
+               True
               ]
              ]
             ],
