@@ -126,7 +126,7 @@ MapThread[
                                                 Null,
                                                 With[ { cell = EvaluationCell[ ] },
                                                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell, True (* forces attachment! *) ]
                                                 ]
                                             ],
                                         Method         -> "Preemptive",

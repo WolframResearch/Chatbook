@@ -1431,10 +1431,11 @@ attachAssistantMessageButtons[ cell_CellObject ] :=
     attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
-    Catch @ Module[ { cell, includeFeedback, attached },
+    Catch @ Module[ { cell, includeFeedback, attached, sideBarCellQ },
 
         cell = topParentCell @ cell0;
         If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
+        sideBarCellQ = cellTaggedQ[ cell, "SideBarTopCell" ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
         includeFeedback = StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
@@ -1446,12 +1447,13 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         attached = AttachCell[
             cell,
             Cell[
-                BoxData @ assistantMessageButtons @ includeFeedback,
+                BoxData @ assistantMessageButtons[ includeFeedback, sideBarCellQ ],
                 "ChatOutputTrayButtons",
-                Magnification -> AbsoluteCurrentValue[ cell, Magnification ] * 0.85
+                Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
             ],
             { Left, Bottom },
-            0,
+            (* The side bar's TemplateBox uses ImageMargins, so use Offset to undo those margins *)
+            If[ sideBarCellQ, Offset[ { 15, 30 }, Automatic ], 0 ],
             { Left, Top },
             RemovalConditions -> "MouseExit"
         ]
@@ -1469,7 +1471,7 @@ attachAssistantMessageButtons // endDefinition;
 (*assistantMessageButtons*)
 assistantMessageButtons // beginDefinition;
 
-assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeFeedback ] =
+assistantMessageButtons[ includeFeedback_, sideBarCellQ_ ] :=
     ToBoxes @ DynamicModule[ { cell },
         Grid[
             { {
@@ -1497,7 +1499,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
-                        Spacer[ 45 ]
+                        Spacer[ If[ sideBarCellQ, 60, 45 ] ] 
                     },
                     Nothing
                 ]
@@ -1564,15 +1566,16 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                                     },
                                     Alignment -> Left,
                                     BaseStyle -> { FontFamily -> "Source Sans Pro" },
-                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
+                                    Spacings  -> { 0, { 0, 0.5, { 0 } } }
                                 ],
                                 Background -> color @ "NA_RaftMenuBackground", FrameStyle -> color @ "NA_RaftMenuFrame", ImageSize -> 158, RoundingRadius -> 4 ],
-                            InheritScope -> True,
-                            Initialization :> (True), (* Deinitialization won't run without an Init *)
+                            InheritScope     -> True,
+                            Initialization   :> (True), (* Deinitialization won't run without an Init *)
                             Deinitialization :> (Typeset`menuActiveQ = False)
                         ],
-                        CellTags -> "CustomActionMenu",
-                        Magnification -> Inherited * 0.85 ],
+                        CellTags      -> "CustomActionMenu",
+                        Magnification -> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]*If[ cellTaggedQ[ topParentCell @ EvaluationCell[ ], "SideBarTopCell" ], 0.85, 1. ]
+                    ],
                     { Left, Bottom }, 0, { Left, Top },
                     RemovalConditions -> "MouseExit" ]) },
         PassEventsDown -> True,
