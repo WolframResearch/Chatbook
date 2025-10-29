@@ -1143,6 +1143,17 @@ snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
     Module[ { path, file },
         path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
         file = ConfirmBy[ FileNameJoin @ { snippetCacheDirectory @ name, path }, StringQ, "File" ];
+        If[ StringLength @ file >= 260 && $OperatingSystem === "Windows",
+            file = FileNameJoin @ {
+                DirectoryName @ file,
+                StringJoin[
+                    StringTake[ FileNameTake @ file, UpTo @ Max[ 0, 200 - StringLength @ DirectoryName @ file ] ],
+                    "_",
+                    Hash[ uri, Automatic, "HexString" ] <> ".wxf"
+                ]
+            };
+            ConfirmAssert[ StringLength @ file < 260, "FileLengthCheck" ];
+        ];
         snippetCacheFile[ uri ] = file
     ],
     throwInternalFailure
