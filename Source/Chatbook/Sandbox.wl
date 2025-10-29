@@ -1070,6 +1070,10 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
     {
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
+        "\[FreeformPrompt](\"" ~~ query: Except[ "\"" ].. ~~ "\")" :>
+            "\[FreeformPrompt][\"" <> query <> "\"]",
+        "\[FreeformPrompt](" ~~ query: Except[ ")" ].. ~~ ")" :>
+            "\[FreeformPrompt][" <> query <> "]",
         "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" /; StringFreeQ[ query, "[" | "]" ] :>
@@ -1273,52 +1277,49 @@ strictPatternTest // endDefinition;
 expandAmbiguityLists // beginDefinition;
 expandAmbiguityLists // Attributes = { HoldAllComplete };
 
+expandAmbiguityLists[ expr_ ] :=
+    Module[ { lists, held, marked, expanded },
 
-expandAmbiguityLists[ expr: HoldPattern[ _AmbiguityList ] ] :=
-    Module[ { bag },
-        bag = Internal`Bag[ ];
-        expandAmbiguityLists[ bag, expr ];
-        Internal`BagPart[ bag, All ]
+        lists = <| |>;
+        held = HoldComplete @ expr;
+
+        marked = ReplaceRepeated[
+            held,
+            HoldPattern @ AmbiguityList[ { items__ }, ___ ] /; FreeQ[ HoldComplete @ items, AmbiguityList ] :>
+                With[ { id = Hash @ HoldComplete @ items },
+                    lists[ id ] = HoldComplete @ items;
+                    ambiguityList @ id /; True
+                ]
+        ];
+
+        expanded = FixedPoint[ expandOnceMarked @ lists, marked, 50 ];
+
+        Cases[ expanded, e_ :> HoldComplete @ e ]
     ];
 
-
-expandAmbiguityLists[
-    bag_,
-    HoldPattern @ AmbiguityList[ { e_, rest___ }, ___ ]
-] /; FreeQ[ Unevaluated @ e, AmbiguityList ] := (
-    Internal`StuffBag[ bag, HoldComplete @ e ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[
-    bag_,
-    HoldPattern @ AmbiguityList[ { Quantity[ m_, AmbiguityList[ { units___ }, ___ ] ], rest___ }, ___ ]
-] /; FreeQ[ HoldComplete[ m, units ], AmbiguityList ] := (
-    Cases[ HoldComplete @ units, u_ :> Internal`StuffBag[ bag, HoldComplete @ Quantity[ m, u ] ] ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[
-    bag_,
-    AmbiguityList[ { AmbiguityList[ { exprs___ }, ___ ], rest___ }, ___ ]
-] /; FreeQ[ HoldComplete @ exprs, AmbiguityList ] := (
-    Cases[ HoldComplete @ exprs, e_ :> Internal`StuffBag[ bag, HoldComplete @ e ] ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[ bag_, _AmbiguityList ] :=
-    Null;
-
-
-(* FIXME: Need a more general approach. Things like this are unhandled:
-    SemanticInterpretation[ "in 10000 hours", _, HoldComplete, AmbiguityFunction -> All ]
-    DatePlus[ Now, Quantity[ 10000, AmbiguityList[ { "Hours", "MeanSolarHours", "SiderealHours" }, "hours" ] ] ]
-*)
-
 expandAmbiguityLists // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandOnceMarked*)
+expandOnceMarked // beginDefinition;
+
+expandOnceMarked[ lists_ ] :=
+    expandOnceMarked[ lists, # ] &;
+
+expandOnceMarked[ lists_, marked_HoldComplete ] :=
+    Catch @ Module[ { rules },
+        rules = Flatten @ Cases[
+            marked,
+            ambiguityList[ id_ ] :> Cases[ lists[ id ], e_ :> ambiguityList @ id :> e ],
+            Infinity,
+            Heads -> True
+        ];
+        If[ rules === { }, Throw @ marked ];
+        Flatten[ HoldComplete @@ ((marked /. # &) /@ rules) ]
+    ];
+
+expandOnceMarked // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1979,10 +1980,10 @@ sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
 
 sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
     appendURIInstructions[
-        StringRiffle[
+        StringTrim @ StringRiffle[
             Flatten @ {
                 makePacketMessages[ ToString @ line, packets ],
-                "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
+                "\nOut[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
             },
             "\n"
         ],
