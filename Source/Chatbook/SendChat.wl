@@ -1312,6 +1312,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\:ff1d" -> "\[FreeformPrompt]",
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
+    "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     $longNameCharacters
 };
 
