@@ -11,6 +11,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Default Tools*)
 (* Uncomment the following when the ChatPreferences tool is ready: *)
 (* Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`ChatPreferences`" ]; *)
+Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`CreateNotebook`"           ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationLookup`"      ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationSearcher`"    ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`NotebookEditor`"           ];

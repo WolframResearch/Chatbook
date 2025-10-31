@@ -90,6 +90,12 @@ $$simpleTemplateBoxName = "Entity"|"EntityClass"|"EntityProperty"|"DateObject"|"
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::InvalidEvaluatorCode     = "Invalid evaluator code: `1`.";
+Chatbook::InvalidEvaluatorProperty = "Invalid evaluator property: `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*WolframLanguageToolEvaluate*)
 WolframLanguageToolEvaluate // beginDefinition;
 
@@ -103,8 +109,8 @@ WolframLanguageToolEvaluate // Options = {
     TimeConstraint          -> 60
 };
 
-WolframLanguageToolEvaluate[ code_? validCodeQ, opts: OptionsPattern[ ] ] :=
-    catchMine @ WolframLanguageToolEvaluate[ code, "String", opts ];
+WolframLanguageToolEvaluate[ code_, opts: OptionsPattern[ ] ] :=
+    catchMine @ WolframLanguageToolEvaluate[ Unevaluated @ code, "String", opts ];
 
 WolframLanguageToolEvaluate[ code_? validCodeQ, property_? validPropertyQ, opts: OptionsPattern[ ] ] :=
     catchMine @ wolframLanguageToolEvaluate[
@@ -113,14 +119,21 @@ WolframLanguageToolEvaluate[ code_? validCodeQ, property_? validPropertyQ, opts:
         optionsAssociation[ WolframLanguageToolEvaluate, opts ]
     ];
 
+WolframLanguageToolEvaluate[ code_ /; ! validCodeQ @ code, property_, opts: OptionsPattern[ ] ] :=
+    catchMine @ throwFailure[ "InvalidEvaluatorCode", HoldForm @ code ];
+
+WolframLanguageToolEvaluate[ code_, property_ /; ! validPropertyQ @ property, opts: OptionsPattern[ ] ] :=
+    catchMine @ throwFailure[ "InvalidEvaluatorProperty", HoldForm @ property ];
+
 WolframLanguageToolEvaluate // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validCodeQ*)
 validCodeQ // beginDefinition;
-validCodeQ[ KeyValuePattern[ "code" -> code_ ] ] := validCodeQ @ code;
-validCodeQ[ code_String ] := StringQ @ code;
+validCodeQ // Attributes = { HoldAllComplete };
+validCodeQ[ code_String ] := StringQ @ code && ! StringMatchQ[ code, WhitespaceCharacter... ];
+validCodeQ[ { __ } ] := True;
 validCodeQ[ HoldComplete[ __ ] ] := True;
 validCodeQ[ ___ ] := False;
 validCodeQ // endDefinition;
@@ -132,7 +145,7 @@ $$propertyName = "Packets"|"Result"|"SessionMX"|"String";
 
 validPropertyQ // beginDefinition;
 validPropertyQ[ $$propertyName ] := True;
-validPropertyQ[ All ] := True;
+validPropertyQ[ All|Automatic ] := True;
 validPropertyQ[ { $$propertyName... } ] := True;
 validPropertyQ[ ___ ] := False;
 validPropertyQ // endDefinition;
@@ -141,6 +154,7 @@ validPropertyQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*wolframLanguageToolEvaluate*)
 wolframLanguageToolEvaluate // beginDefinition;
+wolframLanguageToolEvaluate // Attributes = { HoldFirst };
 
 wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
     Block[
@@ -154,7 +168,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $Line                     = getOption[ "Line"                 , opts ]
         },
-        getProperty[ sandboxEvaluate @ code, property ]
+        getProperty[ sandboxEvaluate @ preprocessCodeForTool @ code, property ]
     ],
     throwInternalFailure
 ];
@@ -205,9 +219,45 @@ getOption // endDefinition;
 (*getProperty*)
 getProperty // beginDefinition;
 getProperty[ as_Association, property_String ] := Lookup[ as, property ];
-getProperty[ as_Association, All ] := as;
+getProperty[ as_Association, All|Automatic ] := as;
 getProperty[ as_Association, properties_List ] := AssociationMap[ getProperty[ as, # ] &, properties ];
 getProperty // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessCodeForTool*)
+preprocessCodeForTool // beginDefinition;
+preprocessCodeForTool // Attributes = { HoldAllComplete };
+
+preprocessCodeForTool[ code: _String | _HoldComplete ] :=
+    code;
+
+preprocessCodeForTool[ code_List ] := Enclose[
+    StringJoin @ ConfirmMatch[ makeInlineExpressionString /@ Unevaluated @ code, { __String }, "Inlined" ],
+    throwInternalFailure
+];
+
+preprocessCodeForTool // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInlineExpressionString*)
+makeInlineExpressionString // beginDefinition;
+makeInlineExpressionString // Attributes = { HoldAllComplete };
+
+makeInlineExpressionString[ fragment_String ] :=
+    fragment;
+
+makeInlineExpressionString[ expr_ ] := Enclose[
+    Module[ { link, key },
+        link = ConfirmBy[ MakeExpressionURI @ Unevaluated @ expr, StringQ, "Link" ];
+        key = ConfirmBy[ expressionURIKey @ link, StringQ, "Key" ];
+        "InlinedExpression[\"attachment://" <> key <> "\"]"
+    ],
+    throwInternalFailure
+];
+
+makeInlineExpressionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -941,7 +991,7 @@ toSandboxExpression[ s_String ] := $lastSandboxExpression =
     ];
 
 toSandboxExpression[ s_, expr_HoldComplete ] :=
-    expandSandboxMacros @ expr;
+    expr;
 
 toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
     Module[ { new, held },
@@ -992,7 +1042,7 @@ toSandboxExpression // endDefinition;
 toHeldExpression // beginDefinition;
 
 toHeldExpression[ s_String ] :=
-    Replace[
+    expandSandboxMacros @ Replace[
         DeleteCases[ Quiet @ ToExpression[ s, InputForm, HoldComplete ], Null ],
         {
             HoldComplete[ xs__, CompoundExpression[ x_, Null ] ] :> Replace[
@@ -1020,6 +1070,10 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
     {
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
+        "\[FreeformPrompt](\"" ~~ query: Except[ "\"" ].. ~~ "\")" :>
+            "\[FreeformPrompt][\"" <> query <> "\"]",
+        "\[FreeformPrompt](" ~~ query: Except[ ")" ].. ~~ ")" :>
+            "\[FreeformPrompt][" <> query <> "]",
         "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" /; StringFreeQ[ query, "[" | "]" ] :>
@@ -1068,6 +1122,8 @@ expandSandboxMacros[ expr_HoldComplete ] := Enclose[
     ],
     throwInternalFailure
 ];
+
+expandSandboxMacros[ $Failed ] := $Failed;
 
 expandSandboxMacros // endDefinition;
 
@@ -1221,52 +1277,49 @@ strictPatternTest // endDefinition;
 expandAmbiguityLists // beginDefinition;
 expandAmbiguityLists // Attributes = { HoldAllComplete };
 
+expandAmbiguityLists[ expr_ ] :=
+    Module[ { lists, held, marked, expanded },
 
-expandAmbiguityLists[ expr: HoldPattern[ _AmbiguityList ] ] :=
-    Module[ { bag },
-        bag = Internal`Bag[ ];
-        expandAmbiguityLists[ bag, expr ];
-        Internal`BagPart[ bag, All ]
+        lists = <| |>;
+        held = HoldComplete @ expr;
+
+        marked = ReplaceRepeated[
+            held,
+            HoldPattern @ AmbiguityList[ { items__ }, ___ ] /; FreeQ[ HoldComplete @ items, AmbiguityList ] :>
+                With[ { id = Hash @ HoldComplete @ items },
+                    lists[ id ] = HoldComplete @ items;
+                    ambiguityList @ id /; True
+                ]
+        ];
+
+        expanded = FixedPoint[ expandOnceMarked @ lists, marked, 50 ];
+
+        Cases[ expanded, e_ :> HoldComplete @ e ]
     ];
 
-
-expandAmbiguityLists[
-    bag_,
-    HoldPattern @ AmbiguityList[ { e_, rest___ }, ___ ]
-] /; FreeQ[ Unevaluated @ e, AmbiguityList ] := (
-    Internal`StuffBag[ bag, HoldComplete @ e ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[
-    bag_,
-    HoldPattern @ AmbiguityList[ { Quantity[ m_, AmbiguityList[ { units___ }, ___ ] ], rest___ }, ___ ]
-] /; FreeQ[ HoldComplete[ m, units ], AmbiguityList ] := (
-    Cases[ HoldComplete @ units, u_ :> Internal`StuffBag[ bag, HoldComplete @ Quantity[ m, u ] ] ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[
-    bag_,
-    AmbiguityList[ { AmbiguityList[ { exprs___ }, ___ ], rest___ }, ___ ]
-] /; FreeQ[ HoldComplete @ exprs, AmbiguityList ] := (
-    Cases[ HoldComplete @ exprs, e_ :> Internal`StuffBag[ bag, HoldComplete @ e ] ];
-    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
-);
-
-
-expandAmbiguityLists[ bag_, _AmbiguityList ] :=
-    Null;
-
-
-(* FIXME: Need a more general approach. Things like this are unhandled:
-    SemanticInterpretation[ "in 10000 hours", _, HoldComplete, AmbiguityFunction -> All ]
-    DatePlus[ Now, Quantity[ 10000, AmbiguityList[ { "Hours", "MeanSolarHours", "SiderealHours" }, "hours" ] ] ]
-*)
-
 expandAmbiguityLists // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandOnceMarked*)
+expandOnceMarked // beginDefinition;
+
+expandOnceMarked[ lists_ ] :=
+    expandOnceMarked[ lists, # ] &;
+
+expandOnceMarked[ lists_, marked_HoldComplete ] :=
+    Catch @ Module[ { rules },
+        rules = Flatten @ Cases[
+            marked,
+            ambiguityList[ id_ ] :> Cases[ lists[ id ], e_ :> ambiguityList @ id :> e ],
+            Infinity,
+            Heads -> True
+        ];
+        If[ rules === { }, Throw @ marked ];
+        Flatten[ HoldComplete @@ ((marked /. # &) /@ rules) ]
+    ];
+
+expandOnceMarked // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1927,10 +1980,10 @@ sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
 
 sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
     appendURIInstructions[
-        StringRiffle[
+        StringTrim @ StringRiffle[
             Flatten @ {
                 makePacketMessages[ ToString @ line, packets ],
-                "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
+                "\nOut[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
             },
             "\n"
         ],

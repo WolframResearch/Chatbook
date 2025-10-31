@@ -381,6 +381,11 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
             ___
         ]
         ,
+        TogglerBox[
+            Dynamic[ (CurrentValue|FrontEnd`CurrentValue)[ _, { TaggingRules, "ModificationHighlight" }, ___ ], ___ ],
+            __
+        ]
+        ,
         DynamicBox[ ToBoxes @ If[ CurrentValue[ EvaluationCell[ ], "CellGroupOpen" ] =!= Closed, _, _ ], ___ ]
         ,
         ButtonBox[
@@ -398,6 +403,10 @@ $$ignoredBox = With[ { icon = $$squarePlusIcon, iw = $$ifWhich, ignored = $$igno
         Cell[ __, "NotesThumbnails", ___ ]
         ,
         Cell[ __, "TechNoteJumpBox"|"TutorialJumpBox", ___ ]
+        ,
+        StyleBox[ _, "FormatUsageSeparator", ___ ]
+        ,
+        Cell[ "\[FilledVerySmallSquare]", ___, "TableRowIcon", ___ ]
         ,
         Cell[ __, $$ignoredCellStyle, ___ ]
     ]
@@ -994,11 +1003,13 @@ $$sectionStyle = Alternatives[
     "EmbeddingFormatSection",
     "EntitySection",
     "ExamplesInitializationSection",
+    "ExportOptionsSection",
     "ExtendedExamplesSection",
     "FormatBackground",
     "FunctionEssaySection",
     "GuideFunctionsSection",
     "ImportExportSection",
+    "ImportOptionsSection",
     "IndicatorAbbreviationSection",
     "IndicatorCategorizationSection",
     "IndicatorDescriptionSection",
@@ -1007,6 +1018,7 @@ $$sectionStyle = Alternatives[
     "InterpreterSection",
     "MetadataSection",
     "MethodSection",
+    "NotebookInterfaceSection",
     "NotesSection",
     "OptionsSection",
     "PredictorSection",
@@ -1177,14 +1189,14 @@ boxToString[ a_String ] /;
     StringLength @ a < $maxStandardFormStringLength && StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] :=
         With[ { res = ToString @ ToExpression[ a, InputForm ] },
             If[ TrueQ @ $showStringCharacters,
-                res,
-                StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
+                niceWhitespace @ res,
+                niceWhitespace @ StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
             ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
         ];
 
 (* Other strings *)
 boxToString[ a_String ] :=
-    ToString[
+    niceWhitespace @ ToString[
         escapeMarkdownCharacters @
             If[ TrueQ @ $showStringCharacters,
                 a,
@@ -1194,6 +1206,13 @@ boxToString[ a_String ] :=
     ];
 
 boxToString[ a: { ___String } ] := StringJoin[ boxToString /@ a ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*niceWhitespace*)
+niceWhitespace // beginDefinition;
+niceWhitespace[ s_String ] := StringReplace[ s, { "\\n" -> "\n", "\\t" -> "\t" } ];
+niceWhitespace // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -2446,11 +2465,14 @@ createAlignedDelimiter // endDefinition;
 (*Documentation Notebooks*)
 boxToString[ Cell[ boxes_, ___, "ObjectNameGrid", ___ ] ] :=
     Module[ { header, note, version },
-        header = "# " <> FirstCase[
-            boxes,
-            Cell[ name_, ___, "ObjectName", ___ ] :> boxToString @ name,
-            boxToString @ boxes,
-            Infinity
+        header = "# " <> StringDelete[
+            FirstCase[
+                boxes,
+                Cell[ name_, ___, "ObjectName", ___ ] :> boxToString @ name,
+                boxToString @ boxes,
+                Infinity
+            ],
+            StartOfString~~("#"..)~~WhitespaceCharacter..
         ];
 
         note = FirstCase[
@@ -2572,6 +2594,23 @@ regroupAnnotationItems[ items_List ] := SequenceReplace[
 ];
 
 regroupAnnotationItems // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*Format Pages*)
+boxToString[ Cell[ boxes_, "FormatUsage", ___ ] ] :=
+    Catch @ Module[ { items },
+        items = DeleteCases[
+            StringTrim @ Cases[
+                boxes,
+                Cell[ b_, ___, "FormatUsage", ___ ] :> boxToString @ b,
+                Infinity
+            ],
+            ""
+        ];
+        If[ items === { }, Throw @ boxToString @ boxes ];
+        StringRiffle[ "* " <> # & /@ items, "\n" ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
