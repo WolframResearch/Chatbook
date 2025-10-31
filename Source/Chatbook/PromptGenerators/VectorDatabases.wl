@@ -14,7 +14,14 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::VectorDatabaseCloudDownload = "\
+Warning: Local vector databases are out of date. Downloading updated vector databases...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Configuration*)
+$suppressDownloadWarning = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -63,6 +70,19 @@ and/or property; this returns an association with `Entity` and/or `EntityPropert
 EntityValue[\[FreeformPrompt][\"entity or entity group name(s)\", \"entity type\"], \
 {\"property canonical name\", ...}, \"Association\"]
 ```
+
+The full set of valid values for the third argument of `EntityValue` are:
+
+| Value | Description |
+| ----- | --- |
+| \"EntityAssociation\" | an association of entities and entity-property values |
+| \"PropertyAssociation\" | an association of properties and entity-property values |
+| \"EntityPropertyAssociation\" | an association in which the specified entities are keys, and values are a nested association of properties and entity-property values |
+| \"PropertyEntityAssociation\" | an association in which the specified properties are keys, and values are a nested association of entities and entity-property values |
+| \"Dataset\" | a dataset in which the specified entities are keys, and values are an association of property names and entity-property values |
+| \"Association\" | a nested association with entity keys on the first level and property keys on the second level |
+| \"NonMissingPropertyAssociation\" | an association of properties and entity-property values with the missing values dropped |
+| \"NonMissingEntityAssociation\" | an association of entities and entity-property values with the missing values dropped |
 
 # Filtering entities by property values
 
@@ -511,17 +531,27 @@ registerVectorDatabase // endDefinition;
 (*InstallVectorDatabases*)
 InstallVectorDatabases // beginDefinition;
 
-InstallVectorDatabases[ ] := catchMine @ Enclose[
-    Block[ { $pacletVectorDBDirectory = None },
-        Success[
-            "VectorDatabasesInstalled",
-            <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
-        ]
+InstallVectorDatabases[ ] :=
+    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True },
+        installVectorDatabases[ ]
+    ];
+
+InstallVectorDatabases // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*installVectorDatabases*)
+installVectorDatabases // beginDefinition;
+
+installVectorDatabases[ ] := Enclose[
+    Module[ { dir },
+        dir = ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ];
+        Success[ "VectorDatabasesInstalled", <| "Location" -> dir |> ]
     ],
     throwInternalFailure
 ];
 
-InstallVectorDatabases // endExportedDefinition;
+installVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -536,16 +566,25 @@ $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall
 getVectorDBDirectory // beginDefinition;
 
 getVectorDBDirectory[ ] := Enclose[
-    If[ $CloudEvaluation, cleanupLegacyVectorDBFiles @ $localVectorDBDirectory ];
-    $vectorDBDirectory = SelectFirst[
-        {
+    Module[ { sources, dir },
+        sources = {
             $pacletVectorDBDirectory,
             If[ $CloudEvaluation, $cloudVectorDBDirectory, Nothing ],
             $localVectorDBDirectory
-        },
-        vectorDBDirectoryQ,
-        (* TODO: need a version of this that prompts the user with a dialog asking them to download *)
-        ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
+        };
+
+        dir = SelectFirst[
+            sources,
+            vectorDBDirectoryQ,
+            ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
+        ];
+
+        If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
+            (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
+            Quiet @ DeleteDirectory[ ChatbookFilesDirectory[ "VectorDatabases" ], DeleteContents -> True ]
+        ];
+
+        $vectorDBDirectory = dir
     ],
     throwInternalFailure
 ];
@@ -599,6 +638,8 @@ downloadVectorDatabases[ ] :=
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
     Module[ { dir, lock, names, urls, sizes, tasks },
 
+        If[ $CloudEvaluation && ! TrueQ @ $suppressDownloadWarning, messagePrint[ "VectorDatabaseCloudDownload" ] ];
+
         $extraDownloadTasks = Internal`Bag[ ];
 
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
@@ -644,21 +685,6 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 ];
 
 downloadVectorDatabases // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cleanupLegacyVectorDBFiles*)
-cleanupLegacyVectorDBFiles // beginDefinition;
-
-cleanupLegacyVectorDBFiles[ dir_String ] := cleanupLegacyVectorDBFiles[ dir ] = Quiet @ Map[
-    DeleteDirectory[ #1, DeleteContents -> True ] &,
-    Join[
-        Select[ FileNames[ DigitCharacter.. ~~ "." ~~ DigitCharacter.. ~~ "." ~~ DigitCharacter.., dir ], DirectoryQ ],
-        Select[ FileNames[ $vectorDBNames, dir ], DirectoryQ[ # ] && ! vectorDBDirectoryQ0[ # ] & ]
-    ]
-];
-
-cleanupLegacyVectorDBFiles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

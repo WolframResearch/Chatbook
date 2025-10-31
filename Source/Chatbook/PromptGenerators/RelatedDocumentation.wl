@@ -552,7 +552,7 @@ Respond with JSON in the following format:
 For \"AssistantType\", specify the type of assistant that should handle the user's message:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
-	\"Data\": The user's message requires a data or entity-based response.
+	\"Data\": The user's message requires a data, multimedia, or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Specify a score as any number from 1 to 5 for your chosen snippets using the following rubric:
@@ -590,7 +590,7 @@ user's latest message.
 On the first line of your response, write one of these assistant types:
 	\"Computational\": The user's message requires a computational response.
 	\"Knowledge\": The user's message requires a knowledge-based response.
-	\"Data\": The user's message requires a data or entity-based response.
+	\"Data\": The user's message requires a data, multimedia, or entity-based response.
 	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Then on each subsequent line, write a score (1-5) and id pair, separated by a space:
@@ -1029,7 +1029,7 @@ getSnippets[ uris: { ___String } ] := Enclose[
         snippets = ConfirmMatch[ Lookup[ data, uris ], { ___Association }, "Snippets" ];
         strings = ConfirmMatch[ Lookup[ "String" ] /@ snippets, { ___String }, "Strings" ];
         ConfirmAssert[ Length @ strings === Length @ uris, "LengthCheck" ];
-        "# " <> # & /@ strings
+        "# " <> StringDelete[ #, StartOfString~~"# " ] & /@ strings
     ],
     throwInternalFailure
 ];
@@ -1143,6 +1143,17 @@ snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
     Module[ { path, file },
         path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
         file = ConfirmBy[ FileNameJoin @ { snippetCacheDirectory @ name, path }, StringQ, "File" ];
+        If[ StringLength @ file >= 260 && $OperatingSystem === "Windows",
+            file = FileNameJoin @ {
+                DirectoryName @ file,
+                StringJoin[
+                    StringTake[ FileNameTake @ file, UpTo @ Max[ 0, 200 - StringLength @ DirectoryName @ file ] ],
+                    "_",
+                    Hash[ uri, Automatic, "HexString" ] <> ".wxf"
+                ]
+            };
+            ConfirmAssert[ StringLength @ file < 260, "FileLengthCheck" ];
+        ];
         snippetCacheFile[ uri ] = file
     ],
     throwInternalFailure
