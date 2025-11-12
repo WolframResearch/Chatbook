@@ -5,11 +5,7 @@ Cell[
 				DynamicBox[
 					ToBoxes[
 						Needs[ "Wolfram`Chatbook`" -> None ];
-						RawBoxes @ Cell[
-							BoxData @ ToBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSideBarChatDockedCell" ],
-							CellTags      -> "SideBarDockedCell",
-							Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
-						],
+						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSideBarChatDockedCell" ],
 						StandardForm ],
 					DestroyAfterEvaluation -> True
 				],
@@ -24,7 +20,7 @@ Cell[
 			}
 		]
 	],
-	Background       -> color @ "NA_NotebookBackground",
+	Background       -> color @ "NA_ChatInputFieldBackgroundArea", (* this colors the entire initial sidebar as gray to make it easier to see *)
 	CellFrameMargins -> 0,
 	CellMargins      -> { { 0, 0 }, { 0, 0 } },
 	CellTags         -> "NotebookAssistantSideBarCell",
