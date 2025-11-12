@@ -1309,10 +1309,10 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                 "Inline",
 
             tags = Flatten @ List @ AbsoluteCurrentValue[ c, CellTags ];
-            TrueQ @ $SideBarChat || AnyTrue[ tags, StringStartsQ[ "SideBar" ] ],
+            TrueQ @ $SideBarChat || AnyTrue[ tags, StringStartsQ[ "SideBar" | "NotebookAssistantSideBar" ] ],
                 ConfirmMatch[
                     Which[
-                        MemberQ[ tags, Alternatives[ "SideBarCell" ] ],
+                        MemberQ[ tags, Alternatives[ "NotebookAssistantSideBarCell" ] ],
                             c,
                         MemberQ[ tags, Alternatives[ "SideBarChatInputCell", "SideBarDockedCell", "SideBarSubDockedCell", "SideBarScrollingContentCell" ] ],
                             ParentCell @ c,
@@ -1329,7 +1329,7 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                 "Chatbook",
 
             True,
-                Confirm[ $Failed, "ResolveAppContainer" ]
+                "Notebook"
         ]
     ],
     throwInternalFailure
