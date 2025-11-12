@@ -512,7 +512,7 @@ sideBarCellObject[ ] := sideBarCellObject @ EvaluationNotebook[ ]
 
 (* This is a hack to get the side bar's CellObject any time we need it.
     The preferred approach is to pass the CellObject through the side bar interface. *)
-sideBarCellObject[ nbo_NotebookObject ] := ParentCell @ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "SideBarAttachedHelperCell" ], $Failed ];
+sideBarCellObject[ nbo_NotebookObject ] := ParentCell @ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantSideBarAttachedHelperCell" ], $Failed ];
 
 sideBarCellObject// endDefinition;
 
