@@ -2024,7 +2024,7 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
                 Except[ _Integer? Positive ] :> $maxChatCells
             ]
         },
-        $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "SideBarCell" ],
+        $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "NotebookAssistantSideBarCell" ],
             (* 15.0: if in a new side bar chat, then there is no scrolling cell, so fail gracefully (in reality we should have added one when sending the first chat) *)
             With[
                 { scrollingCell = First[ Cells[ appContainer, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoSideBarScrollingContentCell" ] },
@@ -2326,7 +2326,7 @@ WriteChatOutputCell[
         input = PreviousCell[ cell, CellStyle -> If[ sideBarQ, "NotebookAssistant`SideBar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
         If[ sideBarQ,
             sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
-            ConfirmMatch[ cellTaggedQ[ sideBarCell, "SideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
+            ConfirmMatch[ cellTaggedQ[ sideBarCell, "NotebookAssistantSideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sideBarCell, Editable -> True ],

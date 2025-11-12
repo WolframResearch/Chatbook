@@ -330,7 +330,7 @@ ensureConversationUUID[ nbo_NotebookObject ] :=
 
 ensureConversationUUID[ nbo_NotebookObject, settings0_Association ] := Enclose[
     Module[ { settings, uuid, appContainer },
-        appContainer = If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "SideBarCell" ], $appContainer, nbo ];
+        appContainer = If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSideBarCell" ], $appContainer, nbo ];
         settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ appContainer, settings0 |>, AssociationQ, "Settings" ];
         uuid = settings[ "ConversationUUID" ];
         If[ ! StringQ @ uuid,
@@ -352,7 +352,7 @@ saveChat // beginDefinition;
 
 saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
     Catch @ Module[ { cellObjects, cells, messages, cellsContainer },
-        If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "SideBarCell" ],
+        If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSideBarCell" ],
             cellsContainer = First[ Cells[ $appContainer, CellTags -> "SideBarScrollingContentCell" ], Throw @ Missing[ "NoCells" ] ]
             ,
             cellsContainer = nbo ];

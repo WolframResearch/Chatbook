@@ -6823,7 +6823,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{4.5, {2.252197265625, 6.126708984375}}],
+      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9857,20 +9857,22 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
   DestroyAfterEvaluation->True]}],
  Editable->True,
  Selectable->False,
- CellMargins->{{0, -4}, {0, 0}},
+ CellMargins->{{0, 0}, {0, 0}},
  Initialization:>AttachCell[
    EvaluationCell[], 
-   Cell["", CellTags -> "SideBarAttachedHelperCell"], {Left, Top}, 0, {
-   Left, Top}],
+   Cell["", CellTags -> "NotebookAssistantSideBarAttachedHelperCell"], {
+   Left, Top}, 0, {Left, Top}],
  CellFrameMargins->0,
  LineSpacing->{1, 0},
  LineIndent->0,
+ FontSize->0.5,
  Magnification->1.,
  Background->LightDarkSwitched[
    GrayLevel[1], 
    GrayLevel[0.0999191]],
  CellTags->
-  "SideBarCell",ExpressionUUID->"37e5c391-ca5f-2041-94d7-1e24bf08ca88"]
+  "NotebookAssistantSideBarCell",ExpressionUUID->"1ddc5595-2bad-044d-84ef-\
+40580a4f5f04"]
 }
 @|
 @|

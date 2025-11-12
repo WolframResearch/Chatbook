@@ -94,9 +94,13 @@ makeSideBarChatDockedCell // endDefinition;
 (*makeSideBarChatSubDockedCellExpression*)
 makeSideBarChatSubDockedCellExpression // beginDefinition;
 
-makeSideBarChatSubDockedCellExpression[ content_ ] := Join[
-    makeWorkspaceChatSubDockedCellExpression @ content, 
-    Cell[ CellTags -> "SideBarSubDockedCell", ShowStringCharacters -> False ] ];
+makeSideBarChatSubDockedCellExpression[ sideBarCell_CellObject, content_ ] := Join[
+    DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
+    Cell[
+        CellTags             -> "SideBarSubDockedCell",
+        FontSize             -> 12,
+        Magnification        -> Dynamic @ AbsoluteCurrentValue[ sideBarCell, Magnification ],
+        ShowStringCharacters -> False ] ];
 
 makeSideBarChatSubDockedCellExpression // endDefinition;
 
@@ -113,7 +117,7 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
-                    FrontEnd`NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression @ content ]
+                    FrontEnd`NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression[ sideBarCell, content ] ]
                 } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
@@ -125,7 +129,7 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression @ content } ] ]
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression[ sideBarCell, content ] } ] ]
                 } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
@@ -1946,7 +1950,7 @@ attachOverlayMenu[ nbo_NotebookObject, sideBarCell_CellObject, name_String ] := 
                 BoxData @ ToBoxes @ attachedOverlayMenuFrame @ ConfirmMatch[ overlayMenu[ nbo, sideBarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ],
                 "AttachedOverlayMenu",
                 CellTags -> name,
-                Magnification -> Dynamic @ AbsoluteCurrentValue[ nbo, Magnification ]
+                Magnification -> Dynamic @ AbsoluteCurrentValue[ sideBarCell, Magnification ]
             ],
             { Center, Bottom },
             0,
