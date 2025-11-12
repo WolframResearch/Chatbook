@@ -6823,7 +6823,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
+      ImageSizeCache->{4.5, {2.252197265625, 6.126708984375}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9843,13 +9843,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
 
 "NotebookAssistantSideBarCell" -> Cell[BoxData[{
  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-     Cell[
-      BoxData[
-       ToBoxes[
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "MakeSideBarChatDockedCell"]]], CellTags -> "SideBarDockedCell", 
-      Magnification -> Dynamic[0.85 AbsoluteCurrentValue[
-          FrontEnd`EvaluationNotebook[], Magnification]]]], StandardForm],
+     Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSideBarChatDockedCell"]], 
+   StandardForm],
   DestroyAfterEvaluation->True], "\n", 
  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
      Symbol["Wolfram`Chatbook`ChatModes`Common`sideBarChatInputCell"][]], 
@@ -9868,11 +9863,11 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
  FontSize->0.5,
  Magnification->1.,
  Background->LightDarkSwitched[
-   GrayLevel[1], 
-   GrayLevel[0.0999191]],
+   GrayLevel[0.95], 
+   RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSideBarCell",ExpressionUUID->"1ddc5595-2bad-044d-84ef-\
-40580a4f5f04"]
+  "NotebookAssistantSideBarCell",ExpressionUUID->"0833fc6f-4025-9c49-8fdf-\
+7cb9047e8665"]
 }
 @|
 @|

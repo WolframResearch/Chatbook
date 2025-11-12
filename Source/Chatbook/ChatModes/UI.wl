@@ -66,25 +66,28 @@ $defaultUserImage := $defaultUserImage =
 (*makeSideBarChatDockedCell*)
 makeSideBarChatDockedCell // beginDefinition;
 
-makeSideBarChatDockedCell[ ] := workspaceChatInitializer @ Framed[
-    DynamicModule[ { nbo, sideBarCell },
-        Grid[
-            { {
-                LogChatTiming @ sideBarNewChatButton[ Dynamic @ nbo, Dynamic @ sideBarCell ],
-                Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                LogChatTiming @ sideBarSourcesButton[ Dynamic @ nbo, Dynamic @ sideBarCell ],
-                LogChatTiming @ sideBarHistoryButton[ Dynamic @ nbo, Dynamic @ sideBarCell ],
-                LogChatTiming @ sideBarOpenAsChatbookButton[ Dynamic @ nbo, Dynamic @ sideBarCell ]
-            } },
-            Alignment -> { Automatic, Center },
-            Spacings  -> 0.2
+makeSideBarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sideBarCell = EvaluationCell[ ] },
+    Cell[
+        BoxData @ ToBoxes @ workspaceChatInitializer @ Framed[
+            Grid[
+                { {
+                    LogChatTiming @ sideBarNewChatButton[ Dynamic @ nbo, Dynamic @ sideBarCell ], (* FIXME: these calling signatures no longer need the Dynamic heads *)
+                    Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                    LogChatTiming @ sideBarSourcesButton[ Dynamic @ nbo, Dynamic @ sideBarCell ],
+                    LogChatTiming @ sideBarHistoryButton[ Dynamic @ nbo, Dynamic @ sideBarCell ],
+                    LogChatTiming @ sideBarOpenAsChatbookButton[ Dynamic @ nbo, Dynamic @ sideBarCell ]
+                } },
+                Alignment -> { Automatic, Center },
+                Spacings  -> 0.2
+            ],
+            Background   -> color @ "NA_Toolbar",
+            FrameStyle   -> color @ "NA_Toolbar",
+            FrameMargins -> { { 5, 4 }, { 0, 1 } },
+            ImageMargins -> 0
         ],
-        Initialization :> (nbo = EvaluationNotebook[ ]; sideBarCell = ParentCell @ EvaluationCell[ ])
-    ],
-    Background   -> color @ "NA_Toolbar",
-    FrameStyle   -> color @ "NA_Toolbar",
-    FrameMargins -> { { 5, 4 }, { 0, 1 } },
-    ImageMargins -> 0
+        CellTags      -> "SideBarDockedCell",
+        Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
+    ]
 ];
 
 makeSideBarChatDockedCell // endDefinition;
@@ -94,12 +97,12 @@ makeSideBarChatDockedCell // endDefinition;
 (*makeSideBarChatSubDockedCellExpression*)
 makeSideBarChatSubDockedCellExpression // beginDefinition;
 
-makeSideBarChatSubDockedCellExpression[ sideBarCell_CellObject, content_ ] := Join[
+makeSideBarChatSubDockedCellExpression[ nbo_NotebookObject, sideBarCell_CellObject, content_ ] := Join[
     DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
     Cell[
         CellTags             -> "SideBarSubDockedCell",
         FontSize             -> 12,
-        Magnification        -> Dynamic @ AbsoluteCurrentValue[ sideBarCell, Magnification ],
+        Magnification        -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
         ShowStringCharacters -> False ] ];
 
 makeSideBarChatSubDockedCellExpression // endDefinition;
@@ -117,7 +120,7 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
-                    FrontEnd`NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression[ sideBarCell, content ] ]
+                    FrontEnd`NotebookWrite[ subDockedCell, makeSideBarChatSubDockedCellExpression[ nbo, sideBarCell, content ] ]
                 } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
@@ -129,7 +132,7 @@ writeSideBarChatSubDockedCell[ nbo_NotebookObject, sideBarCell_CellObject, conte
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression[ sideBarCell, content ] } ] ]
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSideBarChatSubDockedCellExpression[ nbo, sideBarCell, content ] } ] ]
                 } ]
                 ,
                 CurrentValue[ sideBarCell, Editable ] = Inherited
@@ -222,15 +225,32 @@ removeSideBarScrollingContentCell // endDefinition;
 (*sideBarScrollingCell*)
 sideBarScrollingCell // beginDefinition
 
-sideBarScrollingCell[ nbo_NotebookObject, cells:{ ___Cell } ] := Cell[ BoxData @
-    PaneBox[
-        RowBox @ Riffle[ cells, "\n" ],
-        AppearanceElements -> {},
-        ImageSize          -> Dynamic[ { Scaled[ 1. ], UpTo[ Round[ AbsoluteCurrentValue[ "ViewSize" ][[2]]/0.85 ] - 50(*FIXME, but how?*)] } ],
-        Scrollbars         -> { False, True }
-    ],
-    CellTags      -> "SideBarScrollingContentCell",
-    Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
+sideBarScrollingCell[ nbo_NotebookObject, cells:{ ___Cell } ] :=
+Module[ { sideBarCellObj, dockedCellObj, chatInputCellObj },
+    sideBarCellObj = sideBarCellObject @ nbo;
+    { dockedCellObj, chatInputCellObj } = Pick[ #, MatchQ[ #, "SideBarDockedCell" | "SideBarChatInputCell" ]& /@ CurrentValue[ #, CellTags ] ]& @ Cells[ sideBarCellObj ];
+
+    With[ { sc = sideBarCellObj, cc = chatInputCellObj, dc = dockedCellObj },
+        Cell[ BoxData @
+            PaneBox[
+                RowBox @ Riffle[ cells, "\n" ],
+                AppearanceElements -> {},
+                ImageSize -> 
+                    Dynamic[
+                        {
+                            Scaled[ 1. ],
+                            UpTo @ Round[
+                                (AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - If[ CurrentValue[ PreviousCell[ ], CellTags ] === "SideBarSubDockedCell", AbsoluteCurrentValue[ PreviousCell[ ], { CellSize, 2 } ], 0 ]
+                                - AbsoluteCurrentValue[ dc, { CellSize, 2 } ]
+                                - AbsoluteCurrentValue[ cc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                            ] } ],
+                Scrollbars -> { False, True }
+            ],
+            Background    -> color @ "NA_NotebookBackground",
+            CellTags      -> "SideBarScrollingContentCell",
+            Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
+        ] ]
 ]
 
 sideBarScrollingCell // endDefinition
@@ -1950,7 +1970,7 @@ attachOverlayMenu[ nbo_NotebookObject, sideBarCell_CellObject, name_String ] := 
                 BoxData @ ToBoxes @ attachedOverlayMenuFrame @ ConfirmMatch[ overlayMenu[ nbo, sideBarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ],
                 "AttachedOverlayMenu",
                 CellTags -> name,
-                Magnification -> Dynamic @ AbsoluteCurrentValue[ sideBarCell, Magnification ]
+                Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
             ],
             { Center, Bottom },
             0,
