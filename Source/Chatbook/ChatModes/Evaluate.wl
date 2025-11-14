@@ -60,10 +60,9 @@ evaluateWorkspaceChat // endDefinition;
 (*evaluateSideBarChat*)
 evaluateSideBarChat // beginDefinition;
 
-evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, Dynamic[ input_ ] ] := Enclose[
-    Catch @ Module[ { text, uuid, cell, cellObject, scrollablePaneCell, lastDockedCell, lastContentCell },
+evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_ ] := Enclose[
+    Module[ { text, uuid, cell, cellObject, scrollablePaneCell, lastDockedCell, lastContentCell },
 
-        If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
 
@@ -77,8 +76,6 @@ evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, Dynamic[ input_
                 However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
             CellTags -> uuid 
         ];
-
-        input = "";
 
         (* find the last top cell, or docked cell if there are no content cells *)
         (* all old top-cells are within an inline cell that scrolls. Overwrite that cell if it exists, otherwise create it anew *)
