@@ -583,20 +583,28 @@ sideBarChatInputCell // beginDefinition;
 sideBarChatInputCell[ ] := sideBarChatInputCell[ "" ]
 
 sideBarChatInputCell[ initialContent_ ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sideBarCell, fieldContent = initialContent },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sideBarCell, fieldContent = initialContent, returnKeyDownQ, input },
         EventHandler[
             Pane[
                 Grid[
                     {
                         {
-                            Framed[
-                                InputField[
-                                    Dynamic @ fieldContent,
-                                    Boxes,
-                                    ContinuousAction -> True,
-                                    $inputFieldOptions
+                            DynamicWrapper[
+                                Framed[
+                                    InputField[
+                                        Dynamic @ fieldContent,
+                                        Boxes,
+                                        ContinuousAction -> True,
+                                        $inputFieldOptions
+                                    ],
+                                    $inputFieldFrameOptions
                                 ],
-                                $inputFieldFrameOptions
+                                If[ TrueQ @ returnKeyDownQ,
+                                    returnKeyDownQ = False;
+                                    Wolfram`Chatbook`Common`evaluateSideBarChat[ thisNB, sideBarCell, input ]
+                                ],
+                                SynchronousUpdating -> False,
+                                TrackedSymbols      :> { returnKeyDownQ }
                             ],
                             (* no need to templatize an attached cell as it is ephemeral *)
                             PaneSelector[
@@ -608,17 +616,11 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                                                 color @ "NA_ChatInputFieldSendButtonBackgroundHover",
                                                 27
                                             ],
-                                            Needs[ "Wolfram`Chatbook`" -> None ];
-                                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                                                "EvaluateSideBarChat",
-                                                thisNB,
-                                                sideBarCell,
-                                                Dynamic @ fieldContent
-                                            ],
+                                            If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
                                             Appearance   -> "Suppressed",
                                             BoxID        -> "SideBarChatInputCellSendButton",
                                             FrameMargins -> 0,
-                                            Method       -> "Queued"
+                                            Method       -> "Preemptive"
                                         ],
                                     True ->
                                         Button[
@@ -649,16 +651,13 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
             ],
             {
                 "ReturnKeyDown" :> (
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "EvaluateSideBarChat",
-                        thisNB,
-                        sideBarCell,
-                        Dynamic @ fieldContent
-                    ]
-                )
+                    If[ ! validInputStringQ @ fieldContent,
+                        fieldContent = ""
+                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
+                        input = fieldContent; fieldContent = ""; returnKeyDownQ = True
+                    ])
             },
-            Method -> "Queued"
+            Method -> "Preemptive"
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
         Initialization :> (thisNB = EvaluationNotebook[ ]; thisCell = EvaluationCell[ ]; sideBarCell = ParentCell @ thisCell)
