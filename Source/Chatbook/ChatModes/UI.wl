@@ -598,11 +598,24 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                                         $inputFieldOptions
                                     ],
                                     $inputFieldFrameOptions
-                                ],
+                                ]
+                                ,
                                 If[ TrueQ @ returnKeyDownQ,
                                     returnKeyDownQ = False;
-                                    Wolfram`Chatbook`Common`evaluateSideBarChat[ thisNB, sideBarCell, input, Dynamic @ chatEvalCell ]
-                                ],
+                                    evaluateSideBarChat[ thisNB, sideBarCell, input, Dynamic @ chatEvalCell ]
+                                ];
+                                (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
+                                If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
+                                    chatEvalCell = CurrentValue[ sideBarCell, { TaggingRules, "ChatEvaluationCell" } ];
+                                    With[ { sbc = sideBarCell }, (* "Set" is HoldFirst so we must inject values *)
+                                        FrontEndExecute[ {
+                                            FrontEnd`SetOptions[ thisCell, CellTags -> "SideBarChatInputCell" ],
+                                            FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sbc, { TaggingRules, "ChatEvaluationCell" } ], Inherited ]
+                                        } ]
+                                    ];
+                                    If[ Head @ chatEvalCell === CellObject, ChatCellEvaluate[ chatEvalCell, thisNB ] ]
+                                ]
+                                ,
                                 SynchronousUpdating -> False,
                                 TrackedSymbols      :> { returnKeyDownQ }
                             ],
@@ -664,7 +677,7 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
-    CellTags      -> "SideBarChatInputCell" ,
+    CellTags      -> "SideBarChatInputCell",
     Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
@@ -1501,7 +1514,7 @@ assistantMessageButtons[ includeFeedback_, sideBarCellQ_ ] :=
                 Tooltip[ assistantCopyAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                 Button[
                     Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
-                    ChatbookAction[ "RegenerateAssistantMessage", cell ],
+                    ChatbookAction[ "RegenerateAssistantMessage", cell, sideBarCellQ ],
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
                 ],
