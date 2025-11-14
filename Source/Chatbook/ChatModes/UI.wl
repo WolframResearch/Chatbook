@@ -583,7 +583,7 @@ sideBarChatInputCell // beginDefinition;
 sideBarChatInputCell[ ] := sideBarChatInputCell[ "" ]
 
 sideBarChatInputCell[ initialContent_ ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sideBarCell, fieldContent = initialContent, returnKeyDownQ, input },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sideBarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input },
         EventHandler[
             Pane[
                 Grid[
@@ -601,7 +601,7 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                                 ],
                                 If[ TrueQ @ returnKeyDownQ,
                                     returnKeyDownQ = False;
-                                    Wolfram`Chatbook`Common`evaluateSideBarChat[ thisNB, sideBarCell, input ]
+                                    Wolfram`Chatbook`Common`evaluateSideBarChat[ thisNB, sideBarCell, input, Dynamic @ chatEvalCell ]
                                 ],
                                 SynchronousUpdating -> False,
                                 TrackedSymbols      :> { returnKeyDownQ }
@@ -635,7 +635,7 @@ sideBarChatInputCell[ initialContent_ ] := Cell[
                                             FrameMargins -> 0
                                         ]
                                 },
-                                Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === thisCell ],
+                                Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === chatEvalCell ],
                                 Alignment -> { Automatic, Baseline }
                             ]
                         },

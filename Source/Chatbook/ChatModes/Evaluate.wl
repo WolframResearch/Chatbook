@@ -60,8 +60,8 @@ evaluateWorkspaceChat // endDefinition;
 (*evaluateSideBarChat*)
 evaluateSideBarChat // beginDefinition;
 
-evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_ ] := Enclose[
-    Module[ { text, uuid, cell, cellObject, scrollablePaneCell, lastDockedCell, lastContentCell },
+evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
+    Module[ { text, uuid, cell, scrollablePaneCell, lastDockedCell, lastContentCell },
 
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
