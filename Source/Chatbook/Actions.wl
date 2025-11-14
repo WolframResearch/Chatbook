@@ -107,7 +107,34 @@ ChatbookAction[ args___                                  ] := catchMine @ throwI
 (*regenerateAssistantMessage*)
 regenerateAssistantMessage // beginDefinition;
 
-regenerateAssistantMessage[ chatOutput_CellObject ] := Enclose[
+regenerateAssistantMessage[ chatOutput_CellObject, True(*sideBarCellQ_*) ] := Enclose[
+    Catch @ Module[ { chatInputCell, sideBarCell, nbo, chatInputFieldCell },
+        chatInputCell = PreviousCell[ chatOutput, CellStyle -> "NotebookAssistant`SideBar`ChatInput" ];
+        If[ ! MatchQ[ chatInputCell, _CellObject ], Throw @ Null ];
+        
+        sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ chatOutput, _CellObject, "SideBarCell" ];
+        nbo = ConfirmMatch[ parentNotebook @ sideBarCell, _NotebookObject, "Notebook" ];
+        chatInputFieldCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarChatInputCell" ], None ], _CellObject, "SideBarChatInputFieldCell" ];
+
+        With[ { sbc = sideBarCell, cic = chatInputCell }, (* "Set" is HoldFirst so we must inject values *)
+            WithCleanup[
+                FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`SelectionMove[ chatOutput, Before, Cell ],
+                    FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
+                    FrontEnd`NotebookDelete @ chatOutput,
+                    FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sbc, { TaggingRules, "ChatEvaluationCell" } ], cic ], (* use TaggingRules to pass CellObject around *)
+                    FrontEnd`SetOptions[ chatInputFieldCell, CellTags -> { "SideBarChatInputCell", "RegenerateChatOutput" } ] (* backdoor to re-evaluation in side bar *)
+                } ]
+                ,
+                CurrentValue[ sideBarCell, Editable ] = Inherited
+            ]
+        ];
+    ],
+    throwInternalFailure
+];
+
+regenerateAssistantMessage[ chatOutput_CellObject, _ ] := Enclose[
     Catch @ Module[ { chatInput, nbo },
         chatInput = PreviousCell[ chatOutput, CellStyle -> "ChatInput" ];
         If[ ! MatchQ[ chatInput, _CellObject ], Throw @ Null ];
