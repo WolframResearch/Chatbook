@@ -86,7 +86,21 @@ $$outputForm := $$outputForm = Alternatives @@ $OutputForms;
 
 $nlpData = <| |>;
 
-$$simpleTemplateBoxName = "Entity"|"EntityClass"|"EntityProperty"|"DateObject"|"Quantity";
+$$simpleTemplateBoxName = Alternatives[
+    "DateObject",
+    "Entity",
+    "EntityClass",
+    "EntityProperty",
+    "Quantity",
+    "QuantityMixedUnit1",
+    "QuantityMixedUnit2",
+    "QuantityMixedUnit3",
+    "QuantityMixedUnit4",
+    "QuantityMixedUnit5",
+    "QuantityMixedUnit6",
+    "QuantityPostfix",
+    "QuantityPrefix"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
