@@ -1202,7 +1202,7 @@ toolsEnabledQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*dynamicSplitQ*)
 dynamicSplitQ // beginDefinition;
-dynamicSplitQ[ _ ] /; $chatEvaluationBlock := False;
+dynamicSplitQ[ _ ] /; $headlessChat := False;
 dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
 dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
 dynamicSplitQ[ "PartialDynamic"|"Automatic"|"Inherited" ] := True;
