@@ -12,6 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (*Configuration*)
 $snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
+$snippetFetchBatchSize         = 25;
 $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
 $documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
 $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
@@ -103,6 +104,7 @@ $RelatedDocumentationSources = Automatic;
 (*RelatedDocumentation*)
 RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
+    "DownloadBatchSize" -> $snippetFetchBatchSize,
     "FilteredCount"     -> Automatic,
     "FilterResults"     -> Automatic,
     "LLMEvaluator"      -> Automatic,
@@ -173,10 +175,12 @@ RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catch
 RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
         (* TODO: filter results *)
-        DeleteMissing @ makeDocSnippets @ vectorDBSearch[
-            getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
-            prompt,
-            "Results"
+        Block[ { $snippetFetchBatchSize = OptionValue[ "DownloadBatchSize" ] },
+            DeleteMissing @ makeDocSnippets @ vectorDBSearch[
+                getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+                prompt,
+                "Results"
+            ]
         ],
         { ___String },
         "Snippets"
@@ -252,7 +256,8 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 OptionValue[ "PromptHeader" ],
                 $$unspecified :> $usePromptHeader
             ],
-            $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ]
+            $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
+            $snippetFetchBatchSize = OptionValue[ "DownloadBatchSize" ]
         },
         relatedDocumentationPrompt[
             ensureChatMessages @ prompt,
@@ -1176,6 +1181,9 @@ snippetCacheDirectory // endDefinition;
 fetchDocumentationSnippets // beginDefinition;
 
 fetchDocumentationSnippets[ { } ] := { };
+
+fetchDocumentationSnippets[ uris: { __String } ] /; Length @ uris > $snippetFetchBatchSize :=
+    Flatten[ fetchDocumentationSnippets /@ TakeDrop[ uris, $snippetFetchBatchSize ] ];
 
 fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
      Module[ { count, text, $results, tasks },
