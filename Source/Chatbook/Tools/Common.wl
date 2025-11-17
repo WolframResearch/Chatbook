@@ -45,7 +45,7 @@ $ToolFunctions = <|
     "WebFetcher"               -> webFetch,
     "WebImageSearcher"         -> webImageSearch,
     "WebSearcher"              -> webSearch,
-    "WolframAlpha"             -> getWolframAlphaText,
+    "WolframAlpha"             -> wolframAlphaToolEvaluate,
     "WolframLanguageEvaluator" -> wolframLanguageEvaluator
 |>;
 
