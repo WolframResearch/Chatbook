@@ -81,7 +81,7 @@ $stringResult := ! TrueQ @ $ChatNotebookEvaluation || TrueQ @ $headlessChat || T
 wolframAlphaToolEvaluate // beginDefinition;
 
 wolframAlphaToolEvaluate[ as_Association ] :=
-    catchTop @ wolframAlphaToolEvaluate[ as[ "query" ], as[ "steps" ] ];
+    catchTop @ LogChatTiming @ wolframAlphaToolEvaluate[ as[ "query" ], as[ "steps" ] ];
 
 wolframAlphaToolEvaluate[ query_String, steps_ ] :=
     wolframAlphaToolEvaluate0[ DeleteCases[ StringTrim @ StringSplit[ query, "\t"|"\\t" ], "" ], steps ];
