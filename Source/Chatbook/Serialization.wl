@@ -1682,7 +1682,7 @@ boxToString[ TemplateBox[ KeyValuePattern[ "shortenedBoxes" -> boxes_ ], "Output
     boxToString @ boxes;
 
 boxToString[ TemplateBox[ { size_ }, "OutputSizeLimit`Skeleton", ___ ] ] :=
-    " \[LeftSkeleton]" <> boxToString @ size <> "\[RightSkeleton] ";
+    " <<" <> boxToString @ size <> ">> ";
 
 (* Row *)
 boxToString[ TemplateBox[ args_, "RowDefault", ___ ] ] := boxToString @ args;
