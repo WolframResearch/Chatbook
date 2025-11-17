@@ -50,6 +50,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$atomic;
 `$$image;
 
+`$$messageContent;
 `$$chatMessage;
 `$$chatMessages;
 `wordsPattern;

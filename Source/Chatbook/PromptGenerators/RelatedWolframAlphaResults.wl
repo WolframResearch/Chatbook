@@ -20,6 +20,7 @@ $keepAllImages      = False;
 $wolframAlphaAppID  = None;
 $instructions       = None;
 $reinterpret        = False;
+$showSteps          = True;
 $includeWLResults  := TrueQ @ toolSelectedQ[ "WolframLanguageEvaluator" ];
 
 $timeouts = <|
@@ -32,7 +33,10 @@ $timeouts = <|
     "AlphaTotal"  -> 20
 |>;
 
-$podStates = Flatten @ { "Step-by-step solution", "Show all steps", ConstantArray[ "Result__More", 3 ] };
+$podStates := If[ TrueQ @ $showSteps,
+                  Flatten @ { "Step-by-step solution", "Show all steps", ConstantArray[ "Result__More", 3 ] },
+                  ConstantArray[ "Result__More", 3 ]
+              ];
 
 $formats := If[ TrueQ @ $includeWLResults,
                 { "image", "plaintext", "minput" },
@@ -42,8 +46,9 @@ $formats := If[ TrueQ @ $includeWLResults,
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Argument Patterns*)
-$$count = _Integer | UpTo[ _Integer ];
-$$xml   = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
+$$stringOrStrings = $$string | { $$string... };
+$$count           = _Integer | UpTo[ _Integer ];
+$$xml             = HoldPattern[ _XMLElement | XMLObject[ _ ][ ___ ] ];
 
 (* cSpell: disable *)
 $$ignoredXMLTag = Alternatives[
@@ -709,7 +714,7 @@ setResult[
         ];
 
         { stringTiming, string } = ConfirmMatch[
-            AbsoluteTiming @ getWolframAlphaText[ query, True, info ],
+            AbsoluteTiming @ wolframAlphaToolEvaluate[ query, True, info ],
             { _Real, _String? StringQ },
             "String"
         ];
@@ -841,7 +846,7 @@ relatedWolframAlphaResultsContent // endDefinition;
 relatedWolframAlphaResultsFullData // beginDefinition;
 
 relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] := Enclose[
-    Catch @ Module[ { queries, sampleQueries, content, result },
+    Catch @ Module[ { queries, sampleQueries, content },
 
         queries = ConfirmMatch[
             setServiceCaller[
@@ -856,16 +861,9 @@ relatedWolframAlphaResultsFullData[ messages: $$chatMessages, count_, relatedCou
 
         If[ queries === { }, Throw @ <| "Content" -> { }, "SampleQueries" -> sampleQueries |> ];
 
-        content = ConfirmBy[ getWolframAlphaAPIContent @ queries, AssociationQ, "Content" ];
+        content = ConfirmMatch[ getWolframAlphaResults[ queries, "Content" ], { ___Association }, "Content" ];
 
-        result = ConfirmMatch[ Values @ content, { ___Association }, "Result" ];
-
-        result = DeleteDuplicatesBy[
-            KeyDrop[ result, { "StatusCode", "BodyByteArray" } ],
-            Lookup[ "InputInterpretation" ]
-        ];
-
-        <| "Content" -> result, "SampleQueries" -> sampleQueries |>
+        <| "Content" -> content, "SampleQueries" -> sampleQueries |>
     ],
     throwInternalFailure
 ];
@@ -874,24 +872,166 @@ relatedWolframAlphaResultsFullData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*getWolframAlphaResults*)
+getWolframAlphaResults // beginDefinition;
+getWolframAlphaResults // Options = { "StepByStep" :> $showSteps };
+
+(* Default type *)
+getWolframAlphaResults[ queries: $$stringOrStrings, opts: OptionsPattern[ ] ] :=
+    getWolframAlphaResults[ queries, "Content", opts ];
+
+(* Text/String *)
+getWolframAlphaResults[ queries: $$stringOrStrings, "Text"|"String", opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { strings },
+        strings = ConfirmMatch[ getWolframAlphaResults[ queries, "Strings", opts ], { ___String }, "Strings" ];
+        StringRiffle[ strings, "\n\n" ]
+    ],
+    throwInternalFailure
+];
+
+getWolframAlphaResults[ queries: $$stringOrStrings, "Strings", opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { content, strings },
+        content = ConfirmMatch[
+            getWolframAlphaAPIContent[ Flatten @ { queries }, opts ],
+            { ___Association },
+            "Content"
+        ];
+
+        strings = ConfirmMatch[ formatWolframAlphaResult /@ content, { ___String }, "Strings" ];
+
+        strings
+    ],
+    throwInternalFailure
+];
+
+(* Content *)
+getWolframAlphaResults[ query_String, "Content", opts: OptionsPattern[ ] ] := Enclose[
+    First @ ConfirmMatch[ getWolframAlphaAPIContent[ { query }, opts ], { _Association }, "Result" ],
+    throwInternalFailure
+];
+
+getWolframAlphaResults[ queries: { ___String }, "Content", opts: OptionsPattern[ ] ] :=
+    getWolframAlphaAPIContent[ queries, opts ];
+
+
+getWolframAlphaResults // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*getWolframAlphaAPIContent*)
 getWolframAlphaAPIContent // beginDefinition;
+getWolframAlphaAPIContent // Options = { "StepByStep" :> $showSteps };
 
-getWolframAlphaAPIContent[ queries: { ___String } ] := Enclose[
-    Module[ { results, tasks },
-        results = <| |>;
-        tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
-        TaskWait[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ];
-        Quiet[ TaskRemove /@ tasks ];
-        If[ TrueQ @ $cacheResults,
-            getWolframAlphaAPIContent[ queries ] = results,
-            results
-        ]
+getWolframAlphaAPIContent[ { }, opts: OptionsPattern[ ] ] := { };
+
+getWolframAlphaAPIContent[ queries: { ___String }, opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { results },
+        results = ConfirmMatch[
+            Block[ { $showSteps = TrueQ @ OptionValue[ "StepByStep" ] },
+                getWolframAlphaAPIContent0 @ queries
+            ],
+            { ___Association },
+            "Results"
+        ];
+
+        ConfirmMatch[ addWolframAlphaSources @ results, { ___Association }, "Results" ];
+
+        results
     ],
     throwInternalFailure
 ];
 
 getWolframAlphaAPIContent // endDefinition;
+
+
+getWolframAlphaAPIContent0 // beginDefinition;
+
+getWolframAlphaAPIContent0[ queries: { ___String } ] := Enclose[
+    Module[ { results, tasks, content, cleaned },
+        results = <| |>;
+        tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
+
+        TaskWait[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ];
+        Quiet[ TaskRemove /@ tasks ];
+
+        content = ConfirmMatch[ Values @ results, { ___Association }, "Content" ];
+
+        cleaned = DeleteDuplicatesBy[
+            KeyDrop[ content, { "StatusCode", "BodyByteArray" } ],
+            waResultID
+        ];
+
+        If[ TrueQ @ $cacheResults,
+            getWolframAlphaAPIContent0[ queries ] = cleaned,
+            cleaned
+        ]
+    ],
+    throwInternalFailure
+];
+
+getWolframAlphaAPIContent0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*waResultID*)
+waResultID // beginDefinition;
+
+waResultID[ as_Association ] := Enclose[
+    Hash @ ConfirmBy[ waResultID0 @ as, StringQ, "ID" ],
+    throwInternalFailure
+];
+
+waResultID // endDefinition;
+
+
+waResultID0 // beginDefinition;
+
+waResultID0[ as_Association ] :=
+    waResultID0[ as, as[ "InputInterpretation" ] ];
+
+waResultID0[ as_, int_String ] :=
+    int;
+
+waResultID0[ as_, int_Missing ] :=
+    waResultID0[ as, int, as[ "Content" ] ];
+
+waResultID0[ as_, int_, content: { __Association } ] :=
+    With[ { s = makeContentString @ content },
+        StringDelete[
+            s,
+            Shortest @ StringExpression[
+                "https://",
+                (LetterCharacter|DigitCharacter|"_")..,
+                ".wolframalpha.com/files/",
+                (LetterCharacter|DigitCharacter|"_")..,
+                ".gif"|".png"
+            ]
+        ] /; StringQ @ s
+    ];
+
+waResultID0[ as_, int_, content_ ] :=
+    as[ "Query" ];
+
+waResultID0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addWolframAlphaSources*)
+addWolframAlphaSources // beginDefinition;
+
+addWolframAlphaSources[ results_List ] :=
+    addWolframAlphaSources /@ results;
+
+addWolframAlphaSources[ result_Association ] :=
+    addWolframAlphaSources[ result[ "URL" ], result[ "Content" ] ];
+
+addWolframAlphaSources[ url_String, content: { __Association } ] :=
+    AddToSources[ url, content ];
+
+addWolframAlphaSources[ url_String, $TimedOut | { } | KeyValuePattern[ "Type" -> "Error" ] ] :=
+    Nothing;
+
+addWolframAlphaSources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -915,20 +1055,20 @@ submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Encl
         request = HTTPRequest[
             "https://api.wolframalpha.com/v2/query",
             <|
-                "Query" -> {
+                "Query" -> DeleteMissing @ <|
                     "input"         -> query,
                     "reinterpret"   -> $reinterpret,
                     "appid"         -> $wolframAlphaAppID,
                     "format"        -> StringRiffle[ $formats, "," ],
                     "output"        -> "xml",
-                    "sbsmode"       -> "StepByStepDetails",
+                    "sbsmode"       -> If[ TrueQ @ $showSteps, "StepByStepDetails", Missing[ ] ],
                     "podstate"      -> StringRiffle[ $podStates, "," ],
                     "scantimeout"   -> $timeouts[ "AlphaScan"   ],
                     "podtimeout"    -> $timeouts[ "AlphaPod"    ],
                     "formattimeout" -> $timeouts[ "AlphaFormat" ],
                     "parsetimeout"  -> $timeouts[ "AlphaParse"  ],
                     "totaltimeout"  -> $timeouts[ "AlphaTotal"  ]
-                }
+                |>
             |>
         ];
 
@@ -1117,7 +1257,7 @@ inputInterpretation // beginDefinition;
 
 inputInterpretation[ query_String, xml_ ] := FirstCase[
     xml,
-    XMLElement[ "pod", KeyValuePattern[ "title" -> "Input interpretation" ], content_ ] :>
+    XMLElement[ "pod", KeyValuePattern[ "title" -> "Input interpretation"|"Input" ], content_ ] :>
         With[ { s = StringTrim @ StringJoin @ Select[ parsePodContent @ content, StringQ ] },
             s /; s =!= ""
         ],

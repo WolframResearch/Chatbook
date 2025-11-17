@@ -17,7 +17,7 @@ $defaultConfig = <| "StopTokens" -> $stopTokens, "Model" -> <| "Name" -> "gpt-4o
 (* ::Subsection::Closed:: *)
 (*Patterns*)
 $$uri     = _String | URL[ _String ];
-$$source  = KeyValuePattern @ { "URI" -> $$uri, "Content" -> _String };
+$$source  = KeyValuePattern @ { "URI" -> $$uri, "Content" -> $$messageContent };
 $$sources = { $$source... };
 
 (* ::**************************************************************************************************************:: *)
@@ -93,12 +93,18 @@ generateCitations[ text_, Automatic ] := Enclose[
     throwInternalFailure
 ];
 
-generateCitations[ text_String, sources_List ] := Enclose[
+generateCitations[ text_String, sources0_List ] := Enclose[
     Catch @ Module[
         {
-            shortIDs, idsString, sourcesStrings, sourcesString, instructions,
+            sources, shortIDs, idsString, sourcesStrings, sourcesString, instructions,
             response, chosen, uris, uriLookup, citations
         },
+
+        sources = ConfirmMatch[
+            DeleteMissing[ ensureStringContent /@ sources0 ],
+            { KeyValuePattern[ "Content" -> _String ]... },
+            "Sources"
+        ];
 
         shortIDs = ConfirmMatch[ sources[[ All, "ShortID" ]], { ___String }, "ShortIDs" ];
         If[ shortIDs === { }, Throw @ { } ];
@@ -157,6 +163,31 @@ generateCitations // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*ensureStringContent*)
+ensureStringContent // beginDefinition;
+
+ensureStringContent[ source: KeyValuePattern[ "Content" -> _String ] ] := source;
+
+ensureStringContent[ source: KeyValuePattern[ "Content" -> content: { __Association } ] ] := Enclose[
+    Catch @ Module[ { strings, string },
+        strings = ConfirmMatch[
+            Cases[ content, KeyValuePattern @ { "Type" -> "Text", "Data" -> text_String } :> text ],
+            { __String },
+            "Strings"
+        ];
+
+        string = StringTrim @ StringJoin @ strings;
+        If[ string === "", Throw @ Missing[ "EmptyString" ] ];
+
+        <| source, "Content" -> string |>
+    ],
+    throwInternalFailure
+];
+
+ensureStringContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*getAutoSources*)
 getAutoSources // beginDefinition;
 getAutoSources[ ] := getAutoSources[ $ChatHandlerData[ "Sources" ], $sources ];
@@ -178,7 +209,7 @@ formatCitations // endDefinition;
 AddToSources // beginDefinition;
 AddToSources[ source: $$source ] := catchMine @ addToSources @ source;
 AddToSources[ sources: { $$source... } ] := catchMine[ addToSources /@ sources ];
-AddToSources[ uri: $$uri, content_String ] := catchMine @ addToSources @ <| "URI" -> uri, "Content" -> content |>;
+AddToSources[ uri: $$uri, mc: $$messageContent ] := catchMine @ addToSources @ <| "URI" -> uri, "Content" -> mc |>;
 AddToSources // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -197,7 +228,9 @@ addToSources[ source_ ] := Enclose[
             $sources[ uri ] = data
         ];
 
-        ConfirmBy[ $sources, AssociationQ, "Result" ]
+        ConfirmBy[ $sources, AssociationQ, "Result" ];
+
+        data
     ],
     throwInternalFailure
 ];
