@@ -529,7 +529,8 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         transcript = ConfirmBy[
             getSmallContextString[
-                insertContextPrompt @ prompt,
+                (* FIXME: Need to implement per-chat caching to avoid repeating this for the same messages *)
+                dropTrailingToolMessages @ insertContextPrompt @ prompt,
                 "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
             ],
             StringQ,
@@ -590,6 +591,14 @@ generateSuggestedQueries0[ messages_, config_ ] := Enclose[
 ];
 
 generateSuggestedQueries0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropTrailingToolMessages*)
+dropTrailingToolMessages // beginDefinition;
+dropTrailingToolMessages[ { before__, _? toolMessageQ, _ } ] := dropTrailingToolMessages @ { before };
+dropTrailingToolMessages[ messages_List ] := messages;
+dropTrailingToolMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
