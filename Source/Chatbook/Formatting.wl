@@ -340,11 +340,14 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
         seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
         label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
-        Cell[
-            BoxData @ templateBox[ { StringTrim @ thoughts, label }, "ThoughtsOpener" ],
-            "ThoughtsOpener",
-            Background -> None
-        ]
+        {
+            Cell[
+                BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
+                "ThoughtsOpener",
+                Background -> None
+            ],
+            "\n"
+        }
     ];
 
 makeResultCell0[ speechCell[ speech_String ] ] :=
