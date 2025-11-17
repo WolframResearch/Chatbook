@@ -10,9 +10,11 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxItems           = 5;
+$maxItems            = 5;
+$largeResponseLength = 500;
+$largeQueryLength   = 100;
 $stopTokens         = { "[NONE]", "[WL]" };
-$defaultConfig      = <| "StopTokens" -> $stopTokens, "Model" -> <| "Name" -> "gpt-4o-mini" |> |>;
+$defaultConfig      = <| "StopTokens" -> $stopTokens, "Model" -> <| "Name" -> "gpt-4o-mini" |>, "MaxTokens" -> 250 |>;
 $generatorLLMConfig = $defaultConfig;
 $usePromptHeader    = True;
 $multimodal         = True;
@@ -70,7 +72,16 @@ $$ignoredXMLTag = Alternatives[
 
 $$ws = ___String? (StringMatchQ[ WhitespaceCharacter... ]);
 
-$$emptyResponse = Alternatives @@ Append[ $stopTokens, "" ];
+$emptyResponses = Flatten @ {
+    "",
+    "[n]",
+    "[n/a]",
+    "[na]",
+    "[none]",
+    $stopTokens
+};
+
+$$emptyResponse = _String? (StringMatchQ[ $emptyResponses, IgnoreCase -> True ]);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -480,7 +491,7 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
     Module[
         {
             relevant, all, combined, examples, systemPrompt, systemMessage, messages, transcript, config,
-            response, content, queries
+            response, content, confusionScores, confusionScore, queries
         },
 
         relevant = ConfirmMatch[
@@ -533,20 +544,27 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
 
         config   = ConfirmBy[ mergeChatSettings @ { $defaultConfig, $generatorLLMConfig }, AssociationQ, "Config" ];
         response = ConfirmBy[ generateSuggestedQueries0[ messages, config ], AssociationQ, "Response" ];
-        content  = ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
+        content  = StringTrim @ ConfirmBy[ response[ "Content" ], StringQ, "Content" ];
+
+        confusionScores = ConfirmBy[ confusionScoreData @ content, AssociationQ, "ConfusionScores" ];
+        confusionScore = ConfirmBy[ Total @ Values @ confusionScores, NumberQ, "ConfusionScore" ];
 
         queries = ConfirmMatch[
-            DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], $$emptyResponse ],
+            If[ confusionScore > 1.0,
+                { },
+                checkForBadQueries @ DeleteCases[ StringTrim @ StringSplit[ content, "\n" ], $$emptyResponse ]
+            ],
             { ___String },
             "Queries"
         ];
 
         addHandlerArguments[
             "RelatedWolframAlphaResults" -> <|
-                "Messages"      -> messages,
-                "Response"      -> response,
-                "SampleQueries" -> $sampleQueries,
-                "Queries"       -> queries
+                "Messages"        -> messages,
+                "Response"        -> response,
+                "SampleQueries"   -> $sampleQueries,
+                "Queries"         -> queries,
+                "ConfusionScores" -> confusionScores
             |>
         ];
 
@@ -572,6 +590,56 @@ generateSuggestedQueries0[ messages_, config_ ] := Enclose[
 ];
 
 generateSuggestedQueries0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkForBadQueries*)
+checkForBadQueries // beginDefinition;
+
+checkForBadQueries[ queries: { ___String } ] /; AnyTrue[ queries, probablyBadQueryQ ] := { };
+
+checkForBadQueries[ queries: { ___String } ] := StringReplace[
+    queries,
+    StartOfString ~~ "[" ~~ q__ ~~ "]" ~~ EndOfString :> q
+];
+
+checkForBadQueries // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*confusionScoreData*)
+confusionScoreData // beginDefinition;
+
+confusionScoreData[ content_String ] := Select[
+    Association[
+        (#Weight * StringCount[ content, Shortest[ #Pattern ] ] &) /@ $confusionTestData,
+        "LongResponse" -> N @ Max[ 0, (StringLength @ content - $largeResponseLength) / $largeResponseLength ]
+    ],
+    GreaterThan[ 0.0 ]
+];
+
+confusionScoreData // endDefinition;
+
+$$wordBoundary = StartOfString | EndOfString | Except[ WordCharacter ];
+
+$confusionTestData = <|
+    "MarkdownSections"     -> <| "Weight" -> 0.50, "Pattern" -> StartOfLine ~~ "#".. ~~ " " |>,
+    "MarkdownItems"        -> <| "Weight" -> 0.25, "Pattern" -> StartOfLine ~~ "-".. ~~ " " |>,
+    "MarkdownLinks"        -> <| "Weight" -> 0.25, "Pattern" -> StartOfLine ~~ "["~~___~~"]("~~__~~")" |>,
+    "MarkdownImages"       -> <| "Weight" -> 1.00, "Pattern" -> "!["~~___~~"]("~~__~~")" |>,
+    "AttemptedToolCalls"   -> <| "Weight" -> 1.00, "Pattern" -> StartOfLine ~~ "/" ~~ Repeated[ Except[ WhitespaceCharacter ], { 2, 80 } ] ~~ "\n" |>,
+    "NoteTags"             -> <| "Weight" -> 1.00, "Pattern" -> StartOfLine ~~ "[note: "~~___~~"]" |>,
+    "SuspiciousLineBreaks" -> <| "Weight" -> 0.25, "Pattern" -> "\n\n" |>,
+    "InlineTeX"            -> <| "Weight" -> 0.50, "Pattern" -> $$wordBoundary ~~ "$"~~___~~"$" ~~ $$wordBoundary |>,
+    "InlineTeX2"           -> <| "Weight" -> 1.00, "Pattern" -> $$wordBoundary ~~ "$$"~~___~~"$$" ~~ $$wordBoundary |>
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*probablyBadQueryQ*)
+probablyBadQueryQ // beginDefinition;
+probablyBadQueryQ[ query_String ] := StringLength @ query > $largeQueryLength;
+probablyBadQueryQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
