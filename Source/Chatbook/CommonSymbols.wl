@@ -265,6 +265,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `menuMagnification;
 `mergeChatSettings;
 `mergeCodeBlocks;
+`mergeToolCallMessages;
 `messagesToString;
 `modelDisplayName;
 `modelListCachedQ;
