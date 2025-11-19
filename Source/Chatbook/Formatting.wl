@@ -725,16 +725,23 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         Grid[
             {
-                checkTemplateBoxes @ If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ] || TrueQ @ CurrentChatSettings[ cellObj, "SideBarChat" ],
-                    {
-                        button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                        button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
-                    },
-                    {
-                        button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                        button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                        button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-                    }
+                checkTemplateBoxes @ Which[
+                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                        {
+                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
+                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
+                        },
+                    TrueQ @ CurrentChatSettings[ cellObj, "SideBarChat" ],
+                        {
+                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
+                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], "SideBar" ] ]
+                        },
+                    True, (* Chatbook or inline *)
+                        {
+                            button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
+                            button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
+                            button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
+                        }
                 ]
             },
             Alignment -> Top,
@@ -925,6 +932,8 @@ insertCodeBelow // beginDefinition;
 
 insertCodeBelow[ code_ ] := insertCodeBelow[ code, False ];
 
+insertCodeBelow[ cell_CellObject, "SideBar" ] := insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, "SideBar" ]
+
 insertCodeBelow[ cell_CellObject, evaluate_ ] :=
     If[ TrueQ @ CurrentChatSettings[ cell, "WorkspaceChat" ] || TrueQ @ CurrentChatSettings[ cell, "SideBarChat" ],
         insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, evaluate ],
@@ -955,6 +964,27 @@ insertCodeBelow // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*insertCodeInUserNotebook*)
 insertCodeInUserNotebook // beginDefinition;
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "SideBar" ] := Enclose[
+    Module[ { cellObj },
+        cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
+        (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
+        If[ cellObj =!= None && cellTaggedQ[ cellObj, { "SideBarDockedCell", "SideBarSubDockedCell", "SideBarScrollingContentCell", "SideBarChatInputCell", "SideBarTopCell", "NotebookAssistantSideBarCell" } ],
+            SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
+            cellObj = None
+        ];
+
+        If[ cellObj === None,
+            SelectionMove[ chatNB, After, Cell, AutoScroll -> True ];
+            NotebookWrite[ chatNB, preprocessInsertedCell @ cell, All ]
+            ,
+            insertAfterChatGeneratedCells[ cellObj, cell ]
+        ];
+
+        selectionEvaluateCreateCell @ chatNB
+    ],
+    throwInternalFailure
+];
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, evaluate_ ] := Enclose[
     Module[ { nbo, cellObj },

@@ -226,7 +226,7 @@ cellObjectQ[ ___             ] := False;
 (* ::Subsection::Closed:: *)
 (*cellTaggedQ*)
 cellTaggedQ[ cell_CellObject, tag_String       ] := cellTaggedQ[ cell, { tag } ];
-cellTaggedQ[ cell_CellObject, { tags__String } ] := MemberQ[ Flatten @ List @ AbsoluteCurrentValue[ cell, CellTags ], Alternatives @@ tags ];
+cellTaggedQ[ cell_CellObject, { tags__String } ] := MemberQ[ Flatten @ List @ AbsoluteCurrentValue[ cell, CellTags ], Alternatives @@ {tags} ];
 cellTaggedQ[ ___                               ] := False;
 
 (* ::**************************************************************************************************************:: *)
