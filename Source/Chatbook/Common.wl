@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
+System`HoldCompleteForm;
+
 (* :!CodeAnalysis::BeginBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
@@ -1078,7 +1080,7 @@ $bugReportStack := StringRiffle[
     Reverse @ Replace[
         DeleteAdjacentDuplicates @ Cases[
             Stack[ _ ],
-            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
+            (HoldForm|HoldCompleteForm)[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
                 AtomQ @ Unevaluated @ s && StringStartsQ[ Context @ s, "Wolfram`Chatbook`" ] :>
                     SymbolName @ Unevaluated @ s
         ],

@@ -721,9 +721,13 @@ cellToString[ Cell[ a__, "Message"|"MSG", b___ ] ] :=
     Module[ { string, stacks, stack, stackString },
         { string, stacks } = Reap[ cellToString0 @ Cell[ a, b ], $messageStack ];
         stack = First[ First[ stacks, $Failed ], $Failed ];
-        If[ MatchQ[ stack, { __HoldForm } ] && Length @ stack >= 3
+        If[ MatchQ[ stack, { (_HoldForm|_HoldCompleteForm).. } ] && Length @ stack >= 3
             ,
-            stackString = StringRiffle[ Cases[ stack, HoldForm[ expr_ ] :> stackFrameString @ expr ], "\n" ];
+            stackString = StringRiffle[
+                Cases[ stack, (HoldForm|HoldCompleteForm)[ expr_ ] :> stackFrameString @ expr ],
+                "\n"
+            ];
+
             needsBasePrompt[ "MessageStackTrace" ];
             TemplateApply[
                 $stackTraceTemplate,
@@ -3353,7 +3357,7 @@ makeGraphicsExpression[ gfx_ ] := Quiet @ Check[ ToExpression[ gfx, StandardForm
 (*sowMessageData*)
 sowMessageData[ { _, _, _, _, line_Integer, counter_Integer, session_Integer, __ } ] /; $includeStackTrace :=
     With[ { stack = MessageMenu`MessageStackList[ line, counter, session ] },
-        Sow[ stack, $messageStack ] /; MatchQ[ stack, { __HoldForm } ]
+        Sow[ stack, $messageStack ] /; MatchQ[ stack, { (_HoldForm|_HoldCompleteForm).. } ]
     ];
 
 sowMessageData[ ___ ] := Null;
