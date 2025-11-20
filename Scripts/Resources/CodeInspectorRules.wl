@@ -53,8 +53,10 @@ scanSingleArgThrow[ pos_, ast_ ] := Catch[
 (*walkASTForCatch*)
 walkASTForCatch // ClearAll;
 
-walkASTForCatch[ cp`CallNode[ cp`LeafNode[ Symbol, "Catch"|"Hold"|"HoldForm"|"HoldComplete", _ ], { _ }, _ ], _ ] :=
-    Throw[ { }, $tag ];
+walkASTForCatch[
+    cp`CallNode[ cp`LeafNode[ Symbol, "Catch"|"Hold"|"HoldForm"|"HoldComplete"|"HoldCompleteForm", _ ], { _ }, _ ],
+    _
+] := Throw[ { }, $tag ];
 
 walkASTForCatch[ ast_, pos_ ] :=
     Extract[ ast, pos ];
