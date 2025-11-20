@@ -47,7 +47,7 @@ $testingHeads = HoldPattern @ Alternatives[
 ];
 (* :!CodeAnalysis::EndBlock:: *)
 
-$testStack = With[ { h = $testingHeads }, HoldForm[ h[ ___ ] ] ];
+$testStack = With[ { h = $testingHeads }, (HoldForm|System`HoldCompleteForm)[ h[ ___ ] ] ];
 
 messageHandler[
     Hold @ Message[ Wolfram`PacletCICD`TestPaclet::Failures, ___ ],
