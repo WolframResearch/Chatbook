@@ -1957,7 +1957,7 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
     AttachCell[
         nbo,
         Cell[
-            BoxData @ ToBoxes @ attachedOverlayMenuFrame @ ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+            BoxData @ ToBoxes @ attachedOverlayMenuFrame[ nbo, None, ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ] ],
             "AttachedOverlayMenu",
             CellTags -> name,
             Magnification -> Dynamic @ AbsoluteCurrentValue[ nbo, Magnification ]
@@ -1979,7 +1979,7 @@ attachOverlayMenu[ nbo_NotebookObject, sideBarCell_CellObject, name_String ] := 
         AttachCell[
             anchor,
             Cell[
-                BoxData @ ToBoxes @ attachedOverlayMenuFrame @ ConfirmMatch[ overlayMenu[ nbo, sideBarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                BoxData @ ToBoxes @ attachedOverlayMenuFrame[ nbo, sideBarCell, ConfirmMatch[ overlayMenu[ nbo, sideBarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ] ],
                 "AttachedOverlayMenu",
                 CellTags -> name,
                 Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
@@ -1997,13 +1997,17 @@ attachOverlayMenu // endDefinition;
 
 attachedOverlayMenuFrame // beginDefinition;
 
-attachedOverlayMenuFrame[ content_ ] := Framed[
+attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Framed[
     content,
     Alignment    -> { Center, Top },
     Background   -> color @ "NA_NotebookBackground",
-    FrameMargins -> { { 5, 5 }, { 2000, 5 } },
+    FrameMargins -> { { 5, 5 }, { 5, 5 } },
     FrameStyle   -> color @ "NA_NotebookBackground",
-    ImageSize    -> { Scaled[ 1 ], Automatic }
+    If[ MatchQ[ appContainer, _CellObject ],
+        ImageSize -> Dynamic[ AbsoluteCurrentValue[ appContainer, "ViewSize" ]/(0.85*AbsoluteCurrentValue[ nbo, Magnification ]) ]
+        ,
+        ImageSize -> { Scaled[ 1 ], Automatic }
+    ]
 ]
 
 attachedOverlayMenuFrame // endDefinition;
@@ -2221,8 +2225,9 @@ historySearchView[ nbo_NotebookObject, appContainer_, Dynamic[ searching_ ], Dyn
                 Background -> { color @ "NA_OverlayMenuHeaderBackground", color @ "NA_OverlayMenuBackground" },
                 Dividers   -> { None, { 2 -> color @ "NA_OverlayMenuFrame" } }
             ],
+            Background     -> color @ "NA_OverlayMenuBackground",
             RoundingRadius -> 3,
-            FrameMargins   -> 0,
+            FrameMargins   -> { { 0, 0 }, { 5, 0 } },
             FrameStyle     -> color @ "NA_OverlayMenuFrame"
         ]
     ],
@@ -2415,7 +2420,20 @@ makeDefaultHistoryView[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dyn
             Alignment          -> { Center, Top },
             AppearanceElements -> { },
             FrameMargins       -> { { 0, 0 }, { 5, 5 } },
-            ImageSize          -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] },
+            If[ MatchQ[ appContainer, _CellObject ],
+                With[ { dc = First[ Cells[ appContainer ] ] },
+                    ImageSize -> Dynamic[
+                            {
+                                Scaled[ 1. ],
+                                UpTo @ Round[
+                                    (AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                    - 40 (* history menu header and frame margins at 100% magnification *)
+                                    - AbsoluteCurrentValue[ dc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                                ] } ]
+                ]
+                ,
+                ImageSize -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] }
+            ],
             Scrollbars         -> Automatic
         ],
 
@@ -2515,9 +2533,10 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                 title,
                 Style[ timeString, FontColor -> color @ "NA_OverlayMenuFontSubtle" ]
             } },
-            Alignment -> { { Left, Right }, Baseline },
-            BaseStyle -> { "Text", FontSize -> 14, LineBreakWithin -> False },
-            ItemSize  -> Fit
+            Alignment        -> { { Left, Right }, Baseline },
+            BaselinePosition -> { { 1, 1 }, Baseline },
+            BaseStyle        -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+            ItemSize         -> Fit
         ];
 
         hover = Grid[
@@ -2525,37 +2544,42 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                 Button[
                     title,
                     loadConversation[ nbo, appContainer, chat ],
-                    Alignment  -> Left,
-                    Appearance -> "Suppressed",
-                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
-                    Method     -> "Queued"
+                    Alignment        -> Left,
+                    Appearance       -> "Suppressed",
+                    BaseStyle        -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                    BaselinePosition -> Baseline,
+                    Method           -> "Queued"
                 ],
                 Grid[
                     { {
                         Button[
                             $popOutButtonLabel,
                             popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
-                            Appearance -> "Suppressed",
-                            Method     -> "Queued"
+                            Appearance       -> "Suppressed",
+                            BaselinePosition -> Center -> Center,
+                            Method           -> "Queued"
                         ],
                         Button[
                             $trashButtonLabel,
                             DeleteChat @ chat;
                             removeChatFromRows[ Dynamic @ chats, chat ],
-                            Appearance -> "Suppressed",
-                            Method     -> "Queued"
+                            Appearance       -> "Suppressed",
+                            BaselinePosition -> Center -> Center,
+                            Method           -> "Queued"
                         ]
-                    } }
+                    } },
+                    BaselinePosition -> { { 1, 1 }, Baseline }
                 ]
             } },
-            Alignment  -> { { Left, Right }, Baseline },
-            Background -> color @ "NA_OverlayMenuItemBackgroundHover",
-            ItemSize   -> Fit
+            Alignment        -> { { Left, Right }, Baseline },
+            Background       -> color @ "NA_OverlayMenuItemBackgroundHover",
+            BaselinePosition -> { { 1, 1 }, Baseline },
+            ItemSize         -> Fit
         ];
 
         {
             Style[ Spacer[ 3 ], TaggingRules -> <| "ConversationUUID" -> chat[ "ConversationUUID" ] |> ],
-            Mouseover[ default, hover ],
+            Mouseover[ default, hover, BaselinePosition -> Baseline ],
             Spacer[ 3 ]
         }
     ],
