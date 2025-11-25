@@ -91,31 +91,6 @@ scopedTrackedDynamic[ expr_, args___ ] :=
 scopedTrackedDynamic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*currentTabPageDynamic*)
-currentTabPageDynamic // beginDefinition;
-currentTabPageDynamic // Attributes = { HoldFirst };
-
-currentTabPageDynamic[ scope_ ] := expandScope @ Dynamic[
-    Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
-    (CurrentChatSettings[ scope, "CurrentPreferencesTab" ] = #1) &
-];
-
-currentTabPageDynamic // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*currentTabPage*)
-currentTabPage // beginDefinition;
-
-currentTabPage[ scope_ ] := Replace[
-    CurrentChatSettings[ scope, "CurrentPreferencesTab" ],
-    $$unspecified -> "Services"
-];
-
-currentTabPage // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Main*)
 
@@ -134,35 +109,42 @@ createPreferencesContent[ ] := Enclose[
             "Tabs"
         ];
 
-        (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
-        tabView = TabView[
-            tabs,
-            currentTabPageDynamic @ $preferencesScope,
-            Background   -> None,
-            FrameMargins -> { { 2, 2 }, { 2, 3 } },
-            ImageMargins -> { { 10, 10 }, { 2, 2 } },
-            ImageSize    -> { $preferencesWidth, Automatic },
-            LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
-        ];
+        DynamicModule[ { tab },
 
-        (* Create a reset button that will reset preferences to default settings: *)
-        reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
+            (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
+            tabView = TabView[
+                tabs,
+                Dynamic @ tab,
+                Background   -> None,
+                FrameMargins -> { { 2, 2 }, { 2, 3 } },
+                ImageMargins -> { { 10, 10 }, { 2, 2 } },
+                ImageSize    -> { $preferencesWidth, Automatic },
+                LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
+            ];
 
-        (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
-        makeScrollableInCloud @ Grid[
-            {
-                $verticalSpacer,
-                { tabView, "" },
-                $verticalSpacer,
-                { reset, SpanFromLeft },
-                $verticalSpacer
-            },
-            Alignment  -> Left,
-            BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
-            AutoDelete -> False,
-            FrameStyle -> { AbsoluteThickness[ 1 ], color @ "PreferencesContentFrame" },
-            Dividers   -> { False, { 4 -> True } },
-            Spacings   -> { 0, 0.7 }
+            (* Create a reset button that will reset preferences to default settings: *)
+            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
+
+            (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
+            makeScrollableInCloud @ Grid[
+                {
+                    $verticalSpacer,
+                    { tabView, "" },
+                    $verticalSpacer,
+                    { reset, SpanFromLeft },
+                    $verticalSpacer
+                },
+                Alignment  -> Left,
+                BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
+                AutoDelete -> False,
+                FrameStyle -> { AbsoluteThickness[ 1 ], color @ "PreferencesContentFrame" },
+                Dividers   -> { False, { 4 -> True } },
+                Spacings   -> { 0, 0.7 }
+            ],
+
+            Initialization :> (tab = Replace[ CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]),
+            Deinitialization :> (CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ] = tab)
+
         ]
     ],
     throwInternalFailure
@@ -510,10 +492,10 @@ makeServiceSelector[
     Dynamic[ state_ ],
     services_
 ] :=
-    DynamicModule[ { displayValue = expandScope @ extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] },
+    DynamicModule[ { changedValueQ = False, displayValue = expandScope @ extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] },
         DynamicWrapper[
             PopupMenu[
-                Dynamic @ displayValue,
+                Dynamic[ displayValue, Function[ If[ displayValue =!= #, displayValue = #; changedValueQ = True ] ] ],
                 (* ensure LLMKit is first in the popup followed by a delimiter *)
                 Replace[
                     KeyValueMap[
@@ -522,11 +504,11 @@ makeServiceSelector[
                     ],
                     { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
             ]
-            ,
-            serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] @ displayValue
+            , (* we only want this asynchronous evaluation to fire if we've changed from the initial value of the service *)
+            If[ changedValueQ, changedValueQ = False; serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] @ displayValue ]
             ,
             SynchronousUpdating -> False,
-            TrackedSymbols      :> { displayValue }
+            TrackedSymbols      :> { changedValueQ }
         ]
     ];
 
@@ -642,6 +624,7 @@ makeModelNameSelector[
 
         DynamicModule[
             {
+                changedValueQ = False,
                 displayValue = expandScope @ Replace[
                     extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
                     Except[ _String ] :> (CurrentChatSettings[ $preferencesScope, "Model" ] = fallback)
@@ -649,17 +632,17 @@ makeModelNameSelector[
             },
             DynamicWrapper[
                 PopupMenu[
-                    Dynamic @ displayValue,
+                    Dynamic[ displayValue, Function[ If[ displayValue =!= #, displayValue = #; changedValueQ = True ] ] ],
                     Block[ { $noIcons = TrueQ @ $cloudNotebooks },
                         Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
                     ],
                     ImageSize -> Automatic
                 ]
-                ,
-                modelSelectCallback[ Dynamic @ service, Dynamic @ model ] @ displayValue
+                , (* we only want this asynchronous evaluation to fire if we've changed from the initial value of the model name *)
+                If[ changedValueQ, changedValueQ = False; modelSelectCallback[ Dynamic @ service, Dynamic @ model ] @ displayValue ]
                 ,
                 SynchronousUpdating -> False,
-                TrackedSymbols      :> { displayValue }
+                TrackedSymbols      :> { changedValueQ }
             ]
         ]
     ],
@@ -1925,8 +1908,8 @@ $trashBin := Mouseover[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$resetButton*)
-$resetButton :=
+(*resetButton*)
+resetButton[ Dynamic[ tab_ ] ] :=
     Module[ { icon, label },
         icon = Style[
             Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "SyntaxColorResetIcon" ][ # ] ]&[
@@ -1945,7 +1928,7 @@ $resetButton :=
             label,
 
             Needs[ "Wolfram`Chatbook`" -> None ];
-            resetChatPreferences @ currentTabPage @ $preferencesScope
+            resetChatPreferences @ Replace[ tab, CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]
             ,
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
