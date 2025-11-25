@@ -40,6 +40,8 @@ $syntargs := $syntargs = 	{Import[PacletObject["Wolfram/Chatbook"]["AssetLocatio
 							,"EchoFunction"->{_,_:""}
 							} // Association
 
+$systemOptions := $systemOptions = Import[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxOptions"], "WXF"]
+
 $FixRecursionLimit=10;
 
 (*Possible targets*)
@@ -428,7 +430,7 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalUnexpectedCloser, 
 		, "SafeToEvaluate" -> If[success, True, False]
 		, "FixedPattern" -> pat
 		, "FixedCode" -> fixedCode
-		, If[Wolfram`Chatbook`CodeCheck`$Debug,
+		, If[TrueQ@Wolfram`Chatbook`CodeCheck`$CodeCheckDebug,
 			{"AllCodeScore" -> Iconize@allCodeScore, "AllCodeNoScore" -> Iconize@allCodeNoScore},{}]
 		} // Flatten // Association
 ]]
@@ -499,7 +501,7 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 			, "SafeToEvaluate" -> If[success, True, False]
 			, "FixedPattern" -> pat
 			, "FixedCode" -> fixedCode
-			, If[Wolfram`Chatbook`CodeCheck`$Debug,
+			, If[TrueQ@Wolfram`Chatbook`CodeCheck`$CodeCheckDebug,
 				{"AllCodeScore" -> Iconize@allCodeScore, "AllCodeNoScore" -> Iconize@allCodeNoScore},{}]
 			} // Flatten // Association
 	]]
@@ -507,15 +509,15 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 
 scoreAndSort[codes:{_String..}]:=Map[{scoreArgs@#,#}&,codes]//ReverseSortBy[{First}]
 
-scoreArgs[code_String]:=Cases[CodeConcreteParse[code], CallNode[List@LeafNode[_, funcname_, _], _, _], {0, Infinity}] //
+scoreArgs[code_String]:=Cases[CodeConcreteParse[code//EchoLabel["fixed code to score:"]], CallNode[List@LeafNode[_, funcname_, _], _, _], {0, Infinity}] //
 						scoreArgsCallNode
 
 scoreArgsCallNode[cn:{_CallNode..}]:=scoreArgsCallNode/@cn //dechofunction["callnodes subscores:",{#,Total@#}&]//Total
-scoreArgsCallNode[cn_CallNode]:=$syntargs@funcNameCallNode[cn]//
-								If[MissingQ@#, Nothing, scoreArgsPattern[argsCallNode@cn,#]]&//
+scoreArgsCallNode[cn_CallNode]:=$syntargs[funcNameCallNode[cn]//EchoLabel["function:"]]//EchoLabel["syntargs"]//
+								If[MissingQ@#, Nothing, scoreArgsPattern[argsCallNode@cn,#, funcNameCallNode[cn]]]&//
 								If[#===0,decho[funcNameCallNode[cn],"Score: failed match:"];#,#]&
 
-scoreArgsPattern[expr:{___,Rule..}, pattern:{___,Verbatim[Rule...]}]:=
+(* scoreArgsPattern[expr:{___,Rule..}, pattern:{___,Verbatim[Rule...]}]:=
 	Block[{$rules,$whole},
 			With[
 				{
@@ -525,15 +527,27 @@ scoreArgsPattern[expr:{___,Rule..}, pattern:{___,Verbatim[Rule...]}]:=
 								):> {$whole,Length@{$rules}}
 				},
 				Cases[expr,pattRules,{0}]]//
-				ReplaceAll[{{}->0,{{_,len_}}:>1+len/4.}]]
+				ReplaceAll[{{}->0,{{_,len_}}:>1+len/4.}]] *)
 
-scoreArgsPattern[expr_, pattern_]:= MatchQ[expr, pattern]//Boole
+scoreArgsPattern[expr:{___,_Rule..},pattern:{___,Verbatim[Rule...]}, funcname_String]:=
+	Block[{$rules,$whole},
+			With[
+				{pattRules= (pattern/. 	{Verbatim[Rule...]:>Pattern[$rules,_Rule...]
+										,Verbatim[_:"def"]:>Optional[Except[_Rule,_],"def"]
+										}//Pattern[$whole,#]&
+							):>{$whole,{$rules}//Map[Last]//EchoLabel["scoreArgsPattern"]//Select[MemberQ[$systemOptions[funcname],#]&]//Length}
+				}
+				,
+				Cases[expr,pattRules,{0}]] // ReplaceAll[{{}->0,{{_,len_}}:>1+len/4.}]]
+
+
+scoreArgsPattern[expr_, pattern_, _]:= MatchQ[expr, pattern]//Boole
 
 argsCallNode[CallNode[_,GroupNode[GroupSquare,{LeafNode[Token`OpenSquare,"[",so_],___, InfixNode[Comma, a_List, _], __},_],_]]:= argsCallNode[a]
 
 argsCallNode[CallNode[_,GroupNode[GroupSquare,{LeafNode[Token`OpenSquare,"[",so_],a___,LeafNode[Token`CloseSquare,"]",_]},_],_]]:= argsCallNode[{a}]
 
-argsCallNode[args_List]:=
+(* argsCallNode[args_List]:=
 (
 	args
 	//
@@ -544,7 +558,39 @@ argsCallNode[args_List]:=
 	Replace[#,GroupNode[List,{LeafNode[Token`OpenCurly,"{",_],Rule,LeafNode[Token`CloseCurly,"}",_]},_]:>Rule,Infinity]&
 	//
 	Replace[#,Except[Rule,_]->"arg",Infinity]&
+) *)
+
+argsCallNode[args_List]:=
+(
+	args
+	//
+	DeleteCases[#, LeafNode[Token`Comma | Whitespace | Token`Newline| Token`Comment, __], Infinity]&
+	//
+	Replace[#, {BinaryNode[Rule | RuleDelayed, {LeafNode[_,optname_,_], _, _}, _] :> (Rule->optname)}, Infinity]&
+	//
+	Replace[#, GroupNode[List, {
+								  LeafNode[Token`OpenCurly, "{", _]
+								, opt_Rule
+								, LeafNode[Token`CloseCurly, "}", _]
+								}
+							,
+							_
+						]
+						:> opt ,Infinity]&
+	//
+	Replace[#,GroupNode[List,	{
+								  LeafNode[Token`OpenCurly,"{",_]
+								, InfixNode[Comma,{r:(Rule->_)..},_]
+								, LeafNode[Token`CloseCurly,"}",_]
+								}
+							,_
+						]
+						:> r, {1}]&
+	//
+	Replace[#, Except[_Rule, _] -> "arg", {1}]&
+	//EchoLabel["argsCallNode"]
 )
+
 funcNameCallNode[CallNode[{LeafNode[_,funcname_,_]}, _,_]]=funcname;
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
