@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`Personas`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$headlessChat             := ! TrueQ @ $ChatNotebookEvaluation;
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
@@ -59,15 +60,17 @@ AgentEvaluate // endExportedDefinition;
 chatEvaluateHeadless // beginDefinition;
 
 chatEvaluateHeadless[ messages0_, settings_? AssociationQ ] := Enclose[
-    ChatEvaluationBlock[
-        Module[ { messages, as, container },
-            messages = ConfirmMatch[ ensureChatMessages @ messages0, $$chatMessages, "Messages" ];
-            as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ];
-            catchAlways @ waitForLastTask @ $CurrentChatSettings;
-            container = ConfirmBy[ as[ "Container" ], AssociationQ, "Container" ];
-            StringTrim @ ConfirmBy[ container[ "FullContent" ], StringQ, "ResultString" ]
-        ],
-        settings
+    Block[ { $headlessChat = True },
+        ChatEvaluationBlock[
+            Module[ { messages, as, container },
+                messages = ConfirmMatch[ ensureChatMessages @ messages0, $$chatMessages, "Messages" ];
+                as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ];
+                catchAlways @ waitForLastTask @ $CurrentChatSettings;
+                container = ConfirmBy[ as[ "Container" ], AssociationQ, "Container" ];
+                StringTrim @ ConfirmBy[ container[ "FullContent" ], StringQ, "ResultString" ]
+            ],
+            settings
+        ]
     ],
     throwInternalFailure
 ];
@@ -1154,7 +1157,7 @@ checkFinishReason // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*feTaskQ*)
 feTaskQ // beginDefinition;
-feTaskQ[ settings_ ] /; $chatEvaluationBlock := False;
+feTaskQ[ settings_ ] /; $headlessChat := False;
 feTaskQ[ settings_ ] := feTaskQ[ settings, settings[ "NotebookWriteMethod" ] ];
 feTaskQ[ settings_, "ServiceLink"    ] := False;
 feTaskQ[ settings_, "PreemptiveLink" ] := True;
@@ -1313,6 +1316,8 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
+    "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
+    StartOfLine ~~ "/functions." -> "/",
     $longNameCharacters
 };
 
@@ -1447,7 +1452,7 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
-writeResult[ settings_, container_, cell_, as_ ] /; $chatEvaluationBlock := (
+writeResult[ settings_, container_, cell_, as_ ] /; $headlessChat := (
     appendCitations[ Unevaluated @ container, settings ];
     Null
 );

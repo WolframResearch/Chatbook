@@ -1214,7 +1214,7 @@ mergeMessages[ messages: { first_Association, __Association } ] := Enclose[
 
         merged = ConfirmMatch[ mergeCodeBlocks @ content, { (_String|_Association)... }, "Merged" ];
 
-        <| "Role" -> role, "Content" -> merged |>
+        <| first, "Role" -> role, "Content" -> merged |>
     ],
     throwInternalFailure
 ];
