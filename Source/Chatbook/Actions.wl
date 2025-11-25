@@ -490,30 +490,6 @@ EvaluateChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*mergeToolCallMessages*)
-mergeToolCallMessages // beginDefinition;
-
-mergeToolCallMessages[ messages_List ] := SequenceReplace[
-    DeleteCases[ messages, _? temporaryMessageQ ],
-    {
-        {
-            KeyValuePattern[ "ToolRequest"  -> True ],
-            KeyValuePattern[ "ToolResponse" -> True ],
-            msg: KeyValuePattern[ "Role" -> "Assistant" ]
-        } :> msg,
-
-        {
-            KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolRequest"  -> True ] ],
-            KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolResponse" -> True ] ],
-            msg: KeyValuePattern[ "Role" -> "Assistant" ]
-        } :> msg
-    }
-];
-
-mergeToolCallMessages // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*applyChatPost*)
 applyChatPost // beginDefinition;
 

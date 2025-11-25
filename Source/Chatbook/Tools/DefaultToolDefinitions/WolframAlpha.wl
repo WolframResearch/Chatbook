@@ -20,7 +20,11 @@ $wolframAlphaIcon = chatbookIcon[ "ToolIconWolframAlpha", False ];
 (*Description*)
 $wolframAlphaDescription = "\
 Use natural language queries with Wolfram|Alpha to get up-to-date computational results about entities in chemistry, \
-physics, geography, history, art, astronomy, and more.";
+physics, geography, history, art, astronomy, and more.
+IMPORTANT: If you need the results of multiple queries, it's important that you combine them into a single tool call \
+whenever possible to save on token usage and time.";
+
+$queryHelp = "The query (or queries) to send to Wolfram|Alpha. Separate multiple queries with tab characters (\\t).";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -33,12 +37,12 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
     "DisplayName"        -> "Wolfram|Alpha",
     "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> wolframAlphaResultFormatter,
-    "Function"           -> getWolframAlphaText,
+    "Function"           -> wolframAlphaToolEvaluate,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
-            "Help"        -> "the input",
+            "Help"        -> $queryHelp,
             "Required"    -> True
         |>,
         "steps" -> <|
@@ -60,9 +64,12 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
 $defaultPods           := toolOptionValue[ "WolframAlpha", "DefaultPods"     ];
 $foldPods              := toolOptionValue[ "WolframAlpha", "FoldPods"        ];
 $maximumWAPodByteCount := toolOptionValue[ "WolframAlpha", "MaxPodByteCount" ];
+$plaintextOnly         := toolOptionValue[ "WolframAlpha", "PlaintextOnly"   ];
 
 $moreDetailsPlusIcon  := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialOpenerIcon" ];
 $moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialCloserIcon" ];
+
+$stringResult := ! TrueQ @ $ChatNotebookEvaluation || TrueQ @ $headlessChat || TrueQ @ $plaintextOnly;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -70,13 +77,32 @@ $moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blu
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getWolframAlphaText*)
-getWolframAlphaText // beginDefinition;
+(*wolframAlphaToolEvaluate*)
+wolframAlphaToolEvaluate // beginDefinition;
 
-getWolframAlphaText[ as_Association ] :=
-    getWolframAlphaText[ as[ "query" ], as[ "steps" ] ];
+wolframAlphaToolEvaluate[ as_Association ] :=
+    catchTop @ LogChatTiming @ wolframAlphaToolEvaluate[ as[ "query" ], as[ "steps" ] ];
 
-getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
+wolframAlphaToolEvaluate[ query_String, steps_ ] :=
+    wolframAlphaToolEvaluate0[ DeleteCases[ StringTrim @ StringSplit[ query, "\t"|"\\t" ], "" ], steps ];
+
+wolframAlphaToolEvaluate // endDefinition;
+
+
+wolframAlphaToolEvaluate0 // beginDefinition;
+
+wolframAlphaToolEvaluate0[ queries: { __String }, steps: True|False|_Missing ] /; $stringResult := Enclose[
+    ConfirmBy[ getWolframAlphaResults[ queries, "Text", "StepByStep" -> steps ], StringQ, "Result" ],
+    throwInternalFailure
+];
+
+wolframAlphaToolEvaluate0[ queries: { __String }, steps: True|False|_Missing ] :=
+    If[ Length @ queries === 1,
+        wolframAlphaToolEvaluate0[ First @ queries, steps ],
+        Block[ { $stringResult = True }, wolframAlphaToolEvaluate0[ queries, steps ] ]
+    ];
+
+wolframAlphaToolEvaluate0[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string, url },
         result = wolframAlpha[ query, steps ];
         data = WolframAlpha[
@@ -84,29 +110,29 @@ getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
             PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
         ];
-        string = getWolframAlphaText[ query, steps, data ];
+        string = wolframAlphaToolEvaluate0[ query, steps, data ];
         url = StringReplace[ URLBuild[ "https://www.wolframalpha.com/input", <| "i" -> query |> ], "%20" -> "+" ];
         AddToSources[ url, string ];
-        getWolframAlphaText[ query, steps ] = <| "Result" -> result, "String" -> string |>
+        wolframAlphaToolEvaluate0[ query, steps ] = <| "Result" -> result, "String" -> string |>
     ];
 
-getWolframAlphaText[ query_String, steps_, { } ] :=
+wolframAlphaToolEvaluate0[ query_String, steps_, { } ] :=
     "No results returned";
 
-getWolframAlphaText[ query_String, steps_, info_List ] :=
-    getWolframAlphaText[
+wolframAlphaToolEvaluate0[ query_String, steps_, info_List ] :=
+    wolframAlphaToolEvaluate0[
         query,
         steps,
         Quiet[ associationKeyDeflatten[ makeKeySequenceRule /@ info ], AssociationMap::invrlf ]
     ];
 
-getWolframAlphaText[ query_String, steps_, as_Association? AssociationQ ] :=
-    getWolframAlphaText[ query, steps, waResultText @ as ];
+wolframAlphaToolEvaluate0[ query_String, steps_, as_Association? AssociationQ ] :=
+    wolframAlphaToolEvaluate0[ query, steps, waResultText @ as ];
 
-getWolframAlphaText[ query_String, steps_, result_String ] :=
+wolframAlphaToolEvaluate0[ query_String, steps_, result_String ] :=
     result;
 
-getWolframAlphaText // endDefinition;
+wolframAlphaToolEvaluate0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -249,13 +275,13 @@ FormatWolframAlphaPods = formatWolframAlphaPods;
 wolframAlphaResultFormatter // beginDefinition;
 
 wolframAlphaResultFormatter[ query_String, "Parameters", "query" ] :=
-    clickToCopy @ query;
+    clickToCopy @ StringRiffle[ DeleteCases[ StringTrim @ StringSplit[ query, "\t"|"\\t" ], "" ], "\n" ];
 
 wolframAlphaResultFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
     wolframAlphaResultFormatter[ result, "Result" ];
 
 wolframAlphaResultFormatter[ result_, "Result" ] :=
-    formatWolframAlphaPods @ result;
+    compressUntilViewed @ Unevaluated @ formatWolframAlphaPods @ result;
 
 wolframAlphaResultFormatter[ expr_, ___ ] :=
     expr;
@@ -267,8 +293,25 @@ wolframAlphaResultFormatter // endDefinition;
 (*formatWolframAlphaPods*)
 formatWolframAlphaPods // beginDefinition;
 
+formatWolframAlphaPods[ { result_ } ] :=
+    formatWolframAlphaPods @ result;
+
 formatWolframAlphaPods[ expr: _Missing|_Failure|$Failed ] :=
-    expr;
+    clickToCopy @ expr;
+
+formatWolframAlphaPods[ result_String ] :=
+    toolAutoFormatter[
+        StringReplace[
+            result,
+            {
+                StartOfLine~~"#" -> "##",
+                Shortest[ "<result query='" ~~ query__ ~~ "' url='" ~~ url__ ~~ "'>" ] :> "# ["<>query<>"]("<>url<>")",
+                "\n</result>\n" -> "\n---\n",
+                "</result>"~~EndOfString -> ""
+            }
+        ],
+        "Result"
+    ];
 
 formatWolframAlphaPods[ info_Association ] :=
     formatWolframAlphaPods[ info[ "Query" ], info[ "Pods" ], $dynamicText ];

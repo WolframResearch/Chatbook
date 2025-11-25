@@ -37,8 +37,13 @@ ChatMessageToCell // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*chatMessagesToCells*)
 chatMessagesToCells // beginDefinition;
-chatMessagesToCells[ messages_, None|Automatic ] := chatMessagesToCells[ messages, "Default" ];
-chatMessagesToCells[ messages_, format_ ] := chatMessageToCell[ #, format ] & /@ revertMultimodalContent @ messages;
+
+chatMessagesToCells[ messages_, None|Automatic ] :=
+    chatMessagesToCells[ messages, "Default" ];
+
+chatMessagesToCells[ messages_, format_ ] :=
+    chatMessageToCell[ #, format ] & /@ revertMultimodalContent @ mergeToolCallMessages @ messages;
+
 chatMessagesToCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -61,6 +66,30 @@ chatMessageToCell[ role_String, content_, format_ ] := Enclose[
 ];
 
 chatMessageToCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeToolCallMessages*)
+mergeToolCallMessages // beginDefinition;
+
+mergeToolCallMessages[ messages_List ] := SequenceReplace[
+    DeleteCases[ messages, _? temporaryMessageQ ],
+    {
+        {
+            KeyValuePattern[ "ToolRequest"  -> True ],
+            _,
+            msg: KeyValuePattern[ "Role" -> "Assistant" ]
+        } :> msg,
+
+        {
+            KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolRequest"  -> True ] ],
+            _,
+            msg: KeyValuePattern[ "Role" -> "Assistant" ]
+        } :> msg
+    }
+];
+
+mergeToolCallMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
