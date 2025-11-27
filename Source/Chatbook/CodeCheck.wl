@@ -72,11 +72,19 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 												 (*2/4*)"Warning"
 												,(*1/4*)"Remark"
 												,(*0/4*)"ImplicitTimes","Formatting" ,"Scoping"
-												},
+												}
+					,
 					"TagExclusions" -> {"SetInfixInequality" 		(* cases like: a = b==c *)
 										,"ImplicitTimesPseudoCall"	(* cases like: a (b+c)*)
-										},
+										,"ImplicitTimesBlanks"
+										}
+					,
 					SourceConvention -> "SourceCharacterIndex"
+					,
+					"AbstractRules" -> <|
+										pSingleSnakeInSet -> scanSingleSnakeInSet (* detect bad single snake usage inside Set *),
+										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *)
+										|>
 						};
 
 
@@ -121,7 +129,7 @@ CodeFix[target_][
 		,kvCI:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->_}]
 		,params_:<||>
 		]:=
-		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]]]
+		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]//EchoLabel["generatePatternFromCodeCheck"]]]
 
 CodeFix[target_][
 		code_String
@@ -150,9 +158,12 @@ CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:
 	]
 
 generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->KeyValuePattern[{"InspectionObjects"->ios_}]}]]:=
-	 ios // Map[Apply[List]] // #[[All,{3,1}]]& // Sort
+	 ios // Map[extractPatternFromInspectionObject] // Sort
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
+
+extractPatternFromInspectionObject[io:InspectionObject["BadSetSnakeUsage"|"BadSnakeUsage",__]]:=Apply[Sequence,io]//({#3,#1}->#4[Source])&
+extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
 lengthErrors[f_Failure]:=f
@@ -359,7 +370,7 @@ fixPattern[target_][code_String, pat : $patternFatalGroupMissingCloserFatalUnexp
 							ReplaceAll[ccp,Extract[gmc, Most@posUC[[1]]] -> ErrorNode[Token`Error`UnexpectedCloser, newClosingBracket, _]]
        				] // ToSourceCharacterString
 				;
-    			success = 	And[ 	codeFixed =!= FailureQ
+    			success = 	And[ 	Not@FailureQ@codeFixed
 									,
 									MatchQ[
 											SequenceAlignment[code, codeFixed] // DeleteCases[#, _String, {1}] &
@@ -593,18 +604,8 @@ argsCallNode[args_List]:=
 
 funcNameCallNode[CallNode[{LeafNode[_,funcname_,_]}, _,_]]=funcname;
 
-(* FIX PATTERN ----------------------------------------------------------------------- *)
+(*---------------------------------------------------*)
 
-fixPattern[target_][_String, pat_]:=
-							{ "Success" -> False
-							, "TotalFixes" -> 0
-							, "LikelyFalsePositive" -> False
-							, "SafeToEvaluate" -> False
-							, "FixedPattern" -> pat
-							, "FixedCode" -> Missing["Pattern not handled",pat]
-							} // Association
-
-(* ----------------------------------------------------------------------------------- *)
 checkFunctionsSyntax[code_String]:=
 	Module[{cpp=CodeConcreteParse[code]},
 		code//
@@ -634,7 +635,184 @@ argsCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],args_List,_]]:=
 
 funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname
 
-(*---------------------------------------------------*)
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$patternBadSetSnakeUsage = {___, {"Fatal", "BadSetSnakeUsage"}->_, ___};
+
+fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSetSnakeUsage"}->so_, ___}, patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing[]
+			,success=False
+			,finalgnso
+			}
+			,
+			With[
+				{
+				ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]
+				}
+				,
+				{
+				nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
+				}
+				,
+				{
+				newName = Cases[nodeCCP, _String, Infinity] // DeleteCases["_" | "__" | "___"] // StringJoin[First@#, Capitalize@Rest@#] &
+				}
+				,
+				fixedCode=ReplaceAll[ccp, (nodeCCP /. _Association -> _) -> LeafNode[Symbol, newName, <||>]] // ToSourceCharacterString
+			]
+			;success=If[FailureQ@fixedCode,False,True]
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+
+	]
+
+
+
+(* BAD SNAKE USAGE*)
+pSingleSnakeInSet=
+	Alternatives[
+				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{LeafNode[Symbol,_,_]},_]},_],__},_]
+				,
+				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Times",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{},_]},_],LeafNode[Integer,_,_]},_],__},_]
+				,
+				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Times",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{},_]},_],LeafNode[Integer,_,_],LeafNode[Symbol,_,_]},_],__},_]
+	]
+
+scanSingleSnakeInSet // ClearAll;
+scanSingleSnakeInSet[pos_, ast_] :=
+(
+  	Echo["SET BAD SNAKE"];
+  	If[
+		Extract[ast,Flatten[{pos, 2, 1, 2}]] // Echo //
+					Cases[#, (LeafNode | CallNode)[__, <|Source -> {s1_, s2_}|>] :> {s1-1, s2}, {1}] & // EchoLabel["{s1,s2}"] //
+					BlockMap[#[[1, 2]] === #[[2, 1]] &, #, 2, 1] & // Echo //
+					Replace[{}->{False}]//Apply[And] // TrueQ
+		,
+   		CodeInspector`InspectionObject["BadSetSnakeUsage","Bad Snake Usage", "Fatal",
+										Association@{ConfidenceLevel -> 1,Extract[ast, Join[pos, {2, 1, -1}]]}]
+		,
+   		Nothing
+   ]
+)
+(* -------- *)
+$patternBadSnakeUsage = {___, {"Fatal", "BadSnakeUsage"}->_, ___};
+
+fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSnakeUsage"}->so_, ___}, patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing[]
+			,success=True
+			,finalgnso
+			}
+			,
+			Echo["FIX BadSnakeUsage "];
+			With[
+				{
+				ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]
+				}
+				,
+				{
+				nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
+				}
+				,
+				{
+				newNode = 	Cases[nodeCCP, _LeafNode, Infinity] //
+							Replace[{pMulti : Longest@PatternSequence[LeafNode[Except[Token`Comment | Whitespace], __] ..], r___} :>
+									{Cases[{pMulti}, _String, {2}] //
+							DeleteCases["_" | "__" | "___"] // Echo //
+       						StringJoin[First@#, Capitalize@Rest@#] & //
+							LeafNode[Symbol, #, <||>] &, r}] // InfixNode[Times, #, _] &
+				}
+				,
+				fixedCode=ccp /. (nodeCCP /. _Association->_) -> newNode // ToSourceCharacterString
+			]
+			;success=If[FailureQ@fixedCode,False,True]
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+
+	]
+
+pMultiSnake=
+	CallNode[LeafNode[Symbol, "Times", _]
+    		,
+    		{
+          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
+													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_ ]
+													   },_]|
+			CallNode[LeafNode[Symbol, "Pattern", <||>],{ LeafNode[Symbol, _, _]
+														,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_]},_]
+        	,
+          	(
+                CallNode[LeafNode[Symbol, "Pattern", <||>],{ LeafNode[Symbol, _, _]
+															,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_]},_]|
+				LeafNode[Integer, _, _] |
+				CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_] |
+				CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_] |
+				LeafNode[Symbol, _, _]
+            ) ..
+  			}
+     		,_
+	]
+pMultiSnake2=
+	CallNode[LeafNode[Symbol, "Times", _]
+    		,
+    		{
+          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
+													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
+													   			, {} | {LeafNode[Symbol, _, _]} ,_ ]
+													   },_]
+        	,
+          	(
+          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
+													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
+													   			, {} | {LeafNode[Symbol, _, _]} ,_ ]
+													   },_] |
+			LeafNode[Integer | Symbol , _, _] |
+			CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{} | {LeafNode[Symbol, _, _]},_]
+            ) ..
+  			}
+     		,_
+	]
+
+pSingleNotMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
+
+scanMultiSnake // ClearAll;
+scanMultiSnake[pos_, ast_] :=
+(
+    Echo["BAD MULTI SNAKE"];
+    Echo[pos, "pos:"];
+    Echo[ast, "ast:"];
+    Echo[Extract[ast, pos]];
+    If[MatchQ[Extract[ast, pos], pSingleNotMulti]
+   		,Echo["Rejected!"]; Nothing(* CodeInspector`InspectionObject["TagTimesInSet", "Tag Times Protected","Fatal",#]& *)
+		,CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
+			Association@{ConfidenceLevel -> 1, Extract[ast, Echo@Join[pos, {-1}]]}]]
+);
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+
+fixPattern[target_][_String, pat_]:=
+							{ "Success" -> False
+							, "TotalFixes" -> 0
+							, "LikelyFalsePositive" -> False
+							, "SafeToEvaluate" -> False
+							, "FixedPattern" -> pat
+							, "FixedCode" -> Missing["Pattern not handled",pat]
+							} // Association
+
+(* ----------------------------------------------------------------------------------- *)
 
 
 (*------- For debugging*)
