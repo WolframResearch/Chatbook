@@ -786,7 +786,7 @@ pMultiSnake2=
      		,_
 	]
 
-pSingleNotMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
+pFalsePositiveMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
 
 scanMultiSnake // ClearAll;
 scanMultiSnake[pos_, ast_] :=
@@ -795,7 +795,7 @@ scanMultiSnake[pos_, ast_] :=
     Echo[pos, "pos:"];
     Echo[ast, "ast:"];
     Echo[Extract[ast, pos]];
-    If[MatchQ[Extract[ast, pos], pSingleNotMulti]
+    If[MatchQ[Extract[ast, pos], pFalsePositiveMulti]
    		,Echo["Rejected!"]; Nothing(* CodeInspector`InspectionObject["TagTimesInSet", "Tag Times Protected","Fatal",#]& *)
 		,CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
 			Association@{ConfidenceLevel -> 1, Extract[ast, Echo@Join[pos, {-1}]]}]]
