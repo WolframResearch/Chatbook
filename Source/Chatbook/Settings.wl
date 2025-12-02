@@ -67,6 +67,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
@@ -146,17 +147,23 @@ $modelAutoSettings[ "Anthropic", Automatic ] = <|
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
-    "ToolMethod"       -> Automatic,
+    "ToolMethod"       -> Verbatim @ Automatic,
     "ToolResponseRole" -> "User"
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude3" ] = <|
+    "MaxContextTokens"  -> 200000,
     "ToolExamplePrompt" -> None
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
     "DiscourageExtraToolCalls" -> True,
     "ToolExamplePrompt"        -> Automatic
+|>;
+
+$modelAutoSettings[ "Anthropic", "Claude4" ] = <|
+    "MaxContextTokens" -> 200000,
+    "Multimodal"       -> True
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -241,7 +248,7 @@ $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 128000,
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -253,7 +260,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
     "Multimodal"                 -> True,
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -264,12 +271,20 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
+    "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
 |>;
+
+$modelAutoSettings[ Automatic, "GPT51" ] = <|
+    $modelAutoSettings[ Automatic, "GPT5" ],
+    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+|>;
+
+$gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -299,7 +314,7 @@ $modelAutoSettings[ Automatic, "O3Mini" ] = <|
     "MaxContextTokens"           -> 100000,
     "Multimodal"                 -> False,
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 $modelAutoSettings[ Automatic, "O3" ] = <|
@@ -387,7 +402,10 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
                 (* Check for global default: *)
                 $modelAutoSettings[ Automatic, Automatic, key ]
             },
-            e_ :> With[ { s = e }, s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ] ]
+            e_ :> With[ { s = e },
+                Replace[ s, HoldPattern[ Verbatim ][ v_ ] :> v ] /;
+                    MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
+            ]
         ];
 
 autoModelSetting // endDefinition;
