@@ -67,6 +67,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
@@ -264,12 +265,20 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
+    "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
 |>;
+
+$modelAutoSettings[ Automatic, "GPT51" ] = <|
+    $modelAutoSettings[ Automatic, "GPT5" ],
+    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+|>;
+
+$gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
