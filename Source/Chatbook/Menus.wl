@@ -93,7 +93,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                             linkTrailFrame[ "Advanced Settings", aiPane = "Main" ],
                             scrollablePane[
                                 Column[
-                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en ],
+                                    sideBarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en, sideBarCell ],
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
                         ItemSize -> Automatic, Spacings -> { 0, 0 }, Alignment -> Left
@@ -1061,7 +1061,7 @@ submenuLabel // endDefinition;
 AttachSubmenu // beginDefinition;
 
 AttachSubmenu[ parentMenu_, expr_, menuTag_String ] := Enclose[
-    Module[ { parentInfo, root, pos, oPos, offsetX, offsetY, magnification, tags, attached },
+    Module[ { parentInfo, pos, oPos, offsetX, offsetY, magnification, tags, attached },
 
         parentInfo = Replace[
             Association @ CurrentValue[ parentMenu, TaggingRules ],

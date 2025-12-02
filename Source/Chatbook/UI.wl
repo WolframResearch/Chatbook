@@ -545,62 +545,71 @@ labeledCheckbox0[ Dynamic @ value_, update_Function, label_, enabled_, width_ ] 
 
 (*====================================*)
 
-makeToolCallFrequencySlider[ obj_ ] :=
+makeToolCallFrequencySlider[ targetObj_, appContainer_ ] :=
 With[
 	{
-		initFrequency = currentChatSettings[ obj, "ToolCallFrequency" ]
+		initFrequency = currentChatSettings[ targetObj, "ToolCallFrequency" ]
 	},
-	Module[ { checkboxUpdate, checkboxLabel, slider },
-		checkboxUpdate =
-			Function[
-				If[ TrueQ[ # ],
-					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
-				]
-			];
+	Module[ { checkboxUpdate, checkboxLabel },
 		checkboxLabel =
 			Style[
 				tr @ "UIAdvancedChooseAutomatically",
 				"ChatMenuLabel",
-				FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+				If[ MatchQ[ appContainer, _CellObject ],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					]),
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
 						color @ "ChatMenuCheckboxLabelFontHover",
 						color @ "ChatMenuCheckboxLabelFont"
 					])
+				]
 			];
-		slider = Pane[
-			Grid[
-				{
-					{
-						Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
-						DynamicModule[ { value },
-							Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
-								Dynamic[ value, { None, Temporary, (value = CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
-								{ 0, 1, 0.01 },
-								ImageSize    -> { 100, Automatic },
-								ImageMargins -> { { 0, 0 }, { 5, 5 } }
-							],
-							Initialization :> (value = Replace[ initFrequency, Except[ _?NumericQ ] -> 0.5 ])
-						],
-						Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
-					}
-				},
-				Spacings -> { { 0, { 0.5 }, 0 }, 0 },
-				Alignment -> { { Left, Center, Right }, Baseline }
-			],
-			ImageMargins -> 0,
-			ImageSize    -> { 170, Automatic }
-		];
+
 		Pane[
-			DynamicModule[ { value },
+			DynamicModule[ { autoQ, value },
+				checkboxUpdate =
+					Function[
+						If[ TrueQ[ # ],
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = value
+						]
+					];
+
 				PaneSelector[
 					{
-						True -> Column[ { labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
-						False -> Column[ { slider, labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ]
+						True -> Column[ { labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
+						False -> Column[
+							{
+								Pane[
+									Grid[
+										{
+											{
+												Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
+												Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
+													Dynamic[ value, { None, Temporary, (value = CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
+													{ 0, 1, 0.01 },
+													ImageSize    -> { 100, Automatic },
+													ImageMargins -> { { 0, 0 }, { 5, 5 } }
+												],
+												Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
+											}
+										},
+										Spacings -> { { 0, { 0.5 }, 0 }, 0 },
+										Alignment -> { { Left, Center, Right }, Baseline }
+									],
+									ImageMargins -> 0,
+									ImageSize    -> { 170, Automatic }
+								],
+								labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ]
+							},
+						Alignment -> Left ]
 					},
-					Dynamic @ value,
+					Dynamic @ autoQ,
 					ImageSize -> Automatic
 				],
-				Initialization :> (value = initFrequency === Automatic)
+				Initialization :> (value = Replace[ initFrequency, Except[ _?NumericQ ] -> 0.5 ]; autoQ = initFrequency === Automatic)
 			],
 			ImageMargins -> { { 5, 0 }, { 5, 5 } }
 		]
@@ -609,26 +618,73 @@ With[
 
 SetFallthroughError[makeTemperatureSlider]
 
-makeTemperatureSlider[ targetObj_ ] :=
-Pane[
-	DynamicModule[ { value },
-		Slider[
-			Dynamic[ value, {
-				None,
-				Automatic,
-				Function[
-					value = #;
-					CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }] = # ] }
+makeTemperatureSlider[ targetObj_, appContainer_ ] :=
+With[
+	{
+		initTemperature = currentChatSettings[ targetObj, "Temperature" ]
+	},
+	Module[ { checkboxUpdate, checkboxLabel },
+		checkboxLabel =
+			Style[
+				tr @ "UIAdvancedChooseAutomatically",
+				"ChatMenuLabel",
+				If[ MatchQ[ appContainer, _CellObject ],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					]),
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						color @ "ChatMenuCheckboxLabelFontHover",
+						color @ "ChatMenuCheckboxLabelFont"
+					])
+				]
+			];
+
+		Pane[
+			DynamicModule[ { autoQ, value },
+				checkboxUpdate =
+					Function[
+						If[ TrueQ[ # ],
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = Inherited,
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = value
+						]
+					];
+
+				PaneSelector[
+					{
+						True -> Column[ { labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
+						False -> Column[
+							{
+								Pane[
+									Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
+										Dynamic[ value, {
+											None,
+											Automatic,
+											Function[
+												value = #;
+												CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }] = # ] }
+										],
+										{ 0, 2, 0.01 },
+										ImageSize    -> { 130, Automatic },
+										ImageMargins -> {{5, 0}, {5, 5}},
+										Appearance   -> "Labeled"
+									],
+									ImageMargins -> 0,
+									ImageSize    -> { 170, Automatic }
+								],
+								labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ]
+							},
+							Alignment -> Left
+						]
+					},
+					Dynamic @ autoQ,
+					ImageSize -> Automatic
+				],
+				Initialization :> (value = Replace[ initTemperature, Except[ _?NumericQ ] -> 0.5 ]; autoQ = initTemperature === Automatic)
 			],
-			{ 0, 2, 0.01 },
-			ImageSize  -> { 135, Automatic },
-			ImageMargins -> {{5, 0}, {5, 5}},
-			Appearance -> "Labeled"
-		],
-		Initialization :> (value = currentChatSettings[ targetObj, "Temperature" ])
-	],
-	ImageSize -> { 180, Automatic },
-	BaseStyle -> { FontSize -> 12 }
+			ImageMargins -> { { 5, 0 }, { 5, 5 } }
+		]
+	]
 ]
 
 (*=========================================*)
@@ -1142,7 +1198,7 @@ MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
 filterPersonas // beginDefinition;
 
 filterPersonas[ targetObj_ ] :=
-Module[ { personas, favorites },
+Module[ { personas },
 	personas = GetPersonasAssociation[ "IncludeHidden" -> False ];
 
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
@@ -1279,7 +1335,7 @@ Join[
 			"Label"   -> tr @ "UIAdvancedSettings",
 			"Icon"    -> getIcon @ "AdvancedSettings",
 			"MenuTag" -> "AdvancedSettings",
-			"Menu"    :> createAdvancedSettingsMenu @ targetObj,
+			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
@@ -1299,7 +1355,7 @@ getIcon[ name_ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookEx
 (*createAdvancedSettingsMenu*)
 createAdvancedSettingsMenu // beginDefinition;
 
-createAdvancedSettingsMenu[ targetObj_ ] :=
+createAdvancedSettingsMenu[ targetObj_, appContainer_ ] :=
 With[
 	{
 		roleValue = Replace[ currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" } ], { source_, Inherited } :> { source, "User" } ]
@@ -1307,9 +1363,9 @@ With[
 	Join[
 		{
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedTemperature" |>,
-			<| "Type" -> "Custom", "Content" -> makeTemperatureSlider @ targetObj |>,
+			<| "Type" -> "Custom", "Content" -> makeTemperatureSlider[ targetObj, appContainer ] |>,
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedToolCallFrequency" |>,
-			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider @ targetObj |>,
+			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider[ targetObj, appContainer ] |>,
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedRoles" |>
 		},
 		Map[
