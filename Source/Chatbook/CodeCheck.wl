@@ -646,17 +646,20 @@ fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSetSnakeUsage"}->so_,
 			,finalgnso
 			}
 			,
+			Echo["FIX BadSetSnakeUsage "];
 			With[
 				{
 				ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]
 				}
 				,
 				{
-				nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
+				nodeCCP = FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
 				}
 				,
 				{
-				newName = Cases[nodeCCP, _String, Infinity] // DeleteCases["_" | "__" | "___"] // StringJoin[First@#, Capitalize@Rest@#] &
+				newName = 	Cases[nodeCCP, _String, Infinity] //
+							ReplaceRepeated[{a___, PatternSequence["_" | "__" | "___", x_String], b___} :> {a, Capitalize[x], b}] //
+							StringJoin
 				}
 				,
 				fixedCode=ReplaceAll[ccp, (nodeCCP /. _Association -> _) -> LeafNode[Symbol, newName, <||>]] // ToSourceCharacterString
@@ -690,9 +693,9 @@ scanSingleSnakeInSet[pos_, ast_] :=
 (
   	Echo["SET BAD SNAKE"];
   	If[
-		Extract[ast,Flatten[{pos, 2, 1, 2}]] // Echo //
-					Cases[#, (LeafNode | CallNode)[__, <|Source -> {s1_, s2_}|>] :> {s1-1, s2}, {1}] & // EchoLabel["{s1,s2}"] //
-					BlockMap[#[[1, 2]] === #[[2, 1]] &, #, 2, 1] & // Echo //
+		Extract[ast,Flatten[{pos, 2, 1, 2}]] //
+					Cases[#, (LeafNode | CallNode)[__, <|Source -> {s1_, s2_}|>] :> {s1-1, s2}, {1}] & //
+					BlockMap[#[[1, 2]] === #[[2, 1]] &, #, 2, 1] & //
 					Replace[{}->{False}]//Apply[And] // TrueQ
 		,
    		CodeInspector`InspectionObject["BadSetSnakeUsage","Bad Snake Usage", "Fatal",
@@ -725,8 +728,7 @@ fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSnakeUsage"}->so_, __
 				newNode = 	Cases[nodeCCP, _LeafNode, Infinity] //
 							Replace[{pMulti : Longest@PatternSequence[LeafNode[Except[Token`Comment | Whitespace], __] ..], r___} :>
 									{Cases[{pMulti}, _String, {2}] //
-							DeleteCases["_" | "__" | "___"] // Echo //
-       						StringJoin[First@#, Capitalize@Rest@#] & //
+							ReplaceRepeated[{a___, PatternSequence["_" | "__" | "___", x_String], b___} :> {a, Capitalize[x], b}] // StringJoin //
 							LeafNode[Symbol, #, <||>] &, r}] // InfixNode[Times, #, _] &
 				}
 				,
@@ -787,18 +789,28 @@ pMultiSnake2=
 	]
 
 pFalsePositiveMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
-
+PTruePositiveSingle=
+	CallNode[LeafNode[Symbol, "Times", _]
+    		,
+    		{
+          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
+													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_ ]
+													   }
+													   ,<|Source -> {_, x_}|>]
+			,
+			LeafNode[Integer, _, <|Source -> {y_, _}|>]
+			,___
+			}
+			,_
+	] /; (x+1==y)
 scanMultiSnake // ClearAll;
 scanMultiSnake[pos_, ast_] :=
 (
     Echo["BAD MULTI SNAKE"];
-    Echo[pos, "pos:"];
-    Echo[ast, "ast:"];
-    Echo[Extract[ast, pos]];
-    If[MatchQ[Extract[ast, pos], pFalsePositiveMulti]
+    Extract[ast, pos]//If[Not@MatchQ[#,PTruePositiveSingle] && MatchQ[#, pFalsePositiveMulti]
    		,Echo["Rejected!"]; Nothing(* CodeInspector`InspectionObject["TagTimesInSet", "Tag Times Protected","Fatal",#]& *)
 		,CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
-			Association@{ConfidenceLevel -> 1, Extract[ast, Echo@Join[pos, {-1}]]}]]
+			Association@{ConfidenceLevel -> 1, Extract[ast, Join[pos, {-1}]]}]]&
 );
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
