@@ -1024,7 +1024,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
-            KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+            KeyTake[ as, $llmConfigPassedKeys ],
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
@@ -1035,12 +1035,21 @@ makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
-            KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+            KeyTake[ as, $llmConfigPassedKeys ],
             "StopTokens" -> makeStopTokens @ as
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
 makeLLMConfiguration // endDefinition;
+
+
+$llmConfigPassedKeys = {
+    "MaxTokens",
+    "Model",
+    "PresencePenalty",
+    "Reasoning",
+    "Temperature"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
