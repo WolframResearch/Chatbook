@@ -464,7 +464,13 @@ inlineSection[ content_, style_String ] :=
 
 inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } }, size_ ] := Cell[
     BoxData @ PaneBox[
-        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False, FontSize -> size ],
+        StyleBox[
+            formatTextToBoxes @ content,
+            style,
+            CellFrame            -> 0,
+            FontSize             -> size,
+            ShowStringCharacters -> False
+        ],
         ImageMargins -> margins
     ],
     "InlineSection",
@@ -1353,7 +1359,7 @@ $textDataFormatRules = {
         tool: $$simpleToolCall
      ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] :> inlineToolCallCell @ tool
     ,
-    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
