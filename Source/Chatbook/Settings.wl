@@ -152,12 +152,18 @@ $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude3" ] = <|
+    "MaxContextTokens"  -> 200000,
     "ToolExamplePrompt" -> None
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
     "DiscourageExtraToolCalls" -> True,
     "ToolExamplePrompt"        -> Automatic
+|>;
+
+$modelAutoSettings[ "Anthropic", "Claude4" ] = <|
+    "MaxContextTokens" -> 200000,
+    "Multimodal"       -> True
 |>;
 
 (* ::**************************************************************************************************************:: *)
