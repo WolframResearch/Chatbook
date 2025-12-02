@@ -147,7 +147,7 @@ $modelAutoSettings[ "Anthropic", Automatic ] = <|
 |>;
 
 $modelAutoSettings[ "Anthropic", "Claude2" ] = <|
-    "ToolMethod"       -> Automatic,
+    "ToolMethod"       -> Verbatim @ Automatic,
     "ToolResponseRole" -> "User"
 |>;
 
@@ -242,7 +242,7 @@ $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 128000,
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -254,7 +254,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
     "Multimodal"                 -> True,
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -308,7 +308,7 @@ $modelAutoSettings[ Automatic, "O3Mini" ] = <|
     "MaxContextTokens"           -> 100000,
     "Multimodal"                 -> False,
     "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolMethod"                 -> Automatic
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 $modelAutoSettings[ Automatic, "O3" ] = <|
@@ -396,7 +396,10 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
                 (* Check for global default: *)
                 $modelAutoSettings[ Automatic, Automatic, key ]
             },
-            e_ :> With[ { s = e }, s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ] ]
+            e_ :> With[ { s = e },
+                Replace[ s, HoldPattern[ Verbatim ][ v_ ] :> v ] /;
+                    MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
+            ]
         ];
 
 autoModelSetting // endDefinition;
