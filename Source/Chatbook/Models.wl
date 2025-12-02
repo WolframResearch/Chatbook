@@ -333,6 +333,10 @@ modelNameData0[ { "GPT-4o", rest___ } ] :=
 modelNameData0[ { before___, gpt_String, "4o", after___ } ] /; StringEndsQ[ gpt, "gpt", IgnoreCase -> True ] :=
     modelNameData0 @ { before, gpt<>"-4", "Omni", after };
 
+modelNameData0[ { "claude", class_, a_String, b_String, after___ } ] /;
+    And @@ StringMatchQ[ { a, b }, DigitCharacter ] :=
+        modelNameData0 @ { "claude", class, a<>"."<>b, after };
+
 modelNameData0[ parts: { __String } ] :=
 	<|
         "BaseID"   -> makeBaseID @ StringRiffle @ capitalize @ parts,
@@ -435,6 +439,7 @@ chooseModelFamily0 // beginDefinition;
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
 
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Chat"    , $$versionOrParams } ] ] := "DeepSeekChat";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrParams } ] ] := "DeepSeekChat";
