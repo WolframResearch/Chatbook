@@ -390,9 +390,7 @@ $chatEnabledNotebookLabel := Grid[
 (*forceRefreshCloudPreferences*)
 forceRefreshCloudPreferences // beginDefinition;
 
-forceRefreshCloudPreferences[ ] /; ! TrueQ @ $cloudNotebooks := Null;
-
-forceRefreshCloudPreferences[ ] := forceRefreshCloudPreferences @ EvaluationNotebook[ ];
+forceRefreshCloudPreferences[ ] := If[ $cloudNotebooks, forceRefreshCloudPreferences @ EvaluationNotebook[ ], Null ];
 
 forceRefreshCloudPreferences[ nbo_NotebookObject ] := (
     SetOptions[ nbo, DockedCells -> Inherited ];
