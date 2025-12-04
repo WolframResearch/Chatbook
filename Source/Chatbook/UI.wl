@@ -23,6 +23,10 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
+GeneralUtilities`SetUsage[CreateSideBarContent, "
+CreateSideBarContent[ sideBarCell ] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' sidebar menu, passing in the CellObject of the side bar.
+"]
+
 Begin["`Private`"]
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -52,6 +56,138 @@ MakeChatCloudDockedCellContents[] := makeChatCloudDockedCellContents[ ];
 (* ::Section::Closed:: *)
 (*Preferences Panel*)
 CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "Preferences" } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+	nbObj,
+	isChatEnabled
+},
+	(* This menu is kernel-generated, so calculate variables once before the DM displayed content, and pass them on as needed *)
+	nbObj = EvaluationNotebook[ ];
+	isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
+
+	mainSideBarMenuContent[ True, sideBarCell, nbObj, isChatEnabled ],
+
+	InheritScope -> True
+] /; TrueQ @ alreadyLoadedMenuQ;
+
+(*
+	The percolator only appears the first time the menu loads when invoked from the default toolbar.
+	Note that it can quickly flash if the LLM models were first loaded elsewhere, like when creating a new ChatInput cell,
+	but that's an OK compromise. *)
+CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+	nbObj,
+	isChatEnabled,
+	display
+},
+	(* Show the progress indicator as soon as possible *)
+	display =
+		Pane[
+			Column @ {
+				Style[ tr @ "UIInitializeChatbook", "ChatMenuLabel" ],
+				ProgressIndicator[ Appearance -> "Percolate" ]
+			},
+			ImageMargins -> 5,
+			ImageSize    -> Scaled[1.]
+		];
+
+	Dynamic[ display ],
+
+	Initialization :> (
+		nbObj = EvaluationNotebook[ ];
+		isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
+		display = mainSideBarMenuContent[ False, sideBarCell, nbObj, isChatEnabled ];
+		alreadyLoadedMenuQ = True
+	),
+
+	SynchronousInitialization -> False,
+
+	InheritScope -> True
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mainSideBarMenuContent*)
+
+mainSideBarMenuContent // beginDefinition;
+
+Attributes[mainSideBarMenuContent] = {HoldRest};
+
+mainSideBarMenuContent[ alreadyLoadedMenuQ_, sideBarCell_, nbObj_, isChatEnabled_ ] :=
+PaneSelector[
+	{
+		True -> If[ alreadyLoadedMenuQ,
+			((* Creating the menu is expensive even if it's already loaded once before.
+				The Dynamic means we only create it when it is first displayed.
+				So if the False case of this PaneSelector happens first, then createChatNotEnabledToolbar won't take time to load. *)
+				Dynamic[ makeSideBarMenuContent[ sideBarCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
+			),
+			(* If the menu is generating for the first time then we can't have the Dynamic here or else it competes with Dynamic[display] *)
+			makeSideBarMenuContent[ sideBarCell, nbObj ]
+		],
+		False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
+	},
+	Dynamic @ isChatEnabled,
+	ImageSize -> Automatic
+]
+
+mainSideBarMenuContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeSideBarMenuContent*)
+
+makeSideBarMenuContent // beginDefinition;
+
+makeSideBarMenuContent[ sideBarCell_CellObject, nbObj_NotebookObject ] := Enclose[
+	Module[ { items, new },
+
+		items = ConfirmBy[ makeChatActionMenu[ "SideBar", nbObj ], ListQ, "Items" ];
+
+		new = Join[ 
+			{ <|
+				 "Type"           -> "Custom",
+				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSideBar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
+				 "ResetAction"    :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = Inherited),
+				 "ResetCondition" :> (AbsoluteCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
+			|> },
+			items ];
+
+		MakeSideBarMenu[ sideBarCell, new ]
+	],
+	throwInternalFailure
+];
+
+makeSideBarMenuContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*backButtonAppearance*)
+backButtonAppearanceBasic // beginDefinition;
+
+backButtonAppearanceBasic[ label_, frameStyle_, frameMargins_, size_ ] :=
+Framed[
+    label,
+    Alignment -> { Center, Center },
+    BaselinePosition -> Baseline,
+    FrameMargins -> frameMargins,
+    FrameStyle -> Directive[ AbsoluteThickness[ 1 ], frameStyle ],
+    ImageSize -> size,
+    RoundingRadius -> 2 ]
+
+backButtonAppearanceBasic // endDefinition;
+
+backButtonAppearance // beginDefinition;
+
+backButtonAppearance[ label_, frameMargins_, size_ ] :=
+NotebookTools`Mousedown[
+    backButtonAppearanceBasic[ label, GrayLevel[ 0.785 ], frameMargins, size ],
+    backButtonAppearanceBasic[ label, Lighter @ GrayLevel[ 0.785 ], frameMargins, size ],
+    backButtonAppearanceBasic[ label, Darker @ GrayLevel[ 0.785 ], frameMargins, size ],
+    BaselinePosition -> Baseline ]
+
+backButtonAppearance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -326,6 +462,51 @@ makeAutomaticResultAnalysisCheckbox[
 	]
 ]
 
+SetFallthroughError[makeAutomaticResultAnalysisCheckboxSideBar]
+
+(* the side bar changes the notebook-level setting regardless of the $FrontEndSession value *)
+makeAutomaticResultAnalysisCheckboxSideBar[ nbo_NotebookObject ] :=
+Pane[ #, FrameMargins -> { { 0, 0 }, { 7, 7 } } ]& @
+DynamicModule[ { value = TrueQ @ initialValue },
+	Row[
+		{
+			Checkbox[
+				Dynamic[ value, Function[ value = #; CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = # ] ],
+				{False, True}
+			],
+			Spacer[3],
+			EventHandler[
+				Style[
+					Row[
+						{
+							FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+							Spacer[ 3 ],
+							Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+						},
+						"\[NoBreak]",
+						StripOnInput -> True
+					],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					])
+				],
+				"MouseClicked" :> (CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = value = ! value)
+			]
+		},
+		BaseStyle -> {
+			"Text",
+			FontFamily         -> "Source Sans Pro",
+			FontSize           -> 12,
+			FontSlant          -> Plain,
+			CheckboxBoxOptions -> { ImageMargins -> 0 },
+			LineBreakWithin    -> False
+		},
+		StripOnInput -> True
+	]
+
+]
+
 (*====================================*)
 
 SetFallthroughError[labeledCheckbox]
@@ -364,62 +545,71 @@ labeledCheckbox0[ Dynamic @ value_, update_Function, label_, enabled_, width_ ] 
 
 (*====================================*)
 
-makeToolCallFrequencySlider[ obj_ ] :=
+makeToolCallFrequencySlider[ targetObj_, appContainer_ ] :=
 With[
 	{
-		initFrequency = currentChatSettings[ obj, "ToolCallFrequency" ]
+		initFrequency = currentChatSettings[ targetObj, "ToolCallFrequency" ]
 	},
-	Module[ { checkboxUpdate, checkboxLabel, slider },
-		checkboxUpdate =
-			Function[
-				If[ TrueQ[ # ],
-					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-					CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
-				]
-			];
+	Module[ { checkboxUpdate, checkboxLabel },
 		checkboxLabel =
 			Style[
 				tr @ "UIAdvancedChooseAutomatically",
 				"ChatMenuLabel",
-				FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+				If[ MatchQ[ appContainer, _CellObject ],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					]),
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
 						color @ "ChatMenuCheckboxLabelFontHover",
 						color @ "ChatMenuCheckboxLabelFont"
 					])
+				]
 			];
-		slider = Pane[
-			Grid[
-				{
-					{
-						Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
-						DynamicModule[ { value },
-							Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
-								Dynamic[ value, { None, Temporary, (value = CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
-								{ 0, 1, 0.01 },
-								ImageSize    -> { 100, Automatic },
-								ImageMargins -> { { 0, 0 }, { 5, 5 } }
-							],
-							Initialization :> (value = Replace[ initFrequency, Except[ _?NumericQ ] -> 0.5 ])
-						],
-						Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
-					}
-				},
-				Spacings -> { { 0, { 0.5 }, 0 }, 0 },
-				Alignment -> { { Left, Center, Right }, Baseline }
-			],
-			ImageMargins -> 0,
-			ImageSize    -> { 170, Automatic }
-		];
+
 		Pane[
-			DynamicModule[ { value },
+			DynamicModule[ { autoQ, value },
+				checkboxUpdate =
+					Function[
+						If[ TrueQ[ # ],
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = value
+						]
+					];
+
 				PaneSelector[
 					{
-						True -> Column[ { labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
-						False -> Column[ { slider, labeledCheckbox0[ Dynamic @ value, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ]
+						True -> Column[ { labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
+						False -> Column[
+							{
+								Pane[
+									Grid[
+										{
+											{
+												Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
+												Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
+													Dynamic[ value, { None, Temporary, (value = CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
+													{ 0, 1, 0.01 },
+													ImageSize    -> { 100, Automatic },
+													ImageMargins -> { { 0, 0 }, { 5, 5 } }
+												],
+												Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
+											}
+										},
+										Spacings -> { { 0, { 0.5 }, 0 }, 0 },
+										Alignment -> { { Left, Center, Right }, Baseline }
+									],
+									ImageMargins -> 0,
+									ImageSize    -> { 170, Automatic }
+								],
+								labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ]
+							},
+						Alignment -> Left ]
 					},
-					Dynamic @ value,
+					Dynamic @ autoQ,
 					ImageSize -> Automatic
 				],
-				Initialization :> (value = initFrequency === Automatic)
+				Initialization :> (value = Replace[ initFrequency, Except[ _?NumericQ ] -> 0.5 ]; autoQ = initFrequency === Automatic)
 			],
 			ImageMargins -> { { 5, 0 }, { 5, 5 } }
 		]
@@ -428,26 +618,73 @@ With[
 
 SetFallthroughError[makeTemperatureSlider]
 
-makeTemperatureSlider[ targetObj_ ] :=
-Pane[
-	DynamicModule[ { value },
-		Slider[
-			Dynamic[ value, {
-				None,
-				Automatic,
-				Function[
-					value = #;
-					CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }] = # ] }
+makeTemperatureSlider[ targetObj_, appContainer_ ] :=
+With[
+	{
+		initTemperature = currentChatSettings[ targetObj, "Temperature" ]
+	},
+	Module[ { checkboxUpdate, checkboxLabel },
+		checkboxLabel =
+			Style[
+				tr @ "UIAdvancedChooseAutomatically",
+				"ChatMenuLabel",
+				If[ MatchQ[ appContainer, _CellObject ],
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
+						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+					]),
+					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+						color @ "ChatMenuCheckboxLabelFontHover",
+						color @ "ChatMenuCheckboxLabelFont"
+					])
+				]
+			];
+
+		Pane[
+			DynamicModule[ { autoQ, value },
+				checkboxUpdate =
+					Function[
+						If[ TrueQ[ # ],
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = Inherited,
+							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = value
+						]
+					];
+
+				PaneSelector[
+					{
+						True -> Column[ { labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ] }, Alignment -> Left ],
+						False -> Column[
+							{
+								Pane[
+									Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
+										Dynamic[ value, {
+											None,
+											Automatic,
+											Function[
+												value = #;
+												CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }] = # ] }
+										],
+										{ 0, 2, 0.01 },
+										ImageSize    -> { 130, Automatic },
+										ImageMargins -> {{5, 0}, {5, 5}},
+										Appearance   -> "Labeled"
+									],
+									ImageMargins -> 0,
+									ImageSize    -> { 170, Automatic }
+								],
+								labeledCheckbox0[ Dynamic @ autoQ, checkboxUpdate, checkboxLabel, True, 155 ]
+							},
+							Alignment -> Left
+						]
+					},
+					Dynamic @ autoQ,
+					ImageSize -> Automatic
+				],
+				Initialization :> (value = Replace[ initTemperature, Except[ _?NumericQ ] -> 0.5 ]; autoQ = initTemperature === Automatic)
 			],
-			{ 0, 2, 0.01 },
-			ImageSize  -> { 135, Automatic },
-			ImageMargins -> {{5, 0}, {5, 5}},
-			Appearance -> "Labeled"
-		],
-		Initialization :> (value = currentChatSettings[ targetObj, "Temperature" ])
-	],
-	ImageSize -> { 180, Automatic },
-	BaseStyle -> { FontSize -> 12 }
+			ImageMargins -> { { 5, 0 }, { 5, 5 } }
+		]
+	]
 ]
 
 (*=========================================*)
@@ -961,7 +1198,7 @@ MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
 filterPersonas // beginDefinition;
 
 filterPersonas[ targetObj_ ] :=
-Module[ { personas, favorites },
+Module[ { personas },
 	personas = GetPersonasAssociation[ "IncludeHidden" -> False ];
 
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
@@ -1029,12 +1266,17 @@ filterPersonas // endDefinition;
 SetFallthroughError[makeChatActionMenu]
 
 makeChatActionMenu[
-	containerType: "Input" | "Delimiter" | "Toolbar",
+	containerType: "Input" | "Delimiter" | "Toolbar" | "SideBar",
 	targetObj : _CellObject | _NotebookObject
 ] :=
 Join[
 	{
-		<| "Type" -> "Header", "Label" -> tr @ "UIPersonas" |>
+		<|
+			"Type"           -> "Header",
+			"Label"          -> tr @ "UIPersonas",
+			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = Inherited),
+			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+		|>
 	},
 	With[
 		{
@@ -1052,7 +1294,9 @@ Join[
 					(* If we're changing the persona set on a cell, ensure that we are not showing
 						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
 					If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
-				)
+				),
+				"Value"    -> persona,
+				"Category" -> "Persona"
 			|>,
 			filterPersonas @ targetObj
 		]
@@ -1082,14 +1326,16 @@ Join[
 			"Icon"    -> getIcon @ "ChatBlockSettingsMenuIcon",
 			"MenuTag" -> "Services",
 			"Menu"    :> createServiceMenu @ targetObj,
-			"Width"   -> 150
+			"Width"    -> 150,
+			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] = Inherited),
+			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =!= Inherited)
 		|>,
 		<|
 			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIAdvancedSettings",
 			"Icon"    -> getIcon @ "AdvancedSettings",
 			"MenuTag" -> "AdvancedSettings",
-			"Menu"    :> createAdvancedSettingsMenu @ targetObj,
+			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
@@ -1109,7 +1355,7 @@ getIcon[ name_ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookEx
 (*createAdvancedSettingsMenu*)
 createAdvancedSettingsMenu // beginDefinition;
 
-createAdvancedSettingsMenu[ targetObj_ ] :=
+createAdvancedSettingsMenu[ targetObj_, appContainer_ ] :=
 With[
 	{
 		roleValue = Replace[ currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" } ], { source_, Inherited } :> { source, "User" } ]
@@ -1117,9 +1363,9 @@ With[
 	Join[
 		{
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedTemperature" |>,
-			<| "Type" -> "Custom", "Content" -> makeTemperatureSlider @ targetObj |>,
+			<| "Type" -> "Custom", "Content" -> makeTemperatureSlider[ targetObj, appContainer ] |>,
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedToolCallFrequency" |>,
-			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider @ targetObj |>,
+			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider[ targetObj, appContainer ] |>,
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedRoles" |>
 		},
 		Map[
@@ -1157,7 +1403,9 @@ wolframServiceMenuItem[ targetObj_, model_ ] :=
 	"Label"  -> "Wolfram",
 	"Icon"   -> serviceIcon[ model, "Wolfram" ],
 	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
-	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ])
+	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ]),
+	"Value"    -> "LLMKit",
+	"Category" -> "Service"
 |>
 
 wolframServiceMenuItem // endDefinition;
@@ -1236,7 +1484,9 @@ createServiceItem[ obj_, model_, service_String ] := <|
     "Menu"    :> dynamicModelMenu[ obj, model, service ],
     "MenuTag" -> service,
     "Width"   -> 280,
-    "Check"   -> serviceIconCheck[ model, service ]
+    "Check"   -> serviceIconCheck[ model, service ],
+    "Value"    -> service,
+    "Category" -> "Service"
 |>;
 
 createServiceItem // endDefinition;
@@ -1373,7 +1623,9 @@ makeServiceModelMenu[ obj_, currentModel_, service_String, Missing[ "NotConnecte
 		"Type"        -> "Refresh",
 		"Label"       -> tr @ "UIModelsNoList",
 		"InitialMenu" :> (simpleModelMenuDisplay[ service, ProgressIndicator[ Appearance -> "Percolate" ] ]),
-		"FinalMenu"   :> (makeServiceModelMenu[ obj, currentModel, service, getServiceModelList @ service ])
+		"FinalMenu"   :> (makeServiceModelMenu[ obj, currentModel, service, getServiceModelList @ service ]),
+		"Value"       -> None,
+		"Category"    -> "ModelName"
 	|>
 }
 
@@ -1384,7 +1636,9 @@ makeServiceModelMenu[ obj_, currentModel_, service_String, Missing[ "NoModelList
 		"Type"   -> "Setter",
 		"Label"  -> "Automatic",
 		(* TODO: this could probably prompt the user with an InputField to enter a name: *)
-		"Action" :> setModel[ obj, <| "Service" -> service, "Name" -> Automatic |> ]
+		"Action" :> setModel[ obj, <| "Service" -> service, "Name" -> Automatic |> ],
+		"Value"  -> None,
+		"Category" -> "ModelName"
 	|>
 }
 
@@ -1462,7 +1716,9 @@ modelMenuItem[
 	"Label"  -> displayName,
 	"Icon"   -> None,
 	"Check"  -> modelSelectionCheckmark[ currentModel, name ],
-	"Action" :> (setModel[ obj, model ])
+	"Action" :> (setModel[ obj, model ]),
+	"Value"    -> name,
+	"Category" -> "ModelName"
 |>;
 
 modelMenuItem // endDefinition;
@@ -1516,7 +1772,7 @@ currentValueOrigin // beginDefinition;
 		specified CellObject.
 *)
 currentValueOrigin[
-	targetObj : _CellObject | _NotebookObject,
+	targetObj : _CellObject,
 	keyPath_List
 ] := Module[{
 	value,
@@ -1537,6 +1793,18 @@ currentValueOrigin[
 			{"Inherited", value},
 		True,
 			{"Inline", inlineValue}
+	]
+]
+
+currentValueOrigin[
+	nbObj_NotebookObject,
+	keyPath: { TaggingRules, "ChatNotebookSettings", key_ }
+] := Module[ { value },
+	value = CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", key } ];
+
+	If[ value === Inherited,
+		{ "Inherited", CurrentChatSettings[ nbObj, key ] },
+		{ "Inline", value }
 	]
 ]
 

@@ -189,11 +189,16 @@ showContentSuggestions // beginDefinition;
 showContentSuggestions[ $Failed ] :=
     Null;
 
-showContentSuggestions[ nbo_NotebookObject ] :=
-    showContentSuggestions[ nbo, SelectedCells @ nbo ];
+showContentSuggestions[ nbo_NotebookObject ] := If[
+    ! MemberQ[ { "ModalDialog", "ModelessDialog", "MovableModalDialog", "Palette" }, AbsoluteCurrentValue[ nbo, WindowFrame ] ],
+    showContentSuggestions[ nbo, SelectedCells @ nbo ],
+    Null
+];
 
-showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
-    withSuggestionsProgress @ showContentSuggestions0[ nbo, selected ];
+showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] := Condition[
+    withSuggestionsProgress @ showContentSuggestions0[ nbo, selected ],
+    ! MemberQ[ AbsoluteCurrentValue[ selected, CellStyle ], "DockedCell" ]
+];
 
 showContentSuggestions[ nbo_NotebookObject, { } ] :=
     withSuggestionsProgress @ showContentSuggestions0[ nbo, nbo ];
