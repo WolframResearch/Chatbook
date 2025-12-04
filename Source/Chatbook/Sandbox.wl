@@ -1317,7 +1317,7 @@ expandAmbiguityLists[ expr_ ] :=
 
         expanded = FixedPoint[ expandOnceMarked @ lists, marked, 50 ];
 
-        Cases[ expanded, e_ :> HoldComplete @ e ]
+        Select[ Cases[ expanded, e_ :> HoldComplete @ e ], FreeQ @ ambiguityList ]
     ];
 
 expandAmbiguityLists // endDefinition;
@@ -1332,14 +1332,14 @@ expandOnceMarked[ lists_ ] :=
 
 expandOnceMarked[ lists_, marked_HoldComplete ] :=
     Catch @ Module[ { rules },
-        rules = Flatten @ Cases[
+        rules = DeleteDuplicates @ Flatten @ Cases[
             marked,
             ambiguityList[ id_ ] :> Cases[ lists[ id ], e_ :> ambiguityList @ id :> e ],
             Infinity,
             Heads -> True
         ];
         If[ rules === { }, Throw @ marked ];
-        Flatten[ HoldComplete @@ ((marked /. # &) /@ rules) ]
+        DeleteDuplicates @ Flatten[ HoldComplete @@ ((marked /. # &) /@ rules) ]
     ];
 
 expandOnceMarked // endDefinition;
