@@ -81,7 +81,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					,
 					SourceConvention -> "SourceCharacterIndex"
 					,
-					"AbstractRules" -> <|
+					"AbstractRules" -> <|CodeInspector`AbstractRules`$DefaultAbstractRules,
 										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set or as a function name *),
 										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *)
 										|>
@@ -520,11 +520,11 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser
 
 scoreAndSort[codes:{_String..}]:=Map[{scoreArgs@#,#}&,codes]//ReverseSortBy[{First}]
 
-scoreArgs[code_String]:=Cases[CodeConcreteParse[code//EchoLabel["fixed code to score:"]], CallNode[List@LeafNode[_, funcname_, _], _, _], {0, Infinity}] //
+scoreArgs[code_String]:=Cases[CodeConcreteParse[code(* //EchoLabel["fixed code to score:"] *)], CallNode[List@LeafNode[_, funcname_, _], _, _], {0, Infinity}] //
 						scoreArgsCallNode
 
 scoreArgsCallNode[cn:{_CallNode..}]:=scoreArgsCallNode/@cn //dechofunction["callnodes subscores:",{#,Total@#}&]//Total
-scoreArgsCallNode[cn_CallNode]:=$syntargs[funcNameCallNode[cn]//EchoLabel["function:"]]//EchoLabel["syntargs"]//
+scoreArgsCallNode[cn_CallNode]:=$syntargs[funcNameCallNode[cn](* //EchoLabel["function:"] *)](* //EchoLabel["syntargs"] *)//
 								If[MissingQ@#, Nothing, scoreArgsPattern[argsCallNode@cn,#, funcNameCallNode[cn]]]&//
 								If[#===0,decho[funcNameCallNode[cn],"Score: failed match:"];#,#]&
 
@@ -546,7 +546,7 @@ scoreArgsPattern[expr:{___,_Rule..},pattern:{___,Verbatim[Rule...]}, funcname_St
 				{pattRules= (pattern/. 	{Verbatim[Rule...]:>Pattern[$rules,_Rule...]
 										,Verbatim[_:"def"]:>Optional[Except[_Rule,_],"def"]
 										}//Pattern[$whole,#]&
-							):>{$whole,{$rules}//Map[Last]//EchoLabel["scoreArgsPattern"]//Select[MemberQ[$systemOptions[funcname],#]&]//Length}
+							):>{$whole,{$rules}//Map[Last](* //EchoLabel["scoreArgsPattern"] *)//Select[MemberQ[$systemOptions[funcname],#]&]//Length}
 				}
 				,
 				Cases[expr,pattRules,{0}]] // ReplaceAll[{{}->0,{{_,len_}}:>1+len/4.}]]
@@ -599,7 +599,7 @@ argsCallNode[args_List]:=
 						:> r, {1}]&
 	//
 	Replace[#, Except[_Rule, _] -> "arg", {1}]&
-	//EchoLabel["argsCallNode"]
+	(* //EchoLabel["argsCallNode"] *)
 )
 
 funcNameCallNode[CallNode[{LeafNode[_,funcname_,_]}, _,_]]=funcname;
@@ -716,19 +716,14 @@ $patternBadSnakeUsage = {___, {"Fatal", "BadSnakeUsage"}->_, ___};
 fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSnakeUsage"}->so_, ___}, patToIgnore_ : {}] :=
 	Module[	{
 			 fixedCode=Missing[]
-			,success=True
-			,finalgnso
+			,success=False
 			}
 			,
 			(* Echo["FIX BadSnakeUsage "]; *)
 			With[
-				{
-				ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]
-				}
+				{ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]}
 				,
-				{
-				nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
-				}
+				{nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]}
 				,
 				{
 				newNode = 	Cases[nodeCCP, _LeafNode, Infinity] //
@@ -757,31 +752,6 @@ pMultiSnake=
     		,
     		{
           	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
-													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_ ]
-													   },_]|
-			CallNode[LeafNode[Symbol, "Pattern", <||>],{ LeafNode[Symbol, _, _]
-														,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_]},_]
-        	,
-          	(
-                CallNode[LeafNode[Symbol, "Pattern", <||>],{ LeafNode[Symbol, _, _]
-															,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_]},_]|
-				LeafNode[Integer, _, _] |
-				CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_] |
-				CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{LeafNode[Symbol, _, _]},_] |
-				LeafNode[Symbol, _, _]
-            ) ...
-			,
-			CallNode[CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence", <||>], {LeafNode[Symbol, _, _]}, _]|
-					 LeafNode[Integer, _, _], _, _]...
-			}
-			,
-			_]
-
-pMultiSnake2=
-	CallNode[LeafNode[Symbol, "Times", _]
-    		,
-    		{
-          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
 													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
 													   			, {} | {LeafNode[Symbol, _, _]} ,_ ]
 													   },_]
@@ -789,17 +759,20 @@ pMultiSnake2=
           	(
           	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
 													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
-													   			, {} | {LeafNode[Symbol, _, _]} ,_ ]
+													   			,{LeafNode[Symbol, _, _]} ,_ ]
 													   },_] |
 			LeafNode[Integer | Symbol , _, _] |
-			CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{} | {LeafNode[Symbol, _, _]},_]
-            ) ..
+			CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>], {} | {LeafNode[Symbol, _, _]},_]
+            ) ...
+			,
+			CallNode[CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence", <||>], {LeafNode[Symbol, _, _]}, _]|
+					 LeafNode[Integer, _, _], _, _]...
   			}
      		,_
 	]
 
 pFalsePositiveMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
-PTruePositiveSingle=
+pTruePositiveSingle=
 	CallNode[LeafNode[Symbol, "Times", _]
     		,
     		{
@@ -813,11 +786,12 @@ PTruePositiveSingle=
 			}
 			,_
 	] /; (x+1==y)
+
 scanMultiSnake // ClearAll;
 scanMultiSnake[pos_, ast_] :=
 (
     (* Echo["BAD MULTI SNAKE"]; *)
-    Extract[ast, pos]//If[Not@MatchQ[#,PTruePositiveSingle] && MatchQ[#, pFalsePositiveMulti]
+    Extract[ast, pos]//If[Not@MatchQ[#,pTruePositiveSingle] && MatchQ[#, pFalsePositiveMulti]
    		, Nothing
 		, CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
 			Association@{ConfidenceLevel -> 1, Extract[ast, Join[pos, {-1}]]}]]&
