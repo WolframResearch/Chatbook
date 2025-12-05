@@ -676,9 +676,6 @@ fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSingleSnakeUsage"}->s
 
 	]
 
-
-
-(* BAD SNAKE USAGE*)
 pSingleSnake=
 	Alternatives[
 				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{LeafNode[Symbol,_,_]},_]},_],__},_]
