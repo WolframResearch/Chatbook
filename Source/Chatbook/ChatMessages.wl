@@ -74,10 +74,7 @@ $fallbackTokenizer = "generic";
 (* ::Section::Closed:: *)
 (*AugmentChatMessages*)
 AugmentChatMessages // beginDefinition;
-
-AugmentChatMessages // Options = {
-    "ToolMethod" -> "Service"
-};
+AugmentChatMessages // Options = { };
 
 AugmentChatMessages[ messages_, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ AugmentChatMessages[ messages, Automatic, opts ];
@@ -289,7 +286,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             processed = messages
         ];
 
-        processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
+        processed //= Select @ nonEmptyMessageQ;
 
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
@@ -300,6 +297,15 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonEmptyMessageQ*)
+nonEmptyMessageQ // beginDefinition;
+nonEmptyMessageQ[ KeyValuePattern[ "ToolRequests"|"ToolResponses" -> { __ } ] ] := True;
+nonEmptyMessageQ[ KeyValuePattern[ "Content" -> "" | { } | { "" } ] ] := False;
+nonEmptyMessageQ[ _ ] := True;
+nonEmptyMessageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
