@@ -35,8 +35,9 @@ $defaultPromptGenerators := $defaultPromptGenerators = insertPromptGeneratorName
 (*relatedWolframAlphaResultsGenerator*)
 relatedWolframAlphaResultsGenerator // beginDefinition;
 
-relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /; featureEnabledQ[ "RelatedWolframAlphaResults" ] :=
-    LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
+relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /;
+    ! TrueQ @ $ChatNotebookEvaluation || featureEnabledQ[ "RelatedWolframAlphaResults" ] :=
+        LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
 
 relatedWolframAlphaResultsGenerator[ _ ] := "";
 
