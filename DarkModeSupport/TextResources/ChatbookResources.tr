@@ -6823,7 +6823,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{4.5, {2.252197265625, 6.126708984375}}],
+      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9853,10 +9853,15 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
  Editable->True,
  Selectable->False,
  CellMargins->{{0, 0}, {0, 0}},
- Initialization:>AttachCell[
-   EvaluationCell[], 
-   Cell["", CellTags -> "NotebookAssistantSideBarAttachedHelperCell"], {
-   Left, Top}, 0, {Left, Top}],
+ Initialization:>(AttachCell[
+    EvaluationCell[], 
+    Cell["", CellTags -> "NotebookAssistantSideBarAttachedHelperCell"], {
+    Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
+  CurrentValue[
+     EvaluationCell[], TaggingRules] = <|
+    "ChatNotebookSettings" -> 
+     Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`$\
+notebookAssistanceSideBarSettings, "ConversationTitle" -> ""|>),
  CellFrameMargins->0,
  LineSpacing->{1, 0},
  LineIndent->0,
@@ -9866,8 +9871,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSideBarCell",ExpressionUUID->"0833fc6f-4025-9c49-8fdf-\
-7cb9047e8665"]
+  "NotebookAssistantSideBarCell",ExpressionUUID->"f07e5bee-db7b-e54a-a82d-\
+748107c91735"]
 }
 @|
 @|

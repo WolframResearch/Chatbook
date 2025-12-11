@@ -26,7 +26,10 @@ Cell[
 	CellTags         -> "NotebookAssistantSideBarCell",
 	Editable         -> True,
 	FontSize         -> 0.5, (* needed to workaround line wrapping issue where newlines are given their full line-height based on the FontSize *)
-    Initialization   :> AttachCell[ EvaluationCell[ ], Cell[ "", CellTags -> "NotebookAssistantSideBarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ],
+    Initialization   :> (
+    	AttachCell[ EvaluationCell[ ], Cell[ "", CellTags -> "NotebookAssistantSideBarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
+    	Needs[ "Wolfram`Chatbook`" -> None ];
+    	CurrentValue[ EvaluationCell[ ], TaggingRules ] = <| "ChatNotebookSettings" -> Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`$notebookAssistanceSideBarSettings, "ConversationTitle" -> "" |>),
     LineIndent       -> 0,
     LineSpacing      -> { 1, 0 },
     Magnification    -> 1.,
