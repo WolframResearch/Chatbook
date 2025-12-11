@@ -1694,6 +1694,14 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
 
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
 
+        (* There are no chat delimiters in the side bar so throw the side bar cell's settings *)
+        If[ cellTaggedQ[ cell, "NotebookAssistantSideBarCell" ], Throw @
+            Replace[
+                CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                Inherited :> Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
+            ]
+        ];
+
         nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
         cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
 

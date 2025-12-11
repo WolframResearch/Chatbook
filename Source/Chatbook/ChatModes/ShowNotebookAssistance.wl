@@ -525,48 +525,21 @@ showNotebookAssistanceSideBar[ nbo_NotebookObject, input_, evaluate_, settings0_
     Module[ { settings, sideBarCell, scrollingSideBarCell, movedLastChatToSourcesIndicatorQ },
 
         sideBarCell = sideBarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
-        movedLastChatToSourcesIndicatorQ =
-            And[
-                !FailureQ[ sideBarCell ],
-                scrollingSideBarCell = Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ];
-                scrollingSideBarCell =!= {},
-                Cells[ First @ scrollingSideBarCell ] =!= {}
-            ];
+        
+        If[ FailureQ @ sideBarCell,
+             (* don't do anything else because this is the first time we've opened the sidebar in this notebook; Cell Initialization adds necessary TaggingRules *)
+            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sideBarChatWidth |> ];
+            , (* ELSE the sidebar assistant is persistant so don't remove content cells *)
+            
+            (* The sidebar assistant is persistant to a given notebook. Only remove content if "new chat" is selected. *)
 
-        settings = ConfirmBy[
-            mergeChatSettings @ { $notebookAssistanceSideBarSettings, settings0 },
-            AssociationQ,
-            "Settings"
-        ];
-
-        FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sideBarChatWidth |> ];
-
-        If[ FailureQ @ sideBarCell, sideBarCell = ConfirmMatch[ sideBarCellObject @ nbo, _CellObject, "SideBar" ] ];
-
-        CurrentValue[ sideBarCell, TaggingRules ] = <| "ChatNotebookSettings" -> settings, "ConversationTitle" -> "" |>;
-
-        If[ movedLastChatToSourcesIndicatorQ,
-            writeSideBarChatSubDockedCell[
-                nbo,
-                sideBarCell,
-                With[ { sbc = sideBarCell },
-                    Button[
-                        MouseAppearance[
-                            Style[
-                                Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
-                                "NotebookAssistant`SideBar`ToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
-                            ],
-                            "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                        toggleOverlayMenu[ nbo, sbc, "History" ],
-                        Appearance -> "Suppressed"
-                    ]
-                ]
-            ]
-        ];
-
-        If[ TrueQ @ evaluate,
-            MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
-                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SideBarChatInputCellSendButton" }, FE`SearchStart -> sideBarCell, FE`SearchStop -> sideBarCell ] ]
+            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sideBarChatWidth |> ];
+            
+            (* will we ever need to do this with the sidebar chat...? *)
+            If[ TrueQ @ evaluate,
+                MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
+                    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SideBarChatInputCellSendButton" }, FE`SearchStart -> sideBarCell, FE`SearchStop -> sideBarCell ] ]
+        ]
     ],
     throwInternalFailure
 ];
