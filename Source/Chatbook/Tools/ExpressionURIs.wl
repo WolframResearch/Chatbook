@@ -193,6 +193,14 @@ GetExpressionURIs[ str_String, wrapper_, opts: OptionsPattern[ ] ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*validExpressionURIQ*)
+validExpressionURIQ // beginDefinition;
+validExpressionURIQ[ str_String ] := validExpressionURIQ[ str, expressionURIKey @ str ];
+validExpressionURIQ[ str_, key_String ] := KeyExistsQ[ $attachments, key ];
+validExpressionURIQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*expressionURIQ*)
 expressionURIQ // beginDefinition;
 expressionURIQ[ str_String ] := expressionURIKeyQ @ expressionURIKey @ str;
