@@ -1016,12 +1016,30 @@ makeDocSnippets[ results: { ___Association } ] := Enclose[
         sorted   = ConfirmMatch[ addDocSnippets @ results, { ___Association }, "Sorted" ];
         snippets = ConfirmMatch[ Lookup[ sorted, "Snippet" ], { ___String }, "Snippets" ];
         ConfirmAssert[ Length @ snippets === Length @ results, "LengthCheck" ];
-        DeleteDuplicates @ snippets
+        ConfirmMatch[ cleanSnippets @ DeleteDuplicates @ snippets, { ___String }, "Cleaned" ]
     ],
     throwInternalFailure
 ];
 
 makeDocSnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cleanSnippets*)
+cleanSnippets // beginDefinition;
+
+cleanSnippets[ snippets: _String | { ___String } ] := StringReplace[
+    snippets,
+    {
+        md : Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ uri__ ~~ ")\"]\\)" ] :>
+            If[ validExpressionURIQ @ uri,
+                md,
+                "<image removed>"
+            ]
+    }
+];
+
+cleanSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

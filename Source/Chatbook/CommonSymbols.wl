@@ -359,6 +359,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `userMessageBox;
 `userMessageLabel;
 `usingFrontEnd;
+`validExpressionURIQ;
 `waitForLastTask;
 `withApproximateProgress;
 `withBasePromptBuilder;
