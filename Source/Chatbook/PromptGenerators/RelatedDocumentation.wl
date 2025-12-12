@@ -985,7 +985,7 @@ applySnippetFunction // beginDefinition;
 applySnippetFunction[ f_, { } ] := { };
 
 applySnippetFunction[ f_, data: { ___Association } ] := Enclose[
-    Module[ { values, snippets, snippetLen, valuesLen },
+    Module[ { values, snippets, snippetLen, valuesLen, cleaned },
 
         values     = ConfirmMatch[ Lookup[ data, "Value" ], { ___String }, "Values" ];
         snippets   = f @ values;
@@ -995,8 +995,10 @@ applySnippetFunction[ f_, data: { ___Association } ] := Enclose[
         If[ ! MatchQ[ snippets, { ___String } ], throwFailure[ "SnippetFunctionOutputFailure", f, snippets ] ];
         If[ snippetLen =!= valuesLen, throwFailure[ "SnippetFunctionLengthFailure", f, snippetLen, valuesLen ] ];
 
+        cleaned = ConfirmMatch[ cleanSnippets @ snippets, { ___String }, "Cleaned" ];
+
         ConfirmBy[
-            Association /@ Transpose @ { data, Thread[ "Snippet" -> snippets ] },
+            Association /@ Transpose @ { data, Thread[ "Snippet" -> cleaned ] },
             AllTrue @ AssociationQ,
             "Result"
         ]
@@ -1005,23 +1007,6 @@ applySnippetFunction[ f_, data: { ___Association } ] := Enclose[
 ];
 
 applySnippetFunction // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*makeDocSnippets*)
-makeDocSnippets // beginDefinition;
-
-makeDocSnippets[ results: { ___Association } ] := Enclose[
-    Module[ { sorted, snippets },
-        sorted   = ConfirmMatch[ addDocSnippets @ results, { ___Association }, "Sorted" ];
-        snippets = ConfirmMatch[ Lookup[ sorted, "Snippet" ], { ___String }, "Snippets" ];
-        ConfirmAssert[ Length @ snippets === Length @ results, "LengthCheck" ];
-        ConfirmMatch[ cleanSnippets @ DeleteDuplicates @ snippets, { ___String }, "Cleaned" ]
-    ],
-    throwInternalFailure
-];
-
-makeDocSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1040,6 +1025,23 @@ cleanSnippets[ snippets: _String | { ___String } ] := StringReplace[
 ];
 
 cleanSnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeDocSnippets*)
+makeDocSnippets // beginDefinition;
+
+makeDocSnippets[ results: { ___Association } ] := Enclose[
+    Module[ { sorted, snippets },
+        sorted   = ConfirmMatch[ addDocSnippets @ results, { ___Association }, "Sorted" ];
+        snippets = ConfirmMatch[ Lookup[ sorted, "Snippet" ], { ___String }, "Snippets" ];
+        ConfirmAssert[ Length @ snippets === Length @ results, "LengthCheck" ];
+        DeleteDuplicates @ snippets
+    ],
+    throwInternalFailure
+];
+
+makeDocSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
