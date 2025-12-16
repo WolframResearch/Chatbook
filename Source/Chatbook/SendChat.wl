@@ -38,10 +38,7 @@ $buffer            = "";
 (* ::Section::Closed:: *)
 (*AgentEvaluate*)
 AgentEvaluate // beginDefinition;
-AgentEvaluate // Options = {
-    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
-    "LLMEvaluator"        -> "AgentOne"
-};
+AgentEvaluate // Options = { "LLMEvaluator" -> "AgentOne" };
 
 AgentEvaluate[ messages_, opts: OptionsPattern[ ] ] :=
     catchMine @ chatEvaluateHeadless[ messages, optionsAssociation[ AgentEvaluate, opts ] ];
@@ -464,7 +461,7 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources },
+    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
@@ -472,10 +469,11 @@ prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
         split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
         noSources     = ConfirmMatch[ removeSources @ stringResults, { ___Association }, "NoSources" ];
+        cleanBase     = ConfirmMatch[ removeBasePromptTags @ noSources, { ___Association }, "CleanBase" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> noSources ];
+        addHandlerArguments[ "SubmittedMessages" -> cleanBase ];
 
-        noSources
+        cleanBase
     ],
     throwInternalFailure
 ];
@@ -501,6 +499,21 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     ];
 
 prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeBasePromptTags*)
+removeBasePromptTags // beginDefinition;
+
+removeBasePromptTags[ messages_ ] := ReplaceAll[
+    messages,
+    s_String :> RuleCondition @ StringTrim @ StringReplace[
+        s,
+        Shortest[ "<base-prompt>"~~base___~~"</base-prompt>" ] :> base
+    ]
+];
+
+removeBasePromptTags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

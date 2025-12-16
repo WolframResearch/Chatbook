@@ -117,6 +117,10 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" }
 |>;
 
+$$possibleName = $$string | Automatic | ParentList | Inherited | None;
+
+$excludedBasePrompts = { };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Base Prompt Components*)
@@ -439,7 +443,8 @@ withBasePromptBuilder // endDefinition;
 (* ::Subsection::Closed:: *)
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
-needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
+needsBasePrompt[ name_String ] /; MemberQ[ $excludedBasePrompts, name ] := name;
+needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := name;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
 needsBasePrompt[ $$unspecified|ParentList ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
@@ -482,8 +487,8 @@ removeBasePrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toBasePromptNames*)
 toBasePromptNames // beginDefinition;
-toBasePromptNames[ name_String ] := toBasePromptNames @ { name };
-toBasePromptNames[ names: { ___String } ] := Union[ names, Flatten @ Lookup[ $basePromptClasses, names, { } ] ];
+toBasePromptNames[ name: $$possibleName ] := toBasePromptNames @ { name };
+toBasePromptNames[ names: { $$possibleName... } ] := Union[ names, Flatten @ Lookup[ $basePromptClasses, names, { } ] ];
 toBasePromptNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -44,6 +44,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$enableLLMServices;
 `$evaluationCell;
 `$evaluationNotebook;
+`$excludedBasePrompts;
 `$experimentalFeatures;
 `$filterDocumentationRAG;
 `$finalCell;
