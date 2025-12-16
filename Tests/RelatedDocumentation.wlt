@@ -172,3 +172,99 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:169,1-174,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Vector Database Tests*)
+
+(* These ensure the source selector and each component vector database is working properly. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DataRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[ "Show me a map of meteorite impacts", "Snippets", 5 ],
+        StringContainsQ[ ("ResourceObject"|"ResourceData") ~~ "[\"Meteorite" ~~ (" "|"-") ~~ "Landings\"]" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:185,1-193,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DocumentationURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[ "What's the 123456789th prime?", "Snippets", 5 ],
+        StringContainsQ[ "Prime["~~DigitCharacter..~~"]" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:198,1-206,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*EntityValues*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[ "What are the biggest craters from asteroid strikes?", "Snippets", 5 ],
+        StringContainsQ @ StringExpression[
+            "EntityClass[\"EarthImpact\", {EntityProperty[\"EarthImpact\", \"Diameter\"] -> TakeLargest[",
+            DigitCharacter..,
+            "]}]"
+        ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:211,1-223,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FunctionRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[ "What's the resistance of a red green blue resistor?", "Snippets", 5 ],
+        StringContainsQ[ "ResourceFunction[\"FromResistorColorCode\"]" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:228,1-236,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*NeuralNetRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[
+            "I want to run some text generation experiments with GPT2. Can you tell me how I can get started?",
+            "Snippets",
+            5
+        ],
+        StringContainsQ[ "GPT2 Transformer Trained on WebText Data" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:241,1-253,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*PacletRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[
+            "How can I automatically run tests when I open a PR for my paclet on GitHub?",
+            "Snippets",
+            5
+        ],
+        StringContainsQ[ "Wolfram`PacletCICD`CheckPaclet" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:258,1-270,2"
+]
