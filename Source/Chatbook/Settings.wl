@@ -260,6 +260,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
     "Multimodal"                 -> True,
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolCallRetryMessage"       -> False,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
@@ -276,6 +277,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolCallRetryMessage"       -> False,
     "ToolMethod"                 -> "Service"
 |>;
 
