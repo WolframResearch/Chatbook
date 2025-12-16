@@ -2428,7 +2428,7 @@ sandboxFormatter // beginDefinition;
 sandboxFormatter[ code_String, "Parameters", "code" ] :=
     RawBoxes @ makeInteractiveCodeCell[
         "Wolfram",
-        inlineExpressionURIs @ expandNLInputBoxes @ sandboxStringNormalize @ code
+        inlineExpressionURIs @ sandboxStringNormalize @ code
     ];
 
 sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
@@ -2521,39 +2521,6 @@ smallBoxesQ[ boxes_RowBox ] :=
 smallBoxesQ[ boxes_ ] := ByteCount @ boxes <= 10000;
 
 smallBoxesQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*expandNLInputBoxes*)
-expandNLInputBoxes // beginDefinition;
-
-expandNLInputBoxes[ boxes0_ ] :=
-    Module[ { boxes },
-        boxes = If[ StringQ @ boxes0, stringToBoxes @ boxes0, boxes0 ];
-        boxes /. RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :>
-            With[ { expanded = expandNLInputBoxes0 @ b }, expanded /; ! FailureQ @ expanded ]
-    ];
-
-expandNLInputBoxes // endDefinition;
-
-
-expandNLInputBoxes0 // beginDefinition;
-
-expandNLInputBoxes0[ boxes__ ] := Quiet @ ToExpression[
-    RowBox @ { "System`HoldComplete", "[", boxes, "]" },
-    StandardForm,
-    expandNLInputBoxes1
-];
-
-expandNLInputBoxes0 // endDefinition;
-
-
-expandNLInputBoxes1 // beginDefinition;
-expandNLInputBoxes1[ HoldComplete[ q_String ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData @ q;
-expandNLInputBoxes1[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData[ q, p ];
-expandNLInputBoxes1[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
-expandNLInputBoxes1[ _ ] := $Failed;
-expandNLInputBoxes1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
