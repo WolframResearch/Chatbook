@@ -1327,6 +1327,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
+    StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
     $longNameCharacters
 };
 
