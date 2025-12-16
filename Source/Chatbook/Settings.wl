@@ -37,7 +37,7 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
-    "ExcludedBasePrompts"            -> { },
+    "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
     "ForceSynchronous"               -> Automatic,
     "FrequencyPenalty"               -> 0.1,
@@ -365,6 +365,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
+    "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
     "SplitToolResponseMessages" -> False,
@@ -600,6 +601,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $conversionRules         = resolved[ "ConversionRules" ];
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
+            $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
 
             If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
