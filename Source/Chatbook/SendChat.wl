@@ -1683,6 +1683,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "ToolRequestParser"
         ];
 
+        toolCall = ConfirmMatch[ checkForBadRetry[ container, toolCall ], _LLMToolRequest|_Failure, "RetryFix" ];
+
         applyHandlerFunction[ settings, "ToolRequestReceived", <| "ToolRequest" -> toolCall |> ];
 
         toolResponse = ConfirmMatch[
@@ -1777,6 +1779,46 @@ toolEvaluation // endDefinition;
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
 Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkForBadRetry*)
+checkForBadRetry // beginDefinition;
+checkForBadRetry // Attributes = { HoldFirst };
+
+checkForBadRetry[ container_Symbol, toolCall_LLMToolRequest ] := Enclose[
+    Catch @ Module[ { params, bad, fixed, newParams },
+        params = ConfirmBy[ Association @ toolCall[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
+        bad = Select[ params, badRetryQ ];
+        If[ bad === <| |>, Throw @ toolCall ];
+        fixed = StringDelete[ #, WhitespaceCharacter...~~"/retry"~~Whitespace ] & /@ bad;
+        ConfirmAssert[ AllTrue[ fixed, StringQ ], "StringCheck" ];
+        newParams = ConfirmMatch[ Normal[ <| params, fixed |>, Association ], KeyValuePattern @ { }, "New" ];
+
+        container[ "FullContent"    ] = container[ "FullContent"    ] <> "\n/retry\n";
+        container[ "DynamicContent" ] = container[ "DynamicContent" ] <> "\n/retry\n";
+
+        Replace[
+            toolCall,
+            HoldPattern @ LLMToolRequest[ as_Association, opts___ ] :>
+                LLMToolRequest[ <| as, "ParameterValues" -> newParams |>, opts ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+checkForBadRetry[ container_, failure_Failure ] :=
+    failure;
+
+checkForBadRetry // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*badRetryQ*)
+badRetryQ // beginDefinition;
+badRetryQ[ value_String ] := StringStartsQ[ value, WhitespaceCharacter...~~"/retry"~~Whitespace ];
+badRetryQ[ _ ] := False;
+badRetryQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -54,6 +54,7 @@ $basePromptOrder = {
     "WolframLanguageEvaluatorTool",
     "EndTurnToken",
     "ToolCallPreamble",
+    "ServiceToolCallRetry",
     "EndTurnToolCall",
     "DiscourageExtraToolCalls",
     "WolframLanguageEvaluatorToolTrouble",
@@ -112,6 +113,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
+    "ServiceToolCallRetry"                 -> { },
     "EndTurnToolCall"                      -> { "EndTurnToken" },
     "DiscourageExtraToolCalls"             -> { },
     "WolframLanguageEvaluatorToolTrouble"  -> { "WolframLanguageEvaluatorTool" },
@@ -325,7 +327,13 @@ $basePromptComponents[ "EndTurnToken" ] = "\
 * Always end your turn by writing /end.";
 
 $basePromptComponents[ "ToolCallPreamble" ] = "\
-* Before you call a tool, briefly explain why you are calling it.";
+* **Before** you call a tool, briefly explain why you are calling it.
+* If a tool call fails to give you the information you need, explain why before calling it again.";
+
+$basePromptComponents[ "ServiceToolCallRetry" ] = "\
+* If retrying a tool call because the previous one failed, write /retry in your response before calling it again. \
+This will cause the previous tool call to be hidden in a collapsed section that the user can open if they wish to see \
+prior attempts.";
 
 $basePromptComponents[ "EndTurnToolCall" ] = "\
 * If you are going to make a tool call, you must do so BEFORE ending your turn.";
