@@ -35,11 +35,8 @@ $defaultPromptGenerators := $defaultPromptGenerators = insertPromptGeneratorName
 (*relatedWolframAlphaResultsGenerator*)
 relatedWolframAlphaResultsGenerator // beginDefinition;
 
-relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] /;
-    ! TrueQ @ $ChatNotebookEvaluation || featureEnabledQ[ "RelatedWolframAlphaResults" ] :=
-        LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
-
-relatedWolframAlphaResultsGenerator[ _ ] := "";
+relatedWolframAlphaResultsGenerator[ messages: $$chatMessages ] :=
+    LogChatTiming @ RelatedWolframAlphaResults[ messages, "Prompt", MaxItems -> 5 ];
 
 relatedWolframAlphaResultsGenerator // endDefinition;
 
@@ -48,7 +45,7 @@ relatedWolframAlphaResultsGenerator // endDefinition;
 (*webSearchGenerator*)
 webSearchGenerator // beginDefinition;
 
-webSearchGenerator[ messages: $$chatMessages ] /; featureEnabledQ[ "RelatedWebSearchResults" ] := Enclose[
+webSearchGenerator[ messages: $$chatMessages ] := Enclose[
     Catch @ Module[ { key, string, request, response, data, results, snippets },
 
         key = SystemCredential[ "TAVILY_API_KEY" ];
