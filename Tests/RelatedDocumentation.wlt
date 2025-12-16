@@ -183,26 +183,24 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*DataRepositoryURIs*)
 VerificationTest[
-    SelectFirst[
-        RelatedDocumentation[ "Show me a map of meteorite impacts", "Snippets", 5 ],
-        StringContainsQ[ ("ResourceObject"|"ResourceData") ~~ "[\"Meteorite" ~~ (" "|"-") ~~ "Landings\"]" ]
-    ],
-    _String,
+    RelatedDocumentation[ "Show me a map of meteorite impacts", "URIs", 5 ],
+    {
+        ___,
+        URL[ _String? (StringStartsQ[ "https://datarepository.wolframcloud.com/resources/Meteorite-Landings#" ]) ],
+        ___
+    },
     SameTest -> MatchQ,
-    TestID -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:185,1-193,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:185,1-194,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationURIs*)
 VerificationTest[
-    SelectFirst[
-        RelatedDocumentation[ "What's the 123456789th prime?", "Snippets", 5 ],
-        StringContainsQ[ "Prime["~~DigitCharacter..~~"]" ]
-    ],
-    _String,
+    RelatedDocumentation[ "What's the 123456789th prime?", "URIs", 5 ],
+    { ___, URL[ _String? (StringStartsQ[ "paclet:ref/Prime#" ]) ], ___ },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:198,1-206,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:199,1-204,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -219,20 +217,21 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:211,1-223,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:209,1-221,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*FunctionRepositoryURIs*)
 VerificationTest[
-    SelectFirst[
-        RelatedDocumentation[ "What's the resistance of a red green blue resistor?", "Snippets", 5 ],
-        StringContainsQ[ "ResourceFunction[\"FromResistorColorCode\"]" ]
-    ],
-    _String,
+    RelatedDocumentation[ "What's the resistance of a red green blue resistor?", "URIs", 5 ],
+    {
+        ___,
+        URL[ _String? (StringContainsQ[ "/FromResistorColorCode#" ]) ],
+        ___
+    },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:228,1-236,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:226,1-235,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -249,7 +248,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:241,1-253,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:240,1-252,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -266,5 +265,5 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:258,1-270,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:257,1-269,2"
 ]
