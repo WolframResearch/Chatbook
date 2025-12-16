@@ -224,6 +224,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     Enclose @ Module[
         { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
 
+        If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
         needsBasePrompt @ settings;
