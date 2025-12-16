@@ -55,6 +55,7 @@ $basePromptOrder = {
     "EndTurnToken",
     "EndTurnToolCall",
     "DiscourageExtraToolCalls",
+    "WolframLanguageEvaluatorToolTrouble",
     "NotebookAssistanceInstructionsHeader",
     "NotebookAssistanceGettingStarted",
     "NotebookAssistanceErrorMessage",
@@ -111,6 +112,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "EndTurnToken"                         -> { },
     "EndTurnToolCall"                      -> { "EndTurnToken" },
     "DiscourageExtraToolCalls"             -> { },
+    "WolframLanguageEvaluatorToolTrouble"  -> { "WolframLanguageEvaluatorTool" },
     "NotebookAssistanceInstructionsHeader" -> { },
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
@@ -325,6 +327,10 @@ $basePromptComponents[ "EndTurnToolCall" ] = "\
 
 $basePromptComponents[ "DiscourageExtraToolCalls" ] = "\
 * Don't make more tool calls than is needed. Tool calls cost tokens, so be efficient!";
+
+$basePromptComponents[ "WolframLanguageEvaluatorToolTrouble" ] = "\
+* If you are having trouble with the wolfram_language_evaluator tool, try breaking down your code into smaller steps \
+and evaluating each step individually to see what might be causing the issue.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
