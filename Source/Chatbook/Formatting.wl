@@ -725,16 +725,23 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         Grid[
             {
-                checkTemplateBoxes @ If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
-                    {
-                        button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                        button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
-                    },
-                    {
-                        button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                        button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                        button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-                    }
+                checkTemplateBoxes @ Which[
+                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                        {
+                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
+                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
+                        },
+                    TrueQ @ CurrentChatSettings[ cellObj, "SideBarChat" ],
+                        {
+                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
+                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], "SideBar" ] ]
+                        },
+                    True, (* Chatbook or inline *)
+                        {
+                            button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
+                            button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
+                            button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
+                        }
                 ]
             },
             Alignment -> Top,
@@ -925,8 +932,10 @@ insertCodeBelow // beginDefinition;
 
 insertCodeBelow[ code_ ] := insertCodeBelow[ code, False ];
 
+insertCodeBelow[ cell_CellObject, "SideBar" ] := insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, "SideBar" ]
+
 insertCodeBelow[ cell_CellObject, evaluate_ ] :=
-    If[ TrueQ @ CurrentChatSettings[ cell, "WorkspaceChat" ],
+    If[ TrueQ @ CurrentChatSettings[ cell, "WorkspaceChat" ] || TrueQ @ CurrentChatSettings[ cell, "SideBarChat" ],
         insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, evaluate ],
         insertCodeBelow[ getCodeBlockContent @ cell, evaluate ]
     ];
@@ -935,7 +944,7 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo = parentNotebook @ cellObj;
-        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ] || TrueQ @ CurrentChatSettings[ cellObj, "SideBarChat" ],
             insertCodeInUserNotebook[ nbo, getCodeBlockContent @ cell, evaluate ]
             ,
             insertAfterChatGeneratedCells[ cellObj, getCodeBlockContent @ cell ];
@@ -955,6 +964,27 @@ insertCodeBelow // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*insertCodeInUserNotebook*)
 insertCodeInUserNotebook // beginDefinition;
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "SideBar" ] := Enclose[
+    Module[ { cellObj },
+        cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
+        (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
+        If[ cellObj =!= None && cellTaggedQ[ cellObj, { "SideBarDockedCell", "SideBarSubDockedCell", "SideBarScrollingContentCell", "SideBarChatInputCell", "SideBarTopCell", "NotebookAssistantSideBarCell" } ],
+            SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
+            cellObj = None
+        ];
+
+        If[ cellObj === None,
+            SelectionMove[ chatNB, After, Cell, AutoScroll -> True ];
+            NotebookWrite[ chatNB, preprocessInsertedCell @ cell, All ]
+            ,
+            insertAfterChatGeneratedCells[ cellObj, cell ]
+        ];
+
+        selectionEvaluateCreateCell @ chatNB
+    ],
+    throwInternalFailure
+];
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, evaluate_ ] := Enclose[
     Module[ { nbo, cellObj },
@@ -1172,7 +1202,7 @@ stripMarkdownBoxes // endDefinition;
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
 getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`SideBar`ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
@@ -3233,17 +3263,23 @@ assistantMessageBox // endDefinition;
 assistantMessageBoxActive // beginDefinition;
 
 assistantMessageBoxActive[ box_ ] :=
-    assistantMessageBoxActive[ box, $InlineChat ];
+    assistantMessageBoxActive[ box, "Inline" ];
 
-assistantMessageBoxActive[ box_, True ] :=
+assistantMessageBoxActive[ box_, "Inline" ] :=
     With[ { template = $assistantMessageBoxTemplate @ box },
         template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
     ];
 
-assistantMessageBoxActive[ box_, Except[ True ] ] :=
+assistantMessageBoxActive[ box_, "Workspace" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
         "AssistantMessageBox"
+    ];
+
+assistantMessageBoxActive[ box_, "SideBar" ] :=
+    TemplateBox[
+        { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
+        "NotebookAssistant`SideBar`AssistantMessageBox"
     ];
 
 assistantMessageBoxActive // endDefinition;

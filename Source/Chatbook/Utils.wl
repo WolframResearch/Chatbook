@@ -834,6 +834,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
 evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
+evaluateWithProgress[ args___ ] /; $SideBarChat := evaluateWithSideBarProgress @ args;
 evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
 evaluateWithProgress[ args___ ] /; $ContentSuggestions := evaluateWithProgressContainer[ $progressContainer, args ];
 evaluateWithProgress[ args___ ] := Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
@@ -902,6 +903,50 @@ evaluateWithWorkspaceProgress[ args___ ] :=
     ];
 
 evaluateWithWorkspaceProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithSideBarProgress*)
+evaluateWithSideBarProgress // beginDefinition;
+evaluateWithSideBarProgress // Attributes = { HoldFirst };
+
+evaluateWithSideBarProgress[ args___ ] :=
+    Catch @ Module[ { nbo, cell, container, attached },
+
+        nbo = $evaluationNotebook;
+        cell = Last[ Cells[ nbo, CellStyle -> "NotebookAssistant`SideBar`ChatOutput" ], None ];
+        If[ ! MatchQ[ cell, _CellObject ], Throw @ evaluateWithDialogProgress @ args ];
+
+        container = ProgressIndicator[ Appearance -> "Percolate" ];
+
+        attached = AttachCell[
+            cell,
+            Magnify[
+                Pane[
+                    Dynamic[ container, Deinitialization :> Quiet @ Remove @ container ],
+                    ImageSize -> { Scaled[ 1 ], Automatic }
+                ],
+                AbsoluteCurrentValue[ nbo, Magnification ]
+            ],
+            { Left, Bottom },
+            Offset[ { 0, -30 }, { 0, 0 } ],
+            { Left, Top }
+        ];
+
+        WithCleanup[
+            Block[ { Progress`AssetsDump`$defaultIndicatorWidth = Scaled[ 0.925 ] },
+                Progress`EvaluateWithProgress[
+                    args,
+                    "Container" :> container,
+                    "Delay"     -> 0
+                ]
+            ],
+            NotebookDelete @ attached;
+            Quiet @ Remove @ container;
+        ]
+    ];
+
+evaluateWithSideBarProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

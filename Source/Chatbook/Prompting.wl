@@ -145,13 +145,20 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 ";
 
 $basePromptComponents[ "NotebooksPreamble" ] :=
-If[ TrueQ @ $WorkspaceChat,
+Which[
+TrueQ @ $SideBarChat,
+"You are interacting with a user through a special Wolfram Chat interface within a normal notebook. \
+You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
+Similarly, your responses are automatically converted from plain text before being displayed to the user. \
+For this to work correctly, you must adhere to the following guidelines:
+",
+TrueQ @ $WorkspaceChat,
 "You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
 You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
 Similarly, your responses are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
-"
-,
+",
+True,
 "You are interacting with a user through a special Wolfram Chat Notebook. \
 This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
 AI (you). \

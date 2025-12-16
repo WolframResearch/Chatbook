@@ -11,6 +11,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
+$sideBarChatWidth := $sideBarChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
 
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
@@ -43,6 +44,23 @@ $notebookAssistanceInlineSettings := <|
     "AutoSaveConversations" -> False,
     "InlineChat"            -> True
 |>;
+
+$notebookAssistanceSideBarSettings := <|
+    $notebookAssistanceBaseSettings,
+    "AutoGenerateTitle"     -> True,
+    "AutoSaveConversations" -> True,
+    "ConversationUUID"      -> CreateUUID[ ],
+    "SetCellDingbat"        -> False,
+    "TabbedOutput"          -> False,
+    "SideBarChat"           -> True
+|>;
+
+$sideBarChatTopLevelOptions := Sequence[
+    TaggingRules        -> <|
+        "ChatNotebookSettings" -> $notebookAssistanceSideBarSettings,
+        "ConversationTitle"    -> ""
+    |>
+];
 
 $workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
@@ -188,13 +206,40 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 (* ::Subsection::Closed:: *)
 (*Defaults*)
 
-(* The zero argument form uses "Window" by default: *)
+(* The zero argument form uses "Window" by default pre 15.0, "SideBar" otherwise: *)
+ShowNotebookAssistance[ opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
+    catchMine @ ShowNotebookAssistance[ "SideBar", opts ];
+
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ "Window", opts ];
 
 (* Uses "Window" if given a NotebookObject: *)
+ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
+    catchMine @ ShowNotebookAssistance[ nbo, "SideBar", opts ];
+
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ nbo, "Window", opts ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*SideBar*)
+ShowNotebookAssistance[ "SideBar", opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ withChatState @ LogChatTiming @ ShowNotebookAssistance[
+        LogChatTiming @ getUserNotebook[ ],
+        "SideBar",
+        opts
+    ];
+
+ShowNotebookAssistance[ nbo: _NotebookObject|None, "SideBar", opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ withExtraInstructions[
+        OptionValue[ "ExtraInstructions" ],
+        LogChatTiming @ showNotebookAssistanceSideBar[
+            nbo,
+            LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
+            OptionValue[ "EvaluateInput" ],
+            OptionValue[ "ChatNotebookSettings" ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -453,6 +498,53 @@ setInlineInputAndEvaluate[ Null, input_, evaluate_ ] :=
     Null;
 
 setInlineInputAndEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SideBar Notebook Assistance*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sideBarCellObject*)
+sideBarCellObject // beginDefinition;
+
+sideBarCellObject[ ] := sideBarCellObject @ EvaluationNotebook[ ]
+
+(* This is a hack to get the side bar's CellObject any time we need it.
+    The preferred approach is to pass the CellObject through the side bar interface. *)
+sideBarCellObject[ nbo_NotebookObject ] := ParentCell @ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantSideBarAttachedHelperCell" ], $Failed ];
+
+sideBarCellObject// endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*showNotebookAssistanceSideBar*)
+showNotebookAssistanceSideBar // beginDefinition;
+
+showNotebookAssistanceSideBar[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
+    Module[ { settings, sideBarCell, scrollingSideBarCell, movedLastChatToSourcesIndicatorQ },
+
+        sideBarCell = sideBarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
+        
+        If[ FailureQ @ sideBarCell,
+             (* don't do anything else because this is the first time we've opened the sidebar in this notebook; Cell Initialization adds necessary TaggingRules *)
+            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sideBarChatWidth |> ];
+            , (* ELSE the sidebar assistant is persistant so don't remove content cells *)
+            
+            (* The sidebar assistant is persistant to a given notebook. Only remove content if "new chat" is selected. *)
+
+            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sideBarChatWidth |> ];
+            
+            (* will we ever need to do this with the sidebar chat...? *)
+            If[ TrueQ @ evaluate,
+                MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
+                    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SideBarChatInputCellSendButton" }, FE`SearchStart -> sideBarCell, FE`SearchStop -> sideBarCell ] ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+showNotebookAssistanceSideBar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

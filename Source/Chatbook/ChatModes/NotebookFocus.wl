@@ -48,7 +48,7 @@ getFocusedNotebook // endDefinition;
 (*focusedNotebookDisplay*)
 focusedNotebookDisplay // beginDefinition;
 
-focusedNotebookDisplay[ chatNB_ ] := Enclose[
+focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
     Catch @ Module[ { locked, notebooks, info, current, focused, label },
 
         locked = getLockedNotebook @ chatNB;
@@ -68,22 +68,40 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
         (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
         CurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" } ] = Lookup[ focused, "WindowTitle", None ];
 
-        label = Grid[
-            { {
-                Toggler[
-                    Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
-                    {
-                        True  -> $disableNotebookFocusLabel,
-                        False -> $enableNotebookFocusLabel
-                    },
-                    BaselinePosition -> Baseline
-                ],
-                tr[ "WorkspaceFocusIndicatorFocus" ],
-                focusedNotebookDisplay0[ chatNB, focused, locked, info ]
-            } },
-            Alignment        -> { Left, Baseline },
-            BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
-            BaselinePosition -> { 1, 2 } (* align to the text *)
+        label = If[ MatchQ[ appContainer, _CellObject ],
+            Grid[
+                { {
+                    "Restrict context",
+                    Toggler[
+                        Dynamic @ CurrentChatSettings[ appContainer, "AllowSelectionContext" ],
+                        {
+                            True  -> $disableNotebookFocusLabel,
+                            False -> $enableNotebookFocusLabel
+                        },
+                        BaselinePosition -> Baseline
+                    ] } },
+                Alignment        -> { Left, Baseline },
+                BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
+                BaselinePosition -> { 1, 1 } (* align to the text *)
+            ]
+            ,
+            Grid[
+                { {
+                    Toggler[
+                        Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
+                        {
+                            True  -> $disableNotebookFocusLabel,
+                            False -> $enableNotebookFocusLabel
+                        },
+                        BaselinePosition -> Baseline
+                    ],
+                    tr[ "WorkspaceFocusIndicatorFocus" ],
+                    focusedNotebookDisplay0[ chatNB, focused, locked, info ]
+                } },
+                Alignment        -> { Left, Baseline },
+                BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
+                BaselinePosition -> { 1, 2 } (* align to the text *)
+            ]
         ];
 
         Pane[ label, ImageMargins -> { { 0, 0 }, { 0, 0 } } ]
