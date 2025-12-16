@@ -53,6 +53,7 @@ $basePromptOrder = {
     "WolframLanguageStyle",
     "WolframLanguageEvaluatorTool",
     "EndTurnToken",
+    "ToolCallPreamble",
     "EndTurnToolCall",
     "DiscourageExtraToolCalls",
     "WolframLanguageEvaluatorToolTrouble",
@@ -110,6 +111,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
     "EndTurnToken"                         -> { },
+    "ToolCallPreamble"                     -> { },
     "EndTurnToolCall"                      -> { "EndTurnToken" },
     "DiscourageExtraToolCalls"             -> { },
     "WolframLanguageEvaluatorToolTrouble"  -> { "WolframLanguageEvaluatorTool" },
@@ -321,6 +323,9 @@ $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 
 $basePromptComponents[ "EndTurnToken" ] = "\
 * Always end your turn by writing /end.";
+
+$basePromptComponents[ "ToolCallPreamble" ] = "\
+* Before you call a tool, briefly explain why you are calling it.";
 
 $basePromptComponents[ "EndTurnToolCall" ] = "\
 * If you are going to make a tool call, you must do so BEFORE ending your turn.";

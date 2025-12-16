@@ -118,6 +118,12 @@ $absoluteCurrentSettingsCache = None;
 
 $experimentalFeatures = { };
 
+
+$modelInheritedLists = {
+    "BasePrompt",
+    "ExcludedBasePrompts"
+};
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -641,12 +647,41 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
         result[ "StopTokens" ] = autoStopTokens @ result;
-        result
+
+        ConfirmBy[ inheritModelSettings @ result, AssociationQ, "Result" ]
     ],
     throwInternalFailure
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inheritModelSettings*)
+inheritModelSettings // beginDefinition;
+
+inheritModelSettings[ settings_Association ] := Enclose[
+    Catch @ Module[ { usable, inherit, model, modelSettings, merged },
+        usable = ConfirmBy[ KeyTake[ settings, $modelInheritedLists ], AssociationQ, "Usable" ];
+        inherit = Keys @ Select[ usable, Not @* FreeQ[ ParentList|Inherited ] ];
+        If[ inherit === { }, Throw @ settings ];
+        model = ConfirmBy[ settings[ "Model" ], AssociationQ, "Model" ];
+
+        modelSettings = Select[
+            AssociationMap[ autoModelSetting[ model, # ] &, inherit ],
+            MatchQ[ _List | ParentList | Inherited ]
+        ];
+
+        merged = ConfirmBy[ mergeChatSettings @ { modelSettings, settings }, AssociationQ, "Merged" ];
+
+        Scan[ Function[ merged[ # ] //= DeleteDuplicates ], inherit ];
+
+        merged
+    ],
+    throwInternalFailure
+];
+
+inheritModelSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
