@@ -1043,7 +1043,13 @@ cleanSnippets // beginDefinition;
 cleanSnippets[ snippets: _String | { ___String } ] := StringReplace[
     snippets,
     {
-        md : Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ uri__ ~~ ")\"]\\)" ] :>
+        md: Shortest[ "\\!\\(\\*MarkdownImageBox[\"![" ~~ __ ~~ "](" ~~ uri__ ~~ ")\"]\\)" ] :>
+            If[ validExpressionURIQ @ uri,
+                md,
+                "<image removed>"
+            ]
+        ,
+        md: Shortest[ "![cell image](" ~~ uri__ ~~ ")" ] :>
             If[ validExpressionURIQ @ uri,
                 md,
                 "<image removed>"
