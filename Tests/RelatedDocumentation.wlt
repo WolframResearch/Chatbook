@@ -172,3 +172,98 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:169,1-174,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Vector Database Tests*)
+
+(* These ensure the source selector and each component vector database is working properly. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DataRepositoryURIs*)
+VerificationTest[
+    RelatedDocumentation[ "Show me a map of meteorite impacts", "URIs", 5 ],
+    {
+        ___,
+        URL[ _String? (StringStartsQ[ "https://datarepository.wolframcloud.com/resources/Meteorite-Landings#" ]) ],
+        ___
+    },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:185,1-194,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DocumentationURIs*)
+VerificationTest[
+    RelatedDocumentation[ "What's the 123456789th prime?", "URIs", 5 ],
+    { ___, URL[ _String? (StringStartsQ[ "paclet:ref/Prime#" ]) ], ___ },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:199,1-204,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*EntityValues*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[ "What are the biggest craters from asteroid strikes?", "Snippets", 5 ],
+        StringContainsQ @ StringExpression[
+            "EntityClass[\"EarthImpact\", {EntityProperty[\"EarthImpact\", \"Diameter\"] -> TakeLargest[",
+            DigitCharacter..,
+            "]}]"
+        ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:209,1-221,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FunctionRepositoryURIs*)
+VerificationTest[
+    RelatedDocumentation[ "What's the resistance of a red green blue resistor?", "URIs", 5 ],
+    {
+        ___,
+        URL[ _String? (StringContainsQ[ "/FromResistorColorCode#" ]) ],
+        ___
+    },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:226,1-235,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*NeuralNetRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[
+            "I want to run some text generation experiments with GPT2. Can you tell me how I can get started?",
+            "Snippets",
+            5
+        ],
+        StringContainsQ[ "GPT2 Transformer Trained on WebText Data" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:240,1-252,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*PacletRepositoryURIs*)
+VerificationTest[
+    SelectFirst[
+        RelatedDocumentation[
+            "How can I automatically run tests when I open a PR for my paclet on GitHub?",
+            "Snippets",
+            5
+        ],
+        StringContainsQ[ "Wolfram`PacletCICD`CheckPaclet" ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:257,1-269,2"
+]
