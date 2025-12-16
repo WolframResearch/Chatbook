@@ -58,6 +58,7 @@ $dbConnectivity            = 16;
 $dbExpansionAdd            = 256;
 $dbExpansionSearch         = 2048;
 $relativePaths             = Automatic;
+$jsonPattern               = All;
 
 $minCompressedVectors = 2^14;
 $maxCompressedVectors = 2^18;
@@ -158,7 +159,8 @@ BuildVectorDatabase // Options = {
     "Connectivity"    :> $dbConnectivity,
     "ExpansionAdd"    :> $dbExpansionAdd,
     "ExpansionSearch" :> $dbExpansionSearch,
-    "RelativePaths"   :> $relativePaths
+    "RelativePaths"   :> $relativePaths,
+    "Tags"            -> All
 };
 
 BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
@@ -167,7 +169,8 @@ BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
             $dbConnectivity    = OptionValue[ "Connectivity"    ],
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
             $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
-            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ],
+            $jsonPattern       = makeJSONTagPattern @ OptionValue[ "Tags" ]
         },
         <|
             AssociationMap[ BuildVectorDatabase, FileBaseName /@ getVectorDBSourceFile @ All ],
@@ -181,7 +184,8 @@ BuildVectorDatabase[ "SourceSelector", opts: OptionsPattern[ ] ] :=
             $dbConnectivity    = OptionValue[ "Connectivity"    ],
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
             $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
-            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ],
+            $jsonPattern       = makeJSONTagPattern @ OptionValue[ "Tags" ]
         },
         BuildSourceSelector[ ]
     ];
@@ -192,7 +196,8 @@ BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
             $dbConnectivity    = OptionValue[ "Connectivity"    ],
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
             $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
-            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ],
+            $jsonPattern       = makeJSONTagPattern @ OptionValue[ "Tags" ]
         },
         If[ TrueQ @ $relativePaths,
             ConfirmMatch[ inDBDirectory @ buildVectorDatabase @ name, $$vectorDatabase, "Build" ],
@@ -315,6 +320,14 @@ buildVectorDatabase[ name_String ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeJSONTagPattern*)
+makeJSONTagPattern // ClearAll;
+makeJSONTagPattern[ All ] := All;
+makeJSONTagPattern[ { tags___String } ] := makeJSONTagPattern @ Alternatives @ tags;
+makeJSONTagPattern[ tagPatt_ ] := KeyValuePattern[ "Tag" -> tagPatt ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inDBDirectory*)
 inDBDirectory // ClearAll;
 inDBDirectory // Attributes = { HoldFirst };
@@ -358,7 +371,7 @@ addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :
     Enclose @ Catch @ Module[ { batch, text, values, embeddings, added },
 
         batch = ConfirmMatch[
-            readJSONLines[ stream, $incrementalBuildBatchSize ],
+            readJSONLines[ stream, $incrementalBuildBatchSize, $jsonPattern ],
             { __Association } | EndOfFile,
             "Batch"
         ];
@@ -439,9 +452,16 @@ toDBData0[ text_String             ] := toDBData0 @ { text, text  };
 (* ::Subsubsection::Closed:: *)
 (*trimSnippet*)
 trimSnippet // ClearAll;
-trimSnippet[ str_String ] := StringTake[ str, UpTo[ $maxSnippetLength ] ];
+trimSnippet[ str_String ] := trimTokens @ StringTake[ str, UpTo[ $maxSnippetLength ] ];
 trimSnippet[ as: KeyValuePattern[ "Text" -> text_ ] ] := <| as, "Text" -> trimSnippet @ text |>;
 trimSnippet[ other_ ] := trimSnippet @ TextString @ other;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimTokens*)
+trimTokens // ClearAll;
+trimTokens[ str_String ] /; tokenCount @ str < $embeddingMaxTokens := str;
+trimTokens[ str_String ] := trimTokens @ StringTake[ str, Ceiling[ 0.75 * StringLength @ str ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -941,6 +961,7 @@ saveNamedEmbeddingCache[ name_String, data_Association ] :=
 (*tokenCount*)
 tokenCount // ClearAll;
 tokenCount[ str_String ] := Enclose[ tokenCount[ str ] = Length @ ConfirmMatch[ $tokenizer @ str, { ___Integer } ] ];
+tokenCount[ KeyValuePattern[ "String"|"Text" -> str_String ] ] := tokenCount @ str;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1042,13 +1063,40 @@ lineCount[ file_? FileExistsQ ] :=
 (*readJSONLines*)
 readJSONLines // ClearAll;
 
-readJSONLines[ stream_InputStream, n_Integer? Positive ] :=
+readJSONLines[ stream_, n_ ] :=
+    readJSONLines[ stream, n, All ];
+
+readJSONLines[ stream_InputStream, n_Integer? Positive, All ] :=
     Enclose @ Catch @ Module[ { lines, utf8Lines, jsonData },
         lines = ConfirmMatch[ ReadList[ stream, String, n ], { ___String }, "Lines" ];
         If[ lines === { }, Throw @ EndOfFile ];
         utf8Lines = ConfirmMatch[ FromCharacterCode[ ToCharacterCode @ lines, "UTF-8" ], { __String }, "UTF8" ];
         jsonData = ConfirmMatch[ readRawJSONString /@ utf8Lines, { __Association? AssociationQ }, "JSON" ];
         jsonData
+    ];
+
+readJSONLines[ stream_, n_, patt_ ] :=
+    readJSONLinesFiltered[ stream, n, patt ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readJSONLinesFiltered*)
+readJSONLinesFiltered // ClearAll;
+
+readJSONLinesFiltered[ stream_InputStream, n_Integer? Positive, patt_ ] :=
+    Enclose @ Catch @ Module[ { bag, result, line, utf8Line, jsonData },
+        bag = Internal`Bag[ ];
+        result := Replace[ Internal`BagPart[ bag, All ], { } -> EndOfFile ];
+
+        While[ Internal`BagLength @ bag < n,
+               line = ConfirmMatch[ Read[ stream, String ], _String|EndOfFile, "Line" ];
+               If[ line === EndOfFile, Throw @ result ];
+               utf8Line = ConfirmBy[ FromCharacterCode[ ToCharacterCode @ line, "UTF-8" ], StringQ, "UTF8" ];
+               jsonData = ConfirmBy[ readRawJSONString @ utf8Line, AssociationQ, "JSON" ];
+               If[ MatchQ[ jsonData, patt ], Internal`StuffBag[ bag, jsonData ] ]
+        ];
+
+        result
     ];
 
 (* ::**************************************************************************************************************:: *)

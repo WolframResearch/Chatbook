@@ -873,12 +873,39 @@ addInstructions[ results: { ___Association } ] := Enclose[
 
         sorted = ConfirmMatch[ SortBy[ withInstructions, Lookup[ "Position" ] ], { ___Association }, "Sorted" ];
 
-        sorted
+        ConfirmMatch[ addSpecialInstructions @ sorted, { ___Association }, "Result" ]
     ],
     throwInternalFailure
 ];
 
 addInstructions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addSpecialInstructions*)
+addSpecialInstructions // beginDefinition;
+
+addSpecialInstructions[ sorted_List ] := Enclose[
+    Catch @ Module[ { as, entityInstructions },
+        as = ConfirmMatch[ SelectFirst[ sorted, addBasicEntityInstructionsQ ], _Association|_Missing, "Entity" ];
+        If[ MissingQ @ as, Throw @ sorted ];
+        entityInstructions = ConfirmBy[ getNamedSnippet[ "BasicEntityUsage" ], StringQ, "EntityInstructions" ];
+        Prepend[ sorted, <| as, "Position" -> 0, "Snippet" -> entityInstructions, "Type" -> "Instructions" |> ]
+    ],
+    throwInternalFailure
+];
+
+addSpecialInstructions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addBasicEntityInstructionsQ*)
+addBasicEntityInstructionsQ // beginDefinition;
+
+addBasicEntityInstructionsQ[ KeyValuePattern[ "Snippet" -> s_String ] ] :=
+    StringContainsQ[ s, "Entity"|"\[FreeformPrompt]"|"\\\[FreeformPrompt]" ];
+
+addBasicEntityInstructionsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

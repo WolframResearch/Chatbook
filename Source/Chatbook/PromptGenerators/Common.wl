@@ -8,6 +8,7 @@ HoldComplete[
     `$maxNeighbors,
     `$maxSelectedSources,
     `$versionString,
+    `getNamedSnippet,
     `getSmallContextString,
     `insertContextPrompt,
     `vectorDBSearch
