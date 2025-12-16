@@ -630,6 +630,7 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         If[ $chatState,
             If[ override[ "Assistance"    ], $AutomaticAssistance = True ];
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
+            If[ override[ "SideBarChat"   ], $SideBarChat         = True ];
         ];
         result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
         result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
@@ -716,7 +717,7 @@ resolveAutoSetting0[ as_, name_String ] :=
     ];
 
 (* Otherwise resolve defaults normally: *)
-resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat || $InlineChat ];
+resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat || $InlineChat || $SideBarChat ];
 resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "Authentication"                 ] := autoAuthentication @ as;
@@ -1692,6 +1693,14 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
         ];
 
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
+
+        (* There are no chat delimiters in the side bar so throw the side bar cell's settings *)
+        If[ cellTaggedQ[ cell, "NotebookAssistantSideBarCell" ], Throw @
+            Replace[
+                CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                Inherited :> Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
+            ]
+        ];
 
         nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
         cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];

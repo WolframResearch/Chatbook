@@ -43,6 +43,7 @@ $iconDirectory              = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory         = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$sideBarDataFile            = FileNameJoin @ { $assetLocation, "SideBarStyles.wl" };
 $pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
 $iconManifestFile           = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile       = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
@@ -989,8 +990,10 @@ Module[ { excludedCoreExtensions },
         "Text"
     ];
 
+    Get[$sideBarDataFile];
+
     Replace[
-        DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ],
+        DeleteCases[ Flatten @ { $styleDataCells, SideBarCoreExtensionCells[ ] }, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ],
         Cell[ sd:StyleData[ "ChatInput", ___ ], a___, CellEventActions -> b_List, c___ ] :>
             Cell[ sd, a, CellEventActions -> DeleteCases[ b, _[ "MouseEntered" | "MouseExited", _ ] ], c ],
         1]

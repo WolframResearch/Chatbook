@@ -71,6 +71,7 @@ withChatState[ eval_ ] :=
             $currentSettingsCache         = <| |>,
             $enableLLMServices            = Automatic,
             $WorkspaceChat                = False,
+            $SideBarChat                  = False,
             withChatState                 = # &,
             $contextPrompt                = $contextPrompt,
             $selectionPrompt              = $selectionPrompt,
@@ -217,9 +218,13 @@ withEvaluationNotebook // Attributes = { HoldRest };
 
 withEvaluationNotebook[ nbo_NotebookObject, eval_ ] :=
     Block[ { $evaluationNotebook = nbo },
-        If[ TrueQ @ CurrentChatSettings[ nbo, "WorkspaceChat" ],
-            withWorkspaceGlobalProgress[ nbo, eval ],
-            eval
+        Which[
+            TrueQ @ $WorkspaceChat || TrueQ @ CurrentChatSettings[ nbo, "WorkspaceChat" ],
+                withWorkspaceGlobalProgress[ nbo, eval ],
+            TrueQ @ $SideBarChat,
+                withSideBarGlobalProgress[ nbo, eval ],
+            True,
+                eval
         ]
     ];
 

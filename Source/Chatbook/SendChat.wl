@@ -160,14 +160,14 @@ sendChatHeadless // endDefinition;
 (*sendChat*)
 sendChat // beginDefinition;
 
-sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cell, cellObject, container, task },
+sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
+    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cellExpr, cellObj, container, task },
 
         initFETaskWidget @ nbo;
         resolveInlineReferences @ evalCell;
 
         settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
-        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo, appContainer ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0 // LogChatTiming[ "ChatHistoryCellsAndTarget" ],
@@ -188,9 +188,9 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         $reformattedCell = None;
         cellTags = CurrentValue[ evalCell, CellTags ];
-        cell = activeAIAssistantCell[
+        cellExpr = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            Association[ settings, "Container" :> container, "CellObject" :> cellObj, "Task" :> task ],
             cellTags
         ];
 
@@ -199,8 +199,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             NotebookDelete @ $lastCellObject;
         ];
 
-        cellObject = $lastCellObject = ConfirmMatch[
-            createNewChatOutput[ settings, target, cell ],
+        cellObj = $lastCellObject = ConfirmMatch[
+            createNewChatOutput[ settings, target, cellExpr ],
             _CellObject,
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
@@ -228,7 +228,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        CurrentChatSettings[ cellObject, "Data" ] = data;
+        CurrentChatSettings[ cellObj, "Data" ] = data;
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -249,7 +249,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             <|
                 "EvaluationCell" -> evalCell,
                 "Messages"       -> messages,
-                "CellObject"     -> cellObject,
+                "CellObject"     -> cellObj,
                 "Container"      :> container
             |>
         ];
@@ -257,19 +257,19 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         task = $lastTask = chatSubmit[
             container,
             prepareMessagesForLLM[ settings, messages ],
-            cellObject,
+            cellObj,
             settings
         ] // withApproximateProgress[ "SendingChat", 0.4 ];
 
         addHandlerArguments[ "Task" -> task ];
 
-        CurrentChatSettings[ cellObject, "CellObject" ] = cellObject;
-        CurrentChatSettings[ cellObject, "Task"       ] = task;
+        CurrentChatSettings[ cellObj, "CellObject" ] = cellObj;
+        CurrentChatSettings[ cellObj, "Task"       ] = task;
 
-        If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObj, task ] ];
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
 
-        If[ task === $Canceled, throwTop @ StopChat @ cellObject ];
+        If[ task === $Canceled, throwTop @ StopChat @ cellObj ];
 
         task
     ],
@@ -278,7 +278,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
+sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[
         {
             settings, cells0, cells, target, id, key, messages, req, data, persona,
@@ -289,7 +289,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         resolveInlineReferences @ evalCell;
 
         settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
-        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo, appContainer ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
@@ -918,7 +918,7 @@ chatSubmit0 // Attributes = { HoldFirst };
 chatSubmit0[
     container_,
     messages: { __Association },
-    cellObject_,
+    cellObject_CellObject,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
     Module[ { auth, stop, result, chunks, content },
@@ -961,7 +961,7 @@ chatSubmit0[
     throwInternalFailure
 ];
 
-chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
+chatSubmit0[ container_, messages: { __Association }, cellObject_CellObject, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
     $lastChatSubmitResult = ReleaseHold[
@@ -989,7 +989,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings_ ] := (
+chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_CellObject, settings_ ] := (
     $buffer = "";
     applyProcessingFunction[
         settings,
@@ -1068,7 +1068,7 @@ chatHandlerFunctionsKeys // endDefinition;
 chatHandlers // beginDefinition;
 chatHandlers // Attributes = { HoldFirst };
 
-chatHandlers[ container_, cellObject_, settings_ ] :=
+chatHandlers[ container_, cellObject_CellObject, settings_ ] :=
     $lastHandlers = With[
         {
             autoOpen      = TrueQ @ $autoOpen,
@@ -1187,7 +1187,7 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_, cell_ ] :=
+writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_, cell_CellObject ] :=
     Which[
         FailureQ @ strings,
             throwFailureToChatOutput @ strings,
@@ -1198,11 +1198,11 @@ writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ KeyValuePattern[ "BodyChunk" -> chunk_String ], container_, cell_ ] :=
+writeChunk[ KeyValuePattern[ "BodyChunk" -> chunk_String ], container_, cell_CellObject ] :=
     writeChunk[ $buffer <> chunk, container, cell ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ chunk_String, container_, cell_ ] :=
+writeChunk[ chunk_String, container_, cell_CellObject ] :=
     Module[ { ws, sep, parts, buffer },
         ws      = WhitespaceCharacter...;
         sep     = "\n\n" | "\r\n\r\n";
@@ -1218,17 +1218,17 @@ writeChunk // endDefinition;
 writeChunk0 // beginDefinition;
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk0[ container_, cell_, "" | "[DONE]" | "[DONE]\n\n" ] :=
+writeChunk0[ container_, cell_CellObject, "" | "[DONE]" | "[DONE]\n\n" ] :=
     Null;
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk0[ container_, cell_, chunk_String ] :=
+writeChunk0[ container_, cell_CellObject, chunk_String ] :=
     writeChunk0[ container, cell, chunk, Quiet @ Developer`ReadRawJSONString @ chunk ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_,
+    cell_CellObject,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern[ "delta" -> KeyValuePattern[ "content" -> text_String ] ], ___ } ]
 ] := writeChunk0[ container, cell, chunk, text ];
@@ -1236,7 +1236,7 @@ writeChunk0[
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_,
+    cell_CellObject,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern @ { "delta" -> <| |>, "finish_reason" -> "stop" }, ___ } ]
 ] := Null;
@@ -1244,12 +1244,12 @@ writeChunk0[
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_,
+    cell_CellObject,
     chunk_String,
     KeyValuePattern[ "completion" -> text_String ]
 ] := writeChunk0[ container, cell, chunk, text ];
 
-writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
+writeChunk0[ Dynamic[ container_ ], cell_CellObject, chunk_String, text_String ] := (
 
     appendStringContent[ container[ "FullContent"    ], text ];
     appendStringContent[ container[ "DynamicContent" ], text ];
@@ -1276,7 +1276,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     ]
 );
 
-writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
+writeChunk0[ Dynamic[ container_ ], cell_CellObject, chunk_String, other_ ] :=
      Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ];
 
 writeChunk0 // endDefinition;
@@ -1366,20 +1366,20 @@ splitDynamicContent // beginDefinition;
 splitDynamicContent // Attributes = { HoldFirst };
 
 (* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
-splitDynamicContent[ container_, cell_ ] /; Or[
+splitDynamicContent[ container_, cell_CellObject ] /; Or[
     $InlineChat,
     ! $dynamicSplit,
     insufficientVersionQ[ "DynamicSplit" ],
     $cloudNotebooks
 ] := Null;
 
-splitDynamicContent[ container_, cell_ ] :=
+splitDynamicContent[ container_, cell_CellObject ] :=
     splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
 
-splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
+splitDynamicContent[ container_, text_String, cell_CellObject, uuid_String ] :=
     splitDynamicContent[ container, DeleteCases[ StringSplit[ text, $dynamicSplitRules ], "" ], cell, uuid ];
 
-splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
+splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellObject, uuid_String ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write, nbo },
 
         boxObject = ConfirmMatch[
@@ -1403,17 +1403,31 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             "ReformatTextData"
         ];
 
-        write = Cell[ TextData @ reformatted, "ChatOutput", Background -> None, CellFrame -> 0 ];
+        write = Cell[ TextData @ reformatted, If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         container[ "DynamicContent" ] = dynamic;
 
-        With[ { boxObject = boxObject, write = write },
-            splitDynamicTaskFunction @ NotebookWrite[
-                System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                write,
-                None,
-                AutoScroll -> False
+        If[ TrueQ @ $SideBarChat,
+            With[ { boxObject = boxObject, write = write, sideBarCell = sideBarCellObject @ nbo },
+                splitDynamicTaskFunction @ 
+                WithCleanup[
+                    FrontEndExecute[ {
+                        FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                        FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ]
+                    } ]
+                    ,
+                    CurrentValue[ sideBarCell, Editable ] = Inherited
+                ]
+            ]
+            ,
+            With[ { boxObject = boxObject, write = write },
+                splitDynamicTaskFunction @ NotebookWrite[
+                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                    write,
+                    None,
+                    AutoScroll -> False
+                ]
             ]
         ];
 
@@ -1425,7 +1439,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
 ];
 
 (* There's nothing we can write as static content yet: *)
-splitDynamicContent[ container_, { _ } | { }, cell_, uuid_ ] := Null;
+splitDynamicContent[ container_, { _ } | { }, cell_CellObject, uuid_ ] := Null;
 
 splitDynamicContent // endDefinition;
 
@@ -1434,7 +1448,7 @@ splitDynamicContent // endDefinition;
 (*checkResponse*)
 checkResponse // beginDefinition;
 
-checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
+checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_CellObject, as_Association ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
@@ -1442,13 +1456,13 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
 
 (* FIXME: Look for "finish_reason":"stop" and check if response ends in a WL code block.
           If it does, process it as a tool call, since it wrote /exec after the code block. *)
-checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
+checkResponse[ settings_, container_, cell_CellObject, as_Association ] /; toolFreeQ[ settings, container ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
     ];
 
-checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
+checkResponse[ settings_, container_Symbol, cell_CellObject, as_Association ] :=
     If[ TrueQ @ $AutomaticAssistance,
         toolEvaluation[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ toolEvaluation[ settings, Unevaluated @ container, cell, as ]
@@ -1461,12 +1475,12 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
-writeResult[ settings_, container_, cell_, as_ ] /; $headlessChat := (
+writeResult[ settings_, container_, cell_CellObject, as_ ] /; $headlessChat := (
     appendCitations[ Unevaluated @ container, settings ];
     Null
 );
 
-writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
+writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose[
     Catch @ Module[ { log, processed, body, data },
 
         appendCitations[ Unevaluated @ container, settings ];
@@ -1645,7 +1659,7 @@ simpleToolFreeQ // endDefinition;
 (*toolEvaluation*)
 toolEvaluation // beginDefinition;
 
-toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
+toolEvaluation[ settings_, container_Symbol, cell_CellObject, as_Association ] := Enclose[
     Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
@@ -2002,7 +2016,7 @@ appendToolResult // endDefinition;
 (*selectChatCells*)
 selectChatCells // beginDefinition;
 
-selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObject ] :=
+selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObject, appContainer_ ] :=
     Block[
         {
             $maxChatCells = Replace[
@@ -2010,7 +2024,16 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
                 Except[ _Integer? Positive ] :> $maxChatCells
             ]
         },
-        $selectedChatCells = selectChatCells0[ cell, clearMinimizedChats @ nbo ]
+        $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "NotebookAssistantSideBarCell" ],
+            (* 15.0: if in a new side bar chat, then there is no scrolling cell, so fail gracefully (in reality we should have added one when sending the first chat) *)
+            With[
+                { scrollingCell = First[ Cells[ appContainer, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoSideBarScrollingContentCell" ] },
+                { sideBarCells = If[ MissingQ @ scrollingCell, { }, Cells[ scrollingCell, CellTags -> "SideBarTopCell" ] ] },
+                (* at minimum, the input cell should be present, so selectChatCells0 will have an internal error otherwise *)
+                selectChatCells0[ cell, sideBarCells ]
+            ],
+            selectChatCells0[ cell, clearMinimizedChats @ nbo ]
+        ]
     ] // LogChatTiming[ "SelectChatCells" ];
 
 selectChatCells // endDefinition;
@@ -2022,13 +2045,13 @@ selectChatCells0 // beginDefinition;
    a cell that is in the middle of other generated outputs, e.g. a message cell that lies between an input and output.
    In these cases, we want to make sure we don't delete chat output cells that come after the generated cells,
    since the user is just looking for chat feedback for the selected cell. *)
-selectChatCells0[ cell_, cells: { __CellObject } ] := selectChatCells0[ cell, cells, $finalCell ];
+selectChatCells0[ cell_CellObject, cells: { __CellObject } ] := selectChatCells0[ cell, cells, $finalCell ];
 
 (* If `$finalCell` is defined, we can use it to filter out any cells that follow it via this pattern: *)
-selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] := selectChatCells0[ cell, { before, final }, None ];
+selectChatCells0[ cell_CellObject, { before___, final_, ___ }, final_ ] := selectChatCells0[ cell, { before, final }, None ];
 
 (* Otherwise, proceed with cell selection: *)
-selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
+selectChatCells0[ cell_CellObject, cells: { __CellObject }, final_ ] := Enclose[
     Module[ { cellData, cellPosition, before, groupPos, selectedRange, filtered, rest, selectedCells },
 
         cellData = ConfirmMatch[
@@ -2292,17 +2315,38 @@ openChatCell // endDefinition;
 WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
     writeInlineChatOutputCell[ cell, new, info ];
 
+(* $SideBarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
 WriteChatOutputCell[
     cell_CellObject,
     new_Cell,
     info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
-] :=
-    Module[ { output },
-        output = CellObject @ uuid;
-        NotebookWrite[ cell, new, None, AutoScroll -> False ];
+] := Enclose[
+    Module[ { output, input, sideBarQ, sideBarCell },
+        sideBarQ = cellTaggedQ[ cell, "SideBarTopCell" ];
+        input = PreviousCell[ cell, CellStyle -> If[ sideBarQ, "NotebookAssistant`SideBar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
+        If[ sideBarQ,
+            sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
+            ConfirmMatch[ cellTaggedQ[ sideBarCell, "NotebookAssistantSideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
+            WithCleanup[
+                FrontEndExecute[ {
+                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
+                } ]
+                ,
+                CurrentValue[ sideBarCell, Editable ] = Inherited
+            ]
+            ,
+            NotebookWrite[ cell, new, None, AutoScroll -> False ]
+        ];
+        output = NextCell[ input, CellTags -> uuid ]; (* we set the uuid previously *)
+        (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
+        CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
+        $lastChatOutput = output;
         attachChatOutputMenu @ output;
         scrollOutput[ TrueQ @ scroll, output ];
-    ];
+    ],
+    throwInternalFailure
+];
 
 WriteChatOutputCell[ args___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", WriteChatOutputCell, HoldForm @ WriteChatOutputCell @ args ];
@@ -2400,7 +2444,11 @@ activeAIAssistantCell[
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
+            outer     = Which[
+                TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
+                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
+                TrueQ @ $SideBarChat,   assistantMessageBoxActive[ #, "SideBar" ]&,
+                True,                   # & ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -2468,7 +2516,11 @@ activeAIAssistantCell[
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBoxActive, # & ]
+            outer     = Which[
+                TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
+                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
+                TrueQ @ $SideBarChat,   assistantMessageBoxActive[ #, "SideBar" ]&,
+                True,                   # & ]
         },
         Cell[
             BoxData @ outer @ TagBox[
@@ -2486,7 +2538,7 @@ activeAIAssistantCell[
             ]
             ,
             "Output",
-            "ChatOutput",
+            If[ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
             If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
@@ -2659,7 +2711,7 @@ toDingbatBoxes // endDefinition;
 (*writeReformattedCell*)
 writeReformattedCell // beginDefinition;
 
-writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_ ] :=
+writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_CellObject ] :=
     writeReformattedCell[ settings, string, cell ];
 
 writeReformattedCell[ settings_, $$progressIndicator, cell_CellObject ] :=
@@ -2676,7 +2728,7 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
+        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, createTask, info },
 
             string = ConfirmBy[ StringTrim @ string0, StringQ, "String" ];
 
@@ -2693,18 +2745,16 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             cellTags = CurrentValue[ cell, CellTags ];
             uuid     = CreateUUID[ ];
             new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
-            output   = uuidToCellObject[ uuid, cell ];
-
+            
             $lastChatString  = string;
             $reformattedCell = new;
-            $lastChatOutput  = output;
-
+            $lastChatOutput = None;
+            
             createTask = If[ TrueQ @ sufficientVersionQ[ "TaskWriteOutput" ], createFETask, Identity ];
 
             info = addProcessingArguments[
                 "WriteChatOutputCell",
                 <|
-                    "EvaluationCell" -> output,
                     "Result"         -> string,
                     "ScrollOutput"   -> scroll,
                     "CellOpen"       -> open,
@@ -2716,7 +2766,7 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
                 createTask @ applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
             ];
 
-            waitForCellObject[ settings, output ]
+            waitForLastChatOutput @ settings
         ]
     ],
     throwInternalFailure
@@ -2731,7 +2781,7 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
                 Cell @ BoxData @ ToBoxes @ catchAlways @ throwInternalFailure @
                     writeReformattedCell[ settings, other, cell ]
             },
-            "ChatOutput",
+            If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True
         ],
@@ -2743,25 +2793,16 @@ writeReformattedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*uuidToCellObject*)
-uuidToCellObject // beginDefinition;
-uuidToCellObject[ uuid_String, cell_CellObject ] /; $cloudNotebooks := uuidToCellObject[ uuid, parentNotebook @ cell ];
-uuidToCellObject[ uuid1_String, NotebookObject[ _, uuid2_String ] ] := CellObject[ uuid1, uuid2 ];
-uuidToCellObject[ uuid_String, _ ] := CellObject @ uuid;
-uuidToCellObject // endDefinition;
+(*waitForLastChatOutput*)
+waitForLastChatOutput // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*waitForCellObject*)
-waitForCellObject // beginDefinition;
-
-waitForCellObject[ settings_, cell_CellObject, timeout_: 1 ] :=
+waitForLastChatOutput[ settings_, timeout_: 1 ] :=
     If[ settings[ "HandlerFunctions", "ChatPost" ] =!= None,
-        TimeConstrained[ While[ ! StringQ @ CurrentValue[ cell, ExpressionUUID ], Pause[ 0.05 ] ], timeout ];
-        cell
+        TimeConstrained[ While[ $lastChatOutput === None, Pause[ 0.05 ] ], timeout ];
+        $lastChatOutput
     ];
 
-waitForCellObject // endDefinition;
+waitForLastChatOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2822,13 +2863,20 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 
         dingbat = makeOutputDingbat @ settings;
 
-        outer = If[ TrueQ @ $WorkspaceChat,
-                    BoxData @ TemplateBox[
-                        { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
-                        "AssistantMessageBox"
-                    ] &,
-                    # &
-                ];
+        outer = Which[
+            TrueQ @ $WorkspaceChat,
+                BoxData @ TemplateBox[
+                    { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                    "AssistantMessageBox"
+                ] &,
+            TrueQ @ $SideBarChat,
+                BoxData @ TemplateBox[
+                    { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                    "NotebookAssistant`SideBar`AssistantMessageBox"
+                ] &,
+            True,
+                # &
+        ];
 
         Cell[
             outer @ content,
@@ -2838,11 +2886,11 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
                         "[WARNING]", "AssistantOutputWarning",
                         _          , "AssistantOutput"
                 ],
-                "ChatOutput"
+                If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ]
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
-            CellTags          -> cellTags,
+            CellTags          -> Flatten @ { uuid, cellTags },
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
@@ -2857,8 +2905,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 }
-            ],
-            ExpressionUUID -> uuid
+            ]
         ]
     ],
     throwInternalFailure
@@ -2879,7 +2926,7 @@ conformToTextData // endDefinition;
 conformToTextData0 // beginDefinition;
 conformToTextData0[ text_String ] := text;
 conformToTextData0[ (Cell|TextData)[ text_ ] ] := conformToTextData0 @ text;
-conformToTextData0[ Cell[ text_, "ChatOutput" ] ] := conformToTextData0 @ text;
+conformToTextData0[ Cell[ text_, "ChatOutput" | "NotebookAssistant`SideBar`ChatOutput" ] ] := conformToTextData0 @ text;
 conformToTextData0[ text: $$textData ] := text;
 conformToTextData0[ boxes_BoxData ] := Cell @ boxes;
 conformToTextData0[ expr_ ] := With[ { b = ToBoxes @ expr }, conformToTextData0 @ b /; MatchQ[ b, $$textData ] ];
@@ -3047,11 +3094,11 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
 
         cell = Cell[
             content,
-            "ChatOutput",
+            If[ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
-            ExpressionUUID    -> uuid,
+            ExpressionUUID    -> uuid,  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
                 CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
@@ -3078,7 +3125,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SideBarChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
@@ -3117,7 +3164,22 @@ throwFailureToChatOutput // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);
+writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SideBarChat ] := Enclose[
+    (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell if in a side bar chat *)
+    With[ { sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ] },
+        createFETask @ WithCleanup[
+            FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`NotebookWrite[ cell, errorCell @ as ]
+            } ]
+            ,
+            CurrentValue[ sideBarCell, Editable ] = Inherited
+        ];
+        Null
+    ],
+    throwInternalFailure
+]
+writeErrorCell[ cell_CellObject, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);
 writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

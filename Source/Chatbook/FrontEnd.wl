@@ -170,7 +170,7 @@ runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*feParentObject*)
+(*feParentObject goes exactly one level up in the (erroneously assumed) box... > cell... > notebook > frontend chain *)
 feParentObject // beginDefinition;
 
 feParentObject[ box_BoxObject ] :=
@@ -180,6 +180,12 @@ feParentObject[ box_BoxObject ] :=
             parentCell @ box
         ]
     ];
+
+(* 15.0: the side bar is a single CellObject made up of a row of inline cells.
+    The side bar is pretending to be a sub-NotebookObject to the main NotebookObject.
+    The "top-level" cells are in a Row within a scrollable Pane. The Pane itself is within an inline cell.
+    The fe parent of a top-level cell is the side bar's main CellObject, which is two levels up. *)
+feParentObject[ cell_CellObject ] /; cellTaggedQ[ cell, "SideBarTopCell" ] := ParentCell @ ParentCell @ cell;
 
 feParentObject[ cell_CellObject ] :=
     With[ { parent = parentCell @ cell },
@@ -215,6 +221,13 @@ $evaluationCell :=
 (*cellObjectQ*)
 cellObjectQ[ cell_CellObject ] := MatchQ[ Developer`CellInformation @ cell, KeyValuePattern @ { } ];
 cellObjectQ[ ___             ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellTaggedQ*)
+cellTaggedQ[ cell_CellObject, tag_String       ] := cellTaggedQ[ cell, { tag } ];
+cellTaggedQ[ cell_CellObject, { tags__String } ] := MemberQ[ Flatten @ List @ AbsoluteCurrentValue[ cell, CellTags ], Alternatives @@ {tags} ];
+cellTaggedQ[ ___                               ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -565,6 +578,7 @@ fromFETimestamp // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
+parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SideBarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *)
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
@@ -693,6 +707,26 @@ cloudCellPrint // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellPrintAfter*)
 cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
+
+cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] /; cellTaggedQ[ target, "SideBarTopCell" ] := Enclose[
+    Module[ { sideBarCell },
+        (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell *)
+        sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ];
+        WithCleanup[
+            FrontEndExecute[ {
+                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`SelectionMove[ target, After, Cell, AutoScroll -> True ],
+                FrontEnd`NotebookWrite[ parentNotebook @ target, RowBox[ { "\n", cell } ] ]
+            } ]
+            ,
+            CurrentValue[ sideBarCell, Editable ] = Inherited
+        ];
+        (* this should return the CellObject of the newly written inline cell in the scrolling content cell *)
+        ConfirmMatch[ NextCell @ target, _CellObject, "SideBarCellPrintAfterCellObject" ]
+    ]
+    ,
+    throwInternalFailure
+];
 
 cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] := (
     SelectionMove[ target, After, Cell, AutoScroll -> False ];
@@ -958,6 +992,7 @@ getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
         ]
     ];
 
+(* FIXME: this can be improved when searching a side bar chat *)
 getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
     MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[
         nbo,

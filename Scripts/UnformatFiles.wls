@@ -37,6 +37,7 @@ System`LightDark;
 System`LightDarkSwitched;
 
 result = cicd`ScriptConfirmMatch[ UsingFrontEnd[
+    CurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "ExperimentalNotebookParser" } ] = False; (* ensure the file outline cache is built with the old parser *)
     CurrentValue[ $FrontEndSession, DynamicUpdating ] = False;
     unformat /@ files
 ], { __String } ];

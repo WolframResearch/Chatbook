@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $chatOutputOptions = Sequence[ GeneratedCell -> True, CellAutoOverwrite -> True ];
 $selectableOptions = Sequence[ Background -> None, Selectable -> True, Editable -> True ];
 
-$$chatCellFormat = None | Automatic | "Default" | "Inline" | "Workspace";
+$$chatCellFormat = None | Automatic | "Default" | "Inline" | "SideBar" | "Workspace";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -100,6 +100,26 @@ wrapCellContent[ text_, "Assistant", "Default" ] := Cell[ text, "ChatOutput", $c
 wrapCellContent[ text_, "System"   , "Default" ] := Cell[ text, "ChatSystemInput" ];
 wrapCellContent[ text_, "User"     , "Default" ] := Cell[ text, "ChatInput" ];
 
+wrapCellContent[ text_, "Assistant", "SideBar" ] := 
+ReplaceRepeated[
+    Cell[
+        BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "NotebookAssistant`SideBar`AssistantMessageBox" ],
+        "NotebookAssistant`SideBar`ChatOutput",
+        $chatOutputOptions,
+        CellTags -> "SideBarTopCell"
+    ],
+    {(* So far there's only one TemplateBox that is redefined in the Sidebar compared with ChatOuput within the notebook *)
+        TemplateBox[a_, b : Alternatives[ "ChatCodeBlockTemplate" ], c___] :> RuleCondition[ TemplateBox[a, "NotebookAssistant`SideBar`" <> b, c], True ]
+    }
+];
+wrapCellContent[ text_, "System"   , "SideBar" ] := Nothing; (* System inputs shouldn't appear in sidebar chat *)
+wrapCellContent[ text_, "User"     , "SideBar" ] :=
+Cell[
+    BoxData @ TemplateBox[ { Cell[ simplerTextData @ text, $selectableOptions ] }, "NotebookAssistant`SideBar`UserMessageBox" ],
+    "NotebookAssistant`SideBar`ChatInput",
+    CellTags -> "SideBarTopCell"
+];
+
 wrapCellContent[ text_, "Assistant", "Workspace" ] := workspaceOutput @ text;
 wrapCellContent[ text_, "System"   , "Workspace" ] := Nothing; (* System inputs shouldn't appear in workspace chat *)
 wrapCellContent[ text_, "User"     , "Workspace" ] := workspaceInput @ text;
@@ -109,23 +129,23 @@ wrapCellContent // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*workspaceInput*)
+simplerTextData // beginDefinition;
+simplerTextData[ TextData[ { text_String } ] ] := text;
+simplerTextData[ TextData[ text_String ] ] := text;
+simplerTextData[ text_TextData ] := text;
+simplerTextData[ text_String ] := text;
+simplerTextData[ text_ ] := Cell @ text;
+simplerTextData // endDefinition;
+
+
 workspaceInput // beginDefinition;
-workspaceInput[ TextData[ { text_String } ] ] := workspaceInput @ text;
-workspaceInput[ TextData[ text_String ] ] := workspaceInput @ text;
-workspaceInput[ text_TextData ] := workspaceInput0 @ text;
-workspaceInput[ text_String ] := workspaceInput0 @ text;
-workspaceInput[ text_ ] := workspaceInput0 @ Cell @ text;
-workspaceInput // endDefinition;
 
-
-workspaceInput0 // beginDefinition;
-
-workspaceInput0[ stuff_ ] := Cell[
-    BoxData @ TemplateBox[ { Cell[ stuff, $selectableOptions ] }, "UserMessageBox" ],
+workspaceInput[ stuff_ ] := Cell[
+    BoxData @ TemplateBox[ { Cell[ simplerTextData @ stuff, $selectableOptions ] }, "UserMessageBox" ],
     "ChatInput"
 ];
 
-workspaceInput0 // endDefinition;
+workspaceInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
