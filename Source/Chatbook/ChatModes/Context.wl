@@ -723,6 +723,7 @@ fullSelection[ text_String ] := TextData @ { $leftSelectionIndicator, text, $rig
 fullSelection[ BoxData[ { a___ }, b___ ] ] := BoxData[ { $leftSelectionIndicator, a, $rightSelectionIndicator }, b ];
 fullSelection[ BoxData[ a_, b___ ] ] := BoxData[ RowBox @ { $leftSelectionIndicator, a, $rightSelectionIndicator }, b ];
 fullSelection[ TextData[ text_ ] ] := TextData @ Flatten @ { $leftSelectionIndicator, text, $rightSelectionIndicator };
+fullSelection[ RawData[ s_String ] ] := RawData @ StringJoin[ $leftSelectionIndicator, s, $rightSelectionIndicator ];
 fullSelection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
