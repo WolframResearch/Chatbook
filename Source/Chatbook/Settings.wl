@@ -397,7 +397,13 @@ autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
 
 autoModelSetting[ model0_Association, key_String ] :=
     With[ { model = resolveFullModelSpec @ model0 },
-        autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ]
+        autoModelSetting[
+            toBaseServiceName @ model[ "Service" ],
+            model[ "Name" ],
+            model[ "BaseID" ],
+            model[ "Family" ],
+            key
+        ]
     ];
 
 autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
@@ -427,6 +433,18 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
         ];
 
 autoModelSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toBaseServiceName*)
+toBaseServiceName // beginDefinition;
+
+toBaseServiceName[ name_String ] :=
+    With[ { base = StringDelete[ name, StartOfString~~("LLMKit"|"WolframAI"|"AITutor") ] },
+        If[ base === "", name, base ]
+    ];
+
+toBaseServiceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
