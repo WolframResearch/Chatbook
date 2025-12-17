@@ -294,7 +294,8 @@ $modelAutoSettings[ Automatic, "GPT51" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
-    "ExcludedBasePrompts" -> { ParentList, "EscapedCharacters" }
+    "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
+    "ReplaceUnicodeCharacters" -> True
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
