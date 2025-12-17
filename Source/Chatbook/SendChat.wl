@@ -38,10 +38,7 @@ $buffer            = "";
 (* ::Section::Closed:: *)
 (*AgentEvaluate*)
 AgentEvaluate // beginDefinition;
-AgentEvaluate // Options = {
-    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
-    "LLMEvaluator"        -> "AgentOne"
-};
+AgentEvaluate // Options = { "LLMEvaluator" -> "AgentOne" };
 
 AgentEvaluate[ messages_, opts: OptionsPattern[ ] ] :=
     catchMine @ chatEvaluateHeadless[ messages, optionsAssociation[ AgentEvaluate, opts ] ];
@@ -464,7 +461,7 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources },
+    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
@@ -472,10 +469,11 @@ prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
         split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
         noSources     = ConfirmMatch[ removeSources @ stringResults, { ___Association }, "NoSources" ];
+        cleanBase     = ConfirmMatch[ removeBasePromptTags @ noSources, { ___Association }, "CleanBase" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> noSources ];
+        addHandlerArguments[ "SubmittedMessages" -> cleanBase ];
 
-        noSources
+        cleanBase
     ],
     throwInternalFailure
 ];
@@ -501,6 +499,21 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     ];
 
 prepareMessagesForLLM0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeBasePromptTags*)
+removeBasePromptTags // beginDefinition;
+
+removeBasePromptTags[ messages_ ] := ReplaceAll[
+    messages,
+    s_String :> RuleCondition @ StringTrim @ StringReplace[
+        s,
+        Shortest[ "<base-prompt>"~~base___~~"</base-prompt>" ] :> base
+    ]
+];
+
+removeBasePromptTags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -575,6 +588,7 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
         resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
+(* FIXME: This should just convert private use area characters to their corresponding ASCII representations *)
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
 
@@ -1322,11 +1336,14 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\\uf351" -> "\[FreeformPrompt]",
     "\\uF351" -> "\[FreeformPrompt]",
     "\:ff1d" -> "\[FreeformPrompt]",
+    "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
+    "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
+    StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
     $longNameCharacters
 };
 
@@ -1683,6 +1700,8 @@ toolEvaluation[ settings_, container_Symbol, cell_CellObject, as_Association ] :
             "ToolRequestParser"
         ];
 
+        toolCall = ConfirmMatch[ checkForBadRetry[ container, toolCall ], _LLMToolRequest|_Failure, "RetryFix" ];
+
         applyHandlerFunction[ settings, "ToolRequestReceived", <| "ToolRequest" -> toolCall |> ];
 
         toolResponse = ConfirmMatch[
@@ -1777,6 +1796,46 @@ toolEvaluation // endDefinition;
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
 Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkForBadRetry*)
+checkForBadRetry // beginDefinition;
+checkForBadRetry // Attributes = { HoldFirst };
+
+checkForBadRetry[ container_Symbol, toolCall_LLMToolRequest ] := Enclose[
+    Catch @ Module[ { params, bad, fixed, newParams },
+        params = ConfirmBy[ Association @ toolCall[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
+        bad = Select[ params, badRetryQ ];
+        If[ bad === <| |>, Throw @ toolCall ];
+        fixed = StringDelete[ #, WhitespaceCharacter...~~"/retry"~~Whitespace ] & /@ bad;
+        ConfirmAssert[ AllTrue[ fixed, StringQ ], "StringCheck" ];
+        newParams = ConfirmMatch[ Normal[ <| params, fixed |>, Association ], KeyValuePattern @ { }, "New" ];
+
+        container[ "FullContent"    ] = container[ "FullContent"    ] <> "\n/retry\n";
+        container[ "DynamicContent" ] = container[ "DynamicContent" ] <> "\n/retry\n";
+
+        Replace[
+            toolCall,
+            HoldPattern @ LLMToolRequest[ as_Association, opts___ ] :>
+                LLMToolRequest[ <| as, "ParameterValues" -> newParams |>, opts ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+checkForBadRetry[ container_, failure_Failure ] :=
+    failure;
+
+checkForBadRetry // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*badRetryQ*)
+badRetryQ // beginDefinition;
+badRetryQ[ value_String ] := StringStartsQ[ value, WhitespaceCharacter...~~"/retry"~~Whitespace ];
+badRetryQ[ _ ] := False;
+badRetryQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

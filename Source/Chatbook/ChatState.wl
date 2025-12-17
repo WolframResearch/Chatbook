@@ -85,6 +85,7 @@ withChatState[ eval_ ] :=
             $useRasterCache               = True,
             $includeStackTrace            = True,
             $sources                      = <| |>,
+            $excludedBasePrompts          = $excludedBasePrompts,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

@@ -364,6 +364,9 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
         StringDelete[ code, { StartOfString~~Whitespace~~StartOfLine, Whitespace~~EndOfString } ]
     ];
 
+makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
+    makeInlineWL @ code;
+
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
     makeInlineCodeCell @ code,
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
@@ -372,7 +375,7 @@ makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
 makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
     math;
 
-makeResultCell0[ mathCell[ name_String ] ] /; nameQ @ name && Context @ name === "System`" && StringLength @ name > 1 :=
+makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength @ name > 1 :=
     makeResultCell0 @ inlineCodeCell @ name;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
@@ -682,6 +685,9 @@ toTeXBoxes // endDefinition;
 (*formatTextString*)
 formatTextString // beginDefinition;
 
+formatTextString[ code_String? almostCertainlyWLCodeQ ] :=
+    { makeInlineWL @ code };
+
 formatTextString[ str_String ] := StringSplit[
     StringReplace[
         StringDelete[
@@ -701,6 +707,28 @@ formatTextString[ str_String ] := StringSplit[
 ];
 
 formatTextString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*almostCertainlyWLCodeQ*)
+almostCertainlyWLCodeQ // beginDefinition;
+
+almostCertainlyWLCodeQ[ wl_String ] := TrueQ @ Or[
+    StringStartsQ[ wl, "\[FreeformPrompt]" ],
+    StringMatchQ[
+        wl,
+        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ "[" ~~ ___ ~~ "]"
+    ]
+];
+
+almostCertainlyWLCodeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInlineWL*)
+makeInlineWL // beginDefinition;
+makeInlineWL[ code_String ] := Cell[ BoxData @ wlStringToBoxes @ code, "InlineCode", "Input" ];
+makeInlineWL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1503,7 +1531,7 @@ $stringFormatRules = {
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             makeResultCell @ imageCell[ alt, url ],
 
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
+    "[" ~~ label: Shortest[ ___ ] ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
         hyperlink[ label, url ],
 
     "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
@@ -2534,8 +2562,11 @@ buttonOverlay // endDefinition;
 (*makeInlineCodeCell*)
 makeInlineCodeCell // beginDefinition;
 
-makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
+makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
+
+makeInlineCodeCell[ code_String? almostCertainlyWLCodeQ ] :=
+    makeInlineWL @ code;
 
 makeInlineCodeCell[ s_String? LowerCaseQ ] :=
     StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
@@ -2988,6 +3019,9 @@ hyperlink[ label_String, uri_String? expressionURIQ ] :=
         ]
     ];
 
+hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, "ResourceFunction[" ~~ ___ ~~ "]" ] :=
+    makeInlineWL @ rf;
+
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
     Cell @ BoxData @ TemplateBox[
         {
@@ -3004,7 +3038,7 @@ hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, 
 
 hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
 
-hyperlink[ { label: _String|_StyleBox }, url_ ] := ButtonBox[
+hyperlink[ { label: _String|_StyleBox|_Cell }, url_ ] := ButtonBox[
     label,
     BaseStyle  -> "Hyperlink",
     ButtonData -> { URL @ url, None },
@@ -3115,6 +3149,14 @@ trimWhitespaceR // endDefinition;
 nameQ[ "*"|"**" ] := False;
 nameQ[ s_String? StringQ ] := StringFreeQ[ s, Verbatim[ "*" ] | Verbatim[ "@" ] ] && NameQ @ s;
 nameQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*systemNameQ*)
+systemNameQ // beginDefinition;
+systemNameQ[ name_String? nameQ ] := Context @ name === "System`";
+systemNameQ[ ___ ] := False;
+systemNameQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

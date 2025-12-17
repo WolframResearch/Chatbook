@@ -113,7 +113,7 @@ augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := 
         resolved = ConfirmBy[ toChatSettings[ opts, settings ], AssociationQ, "Resolved" ];
 
         excludedBasePrompts = Lookup[ resolved, "ExcludedBasePrompts", { } ];
-        If[ ! MatchQ[ excludedBasePrompts, { ___String } ],
+        If[ ! MatchQ[ excludedBasePrompts, { (_String|ParentList)... } ],
             throwFailure[ "InvalidExcludedBasePrompts", excludedBasePrompts ]
         ];
 
@@ -225,8 +225,9 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { prompted, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
+        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
 
+        If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
         needsBasePrompt @ settings;
@@ -243,11 +244,17 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
 
+        base = ConfirmBy[
+            "<base-prompt>" <> $basePrompt <> "</base-prompt>",
+            StringQ,
+            "BasePrompt"
+        ];
+
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
                 {
-                    "%%BASE_PROMPT%%" :> $basePrompt,
+                    Shortest[ "<base-prompt>"~~___~~"</base-prompt>" ] -> base,
                     "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
                         "\nENDRESULT\n"
                 }
@@ -841,7 +848,7 @@ buildSystemPrompt[ as_Association ] := StringReplace[
                 "Post"  -> getPostPrompt @ as,
                 "Tools" -> getToolPrompt @ as,
                 "Group" -> getGroupPrompt @ as,
-                "Base"  -> "%%BASE_PROMPT%%"
+                "Base"  -> "<base-prompt></base-prompt>"
             |>,
             StringQ
         ]
