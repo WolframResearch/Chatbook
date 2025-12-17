@@ -330,8 +330,11 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
 
-$basePromptComponents[ "EndTurnToken" ] = "\
-* Always end your turn by writing /end.";
+$basePromptComponents[ "EndTurnToken" ] :=
+    If[ StringQ @ $endToken && $endToken =!= "",
+        "* Always end your turn by writing " <> $endToken <> ".",
+        ""
+    ];
 
 $basePromptComponents[ "ToolCallPreamble" ] = "\
 * **Before** you call a tool, briefly explain why you are calling it.

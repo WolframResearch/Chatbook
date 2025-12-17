@@ -42,6 +42,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$dynamicText;
 `$dynamicTrigger;
 `$enableLLMServices;
+`$endToken;
 `$evaluationCell;
 `$evaluationNotebook;
 `$excludedBasePrompts;
