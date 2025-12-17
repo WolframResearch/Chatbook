@@ -56,6 +56,7 @@ graphicsQ // beginDefinition;
 graphicsQ[ $$graphicsPattern       ] := True;
 graphicsQ[ $$definitelyNotGraphics ] := False;
 graphicsQ[ RawBoxes[ boxes_ ]      ] := graphicsBoxQ @ Unevaluated @ boxes;
+graphicsQ[ Labeled[ g_, ___ ]      ] := graphicsQ @ Unevaluated @ g;
 graphicsQ[ g_                      ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphicsPattern ];
 graphicsQ[ ___                     ] := False;
 graphicsQ // endDefinition;

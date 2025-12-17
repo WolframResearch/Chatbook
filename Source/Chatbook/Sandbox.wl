@@ -30,6 +30,7 @@ $maxSandboxMessages        = 10;
 $maxMessageParameterLength = 100;
 $toolOutputPageWidth       = 100;
 $kernelQuit                = False;
+$verifiedResult            = True;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -101,6 +102,16 @@ $$simpleTemplateBoxName = Alternatives[
     "QuantityMixedUnit6",
     "QuantityPostfix",
     "QuantityPrefix"
+];
+
+$$holdFormH = (HoldForm|HoldCompleteForm);
+
+$$probableFailure = Alternatives[
+    $Aborted,
+    $Canceled,
+    $Failed,
+    _Failure,
+    _Missing
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -620,7 +631,12 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 (* ::Subsection::Closed:: *)
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
-sandboxEvaluate[ eval_ ] := Block[ { $kernelQuit = False }, sandboxEvaluate0 @ eval ];
+
+sandboxEvaluate[ eval_ ] :=
+    Block[ { $kernelQuit = False, $verifiedResult = True },
+        sandboxEvaluate0 @ eval
+    ];
+
 sandboxEvaluate // endDefinition;
 
 
@@ -693,11 +709,15 @@ sandboxEvaluate0[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
-        final = $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ initialized, packets ],
-            "Result"  -> sandboxResult @ initialized,
-            "Packets" -> packets
-        |>;
+        final = $lastSandboxResult = ConfirmBy[
+            verifyResult @ <|
+                "String"  -> sandboxResultString[ initialized, packets ],
+                "Result"  -> sandboxResult @ initialized,
+                "Packets" -> packets
+            |>,
+            AssociationQ,
+            "Verified"
+        ];
 
         If[ TrueQ @ $ChatNotebookEvaluation || TrueQ @ $returnFullResult,
             final,
@@ -787,12 +807,16 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
         initialized = initializeExpressions @ result;
 
-        $lastSandboxResult = <|
-            "String"    -> sandboxResultString[ initialized, packets ],
-            "Result"    -> sandboxResult @ initialized,
-            "Packets"   -> packets,
-            "SessionMX" -> setCloudSessionString @ response
-        |>
+        $lastSandboxResult = ConfirmBy[
+            verifyResult @ <|
+                "String"    -> sandboxResultString[ initialized, packets ],
+                "Result"    -> sandboxResult @ initialized,
+                "Packets"   -> packets,
+                "SessionMX" -> setCloudSessionString @ response
+            |>,
+            AssociationQ,
+            "Verified"
+        ]
     ],
     throwInternalFailure
 ];
@@ -968,11 +992,15 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
         packets = TextPacket /@ response[ "OutputLog" ];
         initialized = result;
 
-        $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ initialized, packets ],
-            "Result"  -> sandboxResult @ initialized,
-            "Packets" -> packets
-        |>
+        $lastSandboxResult = ConfirmBy[
+            verifyResult @ <|
+                "String"  -> sandboxResultString[ initialized, packets ],
+                "Result"  -> sandboxResult @ initialized,
+                "Packets" -> packets
+            |>,
+            AssociationQ,
+            "Verified"
+        ]
     ],
     throwInternalFailure
 ];
@@ -2087,6 +2115,66 @@ undefinedSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*verifyResult*)
+verifyResult // beginDefinition;
+
+verifyResult[ as_Association ] := Enclose[
+    Module[ { verified },
+        verified = ConfirmMatch[ verifiedResultQ @ as, True|False, "Verified" ];
+        If[ ! verified, ConfirmBy[ needsBasePrompt[ "WolframLanguageEvaluatorToolTrouble" ], StringQ, "RetryPrompt" ] ];
+        <| as, "Verified" -> verified |>
+    ],
+    throwInternalFailure
+];
+
+verifyResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*verifiedResultQ*)
+verifiedResultQ // beginDefinition;
+
+verifiedResultQ[ as: KeyValuePattern[ "Result" -> result_HoldCompleteForm ] ] := And[
+    $verifiedResult,
+    verifiedExpressionResultQ @ result,
+    verifiedStringResultQ @ as[ "String" ]
+];
+
+verifiedResultQ[ KeyValuePattern[ "Result" -> _Failure ] ] :=
+    False;
+
+verifiedResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*verifiedExpressionResultQ*)
+verifiedExpressionResultQ // beginDefinition;
+verifiedExpressionResultQ[ $$holdFormH[ _? probableFailureQ ] ] := False;
+verifiedExpressionResultQ[ $$holdFormH[ ___ ] ] := True;
+verifiedExpressionResultQ[ _ ] := False;
+verifiedExpressionResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*probableFailureQ*)
+probableFailureQ // beginDefinition;
+probableFailureQ[ $$probableFailure ] := True;
+probableFailureQ[ { exprs__ } ] := AllTrue[ HoldComplete @ exprs, probableFailureQ ];
+probableFailureQ[ _ ] := False;
+probableFailureQ // Attributes = { HoldAllComplete };
+probableFailureQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*verifiedStringResultQ*)
+verifiedStringResultQ // beginDefinition;
+verifiedStringResultQ[ "" ] := False;
+verifiedStringResultQ[ string_String ] := StringFreeQ[ string, "General::messages" ];
+verifiedStringResultQ[ _ ] := False;
+verifiedStringResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*sandboxResult*)
 sandboxResult // beginDefinition;
 sandboxResult[ HoldComplete @ Association @ OrderlessPatternSequence[ "Result" -> res_, ___ ] ] := sandboxResult @ res;
@@ -2428,7 +2516,7 @@ sandboxFormatter // beginDefinition;
 sandboxFormatter[ code_String, "Parameters", "code" ] :=
     RawBoxes @ makeInteractiveCodeCell[
         "Wolfram",
-        inlineExpressionURIs @ expandNLInputBoxes @ sandboxStringNormalize @ code
+        inlineExpressionURIs @ sandboxStringNormalize @ code
     ];
 
 sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
@@ -2521,39 +2609,6 @@ smallBoxesQ[ boxes_RowBox ] :=
 smallBoxesQ[ boxes_ ] := ByteCount @ boxes <= 10000;
 
 smallBoxesQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*expandNLInputBoxes*)
-expandNLInputBoxes // beginDefinition;
-
-expandNLInputBoxes[ boxes0_ ] :=
-    Module[ { boxes },
-        boxes = If[ StringQ @ boxes0, stringToBoxes @ boxes0, boxes0 ];
-        boxes /. RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :>
-            With[ { expanded = expandNLInputBoxes0 @ b }, expanded /; ! FailureQ @ expanded ]
-    ];
-
-expandNLInputBoxes // endDefinition;
-
-
-expandNLInputBoxes0 // beginDefinition;
-
-expandNLInputBoxes0[ boxes__ ] := Quiet @ ToExpression[
-    RowBox @ { "System`HoldComplete", "[", boxes, "]" },
-    StandardForm,
-    expandNLInputBoxes1
-];
-
-expandNLInputBoxes0 // endDefinition;
-
-
-expandNLInputBoxes1 // beginDefinition;
-expandNLInputBoxes1[ HoldComplete[ q_String ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData @ q;
-expandNLInputBoxes1[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData[ q, p ];
-expandNLInputBoxes1[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
-expandNLInputBoxes1[ _ ] := $Failed;
-expandNLInputBoxes1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

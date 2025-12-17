@@ -37,7 +37,7 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
-    "ExcludedBasePrompts"            -> { },
+    "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
     "ForceSynchronous"               -> Automatic,
     "FrequencyPenalty"               -> 0.1,
@@ -117,6 +117,12 @@ $absoluteCurrentSettingsCache = None;
 
 
 $experimentalFeatures = { };
+
+
+$modelInheritedLists = {
+    "BasePrompt",
+    "ExcludedBasePrompts"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -260,6 +266,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
     "Multimodal"                 -> True,
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolCallRetryMessage"       -> False,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
@@ -276,6 +283,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
     "ToolCallExamplePromptStyle" -> "Basic",
+    "ToolCallRetryMessage"       -> False,
     "ToolMethod"                 -> "Service"
 |>;
 
@@ -284,8 +292,11 @@ $modelAutoSettings[ Automatic, "GPT51" ] = <|
     "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
 |>;
 
-$modelAutoSettings[ Automatic, "GPT52" ] =
-    $modelAutoSettings[ Automatic, "GPT51" ];
+$modelAutoSettings[ Automatic, "GPT52" ] = <|
+    $modelAutoSettings[ Automatic, "GPT51" ],
+    "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
+    "ReplaceUnicodeCharacters" -> True
+|>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
@@ -365,6 +376,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
+    "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
     "SplitToolResponseMessages" -> False,
@@ -600,6 +612,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $conversionRules         = resolved[ "ConversionRules" ];
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
+            $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
 
             If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
@@ -638,12 +651,41 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
         result[ "StopTokens" ] = autoStopTokens @ result;
-        result
+
+        ConfirmBy[ inheritModelSettings @ result, AssociationQ, "Result" ]
     ],
     throwInternalFailure
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inheritModelSettings*)
+inheritModelSettings // beginDefinition;
+
+inheritModelSettings[ settings_Association ] := Enclose[
+    Catch @ Module[ { usable, inherit, model, modelSettings, merged },
+        usable = ConfirmBy[ KeyTake[ settings, $modelInheritedLists ], AssociationQ, "Usable" ];
+        inherit = Keys @ Select[ usable, Not @* FreeQ[ ParentList|Inherited ] ];
+        If[ inherit === { }, Throw @ settings ];
+        model = ConfirmBy[ settings[ "Model" ], AssociationQ, "Model" ];
+
+        modelSettings = Select[
+            AssociationMap[ autoModelSetting[ model, # ] &, inherit ],
+            MatchQ[ _List | ParentList | Inherited ]
+        ];
+
+        merged = ConfirmBy[ mergeChatSettings @ { modelSettings, settings }, AssociationQ, "Merged" ];
+
+        Scan[ Function[ merged[ # ] //= DeleteDuplicates ], inherit ];
+
+        merged
+    ],
+    throwInternalFailure
+];
+
+inheritModelSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
