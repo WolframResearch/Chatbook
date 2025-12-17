@@ -714,7 +714,7 @@ formatTextString // endDefinition;
 almostCertainlyWLCodeQ // beginDefinition;
 
 almostCertainlyWLCodeQ[ wl_String ] := TrueQ @ Or[
-    StringContainsQ[ wl, "\[FreeformPrompt]" ],
+    StringStartsQ[ wl, "\[FreeformPrompt]" ],
     StringMatchQ[
         wl,
         (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ "[" ~~ ___ ~~ "]"
