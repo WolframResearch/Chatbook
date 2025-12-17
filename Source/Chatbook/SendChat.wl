@@ -1110,6 +1110,10 @@ chatHandlers[ container_, cellObject_CellObject, settings_ ] :=
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
                     },
+                    If[ ! NumberQ @ $timeToFirstToken,
+                        $timeToFirstToken = AbsoluteTime[ ] - $chatStartTime;
+                        addHandlerArguments[ "TimeToFirstToken" -> Quantity[ $timeToFirstToken, "Seconds" ] ];
+                    ];
                     With[ { as = <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |> },
                         bodyChunkHandler[ as ];
                         Internal`StuffBag[ $debugLog, $lastStatus = as ];

@@ -37,6 +37,7 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
+    "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
     "ForceSynchronous"               -> Automatic,
@@ -261,6 +262,7 @@ $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*gpt-4.1*)
 $modelAutoSettings[ Automatic, "GPT41" ] = <|
+    "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1047576,
     "Multimodal"                 -> True,
@@ -376,6 +378,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
+    "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
@@ -394,7 +397,13 @@ autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
 
 autoModelSetting[ model0_Association, key_String ] :=
     With[ { model = resolveFullModelSpec @ model0 },
-        autoModelSetting[ model[ "Service" ], model[ "Name" ], model[ "BaseID" ], model[ "Family" ], key ]
+        autoModelSetting[
+            toBaseServiceName @ model[ "Service" ],
+            model[ "Name" ],
+            model[ "BaseID" ],
+            model[ "Family" ],
+            key
+        ]
     ];
 
 autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
@@ -424,6 +433,18 @@ autoModelSetting[ service_String, name_String, id_String, family_String, key_Str
         ];
 
 autoModelSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toBaseServiceName*)
+toBaseServiceName // beginDefinition;
+
+toBaseServiceName[ name_String ] :=
+    With[ { base = StringDelete[ name, StartOfString~~("LLMKit"|"WolframAI"|"AITutor") ] },
+        If[ base === "", name, base ]
+    ];
+
+toBaseServiceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -613,6 +634,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
+            $endToken                = resolved[ "EndToken" ];
 
             If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
@@ -1018,10 +1040,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := { "\n/exec", "/end" };
-methodStopTokens[ "Service"        ] := { "/end" };
-methodStopTokens[ "Textual"|"JSON" ] := { "ENDTOOLCALL", "/end" };
-methodStopTokens[ _                ] := { "ENDTOOLCALL", "\n/exec", "/end" };
+methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
+methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
+methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
