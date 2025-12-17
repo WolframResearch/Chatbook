@@ -2140,6 +2140,9 @@ verifiedResultQ[ as: KeyValuePattern[ "Result" -> result_HoldCompleteForm ] ] :=
     verifiedStringResultQ @ as[ "String" ]
 ];
 
+verifiedResultQ[ KeyValuePattern[ "Result" -> _Failure ] ] :=
+    False;
+
 verifiedResultQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
