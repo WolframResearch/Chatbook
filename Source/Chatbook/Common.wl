@@ -608,6 +608,7 @@ catchTop[ eval_, sym_Symbol ] :=
             $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching            = True,
             $failed              = False,
+            $timeToFirstToken    = None,
             catchTop             = # &,
             catchTopAs           = (#1 &) &
         },

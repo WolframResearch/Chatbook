@@ -9,6 +9,8 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$endToken = "/end";
+$endTokenString := If[ StringQ @ $endToken && $endToken =!= "", "\n"<>$endToken, "" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -72,89 +74,89 @@ $messageTemplateType  = "Basic";
 (* ::Subsubsubsection::Closed:: *)
 (*Basic*)
 $chatMessageTemplates[ "Basic" ] = <| |>;
-$chatMessageTemplates[ "Basic", "User"      ] = "User: %%1%%";
-$chatMessageTemplates[ "Basic", "Assistant" ] = "Assistant: %%1%%\n/end";
-$chatMessageTemplates[ "Basic", "System"    ] = "System: %%1%%";
+$chatMessageTemplates[ "Basic", "User"      ] = "User: `Content`";
+$chatMessageTemplates[ "Basic", "Assistant" ] = "Assistant: `Content``EndToken`";
+$chatMessageTemplates[ "Basic", "System"    ] = "System: `Content`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Instruct*)
 $chatMessageTemplates[ "Instruct" ] = <| |>;
-$chatMessageTemplates[ "Instruct", "User"      ] = "[INST]%%1%%[/INST]";
-$chatMessageTemplates[ "Instruct", "Assistant" ] = "%%1%%\n/end";
-$chatMessageTemplates[ "Instruct", "System"    ] = "[INST]%%1%%[/INST]";
+$chatMessageTemplates[ "Instruct", "User"      ] = "[INST]`Content`[/INST]";
+$chatMessageTemplates[ "Instruct", "Assistant" ] = "`Content``EndToken`";
+$chatMessageTemplates[ "Instruct", "System"    ] = "[INST]`Content`[/INST]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Zephyr*)
 $chatMessageTemplates[ "Zephyr" ] = <| |>;
-$chatMessageTemplates[ "Zephyr", "User"      ] = "<|user|>\n%%1%%</s>";
-$chatMessageTemplates[ "Zephyr", "Assistant" ] = "<|assistant|>\n%%1%%\n/end";
-$chatMessageTemplates[ "Zephyr", "System"    ] = "<|system|>\n%%1%%</s>";
+$chatMessageTemplates[ "Zephyr", "User"      ] = "<|user|>\n`Content`</s>";
+$chatMessageTemplates[ "Zephyr", "Assistant" ] = "<|assistant|>\n`Content``EndToken`";
+$chatMessageTemplates[ "Zephyr", "System"    ] = "<|system|>\n`Content`</s>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Phi*)
 $chatMessageTemplates[ "Phi" ] = <| |>;
-$chatMessageTemplates[ "Phi", "User"      ] = "<|user|>\n%%1%%<|end|>";
-$chatMessageTemplates[ "Phi", "Assistant" ] = "<|assistant|>\n%%1%%\n/end<|end|>";
-$chatMessageTemplates[ "Phi", "System"    ] = "<|user|>\n%%1%%<|end|>";
+$chatMessageTemplates[ "Phi", "User"      ] = "<|user|>\n`Content`<|end|>";
+$chatMessageTemplates[ "Phi", "Assistant" ] = "<|assistant|>\n`Content``EndToken`<|end|>";
+$chatMessageTemplates[ "Phi", "System"    ] = "<|user|>\n`Content`<|end|>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Boxed*)
 $chatMessageTemplates[ "Boxed" ] = <| |>;
-$chatMessageTemplates[ "Boxed", "User"      ] = "[user]\n%%1%%";
-$chatMessageTemplates[ "Boxed", "Assistant" ] = "[assistant]\n%%1%%\n/end";
-$chatMessageTemplates[ "Boxed", "System"    ] = "[system]\n%%1%%";
+$chatMessageTemplates[ "Boxed", "User"      ] = "[user]\n`Content`";
+$chatMessageTemplates[ "Boxed", "Assistant" ] = "[assistant]\n`Content``EndToken`";
+$chatMessageTemplates[ "Boxed", "System"    ] = "[system]\n`Content`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*ChatML*)
 $chatMessageTemplates[ "ChatML" ] = <| |>;
-$chatMessageTemplates[ "ChatML", "User"      ] = "<|im_start|>user\n%%1%%<|im_end|>";
-$chatMessageTemplates[ "ChatML", "Assistant" ] = "<|im_start|>assistant\n%%1%%\n/end<|im_end|>";
-$chatMessageTemplates[ "ChatML", "System"    ] = "<|im_start|>system\n%%1%%<|im_end|>";
+$chatMessageTemplates[ "ChatML", "User"      ] = "<|im_start|>user\n`Content`<|im_end|>";
+$chatMessageTemplates[ "ChatML", "Assistant" ] = "<|im_start|>assistant\n`Content``EndToken`<|im_end|>";
+$chatMessageTemplates[ "ChatML", "System"    ] = "<|im_start|>system\n`Content`<|im_end|>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*XML*)
 $chatMessageTemplates[ "XML" ] = <| |>;
-$chatMessageTemplates[ "XML", "User"      ] = "<user>%%1%%</user>";
-$chatMessageTemplates[ "XML", "Assistant" ] = "<assistant>%%1%%\n/end</assistant>";
-$chatMessageTemplates[ "XML", "System"    ] = "<system>%%1%%</system>";
+$chatMessageTemplates[ "XML", "User"      ] = "<user>`Content`</user>";
+$chatMessageTemplates[ "XML", "Assistant" ] = "<assistant>`Content``EndToken`</assistant>";
+$chatMessageTemplates[ "XML", "System"    ] = "<system>`Content`</system>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*DeepSeekCoder*)
 $chatMessageTemplates[ "DeepSeekCoder" ] = <| |>;
-$chatMessageTemplates[ "DeepSeekCoder", "User"      ] = "User: %%1%%";
-$chatMessageTemplates[ "DeepSeekCoder", "Assistant" ] = "Assistant: %%1%%\n/end<\:ff5cend\:2581of\:2581sentence\:ff5c>";
-$chatMessageTemplates[ "DeepSeekCoder", "System"    ] = "System: %%1%%";
+$chatMessageTemplates[ "DeepSeekCoder", "User"      ] = "User: `Content`";
+$chatMessageTemplates[ "DeepSeekCoder", "Assistant" ] = "Assistant: `Content``EndToken`<\:ff5cend\:2581of\:2581sentence\:ff5c>";
+$chatMessageTemplates[ "DeepSeekCoder", "System"    ] = "System: `Content`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Llama*)
 $chatMessageTemplates[ "Llama" ] = <| |>;
-$chatMessageTemplates[ "Llama", "User"      ] = "<|start_header_id|>user<|end_header_id|>\n%%1%%<|eot_id|>";
-$chatMessageTemplates[ "Llama", "Assistant" ] = "<|start_header_id|>assistant<|end_header_id|>\n%%1%%\n/end<|eot_id|>";
-$chatMessageTemplates[ "Llama", "System"    ] = "<|start_header_id|>system<|end_header_id|>\n%%1%%<|eot_id|>";
+$chatMessageTemplates[ "Llama", "User"      ] = "<|start_header_id|>user<|end_header_id|>\n`Content`<|eot_id|>";
+$chatMessageTemplates[ "Llama", "Assistant" ] = "<|start_header_id|>assistant<|end_header_id|>\n`Content``EndToken`<|eot_id|>";
+$chatMessageTemplates[ "Llama", "System"    ] = "<|start_header_id|>system<|end_header_id|>\n`Content`<|eot_id|>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Gemma*)
 $chatMessageTemplates[ "Gemma" ] = <| |>;
-$chatMessageTemplates[ "Gemma", "User"      ] = "<start_of_turn>user\n%%1%%<end_of_turn>";
-$chatMessageTemplates[ "Gemma", "Assistant" ] = "<start_of_turn>model\n%%1%%\n/end<end_of_turn>";
-$chatMessageTemplates[ "Gemma", "System"    ] = "<start_of_turn>user\n%%1%%<end_of_turn>";
+$chatMessageTemplates[ "Gemma", "User"      ] = "<start_of_turn>user\n`Content`<end_of_turn>";
+$chatMessageTemplates[ "Gemma", "Assistant" ] = "<start_of_turn>model\n`Content``EndToken`<end_of_turn>";
+$chatMessageTemplates[ "Gemma", "System"    ] = "<start_of_turn>user\n`Content`<end_of_turn>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Nemotron*)
 $chatMessageTemplates[ "Nemotron" ] = <| |>;
-$chatMessageTemplates[ "Nemotron", "User"      ] = "<extra_id_1>User\n%%1%%";
-$chatMessageTemplates[ "Nemotron", "Assistant" ] = "<extra_id_1>Assistant\n%%1%%\n/end";
-$chatMessageTemplates[ "Nemotron", "System"    ] = "<extra_id_0>System\n%%1%%";
+$chatMessageTemplates[ "Nemotron", "User"      ] = "<extra_id_1>User\n`Content`";
+$chatMessageTemplates[ "Nemotron", "Assistant" ] = "<extra_id_1>Assistant\n`Content``EndToken`";
+$chatMessageTemplates[ "Nemotron", "System"    ] = "<extra_id_0>System\n`Content`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -162,10 +164,7 @@ $chatMessageTemplates[ "Nemotron", "System"    ] = "<extra_id_0>System\n%%1%%";
 messageTemplate // beginDefinition;
 
 messageTemplate[ id_String ] := Enclose[
-    StringTemplate[
-        ConfirmBy[ $chatMessageTemplates[ $messageTemplateType, id ], StringQ, "TemplateString" ],
-        Delimiters -> "%%"
-    ],
+    StringTemplate @ ConfirmBy[ $chatMessageTemplates[ $messageTemplateType, id ], StringQ, "TemplateString" ],
     throwInternalFailure
 ];
 
@@ -175,25 +174,57 @@ messageTemplate // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*user*)
 user // beginDefinition;
-user[ a_List ] := TemplateApply[ messageTemplate[ "User" ], StringRiffle[ TextString /@ Flatten @ a, "\n" ] ];
-user[ a_String ] := user @ { a };
+
+user[ a_List ] := TemplateApply[
+    messageTemplate[ "User" ],
+    <|
+        "Content"  -> StringRiffle[ TextString /@ Flatten @ a, "\n" ],
+        "EndToken" -> $endTokenString
+    |>
+];
+
+user[ a_String ] :=
+    user @ { a };
+
 user // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*assistant*)
 assistant // beginDefinition;
-assistant[ { a___, "tool"|"Tool" -> { name_, as_ }, b___ } ] := assistant @ { a, toolCall[ name, as ], b };
-assistant[ a_List ] := TemplateApply[ messageTemplate[ "Assistant" ], StringRiffle[ TextString /@ Flatten @ a, "\n" ] ];
-assistant[ a_String ] := assistant @ { a };
+
+assistant[ { a___, "tool"|"Tool" -> { name_, as_ }, b___ } ] :=
+    assistant @ { a, toolCall[ name, as ], b };
+
+assistant[ a_List ] := TemplateApply[
+    messageTemplate[ "Assistant" ],
+    <|
+        "Content"  -> StringRiffle[ TextString /@ Flatten @ a, "\n" ],
+        "EndToken" -> $endTokenString
+    |>
+];
+
+assistant[ a_String ] :=
+    assistant @ { a };
+
 assistant // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*system*)
 system // beginDefinition;
-system[ a_List ] := TemplateApply[ messageTemplate[ "System" ], StringRiffle[ TextString /@ Flatten @ a, "\n" ] ];
-system[ a_String ] := system @ { a };
+
+system[ a_List ] := TemplateApply[
+    messageTemplate[ "System" ],
+    <|
+        "Content"  -> StringRiffle[ TextString /@ Flatten @ a, "\n" ],
+        "EndToken" -> $endTokenString
+    |>
+];
+
+system[ a_String ] :=
+    system @ { a };
+
 system // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
