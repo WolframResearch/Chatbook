@@ -96,6 +96,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$templateBoxOptionsCache;
 `$thinkingEnd;
 `$thinkingStart;
+`$timeToFirstToken;
 `$timingLog;
 `$tinyHashLength;
 `$tokenBudget;
