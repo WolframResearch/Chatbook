@@ -2240,7 +2240,11 @@ autoCorrectWLCodeBlock // beginDefinition;
 
 autoCorrectWLCodeBlock[ code_String ] := Enclose[
     Module[ { checked, corrected },
-        checked = ConfirmBy[ CodeCheckFix @ code, AssociationQ, "CodeCheckFix" ];
+        checked = ConfirmBy[
+            LogChatTiming @ CodeCheckFix[ code, "Target" -> "Assistant" ],
+            AssociationQ,
+            "CodeCheckFix"
+        ];
         corrected = ConfirmBy[ autoCorrectWLCodeBlock @ checked, StringQ, "Result" ];
         autoCorrectWLCodeBlock[ code ] = corrected
     ],
