@@ -588,6 +588,7 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
         resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
+(* FIXME: This should just convert private use area characters to their corresponding ASCII representations *)
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
 
