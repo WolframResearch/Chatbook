@@ -156,7 +156,7 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 
 $basePromptComponents[ "NotebooksPreamble" ] :=
 Which[
-TrueQ @ $SideBarChat,
+TrueQ @ $SidebarChat,
 "You are interacting with a user through a special Wolfram Chat interface within a normal notebook. \
 You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
 Similarly, your responses are automatically converted from plain text before being displayed to the user. \

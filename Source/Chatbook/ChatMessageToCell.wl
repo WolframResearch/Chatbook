@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $chatOutputOptions = Sequence[ GeneratedCell -> True, CellAutoOverwrite -> True ];
 $selectableOptions = Sequence[ Background -> None, Selectable -> True, Editable -> True ];
 
-$$chatCellFormat = None | Automatic | "Default" | "Inline" | "SideBar" | "Workspace";
+$$chatCellFormat = None | Automatic | "Default" | "Inline" | "Sidebar" | "Workspace";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -100,24 +100,24 @@ wrapCellContent[ text_, "Assistant", "Default" ] := Cell[ text, "ChatOutput", $c
 wrapCellContent[ text_, "System"   , "Default" ] := Cell[ text, "ChatSystemInput" ];
 wrapCellContent[ text_, "User"     , "Default" ] := Cell[ text, "ChatInput" ];
 
-wrapCellContent[ text_, "Assistant", "SideBar" ] := 
+wrapCellContent[ text_, "Assistant", "Sidebar" ] := 
 ReplaceRepeated[
     Cell[
-        BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "NotebookAssistant`SideBar`AssistantMessageBox" ],
-        "NotebookAssistant`SideBar`ChatOutput",
+        BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "NotebookAssistant`Sidebar`AssistantMessageBox" ],
+        "NotebookAssistant`Sidebar`ChatOutput",
         $chatOutputOptions,
-        CellTags -> "SideBarTopCell"
+        CellTags -> "SidebarTopCell"
     ],
     {(* So far there's only one TemplateBox that is redefined in the Sidebar compared with ChatOuput within the notebook *)
-        TemplateBox[a_, b : Alternatives[ "ChatCodeBlockTemplate" ], c___] :> RuleCondition[ TemplateBox[a, "NotebookAssistant`SideBar`" <> b, c], True ]
+        TemplateBox[a_, b : Alternatives[ "ChatCodeBlockTemplate" ], c___] :> RuleCondition[ TemplateBox[a, "NotebookAssistant`Sidebar`" <> b, c], True ]
     }
 ];
-wrapCellContent[ text_, "System"   , "SideBar" ] := Nothing; (* System inputs shouldn't appear in sidebar chat *)
-wrapCellContent[ text_, "User"     , "SideBar" ] :=
+wrapCellContent[ text_, "System"   , "Sidebar" ] := Nothing; (* System inputs shouldn't appear in sidebar chat *)
+wrapCellContent[ text_, "User"     , "Sidebar" ] :=
 Cell[
-    BoxData @ TemplateBox[ { Cell[ simplerTextData @ text, $selectableOptions ] }, "NotebookAssistant`SideBar`UserMessageBox" ],
-    "NotebookAssistant`SideBar`ChatInput",
-    CellTags -> "SideBarTopCell"
+    BoxData @ TemplateBox[ { Cell[ simplerTextData @ text, $selectableOptions ] }, "NotebookAssistant`Sidebar`UserMessageBox" ],
+    "NotebookAssistant`Sidebar`ChatInput",
+    CellTags -> "SidebarTopCell"
 ];
 
 wrapCellContent[ text_, "Assistant", "Workspace" ] := workspaceOutput @ text;
