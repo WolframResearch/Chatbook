@@ -834,7 +834,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
 evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
-evaluateWithProgress[ args___ ] /; $SideBarChat := evaluateWithSideBarProgress @ args;
+evaluateWithProgress[ args___ ] /; $SidebarChat := evaluateWithSidebarProgress @ args;
 evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
 evaluateWithProgress[ args___ ] /; $ContentSuggestions := evaluateWithProgressContainer[ $progressContainer, args ];
 evaluateWithProgress[ args___ ] := Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
@@ -906,15 +906,15 @@ evaluateWithWorkspaceProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*evaluateWithSideBarProgress*)
-evaluateWithSideBarProgress // beginDefinition;
-evaluateWithSideBarProgress // Attributes = { HoldFirst };
+(*evaluateWithSidebarProgress*)
+evaluateWithSidebarProgress // beginDefinition;
+evaluateWithSidebarProgress // Attributes = { HoldFirst };
 
-evaluateWithSideBarProgress[ args___ ] :=
+evaluateWithSidebarProgress[ args___ ] :=
     Catch @ Module[ { nbo, cell, container, attached },
 
         nbo = $evaluationNotebook;
-        cell = Last[ Cells[ nbo, CellStyle -> "NotebookAssistant`SideBar`ChatOutput" ], None ];
+        cell = Last[ Cells[ nbo, CellStyle -> "NotebookAssistant`Sidebar`ChatOutput" ], None ];
         If[ ! MatchQ[ cell, _CellObject ], Throw @ evaluateWithDialogProgress @ args ];
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
@@ -946,7 +946,7 @@ evaluateWithSideBarProgress[ args___ ] :=
         ]
     ];
 
-evaluateWithSideBarProgress // endDefinition;
+evaluateWithSidebarProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

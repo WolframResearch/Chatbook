@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3973832805"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.21.3975037993"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4116,7 +4116,7 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["NotebookAssistant`SideBar`AssistantMessageBox"],
+   StyleData["NotebookAssistant`Sidebar`AssistantMessageBox"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -4188,7 +4188,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`AutoMoveToChatInputField"
+    "NotebookAssistant`Sidebar`AutoMoveToChatInputField"
    ],
    Initialization :>
     (NotebookDelete[EvaluationCell[]];
@@ -4201,7 +4201,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`ChatCodeBlockTemplate",
+    "NotebookAssistant`Sidebar`ChatCodeBlockTemplate",
     StyleDefinitions -> StyleData["ChatCodeBlockTemplate"]
    ],
    TemplateBoxOptions -> {
@@ -4274,7 +4274,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`ChatInput",
+    "NotebookAssistant`Sidebar`ChatInput",
     StyleDefinitions -> StyleData["ChatInput"]
    ],
    Selectable -> False,
@@ -4288,7 +4288,7 @@ Notebook[
    PaneBoxOptions -> {BaselinePosition -> Baseline}
   ],
   Cell[
-   StyleData["NotebookAssistant`SideBar`ChatInputField"],
+   StyleData["NotebookAssistant`Sidebar`ChatInputField"],
    CellFrame -> 1,
    CellFrameMargins -> {{5, 5}, {0, 0}},
    CellFrameColor ->
@@ -4299,7 +4299,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`ChatOutput",
+    "NotebookAssistant`Sidebar`ChatOutput",
     StyleDefinitions -> StyleData["ChatOutput"]
    ],
    Selectable -> False,
@@ -4315,14 +4315,14 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`CodeAssistanceWelcomeCell"
+    "NotebookAssistant`Sidebar`CodeAssistanceWelcomeCell"
    ],
    CellMargins -> {{10, 10}, {30, 10}},
    TaggingRules -> <|"ChatNotebookSettings" -> <|"ExcludeFromChat" -> True|>|>,
    ShowStringCharacters -> False
   ],
   Cell[
-   StyleData["NotebookAssistant`SideBar`UserMessageBox"],
+   StyleData["NotebookAssistant`Sidebar`UserMessageBox"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -4373,7 +4373,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`WelcomeToCodeAssistanceSplash"
+    "NotebookAssistant`Sidebar`WelcomeToCodeAssistanceSplash"
    ],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -4450,12 +4450,12 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`StyleSheetInformation"
+    "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.3.48.3959923654"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3973832805"|>
   ],
   Cell[
-   StyleData["NotebookAssistant`SideBar`ToolbarButtonLabel"],
+   StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
    CellMargins -> {{66, 10}, {7, 8}},
    LineSpacing -> {1, 3},
    TabSpacings -> {2.5},
@@ -4471,9 +4471,9 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`SideBar`ToolbarTitle",
+    "NotebookAssistant`Sidebar`ToolbarTitle",
     StyleDefinitions ->
-     StyleData["NotebookAssistant`SideBar`ToolbarButtonLabel"]
+     StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"]
    ],
    FontSize -> 12,
    FontColor ->

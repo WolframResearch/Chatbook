@@ -115,8 +115,8 @@ $defaultAppName       = "Default";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
-$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput", "NotebookAssistant`SideBar`ChatInput" };
-$chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError", "NotebookAssistant`SideBar`ChatOutput" };
+$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput", "NotebookAssistant`Sidebar`ChatInput" };
+$chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError", "NotebookAssistant`Sidebar`ChatOutput" };
 $excludeHistoryStyles = { "SideChat" };
 $nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",
                           "ChatMenu", "ChatWidget", "InheritFromParent"
@@ -871,7 +871,7 @@ chatbookServiceCaller // beginDefinition;
 chatbookServiceCaller[ ] := Flatten @ {
     If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
     If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
-    If[ TrueQ @ $SideBarChat, "WorkspaceChat", Nothing ],
+    If[ TrueQ @ $SidebarChat, "WorkspaceChat", Nothing ],
     Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
 };
 
@@ -1333,7 +1333,7 @@ $templateBoxDisplayFunctions := Enclose[
 $$inlineTemplateBoxName = Alternatives[
     "ChatCodeBlockButtonPanel",
     "ChatCodeBlockTemplate",
-    "NotebookAssistant`SideBar`ChatCodeBlockTemplate"
+    "NotebookAssistant`Sidebar`ChatCodeBlockTemplate"
 ];
 
 

@@ -14,7 +14,7 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $SideBarChat || $llmKit ];
+$filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $SidebarChat || $llmKit ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

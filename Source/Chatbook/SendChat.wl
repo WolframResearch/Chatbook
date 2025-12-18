@@ -1424,21 +1424,21 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
             "ReformatTextData"
         ];
 
-        write = Cell[ TextData @ reformatted, If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
+        write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         container[ "DynamicContent" ] = dynamic;
 
-        If[ TrueQ @ $SideBarChat,
-            With[ { boxObject = boxObject, write = write, sideBarCell = sideBarCellObject @ nbo },
+        If[ TrueQ @ $SidebarChat,
+            With[ { boxObject = boxObject, write = write, sidebarCell = sidebarCellObject @ nbo },
                 splitDynamicTaskFunction @ 
                 WithCleanup[
                     FrontEndExecute[ {
-                        FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                        FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                         FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ]
                     } ]
                     ,
-                    CurrentValue[ sideBarCell, Editable ] = Inherited
+                    CurrentValue[ sidebarCell, Editable ] = Inherited
                 ]
             ]
             ,
@@ -2087,13 +2087,13 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
                 Except[ _Integer? Positive ] :> $maxChatCells
             ]
         },
-        $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "NotebookAssistantSideBarCell" ],
+        $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "NotebookAssistantSidebarCell" ],
             (* 15.0: if in a new side bar chat, then there is no scrolling cell, so fail gracefully (in reality we should have added one when sending the first chat) *)
             With[
-                { scrollingCell = First[ Cells[ appContainer, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoSideBarScrollingContentCell" ] },
-                { sideBarCells = If[ MissingQ @ scrollingCell, { }, Cells[ scrollingCell, CellTags -> "SideBarTopCell" ] ] },
+                { scrollingCell = First[ Cells[ appContainer, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoSidebarScrollingContentCell" ] },
+                { sidebarCells = If[ MissingQ @ scrollingCell, { }, Cells[ scrollingCell, CellTags -> "SidebarTopCell" ] ] },
                 (* at minimum, the input cell should be present, so selectChatCells0 will have an internal error otherwise *)
-                selectChatCells0[ cell, sideBarCells ]
+                selectChatCells0[ cell, sidebarCells ]
             ],
             selectChatCells0[ cell, clearMinimizedChats @ nbo ]
         ]
@@ -2378,25 +2378,25 @@ openChatCell // endDefinition;
 WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
     writeInlineChatOutputCell[ cell, new, info ];
 
-(* $SideBarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
+(* $SidebarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
 WriteChatOutputCell[
     cell_CellObject,
     new_Cell,
     info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
 ] := Enclose[
-    Module[ { output, input, sideBarQ, sideBarCell },
-        sideBarQ = cellTaggedQ[ cell, "SideBarTopCell" ];
-        input = PreviousCell[ cell, CellStyle -> If[ sideBarQ, "NotebookAssistant`SideBar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
-        If[ sideBarQ,
-            sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SideBarCellWriteChatOutputCell" ];
-            ConfirmMatch[ cellTaggedQ[ sideBarCell, "NotebookAssistantSideBarCell" ], True, "SideBarCellWriteChatOutputCellTaggedQ" ];
+    Module[ { output, input, sidebarQ, sidebarCell },
+        sidebarQ = cellTaggedQ[ cell, "SidebarTopCell" ];
+        input = PreviousCell[ cell, CellStyle -> If[ sidebarQ, "NotebookAssistant`Sidebar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
+        If[ sidebarQ,
+            sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellWriteChatOutputCell" ];
+            ConfirmMatch[ cellTaggedQ[ sidebarCell, "NotebookAssistantSidebarCell" ], True, "SidebarCellWriteChatOutputCellTaggedQ" ];
             WithCleanup[
                 FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                     FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
                 } ]
                 ,
-                CurrentValue[ sideBarCell, Editable ] = Inherited
+                CurrentValue[ sidebarCell, Editable ] = Inherited
             ]
             ,
             NotebookWrite[ cell, new, None, AutoScroll -> False ]
@@ -2510,7 +2510,7 @@ activeAIAssistantCell[
             outer     = Which[
                 TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
                 TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
-                TrueQ @ $SideBarChat,   assistantMessageBoxActive[ #, "SideBar" ]&,
+                TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
                 True,                   # & ]
         },
         Module[ { x = 0 },
@@ -2582,7 +2582,7 @@ activeAIAssistantCell[
             outer     = Which[
                 TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
                 TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
-                TrueQ @ $SideBarChat,   assistantMessageBoxActive[ #, "SideBar" ]&,
+                TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
                 True,                   # & ]
         },
         Cell[
@@ -2601,7 +2601,7 @@ activeAIAssistantCell[
             ]
             ,
             "Output",
-            If[ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
+            If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
@@ -2844,7 +2844,7 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
                 Cell @ BoxData @ ToBoxes @ catchAlways @ throwInternalFailure @
                     writeReformattedCell[ settings, other, cell ]
             },
-            If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
+            If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True
         ],
@@ -2932,10 +2932,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
                     { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
                     "AssistantMessageBox"
                 ] &,
-            TrueQ @ $SideBarChat,
+            TrueQ @ $SidebarChat,
                 BoxData @ TemplateBox[
                     { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
-                    "NotebookAssistant`SideBar`AssistantMessageBox"
+                    "NotebookAssistant`Sidebar`AssistantMessageBox"
                 ] &,
             True,
                 # &
@@ -2949,7 +2949,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
                         "[WARNING]", "AssistantOutputWarning",
                         _          , "AssistantOutput"
                 ],
-                If[ TrueQ @ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ]
+                If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ]
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
@@ -2989,7 +2989,7 @@ conformToTextData // endDefinition;
 conformToTextData0 // beginDefinition;
 conformToTextData0[ text_String ] := text;
 conformToTextData0[ (Cell|TextData)[ text_ ] ] := conformToTextData0 @ text;
-conformToTextData0[ Cell[ text_, "ChatOutput" | "NotebookAssistant`SideBar`ChatOutput" ] ] := conformToTextData0 @ text;
+conformToTextData0[ Cell[ text_, "ChatOutput" | "NotebookAssistant`Sidebar`ChatOutput" ] ] := conformToTextData0 @ text;
 conformToTextData0[ text: $$textData ] := text;
 conformToTextData0[ boxes_BoxData ] := Cell @ boxes;
 conformToTextData0[ expr_ ] := With[ { b = ToBoxes @ expr }, conformToTextData0 @ b /; MatchQ[ b, $$textData ] ];
@@ -3157,7 +3157,7 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
 
         cell = Cell[
             content,
-            If[ $SideBarChat, "NotebookAssistant`SideBar`ChatOutput", "ChatOutput" ],
+            If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
@@ -3188,7 +3188,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SideBarChat := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SidebarChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
@@ -3227,16 +3227,16 @@ throwFailureToChatOutput // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SideBarChat ] := Enclose[
-    (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell if in a side bar chat *)
-    With[ { sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ] },
+writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SidebarChat ] := Enclose[
+    (* topParentCell is blocked from recursing past a "SidebarTopCell", but we know the parent distance to the side bar cell if in a side bar chat *)
+    With[ { sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SidebarCellPrintAfter" ] },
         createFETask @ WithCleanup[
             FrontEndExecute[ {
-                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                 FrontEnd`NotebookWrite[ cell, errorCell @ as ]
             } ]
             ,
-            CurrentValue[ sideBarCell, Editable ] = Inherited
+            CurrentValue[ sidebarCell, Editable ] = Inherited
         ];
         Null
     ],

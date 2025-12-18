@@ -52,8 +52,8 @@ $styleRoles = <|
     "AssistantOutputError"   -> "Assistant",
     "ChatSystemInput"        -> "System",
     (* sidebar styles *)
-    "NotebookAssistant`SideBar`ChatInput"  -> "User",
-    "NotebookAssistant`SideBar`ChatOutput" -> "Assistant"
+    "NotebookAssistant`Sidebar`ChatInput"  -> "User",
+    "NotebookAssistant`Sidebar`ChatOutput" -> "Assistant"
 |>;
 
 $cachedTokenizerNames = {

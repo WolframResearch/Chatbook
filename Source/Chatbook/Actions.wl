@@ -75,14 +75,14 @@ ChatbookAction[ "DisableAssistance"            , args___ ] := catchMine @ Disabl
 ChatbookAction[ "DisplayInlineChat"            , args___ ] := catchMine @ displayInlineChat @ args;
 ChatbookAction[ "EvaluateChatInput"            , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "EvaluateInlineChat"           , args___ ] := catchMine @ evaluateInlineChat @ args;
-ChatbookAction[ "EvaluateSideBarChat"          , args___ ] := catchMine @ evaluateSideBarChat @ args;
+ChatbookAction[ "EvaluateSidebarChat"          , args___ ] := catchMine @ evaluateSidebarChat @ args;
 ChatbookAction[ "EvaluateWorkspaceChat"        , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
 ChatbookAction[ "ExclusionToggle"              , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "ExplodeDuplicate"             , args___ ] := catchMine @ ExplodeDuplicate @ args;
 ChatbookAction[ "ExplodeInPlace"               , args___ ] := catchMine @ ExplodeInPlace @ args;
 ChatbookAction[ "InsertCodeBelow"              , args___ ] := catchMine @ insertCodeBelow @ args;
 ChatbookAction[ "InsertInlineReference"        , args___ ] := catchMine @ InsertInlineReference @ args;
-ChatbookAction[ "MakeSideBarChatDockedCell"    , args___ ] := catchMine @ makeSideBarChatDockedCell @ args;
+ChatbookAction[ "MakeSidebarChatDockedCell"    , args___ ] := catchMine @ makeSidebarChatDockedCell @ args;
 ChatbookAction[ "MakeWorkspaceChatDockedCell"  , args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
 ChatbookAction[ "MoveToChatInputField"         , args___ ] := catchMine @ moveToChatInputField @ args;
 ChatbookAction[ "OpenChatBlockSettings"        , args___ ] := catchMine @ OpenChatBlockSettings @ args;
@@ -107,27 +107,27 @@ ChatbookAction[ args___                                  ] := catchMine @ throwI
 (*regenerateAssistantMessage*)
 regenerateAssistantMessage // beginDefinition;
 
-regenerateAssistantMessage[ chatOutput_CellObject, True(*sideBarCellQ_*) ] := Enclose[
-    Catch @ Module[ { chatInputCell, sideBarCell, nbo, chatInputFieldCell },
-        chatInputCell = PreviousCell[ chatOutput, CellStyle -> "NotebookAssistant`SideBar`ChatInput" ];
+regenerateAssistantMessage[ chatOutput_CellObject, True(*sidebarCellQ_*) ] := Enclose[
+    Catch @ Module[ { chatInputCell, sidebarCell, nbo, chatInputFieldCell },
+        chatInputCell = PreviousCell[ chatOutput, CellStyle -> "NotebookAssistant`Sidebar`ChatInput" ];
         If[ ! MatchQ[ chatInputCell, _CellObject ], Throw @ Null ];
         
-        sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ chatOutput, _CellObject, "SideBarCell" ];
-        nbo = ConfirmMatch[ parentNotebook @ sideBarCell, _NotebookObject, "Notebook" ];
-        chatInputFieldCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarChatInputCell" ], None ], _CellObject, "SideBarChatInputFieldCell" ];
+        sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ chatOutput, _CellObject, "SidebarCell" ];
+        nbo = ConfirmMatch[ parentNotebook @ sidebarCell, _NotebookObject, "Notebook" ];
+        chatInputFieldCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarChatInputCell" ], None ], _CellObject, "SidebarChatInputFieldCell" ];
 
-        With[ { sbc = sideBarCell, cic = chatInputCell }, (* "Set" is HoldFirst so we must inject values *)
+        With[ { sbc = sidebarCell, cic = chatInputCell }, (* "Set" is HoldFirst so we must inject values *)
             WithCleanup[
                 FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ chatOutput, Before, Cell ],
                     FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
                     FrontEnd`NotebookDelete @ chatOutput,
                     FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sbc, { TaggingRules, "ChatEvaluationCell" } ], cic ], (* use TaggingRules to pass CellObject around *)
-                    FrontEnd`SetOptions[ chatInputFieldCell, CellTags -> { "SideBarChatInputCell", "RegenerateChatOutput" } ] (* backdoor to re-evaluation in side bar *)
+                    FrontEnd`SetOptions[ chatInputFieldCell, CellTags -> { "SidebarChatInputCell", "RegenerateChatOutput" } ] (* backdoor to re-evaluation in side bar *)
                 } ]
                 ,
-                CurrentValue[ sideBarCell, Editable ] = Inherited
+                CurrentValue[ sidebarCell, Editable ] = Inherited
             ]
         ];
     ],
@@ -1336,20 +1336,20 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                 "Inline",
 
             tags = Flatten @ List @ AbsoluteCurrentValue[ c, CellTags ];
-            TrueQ @ $SideBarChat || AnyTrue[ tags, StringStartsQ[ "SideBar" | "NotebookAssistantSideBar" ] ],
+            TrueQ @ $SidebarChat || AnyTrue[ tags, StringStartsQ[ "Sidebar" | "NotebookAssistantSidebar" ] ],
                 ConfirmMatch[
                     Which[
-                        MemberQ[ tags, Alternatives[ "NotebookAssistantSideBarCell" ] ],
+                        MemberQ[ tags, Alternatives[ "NotebookAssistantSidebarCell" ] ],
                             c,
-                        MemberQ[ tags, Alternatives[ "SideBarChatInputCell", "SideBarDockedCell", "SideBarSubDockedCell", "SideBarScrollingContentCell" ] ],
+                        MemberQ[ tags, Alternatives[ "SidebarChatInputCell", "SidebarDockedCell", "SidebarSubDockedCell", "SidebarScrollingContentCell" ] ],
                             ParentCell @ c,
-                        MemberQ[ tags, Alternatives[ "SideBarTopCell" ] ],
+                        MemberQ[ tags, Alternatives[ "SidebarTopCell" ] ],
                             ParentCell @ ParentCell @ c,
                         True,
                             None
                     ],
                     _CellObject,
-                    "SideBarAppContainer"
+                    "SidebarAppContainer"
                 ],
 
             CurrentValue[ nbo, StyleDefinitions ] === "Chatbook.nb",
