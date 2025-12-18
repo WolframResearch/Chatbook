@@ -213,6 +213,8 @@
 "MenuItemShowNotebookAssistanceInline" -> "\:91DD\:5C0D\:9078\:53D6\:90E8\:5206\:7684\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
+"SidebarToolbarButtonTooltipHideSidebar" -> "[[Hide notebook assistant]]",
+
 "WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "WorkspaceToolbarButtonLabelHistory" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",

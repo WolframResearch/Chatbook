@@ -75,14 +75,15 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                     Item[ Spacer[ 0 ], ItemSize -> Fit ],
                     LogChatTiming @ sidebarSourcesButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
                     LogChatTiming @ sidebarHistoryButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarOpenAsChatbookButton[ Dynamic @ nbo, Dynamic @ sidebarCell ]
+                    LogChatTiming @ sidebarOpenAsChatbookButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
+                    sidebarHideButton[ Dynamic @ nbo ]
                 } },
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
             ],
             Background   -> color @ "NA_Toolbar",
             FrameStyle   -> color @ "NA_Toolbar",
-            FrameMargins -> { { 5, 4 }, { 0, 1 } },
+            FrameMargins -> { { 5, 2 }, { 0, 1 } },
             ImageMargins -> 0
         ],
         CellTags      -> "SidebarDockedCell",
@@ -322,6 +323,28 @@ sidebarOpenAsChatbookButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Butto
 ];
 
 sidebarOpenAsChatbookButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sidebarOpenAsChatbookButton*)
+
+sidebarHideButton // beginDefinition;
+
+sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
+    Tooltip[
+        mouseDown[
+            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFont"      ], $toolbarButtonCommon[ False ], $toolbarButtonDefault ],
+            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFontHover" ], $toolbarButtonCommon[ False ], $toolbarButtonHover   ],
+            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFontHover" ], $toolbarButtonCommon[ False ], $toolbarButtonActive  ]
+        ],
+        tr @ "SidebarToolbarButtonTooltipHideSidebar"
+    ],
+    FrontEndToken[nbo, "HideSideBar"],
+    Appearance -> "Suppressed",
+    Evaluator  -> None
+]
+
+sidebarHideButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

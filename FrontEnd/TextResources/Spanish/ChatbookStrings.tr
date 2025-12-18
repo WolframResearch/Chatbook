@@ -213,6 +213,8 @@
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
+"SidebarToolbarButtonTooltipHideSidebar" -> "[[Hide notebook assistant]]",
+
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "Historial",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
