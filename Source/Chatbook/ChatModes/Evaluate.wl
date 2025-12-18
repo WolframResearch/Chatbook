@@ -57,10 +57,10 @@ evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*evaluateSideBarChat*)
-evaluateSideBarChat // beginDefinition;
+(*evaluateSidebarChat*)
+evaluateSidebarChat // beginDefinition;
 
-evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
+evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
     Module[ { text, uuid, cell, scrollablePaneCell, lastDockedCell, lastContentCell },
 
         text = makeBoxesInputMoreTextLike @ input;
@@ -69,9 +69,9 @@ evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_, Dynamic
         cell = Cell[
             BoxData @ TemplateBox[
                 { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
-                "NotebookAssistant`SideBar`UserMessageBox"
+                "NotebookAssistant`Sidebar`UserMessageBox"
             ],
-            "NotebookAssistant`SideBar`ChatInput",
+            "NotebookAssistant`Sidebar`ChatInput",
             (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
                 However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
             CellTags -> uuid 
@@ -79,39 +79,39 @@ evaluateSideBarChat[ nbo_NotebookObject, sideBarCell_CellObject, input_, Dynamic
 
         (* find the last top cell, or docked cell if there are no content cells *)
         (* all old top-cells are within an inline cell that scrolls. Overwrite that cell if it exists, otherwise create it anew *)
-        scrollablePaneCell = First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
+        scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
-            lastDockedCell = ConfirmMatch[ Last[ Cells[ sideBarCell, CellTags -> "SideBarDockedCell" ], $Failed ], _CellObject, "SideBarDockedCell" ];
+            lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
             WithCleanup[
                 FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sideBarScrollingCell[ nbo, { cell } ] } ] ] } ]
+                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sidebarScrollingCell[ nbo, { cell } ] } ] ] } ]
                 ,
-                CurrentValue[ sideBarCell, Editable ] = Inherited
+                CurrentValue[ sidebarCell, Editable ] = Inherited
             ];
-            scrollablePaneCell = ConfirmMatch[ First[ Cells[ sideBarCell, CellTags -> "SideBarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSideBarScrollableCell" ];
+            scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
             , (* ELSE *)
             (* The scrolling pane cell should only exist if it contains content. If it exists without content then something has gone wrong. *)
-            lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SideBarTopCell" ], $Failed ], _CellObject, "NoSideBarScrollingContentCell" ];
+            lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ], $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
             WithCleanup[
                 FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                     FrontEnd`SelectionMove[ lastContentCell, After, Cell, AutoScroll -> True ],
                     FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", cell } ] ] } ]
                 ,
-                CurrentValue[ sideBarCell, Editable ] = Inherited
+                CurrentValue[ sidebarCell, Editable ] = Inherited
             ]
         ];
 
-        cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SideBarChatInputCellObject" ];
-        CurrentValue[ cellObject, CellTags ] = "SideBarTopCell";
+        cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SidebarChatInputCellObject" ];
+        CurrentValue[ cellObject, CellTags ] = "SidebarTopCell";
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
     ],
     throwInternalFailure
 ];
 
-evaluateSideBarChat // endDefinition;
+evaluateSidebarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

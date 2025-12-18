@@ -288,13 +288,13 @@ $fromWorkspaceChatConversionRules := {
         Cell[ Flatten @ TextData @ text, "ChatOutput" ]
     ,
     (* side bar chat *)
-    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "NotebookAssistant`SideBar`UserMessageBox", ___ ], "NotebookAssistant`SideBar`ChatInput", ___ ] :>
+    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "NotebookAssistant`Sidebar`UserMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatInput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
-    Cell[ BoxData @ TemplateBox[ { text_ }, "NotebookAssistant`SideBar`UserMessageBox", ___ ], "NotebookAssistant`SideBar`ChatInput", ___ ] :>
+    Cell[ BoxData @ TemplateBox[ { text_ }, "NotebookAssistant`Sidebar`UserMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatInput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "NotebookAssistant`SideBar`AssistantMessageBox", ___ ], "NotebookAssistant`SideBar`ChatOutput", ___ ] :>
+    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "NotebookAssistant`Sidebar`AssistantMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatOutput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatOutput" ]
 };
 

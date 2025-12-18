@@ -24,11 +24,11 @@ $WorkspaceChat = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*$SideBarChat*)
+(*$SidebarChat*)
 GeneralUtilities`SetUsage[ "\
-$SideBarChat gives True when chat is occurring in a notebook's side bar area and False otherwise." ];
+$SidebarChat gives True when chat is occurring in a notebook's side bar area and False otherwise." ];
 
-$SideBarChat = False;
+$SidebarChat = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

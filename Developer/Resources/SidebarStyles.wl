@@ -75,7 +75,7 @@ fails = DeleteCases[ fails, { _, "Notebook" | "PrintTemporary" | "CellExpression
 (* 3. Only include styles that aren't included in, or are modified from, CoreExtensions.nb. Directly inherit within CoreExtensions.nb. *)
 (* 4. CellFrameLabels is not supported by inline cells so use AttachCell instead *)
 
-SideBarCoreExtensionCells[ ] :=
+SidebarCoreExtensionCells[ ] :=
 MapThread[
     Module[ { b, a, optionsList },
         b = Lookup[ Lookup[ before, #1 ], #2 ];
@@ -104,7 +104,7 @@ MapThread[
         Switch[ #2,
             "AssistantMessageBox",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
                 Cell[
-                    StyleData[ "NotebookAssistant`SideBar`AssistantMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
+                    StyleData[ "NotebookAssistant`Sidebar`AssistantMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
                     TemplateBoxOptions -> {
                         DisplayFunction -> Function @ Evaluate @ OverlayBox[
                             {
@@ -156,7 +156,7 @@ MapThread[
 
             "UserMessageBox",
                 Cell[
-                    StyleData[ "NotebookAssistant`SideBar`UserMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
+                    StyleData[ "NotebookAssistant`Sidebar`UserMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
                     TemplateBoxOptions -> {
                         DisplayFunction -> Function @ Evaluate @ OverlayBox[
                             {
@@ -196,9 +196,9 @@ MapThread[
             _,
                 Cell[
                     StyleData[
-                        "NotebookAssistant`SideBar`" <> StringReplace[ #2, StartOfString ~~ "WorkspaceChat" -> "" ],
+                        "NotebookAssistant`Sidebar`" <> StringReplace[ #2, StartOfString ~~ "WorkspaceChat" -> "" ],
                         Which[
-                            #2 === "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "NotebookAssistant`SideBar`ToolbarButtonLabel" ],
+                            #2 === "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "NotebookAssistant`Sidebar`ToolbarButtonLabel" ],
                             a === { }, Sequence @@ { },
                             True, StyleDefinitions -> StyleData[ #2 ] ] ],
                     Sequence @@ optionsList ]
