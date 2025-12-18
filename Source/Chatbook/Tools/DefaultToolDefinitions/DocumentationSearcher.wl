@@ -165,7 +165,7 @@ formatItem[ text_String ] := Style[
         ReplaceAll[
             FormatChatOutput @ text,
             Cell[
-                BoxData @ TemplateBox[ { cell: Cell[ __, "ChatCode", ___ ], ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`SideBar`ChatCodeBlockTemplate", ___ ],
+                BoxData @ TemplateBox[ { cell: Cell[ __, "ChatCode", ___ ], ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ],
                 "ChatCodeBlock",
                 ___
             ] :> Cell @ PaneBox[ cell, ImageMargins -> { { 0, 0 }, { 0, 20 } } ]

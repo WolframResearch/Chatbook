@@ -330,7 +330,7 @@ ensureConversationUUID[ nbo_NotebookObject ] :=
 
 ensureConversationUUID[ nbo_NotebookObject, settings0_Association ] := Enclose[
     Module[ { settings, uuid, appContainer },
-        appContainer = If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSideBarCell" ], $appContainer, nbo ];
+        appContainer = If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSidebarCell" ], $appContainer, nbo ];
         settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ appContainer, settings0 |>, AssociationQ, "Settings" ];
         uuid = settings[ "ConversationUUID" ];
         If[ ! StringQ @ uuid,
@@ -352,8 +352,8 @@ saveChat // beginDefinition;
 
 saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
     Catch @ Module[ { cellObjects, cells, messages, cellsContainer },
-        If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSideBarCell" ],
-            cellsContainer = First[ Cells[ $appContainer, CellTags -> "SideBarScrollingContentCell" ], Throw @ Missing[ "NoCells" ] ]
+        If[ MatchQ[ $appContainer, _CellObject ] && cellTaggedQ[ $appContainer, "NotebookAssistantSidebarCell" ],
+            cellsContainer = First[ Cells[ $appContainer, CellTags -> "SidebarScrollingContentCell" ], Throw @ Missing[ "NoCells" ] ]
             ,
             cellsContainer = nbo ];
         cellObjects = ConfirmMatch[ Cells @ cellsContainer, { ___CellObject }, "CellObjects" ];
@@ -478,7 +478,7 @@ setChatDisplayTitle // beginDefinition;
 setChatDisplayTitle[ nbo_NotebookObject, c_CellObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         CurrentValue[ c, { TaggingRules, "ConversationTitle" } ] = title;
-        writeSideBarChatSubDockedCell[ nbo, c, WindowTitle ]
+        writeSidebarChatSubDockedCell[ nbo, c, WindowTitle ]
     ];
 
 setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=

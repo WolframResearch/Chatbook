@@ -185,7 +185,7 @@ feParentObject[ box_BoxObject ] :=
     The side bar is pretending to be a sub-NotebookObject to the main NotebookObject.
     The "top-level" cells are in a Row within a scrollable Pane. The Pane itself is within an inline cell.
     The fe parent of a top-level cell is the side bar's main CellObject, which is two levels up. *)
-feParentObject[ cell_CellObject ] /; cellTaggedQ[ cell, "SideBarTopCell" ] := ParentCell @ ParentCell @ cell;
+feParentObject[ cell_CellObject ] /; cellTaggedQ[ cell, "SidebarTopCell" ] := ParentCell @ ParentCell @ cell;
 
 feParentObject[ cell_CellObject ] :=
     With[ { parent = parentCell @ cell },
@@ -578,7 +578,7 @@ fromFETimestamp // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
-parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SideBarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *)
+parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SidebarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *)
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
@@ -708,21 +708,21 @@ cloudCellPrint // endDefinition;
 (*cellPrintAfter*)
 cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
 
-cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] /; cellTaggedQ[ target, "SideBarTopCell" ] := Enclose[
-    Module[ { sideBarCell },
-        (* topParentCell is blocked from recursing past a "SideBarTopCell", but we know the parent distance to the side bar cell *)
-        sideBarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SideBarCellPrintAfter" ];
+cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] /; cellTaggedQ[ target, "SidebarTopCell" ] := Enclose[
+    Module[ { sidebarCell },
+        (* topParentCell is blocked from recursing past a "SidebarTopCell", but we know the parent distance to the side bar cell *)
+        sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SidebarCellPrintAfter" ];
         WithCleanup[
             FrontEndExecute[ {
-                FrontEnd`SetOptions[ sideBarCell, Editable -> True ],
+                FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
                 FrontEnd`SelectionMove[ target, After, Cell, AutoScroll -> True ],
                 FrontEnd`NotebookWrite[ parentNotebook @ target, RowBox[ { "\n", cell } ] ]
             } ]
             ,
-            CurrentValue[ sideBarCell, Editable ] = Inherited
+            CurrentValue[ sidebarCell, Editable ] = Inherited
         ];
         (* this should return the CellObject of the newly written inline cell in the scrolling content cell *)
-        ConfirmMatch[ NextCell @ target, _CellObject, "SideBarCellPrintAfterCellObject" ]
+        ConfirmMatch[ NextCell @ target, _CellObject, "SidebarCellPrintAfterCellObject" ]
     ]
     ,
     throwInternalFailure

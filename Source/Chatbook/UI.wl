@@ -23,9 +23,10 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-GeneralUtilities`SetUsage[CreateSideBarContent, "
-CreateSideBarContent[ sideBarCell ] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' sidebar menu, passing in the CellObject of the side bar.
+GeneralUtilities`SetUsage[CreateSidebarContent, "
+CreateSidebarContent[ sidebarCell ] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' sidebar menu, passing in the CellObject of the side bar.
 "]
+CreateSideBarContent = CreateSidebarContent; (* backwards compatibility during development *)
 
 Begin["`Private`"]
 
@@ -59,7 +60,7 @@ CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "P
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+CreateSidebarContent[ sidebarCell_CellObject ] := DynamicModule[ {
 	nbObj,
 	isChatEnabled
 },
@@ -67,7 +68,7 @@ CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
 	nbObj = EvaluationNotebook[ ];
 	isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
 
-	mainSideBarMenuContent[ True, sideBarCell, nbObj, isChatEnabled ],
+	mainSidebarMenuContent[ True, sidebarCell, nbObj, isChatEnabled ],
 
 	InheritScope -> True
 ] /; TrueQ @ alreadyLoadedMenuQ;
@@ -76,7 +77,7 @@ CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
 	The percolator only appears the first time the menu loads when invoked from the default toolbar.
 	Note that it can quickly flash if the LLM models were first loaded elsewhere, like when creating a new ChatInput cell,
 	but that's an OK compromise. *)
-CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
+CreateSidebarContent[ sidebarCell_CellObject ] := DynamicModule[ {
 	nbObj,
 	isChatEnabled,
 	display
@@ -97,7 +98,7 @@ CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
 	Initialization :> (
 		nbObj = EvaluationNotebook[ ];
 		isChatEnabled = TrueQ @ CurrentValue[ nbObj, { StyleDefinitions, "ChatInput", Evaluatable } ];
-		display = mainSideBarMenuContent[ False, sideBarCell, nbObj, isChatEnabled ];
+		display = mainSidebarMenuContent[ False, sidebarCell, nbObj, isChatEnabled ];
 		alreadyLoadedMenuQ = True
 	),
 
@@ -108,23 +109,23 @@ CreateSideBarContent[ sideBarCell_CellObject ] := DynamicModule[ {
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*mainSideBarMenuContent*)
+(*mainSidebarMenuContent*)
 
-mainSideBarMenuContent // beginDefinition;
+mainSidebarMenuContent // beginDefinition;
 
-Attributes[mainSideBarMenuContent] = {HoldRest};
+Attributes[mainSidebarMenuContent] = {HoldRest};
 
-mainSideBarMenuContent[ alreadyLoadedMenuQ_, sideBarCell_, nbObj_, isChatEnabled_ ] :=
+mainSidebarMenuContent[ alreadyLoadedMenuQ_, sidebarCell_, nbObj_, isChatEnabled_ ] :=
 PaneSelector[
 	{
 		True -> If[ alreadyLoadedMenuQ,
 			((* Creating the menu is expensive even if it's already loaded once before.
 				The Dynamic means we only create it when it is first displayed.
 				So if the False case of this PaneSelector happens first, then createChatNotEnabledToolbar won't take time to load. *)
-				Dynamic[ makeSideBarMenuContent[ sideBarCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
+				Dynamic[ makeSidebarMenuContent[ sidebarCell, nbObj ], SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
 			),
 			(* If the menu is generating for the first time then we can't have the Dynamic here or else it competes with Dynamic[display] *)
-			makeSideBarMenuContent[ sideBarCell, nbObj ]
+			makeSidebarMenuContent[ sidebarCell, nbObj ]
 		],
 		False -> createChatNotEnabledToolbar[ nbObj, Dynamic @ isChatEnabled ]
 	},
@@ -132,34 +133,34 @@ PaneSelector[
 	ImageSize -> Automatic
 ]
 
-mainSideBarMenuContent // endDefinition;
+mainSidebarMenuContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*makeSideBarMenuContent*)
+(*makeSidebarMenuContent*)
 
-makeSideBarMenuContent // beginDefinition;
+makeSidebarMenuContent // beginDefinition;
 
-makeSideBarMenuContent[ sideBarCell_CellObject, nbObj_NotebookObject ] := Enclose[
+makeSidebarMenuContent[ sidebarCell_CellObject, nbObj_NotebookObject ] := Enclose[
 	Module[ { items, new },
 
-		items = ConfirmBy[ makeChatActionMenu[ "SideBar", nbObj ], ListQ, "Items" ];
+		items = ConfirmBy[ makeChatActionMenu[ "Sidebar", nbObj ], ListQ, "Items" ];
 
 		new = Join[ 
 			{ <|
 				 "Type"           -> "Custom",
-				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSideBar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
+				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSidebar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
 				 "ResetAction"    :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = Inherited),
 				 "ResetCondition" :> (AbsoluteCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
 			|> },
 			items ];
 
-		MakeSideBarMenu[ sideBarCell, new ]
+		MakeSidebarMenu[ sidebarCell, new ]
 	],
 	throwInternalFailure
 ];
 
-makeSideBarMenuContent // endDefinition;
+makeSidebarMenuContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -462,10 +463,10 @@ makeAutomaticResultAnalysisCheckbox[
 	]
 ]
 
-SetFallthroughError[makeAutomaticResultAnalysisCheckboxSideBar]
+SetFallthroughError[makeAutomaticResultAnalysisCheckboxSidebar]
 
 (* the side bar changes the notebook-level setting regardless of the $FrontEndSession value *)
-makeAutomaticResultAnalysisCheckboxSideBar[ nbo_NotebookObject ] :=
+makeAutomaticResultAnalysisCheckboxSidebar[ nbo_NotebookObject ] :=
 Pane[ #, FrameMargins -> { { 0, 0 }, { 7, 7 } } ]& @
 DynamicModule[ { value = TrueQ @ initialValue },
 	Row[
@@ -1266,7 +1267,7 @@ filterPersonas // endDefinition;
 SetFallthroughError[makeChatActionMenu]
 
 makeChatActionMenu[
-	containerType: "Input" | "Delimiter" | "Toolbar" | "SideBar",
+	containerType: "Input" | "Delimiter" | "Toolbar" | "Sidebar",
 	targetObj : _CellObject | _NotebookObject
 ] :=
 Join[
