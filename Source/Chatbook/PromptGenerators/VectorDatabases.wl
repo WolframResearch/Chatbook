@@ -576,7 +576,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
         Quiet @ catchAlways @ tryUnpackingVectorDatabases @ dir;
 
         (* Download any remaining vector databases: *)
-        names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
+        names = Select[ $vectorDBNames, ! vectorDBDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
         urls  = KeyTake[ urls0, names ];
 
         lock  = FileNameJoin @ { dir, "download.lock" };
@@ -1427,7 +1427,7 @@ toTinyVector // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $vectorDBDownloadSizes;
 ];
 
 End[ ];
