@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (*Configuration*)
 $snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
-$snippetFetchBatchSize         = 25;
+$snippetFetchBatchSize         = 15;
 $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
 $documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
 $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
