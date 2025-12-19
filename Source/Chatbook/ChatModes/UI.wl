@@ -339,7 +339,7 @@ sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
         ],
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
-    FrontEndToken[nbo, "HideSideBar"],
+    FrontEndToken[nbo, "HideSidebar"],
     Appearance -> "Suppressed",
     Evaluator  -> None
 ]

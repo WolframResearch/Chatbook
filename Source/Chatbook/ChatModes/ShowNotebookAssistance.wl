@@ -528,12 +528,12 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, settings0_
         
         If[ FailureQ @ sidebarCell,
              (* don't do anything else because this is the first time we've opened the sidebar in this notebook; Cell Initialization adds necessary TaggingRules *)
-            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
             , (* ELSE the sidebar assistant is persistant so don't remove content cells *)
             
             (* The sidebar assistant is persistant to a given notebook. Only remove content if "new chat" is selected. *)
 
-            FrontEndTokenExecute[ nbo, "SwitchSideBar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
             
             (* will we ever need to do this with the sidebar chat...? *)
             If[ TrueQ @ evaluate,
