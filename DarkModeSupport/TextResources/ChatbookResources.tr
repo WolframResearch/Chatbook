@@ -9841,7 +9841,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
   FrameMargins->0,
   ImageSize->Automatic],
 
-"NotebookAssistantSideBarCell" -> Cell[BoxData[{
+"NotebookAssistantSidebarCell" -> Cell[BoxData[{
  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]], 
    StandardForm],
