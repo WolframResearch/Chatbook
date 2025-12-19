@@ -1130,6 +1130,8 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
             "InlinedExpression[\"" <> uri <> "\"]",
         ("Import"|"Get") ~~ "[\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"]" /; expressionURIKeyQ @ key :>
             "InlinedExpression[\"" <> uri <> "\"]",
+        ("Import"|"Get") ~~ "[\"" ~~ key__ ~~ "\"]" /; expressionURIKeyQ @ key :>
+            "InlinedExpression[\"attachment://" <> key <> "\"]",
         "\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"" /; expressionURIKeyQ @ key :>
             "InlinedExpression[\"" <> uri <> "\"]",
         "!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")" /; expressionURIKeyQ @ key :>
