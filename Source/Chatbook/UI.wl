@@ -151,7 +151,7 @@ makeSidebarMenuContent[ sidebarCell_CellObject, nbObj_NotebookObject ] := Enclos
 				 "Type"           -> "Custom",
 				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSidebar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
 				 "ResetAction"    :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = Inherited),
-				 "ResetCondition" :> (AbsoluteCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
+				 "ResetCondition" :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
 			|> },
 			items ];
 
@@ -468,42 +468,54 @@ SetFallthroughError[makeAutomaticResultAnalysisCheckboxSidebar]
 (* the side bar changes the notebook-level setting regardless of the $FrontEndSession value *)
 makeAutomaticResultAnalysisCheckboxSidebar[ nbo_NotebookObject ] :=
 Pane[ #, FrameMargins -> { { 0, 0 }, { 7, 7 } } ]& @
-DynamicModule[ { value = TrueQ @ initialValue },
-	Row[
-		{
-			Checkbox[
-				Dynamic[ value, Function[ value = #; CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = # ] ],
-				{False, True}
-			],
-			Spacer[3],
-			EventHandler[
-				Style[
+DynamicModule[ { value, mouseover = False },
+	DynamicWrapper[
+		Row[
+			{
+				EventHandler[
 					Row[
 						{
-							FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+							Checkbox[
+								Dynamic[ value, Function[ Null (* let the EventHandler control the click action *)] ],
+								{False, True}
+							],
 							Spacer[ 3 ],
-							Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+							Style[
+								FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+								FontColor -> (Dynamic[ If[ mouseover, #1, #2 ] ]&[
+									LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ], (* should these move to ColorData? *)
+									LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+								])]
 						},
-						"\[NoBreak]",
+						BaseStyle -> {
+							"Text",
+							FontFamily         -> "Source Sans Pro",
+							FontSize           -> 12,
+							FontSlant          -> Plain,
+							CheckboxBoxOptions -> { ImageMargins -> 0 }
+						},
 						StripOnInput -> True
 					],
-					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
-						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
-					])
+					{
+						"MouseEntered" :> (mouseover = True),
+						"MouseExited"  :> (mouseover = False),
+						"MouseClicked" :> (CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = value = ! value)
+					},
+					PassEventsDown -> True
 				],
-				"MouseClicked" :> (CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = value = ! value)
-			]
-		},
-		BaseStyle -> {
-			"Text",
-			FontFamily         -> "Source Sans Pro",
-			FontSize           -> 12,
-			FontSlant          -> Plain,
-			CheckboxBoxOptions -> { ImageMargins -> 0 },
-			LineBreakWithin    -> False
-		},
-		StripOnInput -> True
+				Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+			},
+			"\[NoBreak]",
+			BaseStyle -> { LineBreakWithin -> False },
+			StripOnInput -> True
+		],
+		value = (* no need to go through the slow AbsoluteCurrentChatSettings for resolving this state *)
+			If[# === Inherited,
+				TrueQ @ CurrentValue[ $FrontEndSession, { TaggingRules, "ChatNotebookSettings", "Assistance" } ]
+				,
+				TrueQ @ #
+			]& @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ],
+		TrackedSymbols :> {}
 	]
 
 ]
