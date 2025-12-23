@@ -932,7 +932,7 @@ chatSubmit0 // Attributes = { HoldFirst };
 chatSubmit0[
     container_,
     messages: { __Association },
-    cellObject_CellObject,
+    cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
     Module[ { auth, stop, result, chunks, content },
@@ -975,7 +975,7 @@ chatSubmit0[
     throwInternalFailure
 ];
 
-chatSubmit0[ container_, messages: { __Association }, cellObject_CellObject, settings_ ] := Quiet[
+chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
     $lastChatSubmitResult = ReleaseHold[
@@ -1003,7 +1003,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_CellObject, set
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_CellObject, settings_ ] := (
+chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings_ ] := (
     $buffer = "";
     applyProcessingFunction[
         settings,
@@ -1082,7 +1082,7 @@ chatHandlerFunctionsKeys // endDefinition;
 chatHandlers // beginDefinition;
 chatHandlers // Attributes = { HoldFirst };
 
-chatHandlers[ container_, cellObject_CellObject, settings_ ] :=
+chatHandlers[ container_, cellObject_, settings_ ] :=
     $lastHandlers = With[
         {
             autoOpen      = TrueQ @ $autoOpen,
@@ -1205,7 +1205,7 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_, cell_CellObject ] :=
+writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_, cell_ ] :=
     Which[
         FailureQ @ strings,
             throwFailureToChatOutput @ strings,
@@ -1216,11 +1216,11 @@ writeChunk[ as: KeyValuePattern[ "ExtractedBodyChunks" -> strings_ ], container_
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ KeyValuePattern[ "BodyChunk" -> chunk_String ], container_, cell_CellObject ] :=
+writeChunk[ KeyValuePattern[ "BodyChunk" -> chunk_String ], container_, cell_ ] :=
     writeChunk[ $buffer <> chunk, container, cell ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk[ chunk_String, container_, cell_CellObject ] :=
+writeChunk[ chunk_String, container_, cell_ ] :=
     Module[ { ws, sep, parts, buffer },
         ws      = WhitespaceCharacter...;
         sep     = "\n\n" | "\r\n\r\n";
@@ -1236,17 +1236,17 @@ writeChunk // endDefinition;
 writeChunk0 // beginDefinition;
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk0[ container_, cell_CellObject, "" | "[DONE]" | "[DONE]\n\n" ] :=
+writeChunk0[ container_, cell_, "" | "[DONE]" | "[DONE]\n\n" ] :=
     Null;
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-writeChunk0[ container_, cell_CellObject, chunk_String ] :=
+writeChunk0[ container_, cell_, chunk_String ] :=
     writeChunk0[ container, cell, chunk, Quiet @ Developer`ReadRawJSONString @ chunk ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_CellObject,
+    cell_,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern[ "delta" -> KeyValuePattern[ "content" -> text_String ] ], ___ } ]
 ] := writeChunk0[ container, cell, chunk, text ];
@@ -1254,7 +1254,7 @@ writeChunk0[
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_CellObject,
+    cell_,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern @ { "delta" -> <| |>, "finish_reason" -> "stop" }, ___ } ]
 ] := Null;
@@ -1262,12 +1262,12 @@ writeChunk0[
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk0[
     container_,
-    cell_CellObject,
+    cell_,
     chunk_String,
     KeyValuePattern[ "completion" -> text_String ]
 ] := writeChunk0[ container, cell, chunk, text ];
 
-writeChunk0[ Dynamic[ container_ ], cell_CellObject, chunk_String, text_String ] := (
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     appendStringContent[ container[ "FullContent"    ], text ];
     appendStringContent[ container[ "DynamicContent" ], text ];
@@ -1294,7 +1294,7 @@ writeChunk0[ Dynamic[ container_ ], cell_CellObject, chunk_String, text_String ]
     ]
 );
 
-writeChunk0[ Dynamic[ container_ ], cell_CellObject, chunk_String, other_ ] :=
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
      Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ];
 
 writeChunk0 // endDefinition;
@@ -1431,7 +1431,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
 
         If[ TrueQ @ $SidebarChat,
             With[ { boxObject = boxObject, write = write, sidebarCell = sidebarCellObject @ nbo },
-                splitDynamicTaskFunction @ 
+                splitDynamicTaskFunction @
                 WithCleanup[
                     FrontEndExecute[ {
                         FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
@@ -1469,7 +1469,7 @@ splitDynamicContent // endDefinition;
 (*checkResponse*)
 checkResponse // beginDefinition;
 
-checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_CellObject, as_Association ] :=
+checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
@@ -1477,13 +1477,13 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
 
 (* FIXME: Look for "finish_reason":"stop" and check if response ends in a WL code block.
           If it does, process it as a tool call, since it wrote /exec after the code block. *)
-checkResponse[ settings_, container_, cell_CellObject, as_Association ] /; toolFreeQ[ settings, container ] :=
+checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, Unevaluated @ container, cell, as ]
     ];
 
-checkResponse[ settings_, container_Symbol, cell_CellObject, as_Association ] :=
+checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
     If[ TrueQ @ $AutomaticAssistance,
         toolEvaluation[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ toolEvaluation[ settings, Unevaluated @ container, cell, as ]
@@ -1496,7 +1496,7 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
-writeResult[ settings_, container_, cell_CellObject, as_ ] /; $headlessChat := (
+writeResult[ settings_, container_, cell_, as_ ] /; $headlessChat := (
     appendCitations[ Unevaluated @ container, settings ];
     Null
 );
@@ -1680,7 +1680,7 @@ simpleToolFreeQ // endDefinition;
 (*toolEvaluation*)
 toolEvaluation // beginDefinition;
 
-toolEvaluation[ settings_, container_Symbol, cell_CellObject, as_Association ] := Enclose[
+toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
@@ -2808,11 +2808,11 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             cellTags = CurrentValue[ cell, CellTags ];
             uuid     = CreateUUID[ ];
             new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
-            
+
             $lastChatString  = string;
             $reformattedCell = new;
             $lastChatOutput = None;
-            
+
             createTask = If[ TrueQ @ sufficientVersionQ[ "TaskWriteOutput" ], createFETask, Identity ];
 
             info = addProcessingArguments[
