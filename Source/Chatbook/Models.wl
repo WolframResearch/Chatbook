@@ -441,6 +441,9 @@ chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
 
+chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";
+chooseModelFamily0[ wordsPattern[ { "Gemini", "3", ___ } ] ] := "Gemini3";
+
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Chat"    , $$versionOrParams } ] ] := "DeepSeekChat";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrParams } ] ] := "DeepSeekChat";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
