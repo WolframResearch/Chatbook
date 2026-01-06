@@ -2484,6 +2484,28 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
 
 prepareChatOutputPage // endDefinition;
 
+
+deleteEvaluationCellIfKernelQuit // beginDefinition;
+
+deleteEvaluationCellIfKernelQuit[ expr_ ] :=
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* front-end boxes memoize the $SessionID that created them *)
+    DynamicWrapper[
+        PaneSelector[
+            { False -> expr, True -> Spacer @ 0 }, (* hide content while we wait for the cell to delete *)
+            Dynamic @ kernelWasQuitQ,
+            ImageSize -> Automatic],
+
+        If[ kernelWasQuitQ, NotebookDelete @ EvaluationCell[ ] ],
+
+        SynchronousUpdating -> False
+    ],
+
+    Initialization :> (kernelWasQuitQ = (originalSessionID =!= $SessionID)) (* whenever the cell re-draws, check the $SessionID *)
+];
+
+deleteEvaluationCellIfKernelQuit // endDefinition;
+
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*activeAIAssistantCell*)
@@ -2502,7 +2524,6 @@ activeAIAssistantCell[
     With[
         {
             label     = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
-            id        = $SessionID,
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
@@ -2516,7 +2537,7 @@ activeAIAssistantCell[
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
             Cell[
-                BoxData @ outer @ ToBoxes @
+                BoxData @ outer @ ToBoxes @ deleteEvaluationCellIfKernelQuit @
                     If[ TrueQ @ reformat,
                         Dynamic[
                             Refresh[
@@ -2531,7 +2552,6 @@ activeAIAssistantCell[
                                 TrackedSymbols :> { x },
                                 UpdateInterval -> 0.4
                             ],
-                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                             Deinitialization :> Quiet @ TaskRemove @ task
                         ],
                         Dynamic[
@@ -2543,7 +2563,6 @@ activeAIAssistantCell[
                                 ,
                                 catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                             ],
-                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                             Deinitialization :> Quiet @ TaskRemove @ task
                         ]
                     ],
@@ -2573,7 +2592,6 @@ activeAIAssistantCell[
     With[
         {
             label     = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
-            id        = $SessionID,
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             uuid      = container[ "UUID" ],
@@ -2587,13 +2605,12 @@ activeAIAssistantCell[
         },
         Cell[
             BoxData @ outer @ TagBox[
-                ToBoxes @ Dynamic[
+                ToBoxes @  deleteEvaluationCellIfKernelQuit @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
                     catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
                     TrackedSymbols   :> { $dynamicTrigger },
-                    Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                     Deinitialization :> Quiet @ TaskRemove @ task
                 ],
                 "DynamicTextDisplay",
