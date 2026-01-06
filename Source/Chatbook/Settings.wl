@@ -210,6 +210,24 @@ $modelAutoSettings[ "GoogleGemini", "GeminiProVision" ] = <|
     "ToolsEnabled" -> False
 |>;
 
+$modelAutoSettings[ "GoogleGemini", "Gemini2" ] = <|
+    "ForceSynchronous" -> False,
+    "MaxContextTokens" -> 1047576,
+    "Multimodal"       -> True,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "GoogleGemini", "Gemini3" ] = <|
+    "ForceSynchronous" -> False,
+    "MaxContextTokens" -> 1047576,
+    "Multimodal"       -> True,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "GoogleGemini", Automatic ] = <|
+    "PresencePenalty" -> Missing[ "NotSupported" ]
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*MistralAI*)
