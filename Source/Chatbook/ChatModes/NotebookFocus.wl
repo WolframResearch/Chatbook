@@ -71,11 +71,12 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         label = If[ MatchQ[ appContainer, _CellObject ],
             Grid[
                 { {
+                    CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ];
                     Toggler[
                         Dynamic @ CurrentChatSettings[ appContainer, "AllowSelectionContext" ],
                         {
-                            True  -> $disableNotebookFocusLabel,
-                            False -> $enableNotebookFocusLabel
+                            True  -> chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
+                            False -> chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ]
                         },
                         BaselinePosition -> Baseline
                     ],
