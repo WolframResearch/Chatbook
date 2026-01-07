@@ -2670,6 +2670,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
+            (* FIXME: this can write to the notebook content area if its empty *)
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
