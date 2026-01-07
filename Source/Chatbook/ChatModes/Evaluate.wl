@@ -85,8 +85,8 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sidebarScrollingCell[ nbo, { cell } ] } ] ] } ]
+                    FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], RowBox[ { "\n", sidebarScrollingCell[ nbo, { cell } ] } ] ]
+                } ]
                 ,
                 CurrentValue[ sidebarCell, Editable ] = Inherited
             ];
@@ -97,8 +97,8 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastContentCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", cell } ] ] } ]
+                    FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ lastContentCell, "After" ], RowBox[ { "\n", cell } ] ]
+                } ]
                 ,
                 CurrentValue[ sidebarCell, Editable ] = Inherited
             ]
