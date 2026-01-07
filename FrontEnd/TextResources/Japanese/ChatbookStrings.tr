@@ -227,6 +227,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:65B0\:3057\:3044\:4F1A\:8A71\:3092\:59CB\:3081\:308B",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:30c1\:30e3\:30c3\:30c8\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3068\:3057\:3066\:958b\:304f",
 "WorkspaceSourcesOpenNotebooks" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:958b\:304f",
+"WorkspaceSourcesNoOpenNotebooks" -> "No other notebooks are currently open.",
 "WorkspaceHistoryPageTemplate" -> "\:30da\:30fc\:30b8`1`/`2`",
 "WorkspaceHistoryFirstPage" -> "\:6700\:521d\:306e\:30da\:30fc\:30b8",
 "WorkspaceHistoryPreviousPage" -> "\:524d\:306e\:30da\:30fc\:30b8",
