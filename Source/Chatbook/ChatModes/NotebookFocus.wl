@@ -71,7 +71,6 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         label = If[ MatchQ[ appContainer, _CellObject ],
             Grid[
                 { {
-                    "Restrict context",
                     Toggler[
                         Dynamic @ CurrentChatSettings[ appContainer, "AllowSelectionContext" ],
                         {
@@ -79,7 +78,8 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                             False -> $enableNotebookFocusLabel
                         },
                         BaselinePosition -> Baseline
-                    ] } },
+                    ],
+                    tr[ "SidebarFocusIndicator" ] } },
                 Alignment        -> { Left, Baseline },
                 BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
                 BaselinePosition -> { 1, 1 } (* align to the text *)

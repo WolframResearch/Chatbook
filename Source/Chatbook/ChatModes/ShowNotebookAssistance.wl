@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
-$sidebarChatWidth := $sidebarChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
+$sidebarChatWidth := Min[ AbsoluteCurrentValue[ EvaluationNotebook[ ], { WindowSize, 1 } ]*0.5, Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ] ];
 
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
@@ -208,14 +208,14 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 
 (* The zero argument form uses "Window" by default pre 15.0, "Sidebar" otherwise: *)
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ "Sidebar", opts ];
+    catchMine @ ShowNotebookAssistance[ "Sidebar" | "SideBar", opts ];
 
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ "Window", opts ];
 
 (* Uses "Window" if given a NotebookObject: *)
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar", opts ];
+    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar" | "SideBar", opts ];
 
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ nbo, "Window", opts ];
@@ -223,14 +223,14 @@ ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Sidebar*)
-ShowNotebookAssistance[ "Sidebar", opts: OptionsPattern[ ] ] :=
+ShowNotebookAssistance[ "Sidebar" | "SideBar", opts: OptionsPattern[ ] ] :=
     catchMine @ LogChatTiming @ withChatState @ LogChatTiming @ ShowNotebookAssistance[
         LogChatTiming @ getUserNotebook[ ],
         "Sidebar",
         opts
     ];
 
-ShowNotebookAssistance[ nbo: _NotebookObject|None, "Sidebar", opts: OptionsPattern[ ] ] :=
+ShowNotebookAssistance[ nbo: _NotebookObject|None, "Sidebar" | "SideBar", opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ withExtraInstructions[
         OptionValue[ "ExtraInstructions" ],
         LogChatTiming @ showNotebookAssistanceSidebar[
