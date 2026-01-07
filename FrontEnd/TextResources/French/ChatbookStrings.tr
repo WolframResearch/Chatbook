@@ -227,6 +227,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "D\[EAcute]marrer une nouvelle conversation",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Ouvrir en tant que notebook de Chat",
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
+"WorkspaceSourcesNoOpenNotebooks" -> "No other notebooks are currently open.",
 "WorkspaceHistoryPageTemplate" -> "Page `1` de `2`",
 "WorkspaceHistoryFirstPage" -> "Premi\[EGrave]re page",
 "WorkspaceHistoryPreviousPage" -> "Page pr\[EAcute]c\[EAcute]dente",

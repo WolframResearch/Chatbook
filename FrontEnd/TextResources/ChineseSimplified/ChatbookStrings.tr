@@ -227,6 +227,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:5F00\:59CB\:65B0\:7684\:5BF9\:8BDD",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:6253\:5F00\:4E3A\:804A\:5929\:7B14\:8BB0\:672C",
 "WorkspaceSourcesOpenNotebooks" -> "\:6253\:5F00\:7B14\:8BB0\:672C",
+"WorkspaceSourcesNoOpenNotebooks" -> "No other notebooks are currently open.",
 "WorkspaceHistoryPageTemplate" -> "Page `1` of `2`",
 "WorkspaceHistoryFirstPage" -> "First page",
 "WorkspaceHistoryPreviousPage" -> "Previous page",

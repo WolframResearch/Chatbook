@@ -2117,6 +2117,14 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
             ],
             Pane[
                 Dynamic @ Grid[
+                    Function[ results,
+                        If[ results === { },
+                            { {
+                                Pane[
+                                    Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontSlant -> "Italic" ],
+                                    Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
+                            results ]
+                    ] @
                     Cases[
                         SortBy[
                             If[ appContainer === None,
