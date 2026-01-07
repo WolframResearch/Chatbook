@@ -1759,6 +1759,27 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
     throwInternalFailure
 ];
 
+currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "NotebookAssistantSidebarCell" ] :=
+    Lookup[
+        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Inherited -> <||> ],
+        key,
+        Lookup[
+            $cachedGlobalSettings,
+            key,
+            Lookup[ $defaultChatSettings, key, Inherited ] ] ]
+
+currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "SidebarTopCell" ] :=
+    Lookup[
+        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Inherited -> <||> ],
+        key,
+        Lookup[
+            CurrentValue[ ParentCell @ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            key,
+            Lookup[
+                $cachedGlobalSettings,
+                key,
+                Lookup[ $defaultChatSettings, key, Inherited ] ] ] ]
+
 currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
@@ -1775,14 +1796,6 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
         ];
 
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
-
-        (* There are no chat delimiters in the side bar so throw the side bar cell's settings *)
-        If[ cellTaggedQ[ cell, "NotebookAssistantSidebarCell" ], Throw @
-            Replace[
-                CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
-                Inherited :> Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
-            ]
-        ];
 
         nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
         cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
