@@ -73,6 +73,7 @@ $defaultChatSettings = <|
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
+    "ShowProgressText"               -> Automatic,
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
@@ -400,6 +401,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
     "ReplaceUnicodeCharacters"  -> False,
+    "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
     "Temperature"               -> 0.7,
     "ToolResponseRole"          -> "System"
@@ -654,7 +656,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
             $endToken                = resolved[ "EndToken" ];
 
-            If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
+            If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
             setLLMKitFlags @ resolved;
         ];
