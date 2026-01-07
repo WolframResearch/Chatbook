@@ -75,7 +75,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                     Item[ Spacer[ 0 ], ItemSize -> Fit ],
                     LogChatTiming @ sidebarSourcesButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
                     LogChatTiming @ sidebarHistoryButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarOpenAsChatbookButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
+                    LogChatTiming @ sidebarOpenAsAssistantWindowButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
                     sidebarHideButton[ Dynamic @ nbo ]
                 } },
                 Alignment -> { Automatic, Center },
@@ -305,28 +305,50 @@ sidebarNewChatButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*sidebarOpenAsChatbookButton*)
-sidebarOpenAsChatbookButton // beginDefinition;
+(*sidebarOpenAsAssistantWindowButton*)
+sidebarOpenAsAssistantWindowButton // beginDefinition;
 
-sidebarOpenAsChatbookButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
-    Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "OpenAsChatbook", None ] ],
-    NotebookPut @ cellsToChatNB[
-        ReplaceRepeated[
-            NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], {} ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
-            (* so far there's only one TemplateBox that needs to be unconverted *)
-            TemplateBox[ a_, b : Alternatives[ "NotebookAssistant`Sidebar`ChatCodeBlockTemplate" ], c___] :>
-                RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "", c ] ], True ]
-        ],
-        CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ] ],
+sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+    Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "OpenAsChatbook", None, "OpenAsWindowedAssistant", False ] ],
+    With[
+        {
+            newNB = ShowNotebookAssistance[ nbo, "Window",
+                "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ]
+        },
+        If[ MatchQ[ newNB, _NotebookObject ],
+            SelectionMove[ newNB, Before, Notebook ];
+            NotebookWrite[
+                newNB,
+                ReplaceRepeated[
+                    NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], {} ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
+                    (* so far there's only one TemplateBox that needs to be unconverted *)
+                    {
+                        Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
+                            RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
+                        TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___] :>
+                            RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
+                    }
+                ] ];
+            attachWorkspaceChatInput @ newNB;
+            
+            (* remove sidebar and its content *)
+            NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+            removeSidebarScrollingContentCell[ nbo, sidebarCell ];
+            removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
+            CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+            CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = "";
+            FrontEndTokenExecute[ nbo, "HideSidebar" ];
+        ]
+    ],
     Appearance -> "Suppressed",
     Method     -> "Queued"
 ];
 
-sidebarOpenAsChatbookButton // endDefinition;
+sidebarOpenAsAssistantWindowButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*sidebarOpenAsChatbookButton*)
+(*sidebarOpenAsAssistantWindowButton*)
 
 sidebarHideButton // beginDefinition;
 
@@ -594,7 +616,7 @@ $toolbarButtonLight   = Sequence[ Background -> color @ "NA_ToolbarLightButtonBa
 (*buttonTooltip*)
 buttonTooltip // beginDefinition;
 buttonTooltip[ label_, None ] := label;
-buttonTooltip[ label_, name_String ] := Tooltip[ label, tr[ "WorkspaceToolbarButtonTooltip"<>name ] ];
+buttonTooltip[ label_, name_String ] := Tooltip[ label, tr[ If[ $AppType === "SidebarChat", "Sidebar", "Workspace" ] <> "ToolbarButtonTooltip" <> name ] ];
 buttonTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

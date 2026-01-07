@@ -1772,10 +1772,10 @@ currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "Noteb
 
 currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "SidebarTopCell" ] :=
     Lookup[
-        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Inherited -> <||> ],
+        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||> ],
         key,
         Lookup[
-            CurrentValue[ ParentCell @ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            Replace[ CurrentValue[ ParentCell @ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||> ],
             key,
             Lookup[
                 $cachedGlobalSettings,

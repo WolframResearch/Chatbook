@@ -214,6 +214,7 @@
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
+"SidebarToolbarButtonTooltipOpenAsWindowedAssistant" -> "Open as a separate window",
 "SidebarFocusIndicator" -> "Ignore notebook content",
 
 "WorkspaceWindowTitle" -> "Assistant de notebook",
