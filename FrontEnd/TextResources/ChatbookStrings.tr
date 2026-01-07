@@ -213,7 +213,8 @@
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
-"SidebarToolbarButtonTooltipHideSidebar" -> "[[Hide notebook assistant]]",
+"SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
+"SidebarFocusIndicator" -> "Ignore notebook content",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "History",

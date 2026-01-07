@@ -213,7 +213,8 @@
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
-"SidebarToolbarButtonTooltipHideSidebar" -> "[[Hide notebook assistant]]",
+"SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
+"SidebarFocusIndicator" -> "Ignore notebook content",
 
 "WorkspaceWindowTitle" -> "Assistant de notebook",
 "WorkspaceToolbarButtonLabelHistory" -> "Historique",
