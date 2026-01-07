@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
-$sidebarChatWidth := $sidebarChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
+$sidebarChatWidth := Min[ AbsoluteCurrentValue[ EvaluationNotebook[ ], { WindowSize, 1 } ]*0.5, Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ] ];
 
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
