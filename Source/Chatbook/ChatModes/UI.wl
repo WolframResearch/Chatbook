@@ -1985,9 +1985,9 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
             CellTags -> name,
             Magnification -> Dynamic @ AbsoluteCurrentValue[ nbo, Magnification ]
         ],
-        { Center, Top },
+        { Left, Top },
         0,
-        { Center, Top }
+        { Left, Top }
     ],
     throwInternalFailure
 ];
@@ -2007,9 +2007,9 @@ attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
                 CellTags -> name,
                 Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
             ],
-            { Center, Bottom },
+            { Left, Bottom },
             0,
-            { Center, Top }
+            { Left, Top }
         ]
     ],
     throwInternalFailure
@@ -2022,7 +2022,7 @@ attachedOverlayMenuFrame // beginDefinition;
 
 attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Framed[
     content,
-    Alignment    -> { Center, Top },
+    Alignment    -> { Left, Top },
     Background   -> color @ "NA_NotebookBackground",
     FrameMargins -> { { 5, 5 }, { 5, 5 } },
     FrameStyle   -> color @ "NA_NotebookBackground",
@@ -2448,7 +2448,7 @@ makeDefaultHistoryView[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dyn
 
         Pane[
             Dynamic[ display, TrackedSymbols :> { display } ],
-            Alignment          -> { Center, Top },
+            Alignment          -> { Left, Top },
             AppearanceElements -> { },
             FrameMargins       -> { { 0, 0 }, { 5, 5 } },
             If[ MatchQ[ appContainer, _CellObject ],
