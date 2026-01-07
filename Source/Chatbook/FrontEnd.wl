@@ -715,8 +715,7 @@ cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ 
         WithCleanup[
             FrontEndExecute[ {
                 FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                FrontEnd`SelectionMove[ target, After, Cell, AutoScroll -> True ],
-                FrontEnd`NotebookWrite[ parentNotebook @ target, RowBox[ { "\n", cell } ] ]
+                FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ target, "After" ],  RowBox[ { "\n", cell } ] ]
             } ]
             ,
             CurrentValue[ sidebarCell, Editable ] = Inherited

@@ -132,8 +132,7 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastDockedCell, After, Cell ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] } ] ]
+                    FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], RowBox[ { "\n", makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] } ] ]
                 } ]
                 ,
                 CurrentValue[ sidebarCell, Editable ] = Inherited
@@ -2704,8 +2703,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
             WithCleanup[
                 FrontEndExecute[ {
                     FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sidebarScrollingCell[ nbo, cells ] } ] ]
+                    FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], RowBox[ { "\n", sidebarScrollingCell[ nbo, cells ] } ] ]
                 } ]
                 ,
                 CurrentValue[ sidebarCell, Editable ] = Inherited
