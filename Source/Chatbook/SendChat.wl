@@ -1429,28 +1429,14 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
 
         container[ "DynamicContent" ] = dynamic;
 
-        If[ TrueQ @ $SidebarChat,
-            With[ { boxObject = boxObject, write = write, sidebarCell = sidebarCellObject @ nbo },
-                splitDynamicTaskFunction @
-                WithCleanup[
-                    FrontEndExecute[ {
-                        FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                        FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ]
-                    } ]
-                    ,
-                    CurrentValue[ sidebarCell, Editable ] = Inherited
-                ]
+        With[ { boxObject = boxObject, write = write },
+            splitDynamicTaskFunction @ NotebookWrite[
+                System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                write,
+                None,
+                AutoScroll -> False
             ]
-            ,
-            With[ { boxObject = boxObject, write = write },
-                splitDynamicTaskFunction @ NotebookWrite[
-                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                    write,
-                    None,
-                    AutoScroll -> False
-                ]
-            ]
-        ];
+        ]
 
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
@@ -2384,23 +2370,10 @@ WriteChatOutputCell[
     new_Cell,
     info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
 ] := Enclose[
-    Module[ { output, input, sidebarQ, sidebarCell },
+    Module[ { output, input, sidebarQ },
         sidebarQ = cellTaggedQ[ cell, "SidebarTopCell" ];
         input = PreviousCell[ cell, CellStyle -> If[ sidebarQ, "NotebookAssistant`Sidebar`ChatInput", "ChatInput" ] ]; (* kind of a hack, but we know there should be a corresponding ChatInput cell *)
-        If[ sidebarQ,
-            sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellWriteChatOutputCell" ];
-            ConfirmMatch[ cellTaggedQ[ sidebarCell, "NotebookAssistantSidebarCell" ], True, "SidebarCellWriteChatOutputCellTaggedQ" ];
-            WithCleanup[
-                FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False ]
-                } ]
-                ,
-                CurrentValue[ sidebarCell, Editable ] = Inherited
-            ]
-            ,
-            NotebookWrite[ cell, new, None, AutoScroll -> False ]
-        ];
+        NotebookWrite[ cell, new, None, AutoScroll -> False ];
         output = NextCell[ input, CellTags -> uuid ]; (* we set the uuid previously *)
         (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
         CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
@@ -3245,18 +3218,7 @@ throwFailureToChatOutput // endDefinition;
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
 writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SidebarChat ] := Enclose[
-    (* topParentCell is blocked from recursing past a "SidebarTopCell", but we know the parent distance to the side bar cell if in a side bar chat *)
-    With[ { sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SidebarCellPrintAfter" ] },
-        createFETask @ WithCleanup[
-            FrontEndExecute[ {
-                FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                FrontEnd`NotebookWrite[ cell, errorCell @ as ]
-            } ]
-            ,
-            CurrentValue[ sidebarCell, Editable ] = Inherited
-        ];
-        Null
-    ],
+    createFETask @ NotebookWrite[ cell, errorCell @ as ],
     throwInternalFailure
 ]
 writeErrorCell[ cell_CellObject, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);

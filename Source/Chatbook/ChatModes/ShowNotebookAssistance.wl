@@ -123,7 +123,7 @@ $notebookAssistanceMenuItems = <|
                 FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceWindow" ],
                 FrontEnd`KernelExecute[
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ "Window", "NewChat" -> True ]
+                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ If[ BoxForm`sufficientVersionQ[ 15.0 ], "Sidebar", "Window" ], "NewChat" -> True ]
                 ],
                 FrontEnd`MenuEvaluator -> Automatic,
                 Evaluate[
