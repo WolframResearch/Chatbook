@@ -214,6 +214,7 @@
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
+"SidebarToolbarButtonTooltipOpenAsWindowedAssistant" -> "Open as a separate window",
 "SidebarFocusIndicator" -> "Ignore notebook content",
 
 "WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",

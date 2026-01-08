@@ -214,6 +214,7 @@
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
+"SidebarToolbarButtonTooltipOpenAsWindowedAssistant" -> "Open as a separate window",
 "SidebarFocusIndicator" -> "Ignore notebook content",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
