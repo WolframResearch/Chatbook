@@ -709,20 +709,9 @@ cloudCellPrint // endDefinition;
 cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
 
 cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] /; cellTaggedQ[ target, "SidebarTopCell" ] := Enclose[
-    Module[ { sidebarCell },
-        (* topParentCell is blocked from recursing past a "SidebarTopCell", but we know the parent distance to the side bar cell *)
-        sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ target, _CellObject, "SidebarCellPrintAfter" ];
-        WithCleanup[
-            FrontEndExecute[ {
-                FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                FrontEnd`NotebookWrite[ System`NotebookLocationSpecifier[ target, "After" ],  RowBox[ { "\n", cell } ] ]
-            } ]
-            ,
-            CurrentValue[ sidebarCell, Editable ] = Inherited
-        ];
-        (* this should return the CellObject of the newly written inline cell in the scrolling content cell *)
-        ConfirmMatch[ NextCell @ target, _CellObject, "SidebarCellPrintAfterCellObject" ]
-    ]
+    NotebookWrite[ System`NotebookLocationSpecifier[ target, "After" ],  RowBox[ { "\n", cell } ] ];
+    (* this should return the CellObject of the newly written inline cell in the scrolling content cell *)
+    ConfirmMatch[ NextCell @ target, _CellObject, "SidebarCellPrintAfterCellObject" ]
     ,
     throwInternalFailure
 ];
