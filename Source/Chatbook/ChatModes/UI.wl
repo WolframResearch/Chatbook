@@ -122,7 +122,7 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
             ,
             (* else, write a new sub-cell after the last docked cell *)
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], RowBox[ { "\n", makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] } ] ]
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] ]
         ];
         (* TODO: move selection to side bar chat's input field *)
     ],
@@ -152,12 +152,7 @@ removeSidebarChatSubDockedCell // beginDefinition;
 
 removeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { subDockedCell },
     subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSidebarSubDockedCell" ];
-    If[ ! MissingQ @ subDockedCell,
-        FrontEndExecute[ {
-            FrontEnd`SelectionMove[ subDockedCell, Before, Cell ],
-            FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
-            FrontEnd`NotebookDelete @ subDockedCell } ]
-    ]
+    If[ ! MissingQ @ subDockedCell, NotebookDelete @ subDockedCell ]
 ];
 
 removeSidebarChatSubDockedCell // endDefinition;
@@ -167,11 +162,7 @@ removeSidebarChatSubDockedCell // endDefinition;
 (*removeSidebarTopCell*)
 removeSidebarTopCell // beginDefinition;
 
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] :=
-    FrontEndExecute[ {
-        FrontEnd`SelectionMove[ sidebarTopCell, Before, Cell ],
-        FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the top cell *)
-        FrontEnd`NotebookDelete @ sidebarTopCell } ];
+removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
 
 removeSidebarTopCell // endDefinition;
 
@@ -182,12 +173,7 @@ removeSidebarScrollingContentCell // beginDefinition;
 
 removeSidebarScrollingContentCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
     scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
-    If[ ! MissingQ @ scrollablePaneCell,
-        FrontEndExecute[ {
-            FrontEnd`SelectionMove[ scrollablePaneCell, Before, Cell ],
-            FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the top cell *)
-            FrontEnd`NotebookDelete @ scrollablePaneCell } ]
-    ]
+    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete @ scrollablePaneCell ]
 ];
 
 removeSidebarScrollingContentCell // endDefinition;
@@ -205,7 +191,7 @@ Module[ { sidebarCellObj, dockedCellObj, chatInputCellObj },
     With[ { sc = sidebarCellObj, cc = chatInputCellObj, dc = dockedCellObj },
         Cell[ BoxData @
             PaneBox[
-                RowBox @ Riffle[ cells, "\n" ],
+                RowBox @ cells,
                 AppearanceElements -> {},
                 ImageSize -> 
                     Dynamic[
@@ -2671,7 +2657,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], RowBox[ { "\n", sidebarScrollingCell[ nbo, cells ] } ] ]
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], sidebarScrollingCell[ nbo, cells ] ]
             , (* ELSE *)
             NotebookWrite[ scrollablePaneCell, sidebarScrollingCell[ nbo, cells ] ]
         ];
