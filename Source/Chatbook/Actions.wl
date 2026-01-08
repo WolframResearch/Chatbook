@@ -117,18 +117,13 @@ regenerateAssistantMessage[ chatOutput_CellObject, True(*sidebarCellQ_*) ] := En
         chatInputFieldCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarChatInputCell" ], None ], _CellObject, "SidebarChatInputFieldCell" ];
 
         With[ { sbc = sidebarCell, cic = chatInputCell }, (* "Set" is HoldFirst so we must inject values *)
-            WithCleanup[
-                FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ chatOutput, Before, Cell ],
-                    FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
-                    FrontEnd`NotebookDelete @ chatOutput,
-                    FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sbc, { TaggingRules, "ChatEvaluationCell" } ], cic ], (* use TaggingRules to pass CellObject around *)
-                    FrontEnd`SetOptions[ chatInputFieldCell, CellTags -> { "SidebarChatInputCell", "RegenerateChatOutput" } ] (* backdoor to re-evaluation in side bar *)
-                } ]
-                ,
-                CurrentValue[ sidebarCell, Editable ] = Inherited
-            ]
+            FrontEndExecute[ {
+                FrontEnd`SelectionMove[ chatOutput, Before, Cell ],
+                FrontEnd`FrontEndToken[ nbo, "DeletePrevious" ], (* remove the newline character before the sub-cell *)
+                FrontEnd`NotebookDelete @ chatOutput,
+                FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sbc, { TaggingRules, "ChatEvaluationCell" } ], cic ], (* use TaggingRules to pass CellObject around *)
+                FrontEnd`SetOptions[ chatInputFieldCell, CellTags -> { "SidebarChatInputCell", "RegenerateChatOutput" } ] (* backdoor to re-evaluation in side bar *)
+            } ]
         ];
     ],
     throwInternalFailure
