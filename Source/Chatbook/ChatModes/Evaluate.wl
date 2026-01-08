@@ -82,26 +82,12 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            WithCleanup[
-                FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastDockedCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", sidebarScrollingCell[ nbo, { cell } ] } ] ] } ]
-                ,
-                CurrentValue[ sidebarCell, Editable ] = Inherited
-            ];
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], sidebarScrollingCell[ nbo, { cell } ] ];
             scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
             , (* ELSE *)
             (* The scrolling pane cell should only exist if it contains content. If it exists without content then something has gone wrong. *)
             lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ], $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
-            WithCleanup[
-                FrontEndExecute[ {
-                    FrontEnd`SetOptions[ sidebarCell, Editable -> True ],
-                    FrontEnd`SelectionMove[ lastContentCell, After, Cell, AutoScroll -> True ],
-                    FrontEnd`NotebookWrite[ nbo, RowBox[ { "\n", cell } ] ] } ]
-                ,
-                CurrentValue[ sidebarCell, Editable ] = Inherited
-            ]
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
         ];
 
         cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SidebarChatInputCellObject" ];

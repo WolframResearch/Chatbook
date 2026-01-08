@@ -9,7 +9,6 @@ Cell[
 						StandardForm ],
 					DestroyAfterEvaluation -> True
 				],
-				"\n",
 				DynamicBox[
 					ToBoxes[
 						Needs[ "Wolfram`Chatbook`" -> None ];
