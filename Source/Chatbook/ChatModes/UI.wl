@@ -152,7 +152,12 @@ removeSidebarChatSubDockedCell // beginDefinition;
 
 removeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { subDockedCell },
     subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSidebarSubDockedCell" ];
-    If[ ! MissingQ @ subDockedCell, NotebookDelete @ subDockedCell ]
+    If[ ! MissingQ @ subDockedCell,
+        FrontEndExecute[ {
+            FrontEnd`SetOptions[ subDockedCell, Deletable -> True ],
+            FrontEnd`NotebookDelete @ subDockedCell
+        } ]
+    ]
 ];
 
 removeSidebarChatSubDockedCell // endDefinition;
@@ -162,7 +167,11 @@ removeSidebarChatSubDockedCell // endDefinition;
 (*removeSidebarTopCell*)
 removeSidebarTopCell // beginDefinition;
 
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
+removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] :=
+    FrontEndExecute[ {
+        FrontEnd`SetOptions[ sidebarTopCell, Deletable -> True ],
+        FrontEnd`NotebookDelete @ sidebarTopCell
+    } ];
 
 removeSidebarTopCell // endDefinition;
 
@@ -173,7 +182,12 @@ removeSidebarScrollingContentCell // beginDefinition;
 
 removeSidebarScrollingContentCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
     scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
-    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete @ scrollablePaneCell ]
+    If[ ! MissingQ @ scrollablePaneCell,
+        FrontEndExecute[ {
+            FrontEnd`SetOptions[ scrollablePaneCell, Deletable -> True ],
+            FrontEnd`NotebookDelete @ scrollablePaneCell
+        } ]
+    ]
 ];
 
 removeSidebarScrollingContentCell // endDefinition;
