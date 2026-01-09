@@ -536,9 +536,10 @@ toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___
     Grid[
         { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ] } },
         gridOpts,
-        Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Baseline },
-        BaselinePosition -> { 1, 1 }
+        Alignment        -> { {Left, Right}, Baseline },
+        BaseStyle        -> { LineBreakWithin -> False },
+        BaselinePosition -> { 1, 1 },
+        Spacings         -> 0.25
     ];
 
 toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}] :=
@@ -548,9 +549,10 @@ toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts_
             Style[ label, If[ $AppType === "SidebarChat", "NotebookAssistant`Sidebar`ToolbarButtonLabel", "WorkspaceChatToolbarButtonLabel" ], styleOpts ]
         } },
         gridOpts,
-        Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Baseline },
-        BaselinePosition -> { 1, 2 }
+        Alignment        -> { {Left, Right}, Baseline },
+        BaseStyle        -> { LineBreakWithin -> False },
+        BaselinePosition -> { 1, 2 },
+        Spacings         -> 0.25
     ];
 
 toolbarButtonLabel0 // endDefinition;
