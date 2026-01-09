@@ -47,6 +47,7 @@
         "Linebreak",
         "Liouville",
         "LLMKit",
+        "lmverbose",
         "Localizable",
         "Mathematica",
         "mathml",
@@ -116,6 +117,7 @@
         "wolframalpha",
         "wolframcloud",
         "wolframengine",
+        "WOLFRAMINIT",
         "wolframresearch",
         "wolframscript",
         "wstp"
