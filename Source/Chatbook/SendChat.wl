@@ -1436,7 +1436,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
                 None,
                 AutoScroll -> False
             ]
-        ]
+        ];
 
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
