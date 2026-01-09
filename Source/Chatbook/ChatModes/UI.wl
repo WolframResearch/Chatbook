@@ -1616,7 +1616,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                         CellTags      -> "CustomActionMenu",
                         Magnification -> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]*If[ cellTaggedQ[ topParentCell @ EvaluationCell[ ], "SidebarTopCell" ], 0.85, 1. ]
                     ],
-                    { Left, Bottom }, 0, { Left, Top },
+                    Sequence @@ If[ Last[ MousePosition[ "ViewScaled" ], 0 ] > 0.78, { { Left, Top }, 0, { Left, Bottom } }, { { Left, Bottom }, 0, { Left, Top } } ],
                     RemovalConditions -> "MouseExit" ]) },
         PassEventsDown -> True,
         Method -> "Preemptive",
