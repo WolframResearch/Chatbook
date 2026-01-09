@@ -1436,7 +1436,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
                 None,
                 AutoScroll -> False
             ]
-        ]
+        ];
 
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
@@ -3177,6 +3177,8 @@ restoreLastPage // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
+
+attachChatOutputMenu[ None ] := Null;
 
 attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SidebarChat := Null;
 
