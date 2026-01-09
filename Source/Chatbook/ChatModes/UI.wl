@@ -152,7 +152,12 @@ removeSidebarChatSubDockedCell // beginDefinition;
 
 removeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { subDockedCell },
     subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSidebarSubDockedCell" ];
-    If[ ! MissingQ @ subDockedCell, NotebookDelete @ subDockedCell ]
+    If[ ! MissingQ @ subDockedCell,
+        FrontEndExecute[ {
+            FrontEnd`SetOptions[ subDockedCell, Deletable -> True ],
+            FrontEnd`NotebookDelete @ subDockedCell
+        } ]
+    ]
 ];
 
 removeSidebarChatSubDockedCell // endDefinition;
@@ -162,7 +167,11 @@ removeSidebarChatSubDockedCell // endDefinition;
 (*removeSidebarTopCell*)
 removeSidebarTopCell // beginDefinition;
 
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
+removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] :=
+    FrontEndExecute[ {
+        FrontEnd`SetOptions[ sidebarTopCell, Deletable -> True ],
+        FrontEnd`NotebookDelete @ sidebarTopCell
+    } ];
 
 removeSidebarTopCell // endDefinition;
 
@@ -173,7 +182,12 @@ removeSidebarScrollingContentCell // beginDefinition;
 
 removeSidebarScrollingContentCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
     scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
-    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete @ scrollablePaneCell ]
+    If[ ! MissingQ @ scrollablePaneCell,
+        FrontEndExecute[ {
+            FrontEnd`SetOptions[ scrollablePaneCell, Deletable -> True ],
+            FrontEnd`NotebookDelete @ scrollablePaneCell
+        } ]
+    ]
 ];
 
 removeSidebarScrollingContentCell // endDefinition;
@@ -536,9 +550,10 @@ toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___
     Grid[
         { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ] } },
         gridOpts,
-        Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Baseline },
-        BaselinePosition -> { 1, 1 }
+        Alignment        -> { {Left, Right}, Baseline },
+        BaseStyle        -> { LineBreakWithin -> False },
+        BaselinePosition -> { 1, 1 },
+        Spacings         -> 0.25
     ];
 
 toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}] :=
@@ -548,9 +563,10 @@ toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts_
             Style[ label, If[ $AppType === "SidebarChat", "NotebookAssistant`Sidebar`ToolbarButtonLabel", "WorkspaceChatToolbarButtonLabel" ], styleOpts ]
         } },
         gridOpts,
-        Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Baseline },
-        BaselinePosition -> { 1, 2 }
+        Alignment        -> { {Left, Right}, Baseline },
+        BaseStyle        -> { LineBreakWithin -> False },
+        BaselinePosition -> { 1, 2 },
+        Spacings         -> 0.25
     ];
 
 toolbarButtonLabel0 // endDefinition;
@@ -1614,7 +1630,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                         CellTags      -> "CustomActionMenu",
                         Magnification -> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]*If[ cellTaggedQ[ topParentCell @ EvaluationCell[ ], "SidebarTopCell" ], 0.85, 1. ]
                     ],
-                    { Left, Bottom }, 0, { Left, Top },
+                    Sequence @@ If[ Last[ MousePosition[ "ViewScaled" ], 0 ] > 0.78, { { Left, Top }, 0, { Left, Bottom } }, { { Left, Bottom }, 0, { Left, Top } } ],
                     RemovalConditions -> "MouseExit" ]) },
         PassEventsDown -> True,
         Method -> "Preemptive",
