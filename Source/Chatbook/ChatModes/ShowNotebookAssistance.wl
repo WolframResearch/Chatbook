@@ -11,7 +11,10 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
-$sidebarChatWidth := Min[ AbsoluteCurrentValue[ EvaluationNotebook[ ], { WindowSize, 1 } ]*0.5, Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ] ];
+$sidebarChatWidth[ nbo_NotebookObject ] := Switch[ $OperatingSystem,
+    "MacOSX", Clip[ 450, { 255, AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ]*0.5 } ],
+    _,        Clip[ 360, { 250, AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ]*0.5 } ]
+];
 
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
@@ -522,18 +525,18 @@ sidebarCellObject// endDefinition;
 showNotebookAssistanceSidebar // beginDefinition;
 
 showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
-    Module[ { settings, sidebarCell, scrollingSidebarCell, movedLastChatToSourcesIndicatorQ },
+    Module[ { sidebarCell },
 
         sidebarCell = sidebarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
         
         If[ FailureQ @ sidebarCell,
              (* don't do anything else because this is the first time we've opened the sidebar in this notebook; Cell Initialization adds necessary TaggingRules *)
-            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
             , (* ELSE the sidebar assistant is persistant so don't remove content cells *)
             
             (* The sidebar assistant is persistant to a given notebook. Only remove content if "new chat" is selected. *)
 
-            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth |> ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
             
             (* will we ever need to do this with the sidebar chat...? *)
             If[ TrueQ @ evaluate,
