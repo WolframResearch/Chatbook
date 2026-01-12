@@ -332,6 +332,7 @@ sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
         ],
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
+    CurrentValue[ $FrontEndSession, "ShowNotebookAssistant" ] = False;
     FrontEndToken[nbo, "HideSidebar"],
     Appearance -> "Suppressed",
     Evaluator  -> None
