@@ -601,7 +601,7 @@ sidebarChatInputCell // beginDefinition;
 sidebarChatInputCell[ ] := sidebarChatInputCell[ "" ]
 
 sidebarChatInputCell[ initialContent_ ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sidebarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sidebarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input, kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID },
         EventHandler[
             Pane[
                 Grid[
@@ -620,6 +620,11 @@ sidebarChatInputCell[ initialContent_ ] := Cell[
                                 ,
                                 If[ TrueQ @ returnKeyDownQ,
                                     returnKeyDownQ = False;
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    If[ kernelWasQuitQ,
+                                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                                        If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
+                                        kernelWasQuitQ = False ];
                                     evaluateSidebarChat[ thisNB, sidebarCell, input, Dynamic @ chatEvalCell ]
                                 ];
                                 (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
@@ -691,7 +696,7 @@ sidebarChatInputCell[ initialContent_ ] := Cell[
             Method -> "Preemptive"
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
-        Initialization :> (thisNB = EvaluationNotebook[ ]; thisCell = EvaluationCell[ ]; sidebarCell = ParentCell @ thisCell)
+        Initialization :> (thisNB = EvaluationNotebook[ ]; thisCell = EvaluationCell[ ]; sidebarCell = ParentCell @ thisCell; kernelWasQuitQ = cachedSessionID =!= $SessionID; cachedSessionID = $SessionID)
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
@@ -747,7 +752,7 @@ attachWorkspaceChatInput // endDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, cachedSessionID = $SessionID, cachedChatInput = "", kernelWasQuitQ = False },
         EventHandler[
             Pane[
                 Grid[
@@ -756,7 +761,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
-                                    Dynamic @ $WorkspaceChatInput,
+                                    Dynamic[ $WorkspaceChatInput, Function[ cachedChatInput = $WorkspaceChatInput = # ] ], (* store a local copy of the text in case the kernel was quit *)
                                     Boxes,
                                     ContinuousAction -> True,
                                     $inputFieldOptions
@@ -773,6 +778,11 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                             27
                                         ],
                                         Needs[ "Wolfram`Chatbook`" -> None ];
+                                        (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
+                                        If[ kernelWasQuitQ,
+                                            If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                                            If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
+                                            kernelWasQuitQ = False ];
                                         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                                             "EvaluateWorkspaceChat",
                                             thisNB,
@@ -821,6 +831,11 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
             {
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
+                    (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
+                    If[ kernelWasQuitQ,
+                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                        If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
+                        kernelWasQuitQ = False ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
@@ -830,7 +845,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
             },
             Method -> "Queued"
         ],
-        Initialization :> (thisNB = EvaluationNotebook[ ])
+        Initialization :> (thisNB = EvaluationNotebook[ ]; kernelWasQuitQ = cachedSessionID =!= $SessionID; cachedSessionID = $SessionID)
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
@@ -865,7 +880,7 @@ $workspaceChatInitialized = False;
 (*initializeWorkspaceChat*)
 initializeWorkspaceChat // beginDefinition;
 
-initializeWorkspaceChat[ ] := initializeWorkspaceChat[ ] = LogChatTiming[
+initializeWorkspaceChat[ ] := LogChatTiming[
     LogChatTiming[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
     LogChatTiming[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
     LogChatTiming[ $llmKitService, "InitializeLLMKitService" ];
@@ -1532,6 +1547,8 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                 Tooltip[ assistantCopyAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                 Button[
                     Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]; (* in case kernel was quit *)
                     ChatbookAction[ "RegenerateAssistantMessage", cell, sidebarCellQ ],
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
