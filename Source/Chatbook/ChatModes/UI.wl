@@ -102,6 +102,7 @@ makeSidebarChatSubDockedCellExpression[ nbo_NotebookObject, sidebarCell_CellObje
     DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
     Cell[
         CellTags             -> "SidebarSubDockedCell",
+        Deletable            -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
         FontSize             -> 12,
         Magnification        -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
         ShowStringCharacters -> False ] ];
@@ -152,12 +153,7 @@ removeSidebarChatSubDockedCell // beginDefinition;
 
 removeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { subDockedCell },
     subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSidebarSubDockedCell" ];
-    If[ ! MissingQ @ subDockedCell,
-        FrontEndExecute[ {
-            FrontEnd`SetOptions[ subDockedCell, Deletable -> True ],
-            FrontEnd`NotebookDelete @ subDockedCell
-        } ]
-    ]
+    If[ ! MissingQ @ subDockedCell, NotebookDelete @ subDockedCell ]
 ];
 
 removeSidebarChatSubDockedCell // endDefinition;
@@ -167,11 +163,7 @@ removeSidebarChatSubDockedCell // endDefinition;
 (*removeSidebarTopCell*)
 removeSidebarTopCell // beginDefinition;
 
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] :=
-    FrontEndExecute[ {
-        FrontEnd`SetOptions[ sidebarTopCell, Deletable -> True ],
-        FrontEnd`NotebookDelete @ sidebarTopCell
-    } ];
+removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
 
 removeSidebarTopCell // endDefinition;
 
@@ -182,12 +174,7 @@ removeSidebarScrollingContentCell // beginDefinition;
 
 removeSidebarScrollingContentCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
     scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
-    If[ ! MissingQ @ scrollablePaneCell,
-        FrontEndExecute[ {
-            FrontEnd`SetOptions[ scrollablePaneCell, Deletable -> True ],
-            FrontEnd`NotebookDelete @ scrollablePaneCell
-        } ]
-    ]
+    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete @ scrollablePaneCell ]
 ];
 
 removeSidebarScrollingContentCell // endDefinition;
@@ -221,6 +208,7 @@ Module[ { sidebarCellObj, dockedCellObj, chatInputCellObj },
             ],
             Background    -> color @ "NA_NotebookBackground",
             CellTags      -> "SidebarScrollingContentCell",
+            Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
             Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
         ] ]
 ]
@@ -333,9 +321,8 @@ sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
     CurrentValue[ $FrontEndSession, "ShowNotebookAssistant" ] = False;
-    FrontEndToken[nbo, "HideSidebar"],
-    Appearance -> "Suppressed",
-    Evaluator  -> None
+    FrontEndTokenExecute[nbo, "HideSidebar"],
+    Appearance -> "Suppressed"
 ]
 
 sidebarHideButton // endDefinition;
