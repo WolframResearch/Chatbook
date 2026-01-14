@@ -397,21 +397,53 @@ addPrompts // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*assembleCustomPrompt*)
 assembleCustomPrompt // beginDefinition;
-assembleCustomPrompt[ settings_Association ] := assembleCustomPrompt[ settings, Lookup[ settings, "Prompts" ] ];
-assembleCustomPrompt[ settings_, $$unspecified ] := None;
-assembleCustomPrompt[ settings_, prompt_String ] := prompt;
-assembleCustomPrompt[ settings_, prompts: { ___String } ] := StringRiffle[ prompts, "\n\n" ];
+assembleCustomPrompt[ settings_ ] := addUserInstructions[ assembleCustomPrompt0 @ settings, settings ];
+assembleCustomPrompt // endDefinition;
 
-assembleCustomPrompt[ settings_? AssociationQ, templated: { ___, _TemplateObject, ___ } ] := Enclose[
+assembleCustomPrompt0 // beginDefinition;
+assembleCustomPrompt0[ settings_Association ] := assembleCustomPrompt0[ settings, Lookup[ settings, "Prompts" ] ];
+assembleCustomPrompt0[ settings_, $$unspecified ] := None;
+assembleCustomPrompt0[ settings_, prompt_String ] := prompt;
+assembleCustomPrompt0[ settings_, prompts: { ___String } ] := StringRiffle[ prompts, "\n\n" ];
+
+assembleCustomPrompt0[ settings_? AssociationQ, templated: { ___, _TemplateObject, ___ } ] := Enclose[
     Module[ { params, prompts },
         params  = ConfirmBy[ Association[ settings, $ChatHandlerData ], AssociationQ, "Params" ];
         prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
-        assembleCustomPrompt[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
+        assembleCustomPrompt0[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
     ],
     throwInternalFailure
 ];
 
-assembleCustomPrompt // endDefinition;
+assembleCustomPrompt0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addUserInstructions*)
+addUserInstructions // beginDefinition;
+
+addUserInstructions[ prompts_, settings_Association ] :=
+    addUserInstructions[ prompts, settings[ "UserInstructions" ] ];
+
+addUserInstructions[ prompts_, None | $$unspecified ] :=
+    prompts;
+
+addUserInstructions[ prompts_String, custom_String ] :=
+    prompts <> "\n\n" <> addUserInstructions[ None, custom ];
+
+addUserInstructions[ None, custom_String ] :=
+    TemplateApply[ $customInstructionsTemplate, custom ];
+
+addUserInstructions // endDefinition;
+
+$customInstructionsTemplate = StringTemplate[ "\
+# User Instructions
+
+IMPORTANT: The following user instructions take precedence over ALL other instructions.
+
+<user-instructions>
+`1`
+</user-instructions>" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
