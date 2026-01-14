@@ -26,8 +26,6 @@ $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 
-$AppType = "WorkspaceChat";
-
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
     BoxID      -> "AttachedChatInputField",
@@ -221,7 +219,7 @@ sidebarScrollingCell // endDefinition
 sidebarHistoryButton // beginDefinition;
 
 sidebarHistoryButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
-    Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "History" ] ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "History" ],
     Appearance -> "Suppressed"
 ];
@@ -234,7 +232,7 @@ sidebarHistoryButton // endDefinition;
 sidebarSourcesButton // beginDefinition;
 
 sidebarSourcesButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
-    Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "Sources" ] ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "Sources" ],
     Appearance -> "Suppressed"
 ];
@@ -248,7 +246,7 @@ sidebarNewChatButton // beginDefinition;
 
 sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
     Button[
-        Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "New", "New", "New", True ] ]
+        toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", True, True ]
         ,
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
         removeSidebarScrollingContentCell[ nbo, sidebarCell ];
@@ -268,7 +266,7 @@ sidebarNewChatButton // endDefinition;
 sidebarOpenAsAssistantWindowButton // beginDefinition;
 
 sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
-    Block[ { $AppType = "SidebarChat" }, toolbarButtonLabel[ "OpenAsChatbook", None, "OpenAsWindowedAssistant", False ] ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant", False, True ],
     With[
         {
             newNB = ShowNotebookAssistance[ nbo, "Window",
@@ -429,7 +427,7 @@ removeWorkspaceChatSubDockedCell // endDefinition;
 historyButton // beginDefinition;
 
 historyButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "History" ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, False ],
     toggleOverlayMenu[ nbo, None, "History" ],
     Appearance -> "Suppressed"
 ];
@@ -442,7 +440,7 @@ historyButton // endDefinition;
 sourcesButton // beginDefinition;
 
 sourcesButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "Sources" ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, False ],
     toggleOverlayMenu[ nbo, None, "Sources" ],
     Appearance -> "Suppressed"
 ];
@@ -456,7 +454,7 @@ newChatButton // beginDefinition;
 
 newChatButton[ Dynamic[ nbo_ ] ] :=
 	Button[
-		toolbarButtonLabel[ "New", "New", "New", True ]
+		toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", True, False ]
 		,
 		clearOverlayMenus @ nbo;
 		NotebookDelete @ Cells @ nbo;
@@ -477,7 +475,7 @@ newChatButton // endDefinition;
 openAsChatbookButton // beginDefinition;
 
 openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "OpenAsChatbook", None ],
+    toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "WorkspaceToolbarButtonTooltipOpenAsChatbook", False, False ],
     popOutChatNB @ nbo,
     Appearance -> "Suppressed",
     Method     -> "Queued"
@@ -490,53 +488,47 @@ openAsChatbookButton // endDefinition;
 (*toolbarButtonLabel*)
 toolbarButtonLabel // beginDefinition;
 
-toolbarButtonLabel[ name_String ] :=
-    toolbarButtonLabel[ name, name ];
-
-toolbarButtonLabel[ iconName_String, label_ ] :=
-    toolbarButtonLabel[ iconName, label, iconName, False ];
-
-toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, lightStyleQ: True | False ] :=
-    toolbarButtonLabel[ iconName, label, tooltipName, lightStyleQ ] =
-		With[
-            {
-                default = If[ lightStyleQ,
-                    toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarLightButtonFont", {FontColor -> color @ "NA_ToolbarLightButtonFont"}, {} ],
-                    toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFont",            {FontColor -> color @ "NA_ToolbarFont"}, {} ]
-                ],
-                (* active font same as hover font; light and regular buttons have the same hover and active states *) 
-                hover   = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {} ],
-                active  = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {} ]
-            },
-			buttonTooltip[
-				mouseDown[
-					Framed[ default, $toolbarButtonCommon[ label =!= None ], If[ lightStyleQ, $toolbarButtonLight, $toolbarButtonDefault ] ],
-					Framed[ hover,   $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
-					Framed[ active,  $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
-				],
-				tooltipName
-			]
-		]
+toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, lightStyleQ: True | False, sidebarChatQ: True | False ] :=
+    With[
+        {
+            default = If[ lightStyleQ,
+                toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarLightButtonFont", {FontColor -> color @ "NA_ToolbarLightButtonFont"}, {}, sidebarChatQ ],
+                toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFont",            {FontColor -> color @ "NA_ToolbarFont"}, {}, sidebarChatQ ]
+            ],
+            (* active font same as hover font; light and regular buttons have the same hover and active states *) 
+            hover   = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {}, sidebarChatQ ],
+            active  = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {}, sidebarChatQ ]
+        },
+        buttonTooltip[
+            mouseDown[
+                Framed[ default, $toolbarButtonCommon[ label =!= None ], If[ lightStyleQ, $toolbarButtonLight, $toolbarButtonDefault ] ],
+                Framed[ hover,   $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
+                Framed[ active,  $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
+            ],
+            tooltipName
+        ]
+    ]
 
 toolbarButtonLabel // endDefinition;
 
 
 toolbarButtonLabel0 // beginDefinition;
 
-toolbarButtonLabel0[ iconName_String, labelName_String, color_, {styleOpts___}, {gridOpts___}] :=
-    With[ { label = tr[ "WorkspaceToolbarButtonLabel"<>labelName ] },
+toolbarButtonLabel0[ iconName_String, labelName_String, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
+    With[ { label = tr @ labelName },
         toolbarButtonLabel0[
             iconName,
             If[ StringQ @ label, Style @ label, label ],
             color,
             {styleOpts},
-            {gridOpts}
+            {gridOpts},
+            sidebarChatQ
         ]
     ];
 
-toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___}] :=
+toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
     Grid[
-        { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ] } },
+        { { chatbookIcon[ iconName, False, color ] } },
         gridOpts,
         Alignment        -> { {Left, Right}, Baseline },
         BaseStyle        -> { LineBreakWithin -> False },
@@ -544,11 +536,11 @@ toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___
         Spacings         -> 0.25
     ];
 
-toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}] :=
+toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
     Grid[
         { {
-            chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False, color ],
-            Style[ label, If[ $AppType === "SidebarChat", "NotebookAssistant`Sidebar`ToolbarButtonLabel", "WorkspaceChatToolbarButtonLabel" ], styleOpts ]
+            chatbookIcon[ iconName, False, color ],
+            Style[ label, If[ sidebarChatQ, "NotebookAssistant`Sidebar`ToolbarButtonLabel", "WorkspaceChatToolbarButtonLabel" ], styleOpts ]
         } },
         gridOpts,
         Alignment        -> { {Left, Right}, Baseline },
@@ -577,7 +569,7 @@ $toolbarButtonLight   = Sequence[ Background -> color @ "NA_ToolbarLightButtonBa
 (*buttonTooltip*)
 buttonTooltip // beginDefinition;
 buttonTooltip[ label_, None ] := label;
-buttonTooltip[ label_, name_String ] := Tooltip[ label, tr[ If[ $AppType === "SidebarChat", "Sidebar", "Workspace" ] <> "ToolbarButtonTooltip" <> name ] ];
+buttonTooltip[ label_, name_String ] := Tooltip[ label, tr @ name ];
 buttonTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
