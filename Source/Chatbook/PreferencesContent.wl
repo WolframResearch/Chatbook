@@ -2023,7 +2023,7 @@ resetButton[ Dynamic[ tab_ ] ] :=
             label,
 
             Needs[ "Wolfram`Chatbook`" -> None ];
-            resetChatPreferences @ Replace[ tab, CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]
+            resetChatPreferences @ Replace[ tab, $$unspecified -> "Services" ]
             ,
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
