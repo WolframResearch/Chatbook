@@ -236,6 +236,7 @@ createNotebookSettingsPanel[ ] := Enclose[
     Module[
         {
             defaultSettingsContent,
+            instructionsLabel, instructionsContent,
             interfaceLabel, interfaceContent,
             featuresLabel, featuresContent,
             content
@@ -246,6 +247,16 @@ createNotebookSettingsPanel[ ] := Enclose[
             scopedTrackedDynamic[ makeDefaultSettingsContent[ ], "Preferences" ],
             _Dynamic,
             "DefaultSettings"
+        ];
+
+        (* Label for the standing instructions section: *)
+        instructionsLabel = subsectionText @ tr[ "PreferencesContentSubsectionInstructions" ];
+
+        (* Retrieve and confirm the content for personalization: *)
+        instructionsContent = ConfirmMatch[
+            scopedTrackedDynamic[ makeInstructionsContent[ ], "Preferences" ],
+            Except[ _makeInstructionsContent ],
+            "Instructions"
         ];
 
         (* Label for the interface section using a style from SystemDialog.nb: *)
@@ -276,6 +287,9 @@ createNotebookSettingsPanel[ ] := Enclose[
                 { defaultSettingsContent },
                 { Spacer[ 1 ]            },
                 { Spacer[ 1 ]            },
+                { instructionsLabel      },
+                { instructionsContent    },
+                { Spacer[ 1 ]            },
                 { interfaceLabel         },
                 { interfaceContent       },
                 { Spacer[ 1 ]            },
@@ -284,7 +298,7 @@ createNotebookSettingsPanel[ ] := Enclose[
                 { featuresContent        }
             },
             Alignment -> { Left, Baseline },
-            Dividers  -> { False, { 3 -> True, 7 -> True } },
+            Dividers  -> { False, { 3 -> True, 6 -> True, 10 -> True } },
             ItemSize  -> { Fit, Automatic },
             Spacings  -> { 0, 0.7 }
         ];
@@ -820,6 +834,87 @@ makeOpenAICompletionURLInput[ False ] := highlightControl[
 ];
 
 makeOpenAICompletionURLInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeInstructionsContent*)
+makeInstructionsContent // beginDefinition;
+
+makeInstructionsContent[ ] :=
+    DynamicModule[ { initialText, currentText, modified },
+
+        initialText = Replace[
+            CurrentChatSettings[ $preferencesScope, "UserInstructions" ],
+            "" | Except[ _String ] -> Null
+        ];
+
+        currentText = initialText;
+        modified = False;
+
+        Column[
+            {
+                tr[ "PreferencesContentInstructionsDescription" ],
+                EventHandler[
+                    Pane[
+                        prefsInputField[
+                            None,
+                            Dynamic[
+                                currentText,
+                                Function[
+                                    currentText = If[ # === "", Null, # ];
+                                    modified = currentText =!= initialText;
+                                ]
+                            ],
+                            String,
+                            ContinuousAction -> True,
+                            FieldHint        -> tr[ "PreferencesContentInstructionsHint" ],
+                            ImageSize        -> { Scaled[ 1 ], Automatic },
+                            BaseStyle        -> {
+                                "controlText",
+                                AutoSpacing -> False,
+                                FontColor   -> color @ "PreferencesContentFont_2",
+                                FontSize    -> 13
+                            }
+                        ],
+                        AppearanceElements -> { },
+                        FrameMargins       -> { { 0, 0 }, { 0, 0 } },
+                        ImageSize          -> { Scaled[ 1 ], UpTo[ 200 ] },
+                        ImageMargins       -> 0,
+                        Scrollbars         -> { Automatic, Automatic }
+                    ],
+                    { "ReturnKeyDown" :> FrontEndExecute @ { NotebookWrite[ InputNotebook[ ], "\n", After ] } }
+                ],
+                PaneSelector[
+                    {
+                        True -> ChoiceButtons[
+                            {
+                                tr[ "SaveChangesButton" ],
+                                tr[ "CancelButton" ]
+                            },
+                            {
+                                CurrentChatSettings[ $preferencesScope, "UserInstructions" ] =
+                                    If[ StringQ @ currentText && StringTrim @ currentText =!= "",
+                                        currentText,
+                                        Inherited
+                                    ];
+
+                                initialText = currentText;
+                                modified    = False;
+                                ,
+                                currentText = initialText;
+                                modified    = False;
+                            }
+                        ],
+                        False -> Spacer[ 1 ]
+                    },
+                    Dynamic @ modified,
+                    ImageSize -> Automatic
+                ]
+            }
+        ]
+    ];
+
+makeInstructionsContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
