@@ -33,6 +33,7 @@ $defaultChatSettings = <|
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
     "ConvertSystemRoleToUser"        -> Automatic,
+    "UserInstructions"             -> Automatic,
     "DiscourageExtraToolCalls"       -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
