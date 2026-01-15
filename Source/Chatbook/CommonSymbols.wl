@@ -266,6 +266,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeToolConfiguration;
 `makeToolResponseString;
 `makeSidebarChatDockedCell;
+`makeSidebarChatInputCell;
 `makeWorkspaceChatDockedCell;
 `markdownExpression;
 `menuMagnification;
