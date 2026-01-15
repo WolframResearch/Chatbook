@@ -20,7 +20,6 @@ HoldComplete[
     `moveToInlineChatInputField,
     `scrollInlineChat,
     `sidebarCellObject,
-    `sidebarChatInputCell,
     `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
