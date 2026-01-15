@@ -1935,6 +1935,76 @@ Dispatch[{
 		 "DC"     -> "NA_RaftMenu",
 		 "Notes"  -> ""
 	|>,
+	"NA_SidebarToolbar" -> <|
+		 "Light"  -> RGBColor[0.9333333, 0.976471, 1.],
+		 "Dark"   -> RGBColor[0.1490196, 0.184314, 0.203922],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarButtonBackgroundHover" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> RGBColor[0.164706, 0.270588, 0.325490],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarButtonBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
+		 "Dark"   -> RGBColor[0.117647, 0.203922, 0.247059],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
+		 "Dark"   -> RGBColor[0.172549, 0.321569, 0.4],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarButtonFramePressed" -> <|
+		 "Light"  -> RGBColor[0.701961, 0.870588, 0.956863],
+		 "Dark"   -> RGBColor[0.133333, 0.254902, 0.313725],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarFont" -> <|
+		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
+		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.0],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarFontHover" -> <|
+		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
+		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.0],
+		 "Method" -> "Same",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarFrame" -> <|
+		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
+		 "Dark"   -> RGBColor[0.168627, 0.584314, 0.8],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarTitleBackground" -> <|
+		 "Light"  -> RGBColor[0.8666666, 0.9372549, 0.9764705],
+		 "Dark"   -> RGBColor[0.1686274, 0.3960784, 0.5607843],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> ""
+	|>,
+	"NA_SidebarToolbarTitleFont" -> <|
+		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
+		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_SidebarToolbar",
+		 "Notes"  -> "NA docked cell area is already dark"
+	|>,
 	"NA_SourcesDockedCellFont" -> <|
 		 "Light"  -> GrayLevel[0.2],
 		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
