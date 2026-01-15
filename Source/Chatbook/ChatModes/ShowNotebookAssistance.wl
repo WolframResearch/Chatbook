@@ -48,6 +48,10 @@ $notebookAssistanceInlineSettings := <|
     "InlineChat"            -> True
 |>;
 
+NotebookAssistanceSidebarSettings // beginDefinition;
+NotebookAssistanceSidebarSettings[ ] := $notebookAssistanceSidebarSettings
+NotebookAssistanceSidebarSettings // endDefinition;
+
 $notebookAssistanceSidebarSettings := <|
     $notebookAssistanceBaseSettings,
     "AutoGenerateTitle"     -> True,

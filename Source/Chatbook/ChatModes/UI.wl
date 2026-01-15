@@ -93,10 +93,10 @@ makeSidebarChatDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*makeSidebarChatSubDockedCellExpression*)
-makeSidebarChatSubDockedCellExpression // beginDefinition;
+(*makeSidebarChatSubDockedCell*)
+makeSidebarChatSubDockedCell // beginDefinition;
 
-makeSidebarChatSubDockedCellExpression[ nbo_NotebookObject, sidebarCell_CellObject, content_ ] := Join[
+makeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, content_ ] := Join[
     DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
     Cell[
         CellTags             -> "SidebarSubDockedCell",
@@ -105,7 +105,7 @@ makeSidebarChatSubDockedCellExpression[ nbo_NotebookObject, sidebarCell_CellObje
         Magnification        -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
         ShowStringCharacters -> False ] ];
 
-makeSidebarChatSubDockedCellExpression // endDefinition;
+makeSidebarChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -117,11 +117,11 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
         subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], $Failed ];
         If[ ! FailureQ @ subDockedCell,
             (* if the sub-cell already exists then rewrite it *)
-            NotebookWrite[ subDockedCell, makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] ]
+            NotebookWrite[ subDockedCell, makeSidebarChatSubDockedCell[ nbo, sidebarCell, content ] ]
             ,
             (* else, write a new sub-cell after the last docked cell *)
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatSubDockedCellExpression[ nbo, sidebarCell, content ] ]
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatSubDockedCell[ nbo, sidebarCell, content ] ]
         ];
         (* TODO: move selection to side bar chat's input field *)
     ],
@@ -574,13 +574,13 @@ buttonTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*sidebarChatInputCell*)
+(*makeSidebarChatInputCell*)
 
-sidebarChatInputCell // beginDefinition;
+makeSidebarChatInputCell // beginDefinition;
 
-sidebarChatInputCell[ ] := sidebarChatInputCell[ "" ]
+makeSidebarChatInputCell[ ] := makeSidebarChatInputCell[ "" ]
 
-sidebarChatInputCell[ initialContent_ ] := Cell[
+makeSidebarChatInputCell[ initialContent_ ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sidebarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input, kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID },
         EventHandler[
             Pane[
@@ -684,7 +684,7 @@ sidebarChatInputCell[ initialContent_ ] := Cell[
     Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
-sidebarChatInputCell // endDefinition;
+makeSidebarChatInputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
