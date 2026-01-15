@@ -7454,7 +7454,7 @@ Ol8EjS+Dph+dL4GmHp0vg8aH0bj8pYAmjs5XcgAAE1oO7g==
   TagBox[
    TagBox[
     DynamicModuleBox[{
-     Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$}, 
+     Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$ = 1}, 
      OverlayBox[{
       PaneBox[
        AnimatorBox[Dynamic[
@@ -9486,7 +9486,73 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    CurrentValue["MouseOver"]],
   BaselinePosition->(Top -> Scaled[0.9]),
   FrameMargins->0,
-  ImageSize->Automatic]
+  ImageSize->Automatic],
+
+"NotebookAssistantSidebarCell" -> Cell[BoxData[
+ RowBox[{
+  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
+     StandardForm],
+   DestroyAfterEvaluation->True], 
+  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+      "MakeSidebarChatScrollingCell"]], StandardForm],
+   DestroyAfterEvaluation->True], 
+  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatInputCell"]], 
+    StandardForm],
+   DestroyAfterEvaluation->True]}]],
+ Editable->True,
+ Selectable->False,
+ CellMargins->{{0, 0}, {0, 0}},
+ Initialization:>(AttachCell[
+    EvaluationCell[], 
+    Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
+    Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
+  CurrentValue[
+     EvaluationCell[], TaggingRules] = <|
+    "ChatNotebookSettings" -> 
+     Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
+     "ConversationTitle" -> ""|>),
+ CellFrameMargins->0,
+ ShowCursorTracker->False,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ FontSize->0.5,
+ Magnification->1.,
+ Background->GrayLevel[0.95],
+ CellTags->
+  "NotebookAssistantSidebarCell",ExpressionUUID->"e5fb495e-6bfb-ba4a-9d42-\
+59b92f6652a6"],
+
+"SidebarAskAnythingArrowIcon" -> GraphicsBox[
+  {FaceForm[GrayLevel[0.819607]], 
+   FilledCurveBox[
+    Line[{{0, 1.7366173205033308`}, {0.233009708737864, 0.4119170984455958}, {
+      0.5097087378640774, 0.4119170984455958}, {0, 0}, {-0.5097087378640774, 
+      0.4119170984455958}, {-0.233009708737864, 0.4119170984455958}, {
+      0, 1.7366173205033308`}}]]},
+  AspectRatio->3.3,
+  ImagePadding->1,
+  ImageSize->{24, 77}],
+
+"SidebarIconHide" -> (GraphicsBox[{
+   Thickness[0.125], 
+   FaceForm[{#, 
+     Opacity[1.]}], 
+   FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1,
+     3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+    3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+    0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGJ1IGZiAIMF1UZyDkA64UPrJ3sgvUXzF5ivUHDuHTKf
+YfLKJ/ZI6htcbtwB8huaFc/JgvgHFk26BpIX5feG8C/mXwbxl/w5LoPMj/ng
+isJ/c/eQNLL+C81x0kjmM0zwYxAA8QWKw7nA4j4tYHfC5Bn+fvtgj6SfIe3q
+W3sk8xku73mJwrdf8hSFv6b7IYr+bRfvoJh/JeyCPZL/YXxY+MDUw8KvYW0E
+2J0bkv7zOyDJ73gD8RdM/41ZajLI/AiDLFlk9TOeQMKZoXYd2N4Zk6DxoHn6
+HTIfFh4w9bDw0lh5WcgBKTxh8i8MIfbC9PechdgL48PiF6YeFv8w98H4MPfD
+1MP8l+B2RQjZ/yjpCwBvF7ac
+    "]]}, AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
+  ImageSize -> {9., 9.}, PlotRange -> {{-0.5, 8.5}, {-0.5, 8.5}}]& )
 }
 @|
 @|

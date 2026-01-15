@@ -220,6 +220,7 @@
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
 "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" -> "Open as a separate window",
 "SidebarFocusIndicator" -> "Ignore notebook content",
+"SidebarOverlayAskAnything" -> "How can I help?",
 
 "WorkspaceWindowTitle" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8",
 "WorkspaceToolbarButtonLabelHistory" -> "\:5c65\:6b74",

@@ -9877,8 +9877,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"881cab3c-7f6f-7745-a62b-\
-42ea432ebcbf"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"ceb7a8fa-8e67-e442-9d90-\
+64f5b8406e2d"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9896,7 +9896,20 @@ W3sk8xku73mJwrdf8hSFv6b7IYr+bRfvoJh/JeyCPZL/YXxY+MDUw8KvYW0E
 HTIfFh4w9bDw0lh5WcgBKTxh8i8MIfbC9PechdgL48PiF6YeFv8w98H4MPfD
 1MP8l+B2RQjZ/yjpCwBvF7ac
     "]]}, AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
-  ImageSize -> {9., 9.}, PlotRange -> {{-0.5, 8.5}, {-0.5, 8.5}}]& )
+  ImageSize -> {9., 9.}, PlotRange -> {{-0.5, 8.5}, {-0.5, 8.5}}]& ),
+
+"SidebarAskAnythingArrowIcon" -> GraphicsBox[
+  {FaceForm[LightDarkSwitched[
+    GrayLevel[0.819607], 
+    GrayLevel[0.392157]]], 
+   FilledCurveBox[
+    Line[{{0, 1.7366173205033308`}, {0.233009708737864, 0.4119170984455958}, {
+      0.5097087378640774, 0.4119170984455958}, {0, 0}, {-0.5097087378640774, 
+      0.4119170984455958}, {-0.233009708737864, 0.4119170984455958}, {
+      0, 1.7366173205033308`}}]]},
+  AspectRatio->3.3,
+  ImagePadding->1,
+  ImageSize->{24, 77}]
 }
 @|
 @|
