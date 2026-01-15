@@ -79,13 +79,16 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
             ],
-            Background   -> color @ "NA_Toolbar",
-            FrameStyle   -> color @ "NA_Toolbar",
+            Background   -> color @ "NA_SidebarToolbar",
+            FrameStyle   -> color @ "NA_SidebarToolbar",
             FrameMargins -> { { 5, 2 }, { 0, 1 } },
             ImageMargins -> 0
         ],
-        CellTags      -> "SidebarDockedCell",
-        Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
+        CellFrame        -> { { 0, 0 }, { 0, 4 } },
+        CellFrameColor   -> color @ "NA_SidebarToolbarFrame",
+        CellFrameMargins -> 0,
+        CellTags         -> "SidebarDockedCell",
+        Magnification    -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
     ]
 ];
 
@@ -191,6 +194,7 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                         Scaled[ 1. ],
                         Round[
                             (AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                            - 4 (* the top bar that better separates the sidebar from the default toolbar *)
                             - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
                             - AbsoluteCurrentValue[ PreviousCell[ CellTags -> "SidebarDockedCell" ], { CellSize, 2 } ]
                             - AbsoluteCurrentValue[ NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
@@ -219,6 +223,7 @@ Module[ { dockedCellObj, chatInputCellObj },
                             Scaled[ 1. ],
                             Round[
                                 (AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - 4 (* the top bar that better separates the sidebar from the default toolbar *)
                                 - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
                                 - AbsoluteCurrentValue[ dc, { CellSize, 2 } ]
                                 - AbsoluteCurrentValue[ cc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
@@ -279,7 +284,7 @@ sidebarNewChatButton // beginDefinition;
 
 sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
     Button[
-        toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", True, True ]
+        toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", False, True ]
         ,
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
@@ -345,9 +350,18 @@ sidebarHideButton // beginDefinition;
 sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
     Tooltip[
         mouseDown[
-            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFont"      ], $toolbarButtonCommon[ False ], $toolbarButtonDefault ],
-            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFontHover" ], $toolbarButtonCommon[ False ], $toolbarButtonHover   ],
-            Framed[ chatbookIcon[ "SidebarIconHide", False, color @ "NA_ToolbarFontHover" ], $toolbarButtonCommon[ False ], $toolbarButtonActive  ]
+            Framed[
+                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFont" ],
+                toolbarButtonCommon[ False ],
+                Background -> color @ "NA_SidebarToolbar", FrameStyle -> color @ "NA_SidebarToolbar" ],
+            Framed[
+                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFontHover" ],
+                toolbarButtonCommon[ False ],
+                Background -> color @ "NA_SidebarToolbarButtonBackgroundHover",   FrameStyle -> color @ "NA_SidebarToolbarButtonFrameHover" ],
+            Framed[
+                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFontHover" ],
+                toolbarButtonCommon[ False ],
+                Background -> color @ "NA_SidebarToolbarButtonBackgroundPressed", FrameStyle -> color @ "NA_SidebarToolbarButtonFramePressed" ]
         ],
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
@@ -523,20 +537,24 @@ toolbarButtonLabel // beginDefinition;
 
 toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, lightStyleQ: True | False, sidebarChatQ: True | False ] :=
     With[
+        { prefix = If[ sidebarChatQ, "NA_SidebarToolbar", "NA_Toolbar" ] },
         {
             default = If[ lightStyleQ,
-                toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarLightButtonFont", {FontColor -> color @ "NA_ToolbarLightButtonFont"}, {}, sidebarChatQ ],
-                toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFont",            {FontColor -> color @ "NA_ToolbarFont"}, {}, sidebarChatQ ]
+                toolbarButtonLabel0[ iconName, label, color[ prefix <> "LightButtonFont" ], {FontColor -> color[ prefix <> "LightButtonFont" ]}, {}, sidebarChatQ ],
+                toolbarButtonLabel0[ iconName, label, color[ prefix <> "Font" ],            {FontColor -> color[ prefix <> "Font" ]}, {}, sidebarChatQ ]
             ],
             (* active font same as hover font; light and regular buttons have the same hover and active states *) 
-            hover   = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {}, sidebarChatQ ],
-            active  = toolbarButtonLabel0[ iconName, label, color @ "NA_ToolbarFontHover", {FontColor -> color @ "NA_ToolbarFontHover"}, {}, sidebarChatQ ]
+            hover   = toolbarButtonLabel0[ iconName, label, color[ prefix <> "FontHover" ], {FontColor -> color[ prefix <> "FontHover" ]}, {}, sidebarChatQ ],
+            active  = toolbarButtonLabel0[ iconName, label, color[ prefix <> "FontHover" ], {FontColor -> color[ prefix <> "FontHover" ]}, {}, sidebarChatQ ]
         },
         buttonTooltip[
             mouseDown[
-                Framed[ default, $toolbarButtonCommon[ label =!= None ], If[ lightStyleQ, $toolbarButtonLight, $toolbarButtonDefault ] ],
-                Framed[ hover,   $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
-                Framed[ active,  $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
+                Framed[ default, toolbarButtonCommon[ label =!= None ],
+                    Sequence @@ If[ lightStyleQ,
+                        { Background -> color[ prefix <> "LightButtonBackground" ], FrameStyle -> color[ prefix <> "LightButtonFrame" ] },
+                        { Background -> color @ prefix,                            FrameStyle -> color @ prefix } ] ],
+                Framed[ hover,   toolbarButtonCommon[ label =!= None ], Background -> color[ prefix <> "ButtonBackgroundHover" ],   FrameStyle -> color[ prefix <> "ButtonFrameHover" ] ],
+                Framed[ active,  toolbarButtonCommon[ label =!= None ], Background -> color[ prefix <> "ButtonBackgroundPressed" ], FrameStyle -> color[ prefix <> "ButtonFramePressed" ]  ]
             ],
             tooltipName
         ]
@@ -584,7 +602,10 @@ toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts_
 
 toolbarButtonLabel0 // endDefinition;
 
-$toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
+
+toolbarButtonCommon // beginDefinition;
+
+toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
     Alignment      -> { Center, Center },
     FrameMargins   -> { If[ hasLabelQ, { 1, 6 }, { 3, 3 } ], { 1, 1 } },
     ImageMargins   -> { { 0, 0 }, { 4, 4 } },
@@ -592,10 +613,7 @@ $toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
     RoundingRadius -> 3
 ];
 
-$toolbarButtonDefault = Sequence[ Background -> color @ "NA_Toolbar", FrameStyle -> color @ "NA_Toolbar" ];
-$toolbarButtonHover   = Sequence[ Background -> color @ "NA_ToolbarButtonBackgroundHover",   FrameStyle -> color @ "NA_ToolbarButtonFrameHover" ];
-$toolbarButtonActive  = Sequence[ Background -> color @ "NA_ToolbarButtonBackgroundPressed", FrameStyle -> color @ "NA_ToolbarButtonFramePressed" ];
-$toolbarButtonLight   = Sequence[ Background -> color @ "NA_ToolbarLightButtonBackground",   FrameStyle -> color @ "NA_ToolbarLightButtonFrame" ];
+toolbarButtonCommon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
