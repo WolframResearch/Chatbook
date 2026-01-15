@@ -173,10 +173,18 @@ makeSidebarChatScrollingCell // beginDefinition;
 
 (* This is an "empty" cell used for new sidebar chats; see NotebookAssistantSidebarCell.wl *)
 makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
-    Cell[ BoxData @
-        PaneBox[
-            RowBox[ { } ],
-            AppearanceElements -> {},
+    Cell[ BoxData @ ToBoxes @
+        Pane[
+            Grid[
+                {
+                    { Style[ tr @ "SidebarOverlayAskAnything" , "TextStyling", FontColor -> color @ "NA_OverlayAskAnythingFontColor", FontFamily -> "Source Sans Pro", FontSize -> 19 ] },
+                    { chatbookIcon[ "SidebarAskAnythingArrowIcon" , False ] } },
+                Alignment -> { Center, Center },
+                Spacings  -> { 0, 0 }
+            ],
+            Alignment          -> { Center, Bottom },
+            AppearanceElements -> { },
+            FrameMargins       -> { { 0, 0 }, { 33, 0 } },
             ImageSize -> 
                 Dynamic[
                     {
@@ -187,13 +195,12 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                             - AbsoluteCurrentValue[ PreviousCell[ CellTags -> "SidebarDockedCell" ], { CellSize, 2 } ]
                             - AbsoluteCurrentValue[ NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
                         ] } ],
-            Scrollbars -> { False, Automatic }
+            Scrollbars -> { False, False }
         ],
         Background    -> color @ "NA_NotebookBackground",
         CellTags      -> "SidebarScrollingContentCell",
         Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
-        Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
-    ]
+        Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ] ]
 ]
 
 (* This version is perhaps more efficient if the CellObjects already exist as we can reference them directly in the dynamic ImageSize *)
@@ -625,6 +632,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                                 ]
                                 ,
                                 If[ TrueQ @ returnKeyDownQ,
+                                    clearOverlayMenus @ thisNB;
                                     returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                     If[ kernelWasQuitQ,

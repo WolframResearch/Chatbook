@@ -1746,6 +1746,20 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
+	"NA_OverlayAskAnythingFontColor" -> <|
+		 "Light"  -> GrayLevel[0.5372549],
+		 "Dark"   -> GrayLevel[0.6509804],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_OverlayAskAnythingArrowIcon" -> <|
+		 "Light"  -> GrayLevel[0.819607],
+		 "Dark"   -> GrayLevel[0.392157],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"NA_OverlayMenuBackground" -> <|
 		 "Light"  -> GrayLevel[1],
 		 "Dark"   -> GrayLevel[0.15295],
@@ -2174,8 +2188,8 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"PreferencesContentServicesNAInfoTooltipFrame" -> <|
-		 "Light"  -> RGBColor[0.8196078, 0.8196078, 0.8196078],
-		 "Dark"   -> RGBColor[0.4264816, 0.4264816, 0.4264816],
+		 "Light"  -> GrayLevel[0.8196078],
+		 "Dark"   -> GrayLevel[0.4264816],
 		 "Method" -> "Feature",
 		 "DC"     -> "PreferencesContent",
 		 "Notes"  -> ""
