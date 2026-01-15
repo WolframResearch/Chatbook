@@ -12,7 +12,14 @@ Cell[
 				DynamicBox[
 					ToBoxes[
 						Needs[ "Wolfram`Chatbook`" -> None ];
-						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatModes`Common`sidebarChatInputCell" ][ ],
+						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatScrollingCell" ],
+						StandardForm ],
+					DestroyAfterEvaluation -> True
+				],
+				DynamicBox[
+					ToBoxes[
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatInputCell" ],
 						StandardForm ],
 					DestroyAfterEvaluation -> True
 				]
@@ -25,13 +32,13 @@ Cell[
 	CellTags          -> "NotebookAssistantSidebarCell",
 	Editable          -> True,
 	FontSize          -> 0.5, (* needed to workaround line wrapping issue where newlines are given their full line-height based on the FontSize *)
-    Initialization    :> (
-    	AttachCell[ EvaluationCell[ ], Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
-    	Needs[ "Wolfram`Chatbook`" -> None ];
-    	CurrentValue[ EvaluationCell[ ], TaggingRules ] = <| "ChatNotebookSettings" -> Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`$notebookAssistanceSidebarSettings, "ConversationTitle" -> "" |>),
-    LineIndent        -> 0,
-    LineSpacing       -> { 1, 0 },
-    Magnification     -> 1.,
-    Selectable        -> False,
-    ShowCursorTracker -> False
+	Initialization    :> (
+		AttachCell[ EvaluationCell[ ], Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
+		Needs[ "Wolfram`Chatbook`" -> None ];
+		CurrentValue[ EvaluationCell[ ], TaggingRules ] = <| "ChatNotebookSettings" -> Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |>),
+	LineIndent        -> 0,
+	LineSpacing       -> { 1, 0 },
+	Magnification     -> 1.,
+	Selectable        -> False,
+	ShowCursorTracker -> False
 ]

@@ -85,6 +85,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `LoadChat;
 `LogChatTiming;
 `MakeExpressionURI;
+`NotebookAssistanceSidebarSettings;
 `ProcessNotebookForRAG;
 `RebuildChatSearchIndex;
 `RegisterVectorDatabase;
