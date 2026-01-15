@@ -167,27 +167,41 @@ removeSidebarTopCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*removeSidebarScrollingContentCell*)
-removeSidebarScrollingContentCell // beginDefinition;
+(*makeSidebarChatScrollingCell*)
 
-removeSidebarScrollingContentCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
-    scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
-    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete @ scrollablePaneCell ]
-];
+makeSidebarChatScrollingCell // beginDefinition;
 
-removeSidebarScrollingContentCell // endDefinition;
+(* This is an "empty" cell used for new sidebar chats; see NotebookAssistantSidebarCell.wl *)
+makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
+    Cell[ BoxData @
+        PaneBox[
+            RowBox[ { } ],
+            AppearanceElements -> {},
+            ImageSize -> 
+                Dynamic[
+                    {
+                        Scaled[ 1. ],
+                        Round[
+                            (AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                            - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
+                            - AbsoluteCurrentValue[ PreviousCell[ CellTags -> "SidebarDockedCell" ], { CellSize, 2 } ]
+                            - AbsoluteCurrentValue[ NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                        ] } ],
+            Scrollbars -> { False, Automatic }
+        ],
+        Background    -> color @ "NA_NotebookBackground",
+        CellTags      -> "SidebarScrollingContentCell",
+        Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
+        Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
+    ]
+]
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sidebarScrollingCell*)
-sidebarScrollingCell // beginDefinition
+(* This version is perhaps more efficient if the CellObjects already exist as we can reference them directly in the dynamic ImageSize *)
+makeSidebarChatScrollingCell[ nbo_NotebookObject, sidebarCell_CellObject, cells:{ ___Cell } ] :=
+Module[ { dockedCellObj, chatInputCellObj },
+    { dockedCellObj, chatInputCellObj } = Pick[ #, MatchQ[ #, "SidebarDockedCell" | "SidebarChatInputCell" ]& /@ CurrentValue[ #, CellTags ] ]& @ Cells[ sidebarCell ];
 
-sidebarScrollingCell[ nbo_NotebookObject, cells:{ ___Cell } ] :=
-Module[ { sidebarCellObj, dockedCellObj, chatInputCellObj },
-    sidebarCellObj = sidebarCellObject @ nbo;
-    { dockedCellObj, chatInputCellObj } = Pick[ #, MatchQ[ #, "SidebarDockedCell" | "SidebarChatInputCell" ]& /@ CurrentValue[ #, CellTags ] ]& @ Cells[ sidebarCellObj ];
-
-    With[ { sc = sidebarCellObj, cc = chatInputCellObj, dc = dockedCellObj },
+    With[ { cc = chatInputCellObj, dc = dockedCellObj },
         Cell[ BoxData @
             PaneBox[
                 RowBox @ cells,
@@ -196,13 +210,13 @@ Module[ { sidebarCellObj, dockedCellObj, chatInputCellObj },
                     Dynamic[
                         {
                             Scaled[ 1. ],
-                            UpTo @ Round[
+                            Round[
                                 (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                                - If[ CurrentValue[ PreviousCell[ ], CellTags ] === "SidebarSubDockedCell", AbsoluteCurrentValue[ PreviousCell[ ], { CellSize, 2 } ], 0 ]
+                                - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
                                 - AbsoluteCurrentValue[ dc, { CellSize, 2 } ]
                                 - AbsoluteCurrentValue[ cc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
                             ] } ],
-                Scrollbars -> { False, True }
+                Scrollbars -> { False, Automatic }
             ],
             Background    -> color @ "NA_NotebookBackground",
             CellTags      -> "SidebarScrollingContentCell",
@@ -211,7 +225,19 @@ Module[ { sidebarCellObj, dockedCellObj, chatInputCellObj },
         ] ]
 ]
 
-sidebarScrollingCell // endDefinition
+makeSidebarChatScrollingCell // endDefinition
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeSidebarScrollingCellContent*)
+removeSidebarScrollingCellContent // beginDefinition;
+
+removeSidebarScrollingCellContent[ nbo_NotebookObject, sidebarCell_CellObject ] := Module[ { scrollablePaneCell },
+    scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ];
+    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ]
+];
+
+removeSidebarScrollingCellContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -249,7 +275,7 @@ sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
         toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", True, True ]
         ,
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-        removeSidebarScrollingContentCell[ nbo, sidebarCell ];
+        removeSidebarScrollingCellContent[ nbo, sidebarCell ];
         removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
         CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = ""
@@ -290,7 +316,7 @@ sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :
             
             (* remove sidebar and its content *)
             NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-            removeSidebarScrollingContentCell[ nbo, sidebarCell ];
+            removeSidebarScrollingCellContent[ nbo, sidebarCell ];
             removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
             CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
             CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = "";
@@ -676,7 +702,13 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
             Method -> "Preemptive"
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
-        Initialization :> (thisNB = EvaluationNotebook[ ]; thisCell = EvaluationCell[ ]; sidebarCell = ParentCell @ thisCell; kernelWasQuitQ = cachedSessionID =!= $SessionID; cachedSessionID = $SessionID)
+        Initialization :> (
+            thisNB = EvaluationNotebook[ ];
+            thisCell = EvaluationCell[ ];
+            sidebarCell = ParentCell @ thisCell;
+            kernelWasQuitQ = cachedSessionID =!= $SessionID;
+            cachedSessionID = $SessionID;
+        )
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
@@ -2670,9 +2702,9 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], sidebarScrollingCell[ nbo, cells ] ]
+            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
             , (* ELSE *)
-            NotebookWrite[ scrollablePaneCell, sidebarScrollingCell[ nbo, cells ] ]
+            NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
         ];
         
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = uuid;

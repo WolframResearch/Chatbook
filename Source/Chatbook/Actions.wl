@@ -84,6 +84,7 @@ ChatbookAction[ "InsertCodeBelow"              , args___ ] := catchMine @ insert
 ChatbookAction[ "InsertInlineReference"        , args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ "MakeSidebarChatDockedCell"    , args___ ] := catchMine @ makeSidebarChatDockedCell @ args;
 ChatbookAction[ "MakeSidebarChatInputCell"     , args___ ] := catchMine @ makeSidebarChatInputCell @ args;
+ChatbookAction[ "MakeSidebarChatScrollingCell" , args___ ] := catchMine @ makeSidebarChatScrollingCell @ args;
 ChatbookAction[ "MakeWorkspaceChatDockedCell"  , args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
 ChatbookAction[ "MoveToChatInputField"         , args___ ] := catchMine @ moveToChatInputField @ args;
 ChatbookAction[ "OpenChatBlockSettings"        , args___ ] := catchMine @ OpenChatBlockSettings @ args;

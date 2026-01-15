@@ -12,6 +12,13 @@ Cell[
 				DynamicBox[
 					ToBoxes[
 						Needs[ "Wolfram`Chatbook`" -> None ];
+						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatScrollingCell" ],
+						StandardForm ],
+					DestroyAfterEvaluation -> True
+				],
+				DynamicBox[
+					ToBoxes[
+						Needs[ "Wolfram`Chatbook`" -> None ];
 						RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatInputCell" ],
 						StandardForm ],
 					DestroyAfterEvaluation -> True
