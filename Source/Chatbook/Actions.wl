@@ -1330,7 +1330,7 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
             TrueQ @ $InlineChat,
                 "Inline",
 
-            tags = Flatten @ List @ AbsoluteCurrentValue[ c, CellTags ];
+            tags = Flatten @ List @ Replace[ AbsoluteCurrentValue[ c, CellTags ], Except[ _List | _String ] :> { } ]; (* Cloud may not get CellTags *)
             TrueQ @ $SidebarChat || AnyTrue[ tags, StringStartsQ[ "Sidebar" | "NotebookAssistantSidebar" ] ],
                 ConfirmMatch[
                     Which[
