@@ -54,14 +54,14 @@ codeParseIndexed[ file_ ] := codeParseIndexed[ file ] =
 copyTemporary[ dir_ ] :=
     Enclose @ Module[ { tmp, extFiles },
         tmp = FileNameJoin @ { $TemporaryDirectory, CreateUUID[ ] };
-        extFiles = ConfirmMatch[ pacletFiles @ dir, { _String, __String }, "Files" ];
-        ConfirmMatch[ (copyTemporary0[ dir, tmp, #1 ] &) /@ extFiles, { _String, __String }, "Copied" ];
+        extFiles = ConfirmMatch[ EchoEvaluation @ pacletFiles @ dir, { _String, __String }, "Files" ];
+        ConfirmMatch[ (EchoEvaluation @ copyTemporary0[ dir, tmp, #1 ] &) /@ extFiles, { _String, __String }, "Copied" ];
         tmp
     ];
 
 copyTemporary0[ dir_, tmp_, file_ ] :=
-    With[ { rel = StringReplace[ ResourceFunction[ "RelativePath" ][ dir, file ], "\\" -> "/" ] },
-        CopyFile[ file, ResourceFunction[ "EnsureFilePath" ][ FileNameJoin @ { tmp, rel } ] ]
+    With[ { rel = StringReplace[ EchoEvaluation @ ResourceFunction[ "RelativePath" ][ dir, file ], "\\" -> "/" ] },
+        CopyFile[ file, EchoEvaluation @ ResourceFunction[ "EnsureFilePath" ][ FileNameJoin @ { tmp, rel } ] ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -156,7 +156,7 @@ If[ FileExistsQ @ $mxFile,
 
 cicd`ConsoleLog[ "Copying files..." ];
 tmp = cicd`ScriptConfirmBy[ copyTemporary @ $pacletDir, DirectoryQ ];
-cicd`ScriptConfirmBy[ setPacletReleaseID[ tmp, releaseID @ $pacletDir ], StringQ ];
+cicd`ScriptConfirmBy[ EchoEvaluation @ setPacletReleaseID[ tmp, releaseID @ $pacletDir ], StringQ ];
 
 If[ $assertions,
     cicd`ConsoleLog[ "Inserting confirmation source info..." ];
