@@ -86,6 +86,7 @@
         "Screencast",
         "Scrollbars",
         "specialkeywords",
+        "Streamable",
         "Struckthrough",
         "Stylesheet",
         "Subcontexts",
@@ -120,7 +121,8 @@
         "WOLFRAMINIT",
         "wolframresearch",
         "wolframscript",
-        "wstp"
+        "wstp",
+        "wxfl"
     ],
     "cSpell.ignoreRegExpList": [
         "\\:\\:[a-z]+",             // message names
