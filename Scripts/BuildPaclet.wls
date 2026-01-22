@@ -16,7 +16,7 @@ $check    = getBooleanArgument[ { "c", "check"    }, True  ];
 $install  = getBooleanArgument[ { "i", "install"  }, False ];
 $mx       = getBooleanArgument[ { "m", "mx"       }, True  ];
 $unformat = getBooleanArgument[ { "u", "unformat" }, True  ];
-$download = getBooleanArgument[ { "s", "snippets" }, False ];
+$download = getBooleanArgument[ { "s", "snippets" }, True  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
