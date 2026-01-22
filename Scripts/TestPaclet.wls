@@ -15,10 +15,14 @@ $testDir         = cDir @ FileNameJoin @ { $pacletDir, "Tests" };
 $ccsTests        = FileNameJoin @ { $testDir, "CurrentChatSettings.wlt" };
 
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
-    ServiceConnect[
-        "OpenAI",
-        Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
-        SaveConnection -> False
+    Quiet[
+        ServiceConnect[
+            "OpenAI",
+            "New",
+            Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
+            SaveConnection -> False
+        ],
+        ServiceConnect::warnnosync
     ]
 ];
 
