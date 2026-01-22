@@ -11,6 +11,7 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Chatbook.nb"]],
   Cell[
    StyleData["Notebook"],
+   ClosingSaveDialog -> False,
    Saveable -> False,
    WindowToolbars -> { },
    CellInsertionPointCell -> None,
@@ -80,8 +81,7 @@ Notebook[
    |>,
    DefaultNewCellStyle -> "AutoMoveToChatInputField",
    Magnification -> 0.85,
-   Background -> GrayLevel[1],
-   ClosingSaveDialog -> False
+   Background -> GrayLevel[1]
   ],
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
