@@ -7,7 +7,7 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (*Initialization*)
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 
-SetOptions[ TestReport, ProgressReporting -> False ];
+Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 $buildDirectory  = FileNameJoin @ { $pacletDir, "build", "Wolfram__Chatbook" };
 $mxFile          = FileNameJoin @ { $buildDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" };
