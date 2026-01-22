@@ -14,18 +14,9 @@ $snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
 $snippetFetchBatchSize         = 15;
 $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
-$documentationSnippetBaseURL  := URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$streamableSnippetBaseURL      = "https://www.wolframcloud.com/obj/wolframai-content/StreamableSnippets";
 $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
-$resourceSnippetBaseURL        = URLBuild @ { $baseURL, "Resources", $snippetType };
-
-$documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Documentation", $documentationSnippetVersion };
-
-$resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "ResourceSystem" };
-
-$otherSnippetsCacheDirectory := $otherSnippetsCacheDirectory =
-    ChatbookFilesDirectory @ { "DocumentationSnippets", $versionString, "Other" };
+$streamableSnippetTypes        = { "Documentation", "ResourceSystem" };
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
@@ -69,6 +60,11 @@ $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
 $snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
+
+$streamableSnippetVersions := $streamableSnippetVersions = <|
+    "Documentation"  -> $snippetVersion,
+    "ResourceSystem" -> "1.0.0"
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1081,13 +1077,21 @@ makeDocSnippets // endDefinition;
 (*getSnippets*)
 getSnippets // beginDefinition;
 
+getSnippets[ { } ] := { };
+
 getSnippets[ uris: { ___String } ] := Enclose[
-    Module[ { data, snippets, strings },
-        data = ConfirmBy[ getDocumentationSnippetData @ uris, AssociationQ, "Data" ];
-        snippets = ConfirmMatch[ Lookup[ data, uris ], { ___Association }, "Snippets" ];
-        strings = ConfirmMatch[ Lookup[ "String" ] /@ snippets, { ___String }, "Strings" ];
-        ConfirmAssert[ Length @ strings === Length @ uris, "LengthCheck" ];
-        "# " <> StringDelete[ #, StartOfString~~"# " ] & /@ strings
+    Module[ { grouped, snippetGroups, snippets },
+        grouped = GroupBy[ uris, streamableSnippetType ];
+        ConfirmAssert[ ContainsOnly[ Keys @ grouped, $streamableSnippetTypes ], "TypeCheck" ];
+        snippetGroups = Association @ KeyValueMap[ #1 -> getStreamSnippets[ #1, #2 ] &, grouped ];
+
+        snippets = ConfirmBy[
+            Association @ Values @ Merge[ { grouped, snippetGroups }, Apply @ AssociationThread ],
+            AssociationQ,
+            "Snippets"
+        ];
+
+        ConfirmMatch[ Lookup[ snippets, uris ], { ___String }, "Result" ]
     ],
     throwInternalFailure
 ];
@@ -1098,304 +1102,296 @@ getSnippets[ uri_String ] :=
 getSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getDocumentationSnippetData*)
-getDocumentationSnippetData // beginDefinition;
+(* ::Section::Closed:: *)
+(*InstallDocumentationResources*)
+InstallDocumentationResources // beginDefinition;
 
-getDocumentationSnippetData[ { } ] := <| |>;
-
-getDocumentationSnippetData[ uris: { __String } ] := Enclose[
-    Module[ { cached, missing },
-
-        cached = ConfirmBy[
-            AssociationMap[ getCachedDocumentationSnippet, uris ],
-            AllTrue @ MatchQ[ _Missing | KeyValuePattern[ "String" -> _String ] ],
-            "Cached"
-        ];
-
-        missing = ConfirmMatch[
-            Union[ First /@ StringSplit[ Keys @ Select[ cached, MissingQ ], "#" ] ],
-            { ___String },
-            "Missing"
-        ];
-
-        LogChatTiming @ fetchDocumentationSnippets @ missing;
-
-        ConfirmBy[
-            AssociationMap[ getCachedDocumentationSnippet, uris ],
-            AllTrue @ MatchQ[ KeyValuePattern[ "String" -> _String ] ],
-            "Result"
-        ]
-    ] // LogChatTiming[ "GetDocumentationSnippets" ],
-    throwInternalFailure
-];
-
-getDocumentationSnippetData // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getCachedDocumentationSnippet*)
-getCachedDocumentationSnippet // beginDefinition;
-getCachedDocumentationSnippet[ uri_String ] := getCachedDocumentationSnippet @ StringSplit[ uri, "#" ];
-getCachedDocumentationSnippet[ { base_String } ] := getCachedDocumentationSnippet @ { base, None };
-getCachedDocumentationSnippet[ { base_String, fragment_ } ] := getCachedDocumentationSnippet0[ base, fragment ];
-getCachedDocumentationSnippet // endDefinition;
-
-
-getCachedDocumentationSnippet0 // beginDefinition;
-
-getCachedDocumentationSnippet0[ base_String, fragment_ ] :=
-    With[ { snippet = $documentationSnippets[ base, fragment ] },
-        snippet /; snippetDataQ @ snippet
+InstallDocumentationResources[ ] :=
+    catchMine @ Block[ { $pacletStreamableSnippetsDirectory = None },
+        installDocumentationResources[ ]
     ];
 
-getCachedDocumentationSnippet0[ base_String, fragment_ ] := Enclose[
-    Catch @ Module[ { file, data, snippet },
-        file = ConfirmBy[ snippetCacheFile @ base, StringQ, "File" ];
-        data = If[ TrueQ @ FileExistsQ @ file, Quiet @ Developer`ReadWXFFile @ file, Throw @ Missing[ "NotCached" ] ];
-        snippet = data[ fragment ];
-        If[ AssociationQ @ data && snippetDataQ @ snippet,
-            $documentationSnippets[ base ] = data; snippet,
-            Missing[ "NotCached" ]
-        ]
+InstallDocumentationResources // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*installDocumentationResources*)
+installDocumentationResources // beginDefinition;
+
+installDocumentationResources[ ] := Enclose[
+    Module[ { dir },
+        dir = ConfirmBy[ getStreamableSnippetsDir[ ], streamableSnippetsDirectoryQ, "Location" ];
+        Success[ "DocumentationResourcesInstalled", <| "Location" -> dir |> ]
     ],
     throwInternalFailure
 ];
 
-getCachedDocumentationSnippet0 // endDefinition;
+installDocumentationResources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*snippetDataQ*)
-snippetDataQ // beginDefinition;
-snippetDataQ[ KeyValuePattern[ "String" -> _String ] ] := True;
-snippetDataQ[ _ ] := False;
-snippetDataQ // endDefinition;
+(*streamableSnippetType*)
+streamableSnippetType // beginDefinition;
+streamableSnippetType[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] := "Documentation";
+streamableSnippetType[ uri_String ] := "ResourceSystem";
+streamableSnippetType // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*snippetCacheFile*)
-snippetCacheFile // beginDefinition;
+(* ::Section::Closed:: *)
+(*Streamable Snippets*)
+$streamableSnippetIndexCache = <| |>;
 
-snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
-    snippetCacheFile[ uri, StringDelete[ uri, "paclet:" ], "Documentation" ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Paths*)
+$streamableSnippetsDir := getStreamableSnippetsDir[ ];
 
-snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolframcloud.com/" ] :=
-    snippetCacheFile[ uri, StringDelete[ uri, "https://resources.wolframcloud.com/" ], "ResourceSystem" ];
+$pacletStreamableSnippetsDirectory :=
+    FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/Snippets/Streamable" };
 
-snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://datarepository.wolframcloud.com/" ] :=
-    snippetCacheFile[
-        uri,
-        "DataRepository/" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/"~~("resources/"|"") ],
-        "ResourceSystem"
-    ];
+$localStreamableSnippetsDirectory :=
+    ChatbookFilesDirectory @ { "DocumentationSnippets", "Streamable", $versionString };
 
-snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://paclets.com/" ] :=
-    snippetCacheFile[
-        uri,
-        "PacletRepository/" <> StringDelete[ uri, "https://paclets.com/" ],
-        "Other"
-    ];
+$cloudStreamableSnippetsDirectory :=
+    PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "Snippets" ];
 
-snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
-    Module[ { path, file },
-        path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
-        file = ConfirmBy[ FileNameJoin @ { snippetCacheDirectory @ name, path }, StringQ, "File" ];
-        If[ StringLength @ file >= 260 && $OperatingSystem === "Windows",
-            file = FileNameJoin @ {
-                DirectoryName @ file,
-                StringJoin[
-                    StringTake[ FileNameTake @ file, UpTo @ Max[ 0, 200 - StringLength @ DirectoryName @ file ] ],
-                    "_",
-                    Hash[ uri, Automatic, "HexString" ] <> ".wxf"
-                ]
-            };
-            ConfirmAssert[ StringLength @ file < 260, "FileLengthCheck" ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getStreamableSnippetsDir*)
+getStreamableSnippetsDir // beginDefinition;
+
+getStreamableSnippetsDir[ ] := Enclose[
+    Module[ { sources, dir },
+        sources = {
+            $pacletStreamableSnippetsDirectory,
+            If[ $CloudEvaluation, $cloudStreamableSnippetsDirectory, Nothing ],
+            $localStreamableSnippetsDirectory
+        };
+
+        dir = SelectFirst[
+            sources,
+            streamableSnippetsDirectoryQ,
+            ConfirmBy[ downloadStreamableSnippets[ ], streamableSnippetsDirectoryQ, "Downloaded" ]
         ];
-        snippetCacheFile[ uri ] = file
+
+        $streamableSnippetsDir = dir
     ],
     throwInternalFailure
 ];
 
-snippetCacheFile // endDefinition;
+getStreamableSnippetsDir // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*snippetCacheDirectory*)
-snippetCacheDirectory // beginDefinition;
-snippetCacheDirectory[ "Documentation"  ] := $documentationSnippetsCacheDirectory;
-snippetCacheDirectory[ "ResourceSystem" ] := $resourceSnippetsCacheDirectory;
-snippetCacheDirectory[ "Other"          ] := $otherSnippetsCacheDirectory;
-snippetCacheDirectory // endDefinition;
+(*streamableSnippetsDirectoryQ*)
+streamableSnippetsDirectoryQ // beginDefinition;
+
+streamableSnippetsDirectoryQ[ dir_String ] := TrueQ @ And[
+    DirectoryQ @ dir,
+    streamableSnippetsDirectoryQ @ FileNames[ Keys @ $streamableSnippetVersions, dir ]
+];
+
+streamableSnippetsDirectoryQ[ dirs: { ___String } ] := TrueQ @ And[
+    Length @ dirs === Length @ $streamableSnippetVersions,
+    AllTrue[ dirs, streamableSnippetsDirectoryQ0 ]
+];
+
+streamableSnippetsDirectoryQ[ None ] := False;
+
+streamableSnippetsDirectoryQ // endDefinition;
+
+
+streamableSnippetsDirectoryQ0 // beginDefinition;
+
+streamableSnippetsDirectoryQ0[ dir_? DirectoryQ ] :=
+    AssociationQ @ Quiet @ catchAlways @ getStreamableSnippetsMetadata @ File @ dir;
+
+streamableSnippetsDirectoryQ0[ _ ] := False;
+
+streamableSnippetsDirectoryQ0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*fetchDocumentationSnippets*)
-fetchDocumentationSnippets // beginDefinition;
+(* ::Subsubsection::Closed:: *)
+(*getStreamableSnippetsMetadata*)
+getStreamableSnippetsMetadata // beginDefinition;
 
-fetchDocumentationSnippets[ { } ] := { };
+getStreamableSnippetsMetadata[ name_String ] :=
+    With[ { cached = $streamableSnippetIndexCache[ name ] },
+        cached /; AssociationQ @ cached
+    ];
 
-fetchDocumentationSnippets[ uris: { __String } ] /; Length @ uris > $snippetFetchBatchSize :=
-    Flatten[ fetchDocumentationSnippets /@ TakeDrop[ uris, $snippetFetchBatchSize ] ];
+getStreamableSnippetsMetadata[ name_String ] :=
+    getStreamableSnippetsMetadata @ File @ FileNameJoin @ { $streamableSnippetsDir, name };
 
-fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
-     Module[ { count, text, $results, tasks },
-        count = Length @ uris;
+getStreamableSnippetsMetadata[ File[ dir_String ] ] := Enclose[
+    Quiet @ Module[ { metaFile, indexFile, payloadFile, metadata, name, version, count, size, index, data },
 
-        text = If[ $EvaluationEnvironment === "Session",
-                   ConfirmBy[
-                       If[ count === 1,
-                           trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
-                           trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
-                       ],
-                       StringQ,
-                       "Text"
-                   ],
-                   ""
-               ];
+        metaFile    = ConfirmBy[ FileNameJoin @ { dir, "Metadata.wxf"  }, FileExistsQ, "MetadataFile" ];
+        indexFile   = ConfirmBy[ FileNameJoin @ { dir, "Index.wxf"     }, FileExistsQ, "IndexFile"    ];
+        payloadFile = ConfirmBy[ FileNameJoin @ { dir, "Snippets.wxfl" }, FileExistsQ, "PayloadFile"  ];
+
+        metadata    = ConfirmBy[ Developer`ReadWXFFile @ metaFile, AssociationQ, "Metadata" ];
+
+        name        = ConfirmBy[ metadata[ "Name"        ], StringQ , "Name"    ];
+        version     = ConfirmBy[ metadata[ "Version"     ], StringQ , "Version" ];
+        count       = ConfirmBy[ metadata[ "Count"       ], IntegerQ, "Count"   ];
+        size        = ConfirmBy[ metadata[ "PayloadSize" ], IntegerQ, "Size"    ];
+
+        ConfirmAssert[ $streamableSnippetVersions[ name ] === version, "VersionCheck" ];
+
+        index = ConfirmBy[ Developer`ReadWXFFile @ indexFile, AssociationQ, "Index" ];
+
+        ConfirmAssert[ Length @ index === count, "IndexLengthCheck" ];
+        ConfirmAssert[ FileByteCount @ payloadFile === size, "PayloadSizeCheck" ];
+
+        data = <| metadata, "Index" -> index, "PayloadFile" -> payloadFile |>;
+
+        (* Cache for later use *)
+        $streamableSnippetIndexCache[ name ] = data;
+
+        data
+    ],
+    throwInternalFailure
+];
+
+getStreamableSnippetsMetadata // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadStreamableSnippets*)
+downloadStreamableSnippets // beginDefinition;
+
+
+downloadStreamableSnippets[ ] := Enclose[
+    Module[ { dir, queue, result },
+
+        dir = $localStreamableSnippetsDirectory;
+
+        queue = ConfirmMatch[
+            Select[
+                $streamableSnippetTypes,
+                ! streamableSnippetsDirectoryQ0 @ FileNameJoin @ { dir, # } &
+            ],
+            { __String },
+            "Queue"
+        ];
 
         withApproximateProgress[
-            $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
-            tasks = fetchDocumentationSnippets0 @ $results /@ uris;
-            TaskWait @ tasks;
-            processDocumentationSnippetResults @ $results,
-            Verbatim @ text,
+            ConfirmMatch[ downloadStreamableSnippets /@ queue, { __String }, "Downloaded" ],
+            "ProgressTextDownloadingDocumentation",
             0.5
-        ]
-    ],
-    throwInternalFailure
-];
-
-fetchDocumentationSnippets // endDefinition;
-
-
-fetchDocumentationSnippets0 // beginDefinition;
-fetchDocumentationSnippets0 // Attributes = { HoldFirst };
-
-fetchDocumentationSnippets0[ $results_ ] :=
-    fetchDocumentationSnippets0[ $results, # ] &;
-
-fetchDocumentationSnippets0[ $results_, uri_String ] := Enclose[
-    Module[ { url, setResult, task },
-        url = ConfirmBy[ toDocSnippetURL @ uri, StringQ, "URL" ];
-        setResult = Function[ $results[ uri ] = <| $results @ uri, # |> ];
-
-        task = URLSubmit[
-            url,
-            HandlerFunctions -> <|
-                "BodyReceived"     -> setResult,
-                "ConnectionFailed" -> Function[ $results[ uri ] = <| $results @ uri, # |> ]
-            |>,
-            HandlerFunctionsKeys -> { "BodyByteArray", "StatusCode", "Headers", "ContentType", "Cookies" }
         ];
 
-        $results[ uri, "URL"  ] = url;
-        $results[ uri, "Task" ] = task
+        result = ConfirmBy[ dir, streamableSnippetsDirectoryQ, "Result" ];
+
+        result
+
+    ] // LogChatTiming[ "DownloadStreamableSnippets" ],
+    throwInternalFailure
+];
+
+
+downloadStreamableSnippets[ name_String ] :=
+    downloadStreamableSnippets[ name, 1 ];
+
+
+downloadStreamableSnippets[ name_String, attempt_Integer ] := Enclose[
+    Catch @ Module[ { retry, ver, url, downloaded, targetDir, extracted },
+        ConfirmAssert[ attempt <= 3, "AttemptCheck" ];
+
+        retry = Throw[ Pause[ attempt ]; downloadStreamableSnippets[ name, attempt + 1 ] ] &;
+
+        ver = ConfirmBy[ StringReplace[ $streamableSnippetVersions @ name, "." -> "-" ], StringQ, "Version" ];
+        url = ConfirmBy[ URLBuild @ { $streamableSnippetBaseURL, name, ver<>".zip" }, StringQ, "URL" ];
+
+        downloaded = URLDownload[ url, FileNameJoin @ { $TemporaryDirectory, name<>".zip" } ];
+        If[ ! FileExistsQ @ downloaded, retry[ ] ];
+
+        targetDir = ConfirmBy[
+            GeneralUtilities`EnsureDirectory @ { $localStreamableSnippetsDirectory, name },
+            DirectoryQ,
+            "TargetDirectory"
+        ];
+
+        extracted = ExtractArchive[ downloaded, targetDir, OverwriteTarget -> True ];
+        If[ ! MatchQ[ extracted, { __String } ], retry[ ] ];
+
+        targetDir
     ],
     throwInternalFailure
 ];
 
-fetchDocumentationSnippets0 // endDefinition;
+
+downloadStreamableSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toDocSnippetURL*)
-toDocSnippetURL // beginDefinition;
+(* ::Subsection::Closed:: *)
+(*getStreamSnippets*)
+getStreamSnippets // beginDefinition;
 
-toDocSnippetURL[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
-    URLBuild @ { $documentationSnippetBaseURL, StringDelete[ uri, StartOfString~~"paclet:" ] <> ".wxf" };
+getStreamSnippets[ name_String ] :=
+    getStreamSnippets[ name, # ] &;
 
-toDocSnippetURL[ uri_String ] :=
-    toDocSnippetURL0 @ URLParse[ uri, { "Domain", "Path" } ];
+getStreamSnippets[ name_String, key_String ] :=
+    First @ getStreamSnippets[ name, { key } ];
 
-toDocSnippetURL // endDefinition;
+getStreamSnippets[ name_String, { } ] :=
+    { };
+
+getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
+    Module[ { file, keyGroups, stream, data, strings },
+
+        file = ConfirmBy[ FileNameJoin @ { $streamableSnippetsDir, name, "Snippets.wxfl" }, FileExistsQ, "File" ];
+        keyGroups = GroupBy[ keys, StringDelete[ #1, "#" ~~ ___ ~~ EndOfString ] & ];
+
+        WithCleanup[
+            stream = ConfirmMatch[ OpenRead[ file, BinaryFormat -> True ], _InputStream, "Stream" ],
+            data = Association @ KeyValueMap[ getStreamSnippets0[ stream, name, #1, #2 ] &, keyGroups ],
+            Quiet @ Close @ stream
+        ];
+
+        strings = ConfirmMatch[ Lookup[ data, keys ], { __String }, "Result" ];
+
+        "# " <> StringDelete[ #, StartOfString~~"# " ] & /@ strings
+    ] // LogChatTiming[ "GetStreamSnippets" ],
+    throwInternalFailure
+];
+
+getStreamSnippets // endDefinition;
 
 
-toDocSnippetURL0 // beginDefinition;
+getStreamSnippets0 // beginDefinition;
 
-toDocSnippetURL0[ { "resources.wolframcloud.com", { "", repo_String, "resources", name_String } } ] :=
-    URLBuild @ { $resourceSnippetBaseURL, repo, name <> ".wxf" };
-
-toDocSnippetURL0[ { "datarepository.wolframcloud.com", { "", "resources", name_String } } ] :=
-    URLBuild @ { $resourceSnippetBaseURL, "DataRepository", name <> ".wxf" };
-
-toDocSnippetURL0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*processDocumentationSnippetResults*)
-processDocumentationSnippetResults // beginDefinition;
-processDocumentationSnippetResults[ results_Association ] := KeyValueMap[ processDocumentationSnippetResult, results ];
-processDocumentationSnippetResults // endDefinition;
-
-(* TODO: retry failed results *)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*processDocumentationSnippetResult*)
-processDocumentationSnippetResult // beginDefinition;
-
-processDocumentationSnippetResult[ base_String, as_Association ] :=
-    processDocumentationSnippetResult[ base, as, as[ "BodyByteArray" ], as[ "StatusCode" ] ];
-
-processDocumentationSnippetResult[ base_String, as_, bytes_ByteArray, 200 ] :=
-    processDocumentationSnippetResult[ base, as, Quiet @ Developer`ReadWXFByteArray @ bytes ];
-
-(* A 401/403 means we're missing a file in the snippet deployment or it has the wrong permissions,
-   so it should trigger an internal failure, otherwise just issue a generic cloud download failure. *)
-processDocumentationSnippetResult[ base_String, as_Association, bytes_, code: Except[ 401|403 ] ] :=
-    throwFailureToChatOutput @ Failure[
-        "CloudDownloadError",
-        <|
-            "MessageTemplate"   :> Chatbook::CloudDownloadError,
-            "MessageParameters" -> { },
-            KeyTake[ as, { "URL", "StatusCode" } ],
-            as
-        |>
-    ];
-
-processDocumentationSnippetResult[ base_String, as_, data_List ] := Enclose[
-    Module[ { combined, keyed, processed, file },
-        combined = ConfirmMatch[ makeCombinedSnippet @ data, None -> _Association, "Combined" ];
-        keyed = Last @ StringSplit[ ConfirmBy[ #[ "URI" ], StringQ, "URI" ], "#" ] -> # & /@ data;
-        processed = ConfirmBy[ Association[ combined, keyed ], AssociationQ, "Processed" ];
-        file = ConfirmBy[ snippetCacheFile @ base, StringQ, "File" ];
-        ConfirmBy[ GeneralUtilities`EnsureDirectory @ DirectoryName @ file, DirectoryQ, "Directory" ];
-        ConfirmBy[ Developer`WriteWXFFile[ file, processed ], FileExistsQ, "Export" ];
-        $documentationSnippets[ base ] = processed
+getStreamSnippets0[ stream_InputStream, name_String, group_String, keys: { __String } ] := Enclose[
+    Module[ { index, pos, len, wxf, snippets },
+        index = ConfirmBy[ loadStreamIndex @ name, AssociationQ, "Index" ];
+        { pos, len } = ConfirmMatch[ index @ group, { _Integer, _Integer }, "PositionAndLength" ];
+        ConfirmMatch[ SetStreamPosition[ stream, pos ], pos, "SetStreamPosition" ];
+        wxf = ConfirmBy[ ReadByteArray[ stream, len ], ByteArrayQ, "WXF" ];
+        snippets = ConfirmBy[ BinaryDeserialize @ wxf, AssociationQ, "Snippets" ];
+        KeyTake[ snippets, keys ]
     ],
     throwInternalFailure
 ];
 
-processDocumentationSnippetResult // endDefinition;
+getStreamSnippets0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makeCombinedSnippet*)
-makeCombinedSnippet // beginDefinition;
-makeCombinedSnippet[ { data_Association, ___ } ] := makeCombinedSnippet @ data;
-(* TODO: combined several initial snippets instead of just one *)
-makeCombinedSnippet[ data_Association ] := None -> data;
-makeCombinedSnippet // endDefinition;
+(*loadStreamIndex*)
+loadStreamIndex // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cacheDocumentationSnippetResult*)
-cacheDocumentationSnippetResult // beginDefinition;
-
-cacheDocumentationSnippetResult[ as_Association ] :=
-    cacheDocumentationSnippetResult[ as[ "URI" ], as ];
-
-cacheDocumentationSnippetResult[ uri_String, as_Association ] :=
-    uri -> cacheDocumentationSnippetResult[ StringSplit[ uri, "#" ], as ];
-
-cacheDocumentationSnippetResult[ { base_String, fragment: _String|None }, as_Association ] :=
-    If[ AssociationQ @ $documentationSnippets[ base ],
-        $documentationSnippets[ base, fragment ] = as,
-        $documentationSnippets[ base ] = <| fragment -> as |>
+loadStreamIndex[ name_String ] :=
+    With[ { cached = $streamableSnippetIndexCache[ name, "Index" ] },
+        cached /; AssociationQ @ cached
     ];
 
-cacheDocumentationSnippetResult // endDefinition;
+loadStreamIndex[ name_String ] := Enclose[
+    ConfirmBy[ getStreamableSnippetsMetadata[ name ][ "Index" ], AssociationQ, "Index" ],
+    throwInternalFailure
+];
+
+loadStreamIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

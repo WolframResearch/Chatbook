@@ -418,9 +418,18 @@ appendFallthroughError[ s_Symbol, values: DownValues|UpValues ] :=
     ];
 
 appendFallthroughError0 // ClearAll;
-appendFallthroughError0[ s_Symbol, OwnValues  ] := e: HoldPattern @ s               := throwInternalFailure @ e;
-appendFallthroughError0[ s_Symbol, DownValues ] := e: HoldPattern @ s[ ___ ]        := throwInternalFailure @ e;
-appendFallthroughError0[ s_Symbol, UpValues   ] := e: HoldPattern @ s[ ___ ][ ___ ] := throwInternalFailure @ e;
+
+appendFallthroughError0[ s_Symbol, OwnValues ] :=
+    e: HoldPattern @ s :=
+        throwInternalFailure[ e, "UnhandledOwnValues", HoldForm @ s ];
+
+appendFallthroughError0[ s_Symbol, DownValues ] :=
+    e: HoldPattern @ s[ ___ ] :=
+        throwInternalFailure[ e, "UnhandledDownValues", HoldForm @ s ];
+
+appendFallthroughError0[ s_Symbol, UpValues ] :=
+    e: HoldPattern @ s[ ___ ][ ___ ] :=
+        throwInternalFailure[ e, "UnhandledUpValues", HoldForm @ s ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

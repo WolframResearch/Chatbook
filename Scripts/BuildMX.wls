@@ -60,8 +60,29 @@ copyTemporary[ dir_ ] :=
     ];
 
 copyTemporary0[ dir_, tmp_, file_ ] :=
-    With[ { rel = StringReplace[ ResourceFunction[ "RelativePath" ][ dir, file ], "\\" -> "/" ] },
-        CopyFile[ file, ResourceFunction[ "EnsureFilePath" ][ FileNameJoin @ { tmp, rel } ] ]
+    With[ { rel = StringReplace[ relativePath[ dir, file ], "\\" -> "/" ] },
+        CopyFile[ file, ensureFilePath @ FileNameJoin @ { tmp, rel } ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*relativePath*)
+relativePath[ dir_, file_ ] :=
+    StringReplace[
+        StringTrim[
+            StringDelete[ ExpandFileName @ file, StartOfString ~~ ExpandFileName @ dir ],
+            $PathnameSeparator
+        ],
+        "\\" -> "/"
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ensureFilePath*)
+ensureFilePath[ file_ ] :=
+    With[ { dir = DirectoryName @ file },
+        If[ ! DirectoryQ @ dir, CreateDirectory[ dir, CreateIntermediateDirectories -> True ] ];
+        file
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -99,16 +120,43 @@ expandTags[ root_, file_ ] :=
 getNewTags[ root_, file_ ] :=
     Module[ { relativeFile },
 
-        relativeFile = StringReplace[ ResourceFunction[ "RelativePath" ][ root, file ], "\\" -> "/" ];
+        relativeFile = StringReplace[ relativePath[ root, file ], "\\" -> "/" ];
 
         Cases[
             codeParse @ file,
-            ResourceFunction[ "ASTPattern" ][
-                HoldPattern @ Alternatives[
-                    (Confirm|ConfirmAssert)[ _, $tag1_String ],
-                    (ConfirmBy|ConfirmMatch|ConfirmQuiet)[ _, _, $tag2_String ]
+            Alternatives[
+                CodeParser`CallNode[
+                    Alternatives[
+                        CodeParser`LeafNode[ Symbol, "Confirm"|"System`Confirm", _ ],
+                        CodeParser`LeafNode[ Symbol, "ConfirmAssert"|"System`ConfirmAssert", _ ]
+                    ],
+                    {
+                        (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                        $tag1: (CodeParser`CallNode|CodeParser`LeafNode)[
+                            String | CodeParser`LeafNode[ Symbol, "String"|"System`String", _ ],
+                            _,
+                            _
+                        ]
+                    },
+                    KeyValuePattern[ CodeParser`Source -> { { $l1_, $c1_ }, { $l2_, $c2_ } } ]
                 ],
-                KeyValuePattern[ cp`Source -> { { $l1_, $c1_ }, { $l2_, $c2_ } } ]
+                CodeParser`CallNode[
+                    Alternatives[
+                        CodeParser`LeafNode[ Symbol, "ConfirmBy"|"System`ConfirmBy", _ ],
+                        CodeParser`LeafNode[ Symbol, "ConfirmMatch"|"System`ConfirmMatch", _ ],
+                        CodeParser`LeafNode[ Symbol, "ConfirmQuiet"|"System`ConfirmQuiet", _ ]
+                    ],
+                    {
+                        (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                        (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                        $tag2: (CodeParser`CallNode|CodeParser`LeafNode)[
+                            String | CodeParser`LeafNode[ Symbol, "String"|"System`String", _ ],
+                            _,
+                            _
+                        ]
+                    },
+                    KeyValuePattern[ CodeParser`Source -> { { $l1_, $c1_ }, { $l2_, $c2_ } } ]
+                ]
             ] :>
                 With[ { tag = First @ { $tag1, $tag2 } },
                     TemplateApply[
@@ -134,15 +182,40 @@ $tagTemplate = StringTemplate[ "\"`Tag`@@`File`:`Line1`,`Column1`-`Line2`,`Colum
 (*getTagPos*)
 getTagPos[ file_ ] := Cases[
     codeParseIndexed @ file,
-    ResourceFunction[ "ASTPattern" ][
-        HoldPattern[
+    Alternatives[
+        CodeParser`CallNode[
             Alternatives[
-                (Confirm|ConfirmAssert)[ _, $tag1_String ],
-                (ConfirmBy|ConfirmMatch|ConfirmQuiet)[ _, _, $tag2_String ]
-            ]
+                CodeParser`LeafNode[ Symbol, "Confirm"|"System`Confirm", _ ],
+                CodeParser`LeafNode[ Symbol, "ConfirmAssert"|"System`ConfirmAssert", _ ]
+            ],
+            {
+                (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                $tag1: (CodeParser`CallNode|CodeParser`LeafNode)[
+                    String | CodeParser`LeafNode[ Symbol, "String"|"System`String", _ ],
+                    _,
+                    _
+                ]
+            },
+            KeyValuePattern[ CodeParser`Source -> p_ ]
         ],
-        KeyValuePattern[ cp`Source -> p_ ]
-    ] :> (First @ { $tag1, $tag2 })[[ 3, Key @ cp`Source ]],
+        CodeParser`CallNode[
+            Alternatives[
+                CodeParser`LeafNode[ Symbol, "ConfirmBy"|"System`ConfirmBy", _ ],
+                CodeParser`LeafNode[ Symbol, "ConfirmMatch"|"System`ConfirmMatch", _ ],
+                CodeParser`LeafNode[ Symbol, "ConfirmQuiet"|"System`ConfirmQuiet", _ ]
+            ],
+            {
+                (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                (CodeParser`CallNode|CodeParser`LeafNode)[ _, _, _ ],
+                $tag2: (CodeParser`CallNode|CodeParser`LeafNode)[
+                    String | CodeParser`LeafNode[ Symbol, "String"|"System`String", _ ],
+                    _,
+                    _
+                ]
+            },
+            KeyValuePattern[ CodeParser`Source -> p_ ]
+        ]
+    ] :> First[ { $tag1, $tag2 } ][[ 3, Key @ cp`Source ]],
     Infinity
 ];
 

@@ -78,6 +78,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `GetFocusedNotebook;
 `InlineTemplateBoxes;
+`InstallDocumentationResources;
 `InstallVectorDatabases;
 `InvalidateServiceCache;
 `ListSavedChats;
@@ -267,6 +268,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURIs",
     "GetFocusedNotebook",
     "InlineTemplateBoxes",
+    "InstallDocumentationResources",
     "InstallVectorDatabases",
     "ListSavedChats",
     "LoadAttachments",
