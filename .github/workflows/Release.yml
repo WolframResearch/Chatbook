@@ -38,8 +38,8 @@ jobs:
         apt-get update && apt-get install -y unzip
         mkdir -p Assets/Snippets/Streamable/Documentation
         mkdir -p Assets/Snippets/Streamable/ResourceSystem
-        curl -L -o /tmp/Documentation.zip "https://github.com/WolframResearch/Chatbook/releases/download/Snippets-Documentation-14-3-0-11967661/Documentation.zip"
-        curl -L -o /tmp/ResourceSystem.zip "https://github.com/WolframResearch/Chatbook/releases/download/Snippets-ResourceSystem-1-0-0/ResourceSystem.zip"
+        curl -L -o /tmp/Documentation.zip "https://www.wolframcloud.com/obj/wolframai-content/StreamableSnippets/Documentation/14-3-0-11967661.zip"
+        curl -L -o /tmp/ResourceSystem.zip "https://www.wolframcloud.com/obj/wolframai-content/StreamableSnippets/ResourceSystem/1-0-0.zip"
         unzip -o /tmp/Documentation.zip -d Assets/Snippets/Streamable/Documentation
         unzip -o /tmp/ResourceSystem.zip -d Assets/Snippets/Streamable/ResourceSystem
 
