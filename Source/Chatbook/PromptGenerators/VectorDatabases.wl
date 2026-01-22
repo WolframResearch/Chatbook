@@ -34,7 +34,7 @@ $vectorDatabases = <| |>;
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
     "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
-    "SnippetFunction" -> getSnippets,
+    "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
 |>;
 
@@ -44,7 +44,7 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
 $vectorDatabases[ "DocumentationURIs" ] = <|
     "Version"         :> If[ $VersionNumber >= 14.3, "1.5.0", "1.4.0" ],
     "Bias"            -> 0.0,
-    "SnippetFunction" -> getSnippets,
+    "SnippetFunction" -> getStreamSnippets[ "Documentation" ],
     "Instructions"    -> None
 |>;
 
@@ -54,16 +54,9 @@ $vectorDatabases[ "DocumentationURIs" ] = <|
 $vectorDatabases[ "EntityValues" ] = <|
     "Version"         -> "1.1.0",
     "Bias"            -> 0.0,
-    "SnippetFunction" -> getEntityValueSnippets,
+    "SnippetFunction" -> getStreamSnippets[ "Documentation" ],
     "Instructions"    :> getNamedSnippet[ "EntityValueInstructions" ]
 |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*getEntityValueSnippets*)
-getEntityValueSnippets // beginDefinition;
-getEntityValueSnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "EntityValues" ][ uris ];
-getEntityValueSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -71,7 +64,7 @@ getEntityValueSnippets // endDefinition;
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
     "Version"         -> "1.2.0",
     "Bias"            -> 1.0,
-    "SnippetFunction" -> getSnippets,
+    "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
 |>;
 
@@ -81,16 +74,9 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
 $vectorDatabases[ "NeuralNetRepositoryURIs" ] = <|
     "Version"         -> "1.1.0",
     "Bias"            -> 1.0,
-    "SnippetFunction" -> getNeuralNetRepositorySnippets,
+    "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
 |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*getNeuralNetRepositorySnippets*)
-getNeuralNetRepositorySnippets // beginDefinition;
-getNeuralNetRepositorySnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "NeuralNetRepositoryURIs" ][ uris ];
-getNeuralNetRepositorySnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -102,16 +88,9 @@ IMPORTANT: Always use PacletSymbol to reference symbols from paclets in the pacl
 $vectorDatabases[ "PacletRepositoryURIs" ] = <|
     "Version"         -> "1.1.0",
     "Bias"            -> 2.0,
-    "SnippetFunction" -> getPacletRepositorySnippets,
+    "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> { URL[ "paclet:ref/PacletSymbol#1" ], $pacletRepositoryInstructions }
 |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*getPacletRepositorySnippets*)
-getPacletRepositorySnippets // beginDefinition;
-getPacletRepositorySnippets[ uris: { ___String } ] := getSnippetAssetFunction[ "PacletRepositoryURIs" ][ uris ];
-getPacletRepositorySnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -471,9 +450,11 @@ InstallVectorDatabases // endExportedDefinition;
 installVectorDatabases // beginDefinition;
 
 installVectorDatabases[ ] := Enclose[
-    Module[ { dir },
+    Module[ { dir, snippets, snippetDir },
         dir = ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ];
-        Success[ "VectorDatabasesInstalled", <| "Location" -> dir |> ]
+        snippets = ConfirmMatch[ InstallDocumentationResources[ ], _Success, "Snippets" ];
+        snippetDir = ConfirmBy[ snippets[ "Location" ], DirectoryQ, "SnippetLocation" ];
+        Success[ "VectorDatabasesInstalled", <| "Location" -> dir, "Snippets" -> snippetDir |> ]
     ],
     throwInternalFailure
 ];
@@ -640,7 +621,10 @@ getDownloadSize // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*tryUnpackingVectorDatabases*)
 tryUnpackingVectorDatabases // beginDefinition;
-tryUnpackingVectorDatabases[ dir_? DirectoryQ ] := Scan[ tryUnpackingVectorDatabase, FileNames[ "*.zip", dir ] ];
+
+tryUnpackingVectorDatabases[ dir_? DirectoryQ ] :=
+    Map[ tryUnpackingVectorDatabase, FileNames[ { "*.zip", "*.zip.tmp" }, dir ] ];
+
 tryUnpackingVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -679,7 +663,7 @@ unpackVectorDatabase // beginDefinition;
 
 unpackVectorDatabase[ zip_String? FileExistsQ ] := Enclose[
     Module[ { name, version, root, dir, res, versionFile },
-        name = ConfirmBy[ FileBaseName @ zip, StringQ, "Name" ];
+        name = ConfirmBy[ FileBaseName @ StringDelete[ zip, ".tmp"~~EndOfString ], StringQ, "Name" ];
         version = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "Version" ];
         root = ConfirmBy[ DirectoryName @ zip, DirectoryQ, "RootDirectory" ];
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, name }, DirectoryQ, "Directory" ];
@@ -765,6 +749,7 @@ checkVectorDatabaseDownload[
     result_
 ] := (
     Quiet @ DeleteFile @ tmp;
+    Internal`YieldAsynchronousTask[ ];
     Internal`StuffBag[
         $extraDownloadTasks,
         URLDownloadSubmit[
@@ -785,8 +770,15 @@ checkVectorDatabaseDownload // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*setDownloadProgress*)
 setDownloadProgress // beginDefinition;
-setDownloadProgress[ name_String ] := setDownloadProgress[ name, ## ] &;
-setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := $downloadProgress[ name ] = b;
+
+setDownloadProgress[ name_String ] :=
+    setDownloadProgress[ name, ## ] &;
+
+setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := (
+    Internal`YieldAsynchronousTask[ ];
+    $downloadProgress[ name ] = b
+);
+
 setDownloadProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

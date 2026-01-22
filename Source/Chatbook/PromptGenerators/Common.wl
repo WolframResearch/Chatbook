@@ -10,6 +10,7 @@ HoldComplete[
     `$versionString,
     `getNamedSnippet,
     `getSmallContextString,
+    `getStreamSnippets,
     `insertContextPrompt,
     `vectorDBSearch
 ];

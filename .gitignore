@@ -1,4 +1,5 @@
 .DS_Store
+Assets/Snippets/Streamable/*
 Assets/VectorDatabases/**/*.usearch
 Assets/VectorDatabases/**/*.wl
 Assets/VectorDatabases/**/*.wxf
