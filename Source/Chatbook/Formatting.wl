@@ -2334,16 +2334,16 @@ formatSpecialBoxes[ string_String ] :=
 
 formatSpecialBoxes[ boxes_ ] :=
     boxes /. {
-        RowBox @ { "\[FreeformPrompt]", "[", q_String, "]" } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ] :>
+        RowBox @ { "\[FreeformPrompt]", "[", q_String? quotedStringQ, "]" } :>
             RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
         ,
-        RowBox @ { "\[FreeformPrompt]", "[", RowBox @ { q_String, ",", _ }, "]" } :>
+        RowBox @ { "\[FreeformPrompt]", "[", RowBox @ { q_String? quotedStringQ, ",", _ }, "]" } :>
             RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
             RuleCondition @ formatNLInputFast @ q
         ,
-        RowBox @ { "ResourceFunction", "[", name_String, "]" } /; StringMatchQ[ name, "\""~~Except[ "\""]..~~"\"" ] :>
+        RowBox @ { "ResourceFunction", "[", name_String? quotedStringQ, "]" } :>
             RuleCondition @ If[ TrueQ @ $dynamicText,
                                 formatResourceFunctionFast @ name,
                                 formatResourceFunctionSlow @ name
@@ -2362,6 +2362,14 @@ formatSpecialBoxes[ boxes_ ] :=
     };
 
 formatSpecialBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*quotedStringQ*)
+quotedStringQ // beginDefinition;
+quotedStringQ[ q_String ] := StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ];
+quotedStringQ[ ___ ] := False;
+quotedStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2507,7 +2515,13 @@ formatNLInputFast // endDefinition;
 formatNLInputSlow // beginDefinition;
 
 formatNLInputSlow[ query_String ] :=
-    With[ { h = ToExpression[ query, InputForm, HoldComplete ] },
+    With[
+        {
+            h = If[ StringMatchQ[ query, "\""~~__~~"\"" ],
+                    ToExpression[ query, InputForm, HoldComplete ],
+                    query
+                ]
+        },
         (
             formatNLInputSlow[ query ] =
                 ReplaceAll[
