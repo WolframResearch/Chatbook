@@ -35,6 +35,7 @@ jobs:
 
     - name: Download Snippets
       run: |
+        apt-get update && apt-get install -y unzip
         mkdir -p Assets/Snippets/Streamable/Documentation
         mkdir -p Assets/Snippets/Streamable/ResourceSystem
         curl -L -o /tmp/Documentation.zip "https://github.com/WolframResearch/Chatbook/releases/download/Snippets-Documentation-14-3-0-11967661/Documentation.zip"
