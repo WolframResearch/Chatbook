@@ -215,7 +215,7 @@ getTagPos[ file_ ] := Cases[
             },
             KeyValuePattern[ CodeParser`Source -> p_ ]
         ]
-    ] :> First @ { $tag1, $tag2 }[[ 3, Key @ cp`Source ]],
+    ] :> First[ { $tag1, $tag2 } ][[ 3, Key @ cp`Source ]],
     Infinity
 ];
 
