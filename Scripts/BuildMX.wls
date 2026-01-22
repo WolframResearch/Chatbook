@@ -60,8 +60,29 @@ copyTemporary[ dir_ ] :=
     ];
 
 copyTemporary0[ dir_, tmp_, file_ ] :=
-    With[ { rel = StringReplace[ EchoEvaluation @ ResourceFunction[ "RelativePath" ][ dir, file ], "\\" -> "/" ] },
-        CopyFile[ file, EchoEvaluation @ ResourceFunction[ "EnsureFilePath" ][ FileNameJoin @ { tmp, rel } ] ]
+    With[ { rel = StringReplace[ EchoEvaluation @ relativePath[ dir, file ], "\\" -> "/" ] },
+        CopyFile[ file, EchoEvaluation @ ensureFilePath @ FileNameJoin @ { tmp, rel } ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*relativePath*)
+relativePath[ dir_, file_ ] :=
+    StringReplace[
+        StringTrim[
+            StringDelete[ ExpandFileName @ file, StartOfString ~~ ExpandFileName @ dir ],
+            $PathnameSeparator
+        ],
+        "\\" -> "/"
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ensureFilePath*)
+ensureFilePath[ file_ ] :=
+    With[ { dir = DirectoryName @ file },
+        If[ ! DirectoryQ @ dir, CreateDirectory[ dir, CreateIntermediateDirectories -> True ] ];
+        file
     ];
 
 (* ::**************************************************************************************************************:: *)
