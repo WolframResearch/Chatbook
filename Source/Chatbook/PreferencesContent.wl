@@ -412,7 +412,7 @@ makeModelSelector0[ type_String ] :=
         type,
         If[ KeyExistsQ[ $availableServices, "LLMKit" ],
             $availableServices,
-            <| "LLMKit" -> <| "Service" -> "Wolfram", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>, $availableServices |> ] ]
+            <| "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>, $availableServices |> ] ]
 
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelNameSelector, highlight },
@@ -738,7 +738,7 @@ modelSelectCallback[
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
     (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
-    model = If[ MatchQ[ service, "LLMKit"|"Wolfram" ], Automatic, selected ];
+    model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1830,7 +1830,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ "LLMKit"|"Wolfram" ] := Automatic;
+getServiceDefaultModel[ "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
 
 getServiceDefaultModel[ service_String ] := Enclose[
     Module[ { lastSelected, name },

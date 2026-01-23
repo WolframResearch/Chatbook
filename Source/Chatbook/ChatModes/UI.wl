@@ -84,7 +84,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             FrameMargins -> { { 5, 2 }, { 0, 1 } },
             ImageMargins -> 0
         ],
-        CellFrame        -> { { 0, 0 }, { 0, 4 } },
+        CellFrame        -> { { 0, 0 }, { 0, 7 } },
         CellFrameColor   -> color @ "NA_SidebarToolbarFrame",
         CellFrameMargins -> 0,
         CellTags         -> "SidebarDockedCell",
@@ -2171,7 +2171,7 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
                         If[ results === { },
                             { {
                                 Pane[
-                                    Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontSlant -> "Italic" ],
+                                    Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontFamily -> "Source Sans Pro", FontSlant -> "Italic" ],
                                     Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
                             results ]
                     ] @
