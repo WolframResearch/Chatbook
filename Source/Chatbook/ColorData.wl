@@ -1944,28 +1944,28 @@ Dispatch[{
 	|>,
 	"NA_SidebarToolbarButtonBackgroundHover" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.164706, 0.270588, 0.325490],
+		 "Dark"   -> RGBColor[0.141176, 0.349020, 0.466667],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
-		 "Dark"   -> RGBColor[0.117647, 0.203922, 0.247059],
+		 "Dark"   -> RGBColor[0.129412, 0.239216, 0.298039],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
-		 "Dark"   -> RGBColor[0.172549, 0.321569, 0.4],
+		 "Dark"   -> RGBColor[0.211765, 0.411765, 0.533333],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.701961, 0.870588, 0.956863],
-		 "Dark"   -> RGBColor[0.133333, 0.254902, 0.313725],
+		 "Dark"   -> RGBColor[0.149020, 0.290196, 0.360784],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
@@ -1985,8 +1985,8 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarFrame" -> <|
-		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Dark"   -> RGBColor[0.168627, 0.584314, 0.8],
+		 "Light"  -> RGBColor[0.815686, 0.898039, 0.929412],
+		 "Dark"   -> RGBColor[0.129412, 0.294118, 0.411765],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
