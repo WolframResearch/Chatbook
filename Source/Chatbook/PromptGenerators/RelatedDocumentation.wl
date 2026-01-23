@@ -1105,12 +1105,7 @@ getSnippets // endDefinition;
 (* ::Section::Closed:: *)
 (*InstallDocumentationResources*)
 InstallDocumentationResources // beginDefinition;
-
-InstallDocumentationResources[ ] :=
-    catchMine @ Block[ { $pacletStreamableSnippetsDirectory = None },
-        installDocumentationResources[ ]
-    ];
-
+InstallDocumentationResources[ ] := catchMine @ installDocumentationResources[ ];
 InstallDocumentationResources // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
