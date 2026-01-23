@@ -7,7 +7,6 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (*Initialization*)
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 If[ ! StringQ @ Environment[ "GITHUB_ACTIONS" ], System`$PublisherID = "Wolfram" ];
-Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -16,7 +15,7 @@ $check    = getBooleanArgument[ { "c", "check"    }, True  ];
 $install  = getBooleanArgument[ { "i", "install"  }, False ];
 $mx       = getBooleanArgument[ { "m", "mx"       }, True  ];
 $unformat = getBooleanArgument[ { "u", "unformat" }, True  ];
-$download = getBooleanArgument[ { "s", "snippets" }, False ];
+$download = getBooleanArgument[ { "s", "snippets" }, True  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -32,38 +31,6 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Download Snippets*)
-$baseSnippetsURL = "https://github.com/WolframResearch/Chatbook/releases/download/";
-
-downloadSnippets[ ] :=
-    Enclose @ Module[ { targetDir, docZip, rsZip },
-        targetDir = FileNameJoin @ { $pacletDir, "Assets/Snippets/Streamable" };
-
-        docZip = URLDownload[
-            $baseSnippetsURL <> "Snippets-Documentation-14-3-0-11967661/Documentation.zip",
-            FileNameJoin @ { $TemporaryDirectory, "Documentation.zip" }
-        ];
-
-        rsZip = URLDownload[
-            $baseSnippetsURL <> "Snippets-ResourceSystem-1-0-0/ResourceSystem.zip",
-            FileNameJoin @ { $TemporaryDirectory, "ResourceSystem.zip" }
-        ];
-
-        ConfirmMatch[
-            ExtractArchive[ docZip, FileNameJoin @ { targetDir, "Documentation" }, OverwriteTarget -> True ],
-            { __String? FileExistsQ }
-        ];
-
-        ConfirmMatch[
-            ExtractArchive[ rsZip, FileNameJoin @ { targetDir, "ResourceSystem" }, OverwriteTarget -> True ],
-            { __String? FileExistsQ }
-        ];
-
-        cicd`ConsoleLog @ SequenceForm[ "Downloaded snippets files: ", FileNames[ All, targetDir, Infinity ] ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Run*)
 
 (* ::**************************************************************************************************************:: *)
@@ -72,13 +39,12 @@ downloadSnippets[ ] :=
 If[ $download,
     Block[ { $ProgressReporting = True },
         cicd`ConsoleLog[ "Downloading documentation snippets..." ];
-        downloadSnippets[ ]
-        (* snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
+        snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
         targetDir = FileNameJoin @ { $pacletDir, "Assets/Snippets/Streamable" };
         If[ DirectoryQ @ targetDir, DeleteDirectory[ targetDir, DeleteContents -> True ] ];
         copied = cDir @ CopyDirectory[ snippetDir, targetDir ];
         cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets to: ", copied ];
-        If[ StringQ @ Environment[ "GITHUB_ACTIONS" ], DeleteDirectory[ snippetDir, DeleteContents -> True ] ]; *)
+        If[ StringQ @ Environment[ "GITHUB_ACTIONS" ], DeleteDirectory[ snippetDir, DeleteContents -> True ] ];
     ]
 ];
 

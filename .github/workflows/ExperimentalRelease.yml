@@ -34,7 +34,7 @@ jobs:
         apt-get update && apt-get install software-properties-common -y
         add-apt-repository ppa:git-core/ppa -y
         apt-get update && apt-get install git -y
-        wget ${{ env.GH_INSTALL_URL }} -O gh.deb
+        curl -fsSL ${{ env.GH_INSTALL_URL }} -o gh.deb
         dpkg -i gh.deb
 
     - name: Checkout
@@ -51,7 +51,7 @@ jobs:
         unzip -o /tmp/ResourceSystem.zip -d Assets/Snippets/Streamable/ResourceSystem
 
     - name: Build Paclet
-      run: wolframscript -f Scripts/BuildPaclet.wls
+      run: wolframscript -f Scripts/BuildPaclet.wls --snippets=false
 
     - name: Rename Paclet File
       run: mv "${{ env.PACLET_PATH }}" "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet"
