@@ -530,6 +530,8 @@ showNotebookAssistanceSidebar // beginDefinition;
 
 showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
     Module[ { sidebarCell },
+        If[ TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ], Return @ Null ]; (* prevent sidebar from opening in dialogs and palettes *)
+        If[ nbo === MessagesNotebook[ ], Return @ Null ]; (* prevent sidebar from opening in messages window *)
 
         sidebarCell = sidebarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
         
