@@ -77,13 +77,15 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					"TagExclusions" -> {"SetInfixInequality" 		(* cases like: a = b==c *)
 										,"ImplicitTimesPseudoCall"	(* cases like: a (b+c)*)
 										,"ImplicitTimesBlanks"
+										,"TimesString"				(* ex: "Meters"*"Second" in Quantity*)
 										}
 					,
 					SourceConvention -> "SourceCharacterIndex"
 					,
 					"AbstractRules" -> <|CodeInspector`AbstractRules`$DefaultAbstractRules,
 										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set or as a function name *),
-										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *)
+										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *),
+										pQuantityUnitName -> scanQuantityUnitName
 										|>
 						};
 
@@ -162,7 +164,8 @@ generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeIn
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
 
-extractPatternFromInspectionObject[io:InspectionObject["BadSingleSnakeUsage"|"BadSnakeUsage",__]]:=Apply[Sequence,io]//({#3,#1}->#4[Source])&
+extractPatternFromInspectionObject[io:InspectionObject["BadSingleSnakeUsage"|"BadSnakeUsage"|"SuspiciousQuantityUnitName",__]]:=
+	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
@@ -185,14 +188,14 @@ mergeFixes[prevFix_, newFix_] :=
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
-$patternErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..}
-fixPattern[target_][code_String, pat:$patternErrorCommaFatalExpectedOperand]:=
+$$ErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..}
+fixPattern[target_][code_String, pat:$$ErrorCommaFatalExpectedOperand]:=
 	(* try fix the error comma first*)
 		fixPattern[target][code, Cases[pat, {"Error", "Comma"}], (*ignore:*){"Fatal", "ExpectedOperand"}]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternErrorComma={{"Error","Comma"}..};
-fixPattern[target_][code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
+$$ErrorComma={{"Error","Comma"}..};
+fixPattern[target_][code_String, pat:$$ErrorComma, patToIgnore_:{}]:=
 	Module[
 			{fixedCode, success=False, lenPatLeft, falsePositive=Missing[], safe=Missing[], totalFixes=0}
 			,
@@ -225,7 +228,7 @@ fixPattern[target_][code_String, pat:$patternErrorComma, patToIgnore_:{}]:=
 				   			  		, {}
 							  		, success=True; safe=True; falsePositive=False;
 							  		(* ----------------- *)
-							  		, $patternErrorComma
+							  		, $$ErrorComma
 									, (lenPatLeft=Length@#)
 										; lengthErrors[replaceCommaComments[fixedCode]]
 										//If[!FailureQ@#
@@ -266,8 +269,8 @@ replaceCommaComments[code_]:=	(
 								)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
-fixPattern[target_][code_String, pat:$patternFatalExpectedOperand, patToIgnore_:{}]:=
+$$FatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
+fixPattern[target_][code_String, pat:$$FatalExpectedOperand, patToIgnore_:{}]:=
 	Module[
 			{
 			 fixedCode=Missing["Expected Operand (no place holder(s) detected)"]
@@ -303,9 +306,9 @@ patExtraOperandEllipsisComment=
 
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalExpectedOperandFatalOpenSquare={{"Error", "ImplicitTimesFunction"}...,{"Fatal", "ExpectedOperand"}.., {"Fatal", "OpenSquare"}..};
+$$FatalExpectedOperandFatalOpenSquare={{"Error", "ImplicitTimesFunction"}...,{"Fatal", "ExpectedOperand"}.., {"Fatal", "OpenSquare"}..};
 
-fixPattern[target_][code_String, pat:$patternFatalExpectedOperandFatalOpenSquare, patToIgnore_:{}]:=
+fixPattern[target_][code_String, pat:$$FatalExpectedOperandFatalOpenSquare, patToIgnore_:{}]:=
 	Module[
 			{fixedCode=Missing[], success=False, falsePositive=Missing[], safe=Missing[], totalFixes=Missing[]}
 			,
@@ -328,9 +331,9 @@ fixPattern[target_][code_String, pat:$patternFatalExpectedOperandFatalOpenSquare
 	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalGroupMissingCloserFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}, ___, {"Fatal", "UnexpectedCloser"}, ___};
+$$FatalGroupMissingCloserFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}, ___, {"Fatal", "UnexpectedCloser"}, ___};
 
-fixPattern[target_][code_String, pat : $patternFatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}] :=
+fixPattern[target_][code_String, pat : $$FatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}] :=
  	Module[	{
    			  ccp = CodeConcreteParse[code, SourceConvention -> "SourceCharacterIndex"]
    			, allGMCpos
@@ -396,9 +399,9 @@ fixPattern[target_][code_String, pat : $patternFatalGroupMissingCloserFatalUnexp
 	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
+$$FatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
 
-fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalUnexpectedCloser, patToIgnore_ : {}] :=
+fixPattern[$EvaluatorPattern][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ : {}] :=
 	Module[{success,fixedCode,allCodeScore,allCodeNoScore},
 	With[
 		{
@@ -448,9 +451,9 @@ fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalUnexpectedCloser, 
 
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternFatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
+$$FatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
 
-fixPattern[$EvaluatorPattern][code_String, pat : $patternFatalGroupMissingCloser, patToIgnore_ : {}] :=
+fixPattern[$EvaluatorPattern][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_ : {}] :=
 	Module[	{
 			 fixedCode=Missing[]
 			,success=False
@@ -637,9 +640,9 @@ funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname
 
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
-$patternBadSingleSnakeUsage = {___, {"Fatal", "BadSingleSnakeUsage"}->_, ___};
+$$BadSingleSnakeUsage = HoldPattern[{___, {"Fatal", "BadSingleSnakeUsage"}->#, ___}]&;
 
-fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSingleSnakeUsage"}->so_, ___}, patToIgnore_ : {}] :=
+fixPattern[target_][code_String, $$BadSingleSnakeUsage[so_], patToIgnore_ : {}] :=
 	Module[	{
 			 fixedCode=Missing[]
 			,success=False
@@ -708,9 +711,9 @@ scanSingleSnake[pos_, ast_] :=
 	]
 )
 (* -------- *)
-$patternBadSnakeUsage = {___, {"Fatal", "BadSnakeUsage"}->_, ___};
+$$BadSnakeUsage = HoldPattern[{___, {"Fatal", "BadSnakeUsage"}->#, ___}]&;
 
-fixPattern[target_][code_String, pat : {___, {"Fatal", "BadSnakeUsage"}->so_, ___}, patToIgnore_ : {}] :=
+fixPattern[target_][code_String, pat : $$BadSnakeUsage[so_], patToIgnore_ : {}] :=
 	Module[	{
 			 fixedCode=Missing[]
 			,success=False
@@ -793,6 +796,167 @@ scanMultiSnake[pos_, ast_] :=
 		, CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
 			Association@{ConfidenceLevel -> 1, Extract[ast, Join[pos, {-1}]]}]]&
 );
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$SuspiciousQuantityUnitName = HoldPattern[{___, {"Fatal", "SuspiciousQuantityUnitName"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat:$$SuspiciousQuantityUnitName[so_], patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing[]
+			,success=False
+			,stringEnds={1,-1}
+			}
+			,
+			StringTake[code, so + stringEnds] // parseUnits (* //EchoLabel["parsed"] *)
+			//
+			If[	MissingQ@#
+				,	success=False ; fixedCode=#;
+				, 	success=True
+					;	fixedCode = StringReplacePart[		code
+														,	Replace[#,x:Except[_String]:>(stringEnds={0,0}; ToString[x,InputForm])]
+														,	so + stringEnds
+									]
+
+			]&
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> True (* -> pQuantityUnitName *)
+			, "SafeToEvaluate" -> True (* the unit is a String *)
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+	]
+
+(*---*)
+
+(* the list of supported units -> Todo: update with Entity list ?*)
+ascValidUnits := ascValidUnits =
+(
+	{
+	Select[QuantityUnits`$UnitList, quantityCamelCaseLikeQ],
+    Select[Keys@QuantityUnits`$UnitAlternateStandardNameReplacements, quantityCamelCaseLikeQ]
+	}
+	// Apply[Union]
+	//	{
+		Thread[# -> True],
+		Thread[{"Cubic", "Cubed", "Square", "Squared", "Per"} -> True]
+		}&
+	// Apply[Association]
+)
+
+
+Clear[validUnitQ,quantityCamelCaseLikeQ, splitCamel,groupUnits]
+
+validUnitQ[unit_String]:=
+			Or[	 Lookup[ascValidUnits, unit, False]
+				,Lookup[ascValidUnits, unit <> "s", False]]
+
+validUnit[unit_String] :=
+	Block[	{vu}
+			,
+			Or[	 Lookup[ascValidUnits, vu = unit, False]
+				,Lookup[ascValidUnits, vu = (unit <> "s"), False]]
+			// If[#, vu, Missing[unit]] &
+	]
+
+(* Todo : support "$" *)
+quantityCamelCaseLikeQ[s_String]:=StringMatchQ[s, StringExpression[ _?UpperCaseQ,(_?UpperCaseQ|_?LowerCaseQ|DigitCharacter)...]]
+quantityCamelCaseLikeQ[__]:=False
+
+splitCamel[s_String] :=
+	StringReplace[	s
+					,
+					{	StringExpression[	 a : (_?LowerCaseQ | DigitCharacter | StartOfString)
+											,b : (_?UpperCaseQ) ..
+						] :> StringJoin[a, " ", StringRiffle@Characters@b]
+					}
+	] // StringSplit // Replace[{x_String} :> x]
+
+groupUnits[cc : {_String ..}] :=
+	With[
+		{n = Length@cc}
+		,
+		{
+		paths = Table[	If[	validUnitQ@StringJoin@cc[[i ;; i + j]]
+							, {i, i + j}
+							, Nothing
+						], {j, 0, n - 2}, {i, 1, n - j}
+				] // Flatten[#, 1] & //	GroupBy[First] // Association @@ {#, _ -> {"stop"}} & // Normal
+	 	}
+		,
+  		{
+		groups =		Map[List, (1 /. paths)]
+					//	ReplaceRepeated[{ij : {a___, {i_Integer, j_Integer}} :> Outer[Append, {ij}, (j + 1) /. paths, 1]}]
+					//	Cases[#, ij : {a___, {i_Integer, n}, "stop"} :> Most@ij, Infinity] &
+		}
+		,
+		(* Selecting the solution with the less number of compound names (==longer names) and not being an $$InvalidGroup*)
+  		SortBy[groups, Length]
+		//
+		Catch[	Map[	(buildGroupNames[cc, #] // If[ Not@MatchQ[#, $$InvalidGroupNames], Throw[#] ]&) &, #]
+				;
+				{}
+		]&
+	]
+
+
+buildGroupNames[cc_, group_]:=Map[validUnit@StringJoin@cc[[Span @@ #]] &,group];
+$$InvalidGroupNames={___, aPrefix, _?(StringContainsQ[#, "Per"] &), ___} | {___, _?(StringContainsQ[#, "Per"] &), aSuffix, ___};
+
+rPowers2Int	=	{"Cubic"|"Cubed"->3, "Square"|"Squared"->2};
+aPowers		=	"Cubic"|"Cubed"|"Square"|"Squared";
+aPrefix		=	Alternatives["Cubic","Square"];
+aSuffix		=	Alternatives["Cubed","Squared"];
+
+Clear@parseUnits
+
+parseUnits[w_String?quantityCamelCaseLikeQ] :=
+	Catch[
+			splitCamel[w]
+		// 	If[# === w, If[validUnitQ@#, Throw@validUnit@#, Throw[Missing["Unknown unit",w]]], #]&
+		//	Replace[x_String :> {x}]
+		(*	----- testing / selection a combination of valid compound unit names  *)
+		//	groupUnits // If[# === {}, Throw@Missing["Unknown unit",w], #]&
+		//	Map[validUnit]
+		(* 	----- processing pre & suf - fixes and "Per" keywords *)
+		//	SplitBy[#, # === "Per" &] & //	ReplaceAll[{"Per"} -> "Per"]
+		//	ReplaceAll[{a___, prefix : aPrefix, b__} :> {Replace[{a}, {} ->Nothing], {prefix, {b}}}]
+		//	ReplaceAll[{a__, suffix : aSuffix, b___} :> {{{a}, suffix}, Replace[{b}, {} -> Nothing]}]
+		//	ReplaceAll[us : {_String ..} :> Times @@ us]
+		//	ReplaceAll[{{ut_, pow : aPowers} | {pow : aPowers, ut_} :> ut^(pow /. rPowers2Int)}]
+		//	ReplaceAll[us : {(Except["Per", _String] | _Power | _Times) ..} :> Times @@ us]
+		//	ReplaceRepeated[{{a_, "Per", b_} :> a/b , {a_, "Per", b_, c__} :> {a/b, c}}]
+		//	ReplaceAll[{x_} :> x]
+		(*	----- final check*)
+		//	If[	MatchQ[#,
+						HoldPattern[Times][	OrderlessPatternSequence[HoldPattern[Power][_String, _Integer] ...
+											,Except[aPowers | "Per", _String] ...
+													]] |
+						HoldPattern[Power][_String, _Integer]
+				]
+				, #, Missing["parseUnits", w]
+			] &
+]
+
+(*---*)
+
+suspiciousUnitQ[unit_String?(quantityCamelCaseLikeQ[StringTrim[#, "\""]]&)]:=
+	Not@Lookup[ascValidUnits, StringTrim[unit, "\""], False]
+suspiciousUnitQ[__]:=False
+
+pQuantityUnitName =
+	CallNode[LeafNode[Symbol, "Quantity", _], {_LeafNode (*number*), LeafNode[String, _?suspiciousUnitQ (*unit name)*), _]}, _]
+
+scanQuantityUnitName // ClearAll;
+
+scanQuantityUnitName[pos_, ast_] :=
+(
+	(* Echo["Checking Quantity name"]; *)
+	FirstCase[Extract[ast, pos], LeafNode[String, unitName_String,so : <|Source -> _|>] :> so, {}, Infinity] //
+	CodeInspector`InspectionObject["SuspiciousQuantityUnitName","Suspicious Quantity Unit Name", "Fatal",
+				Association@{ConfidenceLevel -> 1, #}]&
+  )
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
