@@ -268,6 +268,7 @@
 
 "ProgressTextCheckingDocumentation" -> "\:6AA2\:67E5\:6587\:4EF6\:4E2D",
 "ProgressTextChoosingDocumentation" -> "\:9078\:64C7\:76F8\:95DC\:6587\:4EF6\:4E2D",
+"ProgressTextDownloadingDocumentation" -> "Downloading documentation",
 "ProgressTextCreatingMessages" -> "\:5275\:5EFA\:8A0A\:606F\:4E2D",
 "ProgressTextSendingChat" -> "\:50B3\:9001\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:4E2D",
 "ProgressTextGeneratingSuggestions" -> "\:751F\:6210\:5EFA\:8B70\:4E2D",
