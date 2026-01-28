@@ -268,6 +268,7 @@
 
 "ProgressTextCheckingDocumentation" -> "Revisando la documentaci\[OAcute]n",
 "ProgressTextChoosingDocumentation" -> "Seleccionando la documentaci\[OAcute]n relevante",
+"ProgressTextDownloadingDocumentation" -> "Downloading documentation",
 "ProgressTextCreatingMessages" -> "Creando mensajes",
 "ProgressTextSendingChat" -> "Enviando chat",
 "ProgressTextGeneratingSuggestions" -> "Generando sugerencias",

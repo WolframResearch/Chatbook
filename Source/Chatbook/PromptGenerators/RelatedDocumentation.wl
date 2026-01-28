@@ -1273,7 +1273,7 @@ downloadStreamableSnippets[ ] := Enclose[
 
         withApproximateProgress[
             ConfirmMatch[ downloadStreamableSnippets /@ queue, { __String }, "Downloaded" ],
-            "ProgressTextDownloadingDocumentation",
+            "DownloadingDocumentation",
             0.5
         ];
 
