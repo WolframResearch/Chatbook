@@ -268,6 +268,7 @@
 
 "ProgressTextCheckingDocumentation" -> "\:BB38\:C11C \:D655\:C778",
 "ProgressTextChoosingDocumentation" -> "\:AD00\:B828 \:BB38\:C11C \:C120\:D0DD",
+"ProgressTextDownloadingDocumentation" -> "Downloading documentation",
 "ProgressTextCreatingMessages" -> "\:BA54\:C2DC\:C9C0 \:C0DD\:C131",
 "ProgressTextSendingChat" -> "\:CC44\:D305 \:BCF4\:B0B4\:AE30",
 "ProgressTextGeneratingSuggestions" -> "\:C81C\:C548 \:C0DD\:C131",
