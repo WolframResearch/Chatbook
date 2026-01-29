@@ -642,7 +642,7 @@ funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $$BadSingleSnakeUsage = HoldPattern[{___, {"Fatal", "BadSingleSnakeUsage"}->#, ___}]&;
 
-fixPattern[target_][code_String, $$BadSingleSnakeUsage[so_], patToIgnore_ : {}] :=
+fixPattern[target_][code_String, pat:$$BadSingleSnakeUsage[so_], patToIgnore_ : {}] :=
 	Module[	{
 			 fixedCode=Missing[]
 			,success=False
@@ -821,7 +821,7 @@ fixPattern[target_][code_String, pat:$$SuspiciousQuantityUnitName[so_], patToIgn
 			;
 			{ "Success" -> success
 			, "TotalFixes" -> If[success, 1, 0]
-			, "LikelyFalsePositive" -> True (* -> pQuantityUnitName *)
+			, "LikelyFalsePositive" -> False (* -> pQuantityUnitName *)
 			, "SafeToEvaluate" -> True (* the unit is a String *)
 			, "FixedPattern" -> pat
 			, "FixedCode" -> fixedCode
