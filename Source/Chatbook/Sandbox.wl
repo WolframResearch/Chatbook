@@ -1583,8 +1583,13 @@ $messageOverrideTemplates := $messageOverrideTemplates = Association @ Cases[
 (*applyMessageTemplate*)
 applyMessageTemplate // beginDefinition;
 
-applyMessageTemplate[ label_String, template_String, args_List ] :=
-    label <> ": " <> ToString @ StringForm[ template, Sequence @@ shortenMessageParameters @ args ];
+applyMessageTemplate[ label_String, template_String, args_List ] := Enclose[
+    Module[ { short },
+        short = ConfirmMatch[ shortenMessageParameters @ args, { ___String }, "ShortenMessageParameters" ];
+        label <> ": " <> ToString @ StringForm[ template, Sequence @@ short ]
+    ],
+    throwInternalFailure
+];
 
 applyMessageTemplate // endDefinition;
 
@@ -1628,20 +1633,36 @@ shortenMessageParameter[ count_Integer? NonNegative ] :=
     ];
 
 shortenMessageParameter[ len_Integer? NonNegative, expr_ ] :=
-    ToString[ Unevaluated @ Short @ expr, PageWidth -> len ];
+    stringTrimMiddle[ messageParameterToString @ expr, len ];
 
 shortenMessageParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*messageParameterToString*)
+messageParameterToString // beginDefinition;
+messageParameterToString // Attributes = { HoldAllComplete };
+messageParameterToString[ (HoldCompleteForm|HoldForm)[ expr_ ] ] := messageParameterToString @ expr;
+messageParameterToString[ Power[ expr_, -1 ] ] := messageParameterToString[ 1 / expr ];
+messageParameterToString[ expr_ ] := fixLineEndings @ ToString[ Unevaluated @ expr, InputForm ];
+messageParameterToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*undefinedMessageText*)
 undefinedMessageText // beginDefinition;
 
-undefinedMessageText[ label_String, { args___ } ] := StringJoin[
-    label,
-    ": ",
-    "-- Message text not found -- ",
-    "(" <> ToString[ # ] <> ")" & /@ { args }
+undefinedMessageText[ label_String, args_List ] := Enclose[
+    Module[ { short },
+        short = ConfirmMatch[ shortenMessageParameters @ args, { ___String }, "ShortenMessageParameters" ];
+        StringJoin[
+            label,
+            ": ",
+            "-- Message text not found -- ",
+            "(" <> # <> ")" & /@ short
+        ]
+    ],
+    throwInternalFailure
 ];
 
 undefinedMessageText // endDefinition;
@@ -2034,7 +2055,7 @@ createEvaluationWithWarnings // Attributes = { HoldAllComplete };
 
 createEvaluationWithWarnings[ evaluation_ ] :=
     Module[ { held, undefined },
-        held = Flatten @ HoldComplete @ StackBegin @ Unevaluated @ evaluation;
+        held = Flatten @ HoldComplete @ Block[ { PrintTemporary = Print }, StackBegin @ Unevaluated @ evaluation ];
 
         undefined = Flatten[ HoldComplete @@ Cases[
             Unevaluated @ evaluation,
