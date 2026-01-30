@@ -264,3 +264,44 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "EdgeCases-KernelQuit-Exit-Stop@@Tests/WolframLanguageToolEvaluate.wlt:258,1-266,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Standard Output/Error Handling*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Messages*)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "1/0", "String", Method -> "Session" ],
+    _String? (StringContainsQ[ "Power::infy: Infinite expression 1/0 encountered." ]),
+    SameTest -> MatchQ,
+    TestID   -> "MessageFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:275,1-280,2"
+]
+
+VerificationTest[
+    WolframLanguageToolEvaluate[ "Message[f::argx, f, Range[1000]]", "String", Method -> "Session" ],
+    s_String /; StringLength[ s ] < 500,
+    SameTest -> MatchQ,
+    TestID   -> "MessageFormatting-2@@Tests/WolframLanguageToolEvaluate.wlt:282,1-287,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Print*)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "Print[\"a\"]; 1+1", "String", Method -> "Session" ],
+    _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
+    SameTest -> MatchQ,
+    TestID   -> "PrintFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:292,1-297,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*PrintTemporary*)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "PrintTemporary[\"a\"]; 1+1", "String", Method -> "Session" ],
+    _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
+    SameTest -> MatchQ,
+    TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:302,1-307,2"
+]
