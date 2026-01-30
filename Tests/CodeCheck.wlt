@@ -1485,7 +1485,7 @@ CodeInspector`InspectionObject[
        "Fatal", <|
        ConfidenceLevel -> 1, CodeParser`Source -> {13, 31}|>]},
     "OverallSeverity" -> 4|>, "Success" -> True, "TotalFixes" -> 1,
-  "LikelyFalsePositive" -> True, "SafeToEvaluate" -> True,
+  "LikelyFalsePositive" -> False, "SafeToEvaluate" -> True,
   "FixedCode" -> "Quantity[1, \"Ampere\"*\"SquareMeters\"]",
   "FixedPatterns" -> {{{"Fatal", "SuspiciousQuantityUnitName"} -> {13,
         31}}}, "OriginalCode" -> "Quantity[1, \"AmpereSquareMeter\"]"|>]
@@ -1499,7 +1499,7 @@ CodeInspector`InspectionObject[
        "Fatal", <|
        ConfidenceLevel -> 1, CodeParser`Source -> {13, 29}|>]},
     "OverallSeverity" -> 4|>, "Success" -> False, "TotalFixes" -> 0,
-  "LikelyFalsePositive" -> True, "SafeToEvaluate" -> True,
+  "LikelyFalsePositive" -> False, "SafeToEvaluate" -> True,
   "FixedCode" -> Missing["Unknown unit", "DecibelPerMeter"],
   "FixedPatterns" -> {{{"Fatal", "SuspiciousQuantityUnitName"} -> {13,
         29}}}, "OriginalCode" -> "Quantity[1, \"DecibelPerMeter\"]"|>]
