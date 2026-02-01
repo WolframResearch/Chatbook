@@ -23,6 +23,9 @@ $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "Inclu
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Method"                   ];
+$readPaths                := toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"         ];
+$writePaths               := toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"        ];
+$executePaths             := toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths"      ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -114,6 +117,9 @@ $$probableFailure = Alternatives[
     _Missing
 ];
 
+$$pathItem = _String | $$unspecified | ParentList | All | None | _Hold | _HoldComplete | _HoldCompleteForm;
+$$pathSpec = $$pathItem | { $$pathItem... };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -126,13 +132,16 @@ Chatbook::InvalidEvaluatorProperty = "Invalid evaluator property: `1`.";
 WolframLanguageToolEvaluate // beginDefinition;
 
 WolframLanguageToolEvaluate // Options = {
+    "AllowedExecutePaths"   -> Automatic,
+    "AllowedReadPaths"      -> Automatic,
+    "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
+    "Line"                  -> Automatic,
     "MaxCharacterCount"     -> 10000,
-    Line                    -> Automatic,
-    Method                  -> Automatic,
-    PageWidth               -> Infinity,
-    TimeConstraint          -> 60
+    "Method"                -> Automatic,
+    "PageWidth"             -> Infinity,
+    "TimeConstraint"        -> 60
 };
 
 WolframLanguageToolEvaluate[ code_, opts: OptionsPattern[ ] ] :=
@@ -189,9 +198,12 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendRetryNotice        = getOption[ "AppendRetryNotice"    , opts ],
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
+            $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
+            $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
+            $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
             $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
-            $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
+            $writePaths               = getOption[ "AllowedWritePaths"    , opts ],
             $Line                     = getOption[ "Line"                 , opts ]
         },
         getProperty[ sandboxEvaluate @ preprocessCodeForTool @ code, property ]
@@ -238,7 +250,20 @@ getOption[ "Line", $$unspecified ] := $Line;
 getOption[ "Line", line_Integer? Positive ] := line;
 getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ];
 
+getOption[ "AllowedReadPaths"   , paths_ ] := getAllowedPaths[ "AllowedReadPaths"   , paths ];
+getOption[ "AllowedWritePaths"  , paths_ ] := getAllowedPaths[ "AllowedWritePaths"  , paths ];
+getOption[ "AllowedExecutePaths", paths_ ] := getAllowedPaths[ "AllowedExecutePaths", paths ];
+
 getOption // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAllowedPaths*)
+getAllowedPaths // beginDefinition;
+getAllowedPaths[ name_, $$unspecified ] := $DefaultToolOptions[ "WolframLanguageEvaluator", name ];
+getAllowedPaths[ name_, paths: $$pathSpec ] := paths;
+getAllowedPaths[ name_String, paths_ ] := throwFailure[ "InvalidOptionValue", name, paths ];
+getAllowedPaths // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -454,9 +479,9 @@ startSandboxKernel[ ] := Enclose[
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
-        readPaths    = makeReadPaths    @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"    ];
-        writePaths   = makeWritePaths   @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"   ];
-        executePaths = makeExecutePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths" ];
+        readPaths = makeReadPaths @ $readPaths;
+        writePaths = makeWritePaths @ $writePaths;
+        executePaths = makeExecutePaths @ $executePaths;
 
         (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
         With[ { read = readPaths, write = writePaths, execute = executePaths },
@@ -517,11 +542,9 @@ $defaultReadPaths := $defaultReadPaths = Select[
         FileNameJoin @ { $BaseDirectory, "Autoload", "PacletManager" },
         FileNameJoin @ { $UserBaseDirectory, "Paclets" },
         FileNameJoin @ { $UserBaseDirectory, "Autoload", "PacletManager" },
-        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "CloudObject", "Authentication" },
-        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
-        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
-        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData" },
         FileNameJoin @ { $UserBaseDirectory, "Knowledgebase" },
+        FileNameJoin @ { $UserBaseDirectory, "Logs" },
         SystemInformation[ "FrontEnd", "DocumentationInformation" ][ "Directory" ],
         ExpandFileName @ URL @ $LocalBase
     },
@@ -547,6 +570,7 @@ $defaultWritePaths := $defaultWritePaths = Select[
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
         FileNameJoin @ { $UserBaseDirectory, "Knowledgebase" },
+        FileNameJoin @ { $UserBaseDirectory, "Logs" },
         FileNameJoin @ { ExpandFileName @ URL @ $LocalBase, "Resources" }
     },
     StringQ
@@ -607,7 +631,7 @@ makePaths[ All ] := If[ $OperatingSystem === "Windows", # <> ":\\" & /@ Characte
 makePaths[ None ] := { };
 makePaths[ paths_List ] := DeleteDuplicates @ Flatten[ makePaths /@ Flatten @ paths ];
 makePaths[ path_String ] := path;
-makePaths[ h: _Hold|_HoldComplete ] := makePaths @ ReleaseHold @ h;
+makePaths[ h: _Hold|_HoldComplete|_HoldCompleteForm ] := makePaths @ ReleaseHold @ h;
 makePaths[ ParentList|Inherited ] := ParentList;
 makePaths[ $$unspecified ] := Automatic;
 makePaths // endDefinition;
