@@ -137,6 +137,7 @@ WolframLanguageToolEvaluate // Options = {
     "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
+    "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
     "MaxCharacterCount"     -> 10000,
     "Method"                -> Automatic,
@@ -199,6 +200,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
+            $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
@@ -249,6 +251,10 @@ getOption[ "TimeConstraint", time_ ] := throwFailure[ "InvalidOptionValue", "Tim
 getOption[ "Line", $$unspecified ] := $Line;
 getOption[ "Line", line_Integer? Positive ] := line;
 getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ];
+
+getOption[ "IncludeDefinitions", $$unspecified ] := $includeDefinitions;
+getOption[ "IncludeDefinitions", include: True|False ] := include;
+getOption[ "IncludeDefinitions", include_ ] := throwFailure[ "InvalidOptionValue", "IncludeDefinitions", include ];
 
 getOption[ "AllowedReadPaths"   , paths_ ] := getAllowedPaths[ "AllowedReadPaths"   , paths ];
 getOption[ "AllowedWritePaths"  , paths_ ] := getAllowedPaths[ "AllowedWritePaths"  , paths ];
