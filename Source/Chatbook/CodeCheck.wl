@@ -83,7 +83,8 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					,
 					"AbstractRules" -> <|CodeInspector`AbstractRules`$DefaultAbstractRules,
 										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set or as a function name *),
-										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *)
+										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *),
+										pEntityClass -> scanEntityClass
 										|>
 						};
 
@@ -162,7 +163,7 @@ generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeIn
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
 
-extractPatternFromInspectionObject[io:InspectionObject["BadSingleSnakeUsage"|"BadSnakeUsage",__]]:=Apply[Sequence,io]//({#3,#1}->#4[Source])&
+extractPatternFromInspectionObject[io:InspectionObject["BadSingleSnakeUsage"|"BadSnakeUsage"|"EntityClassBadSyntax",__]]:=Apply[Sequence,io]//({#3,#1}->#4[Source])&
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
@@ -793,6 +794,58 @@ scanMultiSnake[pos_, ast_] :=
 		, CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
 			Association@{ConfidenceLevel -> 1, Extract[ast, Join[pos, {-1}]]}]]&
 );
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$$BadEntityClassSyntax = {___, {"Fatal", "EntityClassBadSyntax"}->#, ___}&;
+
+fixPattern[target_][code_String, pat : $$$BadEntityClassSyntax[so_], patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing["No fix found"]
+			,success=False
+			,ent
+			,newcode
+
+			}
+			,
+			Echo["FIX EntityClassBadSyntax "];
+			With[
+				{cp = CodeParse[code, SourceConvention->"SourceCharacterIndex"]}
+				,
+				(* subcase 1 *)
+				ent = 	FirstCase[cp, c : $$$EntityValueEntityClass[<|Source -> so|>, s_] :> {c, s}, Missing[], Infinity];
+				If[ 	Echo@Not@MissingQ@ent
+					,	newcode = CodeConcreteParse["EntityValue[" <> ent[[2]] <> ", \"Entities\"]"][[2, 1]] /. <|__|> -> _ // ToSourceCharacterString//Echo
+					;	fixedCode = If[Not@FailureQ@newcode, StringReplacePart[code, newcode, ent[[1,-1]][Source]]]//Echo
+
+				]
+				;
+			]
+			;	success=If[MissingQ@fixedCode,False,True]
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, 1, 0]
+			, "LikelyFalsePositive" -> False
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "FixedPattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+
+	]
+
+$$$EntityValueEntityClass = Function[{so, entityname}
+	, CallNode[		LeafNode[Symbol, "EntityValue", _]
+				, 	{CallNode[LeafNode[Symbol, "EntityClass", _], {LeafNode[String, entityname, _]}, so], LeafNode[String, "\"Entities\"", _]}
+				, 	_]
+]
+
+(*---*)
+pEntityClass=CallNode[LeafNode[Symbol,"EntityClass",_],{_LeafNode},_];
+
+scanEntityClass[pos_,ast_]:=
+(
+Echo["EntityClass with 1 arg detected"];
+CodeInspector`InspectionObject["EntityClassBadSyntax","Bad one argument syntax","Fatal"
+								,Association@{ConfidenceLevel->1,(*Source*) Extract[ast,Append[pos,-1]]}]
+)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 
