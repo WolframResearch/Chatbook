@@ -85,12 +85,14 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
             scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
             , (* ELSE *)
-            If[ Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ] === { }, (* rewrite the entire cell if it has no content *)
-                NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
-                scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "NoNewScrollingContentCell" ];
-                ,
-                lastContentCell = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ], $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
-                NotebookWrite[ System`NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
+            With[ { chatCells = Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ]},
+                If[ chatCells === { }, (* rewrite the entire cell if it has no content; this removes the "AskAnything" content *)
+                    NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
+                    scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "NoNewScrollingContentCell" ];
+                    ,
+                    lastContentCell = ConfirmMatch[ Last[ chatCells, $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
+                    NotebookWrite[ System`NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
+                ]
             ]
         ];
 
