@@ -47,7 +47,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
         NotebookWrite[ nbo, cell ];
         moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
-        CurrentValue[ cellObject, CellTags ] = { };
+        setCurrentValue[ cellObject, CellTags, { } ];
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
     ],
     throwInternalFailure
@@ -97,7 +97,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
         ];
 
         cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SidebarChatInputCellObject" ];
-        CurrentValue[ cellObject, CellTags ] = "SidebarTopCell";
+        setCurrentValue[ cellObject, CellTags, "SidebarTopCell" ];
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
     ],
     throwInternalFailure

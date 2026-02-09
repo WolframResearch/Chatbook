@@ -306,7 +306,7 @@ sidebarNewChatButton[ nbo_NotebookObject, sidebarCell_CellObject ] :=
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
         removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
-        CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = ""
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ]
         ,
         Appearance -> "Suppressed",
         Method     -> "Queued"
@@ -347,7 +347,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ]
             removeSidebarScrollingCellContent[ nbo, sidebarCell ];
             removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
             CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
-            CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = "";
+            setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
             FrontEndTokenExecute[ nbo, "HideSidebar" ];
         ]
     ],
@@ -381,7 +381,7 @@ sidebarHideButton[ nbo_NotebookObject ] := Button[
         ],
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
-    CurrentValue[ $FrontEndSession, "ShowNotebookAssistant" ] = False;
+    setCurrentValue[ $FrontEndSession, "ShowNotebookAssistant", False ];
     FrontEndTokenExecute[nbo, "HideSidebar"],
     Appearance -> "Suppressed"
 ]
@@ -452,12 +452,12 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 writeWorkspaceChatSubDockedCell // beginDefinition;
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
-CurrentValue[ nbo, DockedCells ] = Inherited;
-CurrentValue[ nbo, DockedCells ] = {
+setCurrentValue[ nbo, DockedCells, Inherited ];
+setCurrentValue[ nbo, DockedCells, {
     First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
-    makeWorkspaceChatSubDockedCellExpression[ content ] };
-    (* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
-    If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
+    makeWorkspaceChatSubDockedCellExpression[ content ] } ];
+(* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
+If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
 )
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
@@ -480,7 +480,7 @@ writeWorkspaceChatSubDockedCell // endDefinition;
 (*removeWorkspaceChatSubDockedCell*)
 removeWorkspaceChatSubDockedCell // beginDefinition;
 
-removeWorkspaceChatSubDockedCell[ nbo_NotebookObject ] := CurrentValue[ nbo, DockedCells ] = Inherited;
+removeWorkspaceChatSubDockedCell[ nbo_NotebookObject ] := setCurrentValue[ nbo, DockedCells, Inherited ];
 
 removeWorkspaceChatSubDockedCell // endDefinition;
 
@@ -523,7 +523,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 		NotebookDelete @ Cells @ nbo;
 		removeWorkspaceChatSubDockedCell @ nbo;
 		CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
-		CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+		setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ];
 		moveChatInputToTop @ nbo;
 		,
 		Appearance -> "Suppressed",
@@ -677,7 +677,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                                 ];
                                 (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
                                 If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
-                                    chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ];
+                                    chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
                                     With[ { sbc = sidebarCell }, (* "Set" is HoldFirst so we must inject values *)
                                         FrontEndExecute[ {
                                             FrontEnd`SetOptions[ thisCell, CellTags -> "SidebarChatInputCell" ],
@@ -688,7 +688,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                                 ]
                                 ,
                                 SynchronousUpdating -> False,
-                                TrackedSymbols      :> { returnKeyDownQ }
+                                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
                             ],
                             (* no need to templatize an attached cell as it is ephemeral *)
                             PaneSelector[
@@ -2138,7 +2138,7 @@ loadingOverlay // endDefinition;
 (* ::Subsection::Closed:: *)
 (*restoreVerticalScrollbar*)
 restoreVerticalScrollbar // beginDefinition;
-restoreVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] = Inherited;
+restoreVerticalScrollbar[ nbo_NotebookObject ] := setCurrentValue[ nbo, WindowElements, Inherited ];
 restoreVerticalScrollbar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2146,8 +2146,7 @@ restoreVerticalScrollbar // endDefinition;
 (*hideVerticalScrollbar*)
 hideVerticalScrollbar // beginDefinition;
 
-hideVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] =
-    DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+hideVerticalScrollbar[ nbo_NotebookObject ] := setCurrentValue[ nbo, WindowElements, DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ] ];
 
 hideVerticalScrollbar // endDefinition;
 
@@ -2713,16 +2712,16 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
         NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ];
 
         WithCleanup[
-            CurrentValue[ nbo, Selectable ] = True,
+            setCurrentValue[ nbo, Selectable, True ],
             SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
             ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
             If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ],
-            CurrentValue[ nbo, Selectable ] = Inherited
+            setCurrentValue[ nbo, Selectable, Inherited ]
         ];
 
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
-        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
+        setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, title ];
         writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ];
         restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
@@ -2750,7 +2749,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         ];
         
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = uuid;
-        CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = title;
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, title ];
         writeSidebarChatSubDockedCell[ nbo, sidebarCell, WindowTitle ];
         (* TODO: moveToChatInputField[ nbo, True ] *)
     ] // withLoadingOverlay[ { nbo, sidebarCell } ],

@@ -141,8 +141,7 @@ toggleCloudPreferences // beginDefinition;
 (* These cells are added to the bottom of the stack of DockedCells *)
 toggleCloudPreferences[ nbo_NotebookObject ] :=
 (
-    CurrentValue[ nbo, DockedCells ] =
-        Replace[
+    setCurrentValue[ nbo, DockedCells, Replace[
             CurrentValue[ nbo, DockedCells ],
             {
                 (* ============ Remove if it exists ============ *)
@@ -164,7 +163,8 @@ toggleCloudPreferences[ nbo_NotebookObject ] :=
                         $cloudPreferencesCell
                     }
             }
-        ];
+        ]
+    ];
 )
 
 toggleCloudPreferences // endDefinition;
