@@ -1457,7 +1457,7 @@ setCurrentChatSettings1 // beginDefinition;
 setCurrentChatSettings1[ scope: $$feObj, Inherited ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, Inherited ],
-        CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
+        setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, Inherited ]
     ],
     (* Invalidate cache *)
     If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
@@ -1470,7 +1470,7 @@ setCurrentChatSettings1[ scope: $$feObj, value_ ] :=
         WithCleanup[
             If[ TrueQ @ $CloudEvaluation,
                 setCurrentChatSettingsCloud[ scope, as ],
-                CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+                setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, as ]
             ],
             (* Invalidate cache *)
             If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
@@ -1480,7 +1480,7 @@ setCurrentChatSettings1[ scope: $$feObj, value_ ] :=
 setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, key, value ],
-        CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value
+        setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key }, value ]
     ],
     (* Invalidate cache *)
     If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
@@ -1497,36 +1497,36 @@ setCurrentChatSettingsCloud[ scope: $$frontEndObject, value_ ] :=
     With[ { as = Association @ value },
         (
             setGlobalChatSettings @ as;
-            CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+            setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, as ]
         ) /; AssociationQ @ as
     ];
 
 setCurrentChatSettingsCloud[ scope: $$frontEndObject, Inherited ] := (
     setGlobalChatSettings @ Inherited;
-    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, Inherited ]
 );
 
 setCurrentChatSettingsCloud[ scope: $$frontEndObject, key_String? StringQ, value_ ] := (
     setGlobalChatSettings[ key, value ];
     Needs[ "GeneralUtilities`" -> None ];
-    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value;
-    CurrentValue[ scope, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ scope, TaggingRules ];
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key }, value ];
+    setCurrentValue[ scope, TaggingRules, GeneralUtilities`ToAssociations @ CurrentValue[ scope, TaggingRules ] ];
     value
 );
 
 setCurrentChatSettingsCloud[ scope: $$feObj, value_ ] :=
     With[ { as = Association @ value },
-        (CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as) /; AssociationQ @ as
+        (setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, as ]) /; AssociationQ @ as
     ];
 
 setCurrentChatSettingsCloud[ scope: $$feObj, Inherited ] := (
-    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, Inherited ]
 );
 
 setCurrentChatSettingsCloud[ scope: $$feObj, key_String? StringQ, value_ ] := (
     Needs[ "GeneralUtilities`" -> None ];
-    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value;
-    CurrentValue[ scope, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ scope, TaggingRules ];
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key }, value ];
+    setCurrentValue[ scope, TaggingRules, GeneralUtilities`ToAssociations @ CurrentValue[ scope, TaggingRules ] ];
     value
 );
 
@@ -1961,8 +1961,8 @@ verifyInheritance0[ fe_FrontEndObject ] := Enclose[
             "Tags"
         ];
 
-        CurrentValue[ fe, TaggingRules ] = tags;
-        CurrentValue[ fe, { TaggingRules, "ChatNotebookSettings", "InheritanceTest" } ] = True;
+        setCurrentValue[ fe, TaggingRules, tags ];
+        setCurrentValue[ fe, { TaggingRules, "ChatNotebookSettings", "InheritanceTest" }, True ];
 
         ConfirmBy[ CurrentValue[ fe, TaggingRules ], AssociationQ, "Verify" ]
     ],
@@ -2019,8 +2019,8 @@ repairTaggingRules[ obj: $$feObj, parentTags_Association? AssociationQ ] := Encl
         ];
 
         If[ keep === <| |>,
-            CurrentValue[ obj, TaggingRules ] = Inherited,
-            CurrentValue[ obj, TaggingRules ] = keep
+            setCurrentValue[ obj, TaggingRules, Inherited ],
+            setCurrentValue[ obj, TaggingRules, keep ]
         ]
     ],
     throwInternalFailure[ repairTaggingRules[ obj, parentTags ], ## ] &

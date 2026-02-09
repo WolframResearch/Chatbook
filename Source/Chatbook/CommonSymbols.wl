@@ -331,6 +331,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `serviceIcon;
 `serviceName;
 `setCV;
+`setCurrentValue;
 `setProgressDisplay;
 `simpleResultQ;
 `simpleToolRequestParser;

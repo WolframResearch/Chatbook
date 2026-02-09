@@ -66,7 +66,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         focused = FirstCase[ info, KeyValuePattern[ "Focused" -> True ], current ];
 
         (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
-        CurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" } ] = Lookup[ focused, "WindowTitle", None ];
+        setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ];
 
         label = If[ MatchQ[ appContainer, _CellObject ],
             Grid[

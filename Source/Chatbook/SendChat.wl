@@ -387,8 +387,8 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
 
         addHandlerArguments[ "Task" -> task ];
 
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+        setCurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" }, cellObject ];
+        setCurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       }, task ];
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
 
@@ -1769,8 +1769,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         addHandlerArguments[ "Task" -> task ];
 
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cell;
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+        setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" }, cell ];
+        setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       }, task ];
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
 
@@ -2268,7 +2268,7 @@ removeSeverityTag[ s_Symbol? AssociationQ, cell_CellObject ] /; StringQ @ s[ "Fu
     Module[ { tag },
         tag = StringReplace[ s[ "FullContent" ], t:$$tagPrefix~~___~~EndOfString :> t ];
         s = untagString @ s;
-        CurrentValue[ cell, { TaggingRules, "MessageTag" } ] = ToUpperCase @ StringDelete[ tag, Whitespace ]
+        setCurrentValue[ cell, { TaggingRules, "MessageTag" }, ToUpperCase @ StringDelete[ tag, Whitespace ] ]
     ];
 
 removeSeverityTag // endDefinition;
@@ -2376,7 +2376,7 @@ WriteChatOutputCell[
         NotebookWrite[ cell, new, None, AutoScroll -> False ];
         output = NextCell[ input, CellTags -> uuid ]; (* we set the uuid previously *)
         (* The cell expression was specifically constructed that the UUID appears first in the CellTags *)
-        CurrentValue[ output, CellTags ] = Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ]; (* an empty list clears the CellTags option *)
+        setCurrentValue[ output, CellTags , Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ] ]; (* an empty list clears the CellTags option *)
         $lastChatOutput = output;
         attachChatOutputMenu @ output;
         scrollOutput[ TrueQ @ scroll, output ];
@@ -2449,7 +2449,7 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         pageData[ "PagedOutput" ] = True;
 
         newCellObject = cellPrint @ cell;
-        CurrentValue[ newCellObject, { TaggingRules, "PageData" } ] = pageData;
+        setCurrentValue[ newCellObject, { TaggingRules, "PageData" }, pageData ];
         newCellObject
     ],
     throwInternalFailure
@@ -3001,7 +3001,7 @@ attachMinimizedIcon // beginDefinition;
 attachMinimizedIcon[ chatCell_CellObject, label_ ] :=
     Module[ { prev, cell },
         prev = PreviousCell @ chatCell;
-        CurrentValue[ chatCell, Initialization ] = Inherited;
+        setCurrentValue[ chatCell, Initialization, Inherited ];
         cell = makeMinimizedIconCell[ label, chatCell ];
         NotebookDelete @ Cells[ prev, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
         With[ { prev = prev, cell = cell },

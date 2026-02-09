@@ -301,14 +301,14 @@ cv // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*setCV*)
 setCV // beginDefinition;
-setCV[ scope_, keys___, value_ ] := CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ] = value;
+setCV[ scope_, keys___, value_ ] := setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys }, value ];
 setCV // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*unsetCV*)
 unsetCV // beginDefinition;
-unsetCV[ scope_, keys___ ] := CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ] = Inherited;
+unsetCV[ scope_, keys___ ] := setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys }, Inherited ];
 unsetCV // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

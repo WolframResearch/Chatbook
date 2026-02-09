@@ -21,6 +21,8 @@ $dialogInputAllowed := ! Or[
     MathLink`PreemptionEnabledQ[ ] === False
 ];
 
+$efficientCurrentValue = True;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tasks*)
@@ -1270,6 +1272,16 @@ $statelessProgressIndicator =
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*CurrentValue*)
+
+(* CurrentValue[...] = value actually calls CurrentValue twice, requiring two MathLink transactions. 
+    If we only want to set the value and are not using the returned value then only make one MathLink call. *)
+setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; $cloudNotebooks
+setCurrentValue[ args__, value_ ] := MathLink`CallFrontEndHeld @ FrontEnd`SetValue @ FEPrivate`Set[ CurrentValue[ args ], value ] /; TrueQ[ $efficientCurrentValue ]
+setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
