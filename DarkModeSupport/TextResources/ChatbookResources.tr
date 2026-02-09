@@ -9858,15 +9858,14 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
  Editable->True,
  Selectable->False,
  CellMargins->{{0, 0}, {0, 0}},
- Initialization:>(AttachCell[
-    EvaluationCell[], 
-    Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
-    Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
-  CurrentValue[
-     EvaluationCell[], TaggingRules] = <|
-    "ChatNotebookSettings" -> 
-     Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
-     "ConversationTitle" -> ""|>),
+ Initialization:>
+  With[{Typeset`ec = EvaluationCell[]}, AttachCell[Typeset`ec, 
+     Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
+     Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
+   CurrentValue[Typeset`ec, TaggingRules] = <|
+     "ChatNotebookSettings" -> 
+      Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
+      "ConversationTitle" -> ""|>],
  CellFrameMargins->0,
  ShowCursorTracker->False,
  LineSpacing->{1, 0},
@@ -9877,8 +9876,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"ceb7a8fa-8e67-e442-9d90-\
-64f5b8406e2d"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"25bcf740-0257-dc49-a8f2-\
+05e981f6bfae"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
