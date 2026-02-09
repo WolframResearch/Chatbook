@@ -69,12 +69,12 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
         BoxData @ ToBoxes @ workspaceChatInitializer @ Framed[
             Grid[
                 { {
-                    LogChatTiming @ sidebarNewChatButton[ Dynamic @ nbo, Dynamic @ sidebarCell ], (* FIXME: these calling signatures no longer need the Dynamic heads *)
+                    LogChatTiming @ sidebarNewChatButton[ nbo, sidebarCell ],
                     Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                    LogChatTiming @ sidebarSourcesButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarHistoryButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarOpenAsAssistantWindowButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    sidebarHideButton[ Dynamic @ nbo ]
+                    LogChatTiming @ sidebarSourcesButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarHistoryButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarHideButton @ nbo
                 } },
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
@@ -272,7 +272,7 @@ removeSidebarScrollingCellContent // endDefinition;
 (*sidebarHistoryButton*)
 sidebarHistoryButton // beginDefinition;
 
-sidebarHistoryButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarHistoryButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "History" ],
     Appearance -> "Suppressed"
@@ -285,7 +285,7 @@ sidebarHistoryButton // endDefinition;
 (*sidebarSourcesButton*)
 sidebarSourcesButton // beginDefinition;
 
-sidebarSourcesButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarSourcesButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "Sources" ],
     Appearance -> "Suppressed"
@@ -298,7 +298,7 @@ sidebarSourcesButton // endDefinition;
 (*sidebarNewChatButton*)
 sidebarNewChatButton // beginDefinition;
 
-sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
+sidebarNewChatButton[ nbo_NotebookObject, sidebarCell_CellObject ] :=
     Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", False, True ]
         ,
@@ -319,7 +319,7 @@ sidebarNewChatButton // endDefinition;
 (*sidebarOpenAsAssistantWindowButton*)
 sidebarOpenAsAssistantWindowButton // beginDefinition;
 
-sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant", False, True ],
     With[
         {
@@ -359,11 +359,11 @@ sidebarOpenAsAssistantWindowButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*sidebarOpenAsAssistantWindowButton*)
+(*sidebarHideButton*)
 
 sidebarHideButton // beginDefinition;
 
-sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
+sidebarHideButton[ nbo_NotebookObject ] := Button[
     Tooltip[
         mouseDown[
             Framed[
