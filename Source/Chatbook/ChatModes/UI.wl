@@ -193,11 +193,19 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                     {
                         Scaled[ 1. ],
                         Round[
-                            (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                            - 4 (* the top bar that better separates the sidebar from the default toolbar *)
-                            - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
-                            - AbsoluteCurrentValue[ PreviousCell[ CellTags -> "SidebarDockedCell" ], { CellSize, 2 } ]
-                            - AbsoluteCurrentValue[ NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                            (#[[1]][[2]]
+                            - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                            - If[ NumericQ @ #[[2]], #[[2]], 0 ]
+                            - If[ NumericQ @ #[[3]], #[[3]], 0 ]
+                            - If[ NumericQ @ #[[4]], #[[4]], 0 ]
+                            )/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                        ]&[
+                            FrontEndExecute[ {
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ "ViewSize" ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarDockedCell"    ], { CellSize, 2 } ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[     FrontEnd`NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ]
+                            } ]
                         ] } ],
             Scrollbars -> { False, False }
         ],
@@ -222,11 +230,19 @@ Module[ { dockedCellObj, chatInputCellObj },
                         {
                             Scaled[ 1. ],
                             Round[
-                                (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                                - 4 (* the top bar that better separates the sidebar from the default toolbar *)
-                                - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
-                                - AbsoluteCurrentValue[ dc, { CellSize, 2 } ]
-                                - AbsoluteCurrentValue[ cc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                                (#[[1]][[2]]
+                                - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                                - If[ NumericQ @ #[[2]], #[[2]], 0 ]
+                                - If[ NumericQ @ #[[3]], #[[3]], 0 ]
+                                - If[ NumericQ @ #[[4]], #[[4]], 0 ]
+                                )/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                            ]&[
+                                FrontEndExecute[ {
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ "ViewSize" ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ cc, { CellSize, 2 } ]
+                                } ]
                             ] } ],
                 Scrollbars -> { False, Automatic }
             ],
