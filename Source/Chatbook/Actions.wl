@@ -1340,6 +1340,9 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                             ParentCell @ c,
                         MemberQ[ tags, Alternatives[ "SidebarTopCell" ] ],
                             ParentCell @ ParentCell @ c,
+                        (* new SidebarTopCell from sending a chat has uuid as a temporary cell tag, but asking for app container may occur before it gets a "real" cell tag *)
+                        StringMatchQ[ First[ tags, "" ], RegularExpression["[A-Za-z0-9]{8}\\-[A-Za-z0-9]{4}\\-[A-Za-z0-9]{4}\\-[A-Za-z0-9]{4}\\-[A-Za-z0-9]{12}"] ],
+                            ParentCell @ ParentCell @ c,
                         True,
                             None
                     ],
