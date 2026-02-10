@@ -551,7 +551,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
         $extraDownloadTasks = Internal`Bag[ ];
 
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
-        cleanupLegacyVectorDBFiles @ dir;
+        (* cleanupLegacyVectorDBFiles @ dir; *) (* function not defined *)
 
         (* Try unpacking any zip files that might be left over from previous install attempts: *)
         Quiet @ catchAlways @ tryUnpackingVectorDatabases @ dir;
@@ -775,7 +775,7 @@ setDownloadProgress[ name_String ] :=
     setDownloadProgress[ name, ## ] &;
 
 setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := (
-    Internal`YieldAsynchronousTask[ ];
+    (* Internal`YieldAsynchronousTask[ ]; *) (* causes recursion *)
     $downloadProgress[ name ] = b
 );
 
