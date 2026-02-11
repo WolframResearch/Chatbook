@@ -2074,10 +2074,10 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
             ]
         },
         $selectedChatCells = If[ MatchQ[ appContainer, _CellObject ] && cellTaggedQ[ appContainer, "NotebookAssistantSidebarCell" ],
-            (* 15.0: if in a new side bar chat, then there is no scrolling cell, so fail gracefully (in reality we should have added one when sending the first chat) *)
+            (* 15.0: if in a new side bar chat, the scrolling cell may contain cells with UUID as their cell tag so use CellStyle to get them instead *)
             With[
                 { scrollingCell = First[ Cells[ appContainer, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoSidebarScrollingContentCell" ] },
-                { sidebarCells = If[ MissingQ @ scrollingCell, { }, Cells[ scrollingCell, CellTags -> "SidebarTopCell" ] ] },
+                { sidebarCells = If[ MissingQ @ scrollingCell, { }, Cells[ scrollingCell, CellStyle -> {"NotebookAssistant`Sidebar`ChatInput", "NotebookAssistant`Sidebar`ChatOutput" } ] ] },
                 (* at minimum, the input cell should be present, so selectChatCells0 will have an internal error otherwise *)
                 selectChatCells0[ cell, sidebarCells ]
             ],
