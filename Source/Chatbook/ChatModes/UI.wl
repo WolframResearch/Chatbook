@@ -678,7 +678,13 @@ makeSidebarChatInputCell // beginDefinition;
 makeSidebarChatInputCell[ ] := makeSidebarChatInputCell[ "" ]
 
 makeSidebarChatInputCell[ initialContent_ ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sidebarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input, kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID },
+    BoxData @ ToBoxes @ DynamicModule[
+        {
+            thisNB, thisCell, sidebarCell, chatEvalCell,
+            fieldContent = initialContent, returnKeyDownQ, input,
+            kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID,
+            focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
+        },
         EventHandler[
             Pane[
                 Grid[
@@ -754,7 +760,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                             ]
                         },
                         {
-                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, sidebarCell ], Alignment -> Left ],
+                            Item[ Dynamic @ focusArea, Alignment -> Left ],
                             SpanFromLeft
                         }
                     },
@@ -780,6 +786,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
             sidebarCell = ParentCell @ thisCell;
             kernelWasQuitQ = cachedSessionID =!= $SessionID;
             cachedSessionID = $SessionID;
+            focusArea = focusedNotebookDisplay[ thisNB, sidebarCell ]
         )
     ],
     "ChatInputField",
