@@ -2548,14 +2548,13 @@ makeDefaultHistoryView[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dyn
             FrameMargins       -> { { 0, 0 }, { 5, 5 } },
             If[ MatchQ[ appContainer, _CellObject ],
                 With[ { dc = First[ Cells[ appContainer ] ] },
-                    ImageSize -> Dynamic[
-                            {
-                                Scaled[ 1. ],
-                                UpTo @ Round[
-                                    (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                                    - 40 (* history menu header and frame margins at 100% magnification *)
-                                    - AbsoluteCurrentValue[ dc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
-                                ] } ]
+                    ImageSize ->
+                        Dynamic @ {(* run entirely in the front end evaluator *)
+                            Scaled[ 1. ],
+                            UpTo @ FEPrivate`Round[
+                                (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - 40 (* history menu header and frame margins at 100% magnification *)
+                                - FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])] }
                 ]
                 ,
                 ImageSize -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] }
