@@ -150,7 +150,7 @@ makeSidebarMenuContent[ sidebarCell_CellObject, nbObj_NotebookObject ] := Enclos
 			{ <|
 				 "Type"           -> "Custom",
 				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSidebar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
-				 "ResetAction"    :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = Inherited),
+				 "ResetAction"    :> (setCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" }, Inherited ]),
 				 "ResetCondition" :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
 			|> },
 			items ];
@@ -395,10 +395,10 @@ makeAutomaticResultAnalysisCheckbox[
 	setterFunction = ConfirmReplace[target, {
 		$FrontEnd | $FrontEndSession :> (
 			Function[{newValue},
-				CurrentValue[
+				setCurrentValue[
 					target,
-					{TaggingRules, "ChatNotebookSettings", "Assistance"}
-				] = newValue;
+					{TaggingRules, "ChatNotebookSettings", "Assistance"},
+					newValue ];
 			]
 		),
 		nbObj_NotebookObject :> (
@@ -425,15 +425,15 @@ makeAutomaticResultAnalysisCheckbox[
 						]
 					]
 					,
-					CurrentValue[
+					setCurrentValue[
 						nbObj,
-						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					] = Inherited
+						{TaggingRules, "ChatNotebookSettings", "Assistance"},
+						Inherited ]
 					,
-					CurrentValue[
+					setCurrentValue[
 						nbObj,
-						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					] = newValue
+						{TaggingRules, "ChatNotebookSettings", "Assistance"},
+						newValue ]
 				]
 			]
 		)
@@ -499,7 +499,7 @@ DynamicModule[ { value, mouseover = False },
 					{
 						"MouseEntered" :> (mouseover = True),
 						"MouseExited"  :> (mouseover = False),
-						"MouseClicked" :> (CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = value = ! value)
+						"MouseClicked" :> (Function[v, value = v; setCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" }, v ] ] @ !value)
 					},
 					PassEventsDown -> True
 				],
@@ -585,8 +585,8 @@ With[
 				checkboxUpdate =
 					Function[
 						If[ TrueQ[ # ],
-							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = value
+							setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" }, Inherited ],
+							setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" }, value ]
 						]
 					];
 
@@ -601,7 +601,7 @@ With[
 											{
 												Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
 												Slider[(* let the slider move freely, but only update the TaggingRules on mouse-up *)
-													Dynamic[ value, { None, Temporary, (value = CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) & } ],
+													Dynamic[ value, { None, Temporary, (value = #; setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" }, # ]) & } ],
 													{ 0, 1, 0.01 },
 													ImageSize    -> { 100, Automatic },
 													ImageMargins -> { { 0, 0 }, { 5, 5 } }
@@ -658,8 +658,8 @@ With[
 				checkboxUpdate =
 					Function[
 						If[ TrueQ[ # ],
-							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = Inherited,
-							CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = value
+							setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }, Inherited ],
+							setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }, value ]
 						]
 					];
 
@@ -675,7 +675,7 @@ With[
 											Automatic,
 											Function[
 												value = #;
-												CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }] = # ] }
+												setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" }, # ] ] }
 										],
 										{ 0, 2, 0.01 },
 										ImageSize    -> { 130, Automatic },
@@ -1287,7 +1287,7 @@ Join[
 		<|
 			"Type"           -> "Header",
 			"Label"          -> tr @ "UIPersonas",
-			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = Inherited),
+			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 		|>
 	},
@@ -1302,7 +1302,7 @@ Join[
 				"Icon"   -> getPersonaMenuIcon @ personaSettings,
 				"Check"  -> styleListItem[ persona, personaValue ],
 				"Action" :> (
-					CurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = persona;
+					setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
 					updateDynamics[ { "ChatBlock" } ];
 					(* If we're changing the persona set on a cell, ensure that we are not showing
 						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
@@ -1340,7 +1340,7 @@ Join[
 			"MenuTag" -> "Services",
 			"Menu"    :> createServiceMenu @ targetObj,
 			"Width"    -> 150,
-			"ResetAction"    :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] = Inherited),
+			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =!= Inherited)
 		|>,
 		<|
@@ -1388,7 +1388,7 @@ With[
 					"Icon"   -> icon,
 					"Label"  -> role,
 					"Check"  -> styleListItem[ role, roleValue ],
-					"Action" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" }] = role)
+					"Action" :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" }, role ])
 				|>
 			}],
 			{
@@ -1752,8 +1752,7 @@ modelSelectionCheckmark // endDefinition;
 setModel // beginDefinition;
 
 setModel[ obj_, KeyValuePattern @ { "Service" -> service_String, "Name" -> model: _String|Automatic } ] := (
-    CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =
-        <| "Service" -> service, "Name" -> model |>
+    setCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "Model" }, <| "Service" -> service, "Name" -> model |> ]
 );
 
 setModel // endDefinition;

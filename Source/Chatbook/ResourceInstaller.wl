@@ -306,7 +306,7 @@ ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Encl
                     ExpressionCell[ "", "DialogDelimiter", CellMargins -> Inherited ],
                     ExpressionCell[
                         Pane[
-                            ChoiceButtons[ { DialogReturn @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "URL" } ], DialogReturn @ $Canceled } ],
+                            ChoiceButtons[ { DialogReturn @ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "URL" } ], DialogReturn @ $Canceled } ],
                             FrameMargins -> { { 0, 0 }, { 3, 0 } } ],
                         "DialogFooter",
                         CellMargins -> { { Inherited, Inherited }, { Inherited, 4 } },

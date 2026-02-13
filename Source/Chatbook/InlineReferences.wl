@@ -101,9 +101,8 @@ parseInlineReferences[ cellObject_CellObject, _Cell, text_String ] := Enclose[
                         ConfirmBy[ ResourceInstall[ "Prompt: "<>name ], FileExistsQ, "ResourceInstall" ];
                         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
                     ];
-                    CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
-                    CurrentValue[ cellObject, TaggingRules ] =
-                        GeneralUtilities`ToAssociations @ CurrentValue[ cellObject, TaggingRules ]
+                    setCurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, name ];
+                    setCurrentValue[ cellObject, TaggingRules, GeneralUtilities`ToAssociations @ CurrentValue[ cellObject, TaggingRules ] ]
                 )
             ]
         ]
@@ -1205,8 +1204,8 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames,
             Background -> None,
             Selectable -> False,
             Initialization :> With[ { parent = ParentCell @ EvaluationCell[ ] },
-                CurrentValue[ parent, CellDingbat ] = Inherited;
-                CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
+                setCurrentValue[ parent, CellDingbat, Inherited ];
+                setCurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, name ];
             ]
         ]
     ]
@@ -1351,7 +1350,7 @@ Enclose[
 		state = "Chosen";
 		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellObj, {TaggingRules, "PersonaName"}] = input;
+		setCurrentValue[ cellObj, { TaggingRules, "PersonaName" }, input ];
 
 		If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], input ],
 	        ConfirmBy[ ResourceInstall[ "Prompt: "<>input ], FileExistsQ, "ResourceInstall" ];
@@ -1359,8 +1358,8 @@ Enclose[
 	    ];
 
 		With[ { parent = ParentCell @ cellObj },
-			CurrentValue[ parent, CellDingbat ] = Inherited;
-			CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = input;
+			setCurrentValue[ parent, CellDingbat, Inherited ];
+			setCurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, input ];
 		]
 	]
 	,
@@ -1538,7 +1537,7 @@ Enclose[
 		state = "Chosen";
 		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellObj, TaggingRules] = <| "PromptModifierName" -> input, "PromptArguments" -> params |>;
+		setCurrentValue[ cellObj, TaggingRules, <| "PromptModifierName" -> input, "PromptArguments" -> params |> ];
 	]
 	,
 	throwInternalFailure[ setModifierState[state, "Chosen", input, params], ## ] &
@@ -1750,7 +1749,7 @@ Enclose[
 		state = "Chosen";
 		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellObj, TaggingRules] = <| "PromptFunctionName" -> input, "PromptArguments" -> params |>;
+		setCurrentValue[ cellObj, TaggingRules, <| "PromptFunctionName" -> input, "PromptArguments" -> params |> ];
 	]
 	,
 	throwInternalFailure[ setFunctionState[state, "Chosen", input, params], ## ]&
@@ -1946,7 +1945,7 @@ Enclose[
 		state = "Chosen";
 		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellObj, TaggingRules] = <| "WLCode" -> input |>;
+		setCurrentValue[ cellObj, TaggingRules, <| "WLCode" -> input |> ];
 	]
 	,
 	throwInternalFailure[ setWLState[state, "Chosen", input], ## ]&
