@@ -1353,6 +1353,10 @@ CurrentChatSettings[ key_String ] := catchMine @
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
+(* desktop: immediately go to the top-level CellObject *)
+CurrentChatSettings[ cell_CellObject ] /; !$CloudEvaluation := catchMine @
+    currentChatSettings @ Last[ ParentCell[ cell, All ], cell ];
+
 CurrentChatSettings[ cell_CellObject ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
@@ -1360,6 +1364,10 @@ CurrentChatSettings[ cell_CellObject ] := catchMine @
             currentChatSettings @ cell
         ]
     ];
+
+(* desktop: immediately go to the top-level CellObject *)
+CurrentChatSettings[ cell_CellObject, key_String ] /; !$CloudEvaluation := catchMine @
+    currentChatSettings[ Last[ ParentCell[ cell, All ], cell ], key ];
 
 CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
@@ -1680,7 +1688,8 @@ currentChatSettings[ obj: $$feObj ] := Enclose[
         If[ AssociationQ @ cached, Throw @ cached ];
         settings = ConfirmMatch[ currentChatSettings0 @ obj, _Association? AssociationQ | _Missing, "Settings" ];
         If[ AssociationQ @ $currentSettingsCache && AssociationQ @ settings,
-            $currentSettingsCache[ obj ] = settings,
+            $currentSettingsCache[ obj ] = settings
+            ,
             settings
         ]
     ],
@@ -1694,7 +1703,8 @@ currentChatSettings[ obj: $$feObj, key_ ] := Enclose[
         If[ AssociationQ @ $currentSettingsCache,
             settings = ConfirmMatch[ currentChatSettings @ obj, _Association? AssociationQ | _Missing, "Settings" ];
             If[ MissingQ @ settings, Throw @ Inherited ];
-            Lookup[ settings, key, Inherited ],
+            Lookup[ settings, key, Inherited ]
+            ,
             currentChatSettings0[ obj, key ]
         ]
     ],

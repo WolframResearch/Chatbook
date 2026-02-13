@@ -172,7 +172,8 @@ runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*feParentObject goes exactly one level up in the (erroneously assumed) box... > cell... > notebook > frontend chain *)
+(*feParentObject goes exactly one level up in the (erroneously assumed) box... > cell... > notebook > frontend chain.
+    Lucky for us, ParentBox goes up through inline cells, the last "BoxObject" being the top-level cell (but with head BoxObject) *)
 feParentObject // beginDefinition;
 
 feParentObject[ box_BoxObject ] :=
@@ -580,7 +581,8 @@ fromFETimestamp // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
-parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SidebarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *)
+(* Don't use parentCell in the sidebar. We know the structure of the inline cells, so use appropriate nesting of ParentCell *)
+(* parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SidebarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *) *)
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
@@ -651,21 +653,32 @@ cloudBoxParent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*topLevelCellQ*)
-topLevelCellQ // beginDefinition;
-topLevelCellQ[ cell_CellObject ] := topLevelCellQ[ cell, parentNotebook @ cell ];
-topLevelCellQ[ cell_CellObject, nbo_NotebookObject ] := topLevelCellQ[ cell, Cells @ nbo ];
-topLevelCellQ[ cell_CellObject, cells: { ___CellObject } ] := MemberQ[ cells, cell ];
-topLevelCellQ[ _ ] := False;
-topLevelCellQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*topParentCell*)
 topParentCell // beginDefinition;
-topParentCell[ cell_CellObject ] := topParentCell[ cell, parentCell @ cell ];
+
+(* no recursion necessary in destop 14.3+ *)
+topParentCell[ cell_CellObject ] /; !$cloudNotebooks :=
+Module[ { cellStack, cellInformation, cellStyles },
+    cellStack = ParentCell[ cell, All ];      (* "All" is new in 14.3 and undocumented *)
+    If[ cellStack === { }, Return @ cell ];   (* already top level *)
+
+    (* It would be easy enough to return Last of cellStack, but in the sidebar, we want the ChatInput/Output cell and not the sidebar cell *)
+    cellStack       = Prepend[ cellStack, cell ]; (* just in case we used topParentCell on a sidebar top-level cell *)
+    cellInformation = Developer`CellInformation @ cellStack;
+    cellStyles      = Lookup[ #, "Style", { }, Flatten[ { # } ]& ]& /@ cellInformation;
+    
+    If[ MemberQ[ Last @ cellStyles, "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell" ],
+        First[
+            Pick[ cellStack, MemberQ[ #, "NotebookAssistant`Sidebar`ChatOutput" | "NotebookAssistant`Sidebar`ChatInput" ]& /@ cellStyles ],
+            Last @ cellStack
+        ]
+        ,
+        Last @ cellStack
+    ]
+]
+
+topParentCell[ cell_CellObject ] := topParentCell[ cell, cloudParentCell @ cell ];
 topParentCell[ cell_CellObject, cell_CellObject ] := cell; (* Already top (in cloud) *)
-topParentCell[ cell_CellObject, parent_CellObject ] := topParentCell @ parent; (* Recurse upwards *)
 topParentCell[ cell_CellObject, _ ] := cell; (* No parent cell *)
 topParentCell // endDefinition;
 
