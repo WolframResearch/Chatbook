@@ -260,6 +260,13 @@ Reply with [WL] if the user's prompt would be better answered with Wolfram Langu
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*$queryReminder*)
+$queryReminder = "\
+Reminder: You should respond ONLY with Wolfram Alpha queries and nothing else. \
+Do not attempt to respond to the user's query directly.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$resultsPromptHeader*)
 $resultsPromptHeader = "\
 IMPORTANT: The following information was automatically generated using Wolfram Alpha \
@@ -538,7 +545,12 @@ generateSuggestedQueries[ prompt_, count_Integer, relatedCount_Integer, randomCo
         ];
 
         messages = ConfirmMatch[
-            Flatten @ { systemMessage, $fewShotExamples, <| "Role" -> "User", "Content" -> transcript |> },
+            Flatten @ {
+                systemMessage,
+                $fewShotExamples,
+                <| "Role" -> "User"  , "Content" -> transcript     |>,
+                <| "Role" -> "System", "Content" -> $queryReminder |>
+            },
             $$chatMessages,
             "Messages"
         ];
