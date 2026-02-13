@@ -26,6 +26,7 @@ Cell[
 			}
 		]
 	],
+	"NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
 	Background        -> color @ "NA_ChatInputFieldBackgroundArea", (* this colors the entire initial sidebar as gray to make it easier to see *)
 	CellFrameMargins  -> 0,
 	CellMargins       -> { { 0, 0 }, { 0, 0 } },
