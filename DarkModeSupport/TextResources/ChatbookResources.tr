@@ -9854,7 +9854,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatInputCell"]], 
     StandardForm],
-   DestroyAfterEvaluation->True]}]],
+   DestroyAfterEvaluation->
+    True]}]], "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
  Selectable->False,
  CellMargins->{{0, 0}, {0, 0}},
@@ -9876,8 +9877,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"25bcf740-0257-dc49-a8f2-\
-05e981f6bfae"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"4aa1cf58-8a05-054f-9fff-\
+e3bd82f46c14"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
