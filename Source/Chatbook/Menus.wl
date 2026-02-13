@@ -55,7 +55,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                 "Main" -> 
                     Column[
                         {
-                            linkTrailFrame[ "AI Settings", CurrentValue[ sidebarCell, CellTags ] = "ResetToMain" ],
+                            linkTrailFrame[ "AI Settings", setCurrentValue[ sidebarCell, CellTags, "ResetToMain" ] ],
                             scrollablePane[
                                 Column[
                                     sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ items,

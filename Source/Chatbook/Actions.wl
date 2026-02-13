@@ -304,7 +304,7 @@ disableAssistance[ cell_CellObject ] := (
 );
 
 disableAssistance[ nbo_NotebookObject ] := (
-    CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = False
+    setCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" }, False ]
 );
 
 disableAssistance // endDefinition;
@@ -424,8 +424,8 @@ rotateTabPage // endDefinition;
 writePageContent // beginDefinition;
 
 writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] /; $cloudNotebooks := (
-    CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
-    CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
+    setCurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" }, newPage ];
+    setCurrentValue[ cell, TaggingRules, GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ] ];
     NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
 )
 
@@ -433,7 +433,7 @@ writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textDat
     SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
     NotebookWrite[ parentNotebook @ cell, content, None, AutoScroll -> False ];
     SelectionMove[ cell, After, Cell, AutoScroll -> False ];
-    CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
+    setCurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" }, newPage ];
     SetOptions[ cell, CellAutoOverwrite -> True, GeneratedCell -> True ]
 );
 
@@ -1120,13 +1120,13 @@ setChatSectionSettings // beginDefinition;
 
 setChatSectionSettings[ cell_CellObject, settings_Association ] :=
     Module[ { cellSettings, nbSettings, newSettings },
-        KeyValueMap[ Function[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", #1 } ] = #2 ], settings ];
+        KeyValueMap[ Function[ setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", #1 }, #2 ] ], settings ];
 
         (* The rest of this is a workaround for bug 435058 *)
         cellSettings = CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ];
         nbSettings   = CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings" } ];
         newSettings  = Complement[ cellSettings, nbSettings ];
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ] = newSettings;
+        setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" }, newSettings ];
     ];
 
 setChatSectionSettings // endDefinition;
@@ -1228,7 +1228,7 @@ ExclusionToggle[ nbo_NotebookObject, cellObjects: { __CellObject } ] :=
         cells    = ConfirmMatch[ NotebookRead @ cellObjects, { __Cell } ];
         excluded = MatchQ[ cells, { Cell[ __, "ChatExcluded", ___ ], ___ } ];
         toggled  = ConfirmMatch[ If[ excluded, includeChatCells @ cells, excludeChatCells @ cells ], { __Cell } ];
-        CurrentValue[ cellObjects, Deletable ] = True;
+        setCurrentValue[ cellObjects, Deletable, True ];
         NotebookDelete @ cellObjects;
         NotebookWrite[ nbo, toggled, All ]
     ];
@@ -1260,7 +1260,7 @@ WidgetSend // beginDefinition;
 WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $AutomaticAssistance = True },
         (* TODO: this is currently the only UI method to turn this back on *)
-        CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
+        setCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" }, True ];
         SendChat @ cell
     ];
 

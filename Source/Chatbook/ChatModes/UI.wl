@@ -69,12 +69,12 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
         BoxData @ ToBoxes @ workspaceChatInitializer @ Framed[
             Grid[
                 { {
-                    LogChatTiming @ sidebarNewChatButton[ Dynamic @ nbo, Dynamic @ sidebarCell ], (* FIXME: these calling signatures no longer need the Dynamic heads *)
+                    LogChatTiming @ sidebarNewChatButton[ nbo, sidebarCell ],
                     Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                    LogChatTiming @ sidebarSourcesButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarHistoryButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    LogChatTiming @ sidebarOpenAsAssistantWindowButton[ Dynamic @ nbo, Dynamic @ sidebarCell ],
-                    sidebarHideButton[ Dynamic @ nbo ]
+                    LogChatTiming @ sidebarSourcesButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarHistoryButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ],
+                    LogChatTiming @ sidebarHideButton @ nbo
                 } },
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
@@ -193,11 +193,19 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                     {
                         Scaled[ 1. ],
                         Round[
-                            (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                            - 4 (* the top bar that better separates the sidebar from the default toolbar *)
-                            - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
-                            - AbsoluteCurrentValue[ PreviousCell[ CellTags -> "SidebarDockedCell" ], { CellSize, 2 } ]
-                            - AbsoluteCurrentValue[ NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                            (#[[1]][[2]]
+                            - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                            - If[ NumericQ @ #[[2]], #[[2]], 0 ]
+                            - If[ NumericQ @ #[[3]], #[[3]], 0 ]
+                            - If[ NumericQ @ #[[4]], #[[4]], 0 ]
+                            )/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                        ]&[
+                            FrontEndExecute[ {
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ "ViewSize" ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarDockedCell"    ], { CellSize, 2 } ],
+                                FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[     FrontEnd`NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ]
+                            } ]
                         ] } ],
             Scrollbars -> { False, False }
         ],
@@ -222,11 +230,19 @@ Module[ { dockedCellObj, chatInputCellObj },
                         {
                             Scaled[ 1. ],
                             Round[
-                                (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                                - 4 (* the top bar that better separates the sidebar from the default toolbar *)
-                                - If[ # === None, 0, AbsoluteCurrentValue[ #, { CellSize, 2 } ] ]&[ PreviousCell[ CellTags -> "SidebarSubDockedCell" ] ]
-                                - AbsoluteCurrentValue[ dc, { CellSize, 2 } ]
-                                - AbsoluteCurrentValue[ cc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                                (#[[1]][[2]]
+                                - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                                - If[ NumericQ @ #[[2]], #[[2]], 0 ]
+                                - If[ NumericQ @ #[[3]], #[[3]], 0 ]
+                                - If[ NumericQ @ #[[4]], #[[4]], 0 ]
+                                )/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
+                            ]&[
+                                FrontEndExecute[ {
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ "ViewSize" ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ],
+                                    FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ cc, { CellSize, 2 } ]
+                                } ]
                             ] } ],
                 Scrollbars -> { False, Automatic }
             ],
@@ -256,7 +272,7 @@ removeSidebarScrollingCellContent // endDefinition;
 (*sidebarHistoryButton*)
 sidebarHistoryButton // beginDefinition;
 
-sidebarHistoryButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarHistoryButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "History" ],
     Appearance -> "Suppressed"
@@ -269,7 +285,7 @@ sidebarHistoryButton // endDefinition;
 (*sidebarSourcesButton*)
 sidebarSourcesButton // beginDefinition;
 
-sidebarSourcesButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarSourcesButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, True ],
     toggleOverlayMenu[ nbo, sidebarCell, "Sources" ],
     Appearance -> "Suppressed"
@@ -282,7 +298,7 @@ sidebarSourcesButton // endDefinition;
 (*sidebarNewChatButton*)
 sidebarNewChatButton // beginDefinition;
 
-sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
+sidebarNewChatButton[ nbo_NotebookObject, sidebarCell_CellObject ] :=
     Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", False, True ]
         ,
@@ -290,7 +306,7 @@ sidebarNewChatButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :=
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
         removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
-        CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = ""
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ]
         ,
         Appearance -> "Suppressed",
         Method     -> "Queued"
@@ -303,7 +319,7 @@ sidebarNewChatButton // endDefinition;
 (*sidebarOpenAsAssistantWindowButton*)
 sidebarOpenAsAssistantWindowButton // beginDefinition;
 
-sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] := Button[
+sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
     toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant", False, True ],
     With[
         {
@@ -331,7 +347,7 @@ sidebarOpenAsAssistantWindowButton[ Dynamic[ nbo_ ], Dynamic[ sidebarCell_ ] ] :
             removeSidebarScrollingCellContent[ nbo, sidebarCell ];
             removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
             CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
-            CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = "";
+            setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
             FrontEndTokenExecute[ nbo, "HideSidebar" ];
         ]
     ],
@@ -343,11 +359,11 @@ sidebarOpenAsAssistantWindowButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*sidebarOpenAsAssistantWindowButton*)
+(*sidebarHideButton*)
 
 sidebarHideButton // beginDefinition;
 
-sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
+sidebarHideButton[ nbo_NotebookObject ] := Button[
     Tooltip[
         mouseDown[
             Framed[
@@ -365,7 +381,7 @@ sidebarHideButton[ Dynamic[ nbo_ ] ] := Button[
         ],
         tr @ "SidebarToolbarButtonTooltipHideSidebar"
     ],
-    CurrentValue[ $FrontEndSession, "ShowNotebookAssistant" ] = False;
+    setCurrentValue[ $FrontEndSession, "ShowNotebookAssistant", False ];
     FrontEndTokenExecute[nbo, "HideSidebar"],
     Appearance -> "Suppressed"
 ]
@@ -436,12 +452,12 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 writeWorkspaceChatSubDockedCell // beginDefinition;
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
-CurrentValue[ nbo, DockedCells ] = Inherited;
-CurrentValue[ nbo, DockedCells ] = {
+setCurrentValue[ nbo, DockedCells, Inherited ];
+setCurrentValue[ nbo, DockedCells, {
     First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
-    makeWorkspaceChatSubDockedCellExpression[ content ] };
-    (* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
-    If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
+    makeWorkspaceChatSubDockedCellExpression[ content ] } ];
+(* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
+If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
 )
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
@@ -464,7 +480,7 @@ writeWorkspaceChatSubDockedCell // endDefinition;
 (*removeWorkspaceChatSubDockedCell*)
 removeWorkspaceChatSubDockedCell // beginDefinition;
 
-removeWorkspaceChatSubDockedCell[ nbo_NotebookObject ] := CurrentValue[ nbo, DockedCells ] = Inherited;
+removeWorkspaceChatSubDockedCell[ nbo_NotebookObject ] := setCurrentValue[ nbo, DockedCells, Inherited ];
 
 removeWorkspaceChatSubDockedCell // endDefinition;
 
@@ -507,7 +523,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 		NotebookDelete @ Cells @ nbo;
 		removeWorkspaceChatSubDockedCell @ nbo;
 		CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
-		CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+		setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ];
 		moveChatInputToTop @ nbo;
 		,
 		Appearance -> "Suppressed",
@@ -661,7 +677,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                                 ];
                                 (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
                                 If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
-                                    chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ];
+                                    chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
                                     With[ { sbc = sidebarCell }, (* "Set" is HoldFirst so we must inject values *)
                                         FrontEndExecute[ {
                                             FrontEnd`SetOptions[ thisCell, CellTags -> "SidebarChatInputCell" ],
@@ -672,7 +688,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                                 ]
                                 ,
                                 SynchronousUpdating -> False,
-                                TrackedSymbols      :> { returnKeyDownQ }
+                                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
                             ],
                             (* no need to templatize an attached cell as it is ephemeral *)
                             PaneSelector[
@@ -1683,7 +1699,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                             Deinitialization :> (Typeset`menuActiveQ = False)
                         ],
                         CellTags      -> "CustomActionMenu",
-                        Magnification -> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]*If[ cellTaggedQ[ topParentCell @ EvaluationCell[ ], "SidebarTopCell" ], 0.85, 1. ]
+                        Magnification -> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ]*If[ cellTaggedQ[ topParentCell @ EvaluationCell[ ], "SidebarTopCell" ], 0.85, 1. ]
                     ],
                     Sequence @@ If[ Last[ MousePosition[ "ViewScaled" ], 0 ] > 0.78, { { Left, Top }, 0, { Left, Bottom } }, { { Left, Bottom }, 0, { Left, Top } } ],
                     RemovalConditions -> "MouseExit" ]) },
@@ -2122,7 +2138,7 @@ loadingOverlay // endDefinition;
 (* ::Subsection::Closed:: *)
 (*restoreVerticalScrollbar*)
 restoreVerticalScrollbar // beginDefinition;
-restoreVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] = Inherited;
+restoreVerticalScrollbar[ nbo_NotebookObject ] := setCurrentValue[ nbo, WindowElements, Inherited ];
 restoreVerticalScrollbar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2130,8 +2146,7 @@ restoreVerticalScrollbar // endDefinition;
 (*hideVerticalScrollbar*)
 hideVerticalScrollbar // beginDefinition;
 
-hideVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] =
-    DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+hideVerticalScrollbar[ nbo_NotebookObject ] := setCurrentValue[ nbo, WindowElements, DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ] ];
 
 hideVerticalScrollbar // endDefinition;
 
@@ -2697,16 +2712,16 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
         NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ];
 
         WithCleanup[
-            CurrentValue[ nbo, Selectable ] = True,
+            setCurrentValue[ nbo, Selectable, True ],
             SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
             ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
             If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ],
-            CurrentValue[ nbo, Selectable ] = Inherited
+            setCurrentValue[ nbo, Selectable, Inherited ]
         ];
 
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
-        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
+        setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, title ];
         writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ];
         restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
@@ -2734,7 +2749,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         ];
         
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = uuid;
-        CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] = title;
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, title ];
         writeSidebarChatSubDockedCell[ nbo, sidebarCell, WindowTitle ];
         (* TODO: moveToChatInputField[ nbo, True ] *)
     ] // withLoadingOverlay[ { nbo, sidebarCell } ],
