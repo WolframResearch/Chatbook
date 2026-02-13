@@ -84,6 +84,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             FrameMargins -> { { 5, 2 }, { 0, 1 } },
             ImageMargins -> 0
         ],
+        "NotebookAssistant`Sidebar`DockedCell",
         CellFrame        -> { { 0, 0 }, { 0, 7 } },
         CellFrameColor   -> color @ "NA_SidebarToolbarFrame",
         CellFrameMargins -> 0,
@@ -100,7 +101,10 @@ makeSidebarChatDockedCell // endDefinition;
 makeSidebarChatSubDockedCell // beginDefinition;
 
 makeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, content_ ] := Join[
-    DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
+    Insert[
+        DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ],
+        "NotebookAssistant`Sidebar`SubDockedCell",
+        2 ],
     Cell[
         CellTags             -> "SidebarSubDockedCell",
         Deletable            -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
@@ -224,6 +228,7 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                 ],
             Scrollbars -> { False, False }
         ],
+        "NotebookAssistant`Sidebar`ScrollingContentCell",
         Background    -> color @ "NA_NotebookBackground",
         CellTags      -> "SidebarScrollingContentCell",
         Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
@@ -276,6 +281,7 @@ Module[ { dockedCellObj, chatInputCellObj },
                     ],
                 Scrollbars -> { False, Automatic }
             ],
+            "NotebookAssistant`Sidebar`ScrollingContentCell",
             Background    -> color @ "NA_NotebookBackground",
             CellTags      -> "SidebarScrollingContentCell",
             Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
