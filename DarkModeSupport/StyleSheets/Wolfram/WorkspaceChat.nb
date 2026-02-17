@@ -87,7 +87,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.21.3975037993"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.56.3980325675"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -344,7 +344,8 @@ Notebook[
         {
          FrameBox[
           DynamicBox[
-           ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
+           ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]],
+           DestroyAfterEvaluation -> True
           ],
           Background ->
            LightDarkSwitched[
