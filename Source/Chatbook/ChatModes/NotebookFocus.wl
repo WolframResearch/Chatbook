@@ -74,7 +74,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                     (* TODO: "AllowSelectionContext" should become a "sticky" setting *)
                     DynamicModule[ { val = TrueQ @ Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ] },
                         Toggler[
-                            Dynamic[ val, Function[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = val = # ] ],
+                            Dynamic[ val, Function[ val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] ],
                             {
                                 True  -> chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
                                 False -> chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ]

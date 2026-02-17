@@ -760,7 +760,7 @@ StopChat // endDefinition;
 nextChatOutput // beginDefinition;
 nextChatOutput[ cell_CellObject? chatOutputCellQ ] := cell;
 nextChatOutput[ cell_CellObject ] /; $cloudNotebooks := cloudNextChatOutput @ cell;
-nextChatOutput[ cell_CellObject ] := NextCell[ cell, CellStyle -> "ChatOutput" ];
+nextChatOutput[ cell_CellObject ] := NextCell[ cell, CellStyle -> "ChatOutput" | "NotebookAssistant`Sidebar`ChatOutput" ];
 nextChatOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

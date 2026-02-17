@@ -84,6 +84,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             FrameMargins -> { { 5, 2 }, { 0, 1 } },
             ImageMargins -> 0
         ],
+        "NotebookAssistant`Sidebar`DockedCell",
         CellFrame        -> { { 0, 0 }, { 0, 7 } },
         CellFrameColor   -> color @ "NA_SidebarToolbarFrame",
         CellFrameMargins -> 0,
@@ -100,7 +101,10 @@ makeSidebarChatDockedCell // endDefinition;
 makeSidebarChatSubDockedCell // beginDefinition;
 
 makeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, content_ ] := Join[
-    DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ], 
+    Insert[
+        DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ],
+        "NotebookAssistant`Sidebar`SubDockedCell",
+        2 ],
     Cell[
         CellTags             -> "SidebarSubDockedCell",
         Deletable            -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
@@ -188,12 +192,26 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
             Alignment          -> { Center, Bottom },
             AppearanceElements -> { },
             FrameMargins       -> { { 0, 0 }, { 33, 0 } },
-            ImageSize -> 
-                Dynamic[
-                    {
+            ImageSize ->
+                If[ TrueQ @ FE`Evaluate @ FEPrivate`NumericQ @ 1., (* if the front end evaluator has access to NumericQ *)
+                    Dynamic @ {(* run entirely in the front end evaluator *)
                         Scaled[ 1. ],
-                        Round[
-                            (#[[1]][[2]]
+                        FEPrivate`Round[
+                            (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                            - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                            - If[ FEPrivate`NumericQ @ #1, #1, 0 ]
+                            - If[ FEPrivate`NumericQ @ #2, #2, 0 ]
+                            - If[ FEPrivate`NumericQ @ #3, #3, 0 ]
+                            )/(0.85*FrontEnd`AbsoluteCurrentValue[ nbo, Magnification ])
+                        ]&[
+                            FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                            FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarDockedCell"    ], { CellSize, 2 } ],
+                            FrontEnd`AbsoluteCurrentValue[     FrontEnd`NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ]
+                        ] }
+                    ,
+                    Dynamic @ {
+                        Scaled[ 1. ],
+                        Round[(#[[1]][[2]]
                             - 7 (* the top bar that better separates the sidebar from the default toolbar *)
                             - If[ NumericQ @ #[[2]], #[[2]], 0 ]
                             - If[ NumericQ @ #[[3]], #[[3]], 0 ]
@@ -206,9 +224,11 @@ makeSidebarChatScrollingCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                                 FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarDockedCell"    ], { CellSize, 2 } ],
                                 FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[     FrontEnd`NextCell[ CellTags -> "SidebarChatInputCell" ], { CellSize, 2 } ]
                             } ]
-                        ] } ],
+                        ] }
+                ],
             Scrollbars -> { False, False }
         ],
+        "NotebookAssistant`Sidebar`ScrollingContentCell",
         Background    -> color @ "NA_NotebookBackground",
         CellTags      -> "SidebarScrollingContentCell",
         Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
@@ -226,11 +246,25 @@ Module[ { dockedCellObj, chatInputCellObj },
                 RowBox @ cells,
                 AppearanceElements -> {},
                 ImageSize -> 
-                    Dynamic[
-                        {
+                    If[ TrueQ @ FE`Evaluate @ FEPrivate`NumericQ @ 1., (* if the front end evaluator has access to NumericQ *)
+                        Dynamic @ {(* run entirely in the front end evaluator *)
                             Scaled[ 1. ],
-                            Round[
-                                (#[[1]][[2]]
+                            FEPrivate`Round[
+                                (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                                - If[ FEPrivate`NumericQ @ #1, #1, 0 ]
+                                - If[ FEPrivate`NumericQ @ #2, #2, 0 ]
+                                - If[ FEPrivate`NumericQ @ #3, #3, 0 ]
+                                )/(0.85*FrontEnd`AbsoluteCurrentValue[ nbo, Magnification ])
+                            ]&[
+                                FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ],
+                                FrontEnd`AbsoluteCurrentValue[ cc, { CellSize, 2 } ]
+                            ] }
+                        ,
+                        Dynamic @ {
+                            Scaled[ 1. ],
+                            Round[(#[[1]][[2]]
                                 - 7 (* the top bar that better separates the sidebar from the default toolbar *)
                                 - If[ NumericQ @ #[[2]], #[[2]], 0 ]
                                 - If[ NumericQ @ #[[3]], #[[3]], 0 ]
@@ -243,9 +277,11 @@ Module[ { dockedCellObj, chatInputCellObj },
                                     FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ],
                                     FrontEnd`Value @ FrontEnd`AbsoluteCurrentValue[ cc, { CellSize, 2 } ]
                                 } ]
-                            ] } ],
+                            ] }
+                    ],
                 Scrollbars -> { False, Automatic }
             ],
+            "NotebookAssistant`Sidebar`ScrollingContentCell",
             Background    -> color @ "NA_NotebookBackground",
             CellTags      -> "SidebarScrollingContentCell",
             Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
@@ -648,7 +684,13 @@ makeSidebarChatInputCell // beginDefinition;
 makeSidebarChatInputCell[ ] := makeSidebarChatInputCell[ "" ]
 
 makeSidebarChatInputCell[ initialContent_ ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, sidebarCell, chatEvalCell, fieldContent = initialContent, returnKeyDownQ, input, kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID },
+    BoxData @ ToBoxes @ DynamicModule[
+        {
+            thisNB, thisCell, sidebarCell, chatEvalCell,
+            fieldContent = initialContent, returnKeyDownQ, input,
+            kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID,
+            focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
+        },
         EventHandler[
             Pane[
                 Grid[
@@ -724,7 +766,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
                             ]
                         },
                         {
-                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, sidebarCell ], Alignment -> Left ],
+                            Item[ Dynamic @ focusArea, Alignment -> Left ],
                             SpanFromLeft
                         }
                     },
@@ -750,6 +792,7 @@ makeSidebarChatInputCell[ initialContent_ ] := Cell[
             sidebarCell = ParentCell @ thisCell;
             kernelWasQuitQ = cachedSessionID =!= $SessionID;
             cachedSessionID = $SessionID;
+            focusArea = focusedNotebookDisplay[ thisNB, sidebarCell ]
         )
     ],
     "ChatInputField",
@@ -2518,14 +2561,13 @@ makeDefaultHistoryView[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dyn
             FrameMargins       -> { { 0, 0 }, { 5, 5 } },
             If[ MatchQ[ appContainer, _CellObject ],
                 With[ { dc = First[ Cells[ appContainer ] ] },
-                    ImageSize -> Dynamic[
-                            {
-                                Scaled[ 1. ],
-                                UpTo @ Round[
-                                    (AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                                    - 40 (* history menu header and frame margins at 100% magnification *)
-                                    - AbsoluteCurrentValue[ dc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])
-                                ] } ]
+                    ImageSize ->
+                        Dynamic @ {(* run entirely in the front end evaluator *)
+                            Scaled[ 1. ],
+                            UpTo @ FEPrivate`Round[
+                                (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - 40 (* history menu header and frame margins at 100% magnification *)
+                                - FrontEnd`AbsoluteCurrentValue[ dc, { CellSize, 2 } ])/(0.85*AbsoluteCurrentValue[ nbo, Magnification ])] }
                 ]
                 ,
                 ImageSize -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] }

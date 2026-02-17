@@ -1353,6 +1353,10 @@ CurrentChatSettings[ key_String ] := catchMine @
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
+(* desktop: immediately go to the top-level CellObject *)
+CurrentChatSettings[ cell_CellObject ] /; !$CloudEvaluation := catchMine @
+    currentChatSettings @ topParentCell @ cell;
+
 CurrentChatSettings[ cell_CellObject ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
@@ -1360,6 +1364,10 @@ CurrentChatSettings[ cell_CellObject ] := catchMine @
             currentChatSettings @ cell
         ]
     ];
+
+(* desktop: immediately go to the top-level CellObject *)
+CurrentChatSettings[ cell_CellObject, key_String ] /; !$CloudEvaluation := catchMine @
+    currentChatSettings[ topParentCell @ cell, key ];
 
 CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
@@ -1680,7 +1688,8 @@ currentChatSettings[ obj: $$feObj ] := Enclose[
         If[ AssociationQ @ cached, Throw @ cached ];
         settings = ConfirmMatch[ currentChatSettings0 @ obj, _Association? AssociationQ | _Missing, "Settings" ];
         If[ AssociationQ @ $currentSettingsCache && AssociationQ @ settings,
-            $currentSettingsCache[ obj ] = settings,
+            $currentSettingsCache[ obj ] = settings
+            ,
             settings
         ]
     ],
@@ -1694,7 +1703,8 @@ currentChatSettings[ obj: $$feObj, key_ ] := Enclose[
         If[ AssociationQ @ $currentSettingsCache,
             settings = ConfirmMatch[ currentChatSettings @ obj, _Association? AssociationQ | _Missing, "Settings" ];
             If[ MissingQ @ settings, Throw @ Inherited ];
-            Lookup[ settings, key, Inherited ],
+            Lookup[ settings, key, Inherited ]
+            ,
             currentChatSettings0[ obj, key ]
         ]
     ],
@@ -1727,22 +1737,31 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
 
         verifyInheritance @ cell0;
 
-        cell = cell0;
+        (* 99% of the time we only care about top-level cells *)
+        (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
+        cell = ConfirmMatch[ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
-        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
-
-        If[ MemberQ[ styles, $$nestedCellStyle ],
-            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
-            styles = cellStyles @ cell;
-        ];
-
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
 
-        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
-        delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo ], _CellObject|_Missing, "Delimiter" ];
-
+        (*
+            The sidebar Assistant has no chat delimiter. 
+            However, its cell acts as a "notebook" in terms of chat-setting inheritance.
+            Set the local variable 'delimiter' to be the sidebar CellObject. *)
+        Which[
+            MemberQ[ styles, "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell" ],
+                Throw @ currentChatSettings1 @ cell,
+            MemberQ[ styles, "NotebookAssistant`Sidebar`ScrollingContentCell" | "NotebookAssistant`Sidebar`DockedCell" | "NotebookAssistant`Sidebar`SubDockedCell" ],
+                Throw @ currentChatSettings1 @ ParentCell @ cell,
+            MemberQ[ styles, "NotebookAssistant`Sidebar`ChatInput" | "NotebookAssistant`Sidebar`ChatOutput" ],
+                delimiter = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellChatSettings" ],
+            True,
+                nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+                delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo ], _CellObject|_Missing, "Delimiter" ]
+        ];
+        
         settings = Select[
             Map[ Association,
                  Flatten @ {
@@ -1762,63 +1781,53 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
     throwInternalFailure
 ];
 
-currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "NotebookAssistantSidebarCell" ] :=
-    Lookup[
-        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Inherited -> <||> ],
-        key,
-        Lookup[
-            $cachedGlobalSettings,
-            key,
-            Lookup[ $defaultChatSettings, key, Inherited ] ] ]
-
-currentChatSettings0[ cell_CellObject, key_String ] /; cellTaggedQ[ cell, "SidebarTopCell" ] :=
-    Lookup[
-        Replace[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||> ],
-        key,
-        Lookup[
-            Replace[ CurrentValue[ ParentCell @ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||> ],
-            key,
-            Lookup[
-                $cachedGlobalSettings,
-                key,
-                Lookup[ $defaultChatSettings, key, Inherited ] ] ] ]
 
 currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
         verifyInheritance @ cell0;
 
-        cell = cell0;
+        (* 99% of the time we only care about top-level cells *)
+        (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
+        cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
-        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
-
-        If[ MemberQ[ styles, $$nestedCellStyle ],
-            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
-            styles = cellStyles @ cell;
-        ];
-
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
 
-        nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
-        cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
-        (* There are apparently temporary mystery cells that get created that aren't in the root cell list which are
-           then immediately removed. These inherit the style specified by `DefaultNewCellStyle`. In chat-driven
-           notebooks, this is set to "ChatInput", which has a dynamic cell dingbat that needs to resolve
-           `currentChatSettings`. In this case, we have special behavior here to prevent a failure. Since that new
-           temporary cell doesn't get displayed anyway, we don't need to actually resolve the chat settings for it,
-           so we just return a default value instead. Yes, this is an ugly hack.
-        *)
-        If[ And[ MemberQ[ styles, $$chatInputStyle ], (*It's a "ChatInput" cell*)
-                 ! MemberQ[ cells, cell ], (*It's not in the list of cells*)
-                 MatchQ[ CurrentValue[ nbo, DefaultNewCellStyle ], $$chatInputStyle ] (*Due to DefaultNewCellStyle*)
-            ],
-            Throw @ Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
+        (*
+            The sidebar Assistant has no chat delimiter. 
+            However, its cell acts as a "notebook" in terms of chat-setting inheritance.
+            Set the local variable 'delimiter' to be the sidebar CellObject. *)
+        Which[
+            MemberQ[ styles, "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell" ],
+                Throw @ currentChatSettings1[ cell, key ],
+            MemberQ[ styles, "NotebookAssistant`Sidebar`ScrollingContentCell" | "NotebookAssistant`Sidebar`DockedCell" | "NotebookAssistant`Sidebar`SubDockedCell" ],
+                Throw @ currentChatSettings1[ ParentCell @ cell, key ],
+            MemberQ[ styles, "NotebookAssistant`Sidebar`ChatInput" | "NotebookAssistant`Sidebar`ChatOutput" ],
+                delimiter = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellChatSettings" ],
+            True,
+                nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+                cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
+            
+                (* There are apparently temporary mystery cells that get created that aren't in the root cell list which are
+                   then immediately removed. These inherit the style specified by `DefaultNewCellStyle`. In chat-driven
+                   notebooks, this is set to "ChatInput", which has a dynamic cell dingbat that needs to resolve
+                   `currentChatSettings`. In this case, we have special behavior here to prevent a failure. Since that new
+                   temporary cell doesn't get displayed anyway, we don't need to actually resolve the chat settings for it,
+                   so we just return a default value instead. Yes, this is an ugly hack.
+                *)
+                If[ And[ MemberQ[ styles, $$chatInputStyle ], (*It's a "ChatInput" cell*)
+                         ! MemberQ[ cells, cell ], (*It's not in the list of cells*)
+                         MatchQ[ CurrentValue[ nbo, DefaultNewCellStyle ], $$chatInputStyle ] (*Due to DefaultNewCellStyle*)
+                    ],
+                    Throw @ Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
+                ];
+
+                delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ]
         ];
-
-        delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ];
-
+        
         values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
         (* TODO: this should also use `mergeChatSettings` in case the values are associations *)
