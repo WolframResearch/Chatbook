@@ -1355,7 +1355,7 @@ CurrentChatSettings[ key_String ] := catchMine @
 
 (* desktop: immediately go to the top-level CellObject *)
 CurrentChatSettings[ cell_CellObject ] /; !$CloudEvaluation := catchMine @
-    currentChatSettings @ Last[ ParentCell[ cell, All ], cell ];
+    currentChatSettings @ topParentCell @ cell;
 
 CurrentChatSettings[ cell_CellObject ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
@@ -1367,7 +1367,7 @@ CurrentChatSettings[ cell_CellObject ] := catchMine @
 
 (* desktop: immediately go to the top-level CellObject *)
 CurrentChatSettings[ cell_CellObject, key_String ] /; !$CloudEvaluation := catchMine @
-    currentChatSettings[ Last[ ParentCell[ cell, All ], cell ], key ];
+    currentChatSettings[ topParentCell @ cell, key ];
 
 CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
@@ -1739,7 +1739,7 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
 
         (* 99% of the time we only care about top-level cells *)
         (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
-        cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
