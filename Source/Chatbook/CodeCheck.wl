@@ -150,10 +150,11 @@ CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:
 	With[{merged=mergeFixes[kvFixPrev, kvFixNew]//EchoLabel["merged0"]},
 		If[	MatchQ[	kvFixNew	,Alternatives[	 KeyValuePattern[{"Success"->False}]
 												,KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]
-												,KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]]
+												,KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]
+												,KeyValuePattern[{"StopCodeCheck"->True}]]
 			]//EchoLabel["MatchQ"]
 			,
-			merged//EchoLabel["merged"]
+			merged//KeyDrop["StopCodeCheck"]//EchoLabel["merged"]
 			,
 			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]] // EchoLabel["new pattern"]
 			//	If[	 Echo@niter > recursionLimit
@@ -187,7 +188,8 @@ lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Len
 lengthErrors[f_Failure]:=f
 
 
-mergeFixes[{}, newFix_] := {KeyDrop[newFix,"FixedPattern"], "FixedPatterns" ->{newFix["FixedPattern"]}} // Association
+mergeFixes[{}, newFix:KeyValuePattern["FixedPattern"->_]] := {KeyDrop[newFix,"FixedPattern"], "FixedPatterns" ->{newFix["FixedPattern"]}} // Association
+mergeFixes[{}, newFix:KeyValuePattern["FixedPatterns"->_]] := newFix
 
 mergeFixes[prevFix_, newFix_] :=
  	{
@@ -982,7 +984,8 @@ scanQuantityUnitName[pos_, ast_] :=
  *)
 fixPattern[target_][code_String, pat_]:=
 	(Echo["START WARN"];
-	Fold[mergeFixes[#1, warnPattern[target][code,#2]] &, {}, pat]//EchoLabel["FOLD"]
+	Fold[mergeFixes[#1, warnPattern[target][code,{#2}]] &, {}, pat]//EchoLabel["FOLD"]//
+	Association@@{#,"StopCodeCheck"->True}&
 	)
 (* ----------------------------------------------------------------------------------- *)
 (* ----------------------------------------------------------------------------------- *)
@@ -1020,13 +1023,13 @@ scanSuspiciousSymbol[pos_, ast_] :=
 )
 
 
-warnPattern[target_][code_String, pat:$$SuspiciousSymbol[so_], patToIgnore_ : {}] :=
-	{ Echo["lkjljlkjlkjlkjl"];"Success" -> True
+warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_]|$$BadSymbol[so_]), patToIgnore_ : {}] :=
+	{ "Success" -> True
 	, "TotalFixes" -> 0
 	, "LikelyFalsePositive" -> False
 	, "SafeToEvaluate" -> True
 	, "FixedPattern" -> pat
-	, "FixedCode" -> code
+	, "FixedCode" -> Missing["Warning only"]
 	} // Association//Echo
 
 
