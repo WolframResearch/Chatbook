@@ -78,6 +78,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 										,"ImplicitTimesPseudoCall"	(* cases like: a (b+c)*)
 										,"ImplicitTimesBlanks"
 										,"TimesString"				(* ex: "Meters"*"Second" in Quantity*)
+										,"TopLevelDefinitionCompoundExpression" (* ex: f[x_]:x= ; 2*)
 										}
 					,
 					SourceConvention -> "SourceCharacterIndex"
@@ -87,8 +88,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set or as a function name *),
 										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *),
 										pQuantityUnitName -> scanQuantityUnitName,
-										pEntityClassOneArg -> scanEntityClassOneArg,
-										pEntityStringType -> scanEntityType
+										pSuspiciousFunctionSymbol -> scanSuspiciousSymbol
 										|>
 						};
 
@@ -106,7 +106,10 @@ CodeCheck[target_][code_String, OptionsPattern[]]:=
 (*Helpers*)
 
 
-codeInspectOverallSeverityLevel[ios:{__InspectionObject}]:=ios[[All,3]]//ReplaceAll[ruleCodeInspectSeverityToLevel]//Max
+codeInspectOverallSeverityLevel[ios:{__InspectionObject}]:=
+	ios[[All,3]] // StringReplace[#, StringTrim[#, Alternatives @@ ruleCodeInspectSeverityToLevel[[All, 1]]] -> ""]&//
+	ReplaceAll[ruleCodeInspectSeverityToLevel]//Max
+
 codeInspectOverallSeverityLevel[{}]:=None
 
 ruleCodeInspectSeverityToLevel={"Fatal"->4,"Error"->3,"Warning"->2,"Remark"->1,"ImplicitTimes"|"Formatting"|"Scoping"->0};
@@ -134,7 +137,7 @@ CodeFix[target_][
 		,kvCI:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->_}]
 		,params_:<||>
 		]:=
-		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI](* //EchoLabel["generatePatternFromCodeCheck"] *)]]
+		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]//EchoLabel["generatePatternFromCodeCheck"]]//EchoLabel["1 Fixpattern"]]
 
 CodeFix[target_][
 		code_String
@@ -144,20 +147,20 @@ CodeFix[target_][
 
 
 CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
-	With[{merged=mergeFixes[kvFixPrev, kvFixNew]},
+	With[{merged=mergeFixes[kvFixPrev, kvFixNew]//EchoLabel["merged0"]},
 		If[	MatchQ[	kvFixNew	,Alternatives[	 KeyValuePattern[{"Success"->False}]
 												,KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]
 												,KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]]
-			]
+			]//EchoLabel["MatchQ"]
 			,
-			merged
+			merged//EchoLabel["merged"]
 			,
-			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]]
-			//	If[	 niter > recursionLimit
+			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]] // EchoLabel["new pattern"]
+			//	If[	 Echo@niter > recursionLimit
 					,
 					{merged, "Success"->False, "RecursionLimitExceeded"->True}
 					,
-					If[#==={}, merged, (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
+					If[#==={}, merged//EchoLabel["merged2"], (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
 				]&
 		]
 	]
@@ -167,8 +170,17 @@ generatePatternFromCodeCheck[kv:KeyValuePattern[{"ErrorsDetected"->True, "CodeIn
 
 generatePatternFromCodeCheck[KeyValuePattern[{"ErrorsDetected"->False}]]:={}
 
-extractPatternFromInspectionObject[io:InspectionObject["BadSingleSnakeUsage"|"BadSnakeUsage"|"SuspiciousQuantityUnitName"|"EntityClassBadSyntax"|"BadEntityType",__]]:=
-	Apply[Sequence,io]//({#3,#1}->#4[Source])&
+extractPatternFromInspectionObject[
+	io:InspectionObject[
+				Alternatives[	"BadSingleSnakeUsage"
+							,	"BadSnakeUsage"
+							,	"SuspiciousQuantityUnitName"
+							,	"EntityClassBadSyntax"
+							,	"BadEntityType"
+							,	"SuspiciousSystemFunctionSymbol"
+							,	"BadSystemLikeFunctionSymbolName"]
+				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
+
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
@@ -961,188 +973,76 @@ scanQuantityUnitName[pos_, ast_] :=
 				Association@{ConfidenceLevel -> 1, #}]&
 )
 
-(* FIX PATTERN ----------------------------------------------------------------------- *)
-$$$BadEntityClassSyntax = {___, {"Fatal", "EntityClassBadSyntax"}->#, ___}&;
+(* FIX PATTERN (Default) -> WARN PATTERN ------------------------------------------------------------- *)
 
-fixPattern[target_][code_String, pat : $$$BadEntityClassSyntax[so_], patToIgnore_ : {}] :=
-	Module[	{
-			 fixedCode=Missing["No fix found"]
-			,success=False
-			}
-			,
-			(* Echo["FIX EntityClassBadSyntax "]; *)
-			With[
-				{cp=CodeParse[code, SourceConvention->"SourceCharacterIndex"]}
-				,
-				{fixParameters=FirstCase[cp, rEntityClassOneArg, Missing["No fix", pat], Infinity]}
-				,
-				fixedCode =	If[	MissingQ@fixParameters
-								,	fixParameters
-								,	fixParameters["argAST"] // StringTrim[#,"\""]&
-									//	If[	MemberQ[EntityValue[],#]
-											,	StringReplacePart[code, "EntityClass[\""<> # <> "\", All]", fixParameters[Source]]
-											,	StringReplacePart[code, "\[FreeformPrompt][\"" <> splitCamelWithSpaces[#] <>"\"]",fixParameters[Source]]
-									]&
-							]
-			]
-			;	success	=	If[MissingQ@fixedCode, False, True]
-			;
-			{ "Success" -> success
-			, "TotalFixes" -> If[success, 1, 0]
-			, "LikelyFalsePositive" -> False
-			, "SafeToEvaluate" -> If[success, True, False]
-			, "FixedPattern" -> pat
-			, "FixedCode" -> fixedCode
-			(* , "Meta" *)
-			} // Flatten // Association
-
-	]
-splitCamelWithSpaces[s_String]:=(*traiter le cas ------> "\"*)
-(
-	splitCamel[s] // Replace[x_String :> {x}] // StringRiffle[#, " "] &
-	// StringReplace[#, StringExpression[a_?UpperCaseQ, " ", b_?UpperCaseQ] :> a <> b] &
-)
-
-rEntityClassOneArg=
-	RuleDelayed[
-				Alternatives[
-					(* ResourceFunction["ASTPattern"][HoldPattern[EntityValue[ecNode : EntityClass[ ecArg : _], "Entities"]]] *)
-					CallNode[	LeafNode[Symbol, "EntityValue" | "System`EntityValue", _]
-								,
-								{		ecNode : CallNode[LeafNode[Symbol, "EntityClass" | "System`EntityClass", _], {ecArg : (CallNode | LeafNode)[_, _, _]}, _]
-									,	LeafNode[String, "\"Entities\"", _]
-								}
-								, _]
-					,
-					(* ResourceFunction["ASTPattern"][HoldPattern[EntityList[ecNode : EntityClass[ ecArg : _]]]] *)
-					CallNode[	LeafNode[Symbol, "EntityList" | "System`EntityList", _]
-								,
-								{		ecNode : CallNode[LeafNode[Symbol,"EntityClass" |"System`EntityClass", _], {ecArg : (CallNode |LeafNode)[_, _, _]}, _]}
-								,
-								_]
-				]
-				,
-				 Association@{ecNode[[-1]], "argAST" -> ecArg[[-2]], "argASTnum" -> Last@FirstPosition[ecNode, ecArg]}
-	]
-
-
-mkpat=Function[Null, ReplaceAll[Hold[##], HoldPattern[Pattern][a_, _] :> a], HoldAll]
-
-(*--- CodeInspect *)
-pEntityClassOneArg=CallNode[LeafNode[Symbol,"EntityClass",_],{LeafNode[String,__]},_];
-
-scanEntityClassOneArg[pos_,ast_]:=
-(
-(* Echo["EntityClass with 1 arg detected"]; *)
-CodeInspector`InspectionObject["EntityClassBadSyntax","Bad one argument syntax","Fatal"
-								,Association@{ConfidenceLevel->1,(*Source*) Extract[ast,Append[pos,-1]]}]
-)
-
-(*--- Helpers*)
-
-(* convert$String$CST[code_String, so : {_Integer, _Integer}] :=
- CodeConcreteParse[StringTake[code, so], SourceConvention -> "SourceCharacterIndex"] // #[[2, 1]] &
-
-getArgument$CST$String[CallNode[{_LeafNode},GroupNode[GroupSquare,listOfArgs_List,_],_], argNum_Integer]:=
-(
-	listOfArgs // #[[2;;-2]]& // Replace[#,InfixNode[Comma,list_List,_]:>Splice@list,1]&
-	//	SplitBy[#,MatchQ[#,LeafNode[Token`Comma,__]]&]& // DeleteCases[{LeafNode[Token`Comma,",",_]}]
-	//	If[Length@#>=argNum,#[[argNum]], Missing["Missing argument",argNum]]&
-	//	convert$LN$String
-)
-getArgument$CST$String[argNum_Integer][cn_CallNode]:=getArgument$CST$String[cn,argNum]
-getArgument$CST$String[_,_]:=Missing["getArgument::arguments"]
-
-convert$LN$String[lf : {_LeafNode ..}] := StringJoin[lf[[All, 2]]] *)
-
-(* takeCodeParsedGivenSource[codeParsed_, source : {_Integer, _Integer}] :=
-(
- FirstPosition[codeParsed, KeyValuePattern[Source -> source]]
- // If[Not@MissingQ@#, Extract[codeParsed, Most@#], Missing["Source", source]] &
-)
-
-sourceFromLeafNodes[lf : {_LeafNode ..}] := lf[[All, 3]] // Values // Flatten // {First@#, Last@#} &
-
-failureStringQ[cc_]:=CodeConcreteParse[cc]// #[[2, 1]]&// ReplaceAll[ <|__|> -> _] // ToSourceCharacterString // FailureQ
+(* fixPattern[target_][code_String, pat:{(_Rule|_List)..}]:=
+	(Echo["START WARN"];
+	Fold[mergeFixes[#1, warnPattern[target][code,#]&,#2] &, {}, pat]//EchoLabel["FOLD"]
+	)
  *)
-
-(* FIX PATTERN ----------------------------------------------------------------------- *)
-$$$BadEntityType = {___, {"Fatal", "BadEntityType"}->#, ___}&;
-
-fixPattern[target_][code_String, pat : $$$BadEntityType[so_], patToIgnore_ : {}] :=
-	Module[	{
-			 fixedCode=Missing["No fix found"]
-			,success=False
-			,cp=CodeParse[code, SourceConvention->"SourceCharacterIndex"]
-			}
-			,
-			fixedCode=
-			(
-			FirstCase[cp, rEntity2ArgString, Missing["Two Arg Strings Entity"], Infinity]
-			//
-			If[	Not@MissingQ@#
-				,  StringReplacePart[	code
-										,	StringJoin[	"\[FreeformPrompt][\""
-													 	,splitCamelWithSpaces@StringTrim[#["EntityType"],"\""]
-														," "
-														,splitCamelWithSpaces@StringTrim[#["EntityID"],"\""]
-														,"\"]"
-											]
-										,	#["Source"]]
-				,
-					StringTake[code,so]//StringReplacePart[code, "\[FreeformPrompt][" <> # <>"]", so]&
-					(* fixedCode=StringTake[code,so]//
-						StringReplacePart[code, "Interpreter[\"EntityType\"][" <> # <> "]", so]& // EchoLabel["fixed"] *)
-			]&
-			)
-			;
-			{ "Success" -> True
-			, "TotalFixes" -> 0
-			, "LikelyFalsePositive" -> False
-			, "SafeToEvaluate" -> True
-			, "FixedPattern" -> pat
-			, "FixedCode" -> fixedCode
-			} // Association
-	]
-
-(*--- CodeInspect *)
-
-rEntity2ArgString=	RuleDelayed[
-						CallNode[ LeafNode[Symbol, "Entity", _], {LeafNode[String, type_, _], LeafNode[String, id_, _]}, so_]
-						,
-						Association@{"EntityType"->type, "EntityID"->id, "Source"->so[Source]}
-					]
-
-pEntityStringType=CallNode[	 LeafNode[Symbol,func:"Entity"|"EntityClass"|"EntityClassList"|"EntityList"|"EntityValue",_]
-							,{lf:LeafNode[String,name:_,_],___},_];
-
-scanEntityType[pos_,ast_]:=
-(
-	(* Echo["Scan Bad Entity Type"]; *)
-	With[	{cp=Extract[ast,pos]},
-			{params=FirstCase[cp, pEntityStringType:>{func,name,lf[[-1]]},{},{0}]}
-			,
-			If[	Not@MemberQ[EntityValue[], StringTrim[params[[2]],"\""]]
-				,	CodeInspector`InspectionObject["BadEntityType",params[[1]] <>": bad entity type","Fatal"
-													,Association@{ConfidenceLevel->1,(*Source*)params[[3]]}]
-				,	Nothing
-			]
-	]
-)
-
-(* FIX PATTERN ----------------------------------------------------------------------- *)
-
-fixPattern[target_][_String, pat_]:=
-							{ "Success" -> False
-							, "TotalFixes" -> 0
-							, "LikelyFalsePositive" -> False
-							, "SafeToEvaluate" -> False
-							, "FixedPattern" -> pat
-							, "FixedCode" -> Missing["Pattern not handled",pat]
-							} // Association
-
+fixPattern[target_][code_String, pat_]:=
+	(Echo["START WARN"];
+	Fold[mergeFixes[#1, warnPattern[target][code,#2]] &, {}, pat]//EchoLabel["FOLD"]
+	)
+(* ----------------------------------------------------------------------------------- *)
 (* ----------------------------------------------------------------------------------- *)
 
+(* WARNING PATTERN ----------------------------------------------------------------------- *)
+$$SuspiciousSymbol = HoldPattern[{___, {"Fatal", "SuspiciousSystemFunctionSymbol"}->#, ___}]&;
+$$BadSymbol = HoldPattern[{___, {"Warning$", "BadSystemLikeFunctionSymbolName"}->#, ___}]&;
+
+pNamedFunction[funcname_] :=
+ CallNode[LeafNode[Symbol,"SetDelayed", _], {CallNode[LeafNode[Symbol, funcname, _], _, _], __}, _]
+
+
+suspiciousFunctionSymbolQ[name_String] :=
+(
+	Echo["function exists?"];
+	StringStartsQ[name, _?UpperCaseQ]
+	&&
+	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasDownEvaluationsQ]]
+)
+
+pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
+
+scanSuspiciousSymbol[pos_, ast_] :=
+ (
+	Echo["Scan suspicious symbol"];
+	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}
+			,
+			If[	MissingQ@FirstCase[ast, pNamedFunction[name], Missing[], Infinity]
+				,	CodeInspector`InspectionObject["SuspiciousSystemFunctionSymbol","Suspicious Function Name: " <> name, "Fatal",
+   						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
+				,	CodeInspector`InspectionObject["BadSystemLikeFunctionSymbolName","Bad Function Name: " <> name, "Warning$",
+   						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
+			]
+	]
+)
+
+
+warnPattern[target_][code_String, pat:$$SuspiciousSymbol[so_], patToIgnore_ : {}] :=
+	{ Echo["lkjljlkjlkjlkjl"];"Success" -> True
+	, "TotalFixes" -> 0
+	, "LikelyFalsePositive" -> False
+	, "SafeToEvaluate" -> True
+	, "FixedPattern" -> pat
+	, "FixedCode" -> code
+	} // Association//Echo
+
+
+(*---*)
+
+(* WARN PATTERN (Default) ------------------------------------------------------------- *)
+warnPattern[target_][_String, pat_]:=
+	{ "Success" -> False
+	, "TotalFixes" -> 0
+	, "LikelyFalsePositive" -> False
+	, "SafeToEvaluate" -> False
+	, "FixedPattern" -> pat
+	, "FixedCode" -> Missing["Pattern not handled",pat]
+	} // Association
+
+(* ----------------------------------------------------------------------------------- *)
 
 (*------- For debugging*)
 decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Echo[x, mess], x]
