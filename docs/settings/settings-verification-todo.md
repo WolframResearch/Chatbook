@@ -54,7 +54,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MinimumResponsesToSave
 * [x] Model
 * [x] Multimodal
-* [ ] NotebookWriteMethod
+* [x] NotebookWriteMethod
 * [ ] OpenAIAPICompletionURL (deprecated)
 * [ ] OpenAIKey (deprecated)
 * [ ] OpenToolCallBoxes
