@@ -37,7 +37,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ExcludedBasePrompts
 * [x] ExperimentalFeatures
 * [x] ForceSynchronous
-* [ ] FrequencyPenalty
+* [x] FrequencyPenalty
 * [ ] HandlerFunctions
 * [ ] HandlerFunctionsKeys
 * [ ] HybridToolMethod
