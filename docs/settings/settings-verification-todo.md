@@ -33,7 +33,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] DynamicAutoFormat
 * [x] EnableChatGroupSettings
 * [x] EnableLLMServices (deprecated)
-* [ ] EndToken
+* [x] EndToken
 * [ ] ExcludedBasePrompts
 * [ ] ExperimentalFeatures
 * [ ] ForceSynchronous
