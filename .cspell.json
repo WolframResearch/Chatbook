@@ -82,6 +82,7 @@
         "Rescrape",
         "Roboto",
         "RSNB",
+        "Sandboxed",
         "schwag",
         "Screencast",
         "Scrollbars",
@@ -125,9 +126,9 @@
         "wxfl"
     ],
     "ignoreRegExpList": [
-        "\\:\\:[a-z]+",             // message names
-        "\\\\:[0-9a-f]+",           // unicode characters
-        "%[0-9A-F]{2}\\w+",         // url encoded characters
-        "1\\:eJ.+"                  // compressed data
+        "\\:\\:[a-z]+", // message names
+        "\\\\:[0-9a-f]+", // unicode characters
+        "%[0-9A-F]{2}\\w+", // url encoded characters
+        "1\\:eJ.+" // compressed data
     ]
 }
