@@ -59,7 +59,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] OpenAIKey (deprecated)
 * [x] OpenToolCallBoxes
 * [x] PersonaFavorites
-* [ ] PresencePenalty
+* [x] PresencePenalty
 * [ ] ProcessingFunctions
 * [ ] PromptGeneratorMessagePosition
 * [ ] PromptGeneratorMessageRole
