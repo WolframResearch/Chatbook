@@ -57,7 +57,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] NotebookWriteMethod
 * [x] OpenAIAPICompletionURL (deprecated)
 * [x] OpenAIKey (deprecated)
-* [ ] OpenToolCallBoxes
+* [x] OpenToolCallBoxes
 * [ ] PersonaFavorites
 * [ ] PresencePenalty
 * [ ] ProcessingFunctions
