@@ -132,7 +132,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"ShowProgressText"` | `Automatic` | Whether to show progress text while the LLM is generating a response. Model default: `True`. |
 | `"OpenToolCallBoxes"` | `Automatic` | Whether tool call display boxes are open by default. Resolves to `True` when `SendToolResponse` is `False`, otherwise `Automatic`. |
 | `"TrackScrollingWhenPlaced"` | `Automatic` | Whether to auto-scroll the notebook to follow new output as it is placed. |
-| `"AppendCitations"` | `Automatic` | Whether to append citations to the response. Model default: `False`. |
+| `"AppendCitations"` | `Automatic` | Whether to automatically append formatted source citations to the LLM response. When enabled, citations are generated from sources gathered by prompt generators (e.g., documentation, web searches, WolframAlpha results) and appended as a markdown section. When disabled, the WolframAlpha prompt generator instead includes a hint asking the LLM to cite sources inline. Model default: `False`. The WolframAlpha persona overrides this to `True`. |
 
 ## Personas & UI
 
