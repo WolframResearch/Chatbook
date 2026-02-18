@@ -26,7 +26,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ChatHistoryLength
 * [x] ChatInputIndicator
 * [x] ConversationUUID
-* [ ] ConversionRules
+* [x] ConversionRules
 * [ ] ConvertSystemRoleToUser
 * [ ] CurrentPreferencesTab
 * [ ] DiscourageExtraToolCalls
