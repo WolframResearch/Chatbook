@@ -96,7 +96,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"PromptGeneratorsEnabled"` | `Automatic` | [TODO] Which prompt generators are enabled. Behavior defined in the `PromptGenerators/` directory. |
 | `"PromptGeneratorMessagePosition"` | `2` | Position in the message list where prompt generator messages are inserted. |
 | `"PromptGeneratorMessageRole"` | `"System"` | Message role used for prompt generator messages. |
-| `"DiscourageExtraToolCalls"` | `Automatic` | Whether to include a prompt discouraging unnecessary tool calls. Model-specific (e.g., enabled for Claude 3.7 Sonnet). |
+| `"DiscourageExtraToolCalls"` | `Automatic` | Whether to include a base prompt component discouraging unnecessary tool calls. When enabled, adds the `"DiscourageExtraToolCalls"` base prompt component to the system prompt, which appends the text: `"Don't make more tool calls than is needed. Tool calls cost tokens, so be efficient!"`. The setting is evaluated via `discourageExtraToolCallsQ` in `ChatMessages.wl`, which returns `False` if `ToolsEnabled` is `False` or `Tools` is empty (i.e., the prompt is only included when tools are actually available). Has no dependencies on other base prompt components. Model-specific: currently only enabled (`True`) for Anthropic Claude 3.7 Sonnet via `$modelAutoSettings`. No global auto default exists, so `Automatic` effectively resolves to `False` for all other models. Not exposed in the preferences UI. |
 
 ## Tools
 

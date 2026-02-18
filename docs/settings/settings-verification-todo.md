@@ -29,7 +29,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ConversionRules
 * [x] ConvertSystemRoleToUser
 * [x] CurrentPreferencesTab
-* [ ] DiscourageExtraToolCalls
+* [x] DiscourageExtraToolCalls
 * [ ] DynamicAutoFormat
 * [ ] EnableChatGroupSettings
 * [ ] EnableLLMServices (deprecated)
