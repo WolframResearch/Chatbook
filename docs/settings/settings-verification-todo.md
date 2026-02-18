@@ -30,7 +30,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ConvertSystemRoleToUser
 * [x] CurrentPreferencesTab
 * [x] DiscourageExtraToolCalls
-* [ ] DynamicAutoFormat
+* [x] DynamicAutoFormat
 * [ ] EnableChatGroupSettings
 * [ ] EnableLLMServices (deprecated)
 * [ ] EndToken
