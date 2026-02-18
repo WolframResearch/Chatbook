@@ -146,6 +146,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"SetCellDingbat"` | `True` | Whether to set cell dingbats (icons) on chat cells. |
 | `"EnableChatGroupSettings"` | `False` | Whether chat group-level settings are enabled. |
 | `"AllowSelectionContext"` | `Automatic` | Whether to allow the current selection to be used as context. Resolves to `True` when using workspace chat, inline chat, or sidebar chat. |
+| `"CurrentPreferencesTab"` | `"Services"` | Persists the user's last-selected tab in the Chatbook preferences dialog. When the preferences dialog opens, the tab is initialized from this setting (defaulting to `"Services"` if unset); when the dialog closes, the current tab selection is saved back. The `openPreferencesPage` function in `PreferencesContent.wl` also writes to this setting at `$FrontEnd` scope to navigate directly to a specific preferences page. This is a non-inherited persona value (listed in `$nonInheritedPersonaValues`) and is excluded from debug/diagnostic data (listed in `$droppedSettingsKeys` in `Common.wl`). Not included in `$defaultChatSettings`. No model-specific overrides exist. |
 
 ## Storage & Conversations
 
