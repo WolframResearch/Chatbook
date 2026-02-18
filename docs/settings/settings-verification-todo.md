@@ -36,7 +36,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] EndToken
 * [x] ExcludedBasePrompts
 * [x] ExperimentalFeatures
-* [ ] ForceSynchronous
+* [x] ForceSynchronous
 * [ ] FrequencyPenalty
 * [ ] HandlerFunctions
 * [ ] HandlerFunctionsKeys
