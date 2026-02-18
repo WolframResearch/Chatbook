@@ -14,7 +14,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 
 * [x] AllowSelectionContext
 * [x] AppendCitations
-* [ ] AppName
+* [x] AppName
 * [ ] Assistance
 * [ ] Authentication
 * [ ] AutoFormat
