@@ -53,7 +53,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MergeMessages
 * [x] MinimumResponsesToSave
 * [x] Model
-* [ ] Multimodal
+* [x] Multimodal
 * [ ] NotebookWriteMethod
 * [ ] OpenAIAPICompletionURL (deprecated)
 * [ ] OpenAIKey (deprecated)
