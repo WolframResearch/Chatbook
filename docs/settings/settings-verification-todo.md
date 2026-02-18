@@ -44,7 +44,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] IncludeHistory
 * [x] InheritanceTest
 * [x] InitialChatCell
-* [ ] LLMEvaluator
+* [x] LLMEvaluator
 * [ ] MaxCellStringLength
 * [ ] MaxContextTokens
 * [ ] MaxOutputCellStringLength
