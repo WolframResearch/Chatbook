@@ -16,7 +16,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] AppendCitations
 * [x] AppName
 * [x] Assistance
-* [ ] Authentication
+* [x] Authentication
 * [ ] AutoFormat
 * [ ] AutoSaveConversations
 * [ ] BasePrompt

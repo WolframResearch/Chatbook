@@ -49,7 +49,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"Model"` | `$DefaultModel` | The LLM model specification. For Wolfram Engine 14.1+, defaults to `<\|"Service" -> "LLMKit", "Name" -> Automatic\|>`. For older versions, defaults to `<\|"Service" -> "OpenAI", "Name" -> "gpt-4o"\|>`. Can be an `Association` with `"Service"` and `"Name"` keys. |
-| `"Authentication"` | `Automatic` | Authentication method for the LLM service. When `Automatic`, resolves based on the model: `"LLMKit"` for LLMKit service models, otherwise `Automatic` (uses the service's default authentication). |
+| `"Authentication"` | `Automatic` | Authentication method for the LLM service. When `Automatic`, resolves based on the model specification: if the model has an explicit `"Authentication"` field, that value is used; if the model's `"Service"` is `"LLMKit"`, resolves to `"LLMKit"`; otherwise remains `Automatic` (uses the service's default authentication). Depends on `"Model"`. Passed directly to `LLMServices`Chat` and `LLMServices`ChatSubmit` (not via `LLMConfiguration`). |
 | `"EnableLLMServices"` | `Automatic` | Whether LLM services are enabled. Resolves to the internal `$useLLMServices` flag. |
 | `"Multimodal"` | `Automatic` | Whether multimodal (image) input is supported. Resolved per model (e.g., `True` for Claude 4, GPT-4.1, Gemini 2+; `False` for O1-Mini, O3-Mini). |
 | `"Reasoning"` | `Automatic` | Whether model reasoning/chain-of-thought is enabled. Model-specific; only supported by certain models (e.g., O-series, GPT-5). Models that don't support it return `Missing["NotSupported"]`. |
