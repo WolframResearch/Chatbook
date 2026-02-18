@@ -42,7 +42,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] HandlerFunctionsKeys
 * [x] HybridToolMethod
 * [x] IncludeHistory
-* [ ] InheritanceTest
+* [x] InheritanceTest
 * [ ] InitialChatCell
 * [ ] LLMEvaluator
 * [ ] MaxCellStringLength
