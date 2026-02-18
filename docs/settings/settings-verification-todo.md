@@ -15,7 +15,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] AllowSelectionContext
 * [x] AppendCitations
 * [x] AppName
-* [ ] Assistance
+* [x] Assistance
 * [ ] Authentication
 * [ ] AutoFormat
 * [ ] AutoSaveConversations

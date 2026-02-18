@@ -81,7 +81,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"ConvertSystemRoleToUser"` | `Automatic` | Whether to convert system-role messages to user-role messages. Model default: `False`. Required for some models (e.g., O1-Mini). |
 | `"ReplaceUnicodeCharacters"` | `Automatic` | Whether to replace Unicode characters with ASCII equivalents before sending to the LLM. Model default: `False`. Enabled for Anthropic models and some OpenAI models (e.g., GPT-5.2). |
 | `"BypassResponseChecking"` | `Automatic` | Whether to bypass response checking after receiving a response. Resolves to `True` when `ForceSynchronous` is `True`. |
-| `"Assistance"` | `Automatic` | Whether automatic assistance mode is enabled. Default: `False`. |
+| `"Assistance"` | `Automatic` | Whether automatic assistance mode is enabled. When `Automatic`, resolves to `False`. When `True`, LLM responses are processed immediately rather than being queued for user approval, output cells use `"AssistantOutput"` styles instead of `"ChatOutput"`, and certain tools are disabled (WolframLanguageEvaluator, CreateNotebook, WolframAlpha). Controlled in the notebook preferences UI as "Enable automatic assistance". |
 
 ## Prompting
 
