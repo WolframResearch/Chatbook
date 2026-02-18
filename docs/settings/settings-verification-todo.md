@@ -45,7 +45,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] InheritanceTest
 * [x] InitialChatCell
 * [x] LLMEvaluator
-* [ ] MaxCellStringLength
+* [x] MaxCellStringLength
 * [ ] MaxContextTokens
 * [ ] MaxOutputCellStringLength
 * [ ] MaxTokens
