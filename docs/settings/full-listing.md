@@ -123,7 +123,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
-| `"AutoFormat"` | `True` | Whether to auto-format LLM output by converting Markdown to structured notebook cells. |
+| `"AutoFormat"` | `True` | Whether to auto-format LLM output by parsing Markdown syntax and converting it to structured notebook cells. When enabled, the LLM response is processed to convert Markdown elements (code blocks with language detection, headings, bold/italic text, inline code, LaTeX math, images, bullet lists, block quotes, and tables) into properly formatted Wolfram notebook cells. Also includes the `"Formatting"` base prompt component in the system prompt, which instructs the LLM that its output will be parsed as Markdown. When disabled, output is displayed as plain text. Works in conjunction with `"DynamicAutoFormat"` to control whether formatting is applied during streaming. |
 | `"DynamicAutoFormat"` | `Automatic` | Whether to use dynamic formatting during streaming, providing live-formatted output as the response streams in. |
 | `"StreamingOutputMethod"` | `Automatic` | Method for streaming output display. Default: `"PartialDynamic"`. |
 | `"NotebookWriteMethod"` | `Automatic` | Method for writing content to the notebook. Default: `"PreemptiveLink"`. |
