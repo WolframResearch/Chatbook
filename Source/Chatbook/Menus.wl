@@ -55,7 +55,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                 "Main" -> 
                     Column[
                         {
-                            linkTrailFrame[ "AI Settings", setCurrentValue[ sidebarCell, CellTags, "ResetToMain" ] ],
+                            linkTrailFrame[ tr @ "UIAISettings", setCurrentValue[ sidebarCell, CellTags, "ResetToMain" ] ],
                             scrollablePane[
                                 Column[
                                     sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ items,
@@ -66,7 +66,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                 "Services" ->
                     Dynamic @ Column[(* oddity: dynamic column doesn't get the spacings right, leaving a gap, so close the gap by hand *)
                         {
-                            linkTrailFrame[ "Models", aiPane = "Main" ],
+                            linkTrailFrame[ tr @ "UIModels", aiPane = "Main" ],
                             scrollablePane[
                                 Column[
                                     sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ Wolfram`Chatbook`UI`Private`createServiceMenu[ en ],
@@ -90,7 +90,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                 "AdvancedSettings" ->
                     Column[
                         {
-                            linkTrailFrame[ "Advanced Settings", aiPane = "Main" ],
+                            linkTrailFrame[ tr @ "UIAdvancedSettings", aiPane = "Main" ],
                             scrollablePane[
                                 Column[
                                     sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en, sidebarCell ],
