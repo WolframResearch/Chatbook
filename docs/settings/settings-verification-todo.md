@@ -32,7 +32,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] DiscourageExtraToolCalls
 * [x] DynamicAutoFormat
 * [x] EnableChatGroupSettings
-* [ ] EnableLLMServices (deprecated)
+* [x] EnableLLMServices (deprecated)
 * [ ] EndToken
 * [ ] ExcludedBasePrompts
 * [ ] ExperimentalFeatures
