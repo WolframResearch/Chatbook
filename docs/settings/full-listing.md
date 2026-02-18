@@ -72,7 +72,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"IncludeHistory"` | `Automatic` | Whether to include chat history in the context. When `Automatic`, history inclusion is determined by the chat mode. |
-| `"ChatHistoryLength"` | `1000` | Maximum number of tokens of chat history to include in the context. |
+| `"ChatHistoryLength"` | `1000` | Maximum number of chat cells to include in the context. When sending a chat message, the system selects cells starting from the current cell and looking backwards, limited to this count. Used in two paths: `selectChatCells` in `SendChat.wl` (which sets `$maxChatCells` from this value and applies `Take[..., UpTo @ $maxChatCells]` on the filtered cell list) and `selectChatHistoryCells` in `ChatHistory.wl` (which applies the same kind of limit on cell information entries). When the value is not a positive integer, falls back to the default `$maxChatCells`. Exposed in the notebook preferences UI as a numeric input field under the "Notebooks" section. Note: this is a cell count limit, not a token limit; token budgeting is handled separately by `"MaxContextTokens"` and `"TokenBudgetMultiplier"`. |
 | `"MergeMessages"` | `True` | Whether to merge consecutive messages with the same role into a single message. |
 | `"MaxCellStringLength"` | `Automatic` | Maximum string length for input cell content included in the context. Resolved based on model and `MaxContextTokens`. |
 | `"MaxOutputCellStringLength"` | `Automatic` | Maximum string length for output cell content included in the context. Resolved based on `MaxCellStringLength`. |

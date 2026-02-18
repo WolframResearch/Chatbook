@@ -23,7 +23,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] BypassResponseChecking
 * [x] ChatContextPreprompt (deprecated)
 * [x] ChatDrivenNotebook (deprecated)
-* [ ] ChatHistoryLength
+* [x] ChatHistoryLength
 * [ ] ChatInputIndicator
 * [ ] ConversationUUID
 * [ ] ConversionRules
