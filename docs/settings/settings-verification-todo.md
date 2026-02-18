@@ -41,7 +41,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] HandlerFunctions
 * [x] HandlerFunctionsKeys
 * [x] HybridToolMethod
-* [ ] IncludeHistory
+* [x] IncludeHistory
 * [ ] InheritanceTest
 * [ ] InitialChatCell
 * [ ] LLMEvaluator
