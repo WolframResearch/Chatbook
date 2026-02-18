@@ -31,7 +31,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] CurrentPreferencesTab
 * [x] DiscourageExtraToolCalls
 * [x] DynamicAutoFormat
-* [ ] EnableChatGroupSettings
+* [x] EnableChatGroupSettings
 * [ ] EnableLLMServices (deprecated)
 * [ ] EndToken
 * [ ] ExcludedBasePrompts
