@@ -170,6 +170,8 @@
 "UIAddAndManageTools" -> "Add & Manage Tools\[Ellipsis]",
 "UIModels" -> "Models",
 "UIModelsServices" -> "Services",
+"UIAISettings" -> "AI Settings",
+"UIAdvancedSettings" -> "Advanced Settings",
 "UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "Getting available models\[Ellipsis]",
 "UIModelsNoList" -> "Connect for model list",
