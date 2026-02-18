@@ -50,7 +50,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MaxOutputCellStringLength
 * [x] MaxTokens
 * [x] MaxToolResponses
-* [ ] MergeMessages
+* [x] MergeMessages
 * [ ] MinimumResponsesToSave
 * [ ] Model
 * [ ] Multimodal
