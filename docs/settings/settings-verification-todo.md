@@ -22,7 +22,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] BasePrompt
 * [x] BypassResponseChecking
 * [x] ChatContextPreprompt (deprecated)
-* [ ] ChatDrivenNotebook (deprecated)
+* [x] ChatDrivenNotebook (deprecated)
 * [ ] ChatHistoryLength
 * [ ] ChatInputIndicator
 * [ ] ConversationUUID

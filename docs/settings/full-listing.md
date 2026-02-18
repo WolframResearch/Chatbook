@@ -140,7 +140,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | ------- | ------- | ----------- |
 | `"LLMEvaluator"` | `"CodeAssistant"` | The persona (LLM evaluator) to use. Determines the system prompt, available tools, and other settings. See the `LLMConfiguration/Personas/` directory for built-in personas. |
 | `"VisiblePersonas"` | `$corePersonaNames` | List of persona names visible in the persona selector UI. |
-| `"ChatDrivenNotebook"` | `False` | Whether the entire notebook operates in chat-driven mode. This is a non-inherited persona value. |
+| `"ChatDrivenNotebook"` | `False` | **Deprecated.** Whether the entire notebook operates in "chat-driven" mode rather than the default "chat-enabled" mode. When `True`, new cells default to `"ChatInput"` style, the persona selector prioritizes PlainChat/RawModel/CodeWriter/CodeAssistant at the top of the list (`UI.wl` `filterPersonas`), and the cloud toolbar displays "Chat-Driven Notebook" instead of "Chat Notebook" (`CloudToolbar.wl`). Used by `CreateChatDrivenNotebook[]`, which wraps `CreateChatNotebook` with `"ChatDrivenNotebook" -> True`, `"LLMEvaluator" -> "PlainChat"`, and `DefaultNewCellStyle -> "ChatInput"`. This is a non-inherited persona value (listed in `$nonInheritedPersonaValues`). |
 | `"InitialChatCell"` | `True` | Whether to create an initial chat input cell when opening a chat notebook. This is a non-inherited persona value. |
 | `"ChatInputIndicator"` | `Automatic` | Character or expression used as the chat input indicator. Default: `"\|01f4ac"` (speech balloon emoji). |
 | `"SetCellDingbat"` | `True` | Whether to set cell dingbats (icons) on chat cells. |
