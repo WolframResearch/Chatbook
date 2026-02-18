@@ -24,7 +24,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ChatContextPreprompt (deprecated)
 * [x] ChatDrivenNotebook (deprecated)
 * [x] ChatHistoryLength
-* [ ] ChatInputIndicator
+* [x] ChatInputIndicator
 * [ ] ConversationUUID
 * [ ] ConversionRules
 * [ ] ConvertSystemRoleToUser
