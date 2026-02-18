@@ -55,7 +55,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] Model
 * [x] Multimodal
 * [x] NotebookWriteMethod
-* [ ] OpenAIAPICompletionURL (deprecated)
+* [x] OpenAIAPICompletionURL (deprecated)
 * [ ] OpenAIKey (deprecated)
 * [ ] OpenToolCallBoxes
 * [ ] PersonaFavorites
