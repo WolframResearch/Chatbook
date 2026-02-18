@@ -51,7 +51,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MaxTokens
 * [x] MaxToolResponses
 * [x] MergeMessages
-* [ ] MinimumResponsesToSave
+* [x] MinimumResponsesToSave
 * [ ] Model
 * [ ] Multimodal
 * [ ] NotebookWriteMethod
