@@ -49,7 +49,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MaxContextTokens
 * [x] MaxOutputCellStringLength
 * [x] MaxTokens
-* [ ] MaxToolResponses
+* [x] MaxToolResponses
 * [ ] MergeMessages
 * [ ] MinimumResponsesToSave
 * [ ] Model
