@@ -25,7 +25,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ChatDrivenNotebook (deprecated)
 * [x] ChatHistoryLength
 * [x] ChatInputIndicator
-* [ ] ConversationUUID
+* [x] ConversationUUID
 * [ ] ConversionRules
 * [ ] ConvertSystemRoleToUser
 * [ ] CurrentPreferencesTab
