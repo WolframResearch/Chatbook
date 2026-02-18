@@ -52,7 +52,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] MaxToolResponses
 * [x] MergeMessages
 * [x] MinimumResponsesToSave
-* [ ] Model
+* [x] Model
 * [ ] Multimodal
 * [ ] NotebookWriteMethod
 * [ ] OpenAIAPICompletionURL (deprecated)
