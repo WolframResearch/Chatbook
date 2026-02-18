@@ -152,7 +152,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"ConversationUUID"` | `None` | UUID identifying the current conversation. `None` means no conversation tracking. |
-| `"AutoSaveConversations"` | `Automatic` | Whether to automatically save conversations. Resolved based on `AppName` and `ConversationUUID`. |
+| `"AutoSaveConversations"` | `Automatic` | Whether to automatically save conversations to persistent storage after chat evaluations. When `Automatic`, resolves to `True` if both `AppName` is a valid string and `ConversationUUID` is a valid string; otherwise resolves to `False`. Depends on `"AppName"` and `"ConversationUUID"`. When `True`, conversations are saved after each chat evaluation, subject to the `"MinimumResponsesToSave"` threshold. Chat modes may override this: workspace chat and sidebar chat set it to `True` (with a new `ConversationUUID`), while inline chat sets it to `False`. |
 | `"AppName"` | `Automatic` | Application name used to namespace saved conversations, search indexes, and chat history listings. When `Automatic`, resolves to `$defaultAppName` (`"Default"`). When set to a non-default string value, also establishes a service caller context via `setServiceCaller`. Chat modes may override this (e.g., NotebookAssistance uses `"NotebookAssistance"`). The `AutoSaveConversations` setting depends on `AppName` being a valid string. |
 | `"MinimumResponsesToSave"` | `1` | Minimum number of assistant responses required before a conversation is saved. |
 | `"TargetCloudObject"` | `Automatic` | Target cloud object for cloud-based conversation storage. |
