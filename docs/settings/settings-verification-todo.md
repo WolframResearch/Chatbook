@@ -35,7 +35,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] EnableLLMServices (deprecated)
 * [x] EndToken
 * [x] ExcludedBasePrompts
-* [ ] ExperimentalFeatures
+* [x] ExperimentalFeatures
 * [ ] ForceSynchronous
 * [ ] FrequencyPenalty
 * [ ] HandlerFunctions
