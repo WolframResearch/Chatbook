@@ -20,7 +20,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] AutoFormat
 * [x] AutoSaveConversations
 * [x] BasePrompt
-* [ ] BypassResponseChecking
+* [x] BypassResponseChecking
 * [ ] ChatContextPreprompt (deprecated)
 * [ ] ChatDrivenNotebook (deprecated)
 * [ ] ChatHistoryLength
