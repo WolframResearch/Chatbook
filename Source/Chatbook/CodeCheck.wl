@@ -991,7 +991,7 @@ fixPattern[target_][code_String, pat_]:=
 (* ----------------------------------------------------------------------------------- *)
 
 (* WARNING PATTERN ----------------------------------------------------------------------- *)
-$$SuspiciousSymbol = HoldPattern[{___, {"Fatal", "SuspiciousSystemFunctionSymbol"}->#, ___}]&;
+$$SuspiciousSymbol = HoldPattern[{___, {"WarningChatNotebook", "SuspiciousSystemFunctionSymbol"}->#, ___}]&;
 $$BadSymbol = HoldPattern[{___, {"Warning$", "BadSystemLikeFunctionSymbolName"}->#, ___}]&;
 
 pNamedFunction[funcname_] :=
@@ -1003,7 +1003,7 @@ suspiciousFunctionSymbolQ[name_String] :=
 	Echo["function exists?"];
 	StringStartsQ[name, _?UpperCaseQ]
 	&&
-	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasDownEvaluationsQ]]
+	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasAnyEvaluationsQ]]
 )
 
 pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
@@ -1014,9 +1014,9 @@ scanSuspiciousSymbol[pos_, ast_] :=
 	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}
 			,
 			If[	MissingQ@FirstCase[ast, pNamedFunction[name], Missing[], Infinity]
-				,	CodeInspector`InspectionObject["SuspiciousSystemFunctionSymbol","Suspicious Function Name: " <> name, "Fatal",
+				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
    						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
-				,	CodeInspector`InspectionObject["BadSystemLikeFunctionSymbolName","Bad Function Name: " <> name, "Warning$",
+				,	CodeInspector`InspectionObject["GlobalSymbolName","Bad Function Name: " <> name, "RemarkChatebook",
    						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
 			]
 	]
