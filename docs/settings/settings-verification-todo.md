@@ -43,7 +43,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] HybridToolMethod
 * [x] IncludeHistory
 * [x] InheritanceTest
-* [ ] InitialChatCell
+* [x] InitialChatCell
 * [ ] LLMEvaluator
 * [ ] MaxCellStringLength
 * [ ] MaxContextTokens
