@@ -46,7 +46,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] InitialChatCell
 * [x] LLMEvaluator
 * [x] MaxCellStringLength
-* [ ] MaxContextTokens
+* [x] MaxContextTokens
 * [ ] MaxOutputCellStringLength
 * [ ] MaxTokens
 * [ ] MaxToolResponses
