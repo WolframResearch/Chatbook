@@ -137,7 +137,7 @@ CodeFix[target_][
 		,kvCI:KeyValuePattern[{"ErrorsDetected"->True, "CodeInspector"->_}]
 		,params_:<||>
 		]:=
-		CodeFix[target][{}, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]//EchoLabel["generatePatternFromCodeCheck"]]//EchoLabel["1 Fixpattern"]]
+		CodeFix[target][<||>, fixPattern[target][code, generatePatternFromCodeCheck[kvCI]]]
 
 CodeFix[target_][
 		code_String
@@ -147,21 +147,21 @@ CodeFix[target_][
 
 
 CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:=
-	With[{merged=mergeFixes[kvFixPrev, kvFixNew]//EchoLabel["merged0"]},
+	With[{merged=mergeFixes[kvFixPrev, kvFixNew]},
 		If[	MatchQ[	kvFixNew	,Alternatives[	 KeyValuePattern[{"Success"->False}]
 												,KeyValuePattern[{"Success"->True, "LikelyFalsePositive"->True}]
 												,KeyValuePattern[{"Success"->True, "FixedCode"->_Missing}]
-												,KeyValuePattern[{"StopCodeCheck"->True}]]
-			]//EchoLabel["MatchQ"]
+												,KeyValuePattern[{"StopCodeFix"->True}]]
+			]
 			,
-			merged//KeyDrop["StopCodeCheck"]//EchoLabel["merged"]
+			merged//KeyDrop["StopCodeFix"]
 			,
-			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]] // EchoLabel["new pattern"]
-			//	If[	 Echo@niter > recursionLimit
+			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]]
+			//	If[	 niter > recursionLimit
 					,
 					{merged, "Success"->False, "RecursionLimitExceeded"->True}
 					,
-					If[#==={}, merged//EchoLabel["merged2"], (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
+					If[#==={}, merged, (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
 				]&
 		]
 	]
@@ -178,8 +178,8 @@ extractPatternFromInspectionObject[
 							,	"SuspiciousQuantityUnitName"
 							,	"EntityClassBadSyntax"
 							,	"BadEntityType"
-							,	"SuspiciousSystemFunctionSymbol"
-							,	"BadSystemLikeFunctionSymbolName"]
+							,	"SuspiciousFunctionSymbol"
+							,	"GlobalCapitalizedSymbol"]
 				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
@@ -187,17 +187,18 @@ extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
 lengthErrors[f_Failure]:=f
 
+initFix=<|"Success"-> True, "TotalFixes"-> 0, "LikelyFalsePositive"->False, "SafeToEvaluate"->True, "FixedPatterns"->{}, "FixedCode"->Missing["No fixed code"]|>;
 
-mergeFixes[{}, newFix:KeyValuePattern["FixedPattern"->_]] := {KeyDrop[newFix,"FixedPattern"], "FixedPatterns" ->{newFix["FixedPattern"]}} // Association
-mergeFixes[{}, newFix:KeyValuePattern["FixedPatterns"->_]] := newFix
+mergeFixes[<||>, newFix:KeyValuePattern["FixedPatterns"->_]]:=newFix
+mergeFixes[<||>, newFix_]:=	mergeFixes[initFix, newFix] // If[TrueQ@Wolfram`Chatbook`CodeCheck`$CodeCheckDebug, Association@@{newFix,#},#]&
 
 mergeFixes[prevFix_, newFix_] :=
  	{
-		"Success" -> newFix["Success"],
-		"TotalFixes" -> Plus[prevFix[#], Lookup[newFix,#,0]] &@"TotalFixes",
-		"LikelyFalsePositive" -> Or[prevFix[#],Lookup[newFix,#,False]] &@"LikelyFalsePositive",
-		"SafeToEvaluate" -> And[prevFix[#], Lookup[newFix,#,False]] &@"SafeToEvaluate",
-		"FixedPatterns" -> Append[prevFix["FixedPatterns"],Lookup[newFix,"FixedPattern"]],
+		"Success" -> And[newFix[#], prevFix[#]]& @ "Success",
+		"TotalFixes" -> Plus[prevFix[#], newFix[#]] &@"TotalFixes",
+		"LikelyFalsePositive" -> Or[prevFix[#], newFix[#]] &@"LikelyFalsePositive",
+		"SafeToEvaluate" -> And[prevFix[#], newFix[#]] &@"SafeToEvaluate",
+		"FixedPatterns" -> Append[prevFix["FixedPatterns"],Lookup[newFix,"FixedPattern",Lookup[newFix, "FixedPatterns",Missing["FixedPattern"]]]],
 		"FixedCode" -> (newFix["FixedCode"] // If[MissingQ@#, prevFix["FixedCode"], #]&)
 	} // Flatten // Association
 (* ::Subsection:: *)
@@ -520,7 +521,8 @@ fixPattern[$EvaluatorPattern][code_String, pat : $$FatalGroupMissingCloser, patT
 						DeleteDuplicates // dechofunction["Number of possible fixes",Length] //
 						Reverse // (allCodeNoScore=#)& //
 						(allCodeScore=scoreAndSort[#])&//  (*Adding scores*)
-						SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&//
+						(* SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&// *)
+						First//
 						decholabel["final fix:"]//
 						Last
 
@@ -977,22 +979,17 @@ scanQuantityUnitName[pos_, ast_] :=
 
 (* FIX PATTERN (Default) -> WARN PATTERN ------------------------------------------------------------- *)
 
-(* fixPattern[target_][code_String, pat:{(_Rule|_List)..}]:=
-	(Echo["START WARN"];
-	Fold[mergeFixes[#1, warnPattern[target][code,#]&,#2] &, {}, pat]//EchoLabel["FOLD"]
-	)
- *)
 fixPattern[target_][code_String, pat_]:=
-	(Echo["START WARN"];
-	Fold[mergeFixes[#1, warnPattern[target][code,{#2}]] &, {}, pat]//EchoLabel["FOLD"]//
-	Association@@{#,"StopCodeCheck"->True}&
+	((* Echo["START WARN"]; *)
+	Fold[mergeFixes[#1, warnPattern[target][code,{#2}]] &, <||>, pat]//
+	Association@@{#,"StopCodeFix"->True}&
 	)
-(* ----------------------------------------------------------------------------------- *)
+
 (* ----------------------------------------------------------------------------------- *)
 
 (* WARNING PATTERN ----------------------------------------------------------------------- *)
-$$SuspiciousSymbol = HoldPattern[{___, {"WarningChatNotebook", "SuspiciousSystemFunctionSymbol"}->#, ___}]&;
-$$BadSymbol = HoldPattern[{___, {"Warning$", "BadSystemLikeFunctionSymbolName"}->#, ___}]&;
+$$SuspiciousSymbol = HoldPattern[{___, {"WarningChatbook", "SuspiciousFunctionSymbol"}->#, ___}]&;
+$$BadSymbol = HoldPattern[{___, {"RemarkChatebook", "GlobalCapitalizedSymbol"}->#, ___}]&;
 
 pNamedFunction[funcname_] :=
  CallNode[LeafNode[Symbol,"SetDelayed", _], {CallNode[LeafNode[Symbol, funcname, _], _, _], __}, _]
@@ -1000,8 +997,8 @@ pNamedFunction[funcname_] :=
 
 suspiciousFunctionSymbolQ[name_String] :=
 (
-	Echo["function exists?"];
-	StringStartsQ[name, _?UpperCaseQ]
+	(* Echo["function exists?"]; *)
+	StringSplit[name, "`"] // Map[StringStartsQ[_?UpperCaseQ]] // Apply[And]
 	&&
 	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasAnyEvaluationsQ]]
 )
@@ -1010,13 +1007,13 @@ pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbol
 
 scanSuspiciousSymbol[pos_, ast_] :=
  (
-	Echo["Scan suspicious symbol"];
+	(* Echo["Scan suspicious symbol"]; *)
 	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}
 			,
 			If[	MissingQ@FirstCase[ast, pNamedFunction[name], Missing[], Infinity]
 				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
    						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
-				,	CodeInspector`InspectionObject["GlobalSymbolName","Bad Function Name: " <> name, "RemarkChatebook",
+				,	CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
    						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
 			]
 	]
@@ -1030,7 +1027,7 @@ warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_]|$$BadSymbol[so_])
 	, "SafeToEvaluate" -> True
 	, "FixedPattern" -> pat
 	, "FixedCode" -> Missing["Warning only"]
-	} // Association//Echo
+	} // Association
 
 
 (*---*)
@@ -1041,8 +1038,8 @@ warnPattern[target_][_String, pat_]:=
 	, "TotalFixes" -> 0
 	, "LikelyFalsePositive" -> False
 	, "SafeToEvaluate" -> False
-	, "FixedPattern" -> pat
-	, "FixedCode" -> Missing["Pattern not handled",pat]
+	, "FixedPattern" -> Missing["Warn",pat]
+	, "FixedCode" -> Missing["No pattern", pat]
 	} // Association
 
 (* ----------------------------------------------------------------------------------- *)
