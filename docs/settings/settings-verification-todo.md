@@ -47,7 +47,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] LLMEvaluator
 * [x] MaxCellStringLength
 * [x] MaxContextTokens
-* [ ] MaxOutputCellStringLength
+* [x] MaxOutputCellStringLength
 * [ ] MaxTokens
 * [ ] MaxToolResponses
 * [ ] MergeMessages
