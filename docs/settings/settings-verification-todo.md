@@ -40,7 +40,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] FrequencyPenalty
 * [x] HandlerFunctions
 * [x] HandlerFunctionsKeys
-* [ ] HybridToolMethod
+* [x] HybridToolMethod
 * [ ] IncludeHistory
 * [ ] InheritanceTest
 * [ ] InitialChatCell
