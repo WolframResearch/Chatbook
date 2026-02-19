@@ -83,7 +83,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] Tokenizer
 * [x] ToolCallExamplePromptStyle
 * [x] ToolCallFrequency
-* [ ] ToolCallRetryMessage
+* [x] ToolCallRetryMessage
 * [ ] ToolExamplePrompt
 * [ ] ToolMethod
 * [ ] ToolOptions
