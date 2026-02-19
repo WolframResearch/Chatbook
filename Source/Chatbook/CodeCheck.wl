@@ -994,31 +994,37 @@ $$BadSymbol = HoldPattern[{___, {"RemarkChatebook", "GlobalCapitalizedSymbol"}->
 pNamedFunction[funcname_] :=
  CallNode[LeafNode[Symbol,"SetDelayed", _], {CallNode[LeafNode[Symbol, funcname, _], _, _], __}, _]
 
+$UserDefinedFunctionsQ=<||>
+
+pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
 
 suspiciousFunctionSymbolQ[name_String] :=
 (
 	(* Echo["function exists?"]; *)
 	StringSplit[name, "`"] // Map[StringStartsQ[_?UpperCaseQ]] // Apply[And]
 	&&
+	Not[TrueQ@$UserDefinedFunctionsQ[name]]
+	&&
 	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasAnyEvaluationsQ]]
 )
-
-pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
 
 scanSuspiciousSymbol[pos_, ast_] :=
  (
 	(* Echo["Scan suspicious symbol"]; *)
-	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}
+	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}, {funcnode=FirstCase[ast, pNamedFunction[name], Missing[], Infinity]}
 			,
-			If[	MissingQ@FirstCase[ast, pNamedFunction[name], Missing[], Infinity]
+			If[	MissingQ@funcnode
 				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
    						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
-				,	CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
-   						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
+				,	AppendTo[$UserDefinedFunctionsQ,name->True]
+					;
+					Nothing
+					(* ;
+					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
+   						Association@{ConfidenceLevel -> 1,(*Source*)funcnode[[-1]]}] *)
 			]
 	]
 )
-
 
 warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_]|$$BadSymbol[so_]), patToIgnore_ : {}] :=
 	{ "Success" -> True
