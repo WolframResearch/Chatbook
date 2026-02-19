@@ -3,8 +3,7 @@
 * [ ] Settings
   - Source: `Source/Chatbook/Settings.wl`
   - [x] Listing of available settings
-    - Add descriptions for settings that are fully defined in Settings.wl
-    - For other settings, leave a `[TODO]` placeholder in that section for now
+  - [ ] Settings resolution for `Automatic` values (relevant: `AbsoluteCurrentChatSettings`)
   - [ ] How to add support for new models
 * [ ] Citations
   - Source: `Source/Chatbook/Citations.wl`
