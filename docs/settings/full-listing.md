@@ -206,7 +206,7 @@ When a setting has a value of `Automatic`, the resolution pipeline checks `$mode
 7. Service-level default (e.g., `$modelAutoSettings["Anthropic", Automatic]`)
 8. Global default (`$modelAutoSettings[Automatic, Automatic]`)
 
-The first match wins. For details on how to add support for new models, see [TODO: How to Add Support for New Models].
+The first match wins. For details on how to add support for new models, see [TODO: How to Add Support for New Models]().
 
 ### Global Auto Setting Defaults
 
