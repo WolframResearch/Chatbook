@@ -76,7 +76,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] StopTokens
 * [x] StreamingOutputMethod
 * [x] TabbedOutput
-* [ ] TargetCloudObject
+* [x] TargetCloudObject
 * [ ] Temperature
 * [ ] TimeConstraint
 * [ ] TokenBudgetMultiplier
