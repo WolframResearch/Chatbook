@@ -67,7 +67,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] PromptGeneratorsEnabled
 * [x] Prompts
 * [x] Reasoning
-* [ ] ReplaceUnicodeCharacters
+* [x] ReplaceUnicodeCharacters
 * [ ] SendToolResponse
 * [ ] SetCellDingbat
 * [ ] ShowMinimized
