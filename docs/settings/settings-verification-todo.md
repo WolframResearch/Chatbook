@@ -62,7 +62,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] PresencePenalty
 * [x] ProcessingFunctions
 * [x] PromptGeneratorMessagePosition
-* [ ] PromptGeneratorMessageRole
+* [x] PromptGeneratorMessageRole
 * [ ] PromptGenerators
 * [ ] PromptGeneratorsEnabled
 * [ ] Prompts
