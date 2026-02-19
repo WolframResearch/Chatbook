@@ -163,7 +163,3 @@ When `True`, `makeMessageContent` (`ChatMessages.wl`) processes cell content thr
 ### Preferences UI
 
 Exposed in `PreferencesContent.wl` under the "Features" section as a PopupMenu with three options: `Automatic` ("Enabled by Model"), `True` ("Enabled Always"), and `False` ("Enabled Never"), reading and writing `CurrentChatSettings[$preferencesScope, "Multimodal"]`.
-
-## `"Reasoning"`
-
-Model-specific; only supported by certain models (e.g., O-series, GPT-5). Models that don't support it return `Missing["NotSupported"]`.
