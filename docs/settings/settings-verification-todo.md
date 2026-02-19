@@ -90,7 +90,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ToolResponseRole
 * [x] ToolResponseStyle
 * [x] Tools
-* [ ] ToolSelectionType
+* [x] ToolSelectionType
 * [ ] ToolsEnabled
 * [ ] TopP
 * [ ] TrackScrollingWhenPlaced
