@@ -81,7 +81,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] TimeConstraint
 * [x] TokenBudgetMultiplier
 * [x] Tokenizer
-* [ ] ToolCallExamplePromptStyle
+* [x] ToolCallExamplePromptStyle
 * [ ] ToolCallFrequency
 * [ ] ToolCallRetryMessage
 * [ ] ToolExamplePrompt
