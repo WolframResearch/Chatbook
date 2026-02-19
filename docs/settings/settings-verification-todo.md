@@ -72,7 +72,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] SetCellDingbat
 * [x] ShowMinimized
 * [x] ShowProgressText
-* [ ] SplitToolResponseMessages
+* [x] SplitToolResponseMessages
 * [ ] StopTokens
 * [ ] StreamingOutputMethod
 * [ ] TabbedOutput
