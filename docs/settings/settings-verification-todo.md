@@ -70,7 +70,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ReplaceUnicodeCharacters
 * [x] SendToolResponse
 * [x] SetCellDingbat
-* [ ] ShowMinimized
+* [x] ShowMinimized
 * [ ] ShowProgressText
 * [ ] SplitToolResponseMessages
 * [ ] StopTokens
