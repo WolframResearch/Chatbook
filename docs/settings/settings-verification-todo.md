@@ -80,7 +80,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] Temperature
 * [x] TimeConstraint
 * [x] TokenBudgetMultiplier
-* [ ] Tokenizer
+* [x] Tokenizer
 * [ ] ToolCallExamplePromptStyle
 * [ ] ToolCallFrequency
 * [ ] ToolCallRetryMessage
