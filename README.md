@@ -64,4 +64,4 @@ Wolfram code in the chat output can be evaluated in place immediately:
 
 ## License
 
-Licensed under the MIT license ([LICENSE-MIT](./LICENSE) or <https://opensource.org/license/MIT/>)
+Licensed under the MIT license ([LICENSE](./LICENSE) or <https://opensource.org/license/MIT/>)
