@@ -79,7 +79,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] TargetCloudObject
 * [x] Temperature
 * [x] TimeConstraint
-* [ ] TokenBudgetMultiplier
+* [x] TokenBudgetMultiplier
 * [ ] Tokenizer
 * [ ] ToolCallExamplePromptStyle
 * [ ] ToolCallFrequency
