@@ -60,7 +60,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] OpenToolCallBoxes
 * [x] PersonaFavorites
 * [x] PresencePenalty
-* [ ] ProcessingFunctions
+* [x] ProcessingFunctions
 * [ ] PromptGeneratorMessagePosition
 * [ ] PromptGeneratorMessageRole
 * [ ] PromptGenerators
