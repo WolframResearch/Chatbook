@@ -1761,8 +1761,6 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
 
-        applyHandlerFunction[ settings, "ToolResponseReceived", <| "ToolResponse" -> toolResponse |> ];
-
         If[ ! sendToolResponseQ[ settings, toolResponse ], throwTop @ StopChat @ cell ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
