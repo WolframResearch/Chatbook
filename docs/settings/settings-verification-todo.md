@@ -61,7 +61,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] PersonaFavorites
 * [x] PresencePenalty
 * [x] ProcessingFunctions
-* [ ] PromptGeneratorMessagePosition
+* [x] PromptGeneratorMessagePosition
 * [ ] PromptGeneratorMessageRole
 * [ ] PromptGenerators
 * [ ] PromptGeneratorsEnabled
