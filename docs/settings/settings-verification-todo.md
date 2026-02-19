@@ -75,7 +75,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] SplitToolResponseMessages
 * [x] StopTokens
 * [x] StreamingOutputMethod
-* [ ] TabbedOutput
+* [x] TabbedOutput
 * [ ] TargetCloudObject
 * [ ] Temperature
 * [ ] TimeConstraint
