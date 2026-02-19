@@ -1016,7 +1016,7 @@ scanSuspiciousSymbol[pos_, ast_] :=
 			If[	MissingQ@funcnode
 				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
    						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
-				,	AppendTo[$UserDefinedFunctionsQ,name->True]
+				,	$UserDefinedFunctionsQ[name]=True
 					;
 					Nothing
 					(* ;
