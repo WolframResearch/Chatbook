@@ -92,7 +92,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] Tools
 * [x] ToolSelectionType
 * [x] ToolsEnabled
-* [ ] TopP
+* [x] TopP
 * [ ] TrackScrollingWhenPlaced
 * [ ] UserInstructions
 * [ ] VisiblePersonas
