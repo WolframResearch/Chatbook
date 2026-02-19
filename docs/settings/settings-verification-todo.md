@@ -74,7 +74,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ShowProgressText
 * [x] SplitToolResponseMessages
 * [x] StopTokens
-* [ ] StreamingOutputMethod
+* [x] StreamingOutputMethod
 * [ ] TabbedOutput
 * [ ] TargetCloudObject
 * [ ] Temperature
