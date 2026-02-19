@@ -94,5 +94,5 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ToolsEnabled
 * [x] TopP
 * [x] TrackScrollingWhenPlaced
-* [ ] UserInstructions
+* [x] UserInstructions
 * [ ] VisiblePersonas
