@@ -69,7 +69,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] Reasoning
 * [x] ReplaceUnicodeCharacters
 * [x] SendToolResponse
-* [ ] SetCellDingbat
+* [x] SetCellDingbat
 * [ ] ShowMinimized
 * [ ] ShowProgressText
 * [ ] SplitToolResponseMessages
