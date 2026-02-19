@@ -82,7 +82,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] TokenBudgetMultiplier
 * [x] Tokenizer
 * [x] ToolCallExamplePromptStyle
-* [ ] ToolCallFrequency
+* [x] ToolCallFrequency
 * [ ] ToolCallRetryMessage
 * [ ] ToolExamplePrompt
 * [ ] ToolMethod
