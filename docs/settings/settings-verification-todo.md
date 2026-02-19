@@ -87,7 +87,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ToolExamplePrompt
 * [x] ToolMethod
 * [x] ToolOptions
-* [ ] ToolResponseRole
+* [x] ToolResponseRole
 * [ ] ToolResponseStyle
 * [ ] Tools
 * [ ] ToolSelectionType
