@@ -111,22 +111,22 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
-| `"Tools"` | `Automatic` | Tool definitions available to the LLM, resolved as a list of `LLMTool` objects during chat processing. When `Automatic`, tools are resolved dynamically based on the persona (`LLMEvaluator`) and `ToolsEnabled` setting. |
-| `"ToolsEnabled"` | `Automatic` | Whether tools are enabled for the current chat. When `Automatic`, resolved per model via `toolsEnabledQ`. |
-| `"ToolMethod"` | `Automatic` | Method for tool calling: `"Service"` (native API), `"Simple"` (slash-command), `"Textual"`/`"JSON"` (prompt-based), or `Automatic`. |
-| `"HybridToolMethod"` | `Automatic` | Whether to use hybrid tool calling, combining service-level and prompt-based tool calling. |
-| `"ToolOptions"` | `$DefaultToolOptions` | Per-tool option overrides as a nested `Association` mapping tool names to their option associations. |
-| `"ToolSelectionType"` | `<\|\|>` | Per-tool override that controls whether a tool is enabled globally (`All`), disabled globally (`None`), or left to per-persona selection (`Inherited`). |
-| `"ToolCallFrequency"` | `Automatic` | Controls how often the LLM should use tools. Accepts `Automatic` or a number between `0` and `1`. Setting to `0` disables tools entirely. |
+| `"Tools"` | `Automatic` | Tool definitions available to the LLM, resolved as a list of `LLMTool` objects. |
+| `"ToolsEnabled"` | `Automatic` | Whether tools are enabled for the current chat. |
+| `"ToolMethod"` | `Automatic` | Mechanism for tool calling (`"Service"`, `"Simple"`, `"Textual"`, `"JSON"`, or `Automatic`). |
+| `"HybridToolMethod"` | `Automatic` | Whether to combine service-level and prompt-based tool calling. |
+| `"ToolOptions"` | `$DefaultToolOptions` | Per-tool option overrides mapping tool names to option associations. |
+| `"ToolSelectionType"` | `<\|\|>` | Per-tool global override: `All` (always enabled), `None` (always disabled), or `Inherited` (per-persona). |
+| `"ToolCallFrequency"` | `Automatic` | How often the LLM should use tools (`Automatic` or a number between `0` and `1`). |
 | `"ToolCallRetryMessage"` | `Automatic` | Whether to append a retry-guidance system message after each tool response. |
-| `"ToolExamplePrompt"` | `Automatic` | Specifies the tool example prompt included in the system prompt to demonstrate tool usage patterns to the LLM. |
-| `"ToolCallExamplePromptStyle"` | `Automatic` | Style of chat message templates used for tool call example prompts in the system prompt. |
-| `"ToolResponseRole"` | `Automatic` | The message role assigned to tool response messages sent back to the LLM. Model default: `"System"`. Forced to `"Tool"` when `ToolMethod` is `"Service"`. |
-| `"ToolResponseStyle"` | `Automatic` | Controls how tool response content is wrapped/formatted before being sent back to the LLM. |
-| `"SplitToolResponseMessages"` | `Automatic` | Whether to split tool responses into separate messages. Model default: `False`. Enabled for Anthropic models as a workaround. |
-| `"MaxToolResponses"` | `5` | Maximum number of tool responses allowed per chat turn before the tool-calling loop is stopped. |
-| `"SendToolResponse"` | `Automatic` | Whether to send tool responses back to the LLM for further processing. When `False`, tools still execute but results are not sent back. |
-| `"EndToken"` | `Automatic` | End-of-turn token that signals the LLM has finished its response. Model default: `"/end"`. Used in base prompts, stop tokens, and tool call example templates. |
+| `"ToolExamplePrompt"` | `Automatic` | Tool example prompt included in the system prompt to demonstrate tool usage patterns. |
+| `"ToolCallExamplePromptStyle"` | `Automatic` | Template style for tool call examples in the system prompt. |
+| `"ToolResponseRole"` | `Automatic` | Message role assigned to tool response messages sent back to the LLM. |
+| `"ToolResponseStyle"` | `Automatic` | How tool response content is wrapped/formatted before being sent back to the LLM. |
+| `"SplitToolResponseMessages"` | `Automatic` | Whether to split tool responses into separate messages. |
+| `"MaxToolResponses"` | `5` | Maximum number of tool responses allowed per chat turn. |
+| `"SendToolResponse"` | `Automatic` | Whether to send tool responses back to the LLM for further processing. |
+| `"EndToken"` | `Automatic` | End-of-turn token that signals the LLM has finished its response. |
 
 See additional details in [Tools Settings](setting-groups/tools.md).
 
