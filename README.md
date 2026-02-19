@@ -2,12 +2,8 @@
 
 [![Build](https://github.com/WolframResearch/Chatbook/actions/workflows/Build.yml/badge.svg)](https://github.com/WolframResearch/Chatbook/actions/workflows/Build.yml) [![Release](https://github.com/WolframResearch/Chatbook/actions/workflows/Release.yml/badge.svg)](https://github.com/WolframResearch/Chatbook/actions/workflows/Release.yml)
 
-#### [Changelog](./docs/CHANGELOG.md)
-
-
 This repository contains *Chatbook*, a paclet adding support for LLM-powered
 notebooks to Wolfram.
-
 
 ## Getting Started
 
@@ -68,9 +64,4 @@ Wolfram code in the chat output can be evaluated in place immediately:
 
 ## License
 
-Licensed under the MIT license ([LICENSE-MIT](./LICENSE-MIT) or <https://opensource.org/license/MIT/>)
-
-## Contributing
-
-See [**Development.md**](./docs/Development.md) for instructions on how to
-perform common development tasks when contributing to this project.
+Licensed under the MIT license ([LICENSE-MIT](./LICENSE) or <https://opensource.org/license/MIT/>)
