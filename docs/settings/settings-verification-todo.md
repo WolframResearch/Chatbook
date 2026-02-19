@@ -85,7 +85,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] ToolCallFrequency
 * [x] ToolCallRetryMessage
 * [x] ToolExamplePrompt
-* [ ] ToolMethod
+* [x] ToolMethod
 * [ ] ToolOptions
 * [ ] ToolResponseRole
 * [ ] ToolResponseStyle
