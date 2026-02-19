@@ -65,7 +65,7 @@ Choose *one* setting from the list below that is not yet marked as complete and 
 * [x] PromptGeneratorMessageRole
 * [x] PromptGenerators
 * [x] PromptGeneratorsEnabled
-* [ ] Prompts
+* [x] Prompts
 * [ ] Reasoning
 * [ ] ReplaceUnicodeCharacters
 * [ ] SendToolResponse
