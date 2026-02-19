@@ -66,15 +66,12 @@ The default value `$DefaultChatHandlerFunctions` (`Settings.wl`) defines 9 event
 | `"ChatAbort"` | `applyChatPost` (`Actions.wl`), after chat abort | `"ChatObject"`, `"NotebookObject"` |
 | `"ToolRequestReceived"` | After parsing a tool call (`SendChat.wl`) | `"ToolRequest"` |
 | `"ToolResponseGenerated"` | After generating a tool response (`SendChat.wl`) | `"ToolResponse"`, `"ToolResponseString"` |
-| `"ToolResponseReceived"` | After tool response is formatted and ready to send (`SendChat.wl`) | `"ToolResponse"` |
 | `"PromptGeneratorStart"` | `DefaultPromptGenerators.wl`, before each prompt generator | `"PromptGenerator"` |
 | `"PromptGeneratorEnd"` | `DefaultPromptGenerators.wl`, after each prompt generator | `"PromptGenerator"`, `"PromptGeneratorResult"` |
 | `"AppendCitationsStart"` | `Citations.wl`, before citation generation | `"Sources"` |
 | `"AppendCitationsEnd"` | `Citations.wl`, after citation generation | `"CitationString"` |
 
 The `"ChatAbort"`, `"ChatPost"`, and `"ChatPre"` entries use `RuleDelayed` (`:>`) pointing to global variables `$ChatAbort`, `$ChatPost`, and `$ChatPre` (all initially `None`), allowing runtime reassignment without modifying the association.
-
-Note: `"ToolResponseReceived"` (the 10th event) is dispatched via `applyHandlerFunction` but is not included in the default association (falls back to `None` via `getHandlerFunction`).
 
 ### Resolution
 
