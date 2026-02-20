@@ -1841,20 +1841,40 @@ uncaughtThrow // Attributes = { HoldAllComplete };
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*overrideTagForcing*)
+(* Some system symbols will have a mix of top-level and kernel evaluation.
+   This lets us disable tag forcing for these symbols in cases where an untagged Throw is issued by top-level code,
+   but handled by the kernel (where overriding DownValues has no effect). Without this override, we would get:
+   ```wl
+   In[1]:= WolframLanguageToolEvaluate["ContinuedFraction[Pi, 5]", Method -> "Session"]
+
+   Out[1]= "Throw::nocatch: Uncaught Throw[{3, 7, 15, 1, 292}] returned to top level.
+   General::messages: Messages were generated which may indicate errors.
+
+   Out[1]= Hold[Throw[{3, 7, 15, 1, 292}]]"
+   ```
+*)
+$tagOverrideSymbols = HoldComplete[
+    ContinuedFraction
+];
+
 overrideTagForcing // beginDefinition;
 overrideTagForcing // Attributes = { HoldAllComplete };
-(* :!CodeAnalysis::Disable::VariableError::Block:: *)
+
 overrideTagForcing[ eval_ ] :=
+    With[ { overrides = $tagOverrideSymbols },
+        overrideTagForcing[ overrides, eval ]
+    ];
+
+overrideTagForcing[ HoldComplete[ ], eval_ ] := eval;
+
+(* :!CodeAnalysis::Disable::VariableError::Block:: *)
+overrideTagForcing[ HoldComplete[ symbols__Symbol ], eval_ ] :=
     Module[ { protected },
-        Replace[
-            $tagOverrideSymbols,
-            HoldComplete[ symbols__Symbol ] :>
-                Internal`InheritedBlock[ { symbols },
-                    protected = Unprotect @ symbols;
-                    overrideTagForcing0 /@ Unevaluated @ { symbols };
-                    Protect @ protected;
-                    Block[ { $forceTagged = True }, eval ]
-                ]
+        Internal`InheritedBlock[ { symbols },
+            protected = Unprotect @ symbols;
+            overrideTagForcing0 /@ Unevaluated @ { symbols };
+            Protect @ protected;
+            Block[ { $forceTagged = True }, eval ]
         ]
     ];
 
@@ -1871,22 +1891,6 @@ overrideTagForcing0[ symbol_Symbol ] := PrependTo[
 ];
 
 overrideTagForcing0 // endDefinition;
-
-(* Some system symbols will have a mix of top-level and kernel evaluation.
-   This lets us disable tag forcing for these symbols in cases where an untagged Throw is issued by top-level code,
-   but handled by the kernel (where overriding DownValues has no effect). Without this override, we would get:
-   ```wl
-   In[1]:= WolframLanguageToolEvaluate["ContinuedFraction[Pi, 5]", Method -> "Session"]
-
-   Out[1]= "Throw::nocatch: Uncaught Throw[{3, 7, 15, 1, 292}] returned to top level.
-   General::messages: Messages were generated which may indicate errors.
-
-   Out[1]= Hold[Throw[{3, 7, 15, 1, 292}]]"
-   ```
-*)
-$tagOverrideSymbols = HoldComplete[
-    ContinuedFraction
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
