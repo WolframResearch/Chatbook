@@ -34,6 +34,7 @@ $maxMessageParameterLength = 100;
 $toolOutputPageWidth       = 100;
 $kernelQuit                = False;
 $verifiedResult            = True;
+$propagateMessages         = False;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -142,6 +143,7 @@ WolframLanguageToolEvaluate // Options = {
     "MaxCharacterCount"     -> 10000,
     "Method"                -> Automatic,
     "PageWidth"             -> Infinity,
+    "PropagateMessages"     -> False,
     "TimeConstraint"        -> 60
 };
 
@@ -201,6 +203,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
             $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
+            $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
@@ -255,6 +258,10 @@ getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ]
 getOption[ "IncludeDefinitions", $$unspecified ] := $includeDefinitions;
 getOption[ "IncludeDefinitions", include: True|False ] := include;
 getOption[ "IncludeDefinitions", include_ ] := throwFailure[ "InvalidOptionValue", "IncludeDefinitions", include ];
+
+getOption[ "PropagateMessages", $$unspecified ] := $EvaluationEnvironment =!= "Session";
+getOption[ "PropagateMessages", propagate: True|False ] := propagate;
+getOption[ "PropagateMessages", propagate_ ] := throwFailure[ "InvalidOptionValue", "PropagateMessages", propagate ];
 
 getOption[ "AllowedReadPaths"   , paths_ ] := getAllowedPaths[ "AllowedReadPaths"   , paths ];
 getOption[ "AllowedWritePaths"  , paths_ ] := getAllowedPaths[ "AllowedWritePaths"  , paths ];
@@ -1443,16 +1450,17 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ { outputs, result, stopped, $fail },
+    Module[ { outputs, result, stopped, quiet, $fail },
         $suppressMessageCollection = False;
         outputs = Internal`Bag[ ];
         result = $fail;
         stopped = <| |>;
+        quiet = If[ TrueQ @ $propagateMessages, # &, Quiet ];
         Internal`HandlerBlock[
             { "Message", evaluationMessageHandler[ stopped, outputs ] },
             Internal`HandlerBlock[
                 { "Wolfram.System.Print.Veto", evaluationPrintHandler @ outputs },
-                result = Quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
+                result = quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
             ]
         ];
         ConfirmAssert[ result =!= $fail, "EvaluationFailure" ];
@@ -1525,6 +1533,9 @@ evaluationMessageHandler0 // Attributes = { HoldFirst };
 
 (* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
 evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
+
+(* When we're propagating messages, the boolean tells us if we should keep the message or not: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, False ] ] /; $propagateMessages := Null;
 
 (* Messages that are so frequent we don't want to waste time analyzing them: *)
 evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
