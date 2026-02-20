@@ -1785,12 +1785,12 @@ catchEverything[ e_ ] :=
     Internal`InheritedBlock[ { Catch, Throw },
         Catch[
             Unprotect[ Catch, Throw ];
-            PrependTo[ DownValues @ Catch, HoldPattern @ Catch[ expr_ ] :> Catch[ expr, $untagged ] ];
-            PrependTo[ DownValues @ Throw, HoldPattern @ Throw[ expr_ ] :> Throw[ expr, $untagged ] ];
+            PrependTo[ DownValues @ Catch, HoldPattern[ Catch[ expr_ ] /; $forceTagged ] :> Catch[ expr, $untagged ] ];
+            PrependTo[ DownValues @ Throw, HoldPattern[ Throw[ expr_ ] /; $forceTagged ] :> Throw[ expr, $untagged ] ];
             Protect[ Catch, Throw ]
         ];
         catchEverything0 @ CheckAbort[
-            Catch[ handleKernelQuit @ contained @ e, _, uncaughtThrow ],
+            overrideTagForcing @ Catch[ handleKernelQuit @ contained @ e, _, uncaughtThrow ],
             $Aborted,
             PropagateAborts -> False
         ]
@@ -1837,6 +1837,57 @@ catchEverything0 // endDefinition;
 
 contained // Attributes = { SequenceHold };
 uncaughtThrow // Attributes = { HoldAllComplete };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*overrideTagForcing*)
+overrideTagForcing // beginDefinition;
+overrideTagForcing // Attributes = { HoldAllComplete };
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::VariableError::Block:: *)
+overrideTagForcing[ eval_ ] :=
+    Module[ { protected },
+        Replace[
+            $tagOverrideSymbols,
+            HoldComplete[ symbols__Symbol ] :>
+                Internal`InheritedBlock[ { symbols },
+                    protected = Unprotect @ symbols;
+                    overrideTagForcing0 /@ Unevaluated @ { symbols };
+                    Protect @ protected;
+                    Block[ { $forceTagged = True }, eval ]
+                ]
+        ]
+    ];
+(* :!CodeAnalysis::EndBlock:: *)
+overrideTagForcing // endDefinition;
+
+
+overrideTagForcing0 // beginDefinition;
+overrideTagForcing0 // Attributes = { HoldAllComplete };
+
+overrideTagForcing0[ symbol_Symbol ] := PrependTo[
+    DownValues @ symbol,
+    HoldPattern[ symbol[ args___ ] /; $forceTagged ] :>
+        Block[ { $forceTagged = False }, symbol @ args ]
+];
+
+overrideTagForcing0 // endDefinition;
+
+(* Some system symbols will have a mix of top-level and kernel evaluation.
+   This lets us disable tag forcing for these symbols in cases where an untagged Throw is issued by top-level code,
+   but handled by the kernel (where overriding DownValues has no effect). Without this override, we would get:
+   ```wl
+   In[1]:= WolframLanguageToolEvaluate["ContinuedFraction[Pi, 5]", Method -> "Session"]
+
+   Out[1]= "Throw::nocatch: Uncaught Throw[{3, 7, 15, 1, 292}] returned to top level.
+   General::messages: Messages were generated which may indicate errors.
+
+   Out[1]= Hold[Throw[{3, 7, 15, 1, 292}]]"
+   ```
+*)
+$tagOverrideSymbols = HoldComplete[
+    ContinuedFraction
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
