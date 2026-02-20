@@ -305,3 +305,17 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:302,1-307,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Regression Tests*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Override Catch/Throw Tag Forcing*)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "ContinuedFraction[Pi, 5]", "Result", Method -> "Session" ],
+    HoldCompleteForm @ { 3, 7, 15, 1, 292 },
+    SameTest -> MatchQ,
+    TestID   -> "RegressionTests-OverrideTagForcing@@Tests/WolframLanguageToolEvaluate.wlt:316,1-321,2"
+]
