@@ -1843,7 +1843,6 @@ uncaughtThrow // Attributes = { HoldAllComplete };
 (*overrideTagForcing*)
 overrideTagForcing // beginDefinition;
 overrideTagForcing // Attributes = { HoldAllComplete };
-(* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::VariableError::Block:: *)
 overrideTagForcing[ eval_ ] :=
     Module[ { protected },
@@ -1858,7 +1857,7 @@ overrideTagForcing[ eval_ ] :=
                 ]
         ]
     ];
-(* :!CodeAnalysis::EndBlock:: *)
+
 overrideTagForcing // endDefinition;
 
 
