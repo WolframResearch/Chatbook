@@ -1,5 +1,6 @@
 .claude/settings.local.json
 .DS_Store
+.mcp.json
 Assets/Snippets/Streamable/*
 Assets/VectorDatabases/**/*.usearch
 Assets/VectorDatabases/**/*.wl
