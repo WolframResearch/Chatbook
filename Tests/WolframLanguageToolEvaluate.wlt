@@ -287,13 +287,47 @@ VerificationTest[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*PropagateMessages*)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "1/0", Method -> "Session", "PropagateMessages" -> True ],
+    _String? (StringContainsQ[ "Power::infy: Infinite expression 1/0 encountered." ]),
+    { Power::infy },
+    SameTest -> MatchQ,
+    TestID   -> "PropagateMessages@@Tests/WolframLanguageToolEvaluate.wlt:292,1-298,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Automatic Resolution*)
+VerificationTest[
+    Block[ { $EvaluationEnvironment = "Session" },
+        WolframLanguageToolEvaluate[ "First[]", Method -> "Session","PropagateMessages" -> Automatic ]
+    ],
+    _String? (StringContainsQ[ "First::argt: First called with 0 arguments" ]),
+    { }, (* No messages should be issued externally in a Session by default *)
+    SameTest -> MatchQ,
+    TestID   -> "PropagateMessages-Session@@Tests/WolframLanguageToolEvaluate.wlt:303,1-311,2"
+]
+
+VerificationTest[
+    Block[ { $EvaluationEnvironment = "Script" },
+        WolframLanguageToolEvaluate[ "First[]", Method -> "Session", "PropagateMessages" -> Automatic ]
+    ],
+    _String? (StringContainsQ[ "First::argt: First called with 0 arguments" ]),
+    { First::argt }, (* Messages should be issued externally in other environments *)
+    SameTest -> MatchQ,
+    TestID   -> "PropagateMessages-OtherEnvironment@@Tests/WolframLanguageToolEvaluate.wlt:313,1-321,2"
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Print*)
 VerificationTest[
     WolframLanguageToolEvaluate[ "Print[\"a\"]; 1+1", "String", Method -> "Session" ],
     _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
     SameTest -> MatchQ,
-    TestID   -> "PrintFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:292,1-297,2"
+    TestID   -> "PrintFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:326,1-331,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -303,7 +337,7 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "PrintTemporary[\"a\"]; 1+1", "String", Method -> "Session" ],
     _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
     SameTest -> MatchQ,
-    TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:302,1-307,2"
+    TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:336,1-341,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -317,5 +351,19 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "ContinuedFraction[Pi, 5]", "Result", Method -> "Session" ],
     HoldCompleteForm @ { 3, 7, 15, 1, 292 },
     SameTest -> MatchQ,
-    TestID   -> "RegressionTests-OverrideTagForcing@@Tests/WolframLanguageToolEvaluate.wlt:316,1-321,2"
+    TestID   -> "RegressionTests-OverrideTagForcing@@Tests/WolframLanguageToolEvaluate.wlt:350,1-355,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Using PropagateMessages to prevent collecting suppressed kernel messages*)
+VerificationTest[
+    WolframLanguageToolEvaluate[
+        "FullSimplify[Integrate[a + b Log[c Log[d x^n]^p], x], {d>0, x>0, n!=0}]",
+        Method -> "Session",
+        "PropagateMessages" -> True
+    ],
+    _String? (StringFreeQ[ "General::messages" ]),
+    SameTest -> MatchQ,
+    TestID   -> "PropagateMessages-Workaround@@Tests/WolframLanguageToolEvaluate.wlt:360,1-369,2"
 ]
