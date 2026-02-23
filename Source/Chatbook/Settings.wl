@@ -1735,13 +1735,14 @@ currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key
 currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
 
-        verifyInheritance @ cell0;
-
         (* 99% of the time we only care about top-level cells *)
         (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
         cell = ConfirmMatch[ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        
+        verifyInheritance @ cell;
+
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
 
         styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
@@ -1785,13 +1786,14 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
 currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
-        verifyInheritance @ cell0;
-
         (* 99% of the time we only care about top-level cells *)
         (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
         cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        
+        verifyInheritance @ cell;
+
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
 
         styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
