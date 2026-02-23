@@ -241,7 +241,21 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Sidebar" | "SideBar", opts: 
     catchMine @ withChatState @ withExtraInstructions[
         OptionValue[ "ExtraInstructions" ],
         LogChatTiming @ showNotebookAssistanceSidebar[
-            nbo,
+            Which[(* 471899: always have a NotebookObject if opening the sidebar assistant, but don't open in palettes, dialogs, messages, or other chats *)
+                MatchQ[ nbo, None | MessagesNotebook[ ] ],
+                    CreateNotebook[ ],
+                MatchQ[ nbo, _NotebookObject ],
+                    Which[
+                        TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ],
+                            CreateNotebook[ ],
+                        MatchQ[ CurrentValue[ nbo, StyleDefinitions ], "Chatbook.nb" | FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", ___ ] ],
+                            CreateNotebook[ ],
+                        True,
+                            nbo
+                    ],
+                True,
+                    CreateNotebook[ ]
+            ],
             LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ],
             OptionValue[ "ChatNotebookSettings" ]
