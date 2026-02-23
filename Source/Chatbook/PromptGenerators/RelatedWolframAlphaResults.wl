@@ -875,7 +875,7 @@ getWolframAlphaAPIContent0[ queries: { ___String } ] := Enclose[
         results = <| |>;
         tasks = ConfirmMatch[ submitXMLRequest[ results ] /@ queries, { ___TaskObject }, "Tasks" ];
 
-        TaskWait[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ];
+        taskWaitYield[ tasks, TimeConstraint -> $timeouts[ "TaskWait" ] ];
         Quiet[ TaskRemove /@ tasks ];
 
         content = ConfirmMatch[ Values @ results, { ___Association }, "Content" ];

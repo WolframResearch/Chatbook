@@ -342,6 +342,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `stringToBoxes;
 `stringTrimMiddle;
 `systemCredential;
+`taskWaitYield;
 `temporaryMessageQ;
 `throwFailureToChatOutput;
 `tinyHash;

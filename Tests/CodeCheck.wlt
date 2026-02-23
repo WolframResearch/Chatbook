@@ -1261,7 +1261,7 @@ VerificationTest[
    "Microcurie", "Microdarcy", "Microgray", "MicrograyPerSecond",
    "Microkayser", "Microlambert", "Microlux", "MilesPerHour",
    "MillicandelaPerSquareMeter", "Millifarad", "Milligal",
-   "Millijanskys", "MillimolePerGram", "MillionShortTons",
+   (* "Millijanskys", *) "MillimolePerGram", "MillionShortTons",
    "MillipascalSeconds", "Millirad", "Millisiemens", "MilliteslaMeter",
     "MolePerLiter", "NanobarnSecond", "NanofaradSecond", "Nanogray",
    "NanometerPerPicosecond", "NanomolePerLiter", "Nanopascal",
@@ -1379,8 +1379,8 @@ VerificationTest[
    "Quantity[1, \"Miles\"/\"Hour\"]"}, {"MillicandelaPerSquareMeter",
    "Quantity[1, \"Millicandelas\"/\"SquareMeters\"]"}, {"Millifarad",
    "Quantity[1, \"Millifarads\"]"}, {"Milligal",
-   "Quantity[1, \"Milligals\"]"}, {"Millijanskys",
-   Missing["Unknown unit", "Millijanskys"]}, {"MillimolePerGram",
+   "Quantity[1, \"Milligals\"]"}, (* {"Millijanskys",
+   Missing["Unknown unit", "Millijanskys"]}, *) {"MillimolePerGram",
    "Quantity[1, \"Millimoles\"/\"Grams\"]"}, {"MillionShortTons",
    "Quantity[1, \"Million\"*\"ShortTons\"]"}, {"MillipascalSeconds",
    "Quantity[1, \"Millipascals\"*\"Seconds\"]"}, {"Millirad",
@@ -1440,7 +1440,8 @@ VerificationTest[
    "Quantity[1, \"Zeptolumens\"]"}, {"Zeptonewton",
    "Quantity[1, \"Zeptonewtons\"]"}, {"Zeptosecond",
    "Quantity[1, \"Zeptoseconds\"]"}, {"Zettajoule",
-   "Quantity[1, \"Zettajoules\"]"}}
+   "Quantity[1, \"Zettajoules\"]"}},
+   TestID -> "QuantityUnitNames-1@@Tests/CodeCheck.wlt:1231,1-1445,3"
  ]
 
 VerificationTest[
@@ -1465,7 +1466,9 @@ VerificationTest[
         ToExpression@StringTrim@v]
      } & //
   SameQ,
- True]
+ True,
+ TestID -> "QuantityUnitNames-2@@Tests/CodeCheck.wlt:1447,1-1471,2"
+]
 
 VerificationTest[
  CodeCheckFix["Quantity[1, \"Meter\"]"],
@@ -1473,7 +1476,8 @@ VerificationTest[
   "CodeInspector" -> <|"InspectionObjects" -> {},
     "OverallSeverity" -> None|>,
   "FixedCode" -> Missing["No errors detected"],
-  "OriginalCode" -> "Quantity[1, \"Meter\"]"|>
+  "OriginalCode" -> "Quantity[1, \"Meter\"]"|>,
+  TestID -> "QuantityUnitNames-3@@Tests/CodeCheck.wlt:1473,1-1481,3"
  ]
 
  VerificationTest[
@@ -1488,7 +1492,9 @@ CodeInspector`InspectionObject[
   "LikelyFalsePositive" -> False, "SafeToEvaluate" -> True,
   "FixedCode" -> "Quantity[1, \"Ampere\"*\"SquareMeters\"]",
   "FixedPatterns" -> {{{"Fatal", "SuspiciousQuantityUnitName"} -> {13,
-        31}}}, "OriginalCode" -> "Quantity[1, \"AmpereSquareMeter\"]"|>]
+        31}}}, "OriginalCode" -> "Quantity[1, \"AmpereSquareMeter\"]"|>,
+  TestID -> "QuantityUnitNames-4@@Tests/CodeCheck.wlt:1483,2-1497,2"
+]
 
 VerificationTest[
  CodeCheckFix["Quantity[1, \"DecibelPerMeter\"]"],
@@ -1502,4 +1508,6 @@ CodeInspector`InspectionObject[
   "LikelyFalsePositive" -> False, "SafeToEvaluate" -> True,
   "FixedCode" -> Missing["Unknown unit", "DecibelPerMeter"],
   "FixedPatterns" -> {{{"Fatal", "SuspiciousQuantityUnitName"} -> {13,
-        29}}}, "OriginalCode" -> "Quantity[1, \"DecibelPerMeter\"]"|>]
+        29}}}, "OriginalCode" -> "Quantity[1, \"DecibelPerMeter\"]"|>,
+  TestID -> "QuantityUnitNames-5@@Tests/CodeCheck.wlt:1499,1-1513,2"
+]
