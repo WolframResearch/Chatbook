@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 $tinyHashLength = 5;
+$initialTaskWaitDelay = 0.01;
 
 $messageToStringDelimiter = "\n\n";
 $messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
@@ -1043,6 +1044,48 @@ evaluateWithDialogProgress[ args___ ] :=
     ];
 
 evaluateWithDialogProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tasks*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*taskWaitYield*)
+(* Effectively equivalent to TaskWait, but allows other asynchronous tasks to run while waiting. *)
+taskWaitYield // beginDefinition;
+taskWaitYield // Attributes = { Listable };
+taskWaitYield // Options = { TimeConstraint -> Infinity };
+
+taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { initialWait, currentWait, timeConstraint },
+
+        initialWait = ConfirmMatch[ $initialTaskWaitDelay, $$size, "InitialTaskWaitDelay" ];
+        currentWait = initialWait;
+        timeConstraint = ConfirmMatch[ OptionValue[ TimeConstraint ], $$size, "TimeConstraint" ];
+
+        TimeConstrained[
+            While[
+                (* Check if the task hasn't finished yet: *)
+                Quiet @ MatchQ[ task[ "TaskStatus" ], "Running"|"Waiting" ],
+
+                (* Yield to other asynchronous tasks to prevent blocking: *)
+                Internal`YieldAsynchronousTask[ ];
+
+                (* Wait before checking again: *)
+                Pause[ currentWait += initialWait ];
+            ],
+            timeConstraint,
+            Quiet @ TaskRemove @ task
+        ];
+
+        (* Return the task object: *)
+        task
+    ],
+    throwInternalFailure
+];
+
+taskWaitYield // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
