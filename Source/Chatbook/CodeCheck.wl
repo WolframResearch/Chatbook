@@ -17,6 +17,8 @@ Needs["CodeInspector`"]
 Needs["CodeParser`"]
 
 `CodeCheckFix
+`$UserDefinedFunctionsQ=<||>
+
 
 Begin[ "`Private`" ];
 
@@ -55,7 +57,8 @@ CodeCheckFix[code_String, OptionsPattern[]]:= (
 	Needs[ "CodeParser`" -> None ];
 	Block[	{niter=0, recursionLimit=$FixRecursionLimit, $target=OptionValue["Target"]}
 			,
-			With[	{	aCodeCheckInitial	=	CodeCheck[$target][code]	}
+			With[	{	aCodeCheckInitial	=	CodeCheck[$target][code]
+					}
 					,
 					{	errorsDetectedQ		=	(aCodeCheckInitial["InspectionObjects"] =!= {}),
 					 	aCodeFix			=	CodeFix[$target][code,aCodeCheckInitial]
@@ -67,20 +70,27 @@ CodeCheckFix[code_String, OptionsPattern[]]:= (
 					,
 					(* --------------  Output in order--------------------------------*)
 					{
-					"ErrorsDetected"		-> errorsDetectedQ,											(* always available *)
+					"ErrorsDetected"		-> errorsDetectedQ,									(* always available *)
 					"Success"				-> success,
 					"Failure"				-> Lookup[aCodeFix, "Failure", None], 				(* only added when Success -> False*)
-					"SafeToEvaluate"		-> If[Not@TrueQ@success, Missing["Failure"], Lookup[aCodeFix, "SafeToEvaluate", None]],
+					"SafeToEvaluate"		-> If[errorsDetectedQ && Not@TrueQ@success
+													, Missing["Failure"]
+													, Lookup[aCodeFix, "SafeToEvaluate", None]],
 					"RecursionLimitExceeded"-> Lookup[aCodeFix, "RecursionLimitExceeded", None],(* only added when Recursion detected*)
 					"TotalFixes"			-> Lookup[aCodeFix, "TotalFixes", None],
 					"LikelyFalsePositive"	-> Lookup[aCodeFix, "LikelyFalsePositive", None],
 					"PatternLogs"			-> Lookup[aCodeFix, "PatternLogs", None],
 					"CodeInspector"			-> If[errorsDetectedQ
 													,	Association @@
-																{
-																"InitialState"	-> aCodeCheckInitial,
-																"FinalState"	-> Replace[aCodeCheckFinal, _Missing->aCodeCheckInitial]
-																}
+																Replace[
+																		{
+																		"InitialState"	-> aCodeCheckInitial,
+																		"FinalState"	-> Replace[	aCodeCheckFinal
+																									, _Missing->aCodeCheckInitial]
+																		}
+																		,
+																		{a_->same_ ,b_->same_} :> {a -> Inherited, b -> same}
+																]
 													,	None
 												],
 					"OriginalCode"			-> code,											(* always available *)
@@ -292,7 +302,7 @@ fixPattern[target_][code_String, pat:$$ErrorComma, patToIgnore_:{}]:=
    			, "LikelyFalsePositive" -> falsePositive
    			, "SafeToEvaluate" -> safe
    			, "Pattern" -> pat
-   			, "FixedCode" -> fixedCode
+   			, "FixedCode" -> If[code===fixedCode, Missing["Comma: No need to fix"], fixedCode]
    			} // Association
 	]
 
@@ -996,8 +1006,6 @@ warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_]|$$BadSymbol[so_])
 (*---*)
 pNamedFunction[funcname_] :=
  CallNode[LeafNode[Symbol,"SetDelayed", _], {CallNode[LeafNode[Symbol, funcname, _], _, _], __}, _]
-
-$UserDefinedFunctionsQ=<||>
 
 pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
 
