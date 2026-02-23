@@ -96,7 +96,7 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclos
         callback = Function[ result = # ];
         task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
         If[ FailureQ @ task, throwFailureToChatOutput @ task ];
-        TaskWait @ ConfirmMatch[ task, _TaskObject, "Task" ];
+        taskWaitYield @ ConfirmMatch[ task, _TaskObject, "Task" ];
 
         If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ]
             ,

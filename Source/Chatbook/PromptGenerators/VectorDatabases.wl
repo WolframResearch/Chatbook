@@ -687,7 +687,7 @@ taskWait[ tasks_Internal`Bag ] := taskWait @ Internal`BagPart[ tasks, All ];
 taskWait[ tasks_List ] := CheckAbort[ taskWait /@ tasks, Quiet[ TaskRemove /@ tasks ], PropagateAborts -> True ];
 taskWait[ task_TaskObject ] := taskWait[ task, task[ "TaskStatus" ] ];
 taskWait[ task_TaskObject, "Removed" ] := task;
-taskWait[ task_TaskObject, _ ] := TaskWait @ task;
+taskWait[ task_TaskObject, _ ] := taskWaitYield @ task;
 taskWait // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
