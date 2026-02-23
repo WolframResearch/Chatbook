@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 $tinyHashLength = 5;
-$taskWaitInterval  = 0.001;
+$taskWaitInterval = 0.001;
 
 $messageToStringDelimiter = "\n\n";
 $messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
