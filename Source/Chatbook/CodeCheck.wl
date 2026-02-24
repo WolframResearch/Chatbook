@@ -1016,7 +1016,7 @@ pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbol
 suspiciousFunctionSymbolQ[name_String] :=
 (
 	(* Echo["function exists?"]; *)
-	StringSplit[name, "`"] // Map[StringStartsQ[_?UpperCaseQ]] // Apply[And]
+	(StringSplit[name, "`"] // Map[StringStartsQ[_?UpperCaseQ]] // Apply[And])
 	&&
 	Not[TrueQ@$UserDefinedFunctionsQ[name]]
 	&&
