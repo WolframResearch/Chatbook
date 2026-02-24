@@ -73,7 +73,7 @@ CodeCheckFix[code_String, OptionsPattern[]]:= (
 					"ErrorsDetected"		-> errorsDetectedQ,									(* always available *)
 					"Success"				-> success,
 					"Failure"				-> Lookup[aCodeFix, "Failure", None], 				(* only added when Success -> False*)
-					"SafeToEvaluate"		-> If[errorsDetectedQ && Not@TrueQ@success
+					"SafeToEvaluate"		-> If[errorsDetectedQ && Not@TrueQ@success && Not@Lookup[aCodeFix, "StopCodeFix", False]
 													, Missing["Failure"]
 													, Lookup[aCodeFix, "SafeToEvaluate", None]],
 					"RecursionLimitExceeded"-> Lookup[aCodeFix, "RecursionLimitExceeded", None],(* only added when Recursion detected*)
@@ -94,7 +94,7 @@ CodeCheckFix[code_String, OptionsPattern[]]:= (
 													,	None
 												],
 					"OriginalCode"			-> code,											(* always available *)
-					"FixedCode"				-> Lookup[aCodeFix, "FixedCode", None]
+					"FixedCode"				-> Lookup[aCodeFix, "FixedCode", Missing["No errors detected"]]
 					}
 			]
 			// Apply[Association]
@@ -193,7 +193,7 @@ CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:
 												,KeyValuePattern[{"StopCodeFix"->True}]]
 			]
 			,
-			merged//KeyDrop["StopCodeFix"]
+			merged
 			,
 			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]]
 			//	If[	 niter > recursionLimit
@@ -237,9 +237,12 @@ mergeFixes[prevFix_, newFix_] :=
 		"TotalFixes"			-> Plus[prevFix[#], newFix[#]] &@"TotalFixes",
 		"LikelyFalsePositive" 	-> Or[prevFix[#], newFix[#]] &@"LikelyFalsePositive",
 		"SafeToEvaluate"		-> And[prevFix[#], newFix[#]] &@"SafeToEvaluate",
-		"FixedCode" 			-> (newFix["FixedCode"] // If[MissingQ@#, prevFix["FixedCode"], #]&),
+		"FixedCode" 			-> (newFix["FixedCode"] // If[MissingQ@# && StringQ@prevFix["FixedCode"]
+																		, prevFix["FixedCode"]
+																		, #]&),
 		"PatternLogs" 			-> Append[	prevFix["PatternLogs"], Lookup[newFix,"Pattern",Lookup[newFix, "PatternLogs",Missing["Pattern"]]]],
-		"Failure"				-> If[newFix["Success"]===True, None, newFix["FixedCode"]]
+		"Failure"				-> If[newFix["Success"]===True, None, newFix["FixedCode"]],
+		"StopCodeFix"			-> Lookup[newFix,"StopCodeFix",False]
 	} // Flatten // Association
 (* ::Subsection:: *)
 (*Fixes*)
@@ -453,7 +456,8 @@ fixPattern[$EvaluatorPattern][code_String, pat : $$FatalUnexpectedCloser, patToI
 					//
 					(allCodeScore=scoreAndSort[#])& (*Adding scores*)
 					//
-					SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&//
+					(* SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&// *)
+					SelectFirst[#, SyntaxQ[#[[2]]]&, {Missing["No valid fix"]} ]&//
 					decholabel["final fix:"]//
 					Last
 
@@ -984,7 +988,7 @@ scanQuantityUnitName[pos_, ast_] :=
 
 fixPattern[target_][code_String, pat_]:=
 	((* Echo["START WARN"]; *)
-	Fold[mergeFixes[#1, warnPattern[target][code,{#2}]] &, <||>, pat]//
+	Fold[mergeFixes[#1, warnPattern[target][code,#2]] &, <||>, Split@Sort@pat]//
 	Association@@{#,"StopCodeFix"->True}&
 	)
 
