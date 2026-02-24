@@ -18,6 +18,7 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 Chatbook::InvalidMessageList         = "The value `1` is not a valid list of chat messages.";
 Chatbook::InvalidChatSettings        = "The value `1` is not a valid chat settings specification.";
 Chatbook::InvalidExcludedBasePrompts = "The value `1` is not a valid list of excluded base prompts.";
+Chatbook::InvalidPromptComponent     = "Expected a string or list of strings instead of `1`.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -407,10 +408,11 @@ assembleCustomPrompt0[ settings_, prompt_String ] := prompt;
 assembleCustomPrompt0[ settings_, prompts: { ___String } ] := StringRiffle[ prompts, "\n\n" ];
 
 assembleCustomPrompt0[ settings_? AssociationQ, templated: { ___, _TemplateObject, ___ } ] := Enclose[
-    Module[ { params, prompts },
-        params  = ConfirmBy[ Association[ settings, $ChatHandlerData ], AssociationQ, "Params" ];
-        prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
-        assembleCustomPrompt0[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
+    Module[ { params, prompts, validated },
+        params    = ConfirmBy[ Association[ settings, $ChatHandlerData ], AssociationQ, "Params" ];
+        prompts   = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
+        validated = ConfirmMatch[ checkPromptComponent /@ prompts, { ___String }, "Validated" ];
+        assembleCustomPrompt0[ settings, validated ]
     ],
     throwInternalFailure
 ];
@@ -452,11 +454,20 @@ applyPromptTemplate // beginDefinition;
 
 applyPromptTemplate[ template_TemplateObject, params_Association ] :=
     If[ FreeQ[ template, TemplateSlot[ _String, ___ ] ],
-        TemplateApply @ template,
-        TemplateApply[ template, params ]
+        TemplateApply @ replaceCellContext @ template,
+        TemplateApply[ replaceCellContext @ template, params ]
     ];
 
 applyPromptTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkPromptComponent*)
+checkPromptComponent // beginDefinition;
+checkPromptComponent[ prompt_String ] := prompt;
+checkPromptComponent[ prompts: { ___String } ] := StringJoin @ prompts;
+checkPromptComponent[ other_ ] := throwFailure[ "InvalidPromptComponent", other ];
+checkPromptComponent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

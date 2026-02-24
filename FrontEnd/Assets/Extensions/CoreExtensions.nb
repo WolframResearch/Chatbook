@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.21.3975037993"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.56.3980325675"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4243,7 +4243,8 @@ Notebook[
         {
          FrameBox[
           DynamicBox[
-           ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
+           ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]],
+           DestroyAfterEvaluation -> True
           ],
           Background ->
            LightDarkSwitched[
@@ -4452,7 +4453,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3973832805"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.53.3979960907"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

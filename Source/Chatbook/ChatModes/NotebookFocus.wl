@@ -66,7 +66,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         focused = FirstCase[ info, KeyValuePattern[ "Focused" -> True ], current ];
 
         (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
-        CurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" } ] = Lookup[ focused, "WindowTitle", None ];
+        setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ];
 
         label = If[ MatchQ[ appContainer, _CellObject ],
             Grid[
@@ -74,7 +74,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                     (* TODO: "AllowSelectionContext" should become a "sticky" setting *)
                     DynamicModule[ { val = TrueQ @ Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ] },
                         Toggler[
-                            Dynamic[ val, Function[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = val = # ] ],
+                            Dynamic[ val, Function[ val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] ],
                             {
                                 True  -> chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
                                 False -> chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ]
