@@ -997,7 +997,7 @@ insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "Sidebar" ] := Enclo
     Module[ { cellObj },
         cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
         (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
-        If[ cellObj =!= None && cellTaggedQ[ cellObj, { "SidebarDockedCell", "SidebarSubDockedCell", "SidebarScrollingContentCell", "SidebarChatInputCell", "SidebarTopCell", "NotebookAssistantSidebarCell" } ],
+        If[ cellObj =!= None && cellTaggedQ[ Last[ ParentCell[ cellObj, All ], cellObj ], { "NotebookAssistantSidebarCell" } ],
             SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
             cellObj = None
         ];

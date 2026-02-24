@@ -2095,6 +2095,7 @@ VerificationTest[
 ]
 
 VerificationTest[ $UserDefinedFunctionsQ, <| |>, TestID -> "119_UnitTests_CCF_Feb2026" ]
+
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
@@ -2104,10 +2105,7 @@ VerificationTest[
 
 VerificationTest[
 
-
-    MyFunc /:
-        doIt[ MyFunc[ 1 ] ] := 3;
-
+    MyFunc /:doIt[ MyFunc[ 1 ] ] := 3;
     "MyFunc: defined",
     "MyFunc: defined",
     TestID -> "121_UnitTests_CCF_Feb2026"

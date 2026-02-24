@@ -25,7 +25,7 @@ SetToolOptions[ name_String, opts: OptionsPattern[ ] ] :=
 
 SetToolOptions[ scope_, name_String, opts: OptionsPattern[ ] ] := UsingFrontEnd[
     KeyValueMap[
-        (CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name, ToString[ #1 ] } ] = #2) &,
+        (setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name, ToString[ #1 ] }, #2 ]) &,
         Association @ Reverse @ { opts }
     ];
     CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions" } ]
@@ -35,7 +35,7 @@ SetToolOptions[ name_String, Inherited ] :=
     SetToolOptions[ $FrontEnd, name, Inherited ];
 
 SetToolOptions[ scope_, name_String, Inherited ] := UsingFrontEnd[
-    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name } ] = Inherited;
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name }, Inherited ];
     CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions" } ]
 ];
 

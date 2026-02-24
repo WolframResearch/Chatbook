@@ -131,7 +131,7 @@ createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
                 NotebookClose @ nbo
                 ,
                 Replace[ Cells @ nbo, { cell_CellObject, ___ } :> SelectionMove[ cell, Before, CellContents ] ];
-                CurrentValue[ nbo, Visible ] = Inherited;
+                setCurrentValue[ nbo, Visible, Inherited ];
                 SetSelectedNotebook @ nbo
             ]
         ]

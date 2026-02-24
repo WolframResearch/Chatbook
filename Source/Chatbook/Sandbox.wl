@@ -34,6 +34,7 @@ $maxMessageParameterLength = 100;
 $toolOutputPageWidth       = 100;
 $kernelQuit                = False;
 $verifiedResult            = True;
+$propagateMessages         = False;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -142,6 +143,7 @@ WolframLanguageToolEvaluate // Options = {
     "MaxCharacterCount"     -> 10000,
     "Method"                -> Automatic,
     "PageWidth"             -> Infinity,
+    "PropagateMessages"     -> False,
     "TimeConstraint"        -> 60
 };
 
@@ -201,6 +203,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
             $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
+            $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
@@ -255,6 +258,10 @@ getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ]
 getOption[ "IncludeDefinitions", $$unspecified ] := $includeDefinitions;
 getOption[ "IncludeDefinitions", include: True|False ] := include;
 getOption[ "IncludeDefinitions", include_ ] := throwFailure[ "InvalidOptionValue", "IncludeDefinitions", include ];
+
+getOption[ "PropagateMessages", $$unspecified ] := $EvaluationEnvironment =!= "Session";
+getOption[ "PropagateMessages", propagate: True|False ] := propagate;
+getOption[ "PropagateMessages", propagate_ ] := throwFailure[ "InvalidOptionValue", "PropagateMessages", propagate ];
 
 getOption[ "AllowedReadPaths"   , paths_ ] := getAllowedPaths[ "AllowedReadPaths"   , paths ];
 getOption[ "AllowedWritePaths"  , paths_ ] := getAllowedPaths[ "AllowedWritePaths"  , paths ];
@@ -1443,16 +1450,17 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ { outputs, result, stopped, $fail },
+    Module[ { outputs, result, stopped, quiet, $fail },
         $suppressMessageCollection = False;
         outputs = Internal`Bag[ ];
         result = $fail;
         stopped = <| |>;
+        quiet = If[ TrueQ @ $propagateMessages, # &, Quiet ];
         Internal`HandlerBlock[
             { "Message", evaluationMessageHandler[ stopped, outputs ] },
             Internal`HandlerBlock[
                 { "Wolfram.System.Print.Veto", evaluationPrintHandler @ outputs },
-                result = Quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
+                result = quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
             ]
         ];
         ConfirmAssert[ result =!= $fail, "EvaluationFailure" ];
@@ -1525,6 +1533,9 @@ evaluationMessageHandler0 // Attributes = { HoldFirst };
 
 (* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
 evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
+
+(* When we're propagating messages, the boolean tells us if we should keep the message or not: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, False ] ] /; $propagateMessages := Null;
 
 (* Messages that are so frequent we don't want to waste time analyzing them: *)
 evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
@@ -1785,12 +1796,12 @@ catchEverything[ e_ ] :=
     Internal`InheritedBlock[ { Catch, Throw },
         Catch[
             Unprotect[ Catch, Throw ];
-            PrependTo[ DownValues @ Catch, HoldPattern @ Catch[ expr_ ] :> Catch[ expr, $untagged ] ];
-            PrependTo[ DownValues @ Throw, HoldPattern @ Throw[ expr_ ] :> Throw[ expr, $untagged ] ];
+            PrependTo[ DownValues @ Catch, HoldPattern[ Catch[ expr_ ] /; $forceTagged ] :> Catch[ expr, $untagged ] ];
+            PrependTo[ DownValues @ Throw, HoldPattern[ Throw[ expr_ ] /; $forceTagged ] :> Throw[ expr, $untagged ] ];
             Protect[ Catch, Throw ]
         ];
         catchEverything0 @ CheckAbort[
-            Catch[ handleKernelQuit @ contained @ e, _, uncaughtThrow ],
+            overrideTagForcing @ Catch[ handleKernelQuit @ contained @ e, _, uncaughtThrow ],
             $Aborted,
             PropagateAborts -> False
         ]
@@ -1837,6 +1848,60 @@ catchEverything0 // endDefinition;
 
 contained // Attributes = { SequenceHold };
 uncaughtThrow // Attributes = { HoldAllComplete };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*overrideTagForcing*)
+(* Some system symbols will have a mix of top-level and kernel evaluation.
+   This lets us disable tag forcing for these symbols in cases where an untagged Throw is issued by top-level code,
+   but handled by the kernel (where overriding DownValues has no effect). Without this override, we would get:
+   ```wl
+   In[1]:= WolframLanguageToolEvaluate["ContinuedFraction[Pi, 5]", Method -> "Session"]
+
+   Out[1]= "Throw::nocatch: Uncaught Throw[{3, 7, 15, 1, 292}] returned to top level.
+   General::messages: Messages were generated which may indicate errors.
+
+   Out[1]= Hold[Throw[{3, 7, 15, 1, 292}]]"
+   ```
+*)
+$tagOverrideSymbols = HoldComplete[
+    ContinuedFraction
+];
+
+overrideTagForcing // beginDefinition;
+overrideTagForcing // Attributes = { HoldAllComplete };
+
+overrideTagForcing[ eval_ ] :=
+    With[ { overrides = $tagOverrideSymbols },
+        overrideTagForcing[ overrides, eval ]
+    ];
+
+overrideTagForcing[ HoldComplete[ ], eval_ ] := eval;
+
+(* :!CodeAnalysis::Disable::VariableError::Block:: *)
+overrideTagForcing[ HoldComplete[ symbols__Symbol ], eval_ ] :=
+    Module[ { protected },
+        Internal`InheritedBlock[ { symbols },
+            protected = Unprotect @ symbols;
+            overrideTagForcing0 /@ Unevaluated @ { symbols };
+            Protect @ protected;
+            Block[ { $forceTagged = True }, eval ]
+        ]
+    ];
+
+overrideTagForcing // endDefinition;
+
+
+overrideTagForcing0 // beginDefinition;
+overrideTagForcing0 // Attributes = { HoldAllComplete };
+
+overrideTagForcing0[ symbol_Symbol ] := PrependTo[
+    DownValues @ symbol,
+    HoldPattern[ symbol[ args___ ] /; $forceTagged ] :>
+        Block[ { $forceTagged = False }, symbol @ args ]
+];
+
+overrideTagForcing0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

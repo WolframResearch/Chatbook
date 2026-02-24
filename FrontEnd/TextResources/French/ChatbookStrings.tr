@@ -170,6 +170,8 @@
 "UIAddAndManageTools" -> "Ajouter et g\[EAcute]rer des outils\[Ellipsis]",
 "UIModels" -> "Mod\[EGrave]les",
 "UIModelsServices" -> "Services",
+"UIAISettings" -> "AI Settings",
+"UIAdvancedSettings" -> "Advanced Settings",
 "UIModelsServicesGet" -> "Obtention des services disponibles\[Ellipsis]",
 "UIModelsGet" -> "Obtenir les mod\[EGrave]les disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Se connecter pour obtenir la liste des mod\[EGrave]les",

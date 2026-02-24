@@ -401,7 +401,7 @@ sendDialogFeedback // beginDefinition;
 
 sendDialogFeedback[ cell_CellObject, nbo_NotebookObject, data_Association, choices_Association ] := Enclose[
     Module[ { uuid, json, chosen, string, image, request, response },
-        CurrentValue[ nbo, { TaggingRules, "Status" } ] = "Submitting";
+        setCurrentValue[ nbo, { TaggingRules, "Status" }, "Submitting" ];
 
         uuid = Replace[ CurrentValue[ cell, { TaggingRules, "FeedbackUUID" } ], Except[ _? StringQ ] :> Null ];
 
@@ -465,8 +465,8 @@ checkResponse[ cell_CellObject, nbo_NotebookObject, response: HoldPattern[ _HTTP
 checkResponse[ cell_CellObject, nbo_NotebookObject, data_Association, 200 ] := Enclose[
     Module[ { uuid },
         uuid = ConfirmBy[ data[ "RequestUUID" ], StringQ, "UUID" ];
-        CurrentValue[ cell, { TaggingRules, "FeedbackUUID" } ] = uuid;
-        CurrentValue[ nbo , { TaggingRules, "Status"       } ] = "Done";
+        setCurrentValue[ cell, { TaggingRules, "FeedbackUUID" }, uuid ];
+        setCurrentValue[ nbo , { TaggingRules, "Status"       }, "Done" ];
 
         SessionSubmit @ ScheduledTask[ NotebookClose @ nbo, { 3 } ]
     ],
@@ -476,8 +476,8 @@ checkResponse[ cell_CellObject, nbo_NotebookObject, data_Association, 200 ] := E
 checkResponse[ cell_, nbo_, data_, code_ ] := Enclose[
     Module[ { text },
         text = ConfirmBy[ getErrorText[ data, code ], StringQ, "ErrorText" ];
-        CurrentValue[ nbo, { TaggingRules, "ErrorText" } ] = text;
-        CurrentValue[ nbo, { TaggingRules, "Status"    } ] = "Error";
+        setCurrentValue[ nbo, { TaggingRules, "ErrorText" }, text ];
+        setCurrentValue[ nbo, { TaggingRules, "Status"    }, "Error" ];
     ],
     throwInternalFailure[ checkResponse[ cell, nbo, data, code ], ## ] &
 ];

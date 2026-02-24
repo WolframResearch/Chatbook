@@ -275,7 +275,7 @@ Cell[
                     ] },
                 {
                     FrameBox[
-                        DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
+                        DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ], DestroyAfterEvaluation -> True ],
                         Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundBottom",
                         FrameMargins -> { { 7, 2 }, { 2, 2 } },
                         FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
