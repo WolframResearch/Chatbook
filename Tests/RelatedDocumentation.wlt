@@ -22,6 +22,12 @@ VerificationTest[
     TestID   -> "RelatedDocumentationContext@@Tests/RelatedDocumentation.wlt:18,1-23,2"
 ]
 
+$defaultTestOptions =
+    If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+        LLMEvaluator -> <| "Model" -> { "OpenAI", "gpt-4o-mini" }, Authentication -> Automatic |>,
+        Sequence @@ { }
+    ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*RelatedDocumentation*)
@@ -29,14 +35,14 @@ VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?" ],
     { URL[ _String ].. },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs@@Tests/RelatedDocumentation.wlt:28,1-33,2"
+    TestID   -> "RelatedDocumentation-URIs@@Tests/RelatedDocumentation.wlt:34,1-39,2"
 ]
 
 VerificationTest[
     FileNames[ All, ChatbookFilesDirectory[ "VectorDatabases" ], Infinity ],
     { Repeated[ _String, { 40, Infinity } ] },
     SameTest -> MatchQ,
-    TestID   -> "VectorDatabase-Files@@Tests/RelatedDocumentation.wlt:35,1-40,2"
+    TestID   -> "VectorDatabase-Files@@Tests/RelatedDocumentation.wlt:41,1-46,2"
 ]
 
 VerificationTest[
@@ -52,42 +58,42 @@ VerificationTest[
     ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:42,1-56,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:48,1-62,2"
 ]
 
 VerificationTest[
     snippets = RelatedDocumentation[ "What's the biggest pokemon?", "Snippets" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:58,1-63,2"
+    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:64,1-69,2"
 ]
 
 VerificationTest[
     Total @ StringCount[ snippets, "Entity[\"Pokemon\"," ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:65,1-70,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:71,1-76,2"
 ]
 
 VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3, "Sources" -> { "Documentation" } ],
     { URL[ _String ], URL[ _String ], URL[ _String ] },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:72,1-77,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:78,1-83,2"
 ]
 
 VerificationTest[
     AllTrue[ First /@ urls, StringStartsQ[ "paclet:ref/" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:79,1-84,2"
+    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:85,1-90,2"
 ]
 
 VerificationTest[
     RelatedDocumentation[ "What's the biggest pokemon?", "Snippets", 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:86,1-91,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:92,1-97,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -102,14 +108,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:96,1-106,2"
+    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:102,1-112,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? Positive,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:108,1-113,2"
+    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:114,1-119,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -128,14 +134,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:118,1-132,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:124,1-138,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
     _Integer? (GreaterEqualThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:134,1-139,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:140,1-145,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -153,14 +159,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:144,1-157,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:150,1-163,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterEqualThan[ 2 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:159,1-164,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:165,1-170,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -170,7 +176,7 @@ VerificationTest[
     Take[ RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> } ], UpTo[ 30 ] ][[ All, 1 ]],
     { __String? (StringFreeQ[ "$Username" ]) },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:169,1-174,2"
+    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:175,1-180,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -190,7 +196,7 @@ VerificationTest[
         ___
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:185,1-194,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:191,1-200,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -200,7 +206,7 @@ VerificationTest[
     RelatedDocumentation[ "What's the 123456789th prime?", "URIs", 5 ],
     { ___, URL[ _String? (StringStartsQ[ "paclet:ref/Prime#" ]) ], ___ },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:199,1-204,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:205,1-210,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -217,7 +223,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:209,1-221,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:215,1-227,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -231,7 +237,7 @@ VerificationTest[
         ___
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:226,1-235,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:232,1-241,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -248,7 +254,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:240,1-252,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:246,1-258,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -265,5 +271,19 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:257,1-269,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:263,1-275,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Regression Tests*)
+(* Ensure that asynchronous tasks spawned by RelatedDocumentation work in an asynchronous environment. *)
+VerificationTest[
+    TaskWait @ SessionSubmit[
+        res = RelatedDocumentation[ "What's the 123456789th prime?", "Prompt", $defaultTestOptions ]
+    ];
+    res,
+    _String? (StringContainsQ[ "Prime" ]),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-SessionSubmit@@Tests/RelatedDocumentation.wlt:281,1-289,2"
 ]
