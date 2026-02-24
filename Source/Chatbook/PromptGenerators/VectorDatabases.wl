@@ -749,7 +749,6 @@ checkVectorDatabaseDownload[
     result_
 ] := (
     Quiet @ DeleteFile @ tmp;
-    Internal`YieldAsynchronousTask[ ];
     Internal`StuffBag[
         $extraDownloadTasks,
         URLDownloadSubmit[
@@ -770,15 +769,8 @@ checkVectorDatabaseDownload // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*setDownloadProgress*)
 setDownloadProgress // beginDefinition;
-
-setDownloadProgress[ name_String ] :=
-    setDownloadProgress[ name, ## ] &;
-
-setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := (
-    (* Internal`YieldAsynchronousTask[ ]; *) (* causes recursion *)
-    $downloadProgress[ name ] = b
-);
-
+setDownloadProgress[ name_String ] := setDownloadProgress[ name, ## ] &;
+setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := $downloadProgress[ name ] = b;
 setDownloadProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
