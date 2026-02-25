@@ -259,11 +259,12 @@ Cell[
         GridBox[
             {
                 {
-                    (* Allow for some line breaking by setting a minimum window width *)
+                    (* Don't line break: assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
                     FrameBox[
                         PaneBox[
-                            PaneBox[ #1, ImageSize -> Dynamic[ Function[ If[ # > 540, #, 540 ] ][ 0.95*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ] ],
+                            #1,
                             AppearanceElements -> None,
+                            BaseStyle          -> { LineBreakWithin -> False },
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
                             Scrollbars         -> Automatic
                         ],
