@@ -65,28 +65,42 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         current = ConfirmBy[ First @ info, AssociationQ, "Current" ];
         focused = FirstCase[ info, KeyValuePattern[ "Focused" -> True ], current ];
 
-        (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
-        setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ];
+        (*
+            focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current.
+            This tagging is not needed for the sidebar assistant. Avoid dirtying notebooks with the sidebar assistant. *)
+        If[ ! MatchQ[ appContainer, _CellObject ],
+            setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ] ];
 
         label = If[ MatchQ[ appContainer, _CellObject ],
-            Grid[
-                { {
-                    (* TODO: "AllowSelectionContext" should become a "sticky" setting *)
-                    DynamicModule[ { val = TrueQ @ Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ] },
-                        Toggler[
-                            Dynamic[ val, Function[ val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] ],
-                            {
-                                True  -> chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
-                                False -> chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ]
-                            },
-                            BaselinePosition -> Baseline
-                        ]
+            DynamicModule[
+                {
+                    Typeset`val = TrueQ @ Replace[ Wolfram`Chatbook`CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ],
+                    Typeset`mouseOver = False
+                },
+                EventHandler[
+                    Grid[
+                        { {
+                            PaneSelector[
+                                {
+                                    "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, color @ "NA_ChatInputFieldFocus_Gray_3", color @ "NA_ChatInputFieldFocus_Gray_2" ],
+                                    "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, color @ "NA_ChatInputFieldFocus_Gray_4", color @ "NA_ChatInputFieldFocus_Gray_1" ],
+                                    "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, color @ "NA_ChatInputFieldFocus_Gray_2", color @ "NA_ChatInputFieldFocus_Gray_4" ],
+                                    "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, color @ "NA_ChatInputFieldFocus_Gray_1", color @ "NA_ChatInputFieldFocus_Gray_4" ]},
+                                Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
+                            BaselinePosition -> Baseline,
+                            ImageMargins     -> { { 0, 0 }, { 5, 0 } },
+                            ImageSize        -> Automatic ]
+                            ,
+                            Style[ tr[ "SidebarFocusIndicator" ], FontColor -> Dynamic[ If[ Typeset`mouseOver, color @ "NA_ChatInputFieldFocusFontHover", color @ "NA_ChatInputFieldFocusFont" ]]] } },
+                        Alignment        -> { Left, Baseline },
+                        BaseStyle        -> { "Text", FontSize -> 13 },
+                        BaselinePosition -> { 1, 1 } (* align to the text *)
                     ],
-                    tr[ "SidebarFocusIndicator" ] } },
-                Alignment        -> { Left, Baseline },
-                BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
-                BaselinePosition -> { 1, 1 } (* align to the text *)
-            ]
+                  {
+                      "MouseEntered" :> (Typeset`mouseOver = True),
+                      "MouseExited"  :> (Typeset`mouseOver = False),
+                      "MouseClicked" :> (Function[ Typeset`val = #; Wolfram`Chatbook`CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
+                  PassEventsDown -> True]]
             ,
             Grid[
                 { {
