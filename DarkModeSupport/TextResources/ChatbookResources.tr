@@ -9877,8 +9877,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"4aa1cf58-8a05-054f-9fff-\
-e3bd82f46c14"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"de3a668d-d0ab-ca45-b764-\
+4286e90741ba"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9909,7 +9909,51 @@ HTIfFh4w9bDw0lh5WcgBKTxh8i8MIfbC9PechdgL48PiF6YeFv8w98H4MPfD
       0, 1.7366173205033308`}}]]},
   AspectRatio->3.3,
   ImagePadding->1,
-  ImageSize->{24, 77}]
+  ImageSize->{24, 77}],
+
+"SidebarFocusIndicatorCheck" -> (GraphicsBox[{
+   Thickness[0.1], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
+       0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
+      7.596}, {-0.00010014, 8.924}, {1.0759, 10.}, {2.4039, 10.}, {7.5959, 
+      10.}, {8.9239, 10.}, {9.9999, 8.924}, {9.9999, 7.596}, {9.9999, 
+      2.404}, {9.9999, 1.076}, {8.9239, 0.}, {7.5959, 0.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     JoinedCurveBox[{{{1, 4, 3}, {1, 3, 3}}}, {{{2.2297, 5.2572}, {3.1857, 
+      3.9922}, {4.1847, 2.3282}, {4.1847, 2.3282}, {4.1847, 2.3282}, {6.0057, 
+      5.3422}, {7.7707, 7.6712}}}, CurveClosed -> {0}]}, {
+     CapForm["Round"], 
+     JoinForm["Round"], #2}, StripOnInput -> False]}, ImageSize -> {11., 11.},
+   PlotRange -> {{-0.5, 10.5}, {-0.5, 10.5}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center)]& ),
+
+"SidebarFocusIndicatorUncheck" -> (GraphicsBox[{
+   Thickness[0.1], 
+   StyleBox[{
+     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.4043, 0.5}, {1.3543, 0.5}, {
+      0.5003, 1.354}, {0.5003, 2.404}, {0.5003, 7.596}, {0.5003, 8.646}, {
+      1.3543, 9.5}, {2.4043, 9.5}, {7.5953, 9.5}, {8.6453, 9.5}, {9.5003, 
+      8.646}, {9.5003, 7.596}, {9.5003, 2.404}, {9.5003, 1.354}, {8.6453, 
+      0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgAmJBKP1gH98c4yQ5BwYwUHG4cDXsjb41M5yv6yzz+pHZ
+R3sYP8tivqSHg9R+HibtdrGbinD+n5UfL/kCzYHxOdbIRKUAzYHx571ffszb
+/KM9qnkMDKj2obuHgaGuZ2c2J9AeGL+oq+/Jp//KDjDzYHyYfTA+zD0wPsy9
+qOapOKD7H5Wv5LB+SmpH8l4FOB9inqKDLdf1xQVAcRgf1T5FNPcoOoisc39Y
+JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
+48Pci2qeElp8K2H4HwCLaL8E
+      "]]}, {
+     FaceForm[#2]}, StripOnInput -> False]}, ImageSize -> {11., 11.}, 
+  PlotRange -> {{-0.5, 10.5}, {-0.5, 10.5}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center)]& )
 }
 @|
 @|

@@ -660,7 +660,7 @@ topParentCell // beginDefinition;
 topParentCell[ cell_CellObject ] /; !$cloudNotebooks :=
 Module[ { cellStack, cellInformation, cellStyles },
     cellStack = ParentCell[ cell, All ];      (* "All" is new in 14.3 and undocumented *)
-    If[ cellStack === { }, Return @ cell ];   (* already top level *)
+    If[ cellStack === { }, Return @ cell ];   (* already top level, or CellObject doesn't exist *)
 
     (* It would be easy enough to return Last of cellStack, but in the sidebar, we want the ChatInput/Output cell and not the sidebar cell *)
     cellStack       = Prepend[ cellStack, cell ]; (* just in case we used topParentCell on a sidebar top-level cell *)
