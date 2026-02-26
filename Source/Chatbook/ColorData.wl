@@ -1440,21 +1440,28 @@ Dispatch[{
 	|>,
 	"NA_ChatInputFieldFocusFont" -> <|
 		 "Light"  -> GrayLevel[0.5],
-		 "Dark"   -> GrayLevel[0.7380827],
+		 "Dark"   -> GrayLevel[0.6],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusFontHover" -> <|
+		 "Light"  -> GrayLevel[0.64432],
+		 "Dark"   -> GrayLevel[0.7368],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_1" -> <|
 		 "Light"  -> GrayLevel[0.53725],
-		 "Dark"   -> GrayLevel[0.7064789],
+		 "Dark"   -> GrayLevel[0.4986829],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_2" -> <|
 		 "Light"  -> GrayLevel[0.74902],
-		 "Dark"   -> GrayLevel[0.4986829],
+		 "Dark"   -> GrayLevel[0.7064789],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
