@@ -65,8 +65,11 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         current = ConfirmBy[ First @ info, AssociationQ, "Current" ];
         focused = FirstCase[ info, KeyValuePattern[ "Focused" -> True ], current ];
 
-        (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
-        setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ];
+        (*
+            focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current.
+            This tagging is not needed for the sidebar assistant. Avoid dirtying notebooks with the sidebar assistant. *)
+        If[ ! MatchQ[ appContainer, _CellObject ],
+            setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ] ];
 
         label = If[ MatchQ[ appContainer, _CellObject ],
             Grid[
