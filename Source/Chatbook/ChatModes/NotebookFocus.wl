@@ -79,8 +79,8 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                         Toggler[
                             Dynamic[ val, Function[ val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] ],
                             {
-                                True  -> chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
-                                False -> chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ]
+                                True  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, color @ "NA_ChatInputFieldFocus_Gray_4"(*3*), color @ "NA_ChatInputFieldFocus_Gray_1"(*2*) ],
+                                False -> chatbookIcon[ "SidebarFocusIndicatorCheck", False, color @ "NA_ChatInputFieldFocus_Gray_1", color @ "NA_ChatInputFieldFocus_Gray_4" ]
                             },
                             BaselinePosition -> Baseline
                         ]
