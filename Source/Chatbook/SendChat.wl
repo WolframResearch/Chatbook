@@ -559,7 +559,7 @@ splitToolResponses // endDefinition;
 (*splitToolResponse*)
 splitToolResponse // beginDefinition;
 
-splitToolResponse[ msg: KeyValuePattern @ {
+splitToolResponse[ msg: HoldPattern @ KeyValuePattern @ {
     "Role"         -> "Assistant",
     "Content"      -> content: Except[ "", _String ],
     "ToolRequests" -> { __LLMToolRequest }
@@ -616,7 +616,7 @@ rewriteServiceToolCalls[ settings_, messages_List ] :=
 
 rewriteServiceToolCalls[
     settings_,
-    message: KeyValuePattern @ {
+    message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
         "ToolRequests" -> requests: { __LLMToolRequest }
@@ -658,10 +658,10 @@ serviceToolMessageThread[ message_Association, items_List ] :=
 serviceToolMessageThread[ message_Association, item_String ] :=
     <| message, "Content" -> { item } |>;
 
-serviceToolMessageThread[ message_Association, req_LLMToolRequest ] :=
+serviceToolMessageThread[ message_Association, req: HoldPattern[ _LLMToolRequest ] ] :=
     <| message, "Content" -> { }, "ToolRequests" -> { req } |>;
 
-serviceToolMessageThread[ message_Association, resp_LLMToolResponse ] :=
+serviceToolMessageThread[ message_Association, resp: HoldPattern[ _LLMToolResponse ] ] :=
     <| message, "Role" -> "Tool", "Content" -> { }, "ToolResponses" -> { resp } |>;
 
 serviceToolMessageThread // endDefinition;
@@ -696,10 +696,10 @@ toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___
         toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
     ];
 
-toolStringSplit[ req_LLMToolRequest, result_String ] :=
+toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
     toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
 
-toolStringSplit[ req_LLMToolRequest, tool_LLMTool, result_String ] :=
+toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMTool ], result_String ] :=
     {
         req,
         LLMToolResponse @ <|
@@ -1791,7 +1791,7 @@ Reply with /end if the tool call provides a satisfactory answer, otherwise respo
 checkForBadRetry // beginDefinition;
 checkForBadRetry // Attributes = { HoldFirst };
 
-checkForBadRetry[ container_Symbol, toolCall_LLMToolRequest ] := Enclose[
+checkForBadRetry[ container_Symbol, toolCall: HoldPattern[ _LLMToolRequest ] ] := Enclose[
     Catch @ Module[ { params, bad, fixed, newParams },
         params = ConfirmBy[ Association @ toolCall[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
         bad = Select[ params, badRetryQ ];
@@ -1836,13 +1836,13 @@ insertToolID[ HoldPattern @ LLMToolRequest[ as_Association, opts___ ], toolID_St
 insertToolID[
     HoldPattern @ LLMToolResponse[ a: KeyValuePattern[ "Output" -> KeyValuePattern[ "String" -> s_String ] ], opts___ ],
     toolID_String,
-    toolCall_LLMToolRequest
+    toolCall: HoldPattern[ _LLMToolRequest ]
 ] := LLMToolResponse[ <| a, "ResponseString" -> s, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
 
 insertToolID[
     HoldPattern @ LLMToolResponse[ as_Association, opts___ ],
     toolID_String,
-    toolCall_LLMToolRequest
+    toolCall: HoldPattern[ _LLMToolRequest ]
 ] := LLMToolResponse[ <| as, "RequestID" -> toolID, "Request" -> toolCall |>, opts ];
 
 insertToolID[ fail_Failure, ___ ] :=
