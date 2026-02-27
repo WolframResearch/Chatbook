@@ -3176,7 +3176,7 @@ Q5bfcMwb7P4XUYvA+i+UQfzHYWIINr9isgTY/zD7YeGDEn4ArS1I9w==
 "WorkspaceFocusIndicatorCaret" -> GraphicsBox[
   {Thickness[0.2], FaceForm[LightDarkSwitched[
     GrayLevel[0.53725], 
-    GrayLevel[0.7064789]]], 
+    GrayLevel[0.4986829]]], 
    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0,
      1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
 1:eJxTTMoPSmVmYGBgBGJxIGYCYpfunOe/M4Ud2sVunvt+mc3hz8qPl3wXCTmI
@@ -3196,7 +3196,7 @@ xoe5Hz18AaZOtJQ=
    {Thickness[0.1], 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.53725], 
-      GrayLevel[0.7064789]]], 
+      GrayLevel[0.4986829]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
@@ -3218,7 +3218,7 @@ xoe5Hz18AaZOtJQ=
    {Thickness[0.1], 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.74902], 
-      GrayLevel[0.4986829]]], 
+      GrayLevel[0.7064789]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
@@ -3360,32 +3360,32 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
      1., 0.448}, {1., 1.}, {1., 10.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      1, 3, 3}}}, {{{0.5, 9.}, {2., 9.}, {2., 9.5}, {2., 9.776}, {2.224, 
      10.}, {2.5, 10.}, {0.5, 10.}, {0.224, 10.}, {0., 9.776}, {0., 9.5}, {0., 
      9.224}, {0.224, 9.}, {0.5, 9.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 7.}, {2., 7.}, {2., 8.}, {0.5, 8.}, {0.224, 8.}, {0., 
      7.776}, {0., 7.5}, {0., 7.224}, {0.224, 7.}, {0.5, 7.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 3.}, {2., 3.}, {2., 4.}, {0.5, 4.}, {0.224, 4.}, {0., 
      3.776}, {0., 3.5}, {0., 3.224}, {0.224, 3.}, {0.5, 3.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 5.}, {2., 5.}, {2., 6.}, {0.5, 6.}, {0.224, 6.}, {0., 
      5.776}, {0., 5.5}, {0., 5.224}, {0.224, 5.}, {0.5, 5.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}}}, {{{2., 1.5}, {2., 2.}, {0.5, 2.}, {0.224, 2.}, {0., 1.776}, {
      0., 1.5}, {0., 1.224}, {0.224, 1.}, {0.5, 1.}, {2.5, 1.}, {2.224, 1.}, {
@@ -3400,7 +3400,7 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
      9.776, 10.}, {9.5, 10.}, {2.5, 10.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 
       0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
@@ -3469,7 +3469,7 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.53725], 
-      GrayLevel[0.7064789]]], 
+      GrayLevel[0.4986829]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -3497,7 +3497,7 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.74902], 
-      GrayLevel[0.4986829]]], 
+      GrayLevel[0.7064789]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -9842,31 +9842,14 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
   ImageSize->Automatic],
 
 "NotebookAssistantSidebarCell" -> Cell[BoxData[
- RowBox[{
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
-     StandardForm],
-   DestroyAfterEvaluation->True], 
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-      "MakeSidebarChatScrollingCell"]], StandardForm],
-   DestroyAfterEvaluation->True], 
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatInputCell"]], 
-    StandardForm],
-   DestroyAfterEvaluation->
-    True]}]], "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
+ DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+     Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]], 
+   StandardForm],
+  DestroyAfterEvaluation->
+   True]], "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
  Selectable->False,
  CellMargins->{{0, 0}, {0, 0}},
- Initialization:>
-  With[{Typeset`ec = EvaluationCell[]}, AttachCell[Typeset`ec, 
-     Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
-     Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
-   CurrentValue[Typeset`ec, TaggingRules] = <|
-     "ChatNotebookSettings" -> 
-      Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
-      "ConversationTitle" -> ""|>],
  CellFrameMargins->0,
  ShowCursorTracker->False,
  LineSpacing->{1, 0},
@@ -9877,8 +9860,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"de3a668d-d0ab-ca45-b764-\
-4286e90741ba"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"fde097ca-817b-6644-a902-\
+0921db62e950"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
