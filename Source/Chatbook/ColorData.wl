@@ -8,10 +8,6 @@ Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
 
-System`LightDark;
-System`LightDarkSwitched;
-
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notes on colors*)

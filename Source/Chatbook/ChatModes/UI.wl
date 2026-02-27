@@ -8,10 +8,6 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
 
-System`LightDark;
-System`LightDarkSwitched;
-
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -128,7 +124,7 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
             ,
             (* else, write a new sub-cell after the last docked cell *)
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatSubDockedCell[ nbo, sidebarCell, content ] ]
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatSubDockedCell[ nbo, sidebarCell, content ] ]
         ];
         (* TODO: move selection to side bar chat's input field *)
     ],
@@ -2785,7 +2781,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
             , (* ELSE *)
             NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
         ];

@@ -724,7 +724,7 @@ cloudCellPrint // endDefinition;
 cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
 
 cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] /; cellTaggedQ[ target, "SidebarTopCell" ] := Enclose[
-    NotebookWrite[ System`NotebookLocationSpecifier[ target, "After" ],  cell ];
+    NotebookWrite[ NotebookLocationSpecifier[ target, "After" ],  cell ];
     (* this should return the CellObject of the newly written inline cell in the scrolling content cell *)
     ConfirmMatch[ NextCell @ target, _CellObject, "SidebarCellPrintAfterCellObject" ]
     ,
