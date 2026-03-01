@@ -2600,7 +2600,7 @@ codeBlockFrame // beginDefinition;
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
-    BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
+    BoxData @ templateBox[ { cell, lang }, If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", "ChatCodeBlockTemplate" ] ],
     "ChatCodeBlock"
 ];
 
