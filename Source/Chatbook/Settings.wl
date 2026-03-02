@@ -265,6 +265,17 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*xAI*)
+
+$modelAutoSettings[ "xAI" ] = <| |>;
+
+$modelAutoSettings[ "xAI", Automatic ] = <|
+    "PresencePenalty" -> Missing[ "NotSupported" ],
+    "StopTokens" -> Missing[ "NotSupported" ]
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
 
