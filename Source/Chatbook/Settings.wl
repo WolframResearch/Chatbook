@@ -1737,7 +1737,7 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
 
         (* 99% of the time we only care about top-level cells *)
         (* "Inline...Reference" cells are inline cells that contain TaggingRules, but they don't contain ChatNotebookSettings *)
-        cell = ConfirmMatch[ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
         
@@ -1756,8 +1756,9 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
                 Throw @ currentChatSettings1 @ cell,
             MemberQ[ styles, "NotebookAssistant`Sidebar`ScrollingContentCell" | "NotebookAssistant`Sidebar`DockedCell" | "NotebookAssistant`Sidebar`SubDockedCell" ],
                 Throw @ currentChatSettings1 @ ParentCell @ cell,
+            (* ChatOutput may be an inline cell w.r.t. dynamic output text so its depth is not known apriori. *)
             MemberQ[ styles, "NotebookAssistant`Sidebar`ChatInput" | "NotebookAssistant`Sidebar`ChatOutput" ],
-                delimiter = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellChatSettings" ],
+                delimiter = ConfirmMatch[ Last[ ParentCell[ cell, All ], Missing[ "NotAvailable" ] ], _CellObject|_Missing, "SidebarCellChatSettings" ],
             True,
                 nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
                 delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo ], _CellObject|_Missing, "Delimiter" ]
@@ -1807,8 +1808,9 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
                 Throw @ currentChatSettings1[ cell, key ],
             MemberQ[ styles, "NotebookAssistant`Sidebar`ScrollingContentCell" | "NotebookAssistant`Sidebar`DockedCell" | "NotebookAssistant`Sidebar`SubDockedCell" ],
                 Throw @ currentChatSettings1[ ParentCell @ cell, key ],
+            (* ChatOutput may be an inline cell w.r.t. dynamic output text so its depth is not known apriori. *)
             MemberQ[ styles, "NotebookAssistant`Sidebar`ChatInput" | "NotebookAssistant`Sidebar`ChatOutput" ],
-                delimiter = ConfirmMatch[ ParentCell @ ParentCell @ cell, _CellObject, "SidebarCellChatSettings" ],
+                delimiter = ConfirmMatch[ Last[ ParentCell[ cell, All ], Missing[ "NotAvailable" ] ], _CellObject|_Missing, "SidebarCellChatSettings" ],
             True,
                 nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
                 cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
