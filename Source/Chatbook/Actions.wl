@@ -110,12 +110,11 @@ ChatbookAction[ args___                                  ] := catchMine @ throwI
 regenerateAssistantMessage // beginDefinition;
 
 regenerateAssistantMessage[ chatOutput_CellObject, True(*sidebarCellQ_*) ] := Enclose[
-    Catch @ Module[ { chatInputCell, sidebarCell, nbo, chatInputFieldCell },
+    Catch @ Module[ { chatInputCell, sidebarCell, chatInputFieldCell },
         chatInputCell = PreviousCell[ chatOutput, CellStyle -> "NotebookAssistant`Sidebar`ChatInput" ];
         If[ ! MatchQ[ chatInputCell, _CellObject ], Throw @ Null ];
         
         sidebarCell = ConfirmMatch[ ParentCell @ ParentCell @ chatOutput, _CellObject, "SidebarCell" ];
-        nbo = ConfirmMatch[ parentNotebook @ sidebarCell, _NotebookObject, "Notebook" ];
         chatInputFieldCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarChatInputCell" ], None ], _CellObject, "SidebarChatInputFieldCell" ];
 
         With[ { sbc = sidebarCell, cic = chatInputCell }, (* "Set" is HoldFirst so we must inject values *)
@@ -246,11 +245,9 @@ ExplodeInPlace // endDefinition;
 ToggleFormatting // beginDefinition;
 
 ToggleFormatting[ cellObject0_ ] := Enclose[
-    Module[ { cellObject, nbo },
+    Module[ { cellObject },
         cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
-        nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
-        initFETaskWidget @ nbo;
-        createFETask @ toggleFormatting @ cellObject
+        toggleFormatting @ cellObject
     ],
     throwInternalFailure
 ];

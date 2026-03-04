@@ -82,7 +82,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
             scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
             , (* ELSE *)
             With[ { chatCells = Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ]},
@@ -91,7 +91,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
                     scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "NoNewScrollingContentCell" ];
                     ,
                     lastContentCell = ConfirmMatch[ Last[ chatCells, $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
-                    NotebookWrite[ System`NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
+                    NotebookWrite[ NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
                 ]
             ]
         ];
