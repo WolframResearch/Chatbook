@@ -1698,7 +1698,7 @@ VerificationTest[
                             },
                             { "Millifarad", "Quantity[1, \"Millifarads\"]" },
                             { "Milligal", "Quantity[1, \"Milligals\"]" },
-                            { "Millijanskys", Missing[ "Unknown unit", "Millijanskys" ] },
+                            { "Millijanskys", Missing[ "No errors detected" ] },
                             { "MillimolePerGram", "Quantity[1, \"Millimoles\"/\"Grams\"]" },
                             { "MillionShortTons", "Quantity[1, \"Million\"*\"ShortTons\"]" },
                             { "MillipascalSeconds", "Quantity[1, \"Millipascals\"*\"Seconds\"]" },
