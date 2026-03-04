@@ -333,7 +333,7 @@ discourageExtraToolCallsQ // endDefinition;
 dynamicOutputCellQ // beginDefinition;
 
 dynamicOutputCellQ[ Cell[ boxes_BoxData, ___, "ChatOutput", ___ ] ] :=
-    ! FreeQ[ boxes, TagBox[ _, "DynamicTextDisplay", ___ ] ];
+    ! FreeQ[ boxes, TagBox[ _, "DynamicTextDisplay", ___ ] | DynamicModuleBox[ ___, BoxID -> "DynamicTextDisplay", ___ ] ];
 
 dynamicOutputCellQ[ _ ] :=
     False;
