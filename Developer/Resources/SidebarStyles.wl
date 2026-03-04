@@ -109,43 +109,32 @@ MapThread[
                         DisplayFunction -> Function @ Evaluate @ OverlayBox[
                             {
                                 TagBox[
-                                    FrameBox[
-                                        #,
-                                        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                                        Background     -> color @ "NA_AssistantMessageBoxBackground",
-                                        FrameMargins   -> 8,
-                                        FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ],
-                                        ImageMargins   -> { { 15, 15 }, { 30, 12 } }, (* TWEAK: workaround for an inline cell, WorkspaceChat.nb's CellOutput style's CellMargins *)
-                                        ImageSize      -> { Scaled[ 1 ], Automatic },
-                                        RoundingRadius -> 8,
-                                        StripOnInput   -> False
+                                    Append[
+                                        assistantMessageBoxFrame[ # ],
+                                        ImageMargins   -> { { 15, 15 }, { 30, 12 } } (* TWEAK: workaround for an inline cell, WorkspaceChat.nb's CellOutput style's CellMargins *)
                                     ],
-                                    EventHandlerTag @ {
-                                        "MouseEntered" :>
-                                            If[ TrueQ @ $CloudEvaluation,
-                                                Null,
-                                                With[ { cell = EvaluationCell[ ] },
-                                                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell, True (* forces attachment! *) ]
-                                                ]
-                                            ],
-                                        Method         -> "Preemptive",
-                                        PassEventsDown -> Automatic,
-                                        PassEventsUp   -> True
-                                    }
+                                    assistantMessageBoxEventHandler
                                 ],
-                                (* This used to be a CellFrameLabel within the ChatOutput style, but that option isn't supported in inline cells in the side bar *)
-                                PaneBox[
-                                    DynamicBox[
-                                        ToBoxes[
-                                            Needs[ "Wolfram`Chatbook`" -> None ];
-                                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
-                                            StandardForm
-                                        ],
-                                        SingleEvaluation -> True
-                                    ],
-                                    FrameMargins -> { { 5, 0 }, { 0, 23 } }  (* TWEAK: push down the icon to align in the overlay *)
-                                ]
+                                assistantMessageBoxLabel
+                            },
+                            All,
+                            1,
+                            Alignment -> { Left, Top }
+                        ]
+                    }
+                ],
+
+            "AssistantMessageBoxActive",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
+                Cell[
+                    StyleData[ "NotebookAssistant`Sidebar`AssistantMessageBoxActive" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
+                    TemplateBoxOptions -> {
+                        DisplayFunction -> Function @ Evaluate @ OverlayBox[
+                            {
+                                Append[
+                                    assistantMessageBoxFrame[ # ],
+                                    ImageMargins -> { { 15, 15 }, { 30, 12 } } (* TWEAK: workaround for an inline cell, WorkspaceChat.nb's CellOutput style's CellMargins *)
+                                ],
+                                assistantMessageBoxLabel
                             },
                             All,
                             1,
