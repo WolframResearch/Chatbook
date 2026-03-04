@@ -74,6 +74,7 @@ explodeCell // beginDefinition;
 explodeCell[ cellObject_CellObject ] := explodeCell @ NotebookRead @ cellObject;
 explodeCell[ Cell[ content_, ___ ] ] := explodeCell @ content;
 explodeCell[ string_String ] := Cell[ #, "Text" ] & /@ StringSplit[ string, Longest[ "\n".. ] ];
+explodeCell[ BoxData[ TemplateBox[ { c_Cell }, "AssistantMessageBox" | "NotebookAssistant`Sidebar`AssistantMessageBox", ___ ] ] ] := explodeCell @ c
 explodeCell[ (BoxData|TextData)[ textData_, ___ ] ] := explodeCell @ Flatten @ List @ textData;
 
 explodeCell[ textData_List ] := Enclose[
