@@ -798,6 +798,85 @@ inlineResources[ expr_ ] := expr /. {
 };
 
 
+(* ::Subsection::Closed:: *)
+(*other box constructs*)
+
+
+assistantMessageBoxFrame = Function[ x, Evaluate @
+    FrameBox[
+        x,
+        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+        Background     -> color @ "NA_AssistantMessageBoxBackground", (* TWEAK *)
+        FrameMargins   -> 8,
+        FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ], (* TWEAK *)
+        ImageSize      -> { Scaled[ 1 ], Automatic },
+        RoundingRadius -> 8, (* tweaked *)
+        StripOnInput   -> False
+    ]
+]
+
+
+(* Sidebar: this used to be a CellFrameLabel within the ChatOutput style, but that option isn't supported in inline cells in the side bar *)
+assistantMessageBoxLabel =
+PaneBox[
+    DynamicBox[
+        ToBoxes[
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
+            StandardForm
+        ],
+        SingleEvaluation -> True
+    ],
+    FrameMargins -> { { 5, 0 }, { 0, 23 } }  (* TWEAK: push down the icon to align in the overlay *)
+]
+
+
+assistantMessageBoxEventHandler =
+EventHandlerTag @ {
+    "MouseEntered" :>
+        If[ TrueQ @ $CloudEvaluation,
+            Null,
+            With[ { cell = EvaluationCell[ ] },
+                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+            ]
+        ],
+    Method         -> "Preemptive",
+    PassEventsDown -> Automatic,
+    PassEventsUp   -> True
+}
+
+
+chatCodeBlockTemplateCodeFrame = Function[ x, Evaluate @
+    FrameBox[
+        PaneBox[
+            x,
+            (* Don't line break: assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
+            AppearanceElements -> None,
+            BaseStyle          -> { LineBreakWithin -> False }, 
+            ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
+            Scrollbars         -> Automatic
+        ],
+        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
+        FrameMargins -> { { 10, 10 }, { 6, 6 } },
+        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
+        ImageMargins -> { { 0, 0 }, { 0, 8 } },
+        ImageSize    -> { Full, Automatic }
+    ]
+]
+
+
+chatCodeBlockTemplateButtonFrame = Function[ x, Evaluate @
+    FrameBox[
+        x,
+        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundBottom",
+        FrameMargins -> { { 7, 2 }, { 2, 2 } },
+        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
+        ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
+        ImageSize    -> { Full, Automatic }
+    ]
+]
+
 
 (* ::Subsection::Closed:: *)
 (*$styleDataCells*)

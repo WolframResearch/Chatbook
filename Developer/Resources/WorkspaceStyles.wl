@@ -222,30 +222,17 @@ Cell[
     StyleData[ "AssistantMessageBox" ],
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ TagBox[
-            FrameBox[
-                #,
-                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> color @ "NA_AssistantMessageBoxBackground", (* TWEAK *)
-                FrameMargins   -> 8,
-                FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ], (* TWEAK *)
-                ImageSize      -> { Scaled[ 1 ], Automatic },
-                RoundingRadius -> 8, (* tweaked *)
-                StripOnInput   -> False
-            ],
-            EventHandlerTag @ {
-                "MouseEntered" :>
-                    If[ TrueQ @ $CloudEvaluation,
-                        Null,
-                        With[ { cell = EvaluationCell[ ] },
-                            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
-                        ]
-                    ],
-                Method         -> "Preemptive",
-                PassEventsDown -> Automatic,
-                PassEventsUp   -> True
-            }
+            assistantMessageBoxFrame[ # ],
+            assistantMessageBoxEventHandler
         ]
+    }
+]
+
+(*AssistantMessageBoxActive - during stream-of-thought from the LLM, don't add attachments *)
+Cell[
+    StyleData[ "AssistantMessageBoxActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ assistantMessageBoxFrame[ # ]
     }
 ]
 
@@ -258,36 +245,31 @@ Cell[
         DisplayFunction -> Function @ Evaluate @
         GridBox[
             {
-                {
-                    (* Don't line break: assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
-                    FrameBox[
-                        PaneBox[
-                            #1,
-                            AppearanceElements -> None,
-                            BaseStyle          -> { LineBreakWithin -> False },
-                            ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
-                            Scrollbars         -> Automatic
-                        ],
-                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
-                        FrameMargins -> { { 10, 10 }, { 6, 6 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
-                        ImageMargins -> { { 0, 0 }, { 0, 8 } },
-                        ImageSize    -> { Full, Automatic }
-                    ] },
-                {
-                    FrameBox[
-                        DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ], DestroyAfterEvaluation -> True ],
-                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundBottom",
-                        FrameMargins -> { { 7, 2 }, { 2, 2 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
-                        ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
-                        ImageSize    -> { Full, Automatic }
-                    ] }
+                { chatCodeBlockTemplateCodeFrame[ #1 ] },
+                { chatCodeBlockTemplateButtonFrame[ DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ], SingleEvaluation -> True ] ] }
             },
             DefaultBaseStyle -> "Column",
             GridBoxAlignment -> { "Columns" -> { { Left } } },
-            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-            GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+        ]
+    }
+]
+
+(*ChatCodeBlockTemplateActive - during stream-of-thought from the LLM, show inactive buttons *)
+Cell[
+    StyleData[ "ChatCodeBlockTemplateActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @
+        GridBox[
+            {
+                { chatCodeBlockTemplateCodeFrame[ #1 ] },
+                { chatCodeBlockTemplateButtonFrame[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ "Disabled", None ] ] }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> { "Columns" -> { { Left } } },
+            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
         ]
     }
 ]
