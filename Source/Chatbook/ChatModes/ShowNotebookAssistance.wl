@@ -54,6 +54,7 @@ NotebookAssistanceSidebarSettings // endDefinition;
 
 $notebookAssistanceSidebarSettings := <|
     $notebookAssistanceBaseSettings,
+    "AllowSelectionContext" -> False,
     "AutoGenerateTitle"     -> True,
     "AutoSaveConversations" -> True,
     "ConversationUUID"      -> CreateUUID[ ],
