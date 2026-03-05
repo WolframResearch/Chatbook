@@ -981,10 +981,24 @@ getBoxObjectFromBoxID[ obj_, None ] :=
     None;
 
 getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
-    Module[ { nbo },
+    Module[ { nbo, sidebarCell },
         nbo = parentNotebook @ cell;
         If[ MatchQ[ nbo, _NotebookObject ],
-            getBoxObjectFromBoxID[ nbo, uuid ],
+            If[ TrueQ @ $SidebarChat,
+                sidebarCell = Last[ ParentCell[ cell, All ], cell ];
+                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
+                    FE`BoxReference[ nbo, { { uuid } } ],
+                    FE`SearchStart -> sidebarCell,
+                    FE`SearchStop  -> sidebarCell
+                ]
+                ,
+                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
+                    FE`BoxReference[ nbo, { { uuid } } ],
+                    FE`SearchStart -> "StartFromBeginning",
+                    FE`SearchStop  -> "StopAtEnd"
+                ]
+            ]
+            ,
             (* Getting the parent notebook can fail if the cell has been deleted: *)
             If[ ! TrueQ @ cellObjectQ @ cell,
                 (* The cell is actually gone so return an appropriate `Missing` object: *)
@@ -993,15 +1007,6 @@ getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
                 throwInternalFailure @ getBoxObjectFromBoxID[ cell, uuid ]
             ]
         ]
-    ];
-
-(* FIXME: this can be improved when searching a side bar chat *)
-getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
-    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[
-        nbo,
-        { { uuid } },
-        FE`SearchStart -> "StartFromBeginning",
-        FE`SearchStop  -> "StopAtEnd"
     ];
 
 getBoxObjectFromBoxID // endDefinition;
