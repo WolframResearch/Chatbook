@@ -1297,8 +1297,9 @@ $statelessProgressIndicator =
 
 (* CurrentValue[...] = value actually calls CurrentValue twice, requiring two MathLink transactions. 
     If we only want to set the value and are not using the returned value then only make one MathLink call. *)
+setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; value === Inherited  (* Inherited may return values other than Inherited, so don't use a single MathLink call *)
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; $cloudNotebooks
-setCurrentValue[ args__, value_ ] := MathLink`CallFrontEndHeld @ FrontEnd`SetValue @ FEPrivate`Set[ CurrentValue[ args ], value ] /; TrueQ[ $efficientCurrentValue ]
+setCurrentValue[ args__, value_ ] := (MathLink`CallFrontEndHeld @ FrontEnd`SetValue @ FEPrivate`Set[ CurrentValue[ args ], value ]; value) /; TrueQ[ $efficientCurrentValue ]
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value)
 
 (* ::**************************************************************************************************************:: *)
