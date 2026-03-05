@@ -847,25 +847,6 @@ EventHandlerTag @ {
 }
 
 
-chatCodeBlockTemplateCodeFrame = Function[ x, Evaluate @
-    FrameBox[
-        PaneBox[
-            x,
-            (* Don't line break: assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
-            AppearanceElements -> None,
-            BaseStyle          -> { LineBreakWithin -> False }, 
-            ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
-            Scrollbars         -> Automatic
-        ],
-        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
-        FrameMargins -> { { 10, 10 }, { 6, 6 } },
-        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
-        ImageMargins -> { { 0, 0 }, { 0, 8 } },
-        ImageSize    -> { Full, Automatic }
-    ]
-]
-
-
 chatCodeBlockTemplateButtonFrame = Function[ x, Evaluate @
     FrameBox[
         x,

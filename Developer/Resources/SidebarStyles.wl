@@ -124,6 +124,7 @@ MapThread[
                     }
                 ],
 
+            (* Same as above but without the EventHandler *)
             "AssistantMessageBoxActive",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
                 Cell[
                     StyleData[ "NotebookAssistant`Sidebar`AssistantMessageBoxActive" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
