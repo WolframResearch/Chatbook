@@ -74,7 +74,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         label = If[ MatchQ[ appContainer, _CellObject ],
             DynamicModule[
                 {
-                    Typeset`val = TrueQ @ Replace[ Wolfram`Chatbook`CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ],
+                    Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ],
                     Typeset`mouseOver = False
                 },
                 EventHandler[
@@ -99,7 +99,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                   {
                       "MouseEntered" :> (Typeset`mouseOver = True),
                       "MouseExited"  :> (Typeset`mouseOver = False),
-                      "MouseClicked" :> (Function[ Typeset`val = #; Wolfram`Chatbook`CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
+                      "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
                   PassEventsDown -> True]]
             ,
             Grid[
