@@ -1563,7 +1563,7 @@ attachAssistantMessageButtons // beginDefinition;
 attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
 
 attachAssistantMessageButtons[ cell_CellObject ] :=
-    attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
+    attachAssistantMessageButtons[ cell, Or @@ Lookup[ CurrentChatSettings @ cell, { "WorkspaceChat", "SidebarChat" }, False, TrueQ ] ];
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
     Catch @ Module[ { cell, includeFeedback, attached, sidebarCellQ },
@@ -2756,7 +2756,7 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
         If[ MissingQ @ scrollablePaneCell,
             lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
             , (* ELSE *)
             NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, cells ] ]
         ];

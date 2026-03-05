@@ -40,7 +40,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$documentationMarkdownBaseURL;
 `$dynamicSplitRules;
 `$dynamicText;
-`$dynamicTrigger;
 `$enableLLMServices;
 `$endToken;
 `$evaluationCell;

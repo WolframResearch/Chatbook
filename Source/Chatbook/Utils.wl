@@ -393,7 +393,6 @@ $$progressFraction = (_Integer|_Real)? (0.0 <= # <= 1.0 &);
 initializeProgressContainer // beginDefinition;
 
 initializeProgressContainer[ container_Symbol ] := (
-    $dynamicTrigger    = 0;
     $progressFraction  = 0.0;
     $progressContainer = HoldComplete @ container[ "DynamicContent" ];
 
@@ -459,13 +458,10 @@ setProgressDisplay[ expr_, p_ ] :=
 setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
     $progressFraction = ConfirmBy[ Clip[ p, { 0, 1 } ], 0.0 <= # <= 1.0 &, "ProgressFraction" ];
     If[ ! $fixedProgressText && ! MatchQ[ expr, Automatic|Inherited|None ] && ! StringQ @ container,
-        WithCleanup[
-            container = ConfirmMatch[
-                basicProgressPanel[ expr, Dynamic @ $progressFraction ],
-                _Deploy,
-                "ProgressPanel"
-            ],
-            $dynamicTrigger++
+        container = ConfirmMatch[
+            basicProgressPanel[ expr, Dynamic @ $progressFraction ],
+            _Deploy,
+            "ProgressPanel"
         ];
     ],
     throwInternalFailure

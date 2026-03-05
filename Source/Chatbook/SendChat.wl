@@ -15,7 +15,6 @@ Needs[ "Wolfram`Chatbook`Personas`" ];
 (*Configuration*)
 $headlessChat             := ! TrueQ @ $ChatNotebookEvaluation;
 $resizeDingbats            = True;
-splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
@@ -30,9 +29,7 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Initialization*)
-$dynamicTrigger    = 0;
-$lastDynamicUpdate = 0;
-$buffer            = "";
+$buffer = "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -160,7 +157,6 @@ sendChat // beginDefinition;
 sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cellExpr, cellObj, container, task },
 
-        initFETaskWidget @ nbo;
         resolveInlineReferences @ evalCell;
 
         settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
@@ -182,6 +178,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         ConfirmBy[ initializeProgressContainer @ container, AssociationQ, "InitializeProgress" ];
+        ClearAttributes[ container, Temporary ];
 
         $reformattedCell = None;
         cellTags = CurrentValue[ evalCell, CellTags ];
@@ -282,7 +279,6 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
             cellTags, cell, cellObject, container, task
         },
 
-        initFETaskWidget @ nbo;
         resolveInlineReferences @ evalCell;
 
         settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
@@ -1269,20 +1265,23 @@ writeChunk0[
 
 writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
-    appendStringContent[ container[ "FullContent"    ], text ];
-    appendStringContent[ container[ "DynamicContent" ], text ];
-
     (* FIXME: figure out what to do here when there's a custom formatter *)
-    If[ TrueQ @ $dynamicSplit,
-        (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
-        splitDynamicContent[ container, cell ]
+    With[ { newContent = appendStringContent[ container[ "DynamicContent" ], text ] },
+        If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, insufficientVersionQ[ "DynamicSplit" ], $cloudNotebooks ],
+            (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
+            With[ { splitString = DeleteCases[ StringSplit[ newContent, $dynamicSplitRules ], "" ] },
+                If[ Length @ splitString > 1,
+                    writeDynamicChunkAsStatic[ StringJoin @ Most @ splitString, container[ "DynamicBoxObject" ] ];
+                    container[ "DynamicContent" ] = Last @ splitString
+                    ,
+                    container[ "DynamicContent" ] = newContent
+                ]
+            ]
+            ,
+            container[ "DynamicContent" ] = newContent
+        ]
     ];
-
-    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.05,
-        (* Trigger updating of dynamic content in current chat output cell *)
-        $dynamicTrigger++;
-        $lastDynamicUpdate = AbsoluteTime[ ]
-    ];
+    container[ "FullContent" ] = appendStringContent[ container[ "FullContent" ], text ];
 
     (* Handle auto-opening of assistant cells: *)
     Which[
@@ -1305,12 +1304,11 @@ $chunkDebug = Internal`Bag[ ];
 (* ::Subsubsection::Closed:: *)
 (*appendStringContent*)
 appendStringContent // beginDefinition;
-appendStringContent // Attributes = { HoldFirst };
 
 appendStringContent[ container_, text_String ] := Quiet[
     If[ StringQ @ container,
-        container = autoCorrect @ StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
-        container = autoCorrect @ convertUTF8 @ text
+        autoCorrect @ StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
+        autoCorrect @ convertUTF8 @ text
     ],
     $CharacterEncoding::utf8
 ];
@@ -1382,34 +1380,15 @@ Automatically rewrite these as WL tool calls:
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*splitDynamicContent*)
-splitDynamicContent // beginDefinition;
-splitDynamicContent // Attributes = { HoldFirst };
+(*writeDynamicChunkAsStatic*)
+writeDynamicChunkAsStatic // beginDefinition;
 
-(* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
-splitDynamicContent[ container_, cell_CellObject ] /; Or[
-    $InlineChat,
-    ! $dynamicSplit,
-    insufficientVersionQ[ "DynamicSplit" ],
-    $cloudNotebooks
-] := Null;
+writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
+    Catch @ Module[ { boxObject, settings, reformatted, write },
 
-splitDynamicContent[ container_, cell_CellObject ] :=
-    splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
-
-splitDynamicContent[ container_, text_String, cell_CellObject, uuid_String ] :=
-    splitDynamicContent[ container, DeleteCases[ StringSplit[ text, $dynamicSplitRules ], "" ], cell, uuid ];
-
-splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellObject, uuid_String ] := Enclose[
-    Catch @ Module[ { boxObject, settings, reformatted, write, nbo },
-
-        boxObject = ConfirmMatch[
-            getBoxObjectFromBoxID[ cell, uuid ],
-            _BoxObject | Missing[ "CellRemoved", ___ ],
-            "BoxObject"
-        ];
-
-        If[ MatchQ[ boxObject, Missing[ "CellRemoved", ___ ] ],
+        boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
+        
+        If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
 
@@ -1417,38 +1396,36 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_CellOb
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
-                Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
-                { StringJoin @ static }
+                ReplaceAll[
+                    Block[ { $dynamicText = False }, reformatTextData @ static ],
+                    {
+                        TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
+                            If[ TrueQ @ $highlightDynamicContent,
+                                FrameBox[ TemplateBox[ c, "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive", rest ], FrameStyle -> RGBColor[ 0.8, 0.3, 0.8 ] ],
+                                TemplateBox[ c, "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive", rest ]
+                            ],
+                        TemplateBox[ c_, "ChatCodeBlockTemplate", rest___ ] :>
+                            If[ TrueQ @ $highlightDynamicContent,
+                                FrameBox[ TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ], FrameStyle -> RGBColor[ 0.8, 0.3, 0.8 ] ],
+                                TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ]
+                            ]
+                    }
+                ],
+                { static }
             ],
             $$textDataList,
             "ReformatTextData"
         ];
-
+        
         write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
-        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
-
-        container[ "DynamicContent" ] = dynamic;
-
-        With[ { boxObject = boxObject, write = write },
-            splitDynamicTaskFunction @ NotebookWrite[
-                System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                write,
-                None,
-                AutoScroll -> False
-            ]
-        ];
-
-        $dynamicTrigger++;
-        $lastDynamicUpdate = AbsoluteTime[ ];
+        
+        NotebookWrite[ NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
 
     ],
     throwInternalFailure
 ];
 
-(* There's nothing we can write as static content yet: *)
-splitDynamicContent[ container_, { _ } | { }, cell_CellObject, uuid_ ] := Null;
-
-splitDynamicContent // endDefinition;
+writeDynamicChunkAsStatic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1673,9 +1650,6 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             messages, roles, response, newMessages, req, toolID, task
         },
 
-        (* Ensure dynamic text is up to date: *)
-        $dynamicTrigger++;
-        $lastDynamicUpdate = AbsoluteTime[ ];
         $toolCallCount = If[ IntegerQ @ $toolCallCount, $toolCallCount + 1, 1 ];
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
@@ -1756,10 +1730,6 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, settings, output, toolID ];
-
-        (* Update dynamic text with tool result before waiting for the next response: *)
-        $dynamicTrigger++;
-        $lastDynamicUpdate = AbsoluteTime[ ];
 
         If[ ! sendToolResponseQ[ settings, toolResponse ], throwTop @ StopChat @ cell ];
 
@@ -2410,7 +2380,16 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
             Throw @ cellPrint @ cell
         ];
 
-        If[ MatchQ[ prevCellExpr, Cell[ BoxData[ TagBox[ _, "DynamicTextDisplay", ___ ], ___ ], ___ ] ],
+        If[ MatchQ[ prevCellExpr,
+                Alternatives[
+                    (* legacy patterns *)
+                    Cell[ BoxData[ TagBox[ _, "DynamicTextDisplay", ___ ] ], ___ ],
+                    Cell[ BoxData[ StyleBox[ TagBox[ _, "DynamicTextDisplay", ___ ], ___ ] ], ___ ],
+                    (* modern pattern *)
+                    Cell[ BoxData[ DynamicModuleBox[ ___, BoxID -> "DynamicTextDisplay", ___ ] ], ___ ],
+                    Cell[ BoxData[ StyleBox[ DynamicModuleBox[ ___, BoxID -> "DynamicTextDisplay", ___ ], ___ ] ], ___ ]
+                ]
+            ],
             (* The target cell is a left-over dynamic chat output that hasn't been cleaned up properly,
                so delete it and create a new chat output. *)
             NotebookDelete @ target;
@@ -2456,9 +2435,9 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
 prepareChatOutputPage // endDefinition;
 
 
-deleteEvaluationCellIfKernelQuit // beginDefinition;
+deleteFEObjectIfKernelQuit // beginDefinition;
 
-deleteEvaluationCellIfKernelQuit[ expr_ ] :=
+deleteFEObjectIfKernelQuit[ expr_, Hold[ objToDelete_ ] ] :=
 DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* front-end boxes memoize the $SessionID that created them *)
     DynamicWrapper[
         PaneSelector[
@@ -2466,7 +2445,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* fr
             Dynamic @ kernelWasQuitQ,
             ImageSize -> Automatic],
 
-        If[ kernelWasQuitQ, NotebookDelete @ EvaluationCell[ ] ],
+        If[ kernelWasQuitQ, NotebookDelete @ objToDelete ],
 
         SynchronousUpdating -> False
     ],
@@ -2474,7 +2453,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* fr
     Initialization :> (kernelWasQuitQ = (originalSessionID =!= $SessionID)) (* whenever the cell re-draws, check the $SessionID *)
 ];
 
-deleteEvaluationCellIfKernelQuit // endDefinition;
+deleteFEObjectIfKernelQuit // endDefinition;
 
 
 (* ::**************************************************************************************************************:: *)
@@ -2508,7 +2487,7 @@ activeAIAssistantCell[
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
             Cell[
-                BoxData @ outer @ ToBoxes @ deleteEvaluationCellIfKernelQuit @
+                BoxData @ outer @ ToBoxes @ deleteFEObjectIfKernelQuit[ #, Hold[ ParentCell @ EvaluationCell[ ] ] ]& @
                     If[ TrueQ @ reformat,
                         Dynamic[
                             Refresh[
@@ -2575,19 +2554,42 @@ activeAIAssistantCell[
                 True,                   # & ]
         },
         Cell[
-            BoxData @ outer @ TagBox[
-                ToBoxes @  deleteEvaluationCellIfKernelQuit @ Dynamic[
-                    $dynamicTrigger;
-                    (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
-                       FE crash if a NotebookWrite happens at the same time. *)
-                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
-                    TrackedSymbols   :> { $dynamicTrigger },
-                    Deinitialization :> Quiet @ TaskRemove @ task
+            BoxData @ outer @ ToBoxes @
+                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False },
+                    
+                    DynamicWrapper[
+                        PaneSelector[
+                            {
+                                False -> Dynamic[
+                                    finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
+                                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
+                                    TrackedSymbols :> { },
+                                    UpdateInterval -> 0.5
+                                ],
+                                True -> Spacer @ 0  (* hide content while we wait for the cell to delete *)
+                            },
+                            Dynamic @ Or[ kernelWasQuitQ, finishedSignal ],
+                            ImageSize -> Automatic
+                        ],
+
+                        If[ kernelWasQuitQ, NotebookDelete @ topCell ];
+                        If[ TrueQ @ finishedSignal,
+                            setCurrentValue[ topCell, Editable, True ];
+                            WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
+                        ],
+                        
+                        SynchronousUpdating -> False,
+                        TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
+                    ],
+
+                    BoxID            -> "DynamicTextDisplay",
+                    Deinitialization :> Quiet @ TaskRemove @ task,
+                    Initialization   :> (
+                        dmBox = EvaluationBox[ ];
+                        topCell = ParentCell @ EvaluationCell [ ];
+                        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
+                        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
                 ],
-                "DynamicTextDisplay",
-                BoxID -> uuid
-            ]
-            ,
             "Output",
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
@@ -2605,11 +2607,11 @@ activeAIAssistantCell[
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
             CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
-            Editable           -> True,
+            Editable           -> False,
             LanguageCategory   -> None,
             LineIndent         -> 0,
             PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-            Selectable         -> True,
+            Selectable         -> False,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
             TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>,
@@ -2679,11 +2681,25 @@ dynamicTextDisplay[ container_, formatter_, True ] := With[
             $ChatHandlerData
         |>
     },
-    conformToExpression @ formatter[ container[ "DynamicContent" ], data ]
+    conformToExpression @ ReplaceAll[
+        formatter[ container[ "DynamicContent" ], data ],
+        {
+            TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
+                If[ TrueQ @ $highlightDynamicContent,
+                    FrameBox[ TemplateBox[ c, "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive", rest ], FrameStyle -> RGBColor[ 0.8, 0.3, 0.8 ] ],
+                    TemplateBox[ c, "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive", rest ]
+                ],
+            TemplateBox[ c_, "ChatCodeBlockTemplate", rest___ ] :>
+                If[ TrueQ @ $highlightDynamicContent,
+                    FrameBox[ TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ], FrameStyle -> RGBColor[ 0.8, 0.3, 0.8 ] ],
+                    TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ]
+                ]
+        }
+    ]
 ];
 
-dynamicTextDisplay[ container_, formatter_, False ] /; StringQ @ container[ "DynamicContent" ] :=
-    RawBoxes @ Cell @ TextData @ container[ "DynamicContent" ];
+dynamicTextDisplay[ container_, formatter_, False ] /; AssociationQ @ container :=
+    RawBoxes @ Cell @ If[ StringQ @ container[ "DynamicContent" ], TextData, BoxData ] @ container[ "DynamicContent" ];
 
 dynamicTextDisplay[ _Symbol, _, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
 
@@ -2779,7 +2795,7 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, createTask, info },
+        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, info },
 
             string = ConfirmBy[ StringTrim @ string0, StringQ, "String" ];
 
@@ -2801,8 +2817,6 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput = None;
 
-            createTask = If[ TrueQ @ sufficientVersionQ[ "TaskWriteOutput" ], createFETask, Identity ];
-
             info = addProcessingArguments[
                 "WriteChatOutputCell",
                 <|
@@ -2813,18 +2827,28 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
                 |>
             ];
 
-            With[ { new = new, info = info },
-                createTask @ applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
-            ];
+            If[ Lookup[ info, "Container", False, Function[ Null, MatchQ[ Unevaluated @ #, _Symbol ] && AssociationQ @ #, HoldFirst ] ],
+                (* add a key to container, which signals the stream-of-thought dynamic cell that the chat is complete so the cell can rewrite itself *)
+                Lookup[ info, "Container", Null,
+                    Function[ Null,
+                        AssociateTo[ #, {
+                            "FinishedCell"     -> $reformattedCell,
+                            "FinishedCellInfo" -> KeyTake[ info, { "ExpressionUUID", "ScrollOutput" } ] } ],
+                        HoldFirst ] ]
+                , (* ELSE create a task to write the completed cell *)
+                With[ { new = new, info = info },
+                    applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
+                ];
 
-            waitForLastChatOutput @ settings
+                waitForLastChatOutput @ settings
+            ]
         ]
     ],
     throwInternalFailure
 ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
-    createFETask @ NotebookWrite[
+    NotebookWrite[
         cell,
         Cell[
             TextData @ {
@@ -3156,7 +3180,7 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
             ]
         ];
 
-        createFETask @ WithCleanup[
+        WithCleanup[
             NotebookWrite[
                 cellObject,
                 $reformattedCell = cell,
@@ -3217,11 +3241,7 @@ throwFailureToChatOutput // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_CellObject, as_ ] /; TrueQ[ $SidebarChat ] := Enclose[
-    createFETask @ NotebookWrite[ cell, errorCell @ as ],
-    throwInternalFailure
-]
-writeErrorCell[ cell_CellObject, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);
+writeErrorCell[ cell_CellObject, as_ ] := NotebookWrite[ cell, errorCell @ as ];
 writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

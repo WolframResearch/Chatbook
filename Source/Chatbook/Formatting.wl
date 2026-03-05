@@ -777,6 +777,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         ]
     ];
 
+(* this is a placeholder during active stream-of-thought *)
+floatingButtonGrid[ "Disabled", lang_ ] := buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", "Disabled" }, "FormattingCopyToClipboardLabel" ]
+
 (* TODO: I'm assuming this still works on the cloud as written *)
 (* For cloud notebooks (no attached cell) *)
 floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
@@ -1318,7 +1321,7 @@ labeledIcon // beginDefinition;
 
 
 labeledIcon[ iconTemplateName_String, textResource_String ] :=
-    labeledIcon[ { iconTemplateName, True }, textResource ];
+    labeledIcon[ { iconTemplateName, False }, textResource ];
 
 
 labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
@@ -1330,6 +1333,22 @@ labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String 
         textResource
     ];
 
+labeledIcon[ { iconTemplateName_String, "Disabled" }, textResource_String ] := Grid[
+    {
+        {
+            buttonPane @ chatbookExpression @ iconTemplateName,
+            Style[
+                tr @ textResource,
+                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFontDisabled",
+                FontFamily -> "Source Sans Pro",
+                FontSize   -> 12
+            ]
+        }
+    },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 2 },
+    Spacings         -> { 0, 0 }
+];
 
 labeledIcon[ icon_, textResource_String ] := Grid[
     {
@@ -3333,13 +3352,13 @@ assistantMessageBoxActive[ box_, "Inline" ] :=
 assistantMessageBoxActive[ box_, "Workspace" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "AssistantMessageBox"
+        "AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive[ box_, "Sidebar" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "NotebookAssistant`Sidebar`AssistantMessageBox"
+        "NotebookAssistant`Sidebar`AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive // endDefinition;

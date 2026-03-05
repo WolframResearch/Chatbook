@@ -1382,6 +1382,13 @@ Dispatch[{
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> ""
 	|>,
+	"NA_ChatCodeBlockTemplateButtonFontDisabled" -> <|
+		 "Light"  -> GrayLevel[0.2, 0.5],
+		 "Dark"   -> GrayLevel[0.9455560, 0.5],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
 	"NA_ChatCodeBlockTemplateButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.8980392, 0.9294117],
 		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
