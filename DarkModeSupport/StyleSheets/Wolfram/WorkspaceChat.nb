@@ -87,7 +87,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.70.3981601209"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.70.3981692394"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -405,15 +405,11 @@ Notebook[
        {
         {
          FrameBox[
-          PaneBox[
-           #1,
-           AppearanceElements -> None,
-           BaseStyle -> {LineBreakWithin -> False},
-           ImageSize -> {Scaled[1], UpTo[400]},
-           Scrollbars -> Automatic
-          ],
+          #1,
+          Alignment -> {Left, Top},
           Background ->
            LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+          BaseStyle -> {LineBreakWithin -> False},
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -424,7 +420,7 @@ Notebook[
             ]
            ],
           ImageMargins -> {{0, 0}, {0, 8}},
-          ImageSize -> {Full, Automatic}
+          ImageSize -> {Scaled[1], UpTo[400]}
          ]
         },
         {
