@@ -97,7 +97,8 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                     AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
                     setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ];
                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]
-                )
+                );
+                ReleaseHold @ $sidebarChatInitialAction;
             )
         ],
         "NotebookAssistant`Sidebar`DockedCell",

@@ -89,6 +89,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$showProgressBar;
 `$showProgressCancelButton;
 `$showProgressText;
+`$sidebarChatInitialAction;
 `$simpleToolMethod;
 `$sources;
 `$statelessProgressIndicator;
