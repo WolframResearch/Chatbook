@@ -2555,20 +2555,21 @@ activeAIAssistantCell[
         },
         Cell[
             BoxData @ outer @ ToBoxes @
-                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False },
+                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput },
                     
                     DynamicWrapper[
                         PaneSelector[
                             {
-                                False -> Dynamic[
+                                "Active" -> Dynamic[
                                     finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
-                                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
+                                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
                                     TrackedSymbols :> { },
                                     UpdateInterval -> 0.5
                                 ],
-                                True -> Spacer @ 0  (* hide content while we wait for the cell to delete *)
+                                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
+                                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
                             },
-                            Dynamic @ Or[ kernelWasQuitQ, finishedSignal ],
+                            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
                             ImageSize -> Automatic
                         ],
 
@@ -2586,7 +2587,7 @@ activeAIAssistantCell[
                     Deinitialization :> Quiet @ TaskRemove @ task,
                     Initialization   :> (
                         dmBox = EvaluationBox[ ];
-                        topCell = ParentCell @ EvaluationCell [ ];
+                        topCell = If[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat, ParentCell, Identity ] @ EvaluationCell [ ];
                         If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
                         kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
                 ],
