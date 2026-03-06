@@ -57,11 +57,45 @@ evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*appendCellToSidebarChat*)
+appendCellToSidebarChat // beginDefinition;
+
+appendCellToSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, cell_Cell, uuid_String ] := Enclose[
+    Module[ { scrollablePaneCell, lastDockedCell, chatCells, lastContentCell, cellObject },
+        (* find the last top cell, or docked cell if there are no content cells *)
+        (* all old top-cells are within an inline cell that scrolls. Overwrite that cell if it exists, otherwise create it anew *)
+        scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
+        If[ MissingQ @ scrollablePaneCell,
+            lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
+            scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
+            , (* ELSE *)
+            chatCells = Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ];
+            If[ chatCells === { }, (* rewrite the entire cell if it has no content; this removes the "AskAnything" content *)
+                NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
+                scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "NoNewScrollingContentCell" ];
+                ,
+                lastContentCell = ConfirmMatch[ Last[ chatCells, $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
+                NotebookWrite[ NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
+            ]
+        ];
+
+        cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SidebarChatInputCellObject" ];
+        setCurrentValue[ cellObject, CellTags, "SidebarTopCell" ];
+        cellObject
+    ],
+    throwInternalFailure
+];
+
+appendCellToSidebarChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*evaluateSidebarChat*)
 evaluateSidebarChat // beginDefinition;
 
 evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
-    Module[ { text, uuid, cell, scrollablePaneCell, lastDockedCell, lastContentCell },
+    Module[ { text, uuid, cell },
 
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
@@ -77,27 +111,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             CellTags -> uuid 
         ];
 
-        (* find the last top cell, or docked cell if there are no content cells *)
-        (* all old top-cells are within an inline cell that scrolls. Overwrite that cell if it exists, otherwise create it anew *)
-        scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingContent" ];
-        If[ MissingQ @ scrollablePaneCell,
-            lastDockedCell = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
-            scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "UpdatedSidebarScrollableCell" ];
-            , (* ELSE *)
-            With[ { chatCells = Cells[ scrollablePaneCell, CellTags -> "SidebarTopCell" ]},
-                If[ chatCells === { }, (* rewrite the entire cell if it has no content; this removes the "AskAnything" content *)
-                    NotebookWrite[ scrollablePaneCell, makeSidebarChatScrollingCell[ nbo, sidebarCell, { cell } ] ];
-                    scrollablePaneCell = ConfirmMatch[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], $Failed ], _CellObject, "NoNewScrollingContentCell" ];
-                    ,
-                    lastContentCell = ConfirmMatch[ Last[ chatCells, $Failed ], _CellObject, "NoSidebarScrollingContentCell" ];
-                    NotebookWrite[ NotebookLocationSpecifier[ lastContentCell, "After" ], cell ]
-                ]
-            ]
-        ];
-
-        cellObject = ConfirmMatch[ Last[ Cells[ scrollablePaneCell, CellTags -> uuid ], $Failed ], _CellObject, "SidebarChatInputCellObject" ];
-        setCurrentValue[ cellObject, CellTags, "SidebarTopCell" ];
+        cellObject = appendCellToSidebarChat[ nbo, sidebarCell, cell, uuid ];
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
     ],
     throwInternalFailure

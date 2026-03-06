@@ -115,6 +115,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `addProcessingArguments;
 `allowedMultimodalRoles;
 `apiKeyDialog;
+`appendCellToSidebarChat;
 `appendCitations;
 `applyHandlerFunction;
 `applyProcessingFunction;
