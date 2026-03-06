@@ -410,6 +410,65 @@ ShowNotebookAssistance // endExportedDefinition;
 (*autoShowNotebookAssistance*)
 autoShowNotebookAssistance // beginDefinition;
 
+(* SIDEBAR: "Need help getting started?" prompt in the cell insertion bar *)
+autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] /; sufficientVersionQ[ 15.0 ] := Enclose[
+    Catch @ Module[ { nbo, newCell, uuid, sidebarInfo, sidebarCell, cellObject },
+        nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+
+        sidebarInfo = ConfirmMatch[ With[ { nb = nbo }, FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nb, "NotebookAssistant" ] ], _Association|None, "SidebarInfo" ];
+
+        newCell = Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ validateOptionInput @ Key[ "GettingStarted" ], Background -> None, Selectable -> True, Editable -> True ] },
+                    "NotebookAssistant`Sidebar`UserMessageBox"
+                ],
+                "NotebookAssistant`Sidebar`ChatInput",
+                (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
+                    However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
+                CellTags -> uuid 
+            ];
+
+        If[ sidebarInfo === None,
+            (* Most common expected case: the sidebar assistant has yet to be opened in this notebook *)
+            (* Spooky action-at-a-distance: cause different initialization behavior depending on whether assistant has ever been used before in this session *)
+            $sidebarChatInitialAction = With[ { nc = newCell, uuid2 = uuid, nbo2 = nbo },
+                Hold @ ChatCellEvaluate[ appendCellToSidebarChat[ nbo2, sidebarCellObject @ nbo2, nc, uuid2 ], nbo2 ]
+            ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+
+            , (* ELSE unusual corner cases: the sidebar has been active before and may contain content *)
+
+            sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCellObject" ];
+            If[ Lookup[ sidebarInfo, "Active", False, TrueQ ],
+                (* sidebar is currently open: do something sensible *)
+                cellObject = appendCellToSidebarChat[ nbo, sidebarCell, newCell, uuid ];
+                ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+                
+                , (* ELSE the sidebar has been opened before, but isn't now, so open it again as a new chat with the helping prompt *)
+                
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+                With[
+                    {
+                        subDockedCell      = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ],        Missing @ "NoSidebarSubDockedCell" ],
+                        scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ]
+                    },
+                    If[ ! MissingQ @ subDockedCell,      NotebookDelete @ subDockedCell ];
+                    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ];
+                ];
+                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+                setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
+                cellObject = appendCellToSidebarChat[ nbo, sidebarCell, newCell, uuid ];
+                ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+            ]
+        ];
+
+        Null (* so output from this evaluation passes the ConfirmMatch check in ShowNotebookAssistance *)
+    ],
+    throwInternalFailure
+];
+
 autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Module[ { nbo, cells, obj },
         nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
