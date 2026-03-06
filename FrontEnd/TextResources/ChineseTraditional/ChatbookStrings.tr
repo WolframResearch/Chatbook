@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "\:4E0B\:4E00\:9801",
 "WorkspaceHistoryLastPage" -> "\:6700\:5F8C\:4E00\:9801",
 "WorkspaceHistoryTitle" -> "\:6B77\:53F2\:8A18\:9304",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:8907\:88FD\:56DE\:61C9\:81F3\:526A\:8CBC\:7C3F\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:8907\:88FD\:56DE\:61C9\:6210\:70BA\[Ellipsis]",

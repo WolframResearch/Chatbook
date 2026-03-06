@@ -100,7 +100,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
                     ];
                 );
-                
+
                 ReleaseHold @ $sidebarChatInitialAction;
             )
         ],
@@ -2315,15 +2315,23 @@ inclusionCheckbox // endDefinition;
 historyOverlay // beginDefinition;
 
 historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
-    DynamicModule[ { searching = False, query = "" },
+    DynamicModule[ { searching = False, query = "", overlayCell },
         PaneSelector[
             {
-                True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query ],
+                True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
                 False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
             },
             Dynamic @ searching,
             ImageSize -> Automatic
-        ]
+        ],
+
+        Initialization   :> (overlayCell = EvaluationCell[ ]),
+        Deinitialization :> (
+            If[ MatchQ[ appContainer, _CellObject ],
+                FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", appContainer, appContainer ],
+                moveToChatInputField[ nbo, True ]
+            ]
+        )
     ];
 
 historyOverlay // endDefinition;
@@ -2333,12 +2341,12 @@ historyOverlay // endDefinition;
 (*historySearchView*)
 historySearchView // beginDefinition;
 
-historySearchView[ nbo_NotebookObject, appContainer_, Dynamic[ searching_ ], Dynamic[ query_ ] ] := Enclose[
+historySearchView[ nbo_NotebookObject, appContainer_, Dynamic[ searching_ ], Dynamic[ query_ ], Dynamic[ overlayCell_ ] ] := Enclose[
     Catch @ Module[ { appName, header, view },
         appName = ConfirmBy[ CurrentChatSettings[ If[ appContainer === None, nbo, appContainer ], "AppName" ], StringQ, "AppName" ];
 
         header = ConfirmMatch[
-            makeHistoryHeader @ historySearchField[ Dynamic @ query, Dynamic @ searching ],
+            makeHistoryHeader @ historySearchField[ nbo, Dynamic @ query, Dynamic @ searching, Dynamic @ overlayCell ],
             _Pane,
             "Header"
         ];
@@ -2407,16 +2415,32 @@ showSearchResults // endDefinition;
 (*historySearchField*)
 historySearchField // beginDefinition;
 
-historySearchField[ Dynamic[ query_ ], Dynamic[ searching_ ] ] := Grid[
+historySearchField[ nbo_NotebookObject, Dynamic[ query_ ], Dynamic[ searching_ ], Dynamic[ overlayCell_ ] ] := Grid[
     { {
-        InputField[
-            Dynamic[ query ],
-            String,
-            BaseStyle        -> "Text",
-            ContinuousAction -> True,
-            FieldHint        -> "Search",
-            ImageSize        -> { Full, Automatic }
-        ],
+        Overlay[
+            {
+                DynamicModule[ { },
+                    InputField[
+                        Dynamic[ query ],
+                        String,
+                        BaseStyle        -> "Text",
+                        BoxID            -> "ChatHistorySearchField",
+                        ContinuousAction -> True,
+                        ImageSize        -> { Full, Automatic }
+                    ],
+                    Initialization            :> FrontEnd`MoveCursorToInputField[ nbo, "ChatHistorySearchField", overlayCell, overlayCell ],
+                    SynchronousInitialization -> False
+                ],
+                Dynamic @ Pane[
+                    Style[
+                        If[ query === "", tr[ "WorkspaceHistoryFieldHint" ], "" ],
+                        "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ],
+                    ImageMargins -> { { 14, 0 }, { 0, 0 } } ]
+            },
+            { 1, 2 },
+            1,
+            Alignment        -> { Left, Baseline },
+            BaselinePosition -> Baseline ],
         historySearchButton @ Dynamic @ searching
     } },
     Alignment -> { Automatic, Baseline }
@@ -2530,8 +2554,6 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
 ];
 
 historyPagination // endDefinition;
-
-historySearchButton @ Dynamic @ searching
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

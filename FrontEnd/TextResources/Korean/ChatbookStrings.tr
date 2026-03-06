@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "\:B2E4\:C74C \:D398\:C774\:C9C0",
 "WorkspaceHistoryLastPage" -> "\:B9C8\:C9C0\:B9C9 \:D398\:C774\:C9C0",
 "WorkspaceHistoryTitle" -> "\:D788\:C2A4\:D1A0\:B9AC",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:B2F5\:BCC0\:C744 \:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:B2F5\:BCC0\:C744 \:BCF5\:C0AC\[Ellipsis]",

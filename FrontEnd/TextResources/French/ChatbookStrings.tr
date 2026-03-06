@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "Page suivante",
 "WorkspaceHistoryLastPage" -> "Derni\[EGrave]re page",
 "WorkspaceHistoryTitle" -> "Historique",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",
