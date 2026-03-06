@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "Next page",
 "WorkspaceHistoryLastPage" -> "Last page",
 "WorkspaceHistoryTitle" -> "History",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
