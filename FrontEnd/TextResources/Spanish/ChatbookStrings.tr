@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "Siguiente p\[AAcute]gina",
 "WorkspaceHistoryLastPage" -> "\[CapitalUAcute]ltima p\[AAcute]gina",
 "WorkspaceHistoryTitle" -> "Historial",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",
