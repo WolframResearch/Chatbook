@@ -93,11 +93,14 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                     (* create the chat input cell first, then the scrolling cell *)
                     NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ];
                     With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
-                        NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatScrollingCell[ nbo, thisCell, chatInputCell ] ] ];
-                    AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
-                    setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ];
-                    If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]
+                        NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatScrollingCell[ nbo, thisCell, chatInputCell ] ];
+                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
+                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ];
+                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                        FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
+                    ];
                 );
+                
                 ReleaseHold @ $sidebarChatInitialAction;
             )
         ],
@@ -672,12 +675,25 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                         {
                             DynamicWrapper[
                                 Framed[
-                                    InputField[
-                                        Dynamic @ fieldContent,
-                                        Boxes,
-                                        ContinuousAction -> True,
-                                        $inputFieldOptions
-                                    ],
+                                    Overlay[
+                                        {
+                                            InputField[
+                                                Dynamic @ fieldContent,
+                                                Boxes,
+                                                Alignment  -> { Automatic, Baseline },
+                                                Appearance -> "Frameless",
+                                                BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
+                                                BoxID      -> "AttachedChatInputField",
+                                                ContinuousAction -> True,
+                                                ImageSize  -> { Scaled[ 1 ], Automatic }
+                                            ],
+                                            Dynamic @ Style[
+                                                If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
+                                                "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+                                        },
+                                        { 1, 2 },
+                                        1,
+                                        Alignment -> { Left, Baseline } ],
                                     $inputFieldFrameOptions
                                 ]
                                 ,
