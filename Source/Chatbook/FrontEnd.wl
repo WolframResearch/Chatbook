@@ -947,7 +947,7 @@ notebookRead // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cloudNotebookRead*)
 cloudNotebookRead // beginDefinition;
-cloudNotebookRead[ cells: { ___CellObject } ] := notebookReadWithCellObjects /@ cells;
+cloudNotebookRead[ cells: { ___CellObject } ] := notebookReadWithCellObjects /@ cells // DeleteMissing;
 cloudNotebookRead[ cell_ ] := notebookReadWithCellObjects @ cell;
 cloudNotebookRead // endDefinition;
 
@@ -964,8 +964,9 @@ notebookReadWithCellObjects // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*appendCellObject*)
 appendCellObject // beginDefinition;
+appendCellObject[ $Failed, obj_CellObject ] := Missing[ "CellNotAvailable" ]
 appendCellObject[ Cell[ a___ ], obj_CellObject ] := Cell[ a, CellObject -> obj ];
-appendCellObject[ cells: { ___Cell }, objs: { ___CellObject } ] := MapThread[ appendCellObject, { cells, objs } ];
+appendCellObject[ cells: { (_Cell|$Failed)... }, objs: { ___CellObject } ] := DeleteMissing @ MapThread[ appendCellObject, { cells, objs } ];
 appendCellObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
