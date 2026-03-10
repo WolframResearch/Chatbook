@@ -647,6 +647,48 @@ Cell[
 ]
 
 
+With[
+    {
+        frameColor = color @ "ChatCodeBlockTemplateFrame",
+        bg1        = color @ "ChatCodeBlockTemplateBackgroundTop",
+        bg2        = color @ "ChatCodeBlockTemplateBackgroundBottom"
+    },
+
+Cell[
+    StyleData[ "ChatCodeBlockTemplateActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @
+        GridBox[
+            {
+                {
+                    FrameBox[
+                        #1,
+                        Background   -> bg1,
+                        FrameMargins -> { { 10, 10 }, { 6, 6 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+                        ImageMargins -> { { 0, 0 }, { 0, 8 } },
+                        ImageSize    -> { Full, Automatic }
+                    ] },
+                {
+                    FrameBox[
+                        ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ "Disabled", None ],
+                        Background   -> bg2,
+                        FrameMargins -> { { 7, 2 }, { 2, 2 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+                        ImageMargins -> { { 0, 0 }, { 8, -1 } }, (* negative margin to barely overlap the frame above *)
+                        ImageSize    -> { Full, Automatic }
+                    ] }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> { "Columns" -> { { Left } } },
+            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+        ]
+    }
+]
+
+]
+
 
 (* ::Subsection::Closed:: *)
 (*ChatCodeInlineTemplate*)
@@ -1195,16 +1237,7 @@ Cell[
     StyleData[ "AssistantMessageBox" ],
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ TagBox[
-            FrameBox[
-                #,
-                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> color @ "AssistantMessageBoxBackground",
-                FrameMargins   -> { { 15, 8 }, { 8, 8 } },
-                FrameStyle     -> color @ "AssistantMessageBoxFrame",
-                ImageSize      -> { Scaled[ 1 ], Automatic },
-                RoundingRadius -> 10,
-                StripOnInput   -> False
-            ],
+            assistantMessageBoxFrameChatbook[ # ],
             EventHandlerTag @ {
                 "MouseEntered" :>
                     With[ { cell = EvaluationCell[ ] },
@@ -1216,6 +1249,14 @@ Cell[
                 PassEventsUp   -> True
             }
         ]
+    }
+]
+
+
+Cell[
+    StyleData[ "AssistantMessageBoxActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ assistantMessageBoxFrameChatbook[ # ]
     }
 ]
 

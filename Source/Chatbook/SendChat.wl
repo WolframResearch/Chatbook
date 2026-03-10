@@ -2347,7 +2347,13 @@ WriteChatOutputCell[
         setCurrentValue[ output, CellTags , Replace[ new, Cell[ ___, CellTags -> { uuid, rest___ }, ___ ] :> { rest } ] ]; (* an empty list clears the CellTags option *)
         $lastChatOutput = output;
         attachChatOutputMenu @ output;
-        scrollOutput[ TrueQ @ scroll, output ];
+        If[ TrueQ @ scroll,
+            If[ sidebarQ,
+                Lookup[ CurrentValue[ ParentCell @ output, TaggingRules ], "ScrollPositionSymbol", Null, Function[ Null, # = { 0, Scaled[ 1. ] }, HoldFirst ] ]
+                ,
+                scrollOutput[ True, output ]
+            ]
+        ];
     ],
     throwInternalFailure
 ];
@@ -2555,13 +2561,14 @@ activeAIAssistantCell[
         },
         Cell[
             BoxData @ outer @ ToBoxes @
-                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput },
+                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
                     
                     DynamicWrapper[
                         PaneSelector[
                             {
                                 "Active" -> Dynamic[
                                     finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
+                                    scrollToEnd[ ];
                                     cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
                                     TrackedSymbols :> { },
                                     UpdateInterval -> 0.5
@@ -2587,7 +2594,24 @@ activeAIAssistantCell[
                     Deinitialization :> Quiet @ TaskRemove @ task,
                     Initialization   :> (
                         dmBox = EvaluationBox[ ];
-                        topCell = If[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat, ParentCell, Identity ] @ EvaluationCell [ ];
+                        If[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat,
+                            topCell = ParentCell @ EvaluationCell[ ];
+                            If[ scrollOutputQ @ settings,
+                                If[ TrueQ @ $SidebarChat,
+                                    scrollToEnd = Lookup[
+                                        CurrentValue[ ParentCell @ topCell, TaggingRules ],
+                                        "ScrollPositionSymbol",
+                                        Function[ Null ],
+                                        Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
+                                    ]
+                                    ,
+                                    scrollToEnd = Function[ scrollOutput[ True, topCell ] ]
+                                ]
+                            ];
+                            ,
+                            topCell = EvaluationCell[ ];
+                            If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ]
+                        ];
                         If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
                         kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
                 ],
@@ -2608,11 +2632,11 @@ activeAIAssistantCell[
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
             CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
-            Editable           -> False,
+            Editable           -> Not[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat ],
             LanguageCategory   -> None,
             LineIndent         -> 0,
             PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-            Selectable         -> False,
+            Selectable         -> Not[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat ],
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
             TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>,
