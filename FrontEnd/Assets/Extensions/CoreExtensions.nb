@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.70.3981692394"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.74.3982126873"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1147,6 +1147,107 @@ Notebook[
          FrameBox[
           DynamicBox[
            ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
+          ],
+          Background ->
+           LightDarkSwitched[
+            RGBColor[0.988235, 0.992157, 1.0],
+            RGBColor[0.1373, 0.1647, 0.1961]
+           ],
+          FrameMargins -> {{7, 2}, {2, 2}},
+          FrameStyle ->
+           Directive[
+            AbsoluteThickness[1],
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.323174]]
+           ],
+          ImageMargins -> {{0, 0}, {8, -1}},
+          ImageSize -> {Full, Automatic}
+         ]
+        }
+       },
+       DefaultBaseStyle -> "Column",
+       GridBoxAlignment -> {"Columns" -> {{Left}}},
+       GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+       GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatCodeBlockTemplateActive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GridBox[
+       {
+        {
+         FrameBox[
+          #1,
+          Background ->
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
+          FrameMargins -> {{10, 10}, {6, 6}},
+          FrameStyle ->
+           Directive[
+            AbsoluteThickness[1],
+            LightDarkSwitched[GrayLevel[0.92941], GrayLevel[0.323174]]
+           ],
+          ImageMargins -> {{0, 0}, {0, 8}},
+          ImageSize -> {Full, Automatic}
+         ]
+        },
+        {
+         FrameBox[
+          FrameBox[
+           TagBox[
+            GridBox[
+             {
+              {
+               PaneBox[
+                DynamicBox[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookExpressions",
+                  "WorkspaceCodeBlockCopy"
+                 ]
+                ],
+                ImageSize -> {24, 24},
+                ImageSizeAction -> "ShrinkToFit",
+                Alignment -> {Center, Center},
+                BaselinePosition -> Baseline
+               ],
+               StyleBox[
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "FormattingCopyToClipboardLabel"
+                  ],
+                  StandardForm
+                 ]
+                ],
+                FontColor ->
+                 LightDarkSwitched[
+                  GrayLevel[0.2, 0.5],
+                  GrayLevel[0.945556, 0.5]
+                 ],
+                FontFamily -> "Source Sans Pro",
+                FontSize -> 12,
+                StripOnInput -> False
+               ]
+              }
+             },
+             GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+             AutoDelete -> False,
+             GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}},
+             BaselinePosition -> {1, 2}
+            ],
+            "Grid"
+           ],
+           FrameStyle -> None,
+           Background -> None,
+           BaselinePosition -> Baseline,
+           FrameMargins -> {{0, 4}, {0, 0}},
+           RoundingRadius -> 3,
+           StripOnInput -> False
           ],
           Background ->
            LightDarkSwitched[
@@ -2850,6 +2951,32 @@ Notebook[
          PassEventsUp -> True
         }
        ]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["AssistantMessageBoxActive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       #1,
+       BaseStyle -> {"Text", Editable -> False, Selectable -> False},
+       Background ->
+        LightDarkSwitched[
+         RGBColor[0.988235, 0.992157, 1.0],
+         RGBColor[0.246064, 0.246064, 0.246064]
+        ],
+       FrameMargins -> {{15, 8}, {8, 8}},
+       FrameStyle ->
+        LightDarkSwitched[
+         RGBColor[0.788235, 0.8, 0.815686],
+         RGBColor[0.468226, 0.481882, 0.505771]
+        ],
+       ImageSize -> {Scaled[1], Automatic},
+       RoundingRadius -> 10,
+       StripOnInput -> False
       ]
      ])
    }
@@ -4608,7 +4735,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.70.3981692384"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.74.3982126849"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

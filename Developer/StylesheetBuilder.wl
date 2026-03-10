@@ -802,6 +802,19 @@ inlineResources[ expr_ ] := expr /. {
 (*other box constructs*)
 
 
+assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
+    FrameBox[
+        x,
+        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+        Background     -> color @ "AssistantMessageBoxBackground",
+        FrameMargins   -> { { 15, 8 }, { 8, 8 } },
+        FrameStyle     -> color @ "AssistantMessageBoxFrame",
+        ImageSize      -> { Scaled[ 1 ], Automatic },
+        RoundingRadius -> 10,
+        StripOnInput   -> False
+    ]
+]
+
 assistantMessageBoxFrame = Function[ x, Evaluate @
     FrameBox[
         x,
