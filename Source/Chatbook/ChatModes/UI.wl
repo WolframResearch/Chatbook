@@ -25,6 +25,7 @@ $inlineChatScrollPosition    = 0.0;
 $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
+$sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -235,35 +236,40 @@ Cell[ BoxData @ ToBoxes @
 
 (* This version is perhaps more efficient if the CellObjects already exist as we can reference them directly in the dynamic ImageSize *)
 makeSidebarChatScrollingCell[ nbo_NotebookObject, sidebarCell_CellObject, cells:{ ___Cell } ] := Enclose[
-    Function[ { cell1, cell2 },
-        Cell[ BoxData @
-            PaneBox[
-                RowBox @ cells,
-                AppearanceElements -> {},
-                ImageSize -> 
-                    Dynamic @ {(* run entirely in the front end evaluator *)
-                        Scaled[ 1. ],
-                        FEPrivate`Round[
-                            (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
-                            - 7 (* the top bar that better separates the sidebar from the default toolbar *)
-                            - If[ FEPrivate`NumericQ @ #1, #1, 0 ]
-                            - If[ FEPrivate`NumericQ @ #2, #2, 0 ]
-                            - If[ FEPrivate`NumericQ @ #3, #3, 0 ]
-                            )/(0.85*FrontEnd`AbsoluteCurrentValue[ nbo, Magnification ])
-                        ]&[
-                            FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
-                            FrontEnd`AbsoluteCurrentValue[ cell1, { CellSize, 2 } ],
-                            FrontEnd`AbsoluteCurrentValue[ cell2, { CellSize, 2 } ]
-                        ] },
-                Scrollbars -> { False, Automatic }
-            ],
-            "NotebookAssistant`Sidebar`ScrollingContentCell",
-            Background    -> color @ "NA_NotebookBackground",
-            CellTags      -> "SidebarScrollingContentCell",
-            Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
-            Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
-        ]
-    ] @@ ConfirmMatch[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" | "SidebarChatInputCell" ], { _CellObject, _CellObject }, "MakeScrollingSidebarCell"]
+    Unset[$sidebarScrollPosition];
+    With[ { sym = Unique @ $sidebarScrollPosition },
+        Function[ { cell1, cell2 },
+            Cell[ BoxData @
+                PaneBox[
+                    RowBox @ cells,
+                    AppearanceElements -> {},
+                    ImageSize -> 
+                        Dynamic @ {(* run entirely in the front end evaluator *)
+                            Scaled[ 1. ],
+                            FEPrivate`Round[
+                                (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[2]]
+                                - 7 (* the top bar that better separates the sidebar from the default toolbar *)
+                                - If[ FEPrivate`NumericQ @ #1, #1, 0 ]
+                                - If[ FEPrivate`NumericQ @ #2, #2, 0 ]
+                                - If[ FEPrivate`NumericQ @ #3, #3, 0 ]
+                                )/(0.85*FrontEnd`AbsoluteCurrentValue[ nbo, Magnification ])
+                            ]&[
+                                FrontEnd`AbsoluteCurrentValue[ FrontEnd`PreviousCell[ CellTags -> "SidebarSubDockedCell" ], { CellSize, 2 } ],
+                                FrontEnd`AbsoluteCurrentValue[ cell1, { CellSize, 2 } ],
+                                FrontEnd`AbsoluteCurrentValue[ cell2, { CellSize, 2 } ]
+                            ] },
+                    Scrollbars     -> { False, Automatic },
+                    ScrollPosition -> Dynamic @ sym
+                ],
+                "NotebookAssistant`Sidebar`ScrollingContentCell",
+                Background    -> color @ "NA_NotebookBackground",
+                CellTags      -> "SidebarScrollingContentCell",
+                Deletable     -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
+                Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
+                TaggingRules  -> <| "ScrollPositionSymbol" :> sym |>
+            ]
+        ] @@ ConfirmMatch[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" | "SidebarChatInputCell" ], { _CellObject, _CellObject }, "MakeScrollingSidebarCell"]
+    ]
     ,
     throwInternalFailure
 ];
