@@ -1,6 +1,7 @@
 .claude/settings.local.json
 .DS_Store
 .mcp.json
+.obsidian/
 *StackHistory.wxf
 Assets/Snippets/Streamable/*
 Assets/VectorDatabases/**/*.usearch
