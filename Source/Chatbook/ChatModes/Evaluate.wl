@@ -134,7 +134,7 @@ evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTo
         cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
         (* FIXME: could really use selection snapshot... *)
-        If[ anchor === None,
+        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
             SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
             NotebookWrite[ nbo, cellExpr ]
             ,
