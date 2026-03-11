@@ -124,27 +124,24 @@ evaluateSidebarChat // endDefinition;
 (*evaluateFooterChat*)
 evaluateFooterChat // beginDefinition;
 
-evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_, Dynamic[ cellObject_ ] ] := Enclose[
-    Module[ { text, uuid, cell },
+evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
+    Module[ { text, uuid, cellExpr, cellObject },
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
 
-        cell = Cell[ text, "ChatInput", CellTags -> uuid ];
+        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
         (* FIXME: could really use selection snapshot... *)
         If[ anchor === None,
-            If[ !selectionAtTopQ, SelectionMove[ nbo, After, Notebook, AutoScroll -> True ] ];
-            NotebookWrite[ nbo, cell ]
+            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
+            NotebookWrite[ nbo, cellExpr ]
             ,
-            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cell ]
+            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
         ];
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
-        (* TimeConstrained[
-            While[ cellObject === None, cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ] ],
-            2 ]; *)
         setCurrentValue[ cellObject, CellTags, Inherited ];
         
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
