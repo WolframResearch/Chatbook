@@ -9860,8 +9860,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"fde097ca-817b-6644-a902-\
-0921db62e950"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"ca4ac807-e908-f043-a63f-\
+5d95ae34a760"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9936,7 +9936,39 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
       "]]}, {
      FaceForm[#2]}, StripOnInput -> False]}, ImageSize -> {11., 11.}, 
   PlotRange -> {{-0.5, 10.5}, {-0.5, 10.5}}, AspectRatio -> Automatic, 
-  BaselinePosition -> (Center -> Center)]& )
+  BaselinePosition -> (Center -> Center)]& ),
+
+"FooterChatInputCell" -> Cell[BoxData[
+ DynamicBox[ToBoxes[
+  Needs["Wolfram`Chatbook`" -> None]; 
+   Symbol["Wolfram`Chatbook`ChatbookAction"][
+    "MakeFooterChatInputCellContent"], StandardForm],
+  DestroyAfterEvaluation->True]], "ChatInputField",
+ Editable->False,
+ Selectable->False,
+ ShowCursorTracker->False,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ Magnification->1.,
+ CellTags->
+  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"d3c73289-5623-5f42-\
+9424-cef89ddeca55"],
+
+"MidlineChatInputCell" -> Cell[BoxData[
+ DynamicBox[ToBoxes[
+  Needs["Wolfram`Chatbook`" -> None]; 
+   Symbol["Wolfram`Chatbook`ChatbookAction"][
+    "MakeMidlineChatInputCellContent"], StandardForm],
+  DestroyAfterEvaluation->True]], "ChatInputField",
+ Editable->False,
+ Selectable->False,
+ ShowCursorTracker->False,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ Magnification->1.,
+ CellTags->
+  "NotebookAssistantMidlineChatInputCell",ExpressionUUID->"dbb243ea-c4e3-0644-\
+8f4c-539683494143"]
 }
 @|
 @|
