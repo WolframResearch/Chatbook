@@ -5,27 +5,92 @@
   - [x] Listing of available settings
   - [ ] Settings resolution for `Automatic` values (relevant: `AbsoluteCurrentChatSettings`)
   - [ ] How to add support for new models
+
 * [ ] Citations
   - Source: `Source/Chatbook/Citations.wl`
+
 * [ ] Base prompts
   - Source: `Source/Chatbook/Prompting.wl`
+
 * [ ] Prompt generators
-  - [ ] Vector databases
   - [ ] Related documentation
   - [ ] Related Wolfram Alpha results
+  - [ ] Vector databases
+  - [ ] Building vector databases
+
 * [ ] Tools
-  - [ ] WL evaluator
-    - Source: `Source/Chatbook/Sandbox.wl`
+  - [ ] DocumentationLookup
+  - [ ] DocumentationSearcher
+  - [ ] WolframAlpha
+  - [ ] WolframLanguageEvaluator
+  - [ ] CreateNotebook
+  - [ ] WebFetcher
+  - [ ] WebImageSearcher
+  - [ ] WebSearcher
+
 * [ ] Personas
+  - [ ] CodeAssistant
+  - [ ] PlainChat
+  - [ ] RawModel
+  - [ ] AgentOne
+  - [ ] AgentOneCoder
+  - [ ] NotebookAssistant
+  - [ ] WolframAlpha
+
 * [ ] Notebook Assistant
   - Source: `Source/Chatbook/ChatModes/ShowNotebookAssistance.wl`
+  - [ ] Programmatic use of Notebook Assistant
+
 * [ ] Markdown conversion
   - [ ] Converting notebook content to Markdown
     - Source: `Source/Chatbook/Serialization.wl`
   - [ ] Converting Markdown to notebook content
     - Source: `Source/Chatbook/Formatting.wl`
+
 * [ ] Handler functions
   - Source: `Source/Chatbook/Handlers.wl`
+
+* [ ] Downstream dependencies
+  - [ ] Paclets
+    - PromptResource
+    - Wolfram/LLMFunctions
+    - Wolfram/MCPServer
+    - Wolfram/NotebookAssistantCloudResources
+    - Wolfram/NotebookAssistantRAGData
+    - WolframChatbookInstaller
+  - [ ] Resource Functions
+    - ImportMarkdownString
+    - ExportMarkdownString
+
+* [ ] Symbols
+  - [ ] AbsoluteCurrentChatSettings
+  - [ ] AgentEvaluate
+  - [ ] CellToString
+  - [ ] ChatbookFilesDirectory
+  - [ ] CurrentChatSettings
+  - [ ] ExplodeCell
+  - [ ] FormatChatOutput
+  - [ ] GenerateLLMConfiguration
+  - [ ] GetAttachments
+  - [ ] GetExpressionURI
+  - [ ] GetExpressionURIs
+  - [ ] InstallVectorDatabases
+  - [ ] LoadAttachments
+  - [ ] LogChatTiming
+  - [ ] ProcessNotebookForRAG
+  - [ ] RegisterVectorDatabase
+  - [ ] RelatedDocumentation
+  - [ ] RelatedWolframAlphaQueries
+  - [ ] RelatedWolframAlphaResults
+  - [ ] ShowNotebookAssistance
+  - [ ] StringToBoxes
+  - [ ] WolframLanguageToolEvaluate
+  - [ ] $AvailableTools
+  - [ ] $ChatbookFilesDirectory
+  - [ ] $ChatHandlerData
+  - [ ] $ChatNotebookEvaluation
+  - [ ] $ChatTimingData
+  - [ ] $DefaultTools
 
 ## Creating new documentation pages
 
