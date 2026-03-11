@@ -106,7 +106,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"TokenizerName"` | String | Which tokenizer to use for token counting (e.g., `"gpt-4o"`) |
 | `"ExcludedBasePrompts"` | List | Base prompt components to skip for this model |
 
-Use `Missing["NotSupported"]` for parameters that the model's API does not accept. These are automatically stripped before sending to the API.
+Settings whose value is `Missing["NotSupported"]` receive special treatment throughout the system. See [Unsupported Parameters (`Missing["NotSupported"]`)](#unsupported-parameters-missingnotsupported) for details.
 
 ---
 
@@ -358,9 +358,9 @@ $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
 
 By splatting the parent association (`$modelAutoSettings[Automatic, "GPT5"]`) as the first element, all parent keys are inherited and later keys override them. This is a standard Wolfram Language pattern where later keys in an association replace earlier ones.
 
-### Handling unsupported parameters
+### Unsupported Parameters (`Missing["NotSupported"]`)
 
-Use `Missing["NotSupported"]` for API parameters that the model does not accept:
+When a model's API does not accept certain parameters (e.g., `Temperature`, `PresencePenalty`), mark them with `Missing["NotSupported"]` in the model's auto settings:
 
 ```wl
 $modelAutoSettings[ Automatic, "O4Mini" ] = <|
@@ -370,7 +370,86 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 |>;
 ```
 
-These values are stripped before sending to the API via `dropModelUnsupportedParameters` in `Settings.wl`.
+This is not just a marker -- it has specific effects at multiple stages of the pipeline:
+
+#### 1. Settings resolution is short-circuited
+
+When `resolveAutoSetting0` (`Settings.wl`) resolves a setting with an `Automatic` value, it first checks `autoModelSetting`. If the result is `Missing["NotSupported"]`, that value is accepted immediately -- the normal default resolution logic (custom resolvers like `autoStopTokens`, `forceSynchronousQ`, etc.) is bypassed entirely:
+
+```wl
+(* From Settings.wl — this check runs before any setting-specific resolver *)
+resolveAutoSetting0[ as_, name_String ] :=
+    With[ { s = autoModelSetting[ as, name ] },
+        s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
+    ];
+```
+
+This means `Missing["NotSupported"]` propagates through the resolved settings as-is. For example, `autoStopTokens` checks for it explicitly and preserves it rather than computing stop tokens:
+
+```wl
+autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    Missing[ "NotSupported" ];
+```
+
+#### 2. Parameters are stripped before reaching the API
+
+Before sending the LLM configuration to the API, unsupported parameters are removed through two independent mechanisms in `makeLLMConfiguration` (`SendChat.wl`):
+
+**`DeleteMissing`** removes any keys with `Missing[...]` values from the config association. This catches settings that resolved to `Missing["NotSupported"]` and flowed into the LLM config:
+
+```wl
+(* From SendChat.wl *)
+DeleteMissing @ Association[
+    KeyTake[ as, $llmConfigPassedKeys ],
+    "StopTokens" -> makeStopTokens @ as,
+    "ToolMethod" -> "Service"
+] // dropModelUnsupportedParameters[ as ]
+```
+
+**`dropModelUnsupportedParameters`** (`Settings.wl`) provides a second layer of protection. It independently queries `autoModelSetting` for each key in the config and drops any whose model auto-setting is `Missing["NotSupported"]`:
+
+```wl
+(* From Settings.wl *)
+dropModelUnsupportedParameters[ model_Association, config_Association ] := Enclose[
+    Module[ { drop },
+        drop = ConfirmMatch[ modelUnsupportedParameters[ model, config ], { ___String }, "Drop" ];
+        KeyDrop[ config, drop ]
+    ],
+    throwInternalFailure
+];
+
+modelUnsupportedParameters[ as_, keys: { ___String } ] :=
+    Select[ keys, autoModelSetting[ as, # ] === Missing[ "NotSupported" ] & ];
+```
+
+This catches cases where a parameter has a concrete value in the settings (e.g., from `$defaultChatSettings` defaults) but the model's auto-setting declares it unsupported. The parameter is dropped regardless of its current value.
+
+The legacy (non-LLMServices) API path in `makeHTTPRequest` (`SendChat.wl`) has its own removal via `DeleteCases[..., Automatic|_Missing]`, which also strips `Missing["NotSupported"]` values from the HTTP request body.
+
+#### 3. Which settings are affected
+
+The settings passed through to the LLM API are defined in `$llmConfigPassedKeys` (`SendChat.wl`):
+
+```wl
+$llmConfigPassedKeys = {
+    "MaxTokens",
+    "Model",
+    "PresencePenalty",
+    "Reasoning",
+    "Temperature"
+};
+```
+
+`StopTokens` is handled separately (via `makeStopTokens`) but follows the same `DeleteMissing` removal path. These are the settings where `Missing["NotSupported"]` is most commonly used, since they correspond directly to API parameters that vary across models.
+
+#### Summary
+
+The lifecycle of `Missing["NotSupported"]` is:
+
+1. **Declared** in `$modelAutoSettings` for the model family
+2. **Resolved** as the setting value, short-circuiting normal `Automatic` resolution
+3. **Preserved** by setting-specific resolvers that check for it explicitly
+4. **Removed** from the LLM config by `DeleteMissing` and `dropModelUnsupportedParameters` before the API call
 
 ### Service-level vs. family-level vs. service-agnostic settings
 
