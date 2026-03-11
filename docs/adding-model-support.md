@@ -4,7 +4,7 @@ Adding model support to Chatbook ranges from minimal (2 files, ~20 lines) to sub
 
 The core idea: Chatbook classifies models into **families** and resolves their capabilities through a **hierarchical settings table**. Adding support means (a) teaching Chatbook to recognize the model and (b) telling it how the model behaves.
 
-For a real-world example of a simple addition, see [PR #1355](https://github.com/WolframResearch/Chatbook/pull/1355) (Gemini 2/3 support, 2 files, 21 lines). For a complex addition requiring structural changes, see [PR #1120](https://github.com/WolframResearch/Chatbook/pull/1120) (Claude 3.7 Sonnet improvements, 6 files, 151 lines).
+For a real-world example of a simple addition, see [PR #1355](https://github.com/WolframResearch/Chatbook/pull/1355) (Gemini 2/3 support, 2 files, 21 lines). For a complex addition requiring structural changes, see [PR #1120](https://github.com/WolframResearch/Chatbook/pull/1120) (Claude 3.7 Sonnet improvements, 7 files, 151 lines).
 
 ---
 
@@ -547,7 +547,7 @@ $modelAutoSettings[ Automatic, "ModelFamily" ] = <|
    Wolfram`Chatbook`Models`Private`chooseModelFamily["your-model-name"]
 
    (* Verify a specific setting *)
-   Wolfram`Chatbook`Settings`Private`autoModelSetting[
+   Wolfram`Chatbook`Common`autoModelSetting[
        <|"Service" -> "ServiceName", "Name" -> "your-model-name"|>,
        "MaxContextTokens"
    ]
