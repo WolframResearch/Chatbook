@@ -4,7 +4,7 @@
   - Source: `Source/Chatbook/Settings.wl`
   - [x] Listing of available settings
   - [ ] Settings resolution for `Automatic` values (relevant: `AbsoluteCurrentChatSettings`)
-  - [ ] How to add support for new models
+  - [x] How to add support for new models
 
 * [ ] Citations
   - Source: `Source/Chatbook/Citations.wl`
