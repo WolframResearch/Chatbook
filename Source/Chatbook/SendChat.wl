@@ -2610,7 +2610,8 @@ activeAIAssistantCell[
                             ];
                             ,
                             topCell = EvaluationCell[ ];
-                            If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ]
+                            (* do not scroll main notebook chat evaluations *)
+                            (* If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ] *)
                         ];
                         If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
                         kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
