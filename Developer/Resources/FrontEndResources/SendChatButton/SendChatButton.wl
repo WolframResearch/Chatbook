@@ -33,8 +33,8 @@ Function[ Evaluate @ ToBoxes @
 			Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === Typeset`cell ],
 			Alignment -> { Automatic, Baseline },
 			ImageSize -> Automatic
-		], (* TODO: what is this x?? *)
-		Initialization :> (Typeset`cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+		],
+		Initialization :> (Typeset`cell = If[ $CloudEvaluation, EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
 		DynamicModuleValues :> { },
 		UnsavedVariables :> { Typeset`cell }
 	]

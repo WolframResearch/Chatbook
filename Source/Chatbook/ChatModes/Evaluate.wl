@@ -121,6 +121,38 @@ evaluateSidebarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*evaluateFooterChat*)
+evaluateFooterChat // beginDefinition;
+
+evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
+    Module[ { text, uuid, cellExpr, cellObject },
+
+        cellObject = None;
+        text = makeBoxesInputMoreTextLike @ input;
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+
+        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
+
+        (* FIXME: could really use selection snapshot... *)
+        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
+            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
+            NotebookWrite[ nbo, cellExpr ]
+            ,
+            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
+        ];
+        cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
+        ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
+        setCurrentValue[ cellObject, CellTags, Inherited ];
+        
+        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+    ],
+    throwInternalFailure
+];
+
+evaluateFooterChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*evaluateInlineChat*)
 evaluateInlineChat // beginDefinition;
 

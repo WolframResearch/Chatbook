@@ -796,6 +796,274 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
 makeSidebarChatInputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMidlineChatInputCellContent*)
+
+makeMidlineChatInputCellContent // beginDefinition;
+
+makeMidlineChatInputCellContent[ ] := makeMidlineChatInputCellContent[ EvaluationNotebook[ ] ]
+
+makeMidlineChatInputCellContent[ nbo_NotebookObject ] :=
+    DynamicModule[
+        {
+            thisCell, fieldContent = "", returnKeyDownQ, input,
+            kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID,
+            notebookWriteAnchor, selectionAtTopQ
+        },
+        EventHandler[
+            Pane[
+                Grid[
+                    {
+                        {
+                            DynamicWrapper[
+                                Framed[
+                                    Overlay[
+                                        {
+                                            InputField[
+                                                Dynamic @ fieldContent,
+                                                Boxes,
+                                                Alignment  -> { Automatic, Baseline },
+                                                Appearance -> "Frameless",
+                                                BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
+                                                BoxID      -> "AttachedChatInputField",
+                                                ContinuousAction -> True,
+                                                ImageSize  -> { Scaled[ 0.618 ], Automatic }
+                                            ],
+                                            Dynamic @ Style[
+                                                If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
+                                                "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+                                        },
+                                        { 1, 2 },
+                                        1,
+                                        Alignment -> { Left, Baseline } ],
+                                    
+                                    Alignment      -> { Automatic, Baseline },
+                                    Background     -> color @ "NA_ChatInputFieldBackground",
+                                    FrameMargins   -> { { 5, 5 }, { 4, 4 } },
+                                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ],
+                                    RoundingRadius -> 10
+                                ]
+                                ,
+                                If[ TrueQ @ returnKeyDownQ,
+                                    returnKeyDownQ = False;
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    If[ kernelWasQuitQ,
+                                        If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
+                                        kernelWasQuitQ = False ];
+                                    With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, i = input },
+                                        AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
+                                        NotebookDelete @ thisCell;
+                                        evaluateFooterChat[ n, nwa, sat, i ]
+                                    ]
+                                ];
+                                ,
+                                SynchronousUpdating -> False,
+                                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                            ],
+                            Button[
+                                Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                    color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                    color @ "NA_ChatInputFieldSendButtonBackgroundHover",
+                                    27
+                                ],
+                                If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+                                Appearance   -> "Suppressed",
+                                BoxID        -> "SidebarChatInputCellSendButton",
+                                FrameMargins -> 0,
+                                Method       -> "Preemptive"
+                            ]
+                        }
+                    },
+                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                    Spacings  -> { 0.5, 0.0 }
+                ],
+                FrameMargins -> 5
+            ],
+            {
+                "MouseDown" :> ((* a hack until we get notebook selection snapshotting *)
+                    Module[ { nextCell },
+                        selectionAtTopQ = False;
+                        If[ CurrentValue[ nbo, "SelectionType" ] === "CellCaret",
+                            notebookWriteAnchor = PreviousCell @ NotebookSelection @ nbo;
+                            If[ notebookWriteAnchor === None, selectionAtTopQ = True ]
+                            ,
+                            notebookWriteAnchor = Last[ SelectedCells @ nbo, None ] ];
+                        If[ notebookWriteAnchor =!= None,
+                            Which[
+                                MemberQ[ CurrentValue[ notebookWriteAnchor, CellStyle ], "Output" | "ChatOutput" | "Input" | "ChatInput" ],
+                                    nextCell = NextCell @ notebookWriteAnchor;
+                                    If[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
+                                        notebookWriteAnchor = nextCell;
+                                        nextCell = NextCell @ notebookWriteAnchor;
+                                        While[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
+                                            notebookWriteAnchor = nextCell;
+                                            nextCell = NextCell @ notebookWriteAnchor;]
+                                        ,
+                                        Null
+                                    ],
+                                True,
+                                    Null
+                            ]
+                        ]
+                    ]),
+                "ReturnKeyDown" :> (
+                    If[ ! validInputStringQ @ fieldContent,
+                        fieldContent = ""
+                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
+                        input = fieldContent; fieldContent = ""; returnKeyDownQ = True
+                    ])
+            },
+            Method         -> "Preemptive",
+            PassEventsDown -> True
+        ],
+        Initialization :> (
+            thisCell = EvaluationCell[ ];
+            kernelWasQuitQ = cachedSessionID =!= $SessionID;
+            cachedSessionID = $SessionID;
+        )
+    ];
+
+makeMidlineChatInputCellContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeFooterChatInputCellContent*)
+
+makeFooterChatInputCellContent // beginDefinition;
+
+makeFooterChatInputCellContent[ ] := makeFooterChatInputCellContent[ EvaluationNotebook[ ] ]
+
+makeFooterChatInputCellContent[ nbo_NotebookObject ] :=
+    DynamicModule[
+        {
+            thisCell, fieldContent = "", returnKeyDownQ, input,
+            kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID,
+            notebookWriteAnchor, selectionAtTopQ, minimizedQ
+        },
+        EventHandler[
+            PaneSelector[
+                {
+                    False ->
+                        Grid[
+                            {
+                                {
+                                    DynamicWrapper[
+                                        Framed[
+                                            Overlay[
+                                                {
+                                                    InputField[
+                                                        Dynamic @ fieldContent,
+                                                        Boxes,
+                                                        Alignment  -> { Automatic, Baseline },
+                                                        Appearance -> "Frameless",
+                                                        BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
+                                                        BoxID      -> "AttachedChatInputField",
+                                                        ContinuousAction -> True,
+                                                        ImageSize  -> { Scaled[ 1 ], Automatic }
+                                                    ],
+                                                    Dynamic @ Style[
+                                                        If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
+                                                        "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+                                                },
+                                                { 1, 2 },
+                                                1,
+                                                Alignment -> { Left, Baseline } ],
+                                            
+                                            Alignment      -> { Automatic, Baseline },
+                                            Background     -> color @ "NA_ChatInputFieldBackground",
+                                            FrameMargins   -> { { 5, 5 }, { 4, 4 } },
+                                            FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ],
+                                            RoundingRadius -> 10
+                                        ]
+                                        ,
+                                        If[ TrueQ @ returnKeyDownQ,
+                                            returnKeyDownQ = False;
+                                            Needs[ "Wolfram`Chatbook`" -> None ];
+                                            If[ kernelWasQuitQ,
+                                                If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
+                                                kernelWasQuitQ = False ];
+                                            evaluateFooterChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
+                                        ];
+                                        ,
+                                        SynchronousUpdating -> False,
+                                        TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                                    ],
+                                    Button[
+                                        Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
+                                            color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                            color @ "NA_ChatInputFieldSendButtonBackgroundHover",
+                                            27
+                                        ],
+                                        If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+                                        Appearance   -> "Suppressed",
+                                        BoxID        -> "SidebarChatInputCellSendButton",
+                                        FrameMargins -> 0,
+                                        Method       -> "Preemptive"
+                                    ]
+                                }
+                            },
+                            BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                            Spacings  -> { 0.5, 0.0 }
+                        ],
+                    True ->
+                        Button[
+                            Graphics[ { FaceForm[ System`StandardBlue ], Rectangle[ RoundingRadius -> 4 ] }, ImageSize -> { 24, 24 } ],
+                            minimizedQ = False,
+                            ImageSize -> Automatic
+                        ]
+                },
+                Dynamic @ minimizedQ,
+                FrameMargins -> 5,
+                ImageSize    -> Automatic
+            ],
+            {
+                "MouseDown" :> ((* a hack until we get notebook selection snapshotting *)
+                    Module[ { nextCell },
+                        selectionAtTopQ = False;
+                        If[ CurrentValue[ nbo, "SelectionType" ] === "CellCaret",
+                            notebookWriteAnchor = PreviousCell @ NotebookSelection @ nbo;
+                            If[ notebookWriteAnchor === None, selectionAtTopQ = True ]
+                            ,
+                            notebookWriteAnchor = Last[ SelectedCells @ nbo, None ] ];
+                        If[ notebookWriteAnchor =!= None,
+                            Which[
+                                MemberQ[ CurrentValue[ notebookWriteAnchor, CellStyle ], "Output" | "ChatOutput" | "Input" | "ChatInput" ],
+                                    nextCell = NextCell @ notebookWriteAnchor;
+                                    If[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
+                                        notebookWriteAnchor = nextCell;
+                                        nextCell = NextCell @ notebookWriteAnchor;
+                                        While[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
+                                            notebookWriteAnchor = nextCell;
+                                            nextCell = NextCell @ notebookWriteAnchor;]
+                                        ,
+                                        Null
+                                    ],
+                                True,
+                                    Null
+                            ]
+                        ]
+                    ]),
+                "ReturnKeyDown" :> (
+                    If[ ! validInputStringQ @ fieldContent,
+                        fieldContent = ""
+                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
+                        input = fieldContent; fieldContent = ""; returnKeyDownQ = True
+                    ])
+            },
+            Method         -> "Preemptive",
+            PassEventsDown -> True
+        ],
+        Initialization :> (
+            thisCell = EvaluationCell[ ];
+            kernelWasQuitQ = cachedSessionID =!= $SessionID;
+            cachedSessionID = $SessionID;
+            minimizedQ = TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ]
+        )
+    ];
+
+makeFooterChatInputCellContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*attachWorkspaceChatInput*)
 attachWorkspaceChatInput // beginDefinition;
