@@ -9933,7 +9933,7 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
  DynamicBox[ToBoxes[
   Needs["Wolfram`Chatbook`" -> None]; 
    Symbol["Wolfram`Chatbook`ChatbookAction"][
-    "MakeFooterChatInputCellContent"], StandardForm],
+    "MakeChatbarChatInputCellContent"], StandardForm],
   DestroyAfterEvaluation->True]], "ChatInputField",
  Editable->False,
  Selectable->False,
@@ -9945,11 +9945,11 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
   "NotebookAssistantFooterChatInputCell",ExpressionUUID->"c9236850-86ff-e246-\
 ad5a-1ce3075a0f97"],
 
-"MidlineChatInputCell" -> Cell[BoxData[
+"ChatbarChatInputCell" -> Cell[BoxData[
  DynamicBox[ToBoxes[
   Needs["Wolfram`Chatbook`" -> None]; 
    Symbol["Wolfram`Chatbook`ChatbookAction"][
-    "MakeMidlineChatInputCellContent"], StandardForm],
+    "MakeChatbarChatInputCellContent"], StandardForm],
   DestroyAfterEvaluation->True]], "ChatInputField",
  Editable->False,
  Selectable->False,
@@ -9958,8 +9958,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantMidlineChatInputCell",ExpressionUUID->"1836bb30-4696-ac4a-\
-a3bb-299eeaf3918e"],
+  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"c9236850-86ff-e246-\
+ad5a-1ce3075a0f97"],
 
 "ChatbarSettingsIcon" -> GraphicsBox[
   {EdgeForm[None], FaceForm[LightDarkSwitched[
