@@ -121,10 +121,10 @@ evaluateSidebarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*evaluateFooterChat*)
-evaluateFooterChat // beginDefinition;
+(*evaluateevaluateChatbarChat*)
+evaluateChatbarChat // beginDefinition;
 
-evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
+evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
     Module[ { text, uuid, cellExpr, cellObject },
 
         cellObject = None;
@@ -149,7 +149,7 @@ evaluateFooterChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTo
     throwInternalFailure
 ];
 
-evaluateFooterChat // endDefinition;
+evaluateChatbarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

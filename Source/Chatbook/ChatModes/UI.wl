@@ -853,7 +853,7 @@ makeMidlineChatInputCellContent[ nbo_NotebookObject ] :=
                                     With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, i = input },
                                         AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
                                         NotebookDelete @ thisCell;
-                                        evaluateFooterChat[ n, nwa, sat, i ]
+                                        evaluateChatbarChat[ n, nwa, sat, i ]
                                     ]
                                 ];
                                 ,
@@ -982,7 +982,7 @@ makeFooterChatInputCellContent[ nbo_NotebookObject ] :=
                                             If[ kernelWasQuitQ,
                                                 If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
                                                 kernelWasQuitQ = False ];
-                                            evaluateFooterChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
+                                            evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
                                         ];
                                         ,
                                         SynchronousUpdating -> False,
