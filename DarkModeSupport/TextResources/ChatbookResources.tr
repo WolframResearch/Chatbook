@@ -9851,8 +9851,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"c5e1beae-ef4f-0343-9e93-\
-93d712fd1e31"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"321aef5d-6f5a-4f43-a935-\
+a57cda44b081"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9942,8 +9942,8 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"bd6e9e1a-656f-a541-\
-9526-a5ab15e787ea"],
+  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"c9236850-86ff-e246-\
+ad5a-1ce3075a0f97"],
 
 "MidlineChatInputCell" -> Cell[BoxData[
  DynamicBox[ToBoxes[
@@ -9958,8 +9958,39 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantMidlineChatInputCell",ExpressionUUID->"2600ced1-1a66-ca4b-\
-9697-f39a7d8569f5"]
+  "NotebookAssistantMidlineChatInputCell",ExpressionUUID->"1836bb30-4696-ac4a-\
+a3bb-299eeaf3918e"],
+
+"ChatbarSettingsIcon" -> GraphicsBox[
+  {EdgeForm[None], FaceForm[LightDarkSwitched[
+    GrayLevel[0.5], 
+    GrayLevel[0.793978686602641]]], 
+   GeometricTransformationBox[DiskBox[{0, 0}, 0.3], {{{-1, 0}}, {{0, 0}}, {{1,
+     0}}}]},
+  AspectRatio->Automatic,
+  ImagePadding->{{0, 1}, {1, 0}},
+  ImageSize->10,
+  PlotRange->All],
+
+"HideChatbarIcon" -> GraphicsBox[
+  {Thickness[0.125], 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[0.65], 
+     GrayLevel[0.669]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
+      3.9996001720428467`}, {3.999899983406067, 0.9996001720428467}, {
+     6.999899983406067, 3.9996001720428467`}, {0.9998999834060669, 
+     3.9996001720428467`}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[0.65], 
+     GrayLevel[0.669]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
+      7.000199794769287}, {3.999899983406067, 3.999199867248535}, {
+     6.999899983406067, 7.000199794769287}, {0.9998999834060669, 
+     7.000199794769287}}}]}},
+  AspectRatio->Automatic,
+  ImageSize->{8., 8.},
+  PlotRange->{{0., 8.}, {0., 8.}}]
 }
 @|
 @|
