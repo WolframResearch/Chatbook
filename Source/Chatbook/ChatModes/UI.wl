@@ -811,60 +811,45 @@ makeMidlineChatInputCellContent[ nbo_NotebookObject ] :=
             notebookWriteAnchor, selectionAtTopQ
         },
         EventHandler[
-            Pane[
-                Grid[
-                    {
-                        {
-                            DynamicWrapper[
-                                Framed[
-                                    Overlay[
-                                        {
-                                            InputField[
-                                                Dynamic @ fieldContent,
-                                                Boxes,
-                                                Alignment  -> { Automatic, Baseline },
-                                                Appearance -> "Frameless",
-                                                BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
-                                                BoxID      -> "AttachedChatInputField",
-                                                ContinuousAction -> True,
-                                                ImageSize  -> { Scaled[ 0.618 ], Automatic }
-                                            ],
-                                            Dynamic @ Style[
-                                                If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
-                                                "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
-                                        },
-                                        { 1, 2 },
-                                        1,
-                                        Alignment -> { Left, Baseline } ],
-                                    
-                                    Alignment      -> { Automatic, Baseline },
-                                    Background     -> color @ "NA_ChatInputFieldBackground",
-                                    FrameMargins   -> { { 5, 5 }, { 4, 4 } },
-                                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ],
-                                    RoundingRadius -> 10
-                                ]
-                                ,
-                                If[ TrueQ @ returnKeyDownQ,
-                                    returnKeyDownQ = False;
-                                    Needs[ "Wolfram`Chatbook`" -> None ];
-                                    If[ kernelWasQuitQ,
-                                        If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
-                                        kernelWasQuitQ = False ];
-                                    With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, i = input },
-                                        AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
-                                        NotebookDelete @ thisCell;
-                                        evaluateChatbarChat[ n, nwa, sat, i ]
-                                    ]
-                                ];
-                                ,
-                                SynchronousUpdating -> False,
-                                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
-                            ],
+            DynamicWrapper[
+                Framed[
+                    Grid[
+                        { {
+                            Overlay[
+                                {
+                                    InputField[
+                                        Dynamic @ fieldContent,
+                                        Boxes,
+                                        Alignment  -> { Automatic, Baseline },
+                                        Appearance -> "Frameless",
+                                        BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
+                                        BoxID      -> "AttachedChatInputField",
+                                        ContinuousAction -> True,
+                                        ImageSize  -> { Scaled[ 0.618 ], Automatic }
+                                    ],
+                                    Dynamic @ Style[
+                                        If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
+                                        "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+                                },
+                                { 1, 2 },
+                                1,
+                                Alignment -> { Left, Baseline } ],
                             Button[
-                                Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                    color @ "NA_ChatInputFieldSendButtonFrameHover",
-                                    color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                                    27
+                                PaneSelector[
+                                    {
+                                        False ->
+                                            Graphics[ {
+                                                FaceForm @ color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                                EdgeForm @ color @ "NA_ChatInputFieldSendButtonBackgroundHover",
+                                                Disk[ ] }, ImageSize -> { 24, 24 } ],
+                                        True ->
+                                            Graphics[ {
+                                                FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_1",
+                                                EdgeForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2",
+                                                Disk[ ] }, ImageSize -> { 24, 24 } ]
+                                    },
+                                    Dynamic @ CurrentValue[ "MouseOver" ],
+                                    ImageSize -> Automatic
                                 ],
                                 If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
                                 Appearance   -> "Suppressed",
@@ -872,12 +857,34 @@ makeMidlineChatInputCellContent[ nbo_NotebookObject ] :=
                                 FrameMargins -> 0,
                                 Method       -> "Preemptive"
                             ]
-                        }
-                    },
-                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
-                    Spacings  -> { 0.5, 0.0 }
-                ],
-                FrameMargins -> 5
+                        } },
+                        Alignment        -> { Left, Baseline },
+                        BaselinePosition -> { 1, 1 },
+                        Spacings         -> { 0, 0 }
+                    ],
+                    Alignment      -> { Automatic, Center },
+                    Background     -> color @ "NA_ChatInputFieldBackground",
+                    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ],
+                    ImageMargins   -> 5,
+                    RoundingRadius -> 14
+                ]
+                ,
+                If[ TrueQ @ returnKeyDownQ,
+                    returnKeyDownQ = False;
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    If[ kernelWasQuitQ,
+                        If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
+                        kernelWasQuitQ = False ];
+                    With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, i = input },
+                        AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
+                        NotebookDelete @ thisCell;
+                        evaluateChatbarChat[ n, nwa, sat, i ]
+                    ]
+                ];
+                ,
+                SynchronousUpdating -> False,
+                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
             ],
             {
                 "MouseDown" :> ((* a hack until we get notebook selection snapshotting *)
@@ -938,76 +945,153 @@ makeFooterChatInputCellContent[ nbo_NotebookObject ] :=
         {
             thisCell, fieldContent = "", returnKeyDownQ, input,
             kernelWasQuitQ = False, cachedChatInput = "", cachedSessionID = $SessionID,
-            notebookWriteAnchor, selectionAtTopQ, minimizedQ
+            notebookWriteAnchor, selectionAtTopQ, minimizedQ, selectionWithinQ = False
         },
         EventHandler[
             PaneSelector[
                 {
                     False ->
+                        DynamicWrapper[ #, selectionWithinQ = CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ] ]& @
                         Grid[
-                            {
-                                {
-                                    DynamicWrapper[
-                                        Framed[
-                                            Overlay[
-                                                {
-                                                    InputField[
-                                                        Dynamic @ fieldContent,
-                                                        Boxes,
-                                                        Alignment  -> { Automatic, Baseline },
-                                                        Appearance -> "Frameless",
-                                                        BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
-                                                        BoxID      -> "AttachedChatInputField",
-                                                        ContinuousAction -> True,
-                                                        ImageSize  -> { Scaled[ 1 ], Automatic }
+                            { {
+                                DynamicWrapper[
+                                    Framed[
+                                        Grid[
+                                            { {
+                                                Overlay[
+                                                    {
+                                                        InputField[
+                                                            Dynamic @ fieldContent,
+                                                            Boxes,
+                                                            Alignment  -> { Automatic, Baseline },
+                                                            Appearance -> "Frameless",
+                                                            BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
+                                                            BoxID      -> "AttachedChatInputField",
+                                                            ContinuousAction -> True,
+                                                            ImageSize  -> { Scaled[ 1 ], Automatic }
+                                                        ],
+                                                        Dynamic @ Style[
+                                                            If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
+                                                            "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+                                                    },
+                                                    { 1, 2 },
+                                                    1,
+                                                    Alignment -> { Left, Baseline } ],
+                                                Button[
+                                                    PaneSelector[
+                                                        {
+                                                            "Default" ->
+                                                                Graphics[ {
+                                                                    FaceForm @ color @ "NA_ChatInputFieldSendButtonFrameHover",
+                                                                    EdgeForm @ color @ "NA_ChatInputFieldSendButtonBackgroundHover",
+                                                                    Disk[ ] }, ImageSize -> { 24, 24 } ],
+                                                            "Hover" ->
+                                                                Graphics[ {
+                                                                    FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_1",
+                                                                    EdgeForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2",
+                                                                    Disk[ ] }, ImageSize -> { 24, 24 } ],
+                                                            "Disabled" ->
+                                                                Graphics[ {
+                                                                    FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1",
+                                                                    EdgeForm @ color @ "NA_ChatInputFieldFocus_Gray_2",
+                                                                    Disk[ ] }, ImageSize -> { 24, 24 } ]
+                                                        },
+                                                        Dynamic @ Which[ CurrentValue[ "MouseOver" ], "Hover", selectionWithinQ, "Default", True, "Disabled" ],
+                                                        ImageSize -> Automatic
                                                     ],
-                                                    Dynamic @ Style[
-                                                        If[ fieldContent === "", tr[ "AttachedChatFieldHint" ], "" ],
-                                                        "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
-                                                },
-                                                { 1, 2 },
-                                                1,
-                                                Alignment -> { Left, Baseline } ],
-                                            
-                                            Alignment      -> { Automatic, Baseline },
-                                            Background     -> color @ "NA_ChatInputFieldBackground",
-                                            FrameMargins   -> { { 5, 5 }, { 4, 4 } },
-                                            FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatInputFieldFrame" ],
-                                            RoundingRadius -> 10
-                                        ]
-                                        ,
-                                        If[ TrueQ @ returnKeyDownQ,
-                                            returnKeyDownQ = False;
-                                            Needs[ "Wolfram`Chatbook`" -> None ];
-                                            If[ kernelWasQuitQ,
-                                                If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
-                                                kernelWasQuitQ = False ];
-                                            evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
-                                        ];
-                                        ,
-                                        SynchronousUpdating -> False,
-                                        TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
-                                    ],
-                                    Button[
-                                        Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                            color @ "NA_ChatInputFieldSendButtonFrameHover",
-                                            color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                                            27
+                                                    If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+                                                    Appearance   -> "Suppressed",
+                                                    BoxID        -> "SidebarChatInputCellSendButton",
+                                                    FrameMargins -> 0,
+                                                    Method       -> "Preemptive"
+                                                ]
+                                            } },
+                                            Alignment        -> { Left, Baseline },
+                                            BaselinePosition -> { 1, 1 },
+                                            Spacings         -> { 0, 0 }
                                         ],
-                                        If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
-                                        Appearance   -> "Suppressed",
-                                        BoxID        -> "SidebarChatInputCellSendButton",
-                                        FrameMargins -> 0,
-                                        Method       -> "Preemptive"
+                                        Alignment      -> { Automatic, Center },
+                                        Background     -> color @ "NA_ChatInputFieldBackground",
+                                        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                                        FrameStyle     -> (
+                                            Dynamic[
+                                                If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
+                                            ]&[ color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
+                                        RoundingRadius -> 14
                                     ]
-                                }
-                            },
+                                    ,
+                                    If[ TrueQ @ returnKeyDownQ,
+                                        returnKeyDownQ = False;
+                                        Needs[ "Wolfram`Chatbook`" -> None ];
+                                        If[ kernelWasQuitQ,
+                                            If[ fieldContent =!= cachedChatInput, fieldContent = cachedChatInput ];
+                                            kernelWasQuitQ = False ];
+                                        evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
+                                    ]
+                                    ,
+                                    SynchronousUpdating -> False,
+                                    TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                                ],
+                                
+                                Grid[
+                                    {
+                                        {
+                                            DynamicModule[ { Typeset`mouseOverQ = False },
+                                                EventHandler[
+                                                    Framed[
+                                                        chatbookIcon[ "ChatbarSettingsIcon", False ],
+                                                        Background     -> (Dynamic[ Which[ Typeset`mouseOverQ, #1, selectionWithinQ, #2, True, #3 ] ]&[ color @ "NA_ChatInputFieldFocusNotebookIconHover_3", color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1"]),
+                                                        FrameMargins   -> 0,
+                                                        FrameStyle     -> (Dynamic[ Which[ Typeset`mouseOverQ, #1, selectionWithinQ, #2, True, #3 ] ]&[ color @ "NA_ChatInputFieldFocusNotebookIconHover_3", color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
+                                                        ImageMargins   -> { { 2, 0 }, { 1, 0 } },
+                                                        ImageSize      -> { 14, 14 },
+                                                        RoundingRadius -> 2
+                                                    ],
+                                                    {
+                                                        "MouseEntered" :> (Typeset`mouseOverQ = True),
+                                                        "MouseExited"  :> (Typeset`mouseOverQ = False)
+                                                    }
+                                                ]
+                                            ]
+                                        },
+                                        {
+                                            DynamicModule[ { Typeset`mouseOverQ = False },
+                                                EventHandler[
+                                                    Framed[
+                                                        chatbookIcon[ "HideChatbarIcon", False ],
+                                                        Background     -> (Dynamic[ Which[ Typeset`mouseOverQ, #1, selectionWithinQ, #2, True, #3 ] ]&[ color @ "NA_ChatInputFieldFocusNotebookIconHover_3", color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1"]),
+                                                        FrameMargins   -> 0,
+                                                        FrameStyle     -> (Dynamic[ Which[ Typeset`mouseOverQ, #1, selectionWithinQ, #2, True, #3 ] ]&[ color @ "NA_ChatInputFieldFocusNotebookIconHover_3", color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
+                                                        ImageMargins   -> { { 2, 0 }, { 1, 0 } },
+                                                        ImageSize      -> { 14, 14 },
+                                                        RoundingRadius -> 2
+                                                    ],
+                                                    {
+                                                        "MouseEntered" :> (Typeset`mouseOverQ = True),
+                                                        "MouseExited"  :> (Typeset`mouseOverQ = False)
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    },
+                                    Alignment -> { Left, Baseline },
+                                    Spacings  -> { 0, 0 }
+                                ]
+                            } },
                             BaseStyle -> { Magnification -> $inputFieldGridMagnification },
-                            Spacings  -> { 0.5, 0.0 }
+                            Spacings  -> { 0, 0 }
                         ],
                     True ->
                         Button[
-                            Graphics[ { FaceForm[ System`StandardBlue ], Rectangle[ RoundingRadius -> 4 ] }, ImageSize -> { 24, 24 } ],
+                            PaneSelector[
+                                {
+                                    True -> Graphics[ { FaceForm[ color @ "NA_ChatInputFieldFrame" ], Disk[ ] }, ImageSize -> { 24, 24 } ],
+                                    False -> Graphics[ { FaceForm[ color @ "NA_ChatInputFieldFocus_Gray_1" ], Disk[ ] }, ImageSize -> { 24, 24 } ]
+                                },
+                                Dynamic @ selectionWithinQ,
+                                ImageSize -> Automatic
+                            ]
+                            ,
                             minimizedQ = False,
                             ImageSize -> Automatic
                         ]
