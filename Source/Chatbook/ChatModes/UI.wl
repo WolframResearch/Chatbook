@@ -924,40 +924,86 @@ chatbarMinimizeButton // endDefinition;
 (* ::**************************************************************************************************************:: *)
 chatbarOptionsMenu // beginDefinition;
 
-chatbarOptionsMenu[ Dynamic[ selectionWithinQ_ ] ] :=
-DynamicModule[ { Typeset`mouseOverQ = False },
-    EventHandler[
-        Framed[
-            chatbookIcon[ "ChatbarSettingsIcon", False ],
-            Alignment      -> { Center, Center },
-            Background     -> (Dynamic[
-                Which[
-                    Typeset`mouseOverQ, #1,
-                    selectionWithinQ,   #2,
-                    True,               #3 ] 
-                ]&[
-                    color @ "NA_ChatInputFieldFocusNotebookIconHover_3",
-                    color @ "NA_ChatInputFieldFrame",
-                    color @ "NA_ChatInputFieldFocus_Gray_1"]),
-            FrameMargins   -> 0,
-            FrameStyle     -> (Dynamic[
-                Which[
-                    Typeset`mouseOverQ, #1,
-                    selectionWithinQ,   #2,
-                    True,               #3 ]
-                ]&[
-                    color @ "NA_ChatInputFieldFocusNotebookIconHover_3",
-                    color @ "NA_ChatInputFieldFrame",
-                    color @ "NA_ChatInputFieldFocus_Gray_1" ]),
-            ImageMargins   -> { { 2, 0 }, { 1, 0 } },
-            ImageSize      -> { 14, 14 },
-            RoundingRadius -> 2
+
+menuTick[ Dynamic[ val_ ], text_ ] :=
+Row[
+    {
+        Style[
+            Graphics[
+                Line[ { { -0.4, 0.5 }, { 0, 0 }, { 0.8, 1 } } ],
+                AspectRatio      -> Automatic,
+                BaselinePosition -> (Center -> Center),
+                BaseStyle        -> { AbsoluteThickness[ 1.5 ], LightDarkSwitched[ GrayLevel[ 0.35 ], GrayLevel[ 0.892 ] ], JoinForm[ "Round" ], CapForm[ "Round" ] },
+                ImagePadding     -> { { 2, 2 }, { 2, 2 } },
+                ImageSize        -> { 14, 14 }
+            ],
+            ShowContents -> Dynamic @ val
         ],
-        {
-            "MouseEntered" :> (Typeset`mouseOverQ = True),
-            "MouseExited"  :> (Typeset`mouseOverQ = False)
-        }
-    ]
+        Spacer[ 3 ],
+        text
+    },
+    StripOnInput -> True
+]
+
+
+chatbarOptionsMenu[ nbo_NotebookObject, Dynamic[ selectionWithinQ_ ], Dynamic[ minimizedQ_ ] ] :=
+ActionMenu[
+    DynamicModule[ { Typeset`mouseOverQ = False },
+        EventHandler[
+            Framed[
+                chatbookIcon[ "ChatbarSettingsIcon", False ],
+                Alignment      -> { Center, Center },
+                Background     -> (Dynamic[
+                    Which[
+                        Typeset`mouseOverQ, #1,
+                        selectionWithinQ,   #2,
+                        True,               #3 ] 
+                    ]&[
+                        color @ "NA_ChatInputFieldFocusNotebookIconHover_3",
+                        color @ "NA_ChatInputFieldFrame",
+                        color @ "NA_ChatInputFieldFocus_Gray_1"]),
+                FrameMargins   -> 0,
+                FrameStyle     -> (Dynamic[
+                    Which[
+                        Typeset`mouseOverQ, #1,
+                        selectionWithinQ,   #2,
+                        True,               #3 ]
+                    ]&[
+                        color @ "NA_ChatInputFieldFocusNotebookIconHover_3",
+                        color @ "NA_ChatInputFieldFrame",
+                        color @ "NA_ChatInputFieldFocus_Gray_1" ]),
+                ImageMargins   -> { { 2, 0 }, { 1, 0 } },
+                ImageSize      -> { 14, 14 },
+                RoundingRadius -> 2
+            ],
+            {
+                "MouseEntered" :> (Typeset`mouseOverQ = True),
+                "MouseExited"  :> (Typeset`mouseOverQ = False)
+            }
+        ]
+    ],
+    {
+        menuTick[
+            Dynamic @ AbsoluteCurrentValue[ nbo, "ShowChatbar" ],
+            "[[Show Chatbar in this Notebook]]"
+        ] :> (
+            CurrentValue[ nbo, "ShowChatbar" ] = !AbsoluteCurrentValue[ nbo, "ShowChatbar" ]),
+        Delimiter,
+        menuTick[
+            Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, "ShowChatbar" ],
+            "[[Show Chatbar in All Notebooks by Default]]"
+        ] :> (
+            CurrentValue[ $FrontEnd, "ShowChatbar" ] = !AbsoluteCurrentValue[ $FrontEndSession, "ShowChatbar" ];
+            CurrentValue[ nbo, "ShowChatbar" ] = Inherited),
+        menuTick[
+            Dynamic @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ],
+            "[[Minimize Chatbar in All Notebooks by Default]]"
+        ] :> (
+            minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] =
+                Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ])
+    },
+    Appearance -> None,
+    Method     -> "Preemptive"
 ]
 
 chatbarOptionsMenu // endDefinition;
@@ -1034,7 +1080,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             True ->
                                                 Grid[
                                                     {
-                                                        { chatbarOptionsMenu[ Dynamic @ selectionWithinQ ] },
+                                                        { chatbarOptionsMenu[ nbo, Dynamic @ selectionWithinQ, Dynamic @ minimizedQ ] },
                                                         { chatbarMinimizeButton[ minimizedQ, selectionWithinQ ] }
                                                     },
                                                     Alignment -> { Left, Baseline },
@@ -1057,7 +1103,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ]
                 ,
                 barAtBottomQ = AbsoluteCurrentValue[ nbo, "ChatbarPosition" ] === Bottom;
-                selectionWithinQ = !barAtBottomQ || CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ]
+                selectionWithinQ = !barAtBottomQ || CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ];
+                If[ !barAtBottomQ, minimizedQ = False ];
                 ,
                 TrackedSymbols :> { }
             ],
