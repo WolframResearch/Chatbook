@@ -33,10 +33,10 @@ $defaultChatSettings = <|
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
     "ConvertSystemRoleToUser"        -> Automatic,
-    "UserInstructions"               -> Automatic,
     "DiscourageExtraToolCalls"       -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
+    "EnabledBasePrompts"             -> Automatic,
     "EnableLLMServices"              -> Automatic,
     "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
@@ -97,6 +97,7 @@ $defaultChatSettings = <|
     "ToolsEnabled"                   -> Automatic,
     "TopP"                           -> 1,
     "TrackScrollingWhenPlaced"       -> Automatic,
+    "UserInstructions"               -> Automatic,
     "VisiblePersonas"                -> $corePersonaNames
 |>;
 
@@ -316,6 +317,7 @@ $modelAutoSettings[ Automatic, "GPT51" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
+    "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
     "ReplaceUnicodeCharacters" -> True
 |>;
@@ -331,7 +333,7 @@ $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
 $modelAutoSettings[ Automatic, "GPT54" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
     "MaxContextTokens" -> 1050000,
-    "Reasoning" -> Missing[ "NotSupported" ] (* Doesn't work with tools in the completions endpoint *)
+    "Reasoning"        -> Missing[ "NotSupported" ] (* Doesn't work with tools in the completions endpoint *)
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
@@ -412,6 +414,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
+    "EnabledBasePrompts"        -> { },
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
@@ -669,6 +672,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
+            $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
 
             If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];

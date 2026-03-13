@@ -47,6 +47,7 @@ $basePromptOrder = {
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
+    "FunctionRepositoryIntegration",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
@@ -126,6 +127,12 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
 
 $excludedBasePrompts = { };
+
+(* These base prompts are disabled by default, so that `needsBasePrompt["promptName"]` is a no-op, unless explicitly
+   enabled via the "EnabledBasePrompts" setting. *)
+$disabledBasePrompts = {
+    "FunctionRepositoryIntegration"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -308,6 +315,10 @@ $basePromptComponents[ "TrivialCode" ] = "\
 $basePromptComponents[ "Packages" ] = "\
 * Stick to built-in system functionality. Avoid packages unless specifically requested.";
 
+$basePromptComponents[ "FunctionRepositoryIntegration" ] = "\
+* ResourceFunctions published in the Function Repository are reviewed and approved by Wolfram staff, \
+so you can treat them as first-class citizens of the Wolfram Language if there isn't already a built-in equivalent.";
+
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
 
@@ -473,6 +484,7 @@ withBasePromptBuilder // endDefinition;
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; MemberQ[ $excludedBasePrompts, name ] := name;
+needsBasePrompt[ name_String ] /; MemberQ[ $disabledBasePrompts, name ] := name;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := name;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
 needsBasePrompt[ $$unspecified|ParentList ] := Null;
