@@ -307,7 +307,7 @@ regroupCells[ textData_List ] :=
 regroupCells[ { grouped___ }, { grouping___ }, { cell: Cell[ _BoxData ], rest___ } ] :=
     regroupCells[ { grouped }, { grouping, cell }, { rest } ];
 
-regroupCells[ { grouped___ }, { grouping___ }, { box: _StyleBox|_ButtonBox|Cell[ _, "InlineCode", ___ ], rest___ } ] :=
+regroupCells[ { grouped___ }, { grouping___ }, { box: _StyleBox|_ButtonBox|Cell[ _, "InlineCode"|"InlineWL", ___ ], rest___ } ] :=
     regroupCells[ { grouped }, { grouping, box }, { rest } ];
 
 regroupCells[ { grouped___ }, { grouping___ }, { cell: (Cell|StyleBox)[ _, $$newCellStyle, ___ ], rest___ } ] :=
