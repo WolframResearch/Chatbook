@@ -317,7 +317,7 @@ $modelAutoSettings[ Automatic, "GPT51" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
-    "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration" },
+    "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
     "ReplaceUnicodeCharacters" -> True
 |>;
