@@ -529,7 +529,7 @@ fixPattern[$EvaluatorPattern][code_String, pat : $$FatalGroupMissingCloser, patT
 						Reverse // (allCodeNoScore=#)& //
 						(allCodeScore=scoreAndSort[#])&//  (*Adding scores*)
 						(* SelectFirst[#,CodeInspect[#[[2]], Sequence@@Options[CodeCheck]]==={}&, {Missing["No valid fix"]} ]&// *)
-						First//
+						SelectFirst[#, SyntaxQ[#[[2]]]&, {Missing["No valid fix"]} ]&//
 						decholabel["final fix:"]//
 						Last
 
@@ -996,9 +996,9 @@ fixPattern[target_][code_String, pat_]:=
 
 (* WARNING PATTERN ----------------------------------------------------------------------- *)
 $$SuspiciousSymbol = HoldPattern[{___, {"WarningChatbook", "SuspiciousFunctionSymbol"}->#, ___}]&;
-$$BadSymbol = HoldPattern[{___, {"RemarkChatebook", "GlobalCapitalizedSymbol"}->#, ___}]&;
+(* $$BadSymbol = HoldPattern[{___, {"RemarkChatbook", "GlobalCapitalizedSymbol"}->#, ___}]&; *)
 
-warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_]|$$BadSymbol[so_]), patToIgnore_ : {}] :=
+warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_](* |$$BadSymbol[so_] *)), patToIgnore_ : {}] :=
 	{ "Success" -> True
 	, "TotalFixes" -> 0
 	, "LikelyFalsePositive" -> False
@@ -1020,7 +1020,7 @@ suspiciousFunctionSymbolQ[name_String] :=
 	&&
 	Not[TrueQ@$UserDefinedFunctionsQ[name]]
 	&&
-	Not[NameQ[name] && (Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasAnyEvaluationsQ]]
+	Not[NameQ[name] && ((Context[name] === "System`") || ToExpression[name, InputForm, System`Private`HasAnyEvaluationsQ])]
 )
 
 scanSuspiciousSymbol[pos_, ast_] :=
@@ -1030,12 +1030,12 @@ scanSuspiciousSymbol[pos_, ast_] :=
 			,
 			If[	MissingQ@funcnode
 				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
-   						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
+   						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
 				,	$UserDefinedFunctionsQ[name]=True
 					;
 					Nothing
 					(* ;
-					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
+					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatbook",
    						Association@{ConfidenceLevel -> 1,(*Source*)funcnode[[-1]]}] *)
 			]
 	]
