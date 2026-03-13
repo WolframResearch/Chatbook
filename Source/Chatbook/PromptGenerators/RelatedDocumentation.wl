@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$snippetDebug                  = True;
 $snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
 $snippetFetchBatchSize         = 15;
@@ -1334,7 +1335,7 @@ getStreamSnippets[ name_String, { } ] :=
     { };
 
 getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
-    Module[ { file, keyGroups, stream, data, strings },
+    Module[ { file, keyGroups, stream, data, lookup, strings },
 
         file = ConfirmBy[ FileNameJoin @ { $streamableSnippetsDir, name, "Snippets.wxfl" }, FileExistsQ, "File" ];
         keyGroups = GroupBy[ keys, StringDelete[ #1, "#" ~~ ___ ~~ EndOfString ] & ];
@@ -1345,9 +1346,11 @@ getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
             Quiet @ Close @ stream
         ];
 
-        strings = ConfirmMatch[ Lookup[ data, keys ], { __String }, "Result" ];
+        lookup = If[ TrueQ @ $snippetDebug, Lookup, Lookup[ #1, #2, "" ] & ];
 
-        "# " <> StringDelete[ #, StartOfString~~"# " ] & /@ strings
+        strings = ConfirmMatch[ lookup[ data, keys ], { __String }, "Result" ];
+
+        If[ # === "", "", "# " <> StringDelete[ #, StartOfString~~"# " ] ] & /@ strings
     ] // LogChatTiming[ "GetStreamSnippets" ],
     throwInternalFailure
 ];
@@ -1392,7 +1395,7 @@ loadStreamIndex // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $snippetDebug = False;
 ];
 
 End[ ];
