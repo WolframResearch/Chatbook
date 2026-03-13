@@ -332,8 +332,12 @@ $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT54" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
-    "MaxContextTokens" -> 1050000,
-    "Reasoning"        -> Missing[ "NotSupported" ] (* Doesn't work with tools in the completions endpoint *)
+    "EndToken"                   -> None,
+    "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 1050000,
+    "Reasoning"                  -> Missing[ "NotSupported" ], (* Doesn't work with tools in the completions endpoint *)
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
