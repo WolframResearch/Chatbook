@@ -346,6 +346,8 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         string = StringTrim @ StringRiffle[ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
 
+        If[ StringContainsQ[ string, StartOfLine~~"# WFR > " ], needsBasePrompt[ "FunctionRepositoryIntegration" ] ];
+
         If[ string === "",
             "",
             prependRelatedDocsHeader[ string, filter ]
