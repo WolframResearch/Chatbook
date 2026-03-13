@@ -350,13 +350,72 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         If[ string === "",
             "",
-            prependRelatedDocsHeader[ string, filter ]
+            addExampleDataHint @ prependRelatedDocsHeader[ string, filter ]
         ]
     ],
     throwInternalFailure
 ];
 
 relatedDocumentationPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addExampleDataHint*)
+addExampleDataHint // beginDefinition;
+
+addExampleDataHint[ string_String ] := Enclose[
+    Catch @ Module[ { exampleDataFiles, hintText },
+
+        exampleDataFiles = Union @ StringCases[
+            string,
+            "\"" ~~ path: Shortest[ "ExampleData/" ~~ Except[ "\"" ].. ] ~~ "\"" /; exampleDataFileQ @ path :> path
+        ];
+
+        If[ exampleDataFiles === { }, Throw @ string ];
+
+        hintText = ConfirmBy[
+            TemplateApply[
+                $exampleDataHintTemplate,
+                <|
+                    "Files" -> StringRiffle[ "* \"" <> # <> "\"" & /@ exampleDataFiles, "\n" ],
+                    "First" -> First @ exampleDataFiles
+                |>
+            ],
+            StringQ,
+            "HintText"
+        ];
+
+        needsBasePrompt[ "ExampleDataFiles" ];
+
+        StringJoin[ string, "\n\n", hintText ]
+    ],
+    throwInternalFailure
+];
+
+addExampleDataHint // endDefinition;
+
+
+$exampleDataHintTemplate = StringTemplate[ "\
+<system-hint>
+The \"ExampleData/\" directory is included in every Wolfram Language installation and is automatically on $Path, \
+so paths like \"ExampleData/coneflower.jpg\" can be used immediately without any setup.
+
+Available ExampleData files from the snippets above:
+%%Files%%
+
+You can use the following to find the list of all available ExampleData files:
+
+```wl
+FileNameTake /@ FileNames[All, DirectoryName[FindFile[\"%%First%%\"]]]
+```
+</system-hint>", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*exampleDataFileQ*)
+exampleDataFileQ // beginDefinition;
+exampleDataFileQ[ path_String ] := exampleDataFileQ[ path ] = StringQ @ Quiet @ FindFile @ path;
+exampleDataFileQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

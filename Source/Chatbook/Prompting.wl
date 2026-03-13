@@ -53,6 +53,7 @@ $basePromptOrder = {
     "FunctionalStyle",
     "WolframLanguageStyle",
     "WolframLanguageEvaluatorTool",
+    "ExampleDataFiles",
     "EndTurnToken",
     "ToolCallPreamble",
     "ServiceToolCallRetry",
@@ -340,6 +341,10 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
+
+$basePromptComponents[ "ExampleDataFiles" ] = "\
+* When writing example code that imports files and the user has not specified a particular file, \
+use real ExampleData files instead of placeholder paths like \"path/to/file.ext\".";
 
 $basePromptComponents[ "EndTurnToken" ] :=
     If[ StringQ @ $endToken && $endToken =!= "",
