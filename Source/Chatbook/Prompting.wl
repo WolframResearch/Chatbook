@@ -53,6 +53,7 @@ $basePromptOrder = {
     "FunctionalStyle",
     "WolframLanguageStyle",
     "WolframLanguageEvaluatorTool",
+    "WolframLanguageEvaluatorToolInteractive",
     "ExampleDataFiles",
     "EndTurnToken",
     "ToolCallPreamble",
@@ -112,7 +113,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
     "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
-    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
+    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
     "ServiceToolCallRetry"                 -> { },
@@ -132,7 +133,8 @@ $excludedBasePrompts = { };
 (* These base prompts are disabled by default, so that `needsBasePrompt["promptName"]` is a no-op, unless explicitly
    enabled via the "EnabledBasePrompts" setting. *)
 $disabledBasePrompts = {
-    "FunctionRepositoryIntegration"
+    "FunctionRepositoryIntegration",
+    "WolframLanguageEvaluatorToolInteractive"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -341,6 +343,9 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
+
+$basePromptComponents[ "WolframLanguageEvaluatorToolInteractive" ] = "\
+* You can generate interactive content (e.g. Manipulate) using the wolfram_language_evaluator tool.";
 
 $basePromptComponents[ "ExampleDataFiles" ] = "\
 * When writing example code that imports files and the user has not specified a particular file, \
