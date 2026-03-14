@@ -47,11 +47,14 @@ $basePromptOrder = {
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
+    "FunctionRepositoryIntegration",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
     "WolframLanguageStyle",
     "WolframLanguageEvaluatorTool",
+    "WolframLanguageEvaluatorToolInteractive",
+    "ExampleDataFiles",
     "EndTurnToken",
     "ToolCallPreamble",
     "ServiceToolCallRetry",
@@ -110,7 +113,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
     "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
-    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
+    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
     "ServiceToolCallRetry"                 -> { },
@@ -126,6 +129,13 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
 
 $excludedBasePrompts = { };
+
+(* These base prompts are disabled by default, so that `needsBasePrompt["promptName"]` is a no-op, unless explicitly
+   enabled via the "EnabledBasePrompts" setting. *)
+$disabledBasePrompts = {
+    "FunctionRepositoryIntegration",
+    "WolframLanguageEvaluatorToolInteractive"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -308,6 +318,10 @@ $basePromptComponents[ "TrivialCode" ] = "\
 $basePromptComponents[ "Packages" ] = "\
 * Stick to built-in system functionality. Avoid packages unless specifically requested.";
 
+$basePromptComponents[ "FunctionRepositoryIntegration" ] = "\
+* ResourceFunctions published in the Function Repository are reviewed and approved by Wolfram staff, \
+so you can treat them as first-class citizens of the Wolfram Language if there isn't already a built-in equivalent.";
+
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
 
@@ -329,6 +343,13 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
+
+$basePromptComponents[ "WolframLanguageEvaluatorToolInteractive" ] = "\
+* You can generate interactive content (e.g. Manipulate) using the wolfram_language_evaluator tool.";
+
+$basePromptComponents[ "ExampleDataFiles" ] = "\
+* When writing example code that imports files and the user has not specified a particular file, \
+use real ExampleData files instead of placeholder paths like \"path/to/file.ext\".";
 
 $basePromptComponents[ "EndTurnToken" ] :=
     If[ StringQ @ $endToken && $endToken =!= "",
@@ -473,6 +494,7 @@ withBasePromptBuilder // endDefinition;
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; MemberQ[ $excludedBasePrompts, name ] := name;
+needsBasePrompt[ name_String ] /; MemberQ[ $disabledBasePrompts, name ] := name;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := name;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
 needsBasePrompt[ $$unspecified|ParentList ] := Null;

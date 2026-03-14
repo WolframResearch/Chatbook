@@ -713,12 +713,18 @@ formatTextString // endDefinition;
 (*almostCertainlyWLCodeQ*)
 almostCertainlyWLCodeQ // beginDefinition;
 
-almostCertainlyWLCodeQ[ wl_String ] := TrueQ @ Or[
-    StringStartsQ[ wl, "\[FreeformPrompt]" ],
+almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
+
+almostCertainlyWLCodeQ[ wl_String, inline_ ] := TrueQ @ Or[
+    If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
     StringMatchQ[
         wl,
-        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ "[" ~~ ___ ~~ "]"
-    ]
+        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ Alternatives[
+            "[" ~~ ___ ~~ "]",
+            $$ws ~~ ("->"|":>") ~~ __
+        ]
+    ],
+    TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
 ];
 
 almostCertainlyWLCodeQ // endDefinition;
@@ -727,7 +733,16 @@ almostCertainlyWLCodeQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeInlineWL*)
 makeInlineWL // beginDefinition;
-makeInlineWL[ code_String ] := Cell[ BoxData @ wlStringToBoxes @ code, "InlineCode", "Input" ];
+
+makeInlineWL[ code_String ] := Cell[
+    BoxData @ wlStringToBoxes @ code,
+    "InlineWL", "Input",
+    LanguageCategory     -> "Input",
+    ShowAutoStyles       -> True,
+    ShowStringCharacters -> True,
+    ShowSyntaxStyles     -> True
+];
+
 makeInlineWL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1453,6 +1468,9 @@ $textDataFormatRules = {
     table: $$mdTable :> tableCell @ table
     ,
     quote: $$blockQuote :> blockQuoteCell @ quote
+    ,
+    "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")" :>
+        inlineCodeCell[ "ResourceFunction[" <> name <> "]" ]
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
 
@@ -2598,7 +2616,7 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ code_String? almostCertainlyWLCodeQ ] :=
+makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
 
 makeInlineCodeCell[ s_String? LowerCaseQ ] :=
@@ -3052,7 +3070,7 @@ hyperlink[ label_String, uri_String? expressionURIQ ] :=
         ]
     ];
 
-hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, "ResourceFunction[" ~~ ___ ~~ "]" ] :=
+hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, ("`"|"")~~"ResourceFunction[" ~~ ___ ~~ "]"~~("`"|"") ] :=
     makeInlineWL @ rf;
 
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=

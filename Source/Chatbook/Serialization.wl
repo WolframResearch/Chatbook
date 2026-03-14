@@ -249,7 +249,7 @@ $templateBoxRules = <|
     (* Side bar *)
     "NotebookAssistant`Sidebar`AssistantMessageBox" -> First,
     "NotebookAssistant`Sidebar`UserMessageBox"      -> First,
-    
+
     (* Color swatches: *)
     "CMYKColorSwatchTemplate"      -> inputFormString @* Lookup[ "color" ],
     "GrayLevelColorSwatchTemplate" -> inputFormString @* Lookup[ "color" ],
@@ -1632,13 +1632,13 @@ boxToString[ StyleBox[ code_, "TI", ___ ] ] /; ! $inlineCode :=
     ];
 
 boxToString[
-    Cell[ BoxData[ link: TemplateBox[ _, $$refLinkTemplate, ___ ], ___ ], "InlineCode"|"InlineFormula", ___ ]
+    Cell[ BoxData[ link: TemplateBox[ _, $$refLinkTemplate, ___ ], ___ ], "InlineCode"|"InlineFormula"|"InlineWL", ___ ]
 ] /; ! $inlineCode := boxToString @ link;
 
-boxToString[ Cell[ BoxData[ FormBox[ box_, TextForm, ___ ], ___ ], ___, "InlineCode"|"InlineFormula", ___ ] ] :=
+boxToString[ Cell[ BoxData[ FormBox[ box_, TextForm, ___ ], ___ ], ___, "InlineCode"|"InlineFormula"|"InlineWL", ___ ] ] :=
     Block[ { $showStringCharacters = False, $escapeMarkdown = True }, boxToString @ box ];
 
-boxToString[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ] ] /; ! $inlineCode :=
+boxToString[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula"|"InlineWL", ___ ] ] /; ! $inlineCode :=
     Block[ { $escapeMarkdown = False, $inlineCode = True },
         needsBasePrompt[ "DoubleBackticks" ];
         "``" <> boxToString @ code <> "``"

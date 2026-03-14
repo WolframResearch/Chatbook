@@ -86,6 +86,7 @@ withChatState[ eval_ ] :=
             $includeStackTrace            = True,
             $sources                      = <| |>,
             $excludedBasePrompts          = $excludedBasePrompts,
+            $disabledBasePrompts          = $disabledBasePrompts,
             $endToken                     = $endToken,
 
             (* Values used for token budgets during cell serialization: *)
