@@ -113,6 +113,8 @@ Registering the model is just the beginning. During testing, we discovered sever
 
 **Problem:** GPT 5.4 would write long markdown content as tool arguments for the CreateNotebook tool. When using the service-level tool calling API (where arguments are JSON-encoded), the model made JSON syntax errors -- unescaped quotes, improper line breaks, etc. This caused tool calls to fail or produce malformed output.
 
+![Broken markdown rendering in notebook created by GPT 5.4](../images/bad-create-notebook-markdown.png)
+
 **Solution:** Enable hybrid tool calling, which combines service-level tool calling with prompt-based plain-text tool arguments. The model can write tool arguments as plain text instead of being forced into JSON.
 
 **Where:** `Source/Chatbook/Settings.wl`
@@ -130,6 +132,8 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 ### Issue 2: Disabling the End Token
 
 **Problem:** The `"EndToken"` setting (default: `"/end"`) is a text-based signal used by older, less-capable models to indicate they are done with their turn when using prompt-based tool calling. GPT 5.4 would sometimes emit `/end` incorrectly, terminating its response prematurely.
+
+![GPT 5.4 emitting /end token in chat output](../images/end-turn-token-in-output.png)
 
 **Solution:** Set `"EndToken" -> None` to disable the end token entirely. GPT 5.4 handles turn-taking without this signal.
 
