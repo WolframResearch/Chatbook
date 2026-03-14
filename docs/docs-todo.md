@@ -11,9 +11,13 @@
 
 * [ ] Base prompts
   - Source: `Source/Chatbook/Prompting.wl`
+  - [ ] Base prompt component listing and ordering (`$basePromptOrder`)
+  - [ ] On-demand base prompts (`$disabledBasePrompts`, `"EnabledBasePrompts"` setting)
+  - [ ] Base prompt dependencies (`$basePromptDependencies`)
 
 * [ ] Prompt generators
   - [ ] Related documentation
+    - Source: `Source/Chatbook/PromptGenerators/RelatedDocumentation.wl`
   - [ ] Related Wolfram Alpha results
   - [ ] Vector databases
   - [ ] Building vector databases
@@ -40,6 +44,12 @@
 * [ ] Notebook Assistant
   - Source: `Source/Chatbook/ChatModes/ShowNotebookAssistance.wl`
   - [ ] Programmatic use of Notebook Assistant
+
+* [ ] Footer Chat
+  - Sources: `Source/Chatbook/ChatModes/UI.wl`, `Source/Chatbook/ChatModes/Evaluate.wl`
+  - Resources: `Developer/Resources/DynamicContent/FooterChat/`
+  - [ ] Footer and midline chat input cell UI
+  - [ ] Inline chat evaluation
 
 * [ ] Markdown conversion
   - [ ] Converting notebook content to Markdown
