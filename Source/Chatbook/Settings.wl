@@ -33,10 +33,10 @@ $defaultChatSettings = <|
     "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
     "ConvertSystemRoleToUser"        -> Automatic,
-    "UserInstructions"               -> Automatic,
     "DiscourageExtraToolCalls"       -> Automatic,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
+    "EnabledBasePrompts"             -> Automatic,
     "EnableLLMServices"              -> Automatic,
     "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
@@ -97,6 +97,7 @@ $defaultChatSettings = <|
     "ToolsEnabled"                   -> Automatic,
     "TopP"                           -> 1,
     "TrackScrollingWhenPlaced"       -> Automatic,
+    "UserInstructions"               -> Automatic,
     "VisiblePersonas"                -> $corePersonaNames
 |>;
 
@@ -316,8 +317,27 @@ $modelAutoSettings[ Automatic, "GPT51" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
+    "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
     "ReplaceUnicodeCharacters" -> True
+|>;
+
+$modelAutoSettings[ Automatic, "GPT53" ] =
+    $modelAutoSettings[ Automatic, "GPT52" ];
+
+$modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
+    $modelAutoSettings[ Automatic, "GPT53" ],
+    "MaxContextTokens" -> 128000
+|>;
+
+$modelAutoSettings[ Automatic, "GPT54" ] = <|
+    $modelAutoSettings[ Automatic, "GPT53" ],
+    "EndToken"                   -> None,
+    "HybridToolMethod"           -> True,
+    "MaxContextTokens"           -> 1050000,
+    "Reasoning"                  -> Missing[ "NotSupported" ], (* Doesn't work with tools in the completions endpoint *)
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
@@ -398,6 +418,7 @@ $modelAutoSettings[ Automatic, "Mistral" ] = <|
 $modelAutoSettings[ Automatic, Automatic ] = <|
     "AppendCitations"           -> False,
     "ConvertSystemRoleToUser"   -> False,
+    "EnabledBasePrompts"        -> { },
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
@@ -655,6 +676,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
+            $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
 
             If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];
@@ -1740,7 +1762,7 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
         cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
-        
+
         verifyInheritance @ cell;
 
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
@@ -1748,7 +1770,7 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
         styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         (*
-            The sidebar Assistant has no chat delimiter. 
+            The sidebar Assistant has no chat delimiter.
             However, its cell acts as a "notebook" in terms of chat-setting inheritance.
             Set the local variable 'delimiter' to be the sidebar CellObject. *)
         Which[
@@ -1763,7 +1785,7 @@ currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
                 nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
                 delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo ], _CellObject|_Missing, "Delimiter" ]
         ];
-        
+
         settings = Select[
             Map[ Association,
                  Flatten @ {
@@ -1792,7 +1814,7 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
         cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "ParentCell" ];
         cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
         If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
-        
+
         verifyInheritance @ cell;
 
         If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
@@ -1800,7 +1822,7 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
         styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         (*
-            The sidebar Assistant has no chat delimiter. 
+            The sidebar Assistant has no chat delimiter.
             However, its cell acts as a "notebook" in terms of chat-setting inheritance.
             Set the local variable 'delimiter' to be the sidebar CellObject. *)
         Which[
@@ -1814,7 +1836,7 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
             True,
                 nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
                 cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
-            
+
                 (* There are apparently temporary mystery cells that get created that aren't in the root cell list which are
                    then immediately removed. These inherit the style specified by `DefaultNewCellStyle`. In chat-driven
                    notebooks, this is set to "ChatInput", which has a dynamic cell dingbat that needs to resolve
@@ -1831,7 +1853,7 @@ currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
 
                 delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ]
         ];
-        
+
         values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
         (* TODO: this should also use `mergeChatSettings` in case the values are associations *)
