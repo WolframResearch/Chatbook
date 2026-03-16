@@ -54,6 +54,7 @@ NotebookAssistanceSidebarSettings // endDefinition;
 
 $notebookAssistanceSidebarSettings := <|
     $notebookAssistanceBaseSettings,
+    "AllowSelectionContext" -> False,
     "AutoGenerateTitle"     -> True,
     "AutoSaveConversations" -> True,
     "ConversationUUID"      -> CreateUUID[ ],
@@ -130,7 +131,7 @@ $notebookAssistanceMenuItems = <|
                 FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceWindow" ],
                 FrontEnd`KernelExecute[
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ If[ BoxForm`sufficientVersionQ[ 15.0 ], "Sidebar", "Window" ], "NewChat" -> True ]
+                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ If[ BoxForm`sufficientVersionQ[ 15.0 ], "Sidebar", "Window" ], "NewChat" -> "Toggle" ]
                 ],
                 FrontEnd`MenuEvaluator -> Automatic,
                 Evaluate[
@@ -258,6 +259,7 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Sidebar" | "SideBar", opts: 
             ],
             LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ],
+            Replace[ OptionValue[ "NewChat" ], { "Toggle" -> True, _ -> False } ],
             OptionValue[ "ChatNotebookSettings" ]
         ]
     ];
@@ -279,7 +281,7 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Window"|Automatic, opts: Opt
             nbo,
             LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ],
-            OptionValue[ "NewChat" ],
+            Replace[ OptionValue[ "NewChat" ], "Toggle" -> True ],
             OptionValue[ "ChatNotebookSettings" ]
         ]
     ];
@@ -407,6 +409,65 @@ ShowNotebookAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*autoShowNotebookAssistance*)
 autoShowNotebookAssistance // beginDefinition;
+
+(* SIDEBAR: "Need help getting started?" prompt in the cell insertion bar *)
+autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] /; sufficientVersionQ[ 15.0 ] := Enclose[
+    Catch @ Module[ { nbo, newCell, uuid, sidebarInfo, sidebarCell, cellObject },
+        nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+
+        sidebarInfo = ConfirmMatch[ With[ { nb = nbo }, FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nb, "NotebookAssistant" ] ], _Association|None, "SidebarInfo" ];
+
+        newCell = Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ validateOptionInput @ Key[ "GettingStarted" ], Background -> None, Selectable -> True, Editable -> True ] },
+                    "NotebookAssistant`Sidebar`UserMessageBox"
+                ],
+                "NotebookAssistant`Sidebar`ChatInput",
+                (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
+                    However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
+                CellTags -> uuid 
+            ];
+
+        If[ sidebarInfo === None,
+            (* Most common expected case: the sidebar assistant has yet to be opened in this notebook *)
+            (* Spooky action-at-a-distance: cause different initialization behavior depending on whether assistant has ever been used before in this session *)
+            $sidebarChatInitialAction = With[ { nc = newCell, uuid2 = uuid, nbo2 = nbo },
+                Hold @ ChatCellEvaluate[ appendCellToSidebarChat[ nbo2, sidebarCellObject @ nbo2, nc, uuid2 ], nbo2 ]
+            ];
+            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+
+            , (* ELSE unusual corner cases: the sidebar has been active before and may contain content *)
+
+            sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCellObject" ];
+            If[ Lookup[ sidebarInfo, "Active", False, TrueQ ],
+                (* sidebar is currently open: do something sensible *)
+                cellObject = appendCellToSidebarChat[ nbo, sidebarCell, newCell, uuid ];
+                ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+                
+                , (* ELSE the sidebar has been opened before, but isn't now, so open it again as a new chat with the helping prompt *)
+                
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+                With[
+                    {
+                        subDockedCell      = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ],        Missing @ "NoSidebarSubDockedCell" ],
+                        scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ]
+                    },
+                    If[ ! MissingQ @ subDockedCell,      NotebookDelete @ subDockedCell ];
+                    If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ];
+                ];
+                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+                setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
+                cellObject = appendCellToSidebarChat[ nbo, sidebarCell, newCell, uuid ];
+                ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+            ]
+        ];
+
+        Null (* so output from this evaluation passes the ConfirmMatch check in ShowNotebookAssistance *)
+    ],
+    throwInternalFailure
+];
 
 autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Module[ { nbo, cells, obj },
@@ -542,26 +603,33 @@ sidebarCellObject// endDefinition;
 (*showNotebookAssistanceSidebar*)
 showNotebookAssistanceSidebar // beginDefinition;
 
-showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
+showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, settings0_Association ] := Enclose[
     Module[ { sidebarCell },
         If[ TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ], Return @ Null ]; (* prevent sidebar from opening in dialogs and palettes *)
         If[ nbo === MessagesNotebook[ ], Return @ Null ]; (* prevent sidebar from opening in messages window *)
 
         sidebarCell = sidebarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
         
-        If[ FailureQ @ sidebarCell,
-             (* don't do anything else because this is the first time we've opened the sidebar in this notebook; Cell Initialization adds necessary TaggingRules *)
-            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
-            , (* ELSE the sidebar assistant is persistant so don't remove content cells *)
+        Which[
+            FailureQ @ sidebarCell,
+                 (* don't do anything else because this is the first time we've opened the sidebar in this notebook *)
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ], 
             
-            (* The sidebar assistant is persistant to a given notebook. Only remove content if "new chat" is selected. *)
-
-            FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+            TrueQ @ toggle,
+                If[ TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ],
+                    FrontEndTokenExecute[ nbo, "HideSidebar" ]
+                    ,
+                    FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ]
+                ],
             
-            (* will we ever need to do this with the sidebar chat...? *)
-            If[ TrueQ @ evaluate,
-                MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
-                    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
+            (* The sidebar assistant is persistant to a given notebook. *)
+            True,
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                
+                (* will we ever need to do this with the sidebar chat...? *)
+                If[ TrueQ @ evaluate,
+                    MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
+                        MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
         ]
     ],
     throwInternalFailure

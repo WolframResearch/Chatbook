@@ -170,8 +170,8 @@
 "UIAddAndManageTools" -> "Agregar y administrar herramientas\[Ellipsis]",
 "UIModels" -> "Modelos",
 "UIModelsServices" -> "Servicios",
-"UIAISettings" -> "AI Settings",
-"UIAdvancedSettings" -> "Advanced Settings",
+"UIAISettings" -> "Configuraci\[OAcute]n de IA",
+"UIAdvancedSettings" -> "Configuraci\[OAcute]n avanzada",
 "UIModelsServicesGet" -> "Obteniendo los servicios disponibles\[Ellipsis]",
 "UIModelsGet" -> "Obteniendo modelos disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Conectar para la lista de modelos",
@@ -242,6 +242,7 @@
 "WorkspaceHistoryNextPage" -> "Siguiente p\[AAcute]gina",
 "WorkspaceHistoryLastPage" -> "\[CapitalUAcute]ltima p\[AAcute]gina",
 "WorkspaceHistoryTitle" -> "Historial",
+"WorkspaceHistoryFieldHint" -> "Search",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",

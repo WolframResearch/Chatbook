@@ -660,7 +660,7 @@ topParentCell // beginDefinition;
 topParentCell[ cell_CellObject ] /; !$cloudNotebooks :=
 Module[ { cellStack, cellInformation, cellStyles },
     cellStack = ParentCell[ cell, All ];      (* "All" is new in 14.3 and undocumented *)
-    If[ cellStack === { }, Return @ cell ];   (* already top level *)
+    If[ cellStack === { }, Return @ cell ];   (* already top level, or CellObject doesn't exist *)
 
     (* It would be easy enough to return Last of cellStack, but in the sidebar, we want the ChatInput/Output cell and not the sidebar cell *)
     cellStack       = Prepend[ cellStack, cell ]; (* just in case we used topParentCell on a sidebar top-level cell *)
@@ -981,10 +981,24 @@ getBoxObjectFromBoxID[ obj_, None ] :=
     None;
 
 getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
-    Module[ { nbo },
+    Module[ { nbo, sidebarCell },
         nbo = parentNotebook @ cell;
         If[ MatchQ[ nbo, _NotebookObject ],
-            getBoxObjectFromBoxID[ nbo, uuid ],
+            If[ TrueQ @ $SidebarChat,
+                sidebarCell = Last[ ParentCell[ cell, All ], cell ];
+                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
+                    FE`BoxReference[ nbo, { { uuid } } ],
+                    FE`SearchStart -> sidebarCell,
+                    FE`SearchStop  -> sidebarCell
+                ]
+                ,
+                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
+                    FE`BoxReference[ nbo, { { uuid } } ],
+                    FE`SearchStart -> "StartFromBeginning",
+                    FE`SearchStop  -> "StopAtEnd"
+                ]
+            ]
+            ,
             (* Getting the parent notebook can fail if the cell has been deleted: *)
             If[ ! TrueQ @ cellObjectQ @ cell,
                 (* The cell is actually gone so return an appropriate `Missing` object: *)
@@ -993,15 +1007,6 @@ getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
                 throwInternalFailure @ getBoxObjectFromBoxID[ cell, uuid ]
             ]
         ]
-    ];
-
-(* FIXME: this can be improved when searching a side bar chat *)
-getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
-    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[
-        nbo,
-        { { uuid } },
-        FE`SearchStart -> "StartFromBeginning",
-        FE`SearchStop  -> "StopAtEnd"
     ];
 
 getBoxObjectFromBoxID // endDefinition;
@@ -1292,8 +1297,9 @@ $statelessProgressIndicator =
 
 (* CurrentValue[...] = value actually calls CurrentValue twice, requiring two MathLink transactions. 
     If we only want to set the value and are not using the returned value then only make one MathLink call. *)
+setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; value === Inherited  (* Inherited may return values other than Inherited, so don't use a single MathLink call *)
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; $cloudNotebooks
-setCurrentValue[ args__, value_ ] := MathLink`CallFrontEndHeld @ FrontEnd`SetValue @ FEPrivate`Set[ CurrentValue[ args ], value ] /; TrueQ[ $efficientCurrentValue ]
+setCurrentValue[ args__, value_ ] := (MathLink`CallFrontEndHeld @ FrontEnd`SetValue @ FEPrivate`Set[ CurrentValue[ args ], value ]; value) /; TrueQ[ $efficientCurrentValue ]
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value)
 
 (* ::**************************************************************************************************************:: *)

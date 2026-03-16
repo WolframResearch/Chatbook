@@ -243,22 +243,11 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             ]
         ];
 
-        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
-
-        base = ConfirmBy[
-            "<base-prompt>" <> $basePrompt <> "</base-prompt>",
-            StringQ,
-            "BasePrompt"
-        ];
-
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
-                {
-                    Shortest[ "<base-prompt>"~~___~~"</base-prompt>" ] -> base,
-                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
-                        "\nENDRESULT\n"
-                }
+                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                    "\nENDRESULT\n"
             ];
 
         merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ],
@@ -290,11 +279,25 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             "Combined"
         ];
 
+        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
+
+        base = ConfirmBy[
+            "<base-prompt>" <> $basePrompt <> "</base-prompt>",
+            StringQ,
+            "BasePrompt"
+        ];
+
+        combined = combined /.
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                Shortest[ "<base-prompt>"~~___~~"</base-prompt>" ] -> base
+            ];
+
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ combined, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
-            processed = messages
+            processed = combined
         ];
 
         processed //= Select @ nonEmptyMessageQ;
@@ -333,7 +336,7 @@ discourageExtraToolCallsQ // endDefinition;
 dynamicOutputCellQ // beginDefinition;
 
 dynamicOutputCellQ[ Cell[ boxes_BoxData, ___, "ChatOutput", ___ ] ] :=
-    ! FreeQ[ boxes, TagBox[ _, "DynamicTextDisplay", ___ ] ];
+    ! FreeQ[ boxes, TagBox[ _, "DynamicTextDisplay", ___ ] | DynamicModuleBox[ ___, BoxID -> "DynamicTextDisplay", ___ ] ];
 
 dynamicOutputCellQ[ _ ] :=
     False;

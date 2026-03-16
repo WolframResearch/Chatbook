@@ -3004,8 +3004,7 @@ KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
       0, Evaluator -> Automatic, Method -> "Preemptive"]}, 
    Dynamic[Wolfram`Chatbook`$ChatEvaluationCell === Typeset`cell$$], 
    Alignment -> {Automatic, Baseline}, ImageSize -> Automatic], 
-  Initialization :> (Typeset`cell$$ = 
-   If[$CloudEvaluation, Wolfram`ChatbookFrontEndResourceBuilder`Private`x; 
+  Initialization :> (Typeset`cell$$ = If[$CloudEvaluation, 
      EvaluationCell[], 
      ParentCell[
       EvaluationCell[]]]), DynamicModuleValues :> {}, 
@@ -3176,7 +3175,7 @@ Q5bfcMwb7P4XUYvA+i+UQfzHYWIINr9isgTY/zD7YeGDEn4ArS1I9w==
 "WorkspaceFocusIndicatorCaret" -> GraphicsBox[
   {Thickness[0.2], FaceForm[LightDarkSwitched[
     GrayLevel[0.53725], 
-    GrayLevel[0.7064789]]], 
+    GrayLevel[0.4986829]]], 
    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0,
      1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
 1:eJxTTMoPSmVmYGBgBGJxIGYCYpfunOe/M4Ud2sVunvt+mc3hz8qPl3wXCTmI
@@ -3196,7 +3195,7 @@ xoe5Hz18AaZOtJQ=
    {Thickness[0.1], 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.53725], 
-      GrayLevel[0.7064789]]], 
+      GrayLevel[0.4986829]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
@@ -3218,7 +3217,7 @@ xoe5Hz18AaZOtJQ=
    {Thickness[0.1], 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.74902], 
-      GrayLevel[0.4986829]]], 
+      GrayLevel[0.7064789]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
        0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
@@ -3360,32 +3359,32 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
      1., 0.448}, {1., 1.}, {1., 10.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
      1, 3, 3}}}, {{{0.5, 9.}, {2., 9.}, {2., 9.5}, {2., 9.776}, {2.224, 
      10.}, {2.5, 10.}, {0.5, 10.}, {0.224, 10.}, {0., 9.776}, {0., 9.5}, {0., 
      9.224}, {0.224, 9.}, {0.5, 9.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 7.}, {2., 7.}, {2., 8.}, {0.5, 8.}, {0.224, 8.}, {0., 
      7.776}, {0., 7.5}, {0., 7.224}, {0.224, 7.}, {0.5, 7.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 3.}, {2., 3.}, {2., 4.}, {0.5, 4.}, {0.224, 4.}, {0., 
      3.776}, {0., 3.5}, {0., 3.224}, {0.224, 3.}, {0.5, 3.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{0.5, 5.}, {2., 5.}, {2., 6.}, {0.5, 6.}, {0.224, 6.}, {0., 
      5.776}, {0., 5.5}, {0., 5.224}, {0.224, 5.}, {0.5, 5.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}}}, {{{2., 1.5}, {2., 2.}, {0.5, 2.}, {0.224, 2.}, {0., 1.776}, {
      0., 1.5}, {0., 1.224}, {0.224, 1.}, {0.5, 1.}, {2.5, 1.}, {2.224, 1.}, {
@@ -3400,7 +3399,7 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
      9.776, 10.}, {9.5, 10.}, {2.5, 10.}}}]}, 
    {FaceForm[LightDarkSwitched[
      GrayLevel[0.53725], 
-     GrayLevel[0.7064789]]], 
+     GrayLevel[0.4986829]]], 
     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 
       0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
@@ -3469,7 +3468,7 @@ h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.53725], 
-      GrayLevel[0.7064789]]], 
+      GrayLevel[0.4986829]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -3497,7 +3496,7 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
       0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, 
     {FaceForm[LightDarkSwitched[
       GrayLevel[0.74902], 
-      GrayLevel[0.4986829]]], 
+      GrayLevel[0.7064789]]], 
      FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
       1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
       1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
@@ -4579,20 +4578,16 @@ U/I18EI9e64fzqgY8g==
   ImageSize->{{26., 21.}, {26., 21.}},
   PlotRange->{{-0.5, 25.5}, {0.5, 20.5}}],
 
-"BirdnardoIconActive" -> DynamicModuleBox[{Wolfram`ChatbookFrontEndResourceBuilder`Private`running$$ =
-   True}, 
+"BirdnardoIconActive" -> DynamicModuleBox[{Typeset`running$ = True}, 
   TagBox[
    TagBox[
-    DynamicModuleBox[{
-     Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$ = 1}, 
+    DynamicModuleBox[{Typeset`frame$ = 1}, 
      OverlayBox[{
       PaneBox[
-       AnimatorBox[Dynamic[
-        Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$], {1, 10, 1},
+       AnimatorBox[Dynamic[Typeset`frame$], {1, 10, 1},
         AnimationRate->Automatic,
         AnimationRunTime->0.,
-        AnimationRunning->Dynamic[
-         Wolfram`ChatbookFrontEndResourceBuilder`Private`running$$],
+        AnimationRunning->Dynamic[Typeset`running$],
         AppearanceElements->None,
         AutoAction->False,
         DefaultDuration->0.2,
@@ -5412,8 +5407,7 @@ KuSufQ+LxToe/v8CWK55JA==
         DefaultBaseStyle->"ImageGraphics",
         ImageSize->32,
         ImageSizeRaw->{64., 47.},
-        PlotRange->{{0, 64.}, {0, 47.}}]}, Dynamic[
-       Wolfram`ChatbookFrontEndResourceBuilder`Private`frame$$],
+        PlotRange->{{0, 64.}, {0, 47.}}]}, Dynamic[Typeset`frame$],
        Alignment->Automatic,
        BaseStyle->None,
        ImageSize->All,
@@ -5422,12 +5416,9 @@ KuSufQ+LxToe/v8CWK55JA==
        TransitionEffect->Automatic]}],
      DynamicModuleValues:>{}],
     MouseAppearanceTag["LinkHand"]],
-   EventHandlerTag[{
-    "MouseClicked" :> (
-      Wolfram`ChatbookFrontEndResourceBuilder`Private`running$$ = Not[
-        TrueQ[Wolfram`ChatbookFrontEndResourceBuilder`Private`running$$]]), 
-     Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
-     True}]],
+   EventHandlerTag[{"MouseClicked" :> (Typeset`running$ = Not[
+        TrueQ[Typeset`running$]]), Method -> "Preemptive", PassEventsDown -> 
+     Automatic, PassEventsUp -> True}]],
   DynamicModuleValues:>{}],
 
 "BirdnardoIcon" -> GraphicsBox[
@@ -9842,31 +9833,14 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
   ImageSize->Automatic],
 
 "NotebookAssistantSidebarCell" -> Cell[BoxData[
- RowBox[{
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
-     StandardForm],
-   DestroyAfterEvaluation->True], 
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-      "MakeSidebarChatScrollingCell"]], StandardForm],
-   DestroyAfterEvaluation->True], 
-  DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-      Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatInputCell"]], 
-    StandardForm],
-   DestroyAfterEvaluation->
-    True]}]], "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
+ DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
+     Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]], 
+   StandardForm],
+  DestroyAfterEvaluation->
+   True]], "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
  Selectable->False,
  CellMargins->{{0, 0}, {0, 0}},
- Initialization:>
-  With[{Typeset`ec = EvaluationCell[]}, AttachCell[Typeset`ec, 
-     Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
-     Left, Top}, 0, {Left, Top}]; Needs["Wolfram`Chatbook`" -> None]; 
-   CurrentValue[Typeset`ec, TaggingRules] = <|
-     "ChatNotebookSettings" -> 
-      Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
-      "ConversationTitle" -> ""|>],
  CellFrameMargins->0,
  ShowCursorTracker->False,
  LineSpacing->{1, 0},
@@ -9877,8 +9851,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    GrayLevel[0.95], 
    RGBColor[0.1882352, 0.2078431, 0.2274509]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"4aa1cf58-8a05-054f-9fff-\
-e3bd82f46c14"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"321aef5d-6f5a-4f43-a935-\
+a57cda44b081"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9909,7 +9883,114 @@ HTIfFh4w9bDw0lh5WcgBKTxh8i8MIfbC9PechdgL48PiF6YeFv8w98H4MPfD
       0, 1.7366173205033308`}}]]},
   AspectRatio->3.3,
   ImagePadding->1,
-  ImageSize->{24, 77}]
+  ImageSize->{24, 77}],
+
+"SidebarFocusIndicatorCheck" -> (GraphicsBox[{
+   Thickness[0.1], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{7.5959, 0.}, {2.4039, 0.}, {1.0759,
+       0.}, {-0.00010014, 1.076}, {-0.00010014, 2.404}, {-0.00010014, 
+      7.596}, {-0.00010014, 8.924}, {1.0759, 10.}, {2.4039, 10.}, {7.5959, 
+      10.}, {8.9239, 10.}, {9.9999, 8.924}, {9.9999, 7.596}, {9.9999, 
+      2.404}, {9.9999, 1.076}, {8.9239, 0.}, {7.5959, 0.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     JoinedCurveBox[{{{1, 4, 3}, {1, 3, 3}}}, {{{2.2297, 5.2572}, {3.1857, 
+      3.9922}, {4.1847, 2.3282}, {4.1847, 2.3282}, {4.1847, 2.3282}, {6.0057, 
+      5.3422}, {7.7707, 7.6712}}}, CurveClosed -> {0}]}, {
+     CapForm["Round"], 
+     JoinForm["Round"], #2}, StripOnInput -> False]}, ImageSize -> {11., 11.},
+   PlotRange -> {{-0.5, 10.5}, {-0.5, 10.5}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center)]& ),
+
+"SidebarFocusIndicatorUncheck" -> (GraphicsBox[{
+   Thickness[0.1], 
+   StyleBox[{
+     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+      0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{2.4043, 0.5}, {1.3543, 0.5}, {
+      0.5003, 1.354}, {0.5003, 2.404}, {0.5003, 7.596}, {0.5003, 8.646}, {
+      1.3543, 9.5}, {2.4043, 9.5}, {7.5953, 9.5}, {8.6453, 9.5}, {9.5003, 
+      8.646}, {9.5003, 7.596}, {9.5003, 2.404}, {9.5003, 1.354}, {8.6453, 
+      0.5}, {7.5953, 0.5}, {2.4043, 0.5}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgAmJBKP1gH98c4yQ5BwYwUHG4cDXsjb41M5yv6yzz+pHZ
+R3sYP8tivqSHg9R+HibtdrGbinD+n5UfL/kCzYHxOdbIRKUAzYHx571ffszb
+/KM9qnkMDKj2obuHgaGuZ2c2J9AeGL+oq+/Jp//KDjDzYHyYfTA+zD0wPsy9
+qOapOKD7H5Wv5LB+SmpH8l4FOB9inqKDLdf1xQVAcRgf1T5FNPcoOoisc39Y
+JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
+48Pci2qeElp8K2H4HwCLaL8E
+      "]]}, {
+     FaceForm[#2]}, StripOnInput -> False]}, ImageSize -> {11., 11.}, 
+  PlotRange -> {{-0.5, 10.5}, {-0.5, 10.5}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center)]& ),
+
+"FooterChatInputCell" -> Cell[BoxData[
+ DynamicBox[ToBoxes[
+  Needs["Wolfram`Chatbook`" -> None]; 
+   Symbol["Wolfram`Chatbook`ChatbookAction"][
+    "MakeChatbarChatInputCellContent"], StandardForm],
+  DestroyAfterEvaluation->True]], "ChatInputField",
+ Editable->False,
+ Selectable->False,
+ ShowCursorTracker->False,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ Magnification->1.,
+ CellTags->
+  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"c9236850-86ff-e246-\
+ad5a-1ce3075a0f97"],
+
+"ChatbarChatInputCell" -> Cell[BoxData[
+ DynamicBox[ToBoxes[
+  Needs["Wolfram`Chatbook`" -> None]; 
+   Symbol["Wolfram`Chatbook`ChatbookAction"][
+    "MakeChatbarChatInputCellContent"], StandardForm],
+  DestroyAfterEvaluation->True]], "ChatInputField",
+ Editable->False,
+ Selectable->False,
+ ShowCursorTracker->False,
+ LineSpacing->{1, 0},
+ LineIndent->0,
+ Magnification->1.,
+ CellTags->
+  "NotebookAssistantFooterChatInputCell",ExpressionUUID->"c9236850-86ff-e246-\
+ad5a-1ce3075a0f97"],
+
+"ChatbarSettingsIcon" -> GraphicsBox[
+  {EdgeForm[None], FaceForm[LightDarkSwitched[
+    GrayLevel[0.5], 
+    GrayLevel[0.793978686602641]]], 
+   GeometricTransformationBox[DiskBox[{0, 0}, 0.3], {{{-1, 0}}, {{0, 0}}, {{1,
+     0}}}]},
+  AspectRatio->Automatic,
+  ImagePadding->{{0, 1}, {1, 0}},
+  ImageSize->10,
+  PlotRange->All],
+
+"HideChatbarIcon" -> GraphicsBox[
+  {Thickness[0.125], 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[0.65], 
+     GrayLevel[0.669]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
+      3.9996001720428467`}, {3.999899983406067, 0.9996001720428467}, {
+     6.999899983406067, 3.9996001720428467`}, {0.9998999834060669, 
+     3.9996001720428467`}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[0.65], 
+     GrayLevel[0.669]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
+      7.000199794769287}, {3.999899983406067, 3.999199867248535}, {
+     6.999899983406067, 7.000199794769287}, {0.9998999834060669, 
+     7.000199794769287}}}]}},
+  AspectRatio->Automatic,
+  ImageSize->{8., 8.},
+  PlotRange->{{0., 8.}, {0., 8.}}]
 }
 @|
 @|

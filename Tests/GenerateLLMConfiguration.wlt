@@ -25,32 +25,35 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*GenerateLLMConfiguration*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 VerificationTest[
-    config = GenerateLLMConfiguration[ ],
+    config = Quiet[ GenerateLLMConfiguration[ ], LLMServices`Defaults`Private`LLMFunctions::llmrstrt ],
     HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
     SameTest -> MatchQ,
-    TestID   -> "NoArgs@@Tests/GenerateLLMConfiguration.wlt:28,1-33,2"
+    TestID   -> "NoArgs@@Tests/GenerateLLMConfiguration.wlt:30,1-35,2"
 ]
+(* :!CodeAnalysis::EndBlock:: *)
 
 VerificationTest[
     SelectFirst[ config[ "Prompts" ], StringQ ],
     _String? (StringContainsQ[ "Notebook Assistant" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoArgs-Prompt@@Tests/GenerateLLMConfiguration.wlt:35,1-40,2"
+    TestID   -> "NoArgs-Prompt@@Tests/GenerateLLMConfiguration.wlt:38,1-43,2"
 ]
 
 VerificationTest[
     SelectFirst[ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Prompts" ], StringQ ],
     _String? (StringContainsQ[ "Notebook Assistant" ]),
     SameTest -> MatchQ,
-    TestID   -> "Named-Prompt-1@@Tests/GenerateLLMConfiguration.wlt:42,1-47,2"
+    TestID   -> "Named-Prompt-1@@Tests/GenerateLLMConfiguration.wlt:45,1-50,2"
 ]
 
 VerificationTest[
     SelectFirst[ GenerateLLMConfiguration[ "Birdnardo" ][ "Prompts" ], StringQ ],
     _String? (StringContainsQ[ "Birdnardo" ]),
     SameTest -> MatchQ,
-    TestID   -> "Named-Prompt-2@@Tests/GenerateLLMConfiguration.wlt:49,1-54,2"
+    TestID   -> "Named-Prompt-2@@Tests/GenerateLLMConfiguration.wlt:52,1-57,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -60,7 +63,7 @@ VerificationTest[
     Sort[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ] ],
     { "CreateNotebook", "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" },
     SameTest -> MatchQ,
-    TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:59,1-64,2"
+    TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:62,1-67,2"
 ]
 
 VerificationTest[
@@ -70,7 +73,7 @@ VerificationTest[
     ],
     { "WebSearcher" },
     SameTest -> MatchQ,
-    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:66,1-74,2"
+    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:69,1-77,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -80,21 +83,21 @@ VerificationTest[
     model = GenerateLLMConfiguration[ "NotebookAssistant" ][ "Model" ],
     KeyValuePattern[ "Authentication" -> "LLMKit" ],
     SameTest -> MatchQ,
-    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:79,1-84,2"
+    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:82,1-87,2"
 ]
 
 VerificationTest[
     model[ "Service" ],
     If[ $VersionNumber >= 14.3, _String? (StringStartsQ[ "LLMKit" ]), _String ],
     SameTest -> MatchQ,
-    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:86,1-91,2"
+    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:89,1-94,2"
 ]
 
 VerificationTest[
     model[ "Name" ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:93,1-98,2"
+    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:96,1-101,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -105,5 +108,5 @@ VerificationTest[
     Failure[ "GenerateLLMConfiguration::PersonaNotFound", _ ],
     { GenerateLLMConfiguration::PersonaNotFound },
     SameTest -> MatchQ,
-    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:103,1-109,2"
+    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:106,1-112,2"
 ]

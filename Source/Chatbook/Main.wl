@@ -36,7 +36,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$RelatedDocumentationSources;
 `$SandboxKernel;
 `$SidebarChat;
-`$SidebarChatInput;
 `$ToolFunctions;
 `$WorkspaceChat;
 `$WorkspaceChatInput;
