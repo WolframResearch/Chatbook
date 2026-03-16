@@ -437,6 +437,14 @@ chooseModelFamily // endDefinition;
 
 chooseModelFamily0 // beginDefinition;
 
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.1", ___ } ] ] := "GPT51";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.2", ___ } ] ] := "GPT52";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Chat";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT54";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
+
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
@@ -788,20 +796,20 @@ SetModel[ args___ ] := Catch[ setModel[ args ], "SetModel" ]
 setModel[ model_, opts:OptionsPattern[ SetModel ] ] := setModel[ $FrontEndSession, model, opts ]
 
 setModel[ scope_, model_Association, opts:OptionsPattern[ SetModel ] ] := (
-  If[ TrueQ[ OptionValue[ "SetLLMEvaluator" ] ],
-  	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,model];
-  ];
-  setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, Join[
-		Replace[ CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||>, { 0 } ],
-		model ]
-  ]
+    If[ TrueQ[ OptionValue[ "SetLLMEvaluator" ] ],
+        System`$LLMEvaluator = System`LLMConfiguration[ System`$LLMEvaluator, model ];
+    ];
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" }, Join[
+        Replace[ CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <||>, { 0 } ],
+        model ]
+    ]
 )
 
 setModel[ scope_, name_String, opts:OptionsPattern[ SetModel ] ] := Enclose[ With[ { model = ConfirmBy[ standardizeModelName[ name ], StringQ ] },
-  If[ TrueQ[ OptionValue[ "SetLLMEvaluator" ] ],
-  	System`$LLMEvaluator = System`LLMConfiguration[ System`$LLMEvaluator, <| "Model" -> model |> ];
-  ];
-  setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "Model" }, model ]
+    If[ TrueQ[ OptionValue[ "SetLLMEvaluator" ] ],
+        System`$LLMEvaluator = System`LLMConfiguration[ System`$LLMEvaluator, <| "Model" -> model |> ];
+    ];
+    setCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "Model" }, model ]
 ]
 ]
 

@@ -1336,7 +1336,7 @@ getToolFormattingFunction // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $toolConfiguration;
+    Null;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

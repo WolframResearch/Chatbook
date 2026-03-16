@@ -1382,6 +1382,13 @@ Dispatch[{
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> ""
 	|>,
+	"NA_ChatCodeBlockTemplateButtonFontDisabled" -> <|
+		 "Light"  -> GrayLevel[0.2, 0.5],
+		 "Dark"   -> GrayLevel[0.9455560, 0.5],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> ""
+	|>,
 	"NA_ChatCodeBlockTemplateButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.8980392, 0.9294117],
 		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
@@ -1440,21 +1447,28 @@ Dispatch[{
 	|>,
 	"NA_ChatInputFieldFocusFont" -> <|
 		 "Light"  -> GrayLevel[0.5],
-		 "Dark"   -> GrayLevel[0.7380827],
+		 "Dark"   -> GrayLevel[0.6],
+		 "Method" -> "Feature",
+		 "DC"     -> "NA_ChatInputField",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatInputFieldFocusFontHover" -> <|
+		 "Light"  -> GrayLevel[0.64432],
+		 "Dark"   -> GrayLevel[0.7368],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_1" -> <|
 		 "Light"  -> GrayLevel[0.53725],
-		 "Dark"   -> GrayLevel[0.7064789],
+		 "Dark"   -> GrayLevel[0.4986829],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_2" -> <|
 		 "Light"  -> GrayLevel[0.74902],
-		 "Dark"   -> GrayLevel[0.4986829],
+		 "Dark"   -> GrayLevel[0.7064789],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""

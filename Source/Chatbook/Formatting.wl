@@ -713,12 +713,18 @@ formatTextString // endDefinition;
 (*almostCertainlyWLCodeQ*)
 almostCertainlyWLCodeQ // beginDefinition;
 
-almostCertainlyWLCodeQ[ wl_String ] := TrueQ @ Or[
-    StringStartsQ[ wl, "\[FreeformPrompt]" ],
+almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
+
+almostCertainlyWLCodeQ[ wl_String, inline_ ] := TrueQ @ Or[
+    If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
     StringMatchQ[
         wl,
-        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ "[" ~~ ___ ~~ "]"
-    ]
+        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ Alternatives[
+            "[" ~~ ___ ~~ "]",
+            $$ws ~~ ("->"|":>") ~~ __
+        ]
+    ],
+    TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
 ];
 
 almostCertainlyWLCodeQ // endDefinition;
@@ -727,7 +733,16 @@ almostCertainlyWLCodeQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeInlineWL*)
 makeInlineWL // beginDefinition;
-makeInlineWL[ code_String ] := Cell[ BoxData @ wlStringToBoxes @ code, "InlineCode", "Input" ];
+
+makeInlineWL[ code_String ] := Cell[
+    BoxData @ wlStringToBoxes @ code,
+    "InlineWL", "Input",
+    LanguageCategory     -> "Input",
+    ShowAutoStyles       -> True,
+    ShowStringCharacters -> True,
+    ShowSyntaxStyles     -> True
+];
+
 makeInlineWL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -776,6 +791,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
             Spacings  -> 0.2
         ]
     ];
+
+(* this is a placeholder during active stream-of-thought *)
+floatingButtonGrid[ "Disabled", lang_ ] := buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", "Disabled" }, "FormattingCopyToClipboardLabel" ]
 
 (* TODO: I'm assuming this still works on the cloud as written *)
 (* For cloud notebooks (no attached cell) *)
@@ -1318,7 +1336,7 @@ labeledIcon // beginDefinition;
 
 
 labeledIcon[ iconTemplateName_String, textResource_String ] :=
-    labeledIcon[ { iconTemplateName, True }, textResource ];
+    labeledIcon[ { iconTemplateName, False }, textResource ];
 
 
 labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
@@ -1330,6 +1348,22 @@ labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String 
         textResource
     ];
 
+labeledIcon[ { iconTemplateName_String, "Disabled" }, textResource_String ] := Grid[
+    {
+        {
+            buttonPane @ chatbookExpression @ iconTemplateName,
+            Style[
+                tr @ textResource,
+                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFontDisabled",
+                FontFamily -> "Source Sans Pro",
+                FontSize   -> 12
+            ]
+        }
+    },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 2 },
+    Spacings         -> { 0, 0 }
+];
 
 labeledIcon[ icon_, textResource_String ] := Grid[
     {
@@ -1434,6 +1468,9 @@ $textDataFormatRules = {
     table: $$mdTable :> tableCell @ table
     ,
     quote: $$blockQuote :> blockQuoteCell @ quote
+    ,
+    "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")" :>
+        inlineCodeCell[ "ResourceFunction[" <> name <> "]" ]
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
 
@@ -2579,7 +2616,7 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ code_String? almostCertainlyWLCodeQ ] :=
+makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
 
 makeInlineCodeCell[ s_String? LowerCaseQ ] :=
@@ -2600,7 +2637,7 @@ codeBlockFrame // beginDefinition;
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
-    BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
+    BoxData @ templateBox[ { cell, lang }, If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", "ChatCodeBlockTemplate" ] ],
     "ChatCodeBlock"
 ];
 
@@ -3033,7 +3070,7 @@ hyperlink[ label_String, uri_String? expressionURIQ ] :=
         ]
     ];
 
-hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, "ResourceFunction[" ~~ ___ ~~ "]" ] :=
+hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, ("`"|"")~~"ResourceFunction[" ~~ ___ ~~ "]"~~("`"|"") ] :=
     makeInlineWL @ rf;
 
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
@@ -3333,13 +3370,13 @@ assistantMessageBoxActive[ box_, "Inline" ] :=
 assistantMessageBoxActive[ box_, "Workspace" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "AssistantMessageBox"
+        "AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive[ box_, "Sidebar" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "NotebookAssistant`Sidebar`AssistantMessageBox"
+        "NotebookAssistant`Sidebar`AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive // endDefinition;
