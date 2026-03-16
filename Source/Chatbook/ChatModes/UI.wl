@@ -829,7 +829,7 @@ chatbarSendButton // beginDefinition;
 
 Attributes[ chatbarSendButton ] = { HoldAll };
 
-chatbarSendButton[ nbo_, fieldContent_, notebookWriteAnchor_, selectionAtTopQ_, selectionWithinQ_ ] :=
+chatbarSendButton[ fieldContent_, input_, returnKeyDownQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -853,18 +853,7 @@ Button[
         ImageMargins -> 2,
         ImageSize -> Automatic
     ],
-    If[ ! validInputStringQ @ fieldContent,
-        fieldContent = ""
-        ,
-        With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, fc = fieldContent },
-            fieldContent = "";
-            FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued[
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
-                evaluateChatbarChat[ n, nwa, sat, fc ]
-            ]
-        ]
-    ],
+    If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
     Appearance   -> "Suppressed",
     BoxID        -> "SidebarChatInputCellSendButton",
     FrameMargins -> 0,
@@ -1046,34 +1035,45 @@ makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ Evaluatio
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
-            thisCell, fieldContent = initialText,
-            notebookWriteAnchor, selectionAtTopQ = False, minimizedQ, selectionWithinQ = False, barAtBottomQ = False
+            thisCell, fieldContent = initialText, input = initialText,
+            notebookWriteAnchor, selectionAtTopQ = False, minimizedQ, selectionWithinQ = False, barAtBottomQ = False, returnKeyDownQ = False
         },
-        EventHandler[
+        EventHandler[(* pre-emptive mouse-down event *)
             DynamicWrapper[
                 PaneSelector[
                     {
                         False ->
                             Grid[
                                 { {
-                                    Framed[
-                                        Grid[
-                                            { {
-                                                chatbarInputField[ Dynamic @ fieldContent, Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ], tr[ "AttachedChatFieldHint" ] ],
-                                                chatbarSendButton[ nbo, fieldContent, notebookWriteAnchor, selectionAtTopQ, selectionWithinQ ]
-                                            } },
-                                            Alignment        -> { Left, Baseline },
-                                            BaselinePosition -> { 1, 1 },
-                                            Spacings         -> { 0, 0 }
-                                        ],
-                                        Alignment      -> { Automatic, Center },
-                                        Background     -> color @ "NA_ChatInputFieldBackground",
-                                        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
-                                        FrameStyle     -> (
-                                            Dynamic[
-                                                If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
-                                            ]&[ color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
-                                        RoundingRadius -> 14
+                                    DynamicWrapper[
+                                        Framed[
+                                            Grid[
+                                                { {
+                                                    chatbarInputField[ Dynamic @ fieldContent, Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ], tr[ "AttachedChatFieldHint" ] ],
+                                                    chatbarSendButton[ fieldContent, input, returnKeyDownQ ]
+                                                } },
+                                                Alignment        -> { Left, Baseline },
+                                                BaselinePosition -> { 1, 1 },
+                                                Spacings         -> { 0, 0 }
+                                            ],
+                                            Alignment      -> { Automatic, Center },
+                                            Background     -> color @ "NA_ChatInputFieldBackground",
+                                            FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                                            FrameStyle     -> (
+                                                Dynamic[
+                                                    If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
+                                                ]&[ color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
+                                            RoundingRadius -> 14
+                                        ]
+                                        ,
+                                        If[ TrueQ @ returnKeyDownQ,
+                                            returnKeyDownQ = False;
+                                            Needs[ "Wolfram`Chatbook`" -> None ];
+                                            evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, barAtBottomQ, input ]
+                                        ]
+                                        ,
+                                        SynchronousUpdating -> False,
+                                        TrackedSymbols      :> { returnKeyDownQ }
                                     ],
                                     PaneSelector[
                                         {
@@ -1090,7 +1090,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         },
                                         Dynamic @ barAtBottomQ,
                                         ImageSize -> Automatic
-                                    ]                                    
+                                    ]
                                 } },
                                 BaseStyle -> { Magnification -> $inputFieldGridMagnification },
                                 Spacings  -> { 0, 0 }
@@ -1135,19 +1135,10 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                             ]
                         ]
                     ]),
-                "ReturnKeyDown" :> (
-                    If[ ! validInputStringQ @ fieldContent,
-                        fieldContent = ""
-                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
-                        With[ { n = nbo, nwa = notebookWriteAnchor, sat = selectionAtTopQ, fc = fieldContent },
-                            fieldContent = "";
-                            FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued[
-                                Needs[ "Wolfram`Chatbook`" -> None ];
-                                AttachCell[ n, FrontEndResource[ "ChatbookExpressions", "FooterChatInputCell" ], { Right, Bottom }, 0, { Right, Bottom } ];
-                                evaluateChatbarChat[ n, nwa, sat, fc ]
-                            ]
-                        ]
-                    ])
+                (*
+                    The EventHandler, if queued, still won't update the ChatOutput dynamics until the payload is completed.
+                    Instead of trying to write the new ChatInput cell from this event, use a DynamicWrapper above to listen for the key event and evaluate asynchronously. *)
+                "ReturnKeyDown" :> (If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ])
             },
             Method         -> "Preemptive",
             PassEventsDown -> True
