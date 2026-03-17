@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.74.3982126873"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982730505"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -49,12 +49,12 @@ Notebook[
     Cell[
      BoxData[
       DynamicBox[
-       ToBoxes[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-         RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+       If[ TrueQ[CloudSystem`$CloudNotebooks],
+        FEPrivate`FrontEndResource[
+         "ChatbookExpressions",
+         "ChatIconUser"
         ],
-        StandardForm
+        TemplateBox[{}, "ChatInputActiveCellDingbat"]
        ]
       ]
      ],
@@ -258,12 +258,12 @@ Notebook[
       RowBox[
        {
         DynamicBox[
-         ToBoxes[
-          If[ TrueQ[CloudSystem`$CloudNotebooks],
-           RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-           RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+         If[ TrueQ[CloudSystem`$CloudNotebooks],
+          FEPrivate`FrontEndResource[
+           "ChatbookExpressions",
+           "ChatIconUser"
           ],
-          StandardForm
+          TemplateBox[{}, "ChatInputActiveCellDingbat"]
          ]
         ],
         TemplateBox[{12}, "Spacer1"]
@@ -4446,7 +4446,9 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive"
+    "NotebookAssistant`Sidebar`ChatCodeBlockTemplateActive",
+    StyleDefinitions ->
+     StyleData["ChatCodeBlockTemplateActive"]
    ],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -4735,7 +4737,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.74.3982126849"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.74.3982126873"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

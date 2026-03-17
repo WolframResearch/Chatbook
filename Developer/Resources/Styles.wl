@@ -168,13 +168,11 @@ Cell[
         { None, None }
     },
 	CellDingbat -> Cell[
-        BoxData @ DynamicBox @ ToBoxes[
+        BoxData @ DynamicBox @
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
-                RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+                FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatIconUser" ],
+                TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
             ],
-            StandardForm
-        ],
 		Background -> None,
 		CellFrame -> 0,
         CellMargins -> 0
@@ -269,13 +267,11 @@ Cell[
     TaggingRules      -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>,
     CellDingbat       -> Cell[
         BoxData @ RowBox @ {
-            DynamicBox @ ToBoxes[
+            DynamicBox @
                 If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                    RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
-                    RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatIconUser" ],
+                    TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
                 ],
-                StandardForm
-            ],
             TemplateBox[ { 12 }, "Spacer1" ]
         },
         CellFrame        -> { { 0, 0 }, { 0, 2 } },
