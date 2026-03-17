@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982733087"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982745512"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -134,22 +134,7 @@ Notebook[
     StyleDefinitions -> StyleData["FramedChatCell"]
    ],
    CellDingbat ->
-    Cell[
-     BoxData[
-      DynamicBox[
-       If[ TrueQ[CloudSystem`$CloudNotebooks],
-        FEPrivate`FrontEndResource[
-         "ChatbookExpressions",
-         "ChatIconUser"
-        ],
-        TemplateBox[{}, "ChatInputActiveCellDingbat"]
-       ]
-      ]
-     ],
-     Background -> None,
-     CellFrame -> 0,
-     CellMargins -> 0
-    ],
+    TemplateBox[{}, "ChatInputActiveCellDingbat"],
    CellMargins -> {{66, 32}, {1, 8}},
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
@@ -263,27 +248,41 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      DynamicModuleBox[
-       {Wolfram`Chatbook`UI`Private`cell$$},
-       DynamicBox[
-        ToBoxes[
-         Catch[
-          Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-          Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$,
-           Automatic
-          ],
-          Blank[]
+      PaneSelectorBox[
+       {
+        True ->
+         DynamicBox[
+          FEPrivate`FrontEndResource[
+           "ChatbookExpressions",
+           "ChatIconUser"
+          ]
          ],
-         StandardForm
-        ],
-        TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
-       ],
-       Initialization :>
-        (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
-        Needs["Wolfram`Chatbook`" -> None]),
-       DynamicModuleValues :> { },
-       UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+        False ->
+         DynamicModuleBox[
+          {Typeset`cell$$},
+          DynamicBox[
+           ToBoxes[
+            Catch[
+             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+             Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+              Typeset`cell$$,
+              Automatic
+             ],
+             Blank[]
+            ],
+            StandardForm
+           ],
+           TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
+          ],
+          Initialization :>
+           (Typeset`cell$$ = EvaluationCell[];
+           Needs["Wolfram`Chatbook`" -> None]),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Typeset`cell$$}
+         ]
+       },
+       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
+       ImageSize -> Automatic
       ]
      ])
    }
@@ -295,15 +294,22 @@ Notebook[
      (Function[
       PaneSelectorBox[
        {
+        "Cloud" ->
+         DynamicBox[
+          FEPrivate`FrontEndResource[
+           "ChatbookExpressions",
+           "ChatIconUser"
+          ]
+         ],
         True ->
          DynamicModuleBox[
-          {Wolfram`Chatbook`UI`Private`cell$$},
+          {Typeset`cell$$},
           DynamicBox[
            ToBoxes[
             Catch[
              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Wolfram`Chatbook`UI`Private`cell$$,
+              Typeset`cell$$,
               True
              ],
              Blank[]
@@ -313,16 +319,21 @@ Notebook[
            TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
           ],
           Initialization :>
-           (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+           (Typeset`cell$$ = EvaluationCell[];
            Needs["Wolfram`Chatbook`" -> None]),
           DynamicModuleValues :> { },
-          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+          UnsavedVariables :> {Typeset`cell$$}
          ],
         False ->
          ButtonBox[
           FrameBox[
            PaneBox[
-            TemplateBox[{}, "ChatIconUser"],
+            DynamicBox[
+             FEPrivate`FrontEndResource[
+              "ChatbookExpressions",
+              "ChatIconUser"
+             ]
+            ],
             Alignment -> {Center, Center},
             ImageSize -> {25, 25},
             ImageSizeAction -> "ShrinkToFit"
@@ -344,7 +355,12 @@ Notebook[
           Method -> "Preemptive"
          ]
        },
-       Dynamic[CurrentValue["MouseOver"]],
+       Dynamic[
+        If[ TrueQ[CloudSystem`$CloudNotebooks],
+         "Cloud",
+         CurrentValue["MouseOver"]
+        ]
+       ],
        ImageSize -> Automatic
       ]
      ])
@@ -355,46 +371,20 @@ Notebook[
     "SideChat",
     StyleDefinitions -> StyleData["ChatInput"]
    ],
-   CellFrame -> {{0, 0}, {0, 2}},
+   CellFrame -> {{0, 0}, {0, 2.5}},
    CellDingbat ->
-    Cell[
-     BoxData[
-      RowBox[
-       {
-        DynamicBox[
-         If[ TrueQ[CloudSystem`$CloudNotebooks],
-          FEPrivate`FrontEndResource[
-           "ChatbookExpressions",
-           "ChatIconUser"
-          ],
-          TemplateBox[{}, "ChatInputActiveCellDingbat"]
-         ]
-        ],
-        TemplateBox[{12}, "Spacer1"]
-       }
-      ]
-     ],
-     CellFrame -> {{0, 0}, {0, 2}},
-     CellFrameColor ->
-      LightDarkSwitched[
-       RGBColor[0.639216, 0.788235, 0.94902],
-       RGBColor[0.372097, 0.53277, 0.719639]
-      ],
-     CellFrameMargins -> 6
-    ],
-   CellMargins -> {{79, 26}, {Inherited, Inherited}},
-   CellDingbatMargin -> 0,
+    TemplateBox[{}, "ChatInputActiveCellDingbat"],
+   CellMargins -> {{42, 32}, {Inherited, Inherited}},
+   CellDingbatMargin -> -20,
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    TaggingRules -> <|"ChatNotebookSettings" -> <|"IncludeHistory" -> False|>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
+   CellFrameMargins -> {{62, Inherited}, {Inherited, 10}},
+   CellFrameLabels -> {{"", Inherited}, {Inherited, Inherited}},
+   CellFrameLabelMargins -> {{-25, -45}, {0, 0}},
    CounterIncrements -> { },
    MenuSortingValue -> 1544,
-   Background ->
-    LightDarkSwitched[
-     RGBColor[0.980392, 0.988235, 1.0],
-     RGBColor[0.215198, 0.215198, 0.215198]
-    ]
+   Background -> GrayLevel[0, 0]
   ],
   Cell[
    StyleData[
@@ -402,16 +392,11 @@ Notebook[
     StyleDefinitions -> StyleData["ChatInput"]
    ],
    CellDingbat ->
-    Cell[
-     BoxData[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatQueryIcon"
-       ]
-      ]
-     ],
-     Background -> None
+    DynamicBox[
+     FEPrivate`FrontEndResource[
+      "ChatbookExpressions",
+      "ChatQueryIcon"
+     ]
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
@@ -424,16 +409,11 @@ Notebook[
    ],
    CellFrame -> 1,
    CellDingbat ->
-    Cell[
-     BoxData[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "ChatSystemIcon"
-       ]
-      ]
-     ],
-     Background -> None
+    DynamicBox[
+     FEPrivate`FrontEndResource[
+      "ChatbookExpressions",
+      "ChatSystemIcon"
+     ]
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
@@ -448,16 +428,11 @@ Notebook[
     StyleDefinitions -> StyleData["FramedChatCell"]
    ],
    CellDingbat ->
-    Cell[
-     BoxData[
-      DynamicBox[
-       FEPrivate`FrontEndResource[
-        "ChatbookExpressions",
-        "AssistantIcon"
-       ]
-      ]
-     ],
-     Background -> None
+    DynamicBox[
+     FEPrivate`FrontEndResource[
+      "ChatbookExpressions",
+      "AssistantIcon"
+     ]
     ],
    CellMargins -> {{66, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
@@ -1059,24 +1034,7 @@ Notebook[
    CellFrameColor ->
     LightDarkSwitched[GrayLevel[0.74902], GrayLevel[0.549475]],
    CellFrameLabels -> {
-    {
-     Cell[
-      BoxData[
-       DynamicBox[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         "",
-         TemplateBox[{}, "ChatDelimiterCellDingbat"]
-        ]
-       ]
-      ],
-      "Text",
-      Background -> None,
-      CellFrame -> 0,
-      CellMargins -> 0,
-      ShowStringCharacters -> False
-     ],
-     None
-    },
+    {TemplateBox[{}, "ChatDelimiterCellDingbat"], None},
     {None, None}
    },
    LineSpacing -> {1, 2},
@@ -1146,23 +1104,7 @@ Notebook[
    ShowCellLabel -> False,
    CellFrameMargins -> {{20, 20}, {2, 2}},
    CellFrameLabels -> {
-    {
-     Cell[
-      BoxData[
-       DynamicBox[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         "",
-         TemplateBox[{}, "ChatDelimiterCellDingbat"]
-        ]
-       ]
-      ],
-      Background -> None,
-      CellFrame -> 0,
-      CellMargins -> 0,
-      ShowStringCharacters -> False
-     ],
-     None
-    },
+    {TemplateBox[{}, "ChatDelimiterCellDingbat"], None},
     {None, None}
    },
    CounterAssignments -> {{"ChatInputCount", 0}},
@@ -1176,36 +1118,44 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      DynamicModuleBox[
-       {Wolfram`ChatNB`cell$$},
-       DynamicBox[
-        ToBoxes[
-         Catch[
-          Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-          Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
-           Wolfram`ChatNB`cell$$
+      PaneSelectorBox[
+       {
+        True -> "\"\"",
+        False ->
+         DynamicModuleBox[
+          {Typeset`cell$$},
+          DynamicBox[
+           ToBoxes[
+            Catch[
+             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+             Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
+              Typeset`cell$$
+             ],
+             Blank[]
+            ],
+            StandardForm
+           ],
+           TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
           ],
-          Blank[]
-         ],
-         StandardForm
-        ],
-        TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
-       ],
-       Initialization :>
-        (Wolfram`ChatNB`cell$$ = EvaluationCell[];
-        Needs["Wolfram`Chatbook`" -> None];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "UpdateDynamics",
-         "ChatBlock"
-        ]),
-       DynamicModuleValues :> { },
-       Deinitialization :>
-        (Needs["Wolfram`Chatbook`" -> None];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "UpdateDynamics",
-         "ChatBlock"
-        ]),
-       UnsavedVariables :> {Wolfram`ChatNB`cell$$}
+          Initialization :>
+           (Typeset`cell$$ = EvaluationCell[];
+           Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "UpdateDynamics",
+            "ChatBlock"
+           ]),
+          DynamicModuleValues :> { },
+          Deinitialization :>
+           (Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "UpdateDynamics",
+            "ChatBlock"
+           ]),
+          UnsavedVariables :> {Typeset`cell$$}
+         ]
+       },
+       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
+       ImageSize -> Automatic
       ]
      ])
    }

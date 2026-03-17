@@ -167,16 +167,7 @@ Cell[
         },
         { None, None }
     },
-	CellDingbat -> Cell[
-        BoxData @ DynamicBox @
-            If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatIconUser" ],
-                TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
-            ],
-		Background -> None,
-		CellFrame -> 0,
-        CellMargins -> 0
-	],
+	CellDingbat -> TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
@@ -253,31 +244,26 @@ Cell[
 (*SideChat*)
 
 
+(* By using negative margins on the FrameLabels and CellDingbat,
+    we're able to pull the CellFrame completely across the top of the cell.
+    We adjust the CellMargins and CellFrameMargins to compensate.
+    We use Background in order to coerce all frames to exist as invisible edges,
+    otherwise the CellFrameMargin wouldn't work. *)
 Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    MenuSortingValue  -> 1544,
-    Background        -> color @ "SideChatBackground",
-    CellMargins       -> { { 79, 26 }, { Inherited, Inherited } },
-    CellDingbatMargin -> 0,
-    CellFrame         -> { { 0, 0 }, { 0, 2 } },
-    CellFrameMargins  -> { { 0, Inherited }, { Inherited, Inherited } },
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    CounterIncrements -> { },
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
-    TaggingRules      -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>,
-    CellDingbat       -> Cell[
-        BoxData @ RowBox @ {
-            DynamicBox @
-                If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatIconUser" ],
-                    TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
-                ],
-            TemplateBox[ { 12 }, "Spacer1" ]
-        },
-        CellFrame        -> { { 0, 0 }, { 0, 2 } },
-        CellFrameColor   -> color @ "SideChatDingbatFrame",
-        CellFrameMargins -> 6
-    ]
+    MenuSortingValue      -> 1544,
+    Background            -> Transparent,
+    CellDingbat           -> TemplateBox[ {}, "ChatInputActiveCellDingbat" ],
+    CellDingbatMargin     -> -20,
+    CellFrame             -> { { 0, 0 }, { 0, 2.5 } },
+    CellFrameLabels       -> { { "", Inherited }, { Inherited, Inherited } },
+    CellFrameLabelMargins -> { { -25, -45 }, { 0, 0 } },
+    CellFrameMargins      -> { {  62, Inherited }, { Inherited, 10 } },
+    CellMargins           -> { {  42,  32 }, { Inherited, Inherited } },
+    CellTrayWidgets       -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements     -> { },
+    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
+    TaggingRules          -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>
 ]
 
 
@@ -288,7 +274,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat     -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatQueryIcon" ], Background -> None ],
+    CellDingbat     -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatQueryIcon" ],
     CellTrayWidgets -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules    -> <| "ChatNotebookSettings" -> <| |> |>
@@ -302,7 +288,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat       -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatSystemIcon" ], Background -> None ],
+    CellDingbat       -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatSystemIcon" ],
     CellFrame         -> 1,
     CellFrameStyle    -> Dashing @ { Small, Small },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
@@ -326,7 +312,7 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
-    CellDingbat          -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AssistantIcon" ], Background -> None ],
+    CellDingbat          -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AssistantIcon" ],
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",
@@ -409,6 +395,7 @@ Cell[
     MenuSortingValue    -> 1546,
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> color @ "ChatBlockDividerFrame",
+    CellFrameLabels     -> { { TemplateBox[ { }, "ChatDelimiterCellDingbat" ], None }, { None, None } },
     CellFrameMargins    -> 4,
     CellGroupingRules   -> { "SectionGrouping", 30 },
     CellMargins         -> { { 5, 25 }, { 8, 18 } },
@@ -424,26 +411,7 @@ Cell[
     PageBreakBelow      -> False,
     ShowCellLabel       -> False,
     StyleKeyMapping     -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
-    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>,
-
-    CellFrameLabels -> {
-        {
-            Cell[
-                BoxData @ DynamicBox @
-                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                        "",
-                        TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
-                    ],
-                "Text",
-                Background           -> None,
-                CellFrame            -> 0,
-                CellMargins          -> 0,
-                ShowStringCharacters -> False
-            ],
-            None
-        },
-        { None, None }
-    }
+    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>
 ]
 
 
@@ -457,6 +425,7 @@ Cell[
     MenuSortingValue    -> 1547,
     Background          -> color @ "ChatDelimiterBackground",
     CellElementSpacings -> { "CellMinHeight" -> 6 },
+    CellFrameLabels     -> { { TemplateBox[ { }, "ChatDelimiterCellDingbat" ], None }, { None, None } },
     CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules   -> { "SectionGrouping", 62 },
     CellMargins         -> { { 5, 0 }, { 10, 10 } },
@@ -482,24 +451,6 @@ Cell[
             ),
             _, SelectionMove[ EvaluationCell[ ], After, Cell ]
         ]
-    },
-
-    CellFrameLabels -> {
-        {
-            Cell[
-                BoxData @ DynamicBox @
-                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                        "",
-                        TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
-                    ],
-                Background           -> None,
-                CellFrame            -> 0,
-                CellMargins          -> 0,
-                ShowStringCharacters -> False
-            ],
-            None
-        },
-        { None, None }
     },
 
     Initialization :> NotebookDelete @ Cells[ EvaluationCell[ ], AttachedCell -> True, CellStyle -> "ChatMenu" ]

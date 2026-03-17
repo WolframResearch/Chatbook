@@ -1080,11 +1080,26 @@ errorMessageLinkAppearance // endDefinition;
 (* ::Subsection::Closed:: *)
 (*MakeChatInputActiveCellDingbat*)
 MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
+If[ mouseOver === Automatic,
+	PaneSelector[
+		{
+			True -> getIcon @ "ChatIconUser",
+			False -> DynamicModule[ { Typeset`cell },
+				trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
+				Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
+				UnsavedVariables :> { Typeset`cell }
+			]
+		},
+		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
+		ImageSize -> Automatic
+	]
+	,
 	DynamicModule[ { Typeset`cell },
 		trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
 		Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
 		UnsavedVariables :> { Typeset`cell }
-	];
+	]
+];
 
 MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 	targetCell = parentCell @ dingbatCell
@@ -1133,8 +1148,9 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
 		{
-			True -> MakeChatInputActiveCellDingbat[ True ],
-			False -> Button[(* I hate this: the only reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
+			"Cloud" -> getIcon @ "ChatIconUser",
+			True    -> MakeChatInputActiveCellDingbat[ True ],
+			False   -> Button[(* the reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
 				Framed[
 					Pane[
 						getIcon @ "ChatIconUser",
@@ -1154,7 +1170,7 @@ MakeChatInputCellDingbat[ ] :=
 				ContentPadding -> False
 			]
 		},
-		Dynamic @ CurrentValue[ "MouseOver" ],
+		Dynamic @ If[ TrueQ @ CloudSystem`$CloudNotebooks, "Cloud", CurrentValue[ "MouseOver" ] ],
 		ImageSize -> Automatic
 	]
 
@@ -1162,18 +1178,26 @@ MakeChatInputCellDingbat[ ] :=
 (* ::Subsection::Closed:: *)
 (*MakeChatDelimiterCellDingbat*)
 MakeChatDelimiterCellDingbat[ ] :=
-	DynamicModule[ { Typeset`cell },
-		trackedDynamic[ MakeChatDelimiterCellDingbat @ Typeset`cell, { "ChatBlock" } ],
-		Initialization :> (
-			Typeset`cell = EvaluationCell[ ];
-			Needs[ "Wolfram`Chatbook`" -> None ];
-			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
-		),
-		Deinitialization :> (
-			Needs[ "Wolfram`Chatbook`" -> None ];
-			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
-		),
-		UnsavedVariables :> { Typeset`cell }
+	PaneSelector[
+		{
+			True -> "",
+			False ->
+				DynamicModule[ { Typeset`cell },
+					trackedDynamic[ MakeChatDelimiterCellDingbat @ Typeset`cell, { "ChatBlock" } ],
+					Initialization :> (
+						Typeset`cell = EvaluationCell[ ];
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
+					),
+					Deinitialization :> (
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
+					),
+					UnsavedVariables :> { Typeset`cell }
+				]
+		},
+		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
+		ImageSize -> Automatic
 	];
 
 MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
