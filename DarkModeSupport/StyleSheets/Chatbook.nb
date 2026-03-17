@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982730505"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982733087"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -403,7 +403,14 @@ Notebook[
    ],
    CellDingbat ->
     Cell[
-     BoxData[TemplateBox[{}, "ChatQueryIcon"]],
+     BoxData[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+        "ChatbookExpressions",
+        "ChatQueryIcon"
+       ]
+      ]
+     ],
      Background -> None
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
@@ -418,7 +425,14 @@ Notebook[
    CellFrame -> 1,
    CellDingbat ->
     Cell[
-     BoxData[TemplateBox[{}, "ChatSystemIcon"]],
+     BoxData[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+        "ChatbookExpressions",
+        "ChatSystemIcon"
+       ]
+      ]
+     ],
      Background -> None
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
@@ -435,7 +449,14 @@ Notebook[
    ],
    CellDingbat ->
     Cell[
-     BoxData[TemplateBox[{}, "AssistantIcon"]],
+     BoxData[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+        "ChatbookExpressions",
+        "AssistantIcon"
+       ]
+      ]
+     ],
      Background -> None
     ],
    CellMargins -> {{66, 25}, {12, 5}},
@@ -1042,12 +1063,9 @@ Notebook[
      Cell[
       BoxData[
        DynamicBox[
-        ToBoxes[
-         If[ TrueQ[CloudSystem`$CloudNotebooks],
-          "",
-          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
-         ],
-         StandardForm
+        If[ TrueQ[CloudSystem`$CloudNotebooks],
+         "",
+         TemplateBox[{}, "ChatDelimiterCellDingbat"]
         ]
        ]
       ],
@@ -1132,12 +1150,9 @@ Notebook[
      Cell[
       BoxData[
        DynamicBox[
-        ToBoxes[
-         If[ TrueQ[CloudSystem`$CloudNotebooks],
-          "",
-          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
-         ],
-         StandardForm
+        If[ TrueQ[CloudSystem`$CloudNotebooks],
+         "",
+         TemplateBox[{}, "ChatDelimiterCellDingbat"]
         ]
        ]
       ],
@@ -1481,7 +1496,12 @@ Notebook[
          False ->
           FrameBox[
            ButtonBox[
-            TemplateBox[{}, "ChatMenuIcon"],
+            DynamicBox[
+             FEPrivate`FrontEndResource[
+              "ChatbookExpressions",
+              "ChatMenuIcon"
+             ]
+            ],
             ButtonFunction :>
              With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
               Quiet[Needs["Wolfram`Chatbook`" -> None]];
@@ -1511,7 +1531,12 @@ Notebook[
          True ->
           FrameBox[
            ButtonBox[
-            TemplateBox[{}, "ChatMenuIcon"],
+            DynamicBox[
+             FEPrivate`FrontEndResource[
+              "ChatbookExpressions",
+              "ChatMenuIcon"
+             ]
+            ],
             ButtonFunction :>
              With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
               Quiet[Needs["Wolfram`Chatbook`" -> None]];
@@ -2730,7 +2755,13 @@ Notebook[
         PaneSelectorBox[
          {
           False -> " ",
-          True -> TemplateBox[{}, "ChatOutputStopButton"]
+          True ->
+           DynamicBox[
+            FEPrivate`FrontEndResource[
+             "ChatbookExpressions",
+             "ChatOutputStopButton"
+            ]
+           ]
          },
          Dynamic[CurrentValue["MouseOver"]],
          ImageSize -> All,
@@ -2771,7 +2802,13 @@ Notebook[
             ImageSize -> {33, Automatic},
             Alignment -> Left
            ],
-          True -> TemplateBox[{}, "ChatOutputStopButton"]
+          True ->
+           DynamicBox[
+            FEPrivate`FrontEndResource[
+             "ChatbookExpressions",
+             "ChatOutputStopButton"
+            ]
+           ]
          },
          Dynamic[CurrentValue["MouseOver"]],
          ImageSize -> All,
@@ -3463,7 +3500,14 @@ Notebook[
      "Type" -> "Focus",
      "Content" ->
       Cell[
-       BoxData[TemplateBox[{}, "ChatExcludedWidget"]],
+       BoxData[
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+          "ChatbookExpressions",
+          "ChatExcludedWidget"
+         ]
+        ]
+       ],
        "ChatExcludedWidget"
       ]
     |>
@@ -3485,7 +3529,12 @@ Notebook[
        TagBox[
         TagBox[
          TooltipBox[
-          TemplateBox[{}, "ChatWidgetIcon"],
+          DynamicBox[
+           FEPrivate`FrontEndResource[
+            "ChatbookExpressions",
+            "ChatWidgetIcon"
+           ]
+          ],
           DynamicBox[
            ToBoxes[
             FEPrivate`FrontEndResource[
