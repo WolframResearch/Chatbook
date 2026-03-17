@@ -1046,10 +1046,10 @@ $$FatalExpectedOperand={{"Fatal","ExpectedOperand"}..};
 warnPattern[target_][code_String, pat:$$FatalExpectedOperand, patToIgnore_:{}]:=
 	Module[
 			{
-			 fixedCode=Missing["Expected Operand (no place holder(s) detected)"]
+			 fixedCode=Missing["Expected Operand: no place holder(s) detected"]
 			,lenPat=Length@pat
 			,falsePositive=False
-			,safe=False
+			,safe=Failure["Expected Operand: no place holder(s) detected"]
 			,success=False
 			}
 			,
