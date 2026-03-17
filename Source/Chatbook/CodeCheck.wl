@@ -1008,8 +1008,21 @@ warnPattern[target_][code_String, pat:($$SuspiciousSymbol[so_](* |$$BadSymbol[so
 	} // Association
 
 (*---*)
-pNamedFunction[funcname_] :=
- CallNode[LeafNode[Symbol,"SetDelayed", _], {CallNode[LeafNode[Symbol, funcname, _], _, _], __}, _]
+pSetDelayedFunction[funcname_] :=
+ CallNode[LeafNode[Symbol,"SetDelayed", _], {subvalFunc[funcname], __}, _]
+
+subvalFunc[funcname_] := (svf = CallNode[x_, _, _] /; MatchQ[x, LeafNode[Symbol, funcname, _] | svf])
+
+pSetFunction[funcname_] :=
+				CallNode[
+					LeafNode[Symbol, "Set", <||>]
+					, {CallNode[LeafNode[Symbol, funcname, _]
+								, {___, CallNode[ LeafNode[Symbol, "Pattern", <||>]
+											, {LeafNode[Symbol, __], CallNode[LeafNode[Symbol, "Blank", <||>], __]}
+											, _], ___}
+								, _]
+						, __}
+					, _]
 
 pSuspiciousFunctionSymbol = CallNode[LeafNode[Symbol, _?suspiciousFunctionSymbolQ, _], _, _];
 
@@ -1024,18 +1037,22 @@ suspiciousFunctionSymbolQ[name_String] :=
 )
 
 scanSuspiciousSymbol[pos_, ast_] :=
- (
+(
 	(* Echo["Scan suspicious symbol"]; *)
-	With[	{node = Extract[ast, pos]}, {name = node[[1, 2]]}, {funcnode=FirstCase[ast, pNamedFunction[name], Missing[], Infinity]}
+	With[	{node = Extract[ast, pos]}
+			,
+			{name = node[[1, 2]]}
+			,
+			{funcnode=FirstCase[ast, pSetDelayedFunction[name] | pSetFunction[name], Missing[], Infinity]}
 			,
 			If[	MissingQ@funcnode
 				,	CodeInspector`InspectionObject["SuspiciousFunctionSymbol","Suspicious Function Name: " <> name, "WarningChatbook",
-   						Association@{ConfidenceLevel -> 1,(*Source*)node[[-1]]}]
+   						Association@{ConfidenceLevel -> 2,(*Source*)node[[-1]]}]
 				,	$UserDefinedFunctionsQ[name]=True
 					;
 					Nothing
 					(* ;
-					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatbook",
+					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
    						Association@{ConfidenceLevel -> 1,(*Source*)funcnode[[-1]]}] *)
 			]
 	]
