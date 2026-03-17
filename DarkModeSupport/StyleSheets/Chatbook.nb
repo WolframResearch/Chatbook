@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.74.3982126873"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982730505"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -137,12 +137,12 @@ Notebook[
     Cell[
      BoxData[
       DynamicBox[
-       ToBoxes[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-         RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+       If[ TrueQ[CloudSystem`$CloudNotebooks],
+        FEPrivate`FrontEndResource[
+         "ChatbookExpressions",
+         "ChatIconUser"
         ],
-        StandardForm
+        TemplateBox[{}, "ChatInputActiveCellDingbat"]
        ]
       ]
      ],
@@ -362,12 +362,12 @@ Notebook[
       RowBox[
        {
         DynamicBox[
-         ToBoxes[
-          If[ TrueQ[CloudSystem`$CloudNotebooks],
-           RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-           RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+         If[ TrueQ[CloudSystem`$CloudNotebooks],
+          FEPrivate`FrontEndResource[
+           "ChatbookExpressions",
+           "ChatIconUser"
           ],
-          StandardForm
+          TemplateBox[{}, "ChatInputActiveCellDingbat"]
          ]
         ],
         TemplateBox[{12}, "Spacer1"]
