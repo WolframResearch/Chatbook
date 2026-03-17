@@ -1066,7 +1066,7 @@ warnPattern[target_][code_String, pat:$$FatalExpectedOperand, patToIgnore_:{}]:=
 			 fixedCode=Missing["Expected Operand: no place holder(s) detected"]
 			,lenPat=Length@pat
 			,falsePositive=False
-			,safe=Failure["Expected Operand: no place holder(s) detected"]
+			,safe=Failure["Expected Operand: no place holder(s) detected",<||>]
 			,success=False
 			}
 			,

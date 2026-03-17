@@ -38,7 +38,7 @@ VerificationTest[
                 Replace[
                     {
                         Missing[ __ ] :> Missing[ "..." ],
-                        Failure[ __ ] -> Failure[ "..." ]
+                        Failure[ __ ] -> Failure[ "...", <| |> ]
                     }
                 ]
             ]
@@ -216,7 +216,7 @@ VerificationTest[
     mainInfo[ CodeCheckFix[ "k->;" ] ],
     <|
         "FixedCode" -> Missing[ "..." ],
-        "SafeToEvaluate" -> Failure[ "..." ]
+        "SafeToEvaluate" -> Failure[ "...", <| |> ]
     |>,
     TestID -> "15_comma_operand"
 ]
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     <|
         "FixedCode" -> "\nranges = Tuples[{{-1, 0, 1}, Range[-3, 3], Range[-3, 3]}];\n....\n",
-        "SafeToEvaluate" -> Failure[ "..." ]
+        "SafeToEvaluate" -> Failure[ "...", <| |> ]
     |>,
     TestID -> "26_comma_operand"
 ]
@@ -1748,5 +1748,4 @@ VerificationTest[
     "clear formatting helpers",
     TestID -> "1_cleaning"
 ]
-
 
