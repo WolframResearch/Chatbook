@@ -288,7 +288,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat     -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
+    CellDingbat     -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatQueryIcon" ], Background -> None ],
     CellTrayWidgets -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules    -> <| "ChatNotebookSettings" -> <| |> |>
@@ -302,7 +302,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
+    CellDingbat       -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatSystemIcon" ], Background -> None ],
     CellFrame         -> 1,
     CellFrameStyle    -> Dashing @ { Small, Small },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
@@ -326,7 +326,7 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
-    CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
+    CellDingbat          -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AssistantIcon" ], Background -> None ],
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",
@@ -429,13 +429,11 @@ Cell[
     CellFrameLabels -> {
         {
             Cell[
-                BoxData @ DynamicBox @ ToBoxes[
+                BoxData @ DynamicBox @
                     If[ TrueQ @ CloudSystem`$CloudNotebooks,
                         "",
-                        RawBoxes @ TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
+                        TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
                     ],
-                    StandardForm
-                ],
                 "Text",
                 Background           -> None,
                 CellFrame            -> 0,
@@ -489,13 +487,11 @@ Cell[
     CellFrameLabels -> {
         {
             Cell[
-                BoxData @ DynamicBox @ ToBoxes[
+                BoxData @ DynamicBox @
                     If[ TrueQ @ CloudSystem`$CloudNotebooks,
                         "",
-                        RawBoxes @ TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
+                        TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
                     ],
-                    StandardForm
-                ],
                 Background           -> None,
                 CellFrame            -> 0,
                 CellMargins          -> 0,
@@ -808,7 +804,7 @@ Cell[
                 {
                     False -> FrameBox[
                         ButtonBox[
-                            TemplateBox[ { }, "ChatMenuIcon" ],
+                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
                             ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
                                 Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
                                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
@@ -826,7 +822,7 @@ Cell[
                     ],
                     True -> FrameBox[
                         ButtonBox[
-                            TemplateBox[ { }, "ChatMenuIcon" ],
+                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
                             ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
                                 Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
                                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
@@ -1083,7 +1079,7 @@ Cell[
                 PaneSelectorBox[
                     {
                         False -> " ",
-                        True  -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                        True  -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputStopButton" ]
                     },
                     Dynamic @ CurrentValue[ "MouseOver" ],
                     ImageSize    -> All,
@@ -1121,7 +1117,7 @@ Cell[
                             ImageSize -> { 33, Automatic },
                             Alignment -> Left
                         ],
-                        True -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                        True -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputStopButton" ]
                     },
                     Dynamic @ CurrentValue[ "MouseOver" ],
                     ImageSize    -> All,
@@ -1419,7 +1415,7 @@ Cell[
         "ChatWidget"         -> <| "Visible" -> False |>,
         "ChatExcludedWidget" -> <|
             "Type"    -> "Focus",
-            "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatExcludedWidget" ], "ChatExcludedWidget" ]
+            "Content" -> Cell[ BoxData @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatExcludedWidget" ], "ChatExcludedWidget" ]
         |>
     |>,
     CellBracketOptions  -> { "Color" -> Pink },
@@ -1444,7 +1440,10 @@ Cell[
         DisplayFunction -> Function[
             Evaluate @ ToBoxes @ Button[
                 MouseAppearance[
-                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], tr["StylesheetChatWidgetButtonTooltip"] ],
+                    Tooltip[
+                        RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatWidgetIcon" ],
+                        tr["StylesheetChatWidgetButtonTooltip"]
+                    ],
                     "LinkHand"
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },

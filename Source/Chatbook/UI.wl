@@ -1080,10 +1080,10 @@ errorMessageLinkAppearance // endDefinition;
 (* ::Subsection::Closed:: *)
 (*MakeChatInputActiveCellDingbat*)
 MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
-	DynamicModule[ { cell },
-		trackedDynamic[ MakeChatInputActiveCellDingbat[ cell, mouseOver ], { "ChatBlock" } ],
-		Initialization :> (cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
-		UnsavedVariables :> { cell }
+	DynamicModule[ { Typeset`cell },
+		trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
+		Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
+		UnsavedVariables :> { Typeset`cell }
 	];
 
 MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
@@ -1095,20 +1095,20 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 				getPersonaMenuIcon @ currentValueOrigin[ targetCell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ][[ 2 ]],
 				Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"
 			],
-			RoundingRadius -> 2,
-			FrameStyle ->
-				If[ TrueQ @ mouseOver,
-					color @ "ChatDingbatFrameHover",
-					Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]
-				],
 			Background ->
 				If[ TrueQ @ mouseOver,
 					color @ "ChatDingbatBackgroundHover",
 					Dynamic[ If[ CurrentValue[ "MouseOver" ], #, None ] ]&[ color @ "ChatDingbatBackgroundHover" ]
 				],
-			FrameMargins -> 0,
-			ImageMargins -> 0,
-			ContentPadding -> False
+			ContentPadding -> False,
+			FrameMargins   -> 0,
+			FrameStyle ->
+				If[ TrueQ @ mouseOver,
+					color @ "ChatDingbatFrameHover",
+					Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]
+				],
+			ImageMargins   -> 0,
+			RoundingRadius -> 2
 		],
 		If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] === { },
 			MakeMenu[
@@ -1120,9 +1120,9 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 				|>
 			]
 		],
-		Appearance -> $suppressButtonAppearance,
-		ImageMargins -> 0,
-		FrameMargins -> 0,
+		Appearance     -> $suppressButtonAppearance,
+		ImageMargins   -> 0,
+		FrameMargins   -> 0,
 		ContentPadding -> False
 	]
 ];
@@ -1130,13 +1130,16 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatInputCellDingbat*)
-MakeChatInputCellDingbat[] :=
+MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
 		{
 			True -> MakeChatInputActiveCellDingbat[ True ],
 			False -> Button[(* I hate this: the only reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
 				Framed[
-					Pane[RawBoxes @ TemplateBox[{}, "ChatIconUser"], Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
+					Pane[
+						getIcon @ "ChatIconUser",
+						Alignment -> { Center, Center }, ImageSize -> { 25, 25 }, ImageSizeAction -> "ShrinkToFit"
+					],
 					Background     -> None,
 					ContentPadding -> False,
 					FrameMargins   -> 0,
@@ -1151,7 +1154,7 @@ MakeChatInputCellDingbat[] :=
 				ContentPadding -> False
 			]
 		},
-		Dynamic[CurrentValue["MouseOver"]],
+		Dynamic @ CurrentValue[ "MouseOver" ],
 		ImageSize -> Automatic
 	]
 
@@ -1159,10 +1162,10 @@ MakeChatInputCellDingbat[] :=
 (* ::Subsection::Closed:: *)
 (*MakeChatDelimiterCellDingbat*)
 MakeChatDelimiterCellDingbat[ ] :=
-	DynamicModule[ { Wolfram`ChatNB`cell },
-		trackedDynamic[ MakeChatDelimiterCellDingbat @ Wolfram`ChatNB`cell, { "ChatBlock" } ],
+	DynamicModule[ { Typeset`cell },
+		trackedDynamic[ MakeChatDelimiterCellDingbat @ Typeset`cell, { "ChatBlock" } ],
 		Initialization :> (
-			Wolfram`ChatNB`cell = EvaluationCell[ ];
+			Typeset`cell = EvaluationCell[ ];
 			Needs[ "Wolfram`Chatbook`" -> None ];
 			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
 		),
@@ -1170,7 +1173,7 @@ MakeChatDelimiterCellDingbat[ ] :=
 			Needs[ "Wolfram`Chatbook`" -> None ];
 			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
 		),
-		UnsavedVariables :> { Wolfram`ChatNB`cell }
+		UnsavedVariables :> { Typeset`cell }
 	];
 
 MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
