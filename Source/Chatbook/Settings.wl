@@ -236,9 +236,10 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "EndToken"        -> None,
-    "ToolMethod"      -> "Service",
-    "PresencePenalty" -> Missing[ "NotSupported" ]
+    "EndToken"          -> None,
+    "ForceSynchronous"  -> True,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
