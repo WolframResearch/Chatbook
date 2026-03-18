@@ -1677,7 +1677,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "GenerateLLMToolResponse"
         ];
 
-        toolID = tinyHash @ toolResponse;
+        toolID = tinyHash[ toolResponse, 9 ];
         toolCall = insertToolID[ toolCall, toolID ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
