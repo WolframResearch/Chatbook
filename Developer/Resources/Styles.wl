@@ -209,6 +209,15 @@ Cell[
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "RemoveCellAccents", $CellContext`cell ]
         ]
+        ,
+        (* the following three events swap the effects of Enter and Shift+Enter, PassEventsDown -> False is also needed *)
+        "ReturnKeyDown" :> MathLink`CallFrontEnd @ FrontEnd`CellEvaluate @ EvaluationCell[ ]
+        ,
+        { "MenuCommand", "HandleShiftReturn" } :> NotebookWrite[ InputNotebook[ ], "\n" ]
+        ,
+        { "MenuCommand", "EvaluateCells" } :> NotebookWrite[ InputNotebook[ ], "\n" ]
+        ,
+        PassEventsDown -> False
     }
 ]
 
