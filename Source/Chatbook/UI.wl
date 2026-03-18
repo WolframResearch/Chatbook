@@ -1083,7 +1083,7 @@ MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
 If[ mouseOver === Automatic,
 	PaneSelector[
 		{
-			True -> getIcon @ "ChatIconUser",
+			True -> chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
 			False -> DynamicModule[ { Typeset`cell },
 				trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
 				Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
@@ -1148,12 +1148,12 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
 		{
-			"Cloud" -> getIcon @ "ChatIconUser",
+			"Cloud" -> chatbookIcon[ "ChatIconUser", False ],
 			True    -> MakeChatInputActiveCellDingbat[ True ],
 			False   -> Button[(* the reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
 				Framed[
 					Pane[
-						getIcon @ "ChatIconUser",
+						chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
 						Alignment -> { Center, Center }, ImageSize -> { 25, 25 }, ImageSizeAction -> "ShrinkToFit"
 					],
 					Background     -> None,
@@ -1346,7 +1346,7 @@ Join[
 		<|
 			"Type"   -> "Button",
 			"Label"  -> tr @ "UIAddAndManagePersonas",
-			"Icon"   -> getIcon @ "PersonaOther",
+			"Icon"   -> chatbookIcon[ "PersonaOther", False ],
 			"Action" :> (
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "PersonaManage", targetObj ];)
@@ -1354,7 +1354,7 @@ Join[
 		<|
 			"Type"   -> "Button",
 			"Label"  -> tr @ "UIAddAndManageTools",
-			"Icon"   -> getIcon @ "ToolManagerRepository",
+			"Icon"   -> chatbookIcon[ "ToolManagerRepository", False ],
 			"Action" :> (
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ToolManage", targetObj ];)
@@ -1363,7 +1363,7 @@ Join[
 		<|
 			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIModels",
-			"Icon"    -> getIcon @ "ChatBlockSettingsMenuIcon",
+			"Icon"    -> chatbookIcon[ "ChatBlockSettingsMenuIcon", False ],
 			"MenuTag" -> "Services",
 			"Menu"    :> createServiceMenu @ targetObj,
 			"Width"    -> 150,
@@ -1373,18 +1373,13 @@ Join[
 		<|
 			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIAdvancedSettings",
-			"Icon"    -> getIcon @ "AdvancedSettings",
+			"Icon"    -> chatbookIcon[ "AdvancedSettings", False ],
 			"MenuTag" -> "AdvancedSettings",
 			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
 ]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getIcon*)
-getIcon[ name_ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1419,8 +1414,8 @@ With[
 				|>
 			}],
 			{
-				{ "User",   getIcon @ "ChatIconUser" },
-				{ "System", getIcon @ "RoleSystem" }
+				{ "User",   chatbookIcon[ "ChatIconUser", False ] },
+				{ "System", chatbookIcon[ "RoleSystem", False ] }
 			}
 		]
 	]
