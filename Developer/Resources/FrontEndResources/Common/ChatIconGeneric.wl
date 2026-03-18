@@ -4,7 +4,7 @@ Graphics[
   Thickness[ 0.038462 ],
   {
     (* background color *)
-   FaceForm @ { #1, Opacity[ 1.0 ] },
+   FaceForm @ { #1 },
    FilledCurve[
     {
      {
@@ -49,7 +49,7 @@ Graphics[
   },
   {
     (* edge color *)
-   FaceForm @ { #2, Opacity[ 1.0 ] },
+   FaceForm @ { #2 },
    FilledCurve[
     {
      {

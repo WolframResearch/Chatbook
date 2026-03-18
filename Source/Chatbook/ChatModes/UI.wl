@@ -815,7 +815,7 @@ Overlay[
             ContinuousAction -> True,
             ImageSize  -> size
         ],
-        RawBoxes @ DynamicBox @ StyleBox[ If[ fieldContent === "", fieldHint, "" ], "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+        RawBoxes @ DynamicBox @ StyleBox[ If[ fieldContent === "", fieldHint, "" ], "Text", "FieldHintStyle", FontSlant -> "Plain", LineBreakWithin -> False, FontSize -> 15 ]
     },
     { 1, 2 },
     1,
@@ -1053,7 +1053,15 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                     chatbarInputField[
                                                         Dynamic @ fieldContent,
                                                         Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ],
-                                                        FEPrivate`FrontEndResource[ "ChatbookStrings", "AttachedChatFieldHint" ] ],
+                                                        ToBoxes @ Row[
+                                                            {
+                                                                chatbookIcon[ "ChatIconGeneric", False, Transparent, LightDarkSwitched @ RGBColor[ "#8B8B8B" ], 18 ],
+                                                                tr[ "ChatbarFieldHint" ]
+                                                            },
+                                                            "  ",
+                                                            StripOnInput -> True
+                                                        ]
+                                                    ],
                                                     chatbarSendButton[ fieldContent, input, returnKeyDownQ ]
                                                 } },
                                                 Alignment        -> { Left, Baseline },
