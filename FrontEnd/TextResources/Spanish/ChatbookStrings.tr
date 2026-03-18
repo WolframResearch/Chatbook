@@ -214,6 +214,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
+"ChatbarFieldHint" -> "What would you like to do?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de Notebook Assistant\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",
