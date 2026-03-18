@@ -527,36 +527,25 @@ tabScrollButton[ direction_, cell_ ] := Button[
 
 
 $tabbedOutputControls =
-    DynamicModule[ { cell },
+    DynamicModule[ { Typeset`cell },
         Column[
             {
-                Row @ { tabScrollButton[ "TabLeft", cell ], tabScrollButton[ "TabRight", cell ] },
+                Row @ { tabScrollButton[ "TabLeft", Typeset`cell ], tabScrollButton[ "TabRight", Typeset`cell ] },
                 RawBoxes @ StyleBox[
                     RowBox @ {
-                        DynamicBox @ ToBoxes[
-                            CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" }, 1 ],
-                            StandardForm
-                        ],
+                        DynamicBox @ FrontEnd`CurrentValue[ Typeset`cell, { TaggingRules, "PageData", "CurrentPage" }, 1 ],
                         "/",
-                        DynamicBox @ ToBoxes[
-                            CurrentValue[ cell, { TaggingRules, "PageData", "PageCount" }, 1 ],
-                            StandardForm
-                        ]
+                        DynamicBox @ FrontEnd`CurrentValue[ Typeset`cell, { TaggingRules, "PageData", "PageCount" }, 1 ]
                     },
                     FontFamily -> "Roboto",
                     FontSize   -> 10
                 ]
             },
             Alignment -> Center,
-            Spacings  -> 0.1
+            Spacings  -> { 0, 0 }
         ],
-        Initialization   :> (
-            cell = If[ $CloudEvaluation,
-                       Wolfram`ChatNB`x; EvaluationCell[ ],
-                       ParentCell @ EvaluationCell[ ]
-                   ]
-        ),
-        UnsavedVariables :> { cell }
+        Initialization   :> (Typeset`cell = If[ $CloudEvaluation, EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+        UnsavedVariables :> { Typeset`cell }
     ];
 
 
@@ -567,7 +556,7 @@ tabbedChatOutputCellDingbat[ arg_ ] := Column[
         $tabbedOutputControls
     },
     Alignment -> Center,
-    Spacings  -> 0.1
+    Spacings  -> { 0, 0 }
 ];
 
 $chatInputActiveCellDingbat = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ ];
