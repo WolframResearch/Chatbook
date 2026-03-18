@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982815931"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.83.3982823929"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -104,7 +104,16 @@ Notebook[
        "WLTemplate",
        Wolfram`ChatNB`cell
       ]
-     ]
+     ],
+    "ReturnKeyDown" :>
+     MathLink`CallFrontEnd[
+      FrontEnd`CellEvaluate[EvaluationCell[]]
+     ],
+    {"MenuCommand", "HandleShiftReturn"} :>
+     NotebookWrite[InputNotebook[], "\n"],
+    {"MenuCommand", "EvaluateCells"} :>
+     NotebookWrite[InputNotebook[], "\n"],
+    PassEventsDown -> False
    },
    CellFrameColor ->
     LightDarkSwitched[
@@ -4737,7 +4746,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.82.3982809840"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.82.3982815931"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
