@@ -997,6 +997,20 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
+	"IconsChatIconUserBackground" -> <|
+		 "Light"  -> GrayLevel[1],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatIconUserEdge" -> <|
+		 "Light"  -> RGBColor[0., 0.525490, 0.8],
+		 "Dark"   -> RGBColor[0., 0.525490, 0.8],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"IconsMoreInfo_1" -> <|
 		 "Light"  -> GrayLevel[0.62744],
 		 "Dark"   -> GrayLevel[0.6772496],

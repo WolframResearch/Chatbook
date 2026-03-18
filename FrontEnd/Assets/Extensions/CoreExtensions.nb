@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982809840"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982815931"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -148,9 +148,13 @@ Notebook[
        {
         True ->
          DynamicBox[
-          FEPrivate`FrontEndResource[
-           "ChatbookExpressions",
-           "ChatIconUser"
+          FEPrivate`FrontEndResource["ChatbookExpressions", "ChatIconGeneric"][
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+           LightDarkSwitched[
+            RGBColor[0.0, 0.52549, 0.8],
+            RGBColor[0.0, 0.52549, 0.8]
+           ],
+           21
           ]
          ],
         False ->
@@ -225,9 +229,13 @@ Notebook[
           FrameBox[
            PaneBox[
             DynamicBox[
-             FEPrivate`FrontEndResource[
-              "ChatbookExpressions",
-              "ChatIconUser"
+             FEPrivate`FrontEndResource["ChatbookExpressions", "ChatIconGeneric"][
+              LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+              LightDarkSwitched[
+               RGBColor[0.0, 0.52549, 0.8],
+               RGBColor[0.0, 0.52549, 0.8]
+              ],
+              21
              ]
             ],
             Alignment -> {Center, Center},
@@ -4729,7 +4737,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.82.3982745512"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.82.3982809840"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
