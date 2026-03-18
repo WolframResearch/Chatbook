@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982745512"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.82.3982809840"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -2790,7 +2790,7 @@ Notebook[
          {#1},
          {
           DynamicModuleBox[
-           {Wolfram`ChatNB`cell$$},
+           {Typeset`cell$$},
            TagBox[
             GridBox[
              {
@@ -2839,7 +2839,7 @@ Notebook[
                    Catch[
                     Symbol["Wolfram`Chatbook`ChatbookAction"][
                      "TabLeft",
-                     Wolfram`ChatNB`cell$$
+                     Typeset`cell$$
                     ],
                     Blank[]
                    ]),
@@ -2895,7 +2895,7 @@ Notebook[
                    Catch[
                     Symbol["Wolfram`Chatbook`ChatbookAction"][
                      "TabRight",
-                     Wolfram`ChatNB`cell$$
+                     Typeset`cell$$
                     ],
                     Blank[]
                    ]),
@@ -2918,24 +2918,18 @@ Notebook[
                 RowBox[
                  {
                   DynamicBox[
-                   ToBoxes[
-                    CurrentValue[
-                     Wolfram`ChatNB`cell$$,
-                     {TaggingRules, "PageData", "CurrentPage"},
-                     1
-                    ],
-                    StandardForm
+                   FrontEnd`CurrentValue[
+                    Typeset`cell$$,
+                    {TaggingRules, "PageData", "CurrentPage"},
+                    1
                    ]
                   ],
                   "/",
                   DynamicBox[
-                   ToBoxes[
-                    CurrentValue[
-                     Wolfram`ChatNB`cell$$,
-                     {TaggingRules, "PageData", "PageCount"},
-                     1
-                    ],
-                    StandardForm
+                   FrontEnd`CurrentValue[
+                    Typeset`cell$$,
+                    {TaggingRules, "PageData", "PageCount"},
+                    1
                    ]
                   ]
                  }
@@ -2948,26 +2942,25 @@ Notebook[
              GridBoxAlignment -> {"Columns" -> {{Center}}},
              DefaultBaseStyle -> "Column",
              GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-             GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+             GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
             ],
             "Column"
            ],
            Initialization :>
-            (Wolfram`ChatNB`cell$$ = 
+            (Typeset`cell$$ = 
              If[ $CloudEvaluation,
-              Wolfram`ChatNB`x;
               EvaluationCell[],
               ParentCell[EvaluationCell[]]
              ]),
            DynamicModuleValues :> { },
-           UnsavedVariables :> {Wolfram`ChatNB`cell$$}
+           UnsavedVariables :> {Typeset`cell$$}
           ]
          }
         },
         GridBoxAlignment -> {"Columns" -> {{Center}}},
         DefaultBaseStyle -> "Column",
         GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-        GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+        GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
        ],
        "Column"
       ]
