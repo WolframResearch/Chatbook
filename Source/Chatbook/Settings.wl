@@ -237,7 +237,8 @@ $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
     "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "ToolResponseStyle" -> "SystemTags",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
