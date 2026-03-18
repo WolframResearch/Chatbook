@@ -2749,7 +2749,7 @@ makeActiveOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] :=
     makeActiveOutputDingbat[ as, icon ];
 
 makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
-    makeActiveOutputDingbat[ as, RawBoxes @ TemplateBox[ { }, "AssistantIconActive" ] ];
+    makeActiveOutputDingbat[ as, chatbookIcon[ "AssistantIconActive", False ] ];
 
 makeActiveOutputDingbat[ as_, icon_ ] :=
     If[ TrueQ @ $noActiveProgress,
@@ -2770,7 +2770,7 @@ makeOutputDingbat[ as_, name_String ] := makeOutputDingbat[ as, GetCachedPersona
 makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
-makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := TemplateBox[ { }, "AssistantIcon" ];
+makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := chatbookIcon[ "AssistantIcon", False ];
 makeOutputDingbat[ as_, icon_ ] := toDingbatBoxes @ resizeDingbat @ icon;
 makeOutputDingbat // endDefinition;
 
@@ -2994,9 +2994,9 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             CellTags          -> Flatten @ { uuid, cellTags },
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
+                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
                 If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ],
+                    CellDingbat -> dingbat,
                     Sequence @@ { }
                 ]
             ],
@@ -3201,8 +3201,8 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
             TaggingRules      -> rules,
             ExpressionUUID    -> uuid,  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
-                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
+                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
+                CellDingbat -> dingbat
             ]
         ];
 

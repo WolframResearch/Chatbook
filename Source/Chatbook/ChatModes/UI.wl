@@ -815,7 +815,7 @@ Overlay[
             ContinuousAction -> True,
             ImageSize  -> size
         ],
-        Dynamic @ Style[ If[ fieldContent === "", fieldHint, "" ], "Text", "FieldHintStyle", LineBreakWithin -> False, FontSize -> 15 ]
+        RawBoxes @ DynamicBox @ StyleBox[ If[ fieldContent === "", fieldHint, "" ], "Text", "FieldHintStyle", FontSlant -> "Plain", LineBreakWithin -> False, FontSize -> 15 ]
     },
     { 1, 2 },
     1,
@@ -1002,7 +1002,7 @@ chatbarMaximizeButton // beginDefinition;
 
 Attributes[ chatbarMaximizeButton ] = { HoldAll };
 
-chatbarMaximizeButton[ nbo_, chatbarCell_, minimizedQ_, selectionWithinQ_ ] :=
+chatbarMaximizeButton[ nbo_, chatbarCell_, minimizedQ_, minimizeOverrideQ_, selectionWithinQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -1014,6 +1014,7 @@ Button[
     ]
     ,
     minimizedQ = False;
+    minimizeOverrideQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ];
     With[ { n = nbo, c = chatbarCell },
         FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued @ FrontEnd`MoveCursorToInputField[ n, "AttachedChatInputField", c, c ]
     ],
@@ -1036,7 +1037,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
             thisCell, fieldContent = initialText, input = initialText,
-            notebookWriteAnchor, selectionAtTopQ = False, minimizedQ, selectionWithinQ = False, barAtBottomQ = False, returnKeyDownQ = False
+            notebookWriteAnchor, selectionAtTopQ = False, minimizedQ, minimizeOverrideQ = False, selectionWithinQ = False, barAtBottomQ = False, returnKeyDownQ = False
         },
         EventHandler[(* pre-emptive mouse-down event *)
             DynamicWrapper[
@@ -1049,7 +1050,18 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         Framed[
                                             Grid[
                                                 { {
-                                                    chatbarInputField[ Dynamic @ fieldContent, Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ], tr[ "AttachedChatFieldHint" ] ],
+                                                    chatbarInputField[
+                                                        Dynamic @ fieldContent,
+                                                        Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ],
+                                                        ToBoxes @ Row[
+                                                            {
+                                                                chatbookIcon[ "ChatIconGeneric", False, Transparent, LightDarkSwitched @ RGBColor[ "#8B8B8B" ], 18 ],
+                                                                tr[ "ChatbarFieldHint" ]
+                                                            },
+                                                            "  ",
+                                                            StripOnInput -> True
+                                                        ]
+                                                    ],
                                                     chatbarSendButton[ fieldContent, input, returnKeyDownQ ]
                                                 } },
                                                 Alignment        -> { Left, Baseline },
@@ -1095,7 +1107,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                 BaseStyle -> { Magnification -> $inputFieldGridMagnification },
                                 Spacings  -> { 0, 0 }
                             ],
-                        True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, selectionWithinQ ]
+                        True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ, selectionWithinQ ]
                     },
                     Dynamic @ minimizedQ,
                     FrameMargins -> 5,
@@ -1105,6 +1117,12 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 barAtBottomQ = AbsoluteCurrentValue[ nbo, "ChatbarPosition" ] === Bottom;
                 selectionWithinQ = !barAtBottomQ || CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ];
                 If[ !barAtBottomQ, minimizedQ = False ];
+                With[ { sidebarOpenQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] },
+                    If[ !minimizeOverrideQ && sidebarOpenQ,
+                        minimizedQ = True
+                    ];
+                    If[ !sidebarOpenQ, minimizeOverrideQ = False ];
+                ];
                 ,
                 TrackedSymbols :> { }
             ],
