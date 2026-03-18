@@ -199,6 +199,10 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
 
+        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
+            SelectionMove[ cellObj, After, Cell ]
+        ];
+
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         { messages, data } = Reap[
