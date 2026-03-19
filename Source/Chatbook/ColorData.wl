@@ -1005,8 +1005,8 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"IconsChatIconUserEdge" -> <|
-		 "Light"  -> RGBColor[0., 0.525490, 0.8],
-		 "Dark"   -> RGBColor[0., 0.525490, 0.8],
+		 "Light"  -> RGBColor[0., 0.52549, 0.8],
+		 "Dark"   -> RGBColor[0., 0.52549, 0.8],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1439,9 +1439,9 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldBackgroundArea" -> <|
-		 "Light"  -> GrayLevel[0.95],
-		 "Dark"   -> RGBColor[0.1882352, 0.2078431, 0.2274509],
-		 "Method" -> "Design",
+		 "Light"  -> RGBColor[0.933333, 0.976471, 1.],
+		 "Dark"   -> RGBColor[0.1920600, 0.2677078, 0.3257876],
+		 "Method" -> "Background",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1462,28 +1462,28 @@ Dispatch[{
 	"NA_ChatInputFieldFocusFont" -> <|
 		 "Light"  -> GrayLevel[0.5],
 		 "Dark"   -> GrayLevel[0.6],
-		 "Method" -> "Feature",
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocusFontHover" -> <|
 		 "Light"  -> GrayLevel[0.64432],
 		 "Dark"   -> GrayLevel[0.7368],
-		 "Method" -> "Feature",
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_1" -> <|
 		 "Light"  -> GrayLevel[0.53725],
 		 "Dark"   -> GrayLevel[0.4986829],
-		 "Method" -> "Feature",
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocus_Gray_2" -> <|
 		 "Light"  -> GrayLevel[0.74902],
 		 "Dark"   -> GrayLevel[0.7064789],
-		 "Method" -> "Feature",
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1774,16 +1774,16 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Contents float over the NA's notebook background"
 	|>,
-	"NA_OverlayAskAnythingFontColor" -> <|
-		 "Light"  -> GrayLevel[0.5372549],
-		 "Dark"   -> GrayLevel[0.6509804],
+	"NA_OverlayAskAnythingArrowIcon" -> <|
+		 "Light"  -> GrayLevel[0.819607],
+		 "Dark"   -> GrayLevel[0.392157],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
-	"NA_OverlayAskAnythingArrowIcon" -> <|
-		 "Light"  -> GrayLevel[0.819607],
-		 "Dark"   -> GrayLevel[0.392157],
+	"NA_OverlayAskAnythingFontColor" -> <|
+		 "Light"  -> GrayLevel[0.5372549],
+		 "Dark"   -> GrayLevel[0.6509804],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1972,7 +1972,7 @@ Dispatch[{
 	|>,
 	"NA_SidebarToolbarButtonBackgroundHover" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.141176, 0.349020, 0.466667],
+		 "Dark"   -> RGBColor[0.141176, 0.34902, 0.466667],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
@@ -1993,27 +1993,27 @@ Dispatch[{
 	|>,
 	"NA_SidebarToolbarButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.701961, 0.870588, 0.956863],
-		 "Dark"   -> RGBColor[0.149020, 0.290196, 0.360784],
+		 "Dark"   -> RGBColor[0.14902, 0.290196, 0.360784],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarFont" -> <|
 		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.0],
+		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarFontHover" -> <|
 		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.0],
+		 "Dark"   -> RGBColor[0.168627, 0.584314, 0.8],
 		 "Method" -> "Same",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarFrame" -> <|
-		 "Light"  -> RGBColor[0.815686, 0.898039, 0.929412],
+		 "Light"  -> RGBColor[0.070588, 0.556863, 0.819608],
 		 "Dark"   -> RGBColor[0.129412, 0.294118, 0.411765],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
