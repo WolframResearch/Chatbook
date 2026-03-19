@@ -1080,11 +1080,26 @@ errorMessageLinkAppearance // endDefinition;
 (* ::Subsection::Closed:: *)
 (*MakeChatInputActiveCellDingbat*)
 MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
-	DynamicModule[ { cell },
-		trackedDynamic[ MakeChatInputActiveCellDingbat[ cell, mouseOver ], { "ChatBlock" } ],
-		Initialization :> (cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
-		UnsavedVariables :> { cell }
-	];
+If[ mouseOver === Automatic,
+	PaneSelector[
+		{
+			True -> chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
+			False -> DynamicModule[ { Typeset`cell },
+				trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
+				Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
+				UnsavedVariables :> { Typeset`cell }
+			]
+		},
+		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
+		ImageSize -> Automatic
+	]
+	,
+	DynamicModule[ { Typeset`cell },
+		trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
+		Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
+		UnsavedVariables :> { Typeset`cell }
+	]
+];
 
 MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 	targetCell = parentCell @ dingbatCell
@@ -1095,20 +1110,20 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 				getPersonaMenuIcon @ currentValueOrigin[ targetCell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ][[ 2 ]],
 				Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"
 			],
-			RoundingRadius -> 2,
-			FrameStyle ->
-				If[ TrueQ @ mouseOver,
-					color @ "ChatDingbatFrameHover",
-					Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]
-				],
 			Background ->
 				If[ TrueQ @ mouseOver,
 					color @ "ChatDingbatBackgroundHover",
 					Dynamic[ If[ CurrentValue[ "MouseOver" ], #, None ] ]&[ color @ "ChatDingbatBackgroundHover" ]
 				],
-			FrameMargins -> 0,
-			ImageMargins -> 0,
-			ContentPadding -> False
+			ContentPadding -> False,
+			FrameMargins   -> 0,
+			FrameStyle ->
+				If[ TrueQ @ mouseOver,
+					color @ "ChatDingbatFrameHover",
+					Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, None ] ]&[ color @ "ChatDingbatFrameHover" ]
+				],
+			ImageMargins   -> 0,
+			RoundingRadius -> 2
 		],
 		If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] === { },
 			MakeMenu[
@@ -1120,9 +1135,9 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 				|>
 			]
 		],
-		Appearance -> $suppressButtonAppearance,
-		ImageMargins -> 0,
-		FrameMargins -> 0,
+		Appearance     -> $suppressButtonAppearance,
+		ImageMargins   -> 0,
+		FrameMargins   -> 0,
 		ContentPadding -> False
 	]
 ];
@@ -1130,13 +1145,17 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatInputCellDingbat*)
-MakeChatInputCellDingbat[] :=
+MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
 		{
-			True -> MakeChatInputActiveCellDingbat[ True ],
-			False -> Button[(* I hate this: the only reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
+			"Cloud" -> chatbookIcon[ "ChatIconUser", False ],
+			True    -> MakeChatInputActiveCellDingbat[ True ],
+			False   -> Button[(* the reason for this Button wrapper is to prevent jittery redraws due to mismatched sizes on mouse-over *)
 				Framed[
-					Pane[RawBoxes @ TemplateBox[{}, "ChatIconUser"], Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
+					Pane[
+						chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
+						Alignment -> { Center, Center }, ImageSize -> { 25, 25 }, ImageSizeAction -> "ShrinkToFit"
+					],
 					Background     -> None,
 					ContentPadding -> False,
 					FrameMargins   -> 0,
@@ -1151,7 +1170,7 @@ MakeChatInputCellDingbat[] :=
 				ContentPadding -> False
 			]
 		},
-		Dynamic[CurrentValue["MouseOver"]],
+		Dynamic @ If[ TrueQ @ CloudSystem`$CloudNotebooks, "Cloud", CurrentValue[ "MouseOver" ] ],
 		ImageSize -> Automatic
 	]
 
@@ -1159,18 +1178,26 @@ MakeChatInputCellDingbat[] :=
 (* ::Subsection::Closed:: *)
 (*MakeChatDelimiterCellDingbat*)
 MakeChatDelimiterCellDingbat[ ] :=
-	DynamicModule[ { Wolfram`ChatNB`cell },
-		trackedDynamic[ MakeChatDelimiterCellDingbat @ Wolfram`ChatNB`cell, { "ChatBlock" } ],
-		Initialization :> (
-			Wolfram`ChatNB`cell = EvaluationCell[ ];
-			Needs[ "Wolfram`Chatbook`" -> None ];
-			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
-		),
-		Deinitialization :> (
-			Needs[ "Wolfram`Chatbook`" -> None ];
-			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
-		),
-		UnsavedVariables :> { Wolfram`ChatNB`cell }
+	PaneSelector[
+		{
+			True -> "",
+			False ->
+				DynamicModule[ { Typeset`cell },
+					trackedDynamic[ MakeChatDelimiterCellDingbat @ Typeset`cell, { "ChatBlock" } ],
+					Initialization :> (
+						Typeset`cell = EvaluationCell[ ];
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
+					),
+					Deinitialization :> (
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
+					),
+					UnsavedVariables :> { Typeset`cell }
+				]
+		},
+		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
+		ImageSize -> Automatic
 	];
 
 MakeChatDelimiterCellDingbat[ frameLabelCell_CellObject ] := With[ {
@@ -1319,7 +1346,7 @@ Join[
 		<|
 			"Type"   -> "Button",
 			"Label"  -> tr @ "UIAddAndManagePersonas",
-			"Icon"   -> getIcon @ "PersonaOther",
+			"Icon"   -> chatbookIcon[ "PersonaOther", False ],
 			"Action" :> (
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "PersonaManage", targetObj ];)
@@ -1327,7 +1354,7 @@ Join[
 		<|
 			"Type"   -> "Button",
 			"Label"  -> tr @ "UIAddAndManageTools",
-			"Icon"   -> getIcon @ "ToolManagerRepository",
+			"Icon"   -> chatbookIcon[ "ToolManagerRepository", False ],
 			"Action" :> (
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ToolManage", targetObj ];)
@@ -1336,7 +1363,7 @@ Join[
 		<|
 			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIModels",
-			"Icon"    -> getIcon @ "ChatBlockSettingsMenuIcon",
+			"Icon"    -> chatbookIcon[ "ChatBlockSettingsMenuIcon", False ],
 			"MenuTag" -> "Services",
 			"Menu"    :> createServiceMenu @ targetObj,
 			"Width"    -> 150,
@@ -1346,18 +1373,13 @@ Join[
 		<|
 			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIAdvancedSettings",
-			"Icon"    -> getIcon @ "AdvancedSettings",
+			"Icon"    -> chatbookIcon[ "AdvancedSettings", False ],
 			"MenuTag" -> "AdvancedSettings",
 			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
 ]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getIcon*)
-getIcon[ name_ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1392,8 +1414,8 @@ With[
 				|>
 			}],
 			{
-				{ "User",   getIcon @ "ChatIconUser" },
-				{ "System", getIcon @ "RoleSystem" }
+				{ "User",   chatbookIcon[ "ChatIconUser", False ] },
+				{ "System", chatbookIcon[ "RoleSystem", False ] }
 			}
 		]
 	]

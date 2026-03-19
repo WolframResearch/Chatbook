@@ -214,6 +214,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
+"ChatbarFieldHint" -> "What would you like to do?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant\:30c1\:30e3\:30c3\:30c8\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306eNotebook Assistant",
