@@ -410,6 +410,7 @@ ShowNotebookAssistance // endExportedDefinition;
 (*autoShowNotebookAssistance*)
 autoShowNotebookAssistance // beginDefinition;
 
+(* The cell insertion prompt was deprecated in 15.0 but keep this in case we use the prompt in some other interface. *)
 (* SIDEBAR: "Need help getting started?" prompt in the cell insertion bar *)
 autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] /; sufficientVersionQ[ 15.0 ] := Enclose[
     Catch @ Module[ { nbo, newCell, uuid, sidebarInfo, sidebarCell, cellObject },
