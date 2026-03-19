@@ -105,8 +105,7 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             )
         ],
         "NotebookAssistant`Sidebar`DockedCell",
-        CellFrame        -> { { 0, 0 }, { 0, 7 } },
-        CellFrameColor   -> color @ "NA_SidebarToolbarFrame",
+        CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellTags         -> "SidebarDockedCell",
         Magnification    -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
