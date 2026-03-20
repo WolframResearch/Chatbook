@@ -806,18 +806,26 @@ Overlay[
         InputField[
             Dynamic @ fieldContent,
             Boxes,
-            Alignment  -> { Automatic, Baseline },
-            Appearance -> "Frameless",
-            BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
-            BoxID      -> "AttachedChatInputField",
+            Alignment        -> { Automatic, Baseline },
+            Appearance       -> "Frameless",
+            BaselinePosition -> Baseline,
+            BaseStyle        -> { FontColor -> LightDarkSwitched @ RGBColor["#333333"] }, 
+            BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
-            ImageSize  -> size
+            ImageSize        -> size
         ],
-        RawBoxes @ DynamicBox @ StyleBox[ If[ fieldContent === "", fieldHint, "" ], "Text", "FieldHintStyle", FontSlant -> "Plain", LineBreakWithin -> False, FontSize -> 15 ]
+        RawBoxes @ DynamicBox @ If[ fieldContent === "", fieldHint, "" ]
     },
     { 1, 2 },
     1,
-    Alignment -> { Left, Baseline }
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> Baseline,
+    BaseStyle        -> {
+        "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+        FontSize        -> 15,
+        FontSlant       -> "Plain",
+        LineBreakWithin -> False }
 ]
 
 chatbarInputField // endDefinition;
@@ -1053,10 +1061,18 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                         Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ],
                                                         ToBoxes @ Row[
                                                             {
-                                                                chatbookIcon[ "ChatIconGeneric", False, Transparent, LightDarkSwitched @ RGBColor[ "#8B8B8B" ], 18 ],
+                                                                PaneSelector[
+                                                                    {
+                                                                        True  -> chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"]C, LightDarkSwitched @ RGBColor["#128ED1"], 13 ],
+                                                                        False -> chatbookIcon[ "ChatIconGeneric", False, Transparent, LightDarkSwitched @ RGBColor["#898989"], 13 ]
+                                                                    },
+                                                                    Dynamic @ selectionWithinQ,
+                                                                    BaselinePosition -> Baseline,
+                                                                    ImageSize        -> All
+                                                                ],
                                                                 tr[ "ChatbarFieldHint" ]
                                                             },
-                                                            "  ",
+                                                            Spacer @ 7,
                                                             StripOnInput -> True
                                                         ]
                                                     ],
@@ -1072,8 +1088,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             FrameStyle     -> (
                                                 Dynamic[
                                                     If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
-                                                ]&[ color @ "NA_ChatInputFieldFrame", color @ "NA_ChatInputFieldFocus_Gray_1" ]),
-                                            RoundingRadius -> 14
+                                                ]&[ color @ "NA_ChatInputFieldFrame", LightDarkSwitched @ RGBColor["#898989"] ]),
+                                            RoundingRadius -> 9
                                         ]
                                         ,
                                         If[ TrueQ @ returnKeyDownQ,

@@ -6001,7 +6001,7 @@ c6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+
 vOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm
 TP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof
 Ec4A/3BXag==
-      "]}]}}, ImageSize -> {#3, #3}, ImagePadding -> 1]& ),
+      "]}]}}, BaselinePosition -> (Center -> Center), ImageSize -> {#3, #3}, ImagePadding -> 1]& ),
 
 "ChatIconUser" -> GraphicsBox[
   {Thickness[0.038462], 

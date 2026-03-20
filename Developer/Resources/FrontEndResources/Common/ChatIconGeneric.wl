@@ -140,6 +140,7 @@ Graphics[
    ]
   }
  },
+ BaselinePosition -> (Center -> Center),
  ImageSize -> { #3, #3 },
  ImagePadding -> 1
 ]
