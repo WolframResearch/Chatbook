@@ -1368,6 +1368,41 @@ Dispatch[{
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
+	"NA_BlueHueButtonBackgroundHover" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.2325145],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
+		 "Dark"   -> RGBColor[0.0897329, 0.1248041, 0.1550157],
+		 "Method" -> "Background",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3774621, 0.4913380, 0.5632675],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonFramePressed" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.3907552, 0.5965327, 0.7207059],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonIcon" -> <|
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.3024389, 0.7219852, 0.9847301],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"NA_ChatCodeBlockTemplateBackgroundBottom" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
 		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
@@ -1531,7 +1566,7 @@ Dispatch[{
 	|>,
 	"NA_ChatInputFieldFrame" -> <|
 		 "Light"  -> RGBColor[0.458824, 0.760784, 0.921569],
-		 "Dark"   -> RGBColor[0.3484092, 0.4884132, 0.6591817],
+		 "Dark"   -> RGBColor[0.3697296, 0.5575017, 0.6740449],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
@@ -1978,7 +2013,7 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_SidebarToolbarButtonBackgroundPressed" -> <|
-		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
+		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
 		 "Dark"   -> RGBColor[0.129412, 0.239216, 0.298039],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
