@@ -56,11 +56,32 @@ $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 $defaultUserImage := $defaultUserImage =
     inlineTemplateBoxes @ RawBoxes @ TemplateBox[ { }, "WorkspaceDefaultUserIcon" ];
 
-blueHueButtonAppearance[ icon_, imageSize_] :=
+blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:Automatic ] :=
 mousedown[
-    Framed[ icon, Background -> None, FrameStyle -> None, ImageSize -> imageSize, RoundingRadius -> 4 ],
-    Framed[ icon, Background -> color @ "NA_BlueHueButtonBackgroundHover",   FrameStyle -> color @ "NA_BlueHueButtonFrameHover",   ImageSize -> imageSize, RoundingRadius -> 4 ],
-    Framed[ icon, Background -> color @ "NA_BlueHueButtonBackgroundPressed", FrameStyle -> color @ "NA_BlueHueButtonFramePressed", ImageSize -> imageSize, RoundingRadius -> 4 ]
+    Framed[
+        icon,
+        Background     -> None,
+        FrameMargins   -> frameMargins,
+        FrameStyle     -> None,
+        ImageSize      -> imageSize,
+        RoundingRadius -> 4
+    ],
+    Framed[
+        icon,
+        Background     -> color @ "NA_BlueHueButtonBackgroundHover",
+        FrameMargins   -> frameMargins,
+        FrameStyle     -> color @ "NA_BlueHueButtonFrameHover",
+        ImageSize      -> imageSize,
+        RoundingRadius -> 4
+    ],
+    Framed[
+        icon,
+        Background     -> color @ "NA_BlueHueButtonBackgroundPressed",
+        FrameMargins   -> frameMargins,
+        FrameStyle     -> color @ "NA_BlueHueButtonFramePressed",
+        ImageSize      -> imageSize,
+        RoundingRadius -> 4
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2116,32 +2137,41 @@ attachAssistantMessageButtons // endDefinition;
 assistantMessageButtons // beginDefinition;
 
 assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
-    ToBoxes @ DynamicModule[ { cell },
+    ToBoxes @ DynamicModule[ { Typeset`cell },
         Grid[
             { {
-                Tooltip[ assistantCopyAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
+                Tooltip[ assistantCopyAsActionMenu[ Dynamic[ Typeset`cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                 Button[
-                    Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
+                    Tooltip[
+                        blueHueButtonAppearance[ chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ], { 24, 24 } ],
+                        tr[ "WorkspaceOutputRaftRegenerateTooltip" ]
+                    ],
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]; (* in case kernel was quit *)
-                    ChatbookAction[ "RegenerateAssistantMessage", cell, sidebarCellQ ],
+                    ChatbookAction[ "RegenerateAssistantMessage", Typeset`cell, sidebarCellQ ],
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
                 ],
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
                 (* Waiting for sharing functionality to be implemented: *)
-                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
+                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ Typeset`cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
                         Button[
-                            Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
-                            ChatbookAction[ "SendFeedback", cell, True ],
+                            Tooltip[
+                                blueHueButtonAppearance[ chatbookIcon[ "WorkspaceOutputRaftThumbsUpIcon", False ], { 24, 24 } ],
+                                tr[ "WorkspaceOutputRaftFeedbackTooltip" ]
+                            ],
+                            ChatbookAction[ "SendFeedback", Typeset`cell, True ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
                         Button[
-                            Tooltip[ $thumbsDownLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
-                            ChatbookAction[ "SendFeedback", cell, False ],
+                            Tooltip[
+                                blueHueButtonAppearance[ chatbookIcon[ "WorkspaceOutputRaftThumbsDownIcon", False ], { 24, 24 } ],
+                                tr[ "WorkspaceOutputRaftFeedbackTooltip" ]
+                            ],
+                            ChatbookAction[ "SendFeedback", Typeset`cell, False ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
@@ -2153,16 +2183,10 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
             Alignment -> { Automatic, Center },
             Spacings -> 0
         ],
-        Initialization :> (cell = ParentCell @ EvaluationCell[ ])
+        Initialization :> (Typeset`cell = ParentCell @ EvaluationCell[ ])
     ];
 
 assistantMessageButtons // endDefinition;
-
-
-$clipboardLabel  := $clipboardLabel  = chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False ];
-$regenerateLabel := $regenerateLabel = chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ];
-$thumbsUpLabel   := $thumbsUpLabel   = chatbookIcon[ "WorkspaceOutputRaftThumbsUpIcon"  , False ];
-$thumbsDownLabel := $thumbsDownLabel = chatbookIcon[ "WorkspaceOutputRaftThumbsDownIcon", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
