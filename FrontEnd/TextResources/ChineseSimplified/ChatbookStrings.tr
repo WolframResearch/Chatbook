@@ -214,6 +214,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:6709\:95EE\:5FC5\:7B54",
+"ChatbarFieldHint" -> "What would you like to do?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:4E0E\:7B14\:8BB0\:672C\:52A9\:624B\:804A\:5929\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:4E3A\:6240\:9009\:5185\:5BB9\:5BFB\:6C42\:7B14\:8BB0\:672C\:52A9\:624B\:7684\:5E2E\:52A9",
@@ -242,7 +243,7 @@
 "WorkspaceHistoryNextPage" -> "\:4E0B\:4E00\:9875",
 "WorkspaceHistoryLastPage" -> "\:6700\:540E\:4E00\:9875",
 "WorkspaceHistoryTitle" -> "\:5386\:53F2\:8BB0\:5F55",
-"WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryFieldHint" -> "\:641C\:7D22",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:5C06\:54CD\:5E94\:590D\:5236\:5230\:526A\:8D34\:677F\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:5C06\:54CD\:5E94\:590D\:5236\:4E3A\[Ellipsis]",
