@@ -214,6 +214,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Demande\[Hyphen]moi quelque chose",
+"ChatbarFieldHint" -> "What would you like to do?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
@@ -242,7 +243,7 @@
 "WorkspaceHistoryNextPage" -> "Page suivante",
 "WorkspaceHistoryLastPage" -> "Derni\[EGrave]re page",
 "WorkspaceHistoryTitle" -> "Historique",
-"WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryFieldHint" -> "Recherche",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",
