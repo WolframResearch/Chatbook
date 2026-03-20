@@ -38,7 +38,7 @@ $inputFieldOptions = Sequence[
 $inputFieldFrameOptions = Sequence[
     Alignment      -> { Automatic, Baseline },
     Background     -> color @ "NA_ChatInputFieldBackground",
-    FrameMargins   -> { { 5, 5 }, { 4, 4 } },
+    FrameMargins   -> { { 5, 1 }, { 1, 1 } },
     FrameStyle     -> Directive[ AbsoluteThickness[ 1.75 ], color @ "NA_ChatInputFieldFrame" ],
     RoundingRadius -> 8
 ];

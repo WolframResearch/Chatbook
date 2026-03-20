@@ -1495,16 +1495,16 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocusFont" -> <|
-		 "Light"  -> GrayLevel[0.5],
-		 "Dark"   -> GrayLevel[0.6],
-		 "Method" -> "Design",
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.3850995, 0.6206333, 0.7614185],
+		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocusFontHover" -> <|
-		 "Light"  -> GrayLevel[0.64432],
-		 "Dark"   -> GrayLevel[0.7368],
-		 "Method" -> "Design",
+		 "Light"  -> RGBColor[0.380392, 0.704575, 0.879739],
+		 "Dark"   -> RGBColor[0.2611123, 0.7120837, 0.9846240],
+		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1565,8 +1565,8 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFrame" -> <|
-		 "Light"  -> RGBColor[0.458824, 0.760784, 0.921569],
-		 "Dark"   -> RGBColor[0.3697296, 0.5575017, 0.6740449],
+		 "Light"  -> RGBColor[0.070588, 0.556863, 0.819608],
+		 "Dark"   -> RGBColor[0.2611116, 0.7120837, 0.9846240],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
@@ -2455,7 +2455,7 @@ Dispatch[{
 	|>,
 	"StopChatButtonSpinnerHighlight" -> <|
 		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
-		 "Dark"   -> RGBColor[0.3992060, 0.6126511, 0.7399585],
+		 "Dark"   -> RGBColor[0.3992061, 0.6126511, 0.7399585],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
