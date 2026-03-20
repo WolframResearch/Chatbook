@@ -92,6 +92,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                     BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
                     BaselinePosition -> { 1, 2 } (* align to the text *)
                 ],
+                Alignment    -> Left,
                 ImageMargins -> 0
             ]
         ]
@@ -133,7 +134,7 @@ DynamicModule[
                     },
                     Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
                     BaselinePosition -> Baseline,
-                    ImageMargins     -> { { 0, 0 }, { 5, 0 } },
+                    ImageMargins     -> { { 0, 2 }, { 5, 0 } },
                     ImageSize        -> Automatic
                 ]
                 ,
@@ -141,7 +142,8 @@ DynamicModule[
             } },
             Alignment        -> { Left, Baseline },
             BaseStyle        -> { "Text", FontSize -> 12.35 },
-            BaselinePosition -> { 1, 1 } (* align to the text *)
+            BaselinePosition -> { 1, 1 }, (* align to the text *)
+            Spacings         -> { 0, 0 }
         ],
       {
           "MouseEntered" :> (Typeset`mouseOver = True),
