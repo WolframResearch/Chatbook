@@ -1377,7 +1377,7 @@ Dispatch[{
 	|>,
 	"NA_BlueHueButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
-		 "Dark"   -> RGBColor[0.0897329, 0.1248041, 0.1550157],
+		 "Dark"   -> RGBColor[0.0897329, 0.1248040, 0.1550156],
 		 "Method" -> "Background",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1391,7 +1391,7 @@ Dispatch[{
 	|>,
 	"NA_BlueHueButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
-		 "Dark"   -> RGBColor[0.3907552, 0.5965327, 0.7207059],
+		 "Dark"   -> RGBColor[0.3907552, 0.5965328, 0.7207059],
 		 "Method" -> "Feature",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -2447,15 +2447,15 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"StopChatButtonSpinnerBase" -> <|
-		 "Light"  -> GrayLevel[0.9],
-		 "Dark"   -> GrayLevel[0.3392820],
+		 "Light"  -> RGBColor[0.9607843, 0.9607843, 0.9607843],
+		 "Dark"   -> RGBColor[0.2194082, 0.2194082, 0.2194082],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"StopChatButtonSpinnerHighlight" -> <|
-		 "Light"  -> GrayLevel[0.7],
-		 "Dark"   -> GrayLevel[0.6042542],
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.3992060, 0.6126511, 0.7399585],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
