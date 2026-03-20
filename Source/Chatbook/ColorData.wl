@@ -1530,7 +1530,7 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
+		 "Light"  -> RGBColor[0.458824, 0.760784, 0.921569],
 		 "Dark"   -> RGBColor[0.3484092, 0.4884132, 0.6591817],
 		 "Method" -> "Feature",
 		 "DC"     -> "NA_ChatInputField",
