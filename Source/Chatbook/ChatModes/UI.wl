@@ -56,10 +56,11 @@ $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 $defaultUserImage := $defaultUserImage =
     inlineTemplateBoxes @ RawBoxes @ TemplateBox[ { }, "WorkspaceDefaultUserIcon" ];
 
-blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:Automatic ] :=
-mousedown[
+blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0 ] :=
+mouseDown[
     Framed[
         icon,
+        Alignment      -> { Center, Center },
         Background     -> None,
         FrameMargins   -> frameMargins,
         FrameStyle     -> None,
@@ -68,6 +69,7 @@ mousedown[
     ],
     Framed[
         icon,
+        Alignment      -> { Center, Center },
         Background     -> color @ "NA_BlueHueButtonBackgroundHover",
         FrameMargins   -> frameMargins,
         FrameStyle     -> color @ "NA_BlueHueButtonFrameHover",
@@ -76,6 +78,7 @@ mousedown[
     ],
     Framed[
         icon,
+        Alignment      -> { Center, Center },
         Background     -> color @ "NA_BlueHueButtonBackgroundPressed",
         FrameMargins   -> frameMargins,
         FrameStyle     -> color @ "NA_BlueHueButtonFramePressed",
@@ -451,7 +454,7 @@ PaneSelector[
     {
         False ->
             Button[
-                blueHueButtonAppearance[ chatbarIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
+                blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
                 If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
                 Appearance   -> "Suppressed",
                 BoxID        -> "SidebarChatInputCellSendButton",
@@ -460,11 +463,7 @@ PaneSelector[
             ],
         True ->
             Button[
-                Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                    color @ "NA_ChatInputFieldSendButtonFrameHover",
-                    color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                    13
-                ],
+                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 13 ], { 24.5, 24.5 } ],
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",
@@ -1368,11 +1367,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             PaneSelector[
                                 {
                                     None -> Button[
-                                        Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                            color @ "NA_ChatInputFieldSendButtonFrameHover",
-                                            color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                                            27
-                                        ],
+                                        blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
                                         Needs[ "Wolfram`Chatbook`" -> None ];
                                         (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
                                         If[ kernelWasQuitQ,
@@ -1391,11 +1386,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 },
                                 Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
                                 Button[
-                                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ]&[
-                                        color @ "NA_ChatInputFieldSendButtonFrameHover",
-                                        color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                                        27
-                                    ],
+                                    blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 13 ], { 24.5, 24.5 } ],
                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                                     Appearance   -> "Suppressed",
