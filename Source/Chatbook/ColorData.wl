@@ -2005,48 +2005,6 @@ Dispatch[{
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
 	|>,
-	"NA_SidebarToolbarButtonBackgroundHover" -> <|
-		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.141176, 0.34902, 0.466667],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_SidebarToolbarButtonBackgroundPressed" -> <|
-		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
-		 "Dark"   -> RGBColor[0.129412, 0.239216, 0.298039],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_SidebarToolbarButtonFrameHover" -> <|
-		 "Light"  -> RGBColor[0.792157, 0.913725, 0.976471],
-		 "Dark"   -> RGBColor[0.211765, 0.411765, 0.533333],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_SidebarToolbarButtonFramePressed" -> <|
-		 "Light"  -> RGBColor[0.701961, 0.870588, 0.956863],
-		 "Dark"   -> RGBColor[0.14902, 0.290196, 0.360784],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_SidebarToolbarFont" -> <|
-		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Dark"   -> RGBColor[0.364706, 0.780392, 1.],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_SidebarToolbarFontHover" -> <|
-		 "Light"  -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Dark"   -> RGBColor[0.168627, 0.584314, 0.8],
-		 "Method" -> "Same",
-		 "DC"     -> "NA_SidebarToolbar",
-		 "Notes"  -> ""
-	|>,
 	"NA_SidebarToolbarFrame" -> <|
 		 "Light"  -> RGBColor[0.070588, 0.556863, 0.819608],
 		 "Dark"   -> RGBColor[0.129412, 0.294118, 0.411765],
@@ -2076,74 +2034,11 @@ Dispatch[{
 		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
 	"NA_Toolbar" -> <|
-		 "Light"  -> RGBColor[0.4, 0.6784313, 0.8235294],
-		 "Dark"   -> RGBColor[0.2235294, 0.490196, 0.6784313],
+		 "Light"  -> RGBColor[0.9333333, 0.976471, 1.],
+		 "Dark"   -> RGBColor[0.1490196, 0.184314, 0.203922],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarButtonBackgroundHover" -> <|
-		 "Light"  -> RGBColor[0.5294117, 0.7647058, 0.890196],
-		 "Dark"   -> RGBColor[0.3882352, 0.6274509, 0.772549],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarButtonBackgroundPressed" -> <|
-		 "Light"  -> RGBColor[0.2117647, 0.5372549, 0.7098039],
-		 "Dark"   -> RGBColor[0.1568627, 0.3686274, 0.5215686],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarButtonFrameHover" -> <|
-		 "Light"  -> RGBColor[0.6039215, 0.7921568, 0.8941176],
-		 "Dark"   -> RGBColor[0.5137254, 0.7019607, 0.8235294],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarButtonFramePressed" -> <|
-		 "Light"  -> RGBColor[0.2117647, 0.5372549, 0.7098039],
-		 "Dark"   -> RGBColor[0.0862745, 0.3215686, 0.4862745],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarFont" -> <|
-		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.8313725, 0.9294117, 1.],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarFontHover" -> <|
-		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[1],
-		 "Method" -> "Same",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarLightButtonBackground" -> <|
-		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
-		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> ""
-	|>,
-	"NA_ToolbarLightButtonFont" -> <|
-		 "Light"  -> RGBColor[0.2745098, 0.6196078, 0.7960784],
-		 "Dark"   -> RGBColor[0.2, 0.5137254, 0.6745098],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> "NA docked cell area is already dark"
-	|>,
-	"NA_ToolbarLightButtonFrame" -> <|
-		 "Light"  -> RGBColor[0.945098, 0.972549, 0.9882352],
-		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> "This frame is a transitional color"
 	|>,
 	"NA_ToolbarTitleBackground" -> <|
 		 "Light"  -> RGBColor[0.8666666, 0.9372549, 0.9764705],
@@ -2417,20 +2312,6 @@ Dispatch[{
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
-	|>,
-	"SideChatBackground" -> <|
-		 "Light"  -> RGBColor[0.9803921, 0.9882352, 1.],
-		 "Dark"   -> RGBColor[0.2151981, 0.2151981, 0.2151981],
-		 "Method" -> "Background",
-		 "DC"     -> "White",
-		 "Notes"  -> ""
-	|>,
-	"SideChatDingbatFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3720968, 0.5327701, 0.7196387],
-		 "Method" -> "Feature",
-		 "DC"     -> "White",
-		 "Notes"  -> "Same color as ChatInputFrame"
 	|>,
 	"StatelessProgressIndicator" -> <|
 		 "Light"  -> GrayLevel[0.75],

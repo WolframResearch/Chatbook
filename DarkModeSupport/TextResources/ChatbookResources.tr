@@ -4014,8 +4014,8 @@ cTGO5EynT3RyqKZq7RiYg6VF6z9PHeJwhrY1VoQLeixn9kgOQ0VKoZ6jmOfP
       0}, {0, 1, 0}}}, {{{4., 13.}, {16., 13.}, {16., 15.}, {4., 15.}, {4., 
       13.}}, {{4., 8.9882}, {16., 8.9882}, {16., 10.989}, {4., 10.989}, {4., 
       8.9882}}, {{4., 5.}, {16., 5.}, {16., 7.}, {4., 7.}, {4., 5.}}}]}, {
-     FaceForm[#]}, StripOnInput -> False]}, ImageSize -> {20., 20.}, 
-  PlotRange -> {{0., 20.}, {0., 20.}}, AspectRatio -> Automatic, 
+     FaceForm[#]}, StripOnInput -> False]}, ImageSize -> {11.23, 11.23}, 
+  PlotRange -> {{3., 17.}, {4., 16.}}, AspectRatio -> Automatic, 
   BaselinePosition -> (Center -> Center)]& ),
 
 "WorkspaceToolbarIconNew" -> (GraphicsBox[{
@@ -4033,9 +4033,9 @@ cTGO5EynT3RyqKZq7RiYg6VF6z9PHeJwhrY1VoQLeixn9kgOQ0VKoZ6jmOfP
 LRx8GP3BHjtfBMRvcH/I74CdzwGiHXrFpZDlgUABB18ARB8oEZZG5sPMQbKX
 A0U+4ekLe2T+AtdrKHwoCEhIFUTmM6yREUbmI4UPhA8LP4R5Omj2gfko8QEA
 LWkzDA==
-     "]}]}, ImageSize -> {22., 20.}, PlotRange -> {{-5., 17.}, {-3, 17}}, 
-  AspectRatio -> Automatic, DefaultBaseStyle -> {}, 
-  BaselinePosition -> (Center -> Center)]& ),
+     "]}]}, AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
+  DefaultBaseStyle -> {}, ImageSize -> {15.45, 14.045}, 
+  PlotRange -> {{-1., 18.}, {-1, 15}}]& ),
 
 "WorkspaceToolbarIconOpenAsChatbook" -> (GraphicsBox[{
    Thickness[0.08332986316297075], {
@@ -4072,8 +4072,7 @@ LWkzDA==
       Opacity[1.]}], 
     FilledCurveBox[{{{0, 2, 0}}}, {{{5.22689962387085, 6.018500328063965}, {
      11.22689962387085, 12.018500328063965`}}}]}}, AspectRatio -> Automatic, 
-  ImageSize -> {15., 14.}, 
-  PlotRange -> {{-1., 13.000499725341797`}, {-1., 13.}}, 
+  ImageSize -> {11.25, 11.25}, PlotRange -> {{-1., 13.}, {-1., 13.}}, 
   BaselinePosition -> (Center -> Center)]& ),
 
 "WorkspaceToolbarIconSources" -> (GraphicsBox[{
@@ -4093,8 +4092,8 @@ N2D+DrlWiP8jfoL5Cf1OsPDQgNLofFh4Q/gca+7Yo8qDwQEZKXVkPgMiPmAA
 Zg4YNGTtgZiDMA+rOgZE+KPzP9gDADwyPuA=
      "], {{13., 5.}, {13., 3.}, {10., 3.}, {10., 0.}, {8., 0.}, {8., 3.}, {5.,
       3.}, {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]}, 
-  AspectRatio -> Automatic, ImageSize -> {20, 20}, 
-  PlotRange -> {{-6, 14}, {-4, 16}}, 
+  AspectRatio -> Automatic, ImageSize -> {12.35, 12.35}, 
+  PlotRange -> {{-1, 14}, {-1, 13}}, 
   BaselinePosition -> (Center -> Center)]& ),
 
 "AssistantCopyBelow" -> GraphicsBox[
@@ -9608,7 +9607,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
       RGBColor[0.070588, 0.556863, 0.819608], 
       RGBColor[0.129412, 0.294118, 0.411765]],
     ImageSize->{
-      Scaled[1], 5}]],ExpressionUUID->"ab266dda-2aa7-2c4e-89ea-d086c6be956a"], 
+      Scaled[1], 5}]],ExpressionUUID->"52c7ee91-3a4c-1f44-b788-115397ee485e"], 
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
      StandardForm],
@@ -9627,8 +9626,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.19206, 0.2677078, 0.3257876]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"ad37d9f4-b97a-c24d-b16c-\
-4f75cfe22ac9"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"7df7b38a-aa35-9945-b9d2-\
+d483a8054cca"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9746,8 +9745,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"a9f9c56a-5028-6442-9eb5-\
-4a3cbf6904d4"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"cf769dde-e33e-134d-bf0e-\
+8b4c2645db8f"],
 
 "ChatbarSettingsIcon" -> GraphicsBox[
   {EdgeForm[None], FaceForm[LightDarkSwitched[

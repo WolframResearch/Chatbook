@@ -112,9 +112,9 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                     Alignment -> { Automatic, Center },
                     Spacings  -> 0.2
                 ],
-                Background   -> color @ "NA_SidebarToolbar",
-                FrameStyle   -> color @ "NA_SidebarToolbar",
-                FrameMargins -> { { 5, 2 }, { 0, 1 } },
+                Background   -> color @ "NA_Toolbar",
+                FrameStyle   -> color @ "NA_Toolbar",
+                FrameMargins -> { { 2, 0 }, { 0, 1 } },
                 ImageMargins -> 0
             ],
             SynchronousInitialization -> False,
@@ -327,7 +327,11 @@ removeSidebarScrollingCellContent // endDefinition;
 sidebarHistoryButton // beginDefinition;
 
 sidebarHistoryButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, True ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory" ],
+        { Automatic, 24 },
+        { { 5, 5 }, { 0, 0 } }
+    ],
     toggleOverlayMenu[ nbo, sidebarCell, "History" ],
     Appearance -> "Suppressed"
 ];
@@ -340,7 +344,11 @@ sidebarHistoryButton // endDefinition;
 sidebarSourcesButton // beginDefinition;
 
 sidebarSourcesButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, True ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources" ],
+        { Automatic, 24 },
+        { { 5, 5 }, { 0, 0 } }
+    ],
     toggleOverlayMenu[ nbo, sidebarCell, "Sources" ],
     Appearance -> "Suppressed"
 ];
@@ -354,7 +362,11 @@ sidebarNewChatButton // beginDefinition;
 
 sidebarNewChatButton[ nbo_NotebookObject, sidebarCell_CellObject ] :=
     Button[
-        toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", False, True ]
+        blueHueButtonAppearance[
+            toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew" ],
+            { Automatic, 24 },
+            { { 5, 5 }, { 0, 0 } }
+        ]
         ,
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
@@ -374,7 +386,10 @@ sidebarNewChatButton // endDefinition;
 sidebarOpenAsAssistantWindowButton // beginDefinition;
 
 sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant", False, True ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
+        { 24, 24 }
+    ],
     With[
         {
             newNB = ShowNotebookAssistance[ nbo, "Window",
@@ -418,22 +433,9 @@ sidebarOpenAsAssistantWindowButton // endDefinition;
 sidebarHideButton // beginDefinition;
 
 sidebarHideButton[ nbo_NotebookObject ] := Button[
-    Tooltip[
-        mouseDown[
-            Framed[
-                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFont" ],
-                toolbarButtonCommon[ False ],
-                Background -> color @ "NA_SidebarToolbar", FrameStyle -> color @ "NA_SidebarToolbar" ],
-            Framed[
-                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFontHover" ],
-                toolbarButtonCommon[ False ],
-                Background -> color @ "NA_SidebarToolbarButtonBackgroundHover",   FrameStyle -> color @ "NA_SidebarToolbarButtonFrameHover" ],
-            Framed[
-                chatbookIcon[ "SidebarIconHide", False, color @ "NA_SidebarToolbarFontHover" ],
-                toolbarButtonCommon[ False ],
-                Background -> color @ "NA_SidebarToolbarButtonBackgroundPressed", FrameStyle -> color @ "NA_SidebarToolbarButtonFramePressed" ]
-        ],
-        tr @ "SidebarToolbarButtonTooltipHideSidebar"
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "SidebarIconHide", None, "SidebarToolbarButtonTooltipHideSidebar" ],
+        { 24, 24 }
     ],
     setCurrentValue[ $FrontEndSession, "ShowNotebookAssistant", False ];
     FrontEndTokenExecute[nbo, "HideSidebar"],
@@ -1036,7 +1038,7 @@ makeWorkspaceChatDockedCell[ ] := workspaceChatInitializer @ Framed[
     ],
     Background   -> color @ "NA_Toolbar",
     FrameStyle   -> color @ "NA_Toolbar",
-    FrameMargins -> { { 5, 4 }, { 0, 1 } },
+    FrameMargins -> { { 2, 4 }, { 0, 1 } },
     ImageMargins -> 0
 ];
 
@@ -1113,7 +1115,11 @@ removeWorkspaceChatSubDockedCell // endDefinition;
 historyButton // beginDefinition;
 
 historyButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory", False, False ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory" ],
+        { Automatic, 24 },
+        { { 5, 5 }, { 0, 0 } }
+    ],
     toggleOverlayMenu[ nbo, None, "History" ],
     Appearance -> "Suppressed"
 ];
@@ -1126,7 +1132,11 @@ historyButton // endDefinition;
 sourcesButton // beginDefinition;
 
 sourcesButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources", False, False ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources" ],
+        { Automatic, 24 },
+        { { 5, 5 }, { 0, 0 } }
+    ],
     toggleOverlayMenu[ nbo, None, "Sources" ],
     Appearance -> "Suppressed"
 ];
@@ -1140,7 +1150,11 @@ newChatButton // beginDefinition;
 
 newChatButton[ Dynamic[ nbo_ ] ] :=
     Button[
-        toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew", True, False ]
+        blueHueButtonAppearance[
+            toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew" ],
+            { Automatic, 24 },
+            { { 5, 5 }, { 0, 0 } }
+        ]
         ,
         clearOverlayMenus @ nbo;
         NotebookDelete @ Cells @ nbo;
@@ -1161,7 +1175,10 @@ newChatButton // endDefinition;
 openAsChatbookButton // beginDefinition;
 
 openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "WorkspaceToolbarButtonTooltipOpenAsChatbook", False, False ],
+    blueHueButtonAppearance[
+        toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
+        { 24, 24 }
+    ],
     popOutChatNB @ nbo,
     Appearance -> "Suppressed",
     Method     -> "Queued"
@@ -1174,93 +1191,21 @@ openAsChatbookButton // endDefinition;
 (*toolbarButtonLabel*)
 toolbarButtonLabel // beginDefinition;
 
-toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, lightStyleQ: True | False, sidebarChatQ: True | False ] :=
-    With[
-        { prefix = If[ sidebarChatQ, "NA_SidebarToolbar", "NA_Toolbar" ] },
-        {
-            default = If[ lightStyleQ,
-                toolbarButtonLabel0[ iconName, label, color[ prefix <> "LightButtonFont" ], {FontColor -> color[ prefix <> "LightButtonFont" ]}, {}, sidebarChatQ ],
-                toolbarButtonLabel0[ iconName, label, color[ prefix <> "Font" ],            {FontColor -> color[ prefix <> "Font" ]}, {}, sidebarChatQ ]
-            ],
-            (* active font same as hover font; light and regular buttons have the same hover and active states *) 
-            hover   = toolbarButtonLabel0[ iconName, label, color[ prefix <> "FontHover" ], {FontColor -> color[ prefix <> "FontHover" ]}, {}, sidebarChatQ ],
-            active  = toolbarButtonLabel0[ iconName, label, color[ prefix <> "FontHover" ], {FontColor -> color[ prefix <> "FontHover" ]}, {}, sidebarChatQ ]
-        },
-        buttonTooltip[
-            mouseDown[
-                Framed[ default, toolbarButtonCommon[ label =!= None ],
-                    Sequence @@ If[ lightStyleQ,
-                        { Background -> color[ prefix <> "LightButtonBackground" ], FrameStyle -> color[ prefix <> "LightButtonFrame" ] },
-                        { Background -> color @ prefix,                            FrameStyle -> color @ prefix } ] ],
-                Framed[ hover,   toolbarButtonCommon[ label =!= None ], Background -> color[ prefix <> "ButtonBackgroundHover" ],   FrameStyle -> color[ prefix <> "ButtonFrameHover" ] ],
-                Framed[ active,  toolbarButtonCommon[ label =!= None ], Background -> color[ prefix <> "ButtonBackgroundPressed" ], FrameStyle -> color[ prefix <> "ButtonFramePressed" ]  ]
-            ],
-            tooltipName
-        ]
-    ]
+toolbarButtonLabel[ iconName_String, label_String, tooltip:_String | None ] :=
+If[ tooltip === None, #, Tooltip[ #, tooltip ] ]& @
+Grid[
+    { {
+        chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ],
+        tr @ label
+    } },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 2 },
+    BaseStyle        -> "WorkspaceChatToolbarButtonLabel",
+    Spacings         -> { 0.3, 0 }
+]
 
-toolbarButtonLabel // endDefinition;
-
-
-toolbarButtonLabel0 // beginDefinition;
-
-toolbarButtonLabel0[ iconName_String, labelName_String, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
-    With[ { label = tr @ labelName },
-        toolbarButtonLabel0[
-            iconName,
-            If[ StringQ @ label, Style @ label, label ],
-            color,
-            {styleOpts},
-            {gridOpts},
-            sidebarChatQ
-        ]
-    ];
-
-toolbarButtonLabel0[ iconName_String, None, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
-    Grid[
-        { { chatbookIcon[ iconName, False, color ] } },
-        gridOpts,
-        Alignment        -> { {Left, Right}, Baseline },
-        BaseStyle        -> { LineBreakWithin -> False },
-        BaselinePosition -> { 1, 1 },
-        Spacings         -> 0.25
-    ];
-
-toolbarButtonLabel0[ iconName_String, label_, color_, {styleOpts___}, {gridOpts___}, sidebarChatQ_] :=
-    Grid[
-        { {
-            chatbookIcon[ iconName, False, color ],
-            Style[ label, If[ sidebarChatQ, "NotebookAssistant`Sidebar`ToolbarButtonLabel", "WorkspaceChatToolbarButtonLabel" ], styleOpts ]
-        } },
-        gridOpts,
-        Alignment        -> { {Left, Right}, Baseline },
-        BaseStyle        -> { LineBreakWithin -> False },
-        BaselinePosition -> { 1, 2 },
-        Spacings         -> 0.25
-    ];
-
-toolbarButtonLabel0 // endDefinition;
-
-
-toolbarButtonCommon // beginDefinition;
-
-toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
-    Alignment      -> { Center, Center },
-    FrameMargins   -> { If[ hasLabelQ, { 1, 6 }, { 3, 3 } ], { 1, 1 } },
-    ImageMargins   -> { { 0, 0 }, { 4, 4 } },
-    ImageSize      -> { Automatic, 22 },
-    RoundingRadius -> 3
-];
-
-toolbarButtonCommon // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*buttonTooltip*)
-buttonTooltip // beginDefinition;
-buttonTooltip[ label_, None ] := label;
-buttonTooltip[ label_, name_String ] := Tooltip[ label, tr @ name ];
-buttonTooltip // endDefinition;
+toolbarButtonLabel[ iconName_String, None, tooltip:_String | None ] :=
+If[ tooltip === None, #, Tooltip[ #, tooltip ] ]& @ chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

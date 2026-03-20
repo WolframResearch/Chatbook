@@ -74,9 +74,11 @@ Cell[
 (*WorkspaceChatToolbarLabel*)
 Cell[
     StyleData[ "WorkspaceChatToolbarButtonLabel", StyleDefinitions -> StyleData[ "Text" ] ],
-    FontColor  -> color @ "NA_ToolbarFont",
-    FontSize   -> 13,
-    FontWeight -> "DemiBold"
+    FontColor       -> color @ "NA_BlueHueButtonIcon",
+    FontFamily      -> "Source Sans Pro",
+    FontSize        -> 13.5,
+    FontWeight      -> "DemiBold",
+    LineBreakWithin -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
