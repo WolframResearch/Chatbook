@@ -281,7 +281,7 @@ $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     "Temperature"      -> 1.,
     "ToolsEnabled"     -> True, (* TODO *)
     "TopP"             -> 0.95,
-	"Reasoning"        -> <|"effort" -> "High"|> (* TODO *)
+	"Reasoning"        -> <|"Effort" -> {"None", "Minimal", "Medium", "High", Automatic}[[-1]]|> (* TODO *)
     (*"ExcludedBasePrompts" -> Missing[ "NotSupported" ]*) (* TODO *)
 |>;
 
