@@ -31,7 +31,7 @@ Function @ Evaluate @ ToBoxes @
       }
      ]
     },
-    FaceForm @ #1(*color @ "NA_ChatInputFieldFocus_Gray_4/3"*)
+    FaceForm @ #1
    ],
    Style[
     {
@@ -82,7 +82,7 @@ Function @ Evaluate @ ToBoxes @
       }
      ]
     },
-    FaceForm @ #2(*color @ "NA_ChatInputFieldFocus_Gray_1/2"*)
+    FaceForm @ #2
    ]
   },
   ImageSize -> { 11.0, 11.0 },
