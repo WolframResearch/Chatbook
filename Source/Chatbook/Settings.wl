@@ -440,11 +440,11 @@ autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
 autoModelSetting[ model0_Association, key_String ] :=
     With[ { model = resolveFullModelSpec @ model0 },
         autoModelSetting[
-            toBaseServiceName @ model[ "Service" ],
-            model[ "Name" ],
-            model[ "BaseID" ],
-            model[ "Family" ],
-            key
+            (toBaseServiceName @ (model[ "Service" ](*//Echo*)))(*//Echo*), (*OpenRouter*)
+            model[ "Name" ](*//Echo*), (*nvidia/nemotron-3-super-120b-a12b:free*)
+            model[ "BaseID" ](*//Echo*), (*Nemotron3SuperA12bFree*)
+            model[ "Family" ](*//Echo*), (*Nemotron3*)
+            key(*//Echo*)
         ]
     ];
 
@@ -819,7 +819,7 @@ resolveAutoSetting0 // beginDefinition;
 
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
-    With[ { s = autoModelSetting[ as, name ] },
+    With[ { s = autoModelSetting[ as(*//Echo*), name(*//Echo*) ] },
         s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
     ];
 

@@ -81,7 +81,7 @@ sendChatHeadless[ messages_ ] :=
 
 sendChatHeadless[ messages0_, settings0_ ] := Enclose[
     Module[ { settings, container, cellObject, messages, data, persona, task },
-        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        settings = ConfirmBy[ (resolveAutoSettings @ settings0), AssociationQ, "ResolveSettings" ](*//Echo*);
 
         $finishReason = None;
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
