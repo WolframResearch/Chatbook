@@ -71,63 +71,57 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         If[ ! MatchQ[ appContainer, _CellObject ],
             setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ] ];
 
-        label = If[ MatchQ[ appContainer, _CellObject ],
-            DynamicModule[
-                {
-                    Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ appContainer, "AllowSelectionContext" ], Automatic -> False ],
-                    Typeset`mouseOver = False
-                },
-                EventHandler[
-                    Grid[
-                        { {
-                            PaneSelector[
-                                {
-                                    "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, color @ "NA_ChatInputFieldFocus_Gray_3", color @ "NA_ChatInputFieldFocus_Gray_2" ],
-                                    "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, color @ "NA_ChatInputFieldFocus_Gray_4", color @ "NA_ChatInputFieldFocus_Gray_1" ],
-                                    "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, color @ "NA_ChatInputFieldFocus_Gray_2", color @ "NA_ChatInputFieldFocus_Gray_4" ],
-                                    "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, color @ "NA_ChatInputFieldFocus_Gray_1", color @ "NA_ChatInputFieldFocus_Gray_4" ]},
-                                Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
-                            BaselinePosition -> Baseline,
-                            ImageMargins     -> { { 0, 0 }, { 5, 0 } },
-                            ImageSize        -> Automatic ]
-                            ,
-                            Style[ tr[ "SidebarFocusIndicator" ], FontColor -> Dynamic[ If[ Typeset`mouseOver, color @ "NA_ChatInputFieldFocusFontHover", color @ "NA_ChatInputFieldFocusFont" ]]] } },
-                        Alignment        -> { Left, Baseline },
-                        BaseStyle        -> { "Text", FontSize -> 13 },
-                        BaselinePosition -> { 1, 1 } (* align to the text *)
-                    ],
-                  {
-                      "MouseEntered" :> (Typeset`mouseOver = True),
-                      "MouseExited"  :> (Typeset`mouseOver = False),
-                      "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ appContainer, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
-                  PassEventsDown -> True]]
+        If[ MatchQ[ appContainer, _CellObject ],
+            Pane[ focusedNotebookDisplay0 @ appContainer, Alignment -> { Center, Baseline }, ImageSize -> Scaled[ 1 ] ]
             ,
-            Grid[
-                { {
-                    Toggler[
-                        Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
-                        {
-                            True  -> $disableNotebookFocusLabel,
-                            False -> $enableNotebookFocusLabel
-                        },
-                        BaselinePosition -> Baseline
-                    ],
-                    tr[ "WorkspaceFocusIndicatorFocus" ],
-                    focusedNotebookDisplay0[ chatNB, focused, locked, info ]
-                } },
-                Alignment        -> { Left, Baseline },
-                BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
-                BaselinePosition -> { 1, 2 } (* align to the text *)
+            Pane[
+                Grid[
+                    { {
+                        DynamicModule[
+                            {
+                                Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ chatNB, "AllowSelectionContext" ], Automatic -> False ],
+                                Typeset`mouseOver = False
+                            },
+                            EventHandler[
+                                Tooltip[
+                                    PaneSelector[
+                                        {
+                                            "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                                            "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ],
+                                            "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                                            "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
+                                        },
+                                        Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
+                                        BaselinePosition -> Baseline,
+                                        ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+                                        ImageSize        -> Automatic
+                                    ],
+                                    Dynamic[ If[ Typeset`val, tr[ "WorkspaceFocusIndicatorEnableTooltip" ], tr[ "WorkspaceFocusIndicatorDisableTooltip" ] ] ]
+                                ],
+                                {
+                                    "MouseEntered" :> (Typeset`mouseOver = True),
+                                    "MouseExited"  :> (Typeset`mouseOver = False),
+                                    "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ chatNB, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])
+                                },
+                                PassEventsDown -> True
+                            ]
+                        ],
+                        tr[ "WorkspaceFocusIndicatorFocus" ],
+                        focusedNotebookDisplay0[ chatNB, focused, locked, info ]
+                    } },
+                    Alignment        -> { Left, Baseline },
+                    BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
+                    BaselinePosition -> { 1, 2 } (* align to the text *)
+                ],
+                Alignment    -> Left,
+                ImageMargins -> 0
             ]
-        ];
-
-        Pane[ label, ImageMargins -> { { 0, 0 }, { 0, 0 } } ]
+        ]
     ],
     throwInternalFailure
 ];
 
 focusedNotebookDisplay // endDefinition;
-
 
 
 focusedNotebookDisplay0 // beginDefinition;
@@ -141,6 +135,43 @@ focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
     BaselinePosition -> { 1, 1 }, (* align to the button *)
     Dividers         -> Center,
     FrameStyle       -> color @ "NA_ChatInputFieldFocusDividerFrame"
+];
+
+focusedNotebookDisplay0[ sidebarCell_CellObject ] :=
+DynamicModule[
+    {
+        Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ], Automatic -> False ],
+        Typeset`mouseOver = False
+    },
+    EventHandler[
+        Grid[
+            { {
+                PaneSelector[
+                    {
+                        "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                        "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ],
+                        "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                        "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
+                    },
+                    Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
+                    BaselinePosition -> Baseline,
+                    ImageMargins     -> { { 0, 2 }, { 5, 0 } },
+                    ImageSize        -> Automatic
+                ]
+                ,
+                Style[ tr[ "SidebarFocusIndicator" ], FontColor -> Dynamic[ If[ Typeset`mouseOver, color @ "NA_ChatInputFieldFocusFontHover", color @ "NA_ChatInputFieldFocusFont" ] ] ]
+            } },
+            Alignment        -> { Left, Baseline },
+            BaseStyle        -> { "Text", FontSize -> 12.35 },
+            BaselinePosition -> { 1, 1 }, (* align to the text *)
+            Spacings         -> { 0, 0 }
+        ],
+      {
+          "MouseEntered" :> (Typeset`mouseOver = True),
+          "MouseExited"  :> (Typeset`mouseOver = False),
+          "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
+      PassEventsDown -> True
+    ]
 ];
 
 focusedNotebookDisplay0 // endDefinition;

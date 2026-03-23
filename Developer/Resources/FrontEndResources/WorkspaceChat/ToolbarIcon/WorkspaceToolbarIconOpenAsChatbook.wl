@@ -32,6 +32,6 @@ Graphics[{Thickness[0.08332986316297075],
      Opacity[1.]}], FilledCurve[{{{0, 2, 0}}}, 
     {{{5.22689962387085, 6.018500328063965}, {11.22689962387085, 
        12.018500328063965}}}]}}, AspectRatio -> Automatic, 
- ImageSize -> {15., 14.}, PlotRange -> {{-1., 13.000499725341797}, 
+ ImageSize -> {11.25, 11.25}, PlotRange -> {{-1., 13.}, 
    {-1., 13.}}, BaselinePosition -> Center -> Center]
 ]
