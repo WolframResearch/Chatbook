@@ -1307,9 +1307,9 @@ setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value)
 (*mouseDown*)
 mouseDown // beginDefinition;
 (* Workaround for dynamics freezing in attached cells when mousing over docked cell: *)
-mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b ];
+(* mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b, BaselinePosition -> Baseline ]; *)
 mouseDown[ a_, b_, c_ ] /; $CloudEvaluation := Mouseover[ a, b ];
-mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c ];
+mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ];
 mouseDown // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
