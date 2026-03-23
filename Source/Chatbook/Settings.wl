@@ -271,17 +271,26 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
 
-(* model doc: https://web.archive.org/web/20260323163117/https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard#quick-start-guide
-* "Use temperature=1.0 and top_p=0.95 across all tasks and serving backends — reasoning, tool calling, and general chat alike."
+(*
+* model doc:
+  * 3 Super:
+    * https://web.archive.org/web/20260323163117/https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard#quick-start-guide
+    * https://research.nvidia.com/labs/nemotron/files/NVIDIA-Nemotron-3-Super-Technical-Report.pdf
+  * 3 Nano: https://web.archive.org/web/20260323183059/https://build.nvidia.com/nvidia/nemotron-3-nano-30b-a3b
+  *
+
+* doc instructs "Use temperature=1.0 and top_p=0.95 across all tasks and serving backends -- reasoning, tool calling,
+  and general chat alike."
+
 *)
 $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     "ForceSynchronous" -> True,
     "MaxContextTokens" -> 1000000,
     "Multimodal"       -> False,
     "Temperature"      -> 1.,
-    "ToolsEnabled"     -> True, (* TODO *)
+    "ToolsEnabled"     -> True,
     "TopP"             -> 0.95,
-	"Reasoning"        -> <|"Effort" -> {"None", "Minimal", "Medium", "High", Automatic}[[-1]]|> (* TODO *)
+	"Reasoning"        -> <|"Effort" -> {"None", "Minimal", "Medium", "High"}[[2]]|> (* TODO *)
     (*"ExcludedBasePrompts" -> Missing[ "NotSupported" ]*) (* TODO *)
 |>;
 
