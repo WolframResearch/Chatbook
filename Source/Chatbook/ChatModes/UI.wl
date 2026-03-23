@@ -465,7 +465,7 @@ PaneSelector[
             ],
         True ->
             Button[
-                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 13 ], { 24.5, 24.5 } ],
+                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",
@@ -1200,7 +1200,7 @@ Grid[
     } },
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 2 },
-    BaseStyle        -> "WorkspaceChatToolbarButtonLabel",
+    BaseStyle        -> "NotebookAssistant`Sidebar`ToolbarButtonLabel",
     Spacings         -> { 0.3, 0 }
 ]
 
@@ -1280,7 +1280,7 @@ Overlay[
     { 1, 2 },
     1,
     Alignment        -> { Left, Baseline },
-    BaselinePosition -> Baseline,
+    (* BaselinePosition -> Baseline, *)
     BaseStyle        -> {
         "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
         FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
@@ -1305,47 +1305,53 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     {
                         {
                             Framed[
-                                workspaceInputField[ Dynamic @ cachedChatInput ],
-                                $inputFieldFrameOptions
-                            ],
-                            (* no need to templatize an attached cell as it is ephemeral *)
-                            PaneSelector[
-                                {
-                                    None -> Button[
-                                        blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
-                                        Needs[ "Wolfram`Chatbook`" -> None ];
-                                        (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
-                                        If[ kernelWasQuitQ,
-                                            If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                            If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
-                                            kernelWasQuitQ = False ];
-                                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                                            "EvaluateWorkspaceChat",
-                                            thisNB,
-                                            Dynamic @ $WorkspaceChatInput
-                                        ],
-                                        Appearance   -> "Suppressed",
-                                        FrameMargins -> 0,
-                                        Method       -> "Queued"
-                                    ]
-                                },
-                                Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
-                                Button[
-                                    blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 13 ], { 24.5, 24.5 } ],
-                                    Needs[ "Wolfram`Chatbook`" -> None ];
-                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
-                                    Appearance   -> "Suppressed",
-                                    FrameMargins -> 0
+                                Grid[
+                                    { {
+                                        workspaceInputField[ Dynamic @ cachedChatInput ],
+                                        (* no need to templatize an attached cell as it is ephemeral *)
+                                        PaneSelector[
+                                            {
+                                                None -> Button[
+                                                    blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
+                                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                                    (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
+                                                    If[ kernelWasQuitQ,
+                                                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                                                        If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
+                                                        kernelWasQuitQ = False ];
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                                        "EvaluateWorkspaceChat",
+                                                        thisNB,
+                                                        Dynamic @ $WorkspaceChatInput
+                                                    ],
+                                                    Appearance   -> "Suppressed",
+                                                    FrameMargins -> 0,
+                                                    Method       -> "Queued"
+                                                ]
+                                            },
+                                            Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
+                                            Button[
+                                                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
+                                                Needs[ "Wolfram`Chatbook`" -> None ];
+                                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                                Appearance   -> "Suppressed",
+                                                FrameMargins -> 0
+                                            ],
+                                            Alignment -> { Automatic, Baseline }
+                                        ]
+                                    } },
+                                    Alignment        -> { Left, Baseline },
+                                    BaselinePosition -> { 1, 1 },
+                                    Spacings         -> { 0, 0 }
                                 ],
-                                Alignment -> { Automatic, Baseline }
+                                $inputFieldFrameOptions
                             ]
                         },
                         {
-                            Spacer[ 0 ],
-                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, None ], Alignment -> Left ],
-                            SpanFromLeft
+                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, None ], Alignment -> Left ]
                         }
                     },
+                    Alignment -> { Left, Baseline },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification },
                     Spacings  -> { 0.5, 0.0 }
                 ],
@@ -2551,7 +2557,7 @@ attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
             Cell[
                 BoxData @ ToBoxes @ attachedOverlayMenuFrame[ nbo, sidebarCell, ConfirmMatch[ overlayMenu[ nbo, sidebarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ] ],
                 "AttachedOverlayMenu",
-                CellTags -> name,
+                CellTags      -> name,
                 Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
             ],
             { Left, Bottom },
@@ -2570,9 +2576,9 @@ attachedOverlayMenuFrame // beginDefinition;
 attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Framed[
     content,
     Alignment    -> { Left, Top },
-    Background   -> color @ "NA_NotebookBackground",
+    Background   -> color @ "NA_ChatInputFieldBackgroundArea",
     FrameMargins -> { { 5, 5 }, { 5, 5 } },
-    FrameStyle   -> color @ "NA_NotebookBackground",
+    FrameStyle   -> color @ "NA_ChatInputFieldBackgroundArea",
     If[ MatchQ[ appContainer, _CellObject ],
         ImageSize -> Dynamic[ AbsoluteCurrentValue[ appContainer, "ViewSize" ]/(0.85*AbsoluteCurrentValue[ nbo, Magnification ]) ]
         ,

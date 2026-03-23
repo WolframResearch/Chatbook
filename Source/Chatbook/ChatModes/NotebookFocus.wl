@@ -77,13 +77,34 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
             Pane[
                 Grid[
                     { {
-                        Toggler[
-                            Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
+                        DynamicModule[
                             {
-                                True  -> $disableNotebookFocusLabel,
-                                False -> $enableNotebookFocusLabel
+                                Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ chatNB, "AllowSelectionContext" ], Automatic -> False ],
+                                Typeset`mouseOver = False
                             },
-                            BaselinePosition -> Baseline
+                            EventHandler[
+                                Tooltip[
+                                    PaneSelector[
+                                        {
+                                            "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                                            "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ],
+                                            "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
+                                            "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
+                                        },
+                                        Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
+                                        BaselinePosition -> Baseline,
+                                        ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+                                        ImageSize        -> Automatic
+                                    ],
+                                    Dynamic[ If[ Typeset`val, tr[ "WorkspaceFocusIndicatorEnableTooltip" ], tr[ "WorkspaceFocusIndicatorDisableTooltip" ] ] ]
+                                ],
+                                {
+                                    "MouseEntered" :> (Typeset`mouseOver = True),
+                                    "MouseExited"  :> (Typeset`mouseOver = False),
+                                    "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ chatNB, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])
+                                },
+                                PassEventsDown -> True
+                            ]
                         ],
                         tr[ "WorkspaceFocusIndicatorFocus" ],
                         focusedNotebookDisplay0[ chatNB, focused, locked, info ]
