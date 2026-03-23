@@ -266,6 +266,31 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(* OpenRouter Nvidia/Nemotron *)
+
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+
+(* model doc: https://web.archive.org/web/20260323163117/https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard#quick-start-guide
+* "Use temperature=1.0 and top_p=0.95 across all tasks and serving backends — reasoning, tool calling, and general chat alike."
+*)
+$modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
+    "ForceSynchronous" -> True,
+    "MaxContextTokens" -> 1000000,
+    "Multimodal"       -> False,
+    "Temperature"      -> 1.,
+    "ToolsEnabled"     -> True, (* TODO *)
+    "TopP"             -> 0.95,
+	"Reasoning"        -> <|"effort" -> "High"|> (* TODO *)
+    (*"ExcludedBasePrompts" -> Missing[ "NotSupported" ]*) (* TODO *)
+|>;
+
+$modelAutoSettings[ "OpenRouter", Automatic ] = <|
+    (*"PresencePenalty" -> Missing[ "NotSupported" ]*)  (* TODO *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
 
