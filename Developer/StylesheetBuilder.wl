@@ -791,6 +791,36 @@ inlineResources[ expr_ ] := expr /. {
 (*other box constructs*)
 
 
+userMessageBoxFrame = Function[ x, Evaluate @
+    PaneBox[
+        OverlayBox[
+            {
+                FrameBox[
+                    x,
+                    BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                    Background     -> color @ "UserMessageBoxBackground",
+                    FrameMargins   -> { { 14, 8 }, { 8, 8 } },
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "UserMessageBoxFrame" ],
+                    ImageMargins   -> { { 8, 0 }, { 0, 0 } },
+                    RoundingRadius -> 8,
+                    StripOnInput   -> False
+                ],
+                DynamicBox[
+                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "MessageBoxUserIcon" ],
+                    FrameMargins -> { { 0, 0 }, { 0, 13 } },
+                    SingleEvaluation -> True
+                ]
+            },
+            All,
+            1,
+            Alignment -> { Left, Top }
+        ],
+        Alignment -> Right,
+        ImageSize -> { Full, Automatic }
+    ]
+]
+
+
 assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
     FrameBox[
         x,
@@ -805,31 +835,33 @@ assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
 ]
 
 assistantMessageBoxFrame = Function[ x, Evaluate @
-    FrameBox[
-        x,
-        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-        Background     -> color @ "NA_AssistantMessageBoxBackground", (* TWEAK *)
-        FrameMargins   -> 8,
-        FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ], (* TWEAK *)
-        ImageSize      -> { Scaled[ 1 ], Automatic },
-        RoundingRadius -> 8, (* tweaked *)
-        StripOnInput   -> False
-    ]
-]
-
-
-(* Sidebar: this used to be a CellFrameLabel within the ChatOutput style, but that option isn't supported in inline cells in the side bar *)
-assistantMessageBoxLabel =
-PaneBox[
-    DynamicBox[
-        ToBoxes[
-            Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
-            StandardForm
+    PaneBox[
+        OverlayBox[
+            {
+                FrameBox[
+                    x,
+                    BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                    Background     -> color @ "NA_AssistantMessageBoxBackground",
+                    FrameMargins   -> { { 14, 8 }, { 8, 8 } },
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ],
+                    ImageMargins   -> { { 8, 0 }, { 0, 0 } },
+                    ImageSize      -> { Scaled[ 1 ], Automatic },
+                    RoundingRadius -> 8,
+                    StripOnInput   -> False
+                ],
+                DynamicBox[
+                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "MessageBoxAssistantIcon" ],
+                    FrameMargins -> { { 0, 0 }, { 0, 13 } },
+                    SingleEvaluation -> True                                        
+                ]
+            },
+            All,
+            1,
+            Alignment -> { Left, Top }
         ],
-        SingleEvaluation -> True
-    ],
-    FrameMargins -> { { 5, 0 }, { 0, 23 } }  (* TWEAK: push down the icon to align in the overlay *)
+        Alignment -> Left,
+        ImageSize -> { Full, Automatic }
+    ]
 ]
 
 
