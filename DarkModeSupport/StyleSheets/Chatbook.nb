@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.85.3983346424"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.86.3983355658"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -3033,15 +3033,12 @@ Notebook[
         #1,
         BaseStyle -> {"Text", Editable -> False, Selectable -> False},
         Background ->
-         LightDarkSwitched[
-          RGBColor[0.929412, 0.956863, 0.988235],
-          RGBColor[0.247059, 0.305882, 0.403922]
-         ],
+         LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
         FrameMargins -> {{8, 15}, {8, 8}},
         FrameStyle ->
          LightDarkSwitched[
-          RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.32549, 0.447059, 0.6]
+          RGBColor[0.694118, 0.835294, 0.909804],
+          RGBColor[0.376471, 0.490196, 0.560784]
          ],
         RoundingRadius -> 10,
         StripOnInput -> False
