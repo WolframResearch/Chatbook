@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.83.3982823929"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.84.3983010599"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4746,21 +4746,22 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.82.3982815931"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.84.3983009999"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
    CellMargins -> {{66, 10}, {7, 8}},
    LineSpacing -> {1, 3},
    TabSpacings -> {2.5},
+   LineBreakWithin -> False,
    CounterIncrements -> "Text",
    FontFamily -> "Source Sans Pro",
-   FontSize -> 13,
+   FontSize -> 13.5,
    FontWeight -> "DemiBold",
    FontColor ->
     LightDarkSwitched[
-     GrayLevel[1],
-     RGBColor[0.831373, 0.929412, 1.0]
+     RGBColor[0.0705882, 0.556863, 0.819608],
+     RGBColor[0.302439, 0.721985, 0.98473]
     ]
   ],
   Cell[
