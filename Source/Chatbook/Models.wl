@@ -466,7 +466,7 @@ chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemot
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
 
-chooseModelFamily0[ wordsPattern[ "xAI"       ~~ $$versionOrParams ] ] := "Grok";
+chooseModelFamily0[ wordsPattern[ "Grok"       ~~ $$versionOrParams ] ] := "Grok";
 
 chooseModelFamily0[ _String ] := None;
 
