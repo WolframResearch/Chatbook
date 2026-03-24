@@ -834,7 +834,8 @@ evaluateLanguageLabel[ name_String, False ] :=
             MouseAppearance[
                 buttonMouseover[
                     buttonFrameDefault[ buttonPane @ icon, False ],
-                    buttonFrameActive[ buttonPane @ icon, False ]
+                    buttonFrameHover[   buttonPane @ icon, False ],
+                    buttonFramePressed[ buttonPane @ icon, False ]
                 ],
                 "LinkHand"
             ],
@@ -852,7 +853,11 @@ evaluateLanguageLabel[ name_String, True ] :=
 
         fancyTooltip[
             MouseAppearance[
-                buttonMouseover[ buttonFrameDefault[ labeled, True ], buttonFrameActive[ labeled, True ] ],
+                buttonMouseover[
+                    buttonFrameDefault[ labeled, True ],
+                    buttonFrameHover[   labeled, True ],
+                    buttonFramePressed[ labeled, True ]
+                ],
                 "LinkHand"
             ],
             targetNotebookLabel @ EvaluationNotebook[ ]
@@ -904,7 +909,8 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -918,7 +924,8 @@ $copyToClipboardButtonLabelWorkspaceChat := $copyToClipboardButtonLabelWorkspace
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ],
-            buttonFrameActive @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ]
+            buttonFrameHover   @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ],
+            buttonFramePressed @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -932,7 +939,8 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ]
         ],
         "LinkHand"
     ],
@@ -946,7 +954,8 @@ $insertInputButtonLabelWorkspaceChat := $insertInputButtonLabelWorkspaceChat = f
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
         ],
         "LinkHand"
     ],
@@ -960,7 +969,8 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ]
         ],
         "LinkHand"
     ],
@@ -1296,6 +1306,7 @@ button // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*buttonMouseover*)
 buttonMouseover[ a_, b_ ] := Mouseover[ a, b, BaselinePosition -> Baseline ];
+buttonMouseover[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1307,20 +1318,33 @@ buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
         Background       -> None,
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
-        RoundingRadius   -> 3
+        RoundingRadius   -> 2
     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*buttonFrameActive*)
-buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
+(*buttonFrameHover*)
+buttonFrameHover[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
         FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
         Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundHover",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
-        RoundingRadius   -> 3
+        RoundingRadius   -> 2
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*buttonFramePressed*)
+buttonFramePressed[ expr_, extendMarginsQ: True|False : True ] :=
+    Framed[
+        expr,
+        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFramePressed",
+        Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundPressed",
+        BaselinePosition -> Baseline,
+        FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
+        RoundingRadius   -> 2
     ];
 
 (* ::**************************************************************************************************************:: *)
