@@ -1363,7 +1363,7 @@ Dispatch[{
 	|>,
 	"NA_AssistantMessageBoxFrame" -> <|
 		 "Light"  -> RGBColor[0.9215686, 0.9529411, 0.9686274],
-		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.2901960],
+		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.290196],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
@@ -1475,7 +1475,7 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateFrame" -> <|
 		 "Light"  -> RGBColor[0.9215686, 0.9529411, 0.9686274],
-		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.2901960],
+		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.290196],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
@@ -2405,15 +2405,15 @@ Dispatch[{
 		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
 	"UserMessageBoxBackground" -> <|
-		 "Light"  -> RGBColor[0.9294117, 0.9568627, 0.9882352],
-		 "Dark"   -> RGBColor[0.2470588, 0.3058823, 0.4039215],
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
 		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
 	|>,
 	"UserMessageBoxFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3254901, 0.4470588, 0.6],
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764706, 0.4901961, 0.5607843],
 		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
