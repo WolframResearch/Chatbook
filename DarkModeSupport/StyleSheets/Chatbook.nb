@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.84.3983010599"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.85.3983346424"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1332,7 +1332,7 @@ Notebook[
            Background -> None,
            BaselinePosition -> Baseline,
            FrameMargins -> {{0, 4}, {0, 0}},
-           RoundingRadius -> 3,
+           RoundingRadius -> 2,
            StripOnInput -> False
           ],
           Background ->
