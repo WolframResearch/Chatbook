@@ -131,7 +131,7 @@ $notebookAssistanceMenuItems = <|
                 FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceWindow" ],
                 FrontEnd`KernelExecute[
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ If[ BoxForm`sufficientVersionQ[ 15.0 ], "Sidebar", "Window" ], "NewChat" -> "Toggle" ]
+                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ "Window", "NewChat" -> "Toggle" ]
                 ],
                 FrontEnd`MenuEvaluator -> Automatic,
                 Evaluate[
@@ -170,6 +170,7 @@ $notebookAssistanceMenuItems = <|
 (* ::Subsection::Closed:: *)
 (*enableNotebookAssistance*)
 enableNotebookAssistance // beginDefinition;
+enableNotebookAssistance[ k: { $$notebookAssistanceMenuItem.. } ] /; BoxForm`sufficientVersionQ[ 15.0 ] := Null
 enableNotebookAssistance[ k: { $$notebookAssistanceMenuItem.. } ] := FrontEndExecute @ Lookup[ $notebookAssistanceMenuItems, k ];
 enableNotebookAssistance // endDefinition;
 
