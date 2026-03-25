@@ -1079,31 +1079,89 @@ errorMessageLinkAppearance // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatInputActiveCellDingbat*)
+
+makeChatInputActiveCellDingbat // beginDefinition;
+
+(* we can load the dingbat synchronously if we already know all of the personas *)
+makeChatInputActiveCellDingbat[ mouseOver_ ] /; AssociationQ[ Wolfram`Chatbook`Personas`$CachedPersonaData ] :=
+DynamicModule[
+	{
+		Typeset`dingbatCell = None,
+		Typeset`targetCell  = None,
+		Typeset`display     = ""
+	},
+	DynamicWrapper[
+		Dynamic @ Typeset`display
+		,
+		Catch[
+			Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+			Typeset`display = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ Typeset`dingbatCell, Typeset`targetCell, mouseOver ]
+		    ,
+		    Blank[]
+		]
+		,
+		SynchronousUpdating -> True,
+		TrackedSymbols      :> { Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger }
+	],
+	Initialization   :> (
+		Typeset`dingbatCell = EvaluationCell[ ];
+		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
+		Needs[ "Wolfram`Chatbook`" -> None ];
+	),
+	UnsavedVariables :> { Typeset`dingbatCell, Typeset`targetCell }
+]
+
+(*
+	The dingbat loads using the System kernel, but the DynamicWrapper must use the ambient kernel in order to "hear" any trigger signals.
+	The CellObject may change when we cut+paste the cell.
+	The Initialization runs every time we cut+paste the cell.
+	Recalculate the CellObjects during initialization. *)
+makeChatInputActiveCellDingbat[ mouseOver_ ] :=
+DynamicModule[
+	{
+		Typeset`dingbatCell = None,
+		Typeset`targetCell  = None,
+		Typeset`display     = ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_BlueHueButtonIcon" }, ImageSize -> 18 ]
+	},
+	DynamicWrapper[
+		Dynamic @ Typeset`display
+		,
+		Catch[
+			Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+			Typeset`display = ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_BlueHueButtonIcon" }, ImageSize -> 18 ];
+		    Typeset`display = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ Typeset`dingbatCell, Typeset`targetCell, mouseOver ]
+		    ,
+		    Blank[]
+		]
+		,
+		SynchronousUpdating -> False,
+		TrackedSymbols      :> { Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger }
+	],
+	Initialization   :> (
+		Typeset`dingbatCell = EvaluationCell[ ];
+		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
+		Needs[ "Wolfram`Chatbook`" -> None ];
+	),
+	UnsavedVariables :> { Typeset`dingbatCell, Typeset`targetCell }
+]
+
+makeChatInputActiveCellDingbat // endDefinition;
+
 MakeChatInputActiveCellDingbat[ mouseOver_:Automatic ] :=
 If[ mouseOver === Automatic,
 	PaneSelector[
 		{
-			True -> chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
-			False -> DynamicModule[ { Typeset`cell },
-				trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
-				Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
-				UnsavedVariables :> { Typeset`cell }
-			]
+			True  -> chatbookIcon[ "ChatIconGeneric", False, color @ "IconsChatIconUserBackground", color @ "IconsChatIconUserEdge", 21 ],
+			False -> makeChatInputActiveCellDingbat @ mouseOver
 		},
 		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
 		ImageSize -> Automatic
 	]
 	,
-	DynamicModule[ { Typeset`cell },
-		trackedDynamic[ MakeChatInputActiveCellDingbat[ Typeset`cell, mouseOver ], { "ChatBlock" } ],
-		Initialization :> (Typeset`cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
-		UnsavedVariables :> { Typeset`cell }
-	]
+	makeChatInputActiveCellDingbat @ mouseOver
 ];
 
-MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
-	targetCell = parentCell @ dingbatCell
-},
+MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, targetCell_CellObject, mouseOver_ ] :=
 	Button[
 		Framed[
 			Pane[
@@ -1125,22 +1183,25 @@ MakeChatInputActiveCellDingbat[ dingbatCell_CellObject, mouseOver_ ] := With[{
 			ImageMargins   -> 0,
 			RoundingRadius -> 2
 		],
-		If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] === { },
-			MakeMenu[
-				makeChatActionMenu[ "Input", targetCell ],
-				TaggingRules -> <|
-					"ActionScope" -> targetCell,
-					"Anchor"      -> dingbatCell,
-					"IsRoot"      -> True
-				|>
+		With[ { attachedMenuCells = Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] },
+			If[ attachedMenuCells === {},
+				MakeMenu[
+					makeChatActionMenu[ "Input", targetCell ],
+					TaggingRules -> <|
+						"ActionScope" -> targetCell,
+						"Anchor"      -> dingbatCell,
+						"IsRoot"      -> True
+					|>
+				]
+				,
+				NotebookDelete /@ attachedMenuCells
 			]
 		],
 		Appearance     -> $suppressButtonAppearance,
-		ImageMargins   -> 0,
+		ContentPadding -> False,
 		FrameMargins   -> 0,
-		ContentPadding -> False
-	]
-];
+		ImageMargins   -> 0
+	];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
