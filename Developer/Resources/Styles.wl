@@ -229,7 +229,10 @@ Cell[
 Cell[
     StyleData[ "ChatInputActiveCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputActiveCellDingbat
+        DisplayFunction -> Function @ DynamicBox[
+            ToBoxes[ Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ ], StandardForm ],
+            SingleEvaluation -> True
+        ]
     }
 ]
 
@@ -242,7 +245,10 @@ Cell[
 Cell[
     StyleData[ "ChatInputCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputCellDingbat
+        DisplayFunction -> Function @ DynamicBox[
+            ToBoxes[ Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ], StandardForm ],
+            SingleEvaluation -> True
+        ]
     }
 ]
 
@@ -261,7 +267,7 @@ Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue      -> 1544,
     Background            -> Transparent,
-    CellDingbat           -> TemplateBox[ {}, "ChatInputActiveCellDingbat" ],
+    CellDingbat           -> TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
     CellDingbatMargin     -> -20,
     CellFrame             -> { { 0, 0 }, { 0, 2.5 } },
     CellFrameLabels       -> { { "", Inherited }, { Inherited, Inherited } },
