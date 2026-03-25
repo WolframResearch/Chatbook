@@ -126,7 +126,7 @@ Cell[
 Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     AutoQuoteCharacters      -> { },
-    CellFrame                -> 2,
+    CellFrame                -> 1.75,
     CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
@@ -157,9 +157,8 @@ Cell[
             None,
             Cell[
                 BoxData[
-                    DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[
-                        color @ "SendChatButtonFrameHover",
-                        color @ "SendChatButtonBackgroundHover"
+                    DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[
+                        color @ "ChatInputFrame"
                     ]
                 ],
                 Background -> None
