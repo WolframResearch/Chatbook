@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.86.3983355658"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.89.3983430352"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -116,7 +116,7 @@ Notebook[
     "FramedChatCell",
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
-   CellFrame -> 2,
+   CellFrame -> 1.75,
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
@@ -221,8 +221,8 @@ Notebook[
    },
    CellFrameColor ->
     LightDarkSwitched[
-     RGBColor[0.639216, 0.788235, 0.94902],
-     RGBColor[0.372097, 0.53277, 0.719639]
+     RGBColor[0.694118, 0.835294, 0.909804],
+     RGBColor[0.376471, 0.490196, 0.560784]
     ],
    CellFrameLabels -> {
     {
@@ -232,14 +232,12 @@ Notebook[
        DynamicBox[
         FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButton"][
          LightDarkSwitched[
-          RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.372097, 0.53277, 0.719639]
+          RGBColor[0.694118, 0.835294, 0.909804],
+          RGBColor[0.376471, 0.490196, 0.560784]
          ],
-         LightDarkSwitched[
-          RGBColor[0.945098, 0.968627, 0.992157],
-          RGBColor[0.151078, 0.187077, 0.246627]
-         ],
-         20
+         {24, 24},
+         12,
+         18
         ]
        ]
       ],
@@ -680,8 +678,8 @@ Notebook[
    CellAutoOverwrite -> True,
    CellFrameColor ->
     LightDarkSwitched[
-     RGBColor[0.92549, 0.941176, 0.960784],
-     RGBColor[0.1608, 0.2314, 0.30195]
+     RGBColor[0.921569, 0.952941, 0.968628],
+     RGBColor[0.215686, 0.258824, 0.290196]
     ],
    ShowAutoSpellCheck -> False,
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
@@ -689,8 +687,8 @@ Notebook[
    LanguageCategory -> None,
    Background ->
     LightDarkSwitched[
-     RGBColor[0.988235, 0.992157, 1.0],
-     RGBColor[0.1373, 0.1647, 0.1961]
+     RGBColor[0.976471, 0.992157, 1.0],
+     RGBColor[0.113726, 0.121569, 0.129412]
     ],
    GraphicsBoxOptions -> {ImageSizeRaw -> {{300}, {220}}},
    Graphics3DBoxOptions -> {ImageSizeRaw -> {{300}, {220}}}
