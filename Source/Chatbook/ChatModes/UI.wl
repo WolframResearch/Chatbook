@@ -1192,7 +1192,7 @@ openAsChatbookButton // endDefinition;
 toolbarButtonLabel // beginDefinition;
 
 toolbarButtonLabel[ iconName_String, label_String, tooltip:_String | None ] :=
-If[ tooltip === None, #, Tooltip[ #, tooltip ] ]& @
+If[ tooltip === None, #, Tooltip[ #, tr @ tooltip ] ]& @
 Grid[
     { {
         chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ],
@@ -1205,7 +1205,7 @@ Grid[
 ]
 
 toolbarButtonLabel[ iconName_String, None, tooltip:_String | None ] :=
-If[ tooltip === None, #, Tooltip[ #, tooltip ] ]& @ chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ]
+If[ tooltip === None, #, Tooltip[ #, tr @ tooltip ] ]& @ chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

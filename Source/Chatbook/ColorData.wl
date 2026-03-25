@@ -1356,56 +1356,56 @@ Dispatch[{
 	|>,
 	"NA_AssistantMessageBoxBackground" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Dark"   -> RGBColor[0.1137254, 0.1215686, 0.1294117],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Chat bubble around assistant's message, slight difference from non-NA version"
 	|>,
 	"NA_AssistantMessageBoxFrame" -> <|
-		 "Light"  -> RGBColor[0.8784313, 0.9372549, 0.9686274],
-		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Light"  -> RGBColor[0.9215686, 0.9529411, 0.9686274],
+		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.290196],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
 	"NA_BlueHueButtonBackgroundHover" -> <|
 		 "Light"  -> GrayLevel[1.],
-		 "Dark"   -> GrayLevel[0.2325145],
-		 "Method" -> "Background",
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonBackgroundPressed" -> <|
 		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
-		 "Dark"   -> RGBColor[0.0897329, 0.1248040, 0.1550156],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.2196078, 0.3137254, 0.3803921],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonFrameHover" -> <|
 		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
-		 "Dark"   -> RGBColor[0.3774621, 0.4913380, 0.5632675],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonFramePressed" -> <|
 		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
-		 "Dark"   -> RGBColor[0.3907552, 0.5965328, 0.7207059],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonIcon" -> <|
 		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
-		 "Dark"   -> RGBColor[0.3024389, 0.7219852, 0.9847301],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatCodeBlockTemplateBackgroundBottom" -> <|
 		 "Light"  -> RGBColor[0.9764705, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.1372549, 0.1647058, 0.1960784],
+		 "Dark"   -> RGBColor[0.1137254, 0.1215686, 0.1294117],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
@@ -1419,7 +1419,14 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateButtonBackgroundHover" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> RGBColor[0.2039215, 0.2549019, 0.3137254],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> "Used in both NA and Chatbooks"
+	|>,
+	"NA_ChatCodeBlockTemplateButtonBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.8313725, 0.9411764, 1.],
+		 "Dark"   -> RGBColor[0.2196078, 0.3137254, 0.3803921],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
@@ -1439,8 +1446,15 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatCodeBlockTemplateButtonFrameHover" -> <|
-		 "Light"  -> RGBColor[0.8313725, 0.8980392, 0.9294117],
-		 "Dark"   -> RGBColor[0.353, 0.5098, 0.6785],
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
+		 "Method" -> "Design",
+		 "DC"     -> "NA_ChatOutput",
+		 "Notes"  -> "Used in both NA and Chatbooks"
+	|>,
+	"NA_ChatCodeBlockTemplateButtonFramePressed" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Used in both NA and Chatbooks"
@@ -1460,23 +1474,23 @@ Dispatch[{
 		 "Notes"  -> "Uses images from SystemFiles layout"
 	|>,
 	"NA_ChatCodeBlockTemplateFrame" -> <|
-		 "Light"  -> GrayLevel[0.89804],
-		 "Dark"   -> RGBColor[0.1607843, 0.2313725, 0.3019607],
+		 "Light"  -> RGBColor[0.9215686, 0.9529411, 0.9686274],
+		 "Dark"   -> RGBColor[0.2156862, 0.2588235, 0.290196],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
 	|>,
 	"NA_ChatInputFieldBackground" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.09805],
+		 "Dark"   -> GrayLevel[0.0980392],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldBackgroundArea" -> <|
 		 "Light"  -> RGBColor[0.933333, 0.976471, 1.],
-		 "Dark"   -> RGBColor[0.1920600, 0.2677078, 0.3257876],
-		 "Method" -> "Background",
+		 "Dark"   -> RGBColor[0.1490196, 0.2078431, 0.2549019],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1496,15 +1510,15 @@ Dispatch[{
 	|>,
 	"NA_ChatInputFieldFocusFont" -> <|
 		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
-		 "Dark"   -> RGBColor[0.3850995, 0.6206333, 0.7614185],
-		 "Method" -> "Feature",
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFocusFontHover" -> <|
-		 "Light"  -> RGBColor[0.380392, 0.704575, 0.879739],
-		 "Dark"   -> RGBColor[0.2611123, 0.7120837, 0.9846240],
-		 "Method" -> "Feature",
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -1565,9 +1579,9 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_ChatInputFieldFrame" -> <|
-		 "Light"  -> RGBColor[0.070588, 0.556863, 0.819608],
-		 "Dark"   -> RGBColor[0.2611116, 0.7120837, 0.9846240],
-		 "Method" -> "Feature",
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
+		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatInputField",
 		 "Notes"  -> ""
 	|>,
@@ -2391,15 +2405,15 @@ Dispatch[{
 		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
 	"UserMessageBoxBackground" -> <|
-		 "Light"  -> RGBColor[0.9294117, 0.9568627, 0.9882352],
-		 "Dark"   -> RGBColor[0.2470588, 0.3058823, 0.4039215],
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
 		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
 	|>,
 	"UserMessageBoxFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3254901, 0.4470588, 0.6],
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764706, 0.4901961, 0.5607843],
 		 "Method" -> "Design",
 		 "DC"     -> "UserMessageBox",
 		 "Notes"  -> "Chat bubble around user's message"
