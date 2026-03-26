@@ -1370,40 +1370,7 @@ makeChatActionMenu[
 	containerType: "Input" | "Delimiter" | "Toolbar" | "Sidebar",
 	targetObj : _CellObject | _NotebookObject
 ] :=
-Join[
 	{
-		<|
-			"Type"           -> "Header",
-			"Label"          -> tr @ "UIPersonas",
-			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
-			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
-		|>
-	},
-	With[
-		{
-			personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
-		} ,
-		KeyValueMap[ { persona, personaSettings } |->
-			<|
-				"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
-				"Label"  -> personaDisplayName[ persona, personaSettings ],
-				"Icon"   -> getPersonaMenuIcon @ personaSettings,
-				"Check"  -> styleListItem[ persona, personaValue ],
-				"Action" :> (
-					setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
-					updateDynamics[ { "ChatBlock" } ];
-					(* If we're changing the persona set on a cell, ensure that we are not showing
-						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
-					If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
-				),
-				"Value"    -> persona,
-				"Category" -> "Persona"
-			|>,
-			filterPersonas @ targetObj
-		]
-	],
-	{
-		<| "Type" -> "Delimiter" |>,
 		<|
 			"Type"   -> "Button",
 			"Label"  -> tr @ "UIAddAndManagePersonas",
@@ -1423,6 +1390,16 @@ Join[
 		<| "Type" -> "Delimiter" |>,
 		<|
 			"Type"    -> "Submenu",
+			"Label"   -> tr @ "UIPersonas",
+			"Icon"    -> resizeMenuIcon @ chatbookIcon[ "ChatIconCodeAssistant", False ],
+			"MenuTag" -> "Personas",
+			"Menu"    :> createPersonasMenu @ targetObj,
+			"Width"   -> 150,
+			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
+			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+		|>,
+		<|
+			"Type"    -> "Submenu",
 			"Label"   -> tr @ "UIModels",
 			"Icon"    -> chatbookIcon[ "ChatBlockSettingsMenuIcon", False ],
 			"MenuTag" -> "Services",
@@ -1440,7 +1417,111 @@ Join[
 			"Width"   -> 200
 		|>
 	}
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Personas submenu*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createPersonasMenu*)
+
+createPersonasMenu // beginDefinition;
+
+createPersonasMenu[ targetObj_ ] :=
+With[
+	{
+		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
+	},
+	Join[
+		{
+			<|
+				"Type"           -> "Header",
+				"Label"          -> tr @ "UIPersonas",
+				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
+				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+			|>
+		},
+		KeyValueMap[ { persona, personaSettings } |->
+			<|
+				"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
+				"Label"  -> personaDisplayName[ persona, personaSettings ],
+				"Icon"   -> getPersonaMenuIcon @ personaSettings,
+				"Check"  -> styleListItem[ persona, personaValue ],
+				"Action" :> (
+					setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
+					updateDynamics[ { "ChatBlock" } ];
+					(* If we're changing the persona set on a cell, ensure that we are not showing
+						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
+					If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
+				),
+				"Value"    -> persona,
+				"Category" -> "Persona"
+			|>,
+			filterPersonas @ targetObj
+		]
+	]
+] /; AssociationQ @ Wolfram`Chatbook`Personas`$CachedPersonaData;
+
+createPersonasMenu[ targetObj_ ] := {
+With[
+	{
+		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
+	},
+	<|
+		"Type"        -> "Delayed",
+		"InitialMenu" -> {
+			<|
+				"Type"           -> "Header",
+				"Label"          -> tr @ "UIPersonas",
+				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
+				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+			|>,
+			<|
+				"Type"    -> "Custom",
+				"Content" ->
+					Pane[
+						Column @ {
+							Style[ tr @ "UIPersonasGet", "ChatMenuLabel" ],
+							ProgressIndicator[ Appearance -> "Percolate" ]
+						},
+						ImageMargins -> 5
+					]
+			|>
+		},
+		"FinalMenu" :>
+			Join[
+				{
+					<|
+						"Type"           -> "Header",
+						"Label"          -> tr @ "UIPersonas",
+						"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
+						"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited) |>
+				},
+				KeyValueMap[ { persona, personaSettings } |->
+					<|
+						"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
+						"Label"  -> personaDisplayName[ persona, personaSettings ],
+						"Icon"   -> getPersonaMenuIcon @ personaSettings,
+						"Check"  -> styleListItem[ persona, personaValue ],
+						"Action" :> (
+							setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
+							updateDynamics[ { "ChatBlock" } ];
+							(* If we're changing the persona set on a cell, ensure that we are not showing
+								the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
+							If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
+						),
+						"Value"    -> persona,
+						"Category" -> "Persona"
+					|>,
+					filterPersonas @ targetObj
+				]
+			]
+	|>
 ]
+};
+
+createPersonasMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
