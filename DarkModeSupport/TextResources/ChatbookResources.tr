@@ -9628,7 +9628,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
       RGBColor[0.070588, 0.556863, 0.819608], 
       RGBColor[0.129412, 0.294118, 0.411765]],
     ImageSize->{
-      Scaled[1], 5}]],ExpressionUUID->"ede6c5e0-e648-0946-8708-f613503ef1c3"], 
+      Scaled[1], 5}]],ExpressionUUID->"e4091314-0dc2-1b4c-b3cd-93744cca7f53"], 
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
      StandardForm],
@@ -9647,8 +9647,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"b92dafe2-9bcb-fb4d-a8f7-\
-12b3492e6b7c"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"32cde2f9-956b-9043-8b85-\
+f91bcb683d15"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9766,8 +9766,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"59f0261f-9a91-9c45-b5e8-\
-10bd66f21e4a"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"60c49f51-4053-1645-9b1b-\
+c9711923741a"],
 
 "ChatbarSettingsIcon" -> GraphicsBox[
   {EdgeForm[None], FaceForm[LightDarkSwitched[
@@ -9926,7 +9926,70 @@ pJiv9ujhBQBkOk3/
      CurveClosed->{1}]}},
   AspectRatio->Automatic,
   ImageSize->{17., 17.},
-  PlotRange->{{-0.5, 15.75}, {-0.5, 16.3169002532959}}]
+  PlotRange->{{-0.5, 15.75}, {-0.5, 16.3169002532959}}],
+
+"ChatInputCellDingbat" -> GraphicsBox[
+  {Thickness[0.05714285714285714], 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[1], 
+     GrayLevel[0.0980392]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFvPxCDkC6QfiCCIh2+Nv+2R6Jz8C/7x0y
+v6H773MQn0NrpSgyPyhxkxgy/8Pt7wbI/AOaVobI5l3QLTBEtg/Gr5jlDtYH
+43u86EThR7zZD+bDzIPxYfbB+HrRG8WQ+Y+VV4gimwfzD8w+GH/DlZWKyHxY
++DDMWfTTHj28AEDaVb0=
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[0.6941176, 0.8352941, 0.9098039], 
+     RGBColor[0.3764705, 0.490196, 0.5607843]], Thickness[
+    0.08571428571428572], CapForm[
+    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
+    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFvPxCDkC6QfiCCIh2+Nv+2R6Jz8C/7x0y
+v6H773MQn0NrpSgyPyhxkxgy/8Pt7wbI/AOaVobI5l3QLTBEtg/Gr5jlDtYH
+43u86EThR7zZD+bDzIPxYfbB+HrRG8WQ+Y+VV4gimwfzD8w+GH/DlZWKyHxY
++DDMWfTTHj28AEDaVb0=
+     "],
+     CurveClosed->{1}]}},
+  AspectRatio->Automatic,
+  ImageSize->{19., 20.},
+  PlotRange->{{-0.5, 18.}, {-0.5, 18.688499450683594`}}],
+
+"ChatOutputCellDingbat" -> GraphicsBox[
+  {Thickness[0.057971014492753624`], 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[0.8784313, 0.9490196, 0.9882352], 
+     RGBColor[0.2039215, 0.2823529, 0.345098]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMG3n5BBxB9dJ8wiD7wp/2jPRKfgW/fK2R+
+Q9ffxyA+x53pIsj8IOGFosj8go7NBsj8A1O+GiCbF3BL2xDZPhi/YJY6WB2M
+7/AiE4Uf8GY+mA8zD8aH2Qfj6/EuEEXmP746TQTZPJh/YPbB+AuuZCoi82Hh
+w5AS+9UePbwAlwpaOA==
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.4, 0.6117647, 0.7411764]], Thickness[0.07246376811594203], 
+    CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
+    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMG3n5BBxB9dJ8wiD7wp/2jPRKfgW/fK2R+
+Q9ffxyA+x53pIsj8IOGFosj8go7NBsj8A1O+GiCbF3BL2xDZPhi/YJY6WB2M
+7/AiE4Uf8GY+mA8zD8aH2Qfj6/EuEEXmP746TQTZPJh/YPbB+AuuZCoi82Hh
+w5AS+9UePbwAlwpaOA==
+     "],
+     CurveClosed->{1}]}},
+  AspectRatio->Automatic,
+  ImageSize->{19., 19.},
+  PlotRange->{{-0.5, 17.75}, {-0.5, 18.29650115966797}}]
 }
 @|
 @|
