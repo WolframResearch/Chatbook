@@ -688,7 +688,7 @@ toolStringSplit[ req_String, result_String ] :=
     toolStringSplit[ toolRequestParser @ req, result ];
 
 toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash @ req },
+    With[ { id = tinyHash[ req, 9 ] },
         toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
     ];
 
