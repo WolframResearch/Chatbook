@@ -290,8 +290,8 @@ $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     "Temperature"      -> 1.,
     "ToolsEnabled"     -> True,
     "TopP"             -> 0.95,
-	"Reasoning"        -> <|"Effort" -> {"None", "Minimal", "Medium", "High"}[[2]]|> (* TODO *)
-    (*"ExcludedBasePrompts" -> Missing[ "NotSupported" ]*) (* TODO *)
+    "Reasoning"        -> <|"Enabled" -> True|>
+    (*"Reasoning"      -> <|"Effort" -> {"None", "Minimal", "Medium", "High"}[[2]]|>*) (* TODO: what's the effective effort used if using `"Enabled" -> True`? Does it matter? *)
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <|
