@@ -166,7 +166,7 @@ Cell[
         },
         { None, None }
     },
-	CellDingbat -> TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
+	CellDingbat -> TemplateBox[ { }, "ChatInputCellDingbat" ],
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
@@ -221,23 +221,6 @@ Cell[
 ]
 
 
-
-(* ::Subsubsection::Closed:: *)
-(*ChatInputActiveCellDingbat*)
-
-
-Cell[
-    StyleData[ "ChatInputActiveCellDingbat" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ DynamicBox[
-            ToBoxes[ Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ ], StandardForm ],
-            SingleEvaluation -> True
-        ]
-    }
-]
-
-
-
 (* ::Subsubsection::Closed:: *)
 (*ChatInputCellDingbat*)
 
@@ -245,10 +228,7 @@ Cell[
 Cell[
     StyleData[ "ChatInputCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ DynamicBox[
-            ToBoxes[ Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ], StandardForm ],
-            SingleEvaluation -> True
-        ]
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ]
     }
 ]
 
@@ -267,7 +247,7 @@ Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue      -> 1544,
     Background            -> Transparent,
-    CellDingbat           -> TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
+    CellDingbat           -> TemplateBox[ { }, "ChatInputCellDingbat" ],
     CellDingbatMargin     -> -20,
     CellFrame             -> { { 0, 0 }, { 0, 2.5 } },
     CellFrameLabels       -> { { "", Inherited }, { Inherited, Inherited } },
@@ -326,7 +306,7 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
-    CellDingbat          -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AssistantIcon" ],
+    CellDingbat          -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputCellDingbat" ],
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",

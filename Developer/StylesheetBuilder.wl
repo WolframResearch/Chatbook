@@ -559,8 +559,6 @@ tabbedChatOutputCellDingbat[ arg_ ] := Column[
     Spacings  -> { 0, 0 }
 ];
 
-$chatInputActiveCellDingbat = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ ];
-$chatInputCellDingbat       = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ];
 $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ];
 
 
