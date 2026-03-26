@@ -1088,7 +1088,7 @@ DynamicModule[
 	{
 		Typeset`dingbatCell = None,
 		Typeset`targetCell  = None,
-		Typeset`display     = ""
+		Typeset`display     = chatbookIcon[ "ChatInputCellDingbat", False ]
 	},
 	DynamicWrapper[
 		Dynamic @ Typeset`display
@@ -1121,14 +1121,14 @@ DynamicModule[
 	{
 		Typeset`dingbatCell = None,
 		Typeset`targetCell  = None,
-		Typeset`display     = ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_BlueHueButtonIcon" }, ImageSize -> 18 ]
+		Typeset`display     = chatbookIcon[ "ChatInputCellDingbat", False ]
 	},
 	DynamicWrapper[
 		Dynamic @ Typeset`display
 		,
 		Catch[
 			Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-			Typeset`display = ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_BlueHueButtonIcon" }, ImageSize -> 18 ];
+			(* Typeset`display = ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_BlueHueButtonIcon" }, ImageSize -> 18 ]; *)
 		    Typeset`display = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ Typeset`dingbatCell, Typeset`targetCell, mouseOver ]
 		    ,
 		    Blank[]
