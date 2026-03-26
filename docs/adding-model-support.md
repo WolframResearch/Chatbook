@@ -73,6 +73,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"ToolsEnabled"` | Boolean | Whether the model supports tool/function calling |
 | `"ForceSynchronous"` | Boolean | Force non-streaming (synchronous) API calls |
 | `"Reasoning"` | `"Minimal"` / `"None"` / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
+|  | `<|"Enabled" -> True|>` / `<|"Effort" -> "None" / "Minimal" / "Medium" / "High"|>` | (e.g. for Nvidia models via OpenRouter) |
 
 **Tool configuration:**
 
