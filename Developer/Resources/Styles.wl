@@ -306,7 +306,8 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
-    CellDingbat          -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputCellDingbat" ],
+    CellDingbat          -> TemplateBox[ { }, "ChatOutputCellDingbat" ],
+    CellDingbatMargin    -> 6.5, (* the ChatInput dingbat is a button with frame margins so nudge over the output *)
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",
@@ -332,6 +333,17 @@ Cell[
     menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
 ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*ChatOutputCellDingbat*)
+
+
+Cell[
+    StyleData[ "ChatOutputCellDingbat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatOutputCellDingbat[ ]
+    }
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -459,7 +471,7 @@ Cell[
 Cell[
     StyleData[ "ChatDelimiterCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatDelimiterCellDingbat
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ]
     }
 ]
 
@@ -1085,7 +1097,7 @@ Cell[
 Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ tabbedChatOutputCellDingbat @ #
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatOutputCellDingbat[ ]
     }
 ]
 

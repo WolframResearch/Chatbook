@@ -409,7 +409,7 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
         content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ] | KeyValuePattern[ { "Response" -> _ } ], "Content" ];
 
-        writePageContent[ cell, newPage, content ]
+        writePageContent[ cell, newPage, If[ AssociationQ @ content, content["Response"], content ] ]
     ],
     throwInternalFailure[ rotateTabPage[ cell, n ], ## ] &
 ];
