@@ -27,6 +27,7 @@ Cell[
     Saveable               -> False,
     Selectable             -> False,
     ShowCellBracket        -> False,
+    "ShowChatbar"          -> False,
     TaggingRules           -> <| "ChatNotebookSettings" -> $workspaceDefaultSettings |>,
     WindowClickSelect      -> True,
     WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },

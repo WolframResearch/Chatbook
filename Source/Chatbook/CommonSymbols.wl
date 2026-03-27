@@ -133,6 +133,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `autoAssistQ;
 `autoCorrect;
 `autoModelSetting;
+`blueHueButtonAppearance;
 `boxDataQ;
 `cachedTokenizer;
 `cellFlatten;
