@@ -2413,7 +2413,14 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         ];
 
         encoded = ConfirmBy[
-            BaseEncode @ BinarySerialize[ prevPage, PerformanceGoal -> "Size" ],
+            makeMinimalPageData[
+                prevPage,
+                FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] :>
+                    BinaryDeserialize @ BaseDecode @ cd,
+                    <| |>,
+                    { 0, Infinity }
+                ]
+            ],
             StringQ,
             "BaseEncode"
         ];
@@ -2997,13 +3004,13 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             CellAutoOverwrite -> True,
             CellTags          -> Flatten @ { uuid, cellTags },
             TaggingRules      -> rules,
-            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
+            (* If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
                 If[ TrueQ @ settings[ "SetCellDingbat" ],
                     CellDingbat -> dingbat,
                     Sequence @@ { }
                 ]
-            ],
+            ], *)
             If[ TrueQ @ open,
                 Sequence @@ { },
                 Sequence @@ Flatten @ {
@@ -3100,7 +3107,7 @@ makeReformattedCellTaggingRules[
             "MessageTag"       -> tag,
             "ChatData"         -> makeCompactChatData[ string, tag, settings ],
             "PageData"         -> <|
-                "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+                "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
                 "CurrentPage"-> p
             |>
@@ -3152,6 +3159,41 @@ makeCompactChatData[
     ];
 
 makeCompactChatData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMinimalPageData*)
+makeMinimalPageData // beginDefinition;
+
+makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
+
+makeMinimalPageData[ content_, settings_Association ] :=
+BaseEncode @ BinarySerialize[
+    <|
+        "Response"     -> content,
+        "LLMEvaluator" -> Lookup[ settings, "LLMEvaluator" ],
+        "Messages"     -> Lookup[
+            settings, "Data", Missing[ "NoData" ],
+            If[ ! AssociationQ[ # ],
+                Missing[ "UnexpectedData" ]
+                ,
+                Lookup[
+                    #, "Messages", Missing[ "NoMessages" ],
+                    If[ ! MatchQ[ #, { ___Association } ],
+                        Missing[ "UnexpectedMessages" ]
+                        , (* remove any surrounding non-user prompts and response messages *)
+                        If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
+                            If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
+                                #
+                    ]&
+                ]
+            ]&
+        ]
+    |>,
+    PerformanceGoal -> "Size"
+];
+
+makeMinimalPageData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

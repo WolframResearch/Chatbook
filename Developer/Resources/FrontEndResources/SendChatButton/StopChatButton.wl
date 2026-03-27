@@ -1,3 +1,4 @@
+(* icon used within sidebar and windowed assistant input fields; frame and hover effects added elsewhere *)
 Function @ Evaluate @ ToBoxes @
 Overlay[
 	{

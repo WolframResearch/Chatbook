@@ -172,6 +172,7 @@
 "UIModelsServices" -> "Servicios",
 "UIAISettings" -> "Configuraci\[OAcute]n de IA",
 "UIAdvancedSettings" -> "Configuraci\[OAcute]n avanzada",
+"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
 "UIModelsServicesGet" -> "Obteniendo los servicios disponibles\[Ellipsis]",
 "UIModelsGet" -> "Obteniendo modelos disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Conectar para la lista de modelos",

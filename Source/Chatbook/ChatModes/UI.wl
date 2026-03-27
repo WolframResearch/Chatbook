@@ -456,7 +456,7 @@ PaneSelector[
     {
         False ->
             Button[
-                blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
+                blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
                 If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
                 Appearance   -> "Suppressed",
                 BoxID        -> "SidebarChatInputCellSendButton",
@@ -1312,7 +1312,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         PaneSelector[
                                             {
                                                 None -> Button[
-                                                    blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False ], { 24.5, 24.5 } ],
+                                                    blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
                                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                                     (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
                                                     If[ kernelWasQuitQ,
@@ -1778,7 +1778,7 @@ inlineChatInputField[
                         ],
                         (* FIXME: this needs a custom button *)
                         RawBoxes @ inlineTemplateBox @
-                            DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 27 ] ]&[ RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ] ]
+                            DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[ RGBColor[ "#a3c9f2" ] ]
                     }
                 },
                 BaseStyle -> { Magnification -> $inputFieldGridMagnification*0.8 }
