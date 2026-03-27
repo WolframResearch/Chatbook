@@ -10,6 +10,7 @@ BeginPackage["Wolfram`Chatbook`UI`"]
 Needs[ "GeneralUtilities`" -> None ];
 
 MakeChatInputCellDingbat
+MakeChatOutputCellDingbat
 MakeChatDelimiterCellDingbat
 MakeChatCloudDefaultNotebookDockedCell
 MakeChatCloudDockedCellContents
@@ -1082,7 +1083,6 @@ errorMessageLinkAppearance // endDefinition;
 makeChatInputActiveCellDingbat // beginDefinition;
 
 (*
-	The dingbat loads using the System kernel, but the DynamicWrapper must use the ambient kernel in order to "hear" any trigger signals.
 	The CellObject may change when we cut+paste the cell.
 	The Initialization runs every time we cut+paste the cell.
 	Recalculate the CellObjects during initialization. *)
@@ -1162,6 +1162,177 @@ makeChatInputActiveCellDingbat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*makeChatOutputActiveCellDingbat*)
+
+makeChatOutputActiveCellDingbat // beginDefinition;
+
+(*
+	The dingbat loads using the System kernel, but the DynamicWrapper must use the ambient kernel in order to "hear" any trigger signals.
+	The CellObject may change when we cut+paste the cell.
+	The Initialization runs every time we cut+paste the cell.
+	Recalculate the CellObjects during initialization. *)
+makeChatOutputActiveCellDingbat[ ] :=
+DynamicModule[
+	{
+		Typeset`dingbatCell  = None,
+		Typeset`targetCell   = None,
+		Typeset`display      = chatbookIcon[ "ChatOutputCellDingbat", False ]
+	},
+	DynamicWrapper[
+		Dynamic @ Typeset`display
+		,
+		(* this updates whenever TaggingRules changes here, or at a more global scope *)
+		Catch[
+			With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
+				Typeset`display = Which[
+					KeyExistsQ[ tagRules, "PageData" ],
+						makeChatOutputPagedDingbat[ Typeset`targetCell, Lookup[ tagRules, "PageData", <| |> ] ],
+					KeyExistsQ[ tagRules, "ChatData" ],
+						makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
+					True,
+						chatbookIcon[ "ChatOutputCellDingbat", False ]
+				]
+			]
+			,
+			Blank[]
+		]
+		,
+		SynchronousUpdating -> False,
+		TrackedSymbols      :> { }
+	],
+	Initialization   :> (
+		Typeset`dingbatCell = EvaluationCell[ ];
+		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
+		Needs[ "Wolfram`Chatbook`" -> None ];
+	),
+	UnsavedVariables :> { Typeset`dingbatCell, Typeset`targetCell }
+];
+
+makeChatOutputActiveCellDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatOutputPagedDingbat*)
+makeChatOutputPagedDingbat // beginDefinition;
+
+makeChatOutputPagedDingbat[ targetCell_CellObject, allPageData_Association ] :=
+Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
+	currentPage = Lookup[ allPageData, "CurrentPage", 1 ];
+	currentPageData = Lookup[ allPageData, "Pages", <| |>, Lookup[ #, currentPage, Missing[ "NoPageData" ], BinaryDeserialize[ BaseDecode[ # ] ]& ]& ];
+	If[ MissingQ @ currentPageData, Return @ chatbookIcon[ "ChatOutputCellDingbat", False ] ];
+	
+	evaluatorName = Lookup[ currentPageData, "LLMEvaluator", Missing[ "NoEvaluatorName" ],
+		Which[
+			StringQ @ #, #,
+			AssociationQ @ #, Lookup[ #, "LLMEvaluatorName", Missing[ "NoEvaluatorName" ], If[ StringQ @ #, #, Missing[ "NoEvaluatorName" ] ]& ],
+			True, Missing[ "NoEvaluatorName" ]
+		]&
+	];
+
+	If[ MissingQ @ evaluatorName,
+		icon = chatbookIcon[ "PersonaUnknown", False ];
+		displayName = None
+		,
+		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
+			icon = getPersonaMenuIcon @ personaSettings;
+			displayName = personaDisplayName[ evaluatorName, personaSettings ]
+		]
+	];
+
+	Grid[
+		{
+			{
+				If[ displayName === None, icon, Tooltip[ icon, displayName ] ]
+			},
+			{
+				Grid[
+					{
+						{
+							Button[
+								ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
+								blueHueButtonAppearance[
+									Graphics[
+										{
+											FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+											Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
+										},
+										ImageSize -> 3 ],
+									{ 8, 11 }
+								],
+								Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
+								Appearance -> "Suppressed",
+								ImageSize  -> Automatic
+							],
+							Button[
+								ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
+								blueHueButtonAppearance[
+									Graphics[
+										{
+											FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+											Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
+										},
+										ImageSize -> 3 ],
+									{ 8, 11 }
+								],
+								Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
+								Appearance -> "Suppressed",
+								ImageSize  -> Automatic
+							]
+						}
+					},
+					Spacings -> { 0, 0 }
+				]
+			},
+			{
+				RawBoxes @ StyleBox[
+					RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
+					FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+					FontFamily -> "Roboto",
+					FontSize   -> 8
+				]
+			}
+		},
+		BaseStyle -> { FontSize -> 0.5 },
+		Spacings -> { 0, 0 }
+	]
+];
+
+makeChatOutputPagedDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatOutputDingbat*)
+makeChatOutputDingbat // beginDefinition;
+
+makeChatOutputDingbat[ chatData_Association ] :=
+Module[ { evaluatorName, icon, displayName },
+	evaluatorName = Lookup[ chatData, "LLMEvaluator", Missing[ "NoEvaluatorName" ],
+		Which[
+			StringQ @ #, #,
+			AssociationQ @ #, Lookup[ #, "LLMEvaluatorName", Missing[ "NoEvaluatorName" ], If[ StringQ @ #, #, Missing[ "NoEvaluatorName" ] ]& ],
+			True, Missing[ "NoEvaluatorName" ]
+		]&
+	];
+
+	If[ MissingQ @ evaluatorName,
+		icon = chatbookIcon[ "PersonaUnknown", False ];
+		displayName = None
+		,
+		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
+			icon = getPersonaMenuIcon @ personaSettings;
+			displayName = personaDisplayName[ evaluatorName, personaSettings ]
+		]
+	];
+
+	If[ displayName === None, icon, Tooltip[ icon, displayName ] ]
+];
+
+makeChatOutputDingbat[ _ ] := chatbookIcon[ "PersonaUnknown", False ]
+
+makeChatOutputDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*MakeChatInputCellDingbat*)
 MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
@@ -1181,6 +1352,19 @@ MakeChatDelimiterCellDingbat[ ] :=
 		{
 			True  -> "",
 			False -> makeChatInputActiveCellDingbat[ { Center, Bottom }, 0, { Center, Top } ]
+		},
+		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
+		ImageSize -> Automatic
+	];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeChatOutputCellDingbat*)
+MakeChatOutputCellDingbat[ ] :=
+	PaneSelector[
+		{
+			True  -> "",
+			False -> makeChatOutputActiveCellDingbat[ ]
 		},
 		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
 		ImageSize -> Automatic
