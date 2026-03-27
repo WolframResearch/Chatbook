@@ -407,7 +407,7 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
         newPage     = Mod[ currentPage + n, pageCount, 1 ];
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
-        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ], "Content" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ] | KeyValuePattern[ { "Response" -> _ } ], "Content" ];
 
         writePageContent[ cell, newPage, content ]
     ],

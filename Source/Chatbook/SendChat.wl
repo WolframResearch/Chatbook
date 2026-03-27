@@ -3100,7 +3100,32 @@ makeReformattedCellTaggingRules[
             "MessageTag"       -> tag,
             "ChatData"         -> makeCompactChatData[ string, tag, settings ],
             "PageData"         -> <|
-                "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+                "Pages"      ->
+                Append[ pages,
+                    p -> BaseEncode @ BinarySerialize[ <|
+                                "Response"     -> content,
+                                "LLMEvaluator" -> Lookup[ settings, "LLMEvaluator" ],
+                                "Messages"     -> Lookup[
+                                    settings, "Data", Missing[ "NoData" ],
+                                    If[ ! AssociationQ[ # ],
+                                        Missing[ "UnexpectedData" ]
+                                        ,
+                                        Lookup[
+                                            #, "Messages", Missing[ "NoMessages" ],
+                                            If[ ! MatchQ[ #, { ___Association } ],
+                                                Missing[ "UnexpectedMessages" ]
+                                                , (* remove any surrounding non-user prompts and response messages *)
+                                                If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
+                                                    If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
+                                                        #
+                                            ]&
+                                        ]
+                                    ]&
+                                ]
+                            |>,
+                            PerformanceGoal -> "Size"
+                        ]
+                ],
                 "PageCount"  -> p,
                 "CurrentPage"-> p
             |>

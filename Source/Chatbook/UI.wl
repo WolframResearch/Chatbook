@@ -1118,25 +1118,28 @@ DynamicModule[
 		,
 		Catch[
 			Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+			System`Echo[{persona, Typeset`personaCache}];
 			With[ { persona = currentValueOrigin[ Typeset`targetCell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ][[ 2 ]] },
 				If[ persona =!= Typeset`personaCache,
 					Typeset`personaCache = persona;
 					NotebookDelete /@ Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatInput`PersonaIcon" ];
-					AttachCell[
-						Typeset`dingbatCell,
-						Cell[ BoxData @ ToBoxes @
-							Tooltip[
-								Pane[
-									getPersonaMenuIcon @ persona,
-									Alignment       -> { Center, Center },
-									ImageSize       -> { 25, 25 },
-									ImageSizeAction -> "ShrinkToFit"
+					If[ Typeset`personaCache =!= "CodeAssistant",
+						AttachCell[
+							Typeset`dingbatCell,
+							Cell[ BoxData @ ToBoxes @
+								Tooltip[
+									Pane[
+										getPersonaMenuIcon @ persona,
+										Alignment       -> { Center, Center },
+										ImageSize       -> { 25, 25 },
+										ImageSizeAction -> "ShrinkToFit"
+									],
+									persona
 								],
-								persona
+								"NotebookAssistant`ChatInput`PersonaIcon"
 							],
-							"NotebookAssistant`ChatInput`PersonaIcon"
-						],
-						{ Left, Center }, 0, { Right, Center }
+							{ Left, Center }, 0, { Right, Center }
+						]
 					]
 				]
 			]
@@ -1144,11 +1147,13 @@ DynamicModule[
 			Blank[]
 		]
 		,
+		(* Evaluator           -> "System", *)
 		SynchronousUpdating -> False,
 		TrackedSymbols      :> { Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger }
 	],
 	Evaluator        -> "System",
 	Initialization   :> (
+		Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger = 0;
 		Typeset`dingbatCell = EvaluationCell[ ];
 		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
 		Needs[ "Wolfram`Chatbook`" -> None ];
@@ -1330,7 +1335,7 @@ makeChatActionMenu[
 			"Icon"    -> resizeMenuIcon @ chatbookIcon[ "ChatIconCodeAssistant", False ],
 			"MenuTag" -> "Personas",
 			"Menu"    :> createPersonasMenu @ targetObj,
-			"Width"   -> 150,
+			"Width"   -> 200,
 			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 		|>,
@@ -1376,7 +1381,27 @@ With[
 				"Label"          -> tr @ "UIPersonas",
 				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
-			|>
+			|>,
+			(* always display the Code Assistant persona as it is the default *)
+			With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+				<|
+					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
+					"Label"  -> personaDisplayName[ persona, personaSettings ],
+					"Icon"   -> getPersonaMenuIcon @ personaSettings,
+					"Check"  -> styleListItem[ persona, personaValue ],
+					"Action" :> (
+						setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
+						System`Echo @ Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger++;
+						(* If we're changing the persona set on a cell, ensure that we are not showing
+							the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
+						If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
+					),
+					"Evaluator" -> "System",
+					"Value"     -> persona,
+					"Category"  -> "Persona"
+				|>
+			],
+			<| "Type" -> "Delimiter" |>
 		},
 		KeyValueMap[ { persona, personaSettings } |->
 			<|
@@ -1386,15 +1411,16 @@ With[
 				"Check"  -> styleListItem[ persona, personaValue ],
 				"Action" :> (
 					setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
-					updateDynamics[ { "ChatBlock" } ];
+					System`Echo @ Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger++;
 					(* If we're changing the persona set on a cell, ensure that we are not showing
 						the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
 					If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
 				),
-				"Value"    -> persona,
-				"Category" -> "Persona"
+				"Evaluator" -> "System",
+				"Value"     -> persona,
+				"Category"  -> "Persona"
 			|>,
-			filterPersonas @ targetObj
+			KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
 		]
 	]
 ] /; AssociationQ @ Wolfram`Chatbook`Personas`$CachedPersonaData;
@@ -1413,6 +1439,26 @@ With[
 				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 			|>,
+			(* always display the Code Assistant persona as it is the default; construct such that we don't need to read the info *)
+			With[ { persona = "CodeAssistant" },
+				<|
+					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
+					"Label"  -> tr @ "PersonaNameCodeAssistant",
+					"Icon"   -> chatbookIcon[ "ChatOutputCellDingbat", False ],
+					"Check"  -> styleListItem[ persona, personaValue ],
+					"Action" :> (
+						setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
+						System`Echo @ Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger++;
+						(* If we're changing the persona set on a cell, ensure that we are not showing
+							the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
+						If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
+					),
+					"Evaluator" -> "System",
+					"Value"     -> persona,
+					"Category"  -> "Persona"
+				|>
+			],
+			<| "Type" -> "Delimiter" |>,
 			<|
 				"Type"    -> "Custom",
 				"Content" ->
@@ -1432,7 +1478,28 @@ With[
 						"Type"           -> "Header",
 						"Label"          -> tr @ "UIPersonas",
 						"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
-						"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited) |>
+						"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
+					|>,
+					(* always display the Code Assistant persona as it is the default *)
+					With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+						<|
+							"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
+							"Label"  -> personaDisplayName[ persona, personaSettings ],
+							"Icon"   -> getPersonaMenuIcon @ personaSettings,
+							"Check"  -> styleListItem[ persona, personaValue ],
+							"Action" :> (
+								setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
+								System`Echo @ Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger++;
+								(* If we're changing the persona set on a cell, ensure that we are not showing
+									the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
+								If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
+							),
+							"Evaluator" -> "System",
+							"Value"     -> persona,
+							"Category"  -> "Persona"
+						|>
+					],
+					<| "Type" -> "Delimiter" |>
 				},
 				KeyValueMap[ { persona, personaSettings } |->
 					<|
@@ -1442,15 +1509,16 @@ With[
 						"Check"  -> styleListItem[ persona, personaValue ],
 						"Action" :> (
 							setCurrentValue[ targetObj, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, persona ];
-							updateDynamics[ { "ChatBlock" } ];
+							System`Echo @ Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger++;
 							(* If we're changing the persona set on a cell, ensure that we are not showing
 								the static "ChatInputCellDingbat" that is set when a ChatInput is evaluated. *)
 							If[ Head[ targetObj ] === CellObject, SetOptions[ targetObj, CellDingbat -> Inherited ]; ]
 						),
-						"Value"    -> persona,
-						"Category" -> "Persona"
+						"Evaluator" -> "System",
+						"Value"     -> persona,
+						"Category"  -> "Persona"
 					|>,
-					filterPersonas @ targetObj
+					KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
 				]
 			]
 	|>

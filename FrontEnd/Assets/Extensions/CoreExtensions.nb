@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.89.3983528886"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.89.3983593272"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -333,29 +333,31 @@ Notebook[
                ]
               ];
 
-              AttachCell[
-               Typeset`dingbatCell$$,
-               Cell[
-                BoxData[
-                 ToBoxes[
-                  Tooltip[
-                   Pane[
-                    Wolfram`Chatbook`Common`getPersonaMenuIcon[
-                     Wolfram`Chatbook`UI`Private`persona$
+              If[ Typeset`personaCache$$ =!= "CodeAssistant",
+               AttachCell[
+                Typeset`dingbatCell$$,
+                Cell[
+                 BoxData[
+                  ToBoxes[
+                   Tooltip[
+                    Pane[
+                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                      Wolfram`Chatbook`UI`Private`persona$
+                     ],
+                     Alignment -> {Center, Center},
+                     ImageSize -> {25, 25},
+                     ImageSizeAction -> "ShrinkToFit"
                     ],
-                    Alignment -> {Center, Center},
-                    ImageSize -> {25, 25},
-                    ImageSizeAction -> "ShrinkToFit"
-                   ],
-                   Wolfram`Chatbook`UI`Private`persona$
+                    Wolfram`Chatbook`UI`Private`persona$
+                   ]
                   ]
-                 ]
+                 ],
+                 "NotebookAssistant`ChatInput`PersonaIcon"
                 ],
-                "NotebookAssistant`ChatInput`PersonaIcon"
-               ],
-               {Left, Center},
-               0,
-               {Right, Center}
+                {Left, Center},
+                0,
+                {Right, Center}
+               ]
               ]
              ]
             ],
@@ -4837,7 +4839,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.89.3983527937"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.89.3983528886"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
