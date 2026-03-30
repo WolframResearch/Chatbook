@@ -94,8 +94,8 @@ Function @ Evaluate @ ToBoxes @ Graphics[
               CurveClosed -> {1}
             ]
           },
-          CapForm @ Butt,
-          JoinForm @ {Miter, 1.},
+          CapForm @ "Butt",
+          JoinForm @ {"Miter", 1.},
           Thickness @ 0.07246376811594203,
           #2
         ]

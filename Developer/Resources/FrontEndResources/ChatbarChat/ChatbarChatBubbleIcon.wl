@@ -48,7 +48,7 @@ Graphics[
 		},
 		{
 			#2,
-			Thickness @ 0.08600345478355505, CapForm @ Butt, JoinForm @ {Miter, 1.},
+			Thickness @ 0.08600345478355505, CapForm @ "Butt", JoinForm @ {"Miter", 1.},
 			JoinedCurve[
 				{
 					{

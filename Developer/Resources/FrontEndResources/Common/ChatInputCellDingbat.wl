@@ -47,7 +47,7 @@ Graphics[
 		},
 		{
 			color @ "IconsChatIconUserEdge",
-			Thickness @ 0.08571428571428572, CapForm @ Butt, JoinForm @ {Miter, 1.},
+			Thickness @ 0.08571428571428572, CapForm @ "Butt", JoinForm @ {"Miter", 1.},
 			JoinedCurve[
 				{
 					{

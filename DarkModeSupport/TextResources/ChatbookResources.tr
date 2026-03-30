@@ -5756,9 +5756,8 @@ XX8fg/jf5IVEkPkdFtNEkfkLFOMMkPkGz/YZoJhXy2uIYh+Un6DwUN8BiX8g
 JNAAmR/wZj6YDzMPxofZB+OnGE0VRebD3As3D+ofuH1Q/oVHYooo4QELn1Xn
 we5ECS8Avx1Zjg==
         "], CurveClosed -> {1}]}, {
-       CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-       JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
-       
+       CapForm["Butt"], 
+       JoinForm[{"Miter", 1.}], 
        Thickness[0.07246376811594203], #2}, StripOnInput -> False]}}}, 
   AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
   ImageSize -> {#3, #3}, 
@@ -9628,7 +9627,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
       RGBColor[0.070588, 0.556863, 0.819608], 
       RGBColor[0.129412, 0.294118, 0.411765]],
     ImageSize->{
-      Scaled[1], 5}]],ExpressionUUID->"ecd72a93-cb27-6a47-820f-4626e9a64424"], 
+      Scaled[1], 5}]],ExpressionUUID->"2a0ba0bf-72a6-0549-b188-c4a60e2ccb99"], 
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
      StandardForm],
@@ -9647,8 +9646,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"f7f38174-06c2-1348-9618-\
-4d9f08e9644f"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"376484db-8e5a-9f4e-b2bb-\
+2f66783e583d"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9766,8 +9765,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"10e04eb2-0c92-bc49-9048-\
-f18b39724306"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"db803414-7f98-8141-b805-\
+05562118a851"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -9882,9 +9881,7 @@ pJiv9ujhBQBkOk3/
    {LightDarkSwitched[
      RGBColor[
      0.4588235294117647, 0.7607843137254902, 0.9215686274509803, 1.]], 
-    Thickness[0.08196721311475409], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    Thickness[0.08196721311475409], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -9913,9 +9910,7 @@ pJiv9ujhBQBkOk3/
    {LightDarkSwitched[
      RGBColor[
      0.6941176470588235, 0.8352941176470589, 0.9098039215686274, 1.]], 
-    Thickness[0.08196721311475409], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    Thickness[0.08196721311475409], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -9945,9 +9940,7 @@ v6H773MQn0NrpSgyPyhxkxgy/8Pt7wbI/AOaVobI5l3QLTBEtg/Gr5jlDtYH
    {LightDarkSwitched[
      RGBColor[0.6941176, 0.8352941, 0.9098039], 
      RGBColor[0.3764705, 0.490196, 0.5607843]], Thickness[
-    0.08571428571428572], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    0.08571428571428572], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -9977,8 +9970,7 @@ w5AS+9UePbwAlwpaOA==
    {LightDarkSwitched[
      RGBColor[0.4588235, 0.7607843, 0.9215686], 
      RGBColor[0.4, 0.6117647, 0.7411764]], Thickness[0.07246376811594203], 
-    CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -10004,8 +9996,8 @@ nzGrHIWvsf0imA8zD8aH2QfjeznfEULmB0sxCCGbB/MPzD4YP2FhmCwyHxY+
 DpNivtqjhxcAdaxRzg==
      "]]}, {#2, 
     Thickness[0.08600345478355505], 
-    CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -10030,8 +10022,8 @@ IPMNdodbIJsH48Psg/GFYiHugfFh7oWZB/MPzD4Y38PB2QAlPKDhY7HTRgGZ
 D5YHAFf2S08=
      "]]}, {#2, 
     Thickness[0.0390625], 
-    CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
