@@ -985,7 +985,7 @@ Dispatch[{
 	|>,
 	"IconsChatIconAssistantBackground" -> <|
 		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
-		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.3450980],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1027,7 +1027,7 @@ Dispatch[{
 	|>,
 	"IconsChatIconUserEdge" -> <|
 		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
-		 "Dark"   -> RGBColor[0.3764705, 0.4901960, 0.5607843],
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1418,6 +1418,76 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonIcon" -> <|
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonIconInactive" -> <|
+		 "Light"  -> GrayLevel[0.6509803],
+		 "Dark"   -> GrayLevel[0.6509803],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.9333333, 0.9764705, 1.],
+		 "Dark"   -> RGBColor[0.1490196, 0.2078431, 0.2549019],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFrame" -> <|
+		 "Light"  -> RGBColor[0.8980392, 0.8980392, 0.8980392],
+		 "Dark"   -> RGBColor[0.3411764, 0.3411764, 0.3411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFramePressed" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconBackground1" -> <|
+		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconBackground2" -> <|
+		 "Light"  -> RGBColor[1., 1., 1.],
+		 "Dark"   -> RGBColor[0.0980392, 0.0980392, 0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconFrame" -> <|
 		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
 		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
 		 "Method" -> "Design",
