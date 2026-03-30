@@ -2482,15 +2482,15 @@ Dispatch[{
 		 "Notes"  -> "In ChatOutput UI"
 	|>,
 	"ThumbsUpDownIcon" -> <|
-		 "Light"  -> GrayLevel[0.8],
-		 "Dark"   -> GrayLevel[0.4867756],
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.3992060, 0.6126511, 0.7399585],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
 	"ThumbsUpDownIconHover" -> <|
-		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> GrayLevel[0.9612557],
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.4983593, 0.7805234, 0.9852586],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"
