@@ -56,10 +56,43 @@ $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 $defaultUserImage := $defaultUserImage =
     inlineTemplateBoxes @ RawBoxes @ TemplateBox[ { }, "WorkspaceDefaultUserIcon" ];
 
-blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0 ] :=
+blueHueButtonAppearance[ "ChatbarMinimized" ] :=
 mouseDown[
     Framed[
-        icon,
+        chatbookIcon[ "ChatbarChatBubbleMinimizedIcon", False, color @ "NA_ChatbarMinimizedButtonIconBackground1", color @ "NA_BlueHueButtonIcon" ],
+        Alignment      -> { Center, Center },
+        Background     -> color @ "NA_ChatbarMinimizedButtonBackground",
+        FrameMargins   -> 0,
+        FrameStyle     -> color @ "NA_ChatbarMinimizedButtonFrame",
+        ImageSize      -> { 32, 32 },
+        RoundingRadius -> 8
+    ],
+    Framed[
+        chatbookIcon[ "ChatbarChatBubbleMinimizedIcon", False, color @ "NA_ChatbarMinimizedButtonIconBackground2", color @ "NA_BlueHueButtonIcon" ],
+        Alignment      -> { Center, Center },
+        Background     -> color @ "NA_ChatbarMinimizedButtonBackgroundHover",
+        FrameMargins   -> 0,
+        FrameStyle     -> color @ "NA_ChatbarMinimizedButtonFrameHover",
+        ImageSize      -> { 32, 32 },
+        RoundingRadius -> 8
+    ],
+    Framed[
+        chatbookIcon[ "ChatbarChatBubbleMinimizedIcon", False, color @ "NA_ChatbarMinimizedButtonIconBackground2", color @ "NA_BlueHueButtonIcon" ],
+        Alignment      -> { Center, Center },
+        Background     -> color @ "NA_ChatbarMinimizedButtonBackgroundPressed",
+        FrameMargins   -> 0,
+        FrameStyle     -> color @ "NA_ChatbarMinimizedButtonFramePressed",
+        ImageSize      -> { 32, 32 },
+        RoundingRadius -> 8
+    ]
+]
+
+blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0 ] := blueHueButtonAppearance[ { icon, icon, icon }, imageSize, frameMargins ]
+
+blueHueButtonAppearance[ { default_, hover_, pressed_ }, imageSize_, frameMargins_:0 ] :=
+mouseDown[
+    Framed[
+        default,
         Alignment      -> { Center, Center },
         Background     -> None,
         FrameMargins   -> frameMargins,
@@ -68,7 +101,7 @@ mouseDown[
         RoundingRadius -> 4
     ],
     Framed[
-        icon,
+        hover,
         Alignment      -> { Center, Center },
         Background     -> color @ "NA_BlueHueButtonBackgroundHover",
         FrameMargins   -> frameMargins,
@@ -77,7 +110,7 @@ mouseDown[
         RoundingRadius -> 4
     ],
     Framed[
-        icon,
+        pressed,
         Alignment      -> { Center, Center },
         Background     -> color @ "NA_BlueHueButtonBackgroundPressed",
         FrameMargins   -> frameMargins,
@@ -669,28 +702,14 @@ chatbarSendButton // beginDefinition;
 
 Attributes[ chatbarSendButton ] = { HoldAll };
 
-chatbarSendButton[ fieldContent_, input_, returnKeyDownQ_ ] :=
+chatbarSendButton[ fieldContent_, selectionWithinQ_, input_, returnKeyDownQ_ ] :=
 Button[
     PaneSelector[
         {
-            "Default" ->
-                Graphics[ {
-                    FaceForm @ color @ "NA_ChatInputFieldSendButtonFrameHover",
-                    EdgeForm @ color @ "NA_ChatInputFieldSendButtonBackgroundHover",
-                    Disk[ ] }, ImageSize -> { 20, 20 } ],
-            "Hover" ->
-                Graphics[ {
-                    FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_1",
-                    EdgeForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2",
-                    Disk[ ] }, ImageSize -> { 20, 20 } ],
-            "Disabled" ->
-                Graphics[ {
-                    FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1",
-                    EdgeForm @ color @ "NA_ChatInputFieldFocus_Gray_2",
-                    Disk[ ] }, ImageSize -> { 20, 20 } ]
+            True  -> blueHueButtonAppearance[ chatbookIcon[ "ChatbarSendIcon", False, color @ "NA_BlueHueButtonIcon" ], { 24, 24 } ],
+            False -> blueHueButtonAppearance[ chatbookIcon[ "ChatbarSendIcon", False, color @ "NA_BlueHueButtonIconInactive" ], { 24, 24 } ]
         },
-        Dynamic @ Which[ CurrentValue[ "MouseOver" ], "Hover", selectionWithinQ, "Default", True, "Disabled" ],
-        ImageMargins -> 2,
+        Dynamic @ selectionWithinQ,
         ImageSize -> Automatic
     ],
     If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
@@ -851,14 +870,7 @@ Attributes[ chatbarMaximizeButton ] = { HoldAll };
 
 chatbarMaximizeButton[ nbo_, chatbarCell_, minimizedQ_, minimizeOverrideQ_, selectionWithinQ_ ] :=
 Button[
-    PaneSelector[
-        {
-            True -> Graphics[ { FaceForm[ color @ "NA_ChatInputFieldFrame" ], Disk[ ] }, ImageSize -> { 24, 24 } ],
-            False -> Graphics[ { FaceForm[ color @ "NA_ChatInputFieldFocus_Gray_1" ], Disk[ ] }, ImageSize -> { 24, 24 } ]
-        },
-        Dynamic @ selectionWithinQ,
-        ImageSize -> Automatic
-    ]
+    blueHueButtonAppearance @ "ChatbarMinimized"
     ,
     minimizedQ = False;
     minimizeOverrideQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ];
@@ -902,7 +914,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                         Dynamic @ selectionWithinQ,
                                                         Dynamic[ If[ barAtBottomQ, { Scaled[ 1 ], Automatic }, { Scaled[ 0.618 ], Automatic } ] ]
                                                     ],
-                                                    chatbarSendButton[ fieldContent, input, returnKeyDownQ ]
+                                                    chatbarSendButton[ fieldContent, selectionWithinQ, input, returnKeyDownQ ]
                                                 } },
                                                 Alignment        -> { Left, Baseline },
                                                 BaselinePosition -> { 1, 1 },
