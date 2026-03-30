@@ -287,11 +287,13 @@ $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     "ForceSynchronous" -> True,
     "MaxContextTokens" -> 1000000,
     "Multimodal"       -> False,
-    "Temperature"      -> 1.,
-    "ToolsEnabled"     -> True,
-    "TopP"             -> 0.95,
-    "Reasoning"        -> <|"Enabled" -> True|>
+    "Reasoning"        -> <|"Enabled" -> True|>,
     (*"Reasoning"      -> <|"Effort" -> {"None", "Minimal", "Medium", "High"}[[2]]|>*) (* TODO: what's the effective effort used if using `"Enabled" -> True`? Does it matter? *)
+    "Temperature"      -> 1.,
+    "HybridToolMethod" -> True,
+    "ToolMethod"       -> "Service",
+    "ToolsEnabled"     -> True,
+    "TopP"             -> 0.95
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <|
