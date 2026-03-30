@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.90.3983868558"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.91.3983874861"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -838,6 +838,7 @@ Notebook[
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
@@ -3237,6 +3238,7 @@ Notebook[
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
