@@ -5825,8 +5825,8 @@ fmQ+zP9w9dDwgZsHDT+4fVA+SngDAGbuTtY=
 
 "ChatMenuIcon" -> GraphicsBox[
   {Thickness[0.071429], FaceForm[{LightDarkSwitched[
-    GrayLevel[0.2], 
-    GrayLevel[0.8]], Opacity[1.]}], 
+    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+    RGBColor[0.4980392, 0.7803921, 0.9843137]], Opacity[1.]}], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {
     0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
     0}}}, {{{6., 5.}, {8., 5.}, {8., 7.}, {6., 7.}, {6., 5.}}, {{6., 9.}, {8.,
@@ -9627,7 +9627,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
       RGBColor[0.070588, 0.556863, 0.819608], 
       RGBColor[0.129412, 0.294118, 0.411765]],
     ImageSize->{
-      Scaled[1], 5}]],ExpressionUUID->"2a0ba0bf-72a6-0549-b188-c4a60e2ccb99"], 
+      Scaled[1], 5}]],ExpressionUUID->"3c4857f5-c590-7f4e-af49-99092e48fe61"], 
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
      StandardForm],
@@ -9646,8 +9646,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"376484db-8e5a-9f4e-b2bb-\
-2f66783e583d"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"2c4c8308-2758-ca47-99f0-\
+a9b2a66899d4"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9765,8 +9765,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"db803414-7f98-8141-b805-\
-05562118a851"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"d529a26e-0b25-404b-a856-\
+d1fc5108814d"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 

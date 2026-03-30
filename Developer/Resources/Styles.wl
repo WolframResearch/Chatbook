@@ -756,49 +756,14 @@ With[
 Cell[
     StyleData[ "ChatMenuButton" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ TagBox[
-            PaneSelectorBox[
-                {
-                    False -> FrameBox[
-                        ButtonBox[
-                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
-                            ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
-                                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
-                            ],
-                            Appearance -> $suppressButtonAppearance,
-                            Evaluator  -> Automatic,
-                            Method     -> "Preemptive"
-                        ],
-                        RoundingRadius -> 3,
-                        FrameStyle     -> None,
-                        Background     -> None,
-                        FrameMargins   -> 0,
-                        ContentPadding -> False,
-                        StripOnInput   -> False
-                    ],
-                    True -> FrameBox[
-                        ButtonBox[
-                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
-                            ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
-                                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
-                            ],
-                            Appearance -> $suppressButtonAppearance,
-                            Evaluator  -> Automatic,
-                            Method     -> "Preemptive"
-                        ],
-                        RoundingRadius -> 3,
-                        FrameStyle     -> frameColor,
-                        Background     -> #2,
-                        FrameMargins   -> 0,
-                        ContentPadding -> False,
-                        StripOnInput   -> False
-                    ]
-                },
-                Dynamic @ CurrentValue[ "MouseOver" ],
-                ImageSize    -> Automatic,
-                FrameMargins -> 0
+        DisplayFunction -> Function @ Evaluate @ TagBox[ ToBoxes @
+            Button[
+                Wolfram`Chatbook`Common`blueHueButtonAppearance[ Wolfram`Chatbook`Common`chatbookIcon[ "ChatMenuIcon", False ], { 14, 20 } ],
+                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, EvaluationCell[ ] ],
+                Appearance -> $suppressButtonAppearance,
+                Evaluator  -> Automatic,
+                ImageSize  -> Automatic,
+                Method     -> "Preemptive"
             ],
             MouseAppearanceTag[ "LinkHand" ]
         ]
