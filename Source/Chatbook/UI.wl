@@ -1234,7 +1234,7 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		displayName = None
 		,
 		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
-			icon = getPersonaMenuIcon @ personaSettings;
+			icon = Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ];
 			displayName = personaDisplayName[ evaluatorName, personaSettings ]
 		]
 	];
