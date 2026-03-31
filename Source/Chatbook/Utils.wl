@@ -555,7 +555,7 @@ basicProgressBarRow[ expr_, p_ ] /; $showProgressBar := {
                     },
                     AspectRatio      -> Full,
                     Background       -> color @ "ProgressBarBackground",
-                    ImageSize        -> { Full, 4 },
+                    ImageSize        -> { Full, 3 },
                     PlotRangePadding -> None
                 ],
                 progressCancelButton[ expr, p ]
