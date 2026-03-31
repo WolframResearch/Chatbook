@@ -231,7 +231,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        (* If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -239,7 +239,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
                     TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
                 ]
             ] // LogChatTiming[ "SetCellDingbat" ]
-        ];
+        ]; *)
 
         applyHandlerFunction[
             settings,
@@ -2794,7 +2794,7 @@ resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
     icon,
     ContentPadding  -> False,
     FrameMargins    -> 0,
-    ImageSize       -> { 35, 35 },
+    ImageSize       -> { Automatic, 19 },
     ImageSizeAction -> "ShrinkToFit",
     Alignment       -> { Center, Center }
 ];
@@ -2951,7 +2951,7 @@ reformatCell // beginDefinition;
 
 (* FIXME: why does this actually need UsingFrontEnd here? *)
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
-    Module[ { formatter, toolFormatter, content, rules, dingbat, outer },
+    Module[ { formatter, toolFormatter, content, rules, outer },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
@@ -2972,8 +2972,6 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             AssociationQ,
             "TaggingRules"
         ];
-
-        dingbat = makeOutputDingbat @ settings;
 
         outer = Which[
             TrueQ @ $WorkspaceChat,
@@ -3004,13 +3002,6 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             CellAutoOverwrite -> True,
             CellTags          -> Flatten @ { uuid, cellTags },
             TaggingRules      -> rules,
-            (* If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
-                If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> dingbat,
-                    Sequence @@ { }
-                ]
-            ], *)
             If[ TrueQ @ open,
                 Sequence @@ { },
                 Sequence @@ Flatten @ {
@@ -3230,26 +3221,21 @@ $exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 restoreLastPage // beginDefinition;
 
 restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclose[
-    Module[ { pageData, b64, bytes, content, dingbat, uuid, cell },
+    Module[ { pageData, b64, bytes, content, uuid, cell },
 
         pageData = ConfirmBy[ rules[ "PageData" ], AssociationQ, "PageData" ];
         b64      = ConfirmBy[ pageData[ "Pages", pageData[ "CurrentPage" ] ], StringQ, "Base64" ];
         bytes    = ConfirmBy[ ByteArray @ b64, ByteArrayQ, "ByteArray" ];
-        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData, "TextData" ];
-        dingbat  = makeOutputDingbat @ settings;
+        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData | _Association, "TextData" ];
         uuid     = CreateUUID[ ];
 
         cell = Cell[
-            content,
+            If[ AssociationQ @ content, Lookup[ content, "Response" ], content ],
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
-            ExpressionUUID    -> uuid,  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
-            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
-                CellDingbat -> dingbat
-            ]
+            ExpressionUUID    -> uuid  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
         ];
 
         WithCleanup[
