@@ -490,7 +490,7 @@ deleteTokenBarBeforeClosingBracket[cst_, errorNode_]:=
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $$FatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
 
-fixPatternBrackets[$EvaluatorPattern][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ : {}] :=
+fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ : {}] :=
 	Module[{success,fixedCode,allCodeScore,allCodeNoScore},
 	Echo["**********  UC  **********"];
 	With[
@@ -531,7 +531,7 @@ fixPatternBrackets[$EvaluatorPattern][code_String, pat : $$FatalUnexpectedCloser
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $$FatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
 
-fixPatternBrackets[$EvaluatorPattern][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_ : {}] :=
+fixPatternBrackets[_][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_ : {}] :=
 	Module[{
 			 fixedCode=Missing[]
 			,success=False
@@ -621,7 +621,7 @@ $funcsSyntax={};
 newsyntax=
 {
 	"Table"->{_,"List"...},
-	"N"->{_,Repeated[Integer| Real,{0,1}]},
+	"N"->{_,$MachinePrecision|Repeated[Integer| Real,{0,1}]},
 	"FaceForm"->Alternatives[{},{_},{_,Except["EdgeForm"->_]}],
 	"Prepend"->Alternatives[{_},{_,_}]
 };
