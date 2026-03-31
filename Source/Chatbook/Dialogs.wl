@@ -160,7 +160,8 @@ dialogPane0[ expr_, style_, margins_ ] :=
     Pane[
         expr,
         BaseStyle    -> dialogBaseStyle @ style,
-        FrameMargins -> dialogMargins[ style, margins ]
+        FrameMargins -> dialogMargins[ style, margins ],
+        ImageSize    -> Scaled[ 1 ]
     ];
 
 dialogPane0 // endDefinition;
