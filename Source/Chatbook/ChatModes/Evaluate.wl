@@ -124,7 +124,7 @@ evaluateSidebarChat // endDefinition;
 (*evaluateevaluateChatbarChat*)
 evaluateChatbarChat // beginDefinition;
 
-evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, barAtBottomQ:True|False, input_ ] := Enclose[
+evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
     Module[ { text, uuid, cellExpr, cellObject },
 
         cellObject = None;
@@ -135,7 +135,7 @@ evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtT
 
         (* FIXME: could really use selection snapshot... *)
         If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
-            SelectionMove[ nbo, Which[ !barAtBottomQ, All, selectionAtTopQ, Before, True, After ], Notebook, AutoScroll -> True ];
+            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
             NotebookWrite[ nbo, cellExpr ]
             ,
             NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
