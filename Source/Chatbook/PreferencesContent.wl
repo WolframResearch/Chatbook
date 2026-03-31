@@ -118,12 +118,12 @@ createPreferencesContent[ ] := Enclose[
                 Background   -> None,
                 FrameMargins -> { { 2, 2 }, { 2, 3 } },
                 ImageMargins -> { { 10, 10 }, { 2, 2 } },
-                ImageSize    -> { $preferencesWidth, Automatic },
+                ImageSize    -> { Scaled[ 1 ], Automatic },
                 LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
             ];
 
             (* Create a reset button that will reset preferences to default settings: *)
-            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
+            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> Scaled[ 1 ] ];
 
             (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
             makeScrollableInCloud @ Grid[
@@ -159,7 +159,7 @@ makeScrollableInCloud // beginDefinition;
 
 makeScrollableInCloud[ expr_ ] /; $CloudEvaluation :=
     Pane[ Pane[ expr, ImageMargins -> { { 0, 10 }, { 0, 0 } } ],
-          ImageSize  -> { Automatic, $cloudPreferencesHeight },
+          ImageSize  -> { $preferencesWidth, $cloudPreferencesHeight },
           Scrollbars -> { None, True }
     ];
 
@@ -490,7 +490,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
 ];
 
 makeModelSelector0[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
-    Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ];
+    Pane[ failure, ImageSize -> { Scaled[ 0.922 ], Automatic } ];
 
 makeModelSelector0 // endDefinition;
 
@@ -1488,7 +1488,7 @@ makeServiceGridRows[ services_Association ] :=
     KeyValueMap[ makeServiceGridRow, DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ] ];
 
 makeServiceGridRows[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
-    Throw[ Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ], $servicesSettingsTag ];
+    Throw[ Pane[ failure, ImageSize -> { Scaled[ 0.922 ], Automatic } ], $servicesSettingsTag ];
 
 makeServiceGridRows // endDefinition;
 
