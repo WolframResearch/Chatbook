@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.93.3984194706"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.94.3984455001"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -728,6 +728,11 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"
@@ -3089,6 +3094,11 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"
@@ -5037,7 +5047,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.93.3984193667"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.93.3984194706"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

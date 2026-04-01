@@ -2614,7 +2614,13 @@ activeAIAssistantDynamicModule // beginDefinition;
 activeAIAssistantDynamicModule // Attributes = { HoldFirst };
 
 (* Sidebar is a stack of inline cells. To avoid FE crash, asynchronously rewrite the ChatOutput after stream-of-thought finishes *)
-activeAIAssistantDynamicModule[ container_, settings_, task_, formatter_, reformat_ ] /; $SidebarChat :=
+activeAIAssistantDynamicModule[
+    container_,
+    settings_,
+    task_,
+    formatter_,
+    reformat_
+] /; $SidebarChat :=
 DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
     DynamicWrapper[
         PaneSelector[
@@ -2661,7 +2667,13 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
 ];
 
 (* Notebooks are safe from crashing when rewriting a top-level cell *)
-activeAIAssistantDynamicModule[ container_, settings_, task_, formatter_, reformat_ ] :=
+activeAIAssistantDynamicModule[
+    container_,
+    settings_,
+    task_,
+    formatter_,
+    reformat_
+] :=
 DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
     DynamicWrapper[
         PaneSelector[
