@@ -298,11 +298,18 @@ Dispatch[{
 		 "Notes"  -> "Dingbat for ChatInput/Output"
 	|>,
 	"ChatInputFrame" -> <|
-		 "Light"  -> RGBColor[0.6392156, 0.7882352, 0.9490196],
-		 "Dark"   -> RGBColor[0.3720968, 0.5327701, 0.7196387],
-		 "Method" -> "Feature",
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764706, 0.4901961, 0.5607843],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
-		 "Notes"  -> "Acccent6"
+		 "Notes"  -> ""
+	|>,
+	"ChatInputSendStopIcon" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
 	|>,
 	"ChatMenuAdvancedSettingsIcon" -> <|
 		 "Light"  -> GrayLevel[0.53725],
@@ -431,15 +438,15 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"ChatOutputBackground" -> <|
-		 "Light"  -> RGBColor[0.9882352, 0.9921568, 1.],
-		 "Dark"   -> RGBColor[0.1373, 0.1647, 0.1961],
+		 "Light"  -> RGBColor[0.9764706, 0.9921569, 1.],
+		 "Dark"   -> RGBColor[0.1137255, 0.1215686, 0.1294118],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> ""
 	|>,
 	"ChatOutputFrame" -> <|
-		 "Light"  -> RGBColor[0.9254901, 0.9411764, 0.9607843],
-		 "Dark"   -> RGBColor[0.1608, 0.2314, 0.30195],
+		 "Light"  -> RGBColor[0.9215686, 0.9529412, 0.9686275],
+		 "Dark"   -> RGBColor[0.2156863, 0.2588235, 0.2901961],
 		 "Method" -> "Design",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "ChatOutputFrame is not the same color as ChatInputFrame"
@@ -976,6 +983,20 @@ Dispatch[{
 		 "DC"     -> "ChatMenu",
 		 "Notes"  -> ""
 	|>,
+	"IconsChatIconAssistantBackground" -> <|
+		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"IconsChatIconAssistantEdge" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"IconsChatIconNotebookAssistant_Background" -> <|
 		 "Light"  -> GrayLevel[1],
 		 "Dark"   -> GrayLevel[0.0980392],
@@ -1005,8 +1026,8 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"IconsChatIconUserEdge" -> <|
-		 "Light"  -> RGBColor[0., 0.52549, 0.8],
-		 "Dark"   -> RGBColor[0., 0.52549, 0.8],
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
 		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
@@ -1397,6 +1418,76 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_BlueHueButtonIcon" -> <|
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_BlueHueButtonIconInactive" -> <|
+		 "Light"  -> GrayLevel[0.6509803],
+		 "Dark"   -> GrayLevel[0.6509803],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackground" -> <|
+		 "Light"  -> GrayLevel[1.],
+		 "Dark"   -> GrayLevel[0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackgroundHover" -> <|
+		 "Light"  -> RGBColor[0.9333333, 0.9764705, 1.],
+		 "Dark"   -> RGBColor[0.1490196, 0.2078431, 0.2549019],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonBackgroundPressed" -> <|
+		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFrame" -> <|
+		 "Light"  -> RGBColor[0.8980392, 0.8980392, 0.8980392],
+		 "Dark"   -> RGBColor[0.3411764, 0.3411764, 0.3411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFrameHover" -> <|
+		 "Light"  -> RGBColor[0.6941176, 0.8352941, 0.9098039],
+		 "Dark"   -> RGBColor[0.3764705, 0.490196, 0.5607843],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonFramePressed" -> <|
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.4, 0.6117647, 0.7411764],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconBackground1" -> <|
+		 "Light"  -> RGBColor[0.8784313, 0.9490196, 0.9882352],
+		 "Dark"   -> RGBColor[0.2039215, 0.2823529, 0.345098],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconBackground2" -> <|
+		 "Light"  -> RGBColor[1., 1., 1.],
+		 "Dark"   -> RGBColor[0.0980392, 0.0980392, 0.0980392],
+		 "Method" -> "Design",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"NA_ChatbarMinimizedButtonIconFrame" -> <|
 		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
 		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
 		 "Method" -> "Design",
@@ -2342,9 +2433,9 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"StopChatButtonSpinnerBase" -> <|
-		 "Light"  -> RGBColor[0.9607843, 0.9607843, 0.9607843],
-		 "Dark"   -> RGBColor[0.2194082, 0.2194082, 0.2194082],
-		 "Method" -> "Content",
+		 "Light"  -> RGBColor[0.9411764, 0.9411764, 0.9411764],
+		 "Dark"   -> GrayLevel[0.2],
+		 "Method" -> "Design",
 		 "DC"     -> "White",
 		 "Notes"  -> ""
 	|>,
@@ -2391,15 +2482,15 @@ Dispatch[{
 		 "Notes"  -> "In ChatOutput UI"
 	|>,
 	"ThumbsUpDownIcon" -> <|
-		 "Light"  -> GrayLevel[0.8],
-		 "Dark"   -> GrayLevel[0.4867756],
+		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
+		 "Dark"   -> RGBColor[0.3992060, 0.6126511, 0.7399585],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
 	"ThumbsUpDownIconHover" -> <|
-		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> GrayLevel[0.9612557],
+		 "Light"  -> RGBColor[0.0705882, 0.5568627, 0.8196078],
+		 "Dark"   -> RGBColor[0.4983593, 0.7805234, 0.9852586],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"

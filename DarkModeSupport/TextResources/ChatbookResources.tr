@@ -1508,9 +1508,9 @@ Vtlq6OwNFsOerlMNp35OJzIvjlqNL7cqrnuXUfj/+/Mf6Ef9+w==
 "ThumbsDownActive" -> GraphicsBox[
   {Thickness[0.0625], 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm["Round"], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm["Round"], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{11.34, 6.4263}, {13.59, 6.4263}, {
      14.073, 6.4263}, {14.467, 6.8253}, {14.469, 7.3163}, {14.496, 13.675}, {
@@ -1519,9 +1519,9 @@ Vtlq6OwNFsOerlMNp35OJzIvjlqNL7cqrnuXUfj/+/Mf6Ef9+w==
      10.467, 6.8253}, {10.857, 6.4263}, {11.34, 6.4263}}},
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1,
@@ -1543,21 +1543,21 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
      "],
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{2.3237, 8.461}, {4.3237, 8.461}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{2.8741, 10.496}, {4.6661, 10.496}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{3.2369, 12.53}, {5.0289, 12.53}}},
      CurveClosed->{0}]}},
   AspectRatio->Automatic,
@@ -1567,9 +1567,9 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
 "ThumbsDownInactive" -> GraphicsBox[
   {Thickness[0.0625], 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm["Round"], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm["Round"], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{11.34, 6.4263}, {13.59, 6.4263}, {
      14.073, 6.4263}, {14.467, 6.8253}, {14.469, 7.3163}, {14.496, 13.675}, {
@@ -1578,9 +1578,9 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
      10.467, 6.8253}, {10.857, 6.4263}, {11.34, 6.4263}}},
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1,
@@ -1602,21 +1602,21 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
      "],
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{2.3237, 8.461}, {4.3237, 8.461}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{2.8741, 10.496}, {4.6661, 10.496}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{3.2369, 12.53}, {5.0289, 12.53}}},
      CurveClosed->{0}]}},
   AspectRatio->Automatic,
@@ -1626,9 +1626,9 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
 "ThumbsUpActive" -> GraphicsBox[
   {Thickness[0.0625], 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm["Round"], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm["Round"], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{4.6599, 9.5738}, {2.4099, 9.5738}, {
      1.9269, 9.5738}, {1.5329, 9.1748}, {1.5309, 8.6838}, {1.5039, 2.3248}, {
@@ -1637,9 +1637,9 @@ Z1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP
      5.5329, 9.1748}, {5.1429, 9.5738}, {4.6599, 9.5738}}},
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1,
@@ -1661,21 +1661,21 @@ heAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=
      "],
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{13.676, 7.539}, {11.676, 7.539}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{13.126, 5.5043}, {11.334, 5.5043}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.2], 
-     GrayLevel[0.9612557]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.0705882, 0.5568627, 0.8196078], 
+     RGBColor[0.4983593, 0.7805234, 0.9852586]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{12.763, 3.4695}, {10.971, 3.4695}}},
      CurveClosed->{0}]}},
   AspectRatio->Automatic,
@@ -1685,9 +1685,9 @@ heAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=
 "ThumbsUpInactive" -> GraphicsBox[
   {Thickness[0.0625], 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm["Round"], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm["Round"], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{4.6599, 9.5738}, {2.4099, 9.5738}, {
      1.9269, 9.5738}, {1.5329, 9.1748}, {1.5309, 8.6838}, {1.5039, 2.3248}, {
@@ -1696,9 +1696,9 @@ heAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=
      5.5329, 9.1748}, {5.1429, 9.5738}, {4.6599, 9.5738}}},
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.061313], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.061313], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1,
@@ -1720,21 +1720,21 @@ heAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=
      "],
      CurveClosed->{1}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{13.676, 7.539}, {11.676, 7.539}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{13.126, 5.5043}, {11.334, 5.5043}}},
      CurveClosed->{0}]}, 
    {LightDarkSwitched[
-     GrayLevel[0.8], 
-     GrayLevel[0.4867756]], Thickness[0.062188], Opacity[1.], CapForm["Butt"],
-     JoinForm[{"Miter", 1.}], 
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.399206, 0.6126511, 0.7399585]], Thickness[0.062188], Opacity[
+    1.], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}}}, {{{12.763, 3.4695}, {10.971, 3.4695}}},
      CurveClosed->{0}]}},
   AspectRatio->Automatic,
@@ -2925,57 +2925,45 @@ qvmGcPth+lHdh3A/ADVIfz0=
      0], DynamicModuleValues :> {}]], SingleEvaluation -> True]& ),
 
 "SendChatButtonLabel" -> (TagBox[
-  PaneSelectorBox[{False -> FrameBox[
-      GraphicsBox[{
-        Thickness[0.055556], 
-        FaceForm[
-         LightDarkSwitched[
-          RGBColor[0.6392156, 0.7882352, 0.9490196], 
-          RGBColor[0.3961, 0.6236, 0.8824]]], 
-        FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
-         0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-         3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
-1:eJxTTMoPSmVmYGBgBGIZIGYC4i9/r1S8ZDNwKM6Y+Lbmv67DvcntrVGX/9lL
-699VYWPUdXiwj2+O8aIP9t05z3+v/Kjj8Dsm9+i/TY/tN819v/zYaS0HweO7
-dvSyfbHfUzJZgmWapsOWyK87b3UJOjwRkT35dL6yQ+2FzUARIQcrZa/qZn5l
-h1VNgZ5zG0Qcpm3iKVzzWsnh/gPuySuZxBz2PgZqcFV2WPsLaIGdksPNc9+D
-Hy9Vc7CadLreY7+SQ75Q84FTD9Ucdv5p/3I7XNmh8qWaIccaNQcTQTObvZOU
-HYC2h/HpqjnY7A2apnhO2WGd+8MqkXWqDt/Z4mf4TFV2uL64wJZLXNUhM/9D
-60kRZQenhKcXlG6rOEScMjqycZ24w4y7QI9XKToo5VRULdURc/jn/OvtawVF
-B6Y9rEIi9qIOlRErTM9GKzhsa6kB+kjUoWXe2VXnReUdNjA/79HIFXOQmHqF
-M2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB
-KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
-/HoO6PEFAPo2ybM=
-         "]]}, AspectRatio -> Automatic, ImageSize -> #3, 
-       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> None, 
-      Background -> None, RoundingRadius -> 3, FrameMargins -> 1, 
-      StripOnInput -> False], True -> FrameBox[
-      GraphicsBox[{
-        Thickness[0.055556], 
-        FaceForm[
-         LightDarkSwitched[
-          RGBColor[0.6392156, 0.7882352, 0.9490196], 
-          RGBColor[0.3961, 0.6236, 0.8824]]], 
-        FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
-         0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-         3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
-1:eJxTTMoPSmVmYGBgBGIZIGYC4i9/r1S8ZDNwKM6Y+Lbmv67DvcntrVGX/9lL
-699VYWPUdXiwj2+O8aIP9t05z3+v/Kjj8Dsm9+i/TY/tN819v/zYaS0HweO7
-dvSyfbHfUzJZgmWapsOWyK87b3UJOjwRkT35dL6yQ+2FzUARIQcrZa/qZn5l
-h1VNgZ5zG0Qcpm3iKVzzWsnh/gPuySuZxBz2PgZqcFV2WPsLaIGdksPNc9+D
-Hy9Vc7CadLreY7+SQ75Q84FTD9Ucdv5p/3I7XNmh8qWaIccaNQcTQTObvZOU
-HYC2h/HpqjnY7A2apnhO2WGd+8MqkXWqDt/Z4mf4TFV2uL64wJZLXNUhM/9D
-60kRZQenhKcXlG6rOEScMjqycZ24w4y7QI9XKToo5VRULdURc/jn/OvtawVF
-B6Y9rEIi9qIOlRErTM9GKzhsa6kB+kjUoWXe2VXnReUdNjA/79HIFXOQmHqF
-M2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB
-KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
-/HoO6PEFAPo2ybM=
-         "]]}, AspectRatio -> Automatic, ImageSize -> #3, 
-       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> #, 
-      Background -> #2, RoundingRadius -> 3, FrameMargins -> 1, StripOnInput -> 
-      False]}, 
-   Dynamic[
-    CurrentValue["MouseOver"]], ImageSize -> Automatic, FrameMargins -> 0], 
+  DynamicModuleBox[{Typeset`down$$ = False}, 
+   TagBox[
+    PaneSelectorBox[{"Default" -> FrameBox[
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+         "ChatbookExpressions", "SendChatArrow"][#, #3]], 
+        Alignment -> {Center, Center}, Background -> None, BaselinePosition -> 
+        Baseline, FrameMargins -> 0, FrameStyle -> None, ImageSize -> #2, 
+        RoundingRadius -> 4, StripOnInput -> False], "Hover" -> FrameBox[
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+         "ChatbookExpressions", "SendChatArrow"][#, #3]], 
+        Alignment -> {Center, Center}, Background -> LightDarkSwitched[
+          GrayLevel[1.], 
+          GrayLevel[0.0980392]], BaselinePosition -> Baseline, FrameMargins -> 
+        0, FrameStyle -> LightDarkSwitched[
+          RGBColor[0.6941176, 0.8352941, 0.9098039], 
+          RGBColor[0.3764705, 0.490196, 0.5607843]], ImageSize -> #2, 
+        RoundingRadius -> 4, StripOnInput -> False], "Down" -> FrameBox[
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+         "ChatbookExpressions", "SendChatArrow"][#, #3]], 
+        Alignment -> {Center, Center}, Background -> LightDarkSwitched[
+          RGBColor[0.8313725, 0.9411764, 1.], 
+          RGBColor[0.2196078, 0.3137254, 0.3803921]], BaselinePosition -> 
+        Baseline, FrameMargins -> 0, FrameStyle -> LightDarkSwitched[
+          RGBColor[0.4588235, 0.7607843, 0.9215686], 
+          RGBColor[0.4, 0.6117647, 0.7411764]], ImageSize -> #2, 
+        RoundingRadius -> 4, StripOnInput -> False]}, 
+     Dynamic[
+      Which[
+       And[
+        CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+       CurrentValue["MouseOver"], "Hover", True, "Default"]], 
+     BaselinePosition -> Baseline, ImageSize -> Automatic, FrameMargins -> 0], 
+    EventHandlerTag[{
+     "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+      FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, Method -> 
+      "Preemptive", PassEventsUp -> True}]], DynamicModuleValues :> {}], 
   MouseAppearanceTag["LinkHand"]]& ),
 
 "SendChatButton" -> (DynamicModuleBox[{Typeset`cell$$}, 
@@ -2992,7 +2980,7 @@ KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
       0, Method -> "Queued", Evaluator -> Automatic], True -> ButtonBox[
       DynamicBox[
        FEPrivate`FrontEndResource[
-       "ChatbookExpressions", "StopChatButtonLabel"][#, #2, #3]], 
+       "ChatbookExpressions", "StopChatButtonLabel"][#, #2, #4]], 
       ButtonFunction :> 
       If[Wolfram`Chatbook`$ChatEvaluationCell =!= Typeset`cell$$, 
         NotebookWrite[Typeset`cell$$, 
@@ -3001,7 +2989,7 @@ KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
         Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]], Appearance -> 
       FEPrivate`FrontEndResource[
        "FEExpressions", "SuppressMouseDownNinePatchAppearance"], FrameMargins -> 
-      0, Evaluator -> Automatic, Method -> "Preemptive"]}, 
+      0, Method -> "Preemptive", Evaluator -> Automatic]}, 
    Dynamic[Wolfram`Chatbook`$ChatEvaluationCell === Typeset`cell$$], 
    Alignment -> {Automatic, Baseline}, ImageSize -> Automatic], 
   Initialization :> (Typeset`cell$$ = If[$CloudEvaluation, 
@@ -3011,45 +2999,78 @@ KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
   UnsavedVariables :> {Typeset`cell$$}]& ),
 
 "StopChatButtonLabel" -> (TagBox[
-  PaneSelectorBox[{False -> FrameBox[
-      OverlayBox[{
-        DynamicBox[
-         FEPrivate`FrontEndResource[
-         "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
-          LightDarkSwitched[
-           RGBColor[0.9607843, 0.9607843, 0.9607843], 
-           RGBColor[0.2194082, 0.2194082, 0.2194082]], 
-          LightDarkSwitched[
-           RGBColor[0.4588235, 0.7607843, 0.9215686], 
-           RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
-        GraphicsBox[{
-          LightDarkSwitched[
-           RGBColor[0.6392156, 0.7882352, 0.9490196], 
-           RGBColor[0.3961, 0.6236, 0.8824]], 
-          RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
-         1.1]}, Alignment -> {Center, Center}], FrameStyle -> None, 
-      Background -> None, RoundingRadius -> 3, FrameMargins -> 1, 
-      StripOnInput -> False], True -> FrameBox[
-      OverlayBox[{
-        DynamicBox[
-         FEPrivate`FrontEndResource[
-         "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
-          LightDarkSwitched[
-           RGBColor[0.9607843, 0.9607843, 0.9607843], 
-           RGBColor[0.2194082, 0.2194082, 0.2194082]], 
-          LightDarkSwitched[
-           RGBColor[0.4588235, 0.7607843, 0.9215686], 
-           RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
-        GraphicsBox[{
-          LightDarkSwitched[
-           RGBColor[0.6392156, 0.7882352, 0.9490196], 
-           RGBColor[0.3961, 0.6236, 0.8824]], 
-          RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
-         1.1]}, Alignment -> {Center, Center}], FrameStyle -> #, 
-      Background -> #2, RoundingRadius -> 3, FrameMargins -> 1, StripOnInput -> 
-      False]}, 
-   Dynamic[
-    CurrentValue["MouseOver"]], ImageSize -> Automatic, FrameMargins -> 0], 
+  DynamicModuleBox[{Typeset`down$$ = False}, 
+   TagBox[
+    PaneSelectorBox[{"Default" -> FrameBox[
+        OverlayBox[{
+          DynamicBox[
+           FEPrivate`FrontEndResource[
+           "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
+            LightDarkSwitched[
+             RGBColor[0.9411764, 0.9411764, 0.9411764], 
+             GrayLevel[0.2]], 
+            LightDarkSwitched[
+             RGBColor[0.4588235, 0.7607843, 0.9215686], 
+             RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
+          GraphicsBox[{#, 
+            RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, 
+           PlotRange -> 1.1]}, Alignment -> {Center, Center}, 
+         BaselinePosition -> Baseline], Alignment -> {Center, Center}, 
+        Background -> None, BaselinePosition -> Baseline, FrameMargins -> 0, 
+        FrameStyle -> None, ImageSize -> #2, RoundingRadius -> 4, 
+        StripOnInput -> False], "Hover" -> FrameBox[
+        OverlayBox[{
+          DynamicBox[
+           FEPrivate`FrontEndResource[
+           "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
+            LightDarkSwitched[
+             RGBColor[0.9411764, 0.9411764, 0.9411764], 
+             GrayLevel[0.2]], 
+            LightDarkSwitched[
+             RGBColor[0.4588235, 0.7607843, 0.9215686], 
+             RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
+          GraphicsBox[{#, 
+            RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, 
+           PlotRange -> 1.1]}, Alignment -> {Center, Center}, 
+         BaselinePosition -> Baseline], Alignment -> {Center, Center}, 
+        Background -> LightDarkSwitched[
+          GrayLevel[1.], 
+          GrayLevel[0.0980392]], BaselinePosition -> Baseline, FrameMargins -> 
+        0, FrameStyle -> LightDarkSwitched[
+          RGBColor[0.6941176, 0.8352941, 0.9098039], 
+          RGBColor[0.3764705, 0.490196, 0.5607843]], ImageSize -> #2, 
+        RoundingRadius -> 4, StripOnInput -> False], "Down" -> FrameBox[
+        OverlayBox[{
+          DynamicBox[
+           FEPrivate`FrontEndResource[
+           "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
+            LightDarkSwitched[
+             RGBColor[0.9411764, 0.9411764, 0.9411764], 
+             GrayLevel[0.2]], 
+            LightDarkSwitched[
+             RGBColor[0.4588235, 0.7607843, 0.9215686], 
+             RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
+          GraphicsBox[{#, 
+            RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, 
+           PlotRange -> 1.1]}, Alignment -> {Center, Center}, 
+         BaselinePosition -> Baseline], Alignment -> {Center, Center}, 
+        Background -> LightDarkSwitched[
+          RGBColor[0.8313725, 0.9411764, 1.], 
+          RGBColor[0.2196078, 0.3137254, 0.3803921]], BaselinePosition -> 
+        Baseline, FrameMargins -> 0, FrameStyle -> LightDarkSwitched[
+          RGBColor[0.4588235, 0.7607843, 0.9215686], 
+          RGBColor[0.4, 0.6117647, 0.7411764]], ImageSize -> #2, 
+        RoundingRadius -> 4, StripOnInput -> False]}, 
+     Dynamic[
+      Which[
+       And[
+        CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+       CurrentValue["MouseOver"], "Hover", True, "Default"]], 
+     BaselinePosition -> Baseline, ImageSize -> Automatic, FrameMargins -> 0], 
+    EventHandlerTag[{
+     "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+      FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, Method -> 
+      "Preemptive", PassEventsUp -> True}]], DynamicModuleValues :> {}], 
   MouseAppearanceTag["LinkHand"]]& ),
 
 "ToolIconWolframAlpha" -> GraphicsBox[
@@ -5735,9 +5756,8 @@ XX8fg/jf5IVEkPkdFtNEkfkLFOMMkPkGz/YZoJhXy2uIYh+Un6DwUN8BiX8g
 JNAAmR/wZj6YDzMPxofZB+OnGE0VRebD3As3D+ofuH1Q/oVHYooo4QELn1Xn
 we5ECS8Avx1Zjg==
         "], CurveClosed -> {1}]}, {
-       CapForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-       JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
-       
+       CapForm["Butt"], 
+       JoinForm[{"Miter", 1.}], 
        Thickness[0.07246376811594203], #2}, StripOnInput -> False]}}}, 
   AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
   ImageSize -> {#3, #3}, 
@@ -5805,8 +5825,8 @@ fmQ+zP9w9dDwgZsHDT+4fVA+SngDAGbuTtY=
 
 "ChatMenuIcon" -> GraphicsBox[
   {Thickness[0.071429], FaceForm[{LightDarkSwitched[
-    GrayLevel[0.2], 
-    GrayLevel[0.8]], Opacity[1.]}], 
+    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+    RGBColor[0.4980392, 0.7803921, 0.9843137]], Opacity[1.]}], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {
     0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
     0}}}, {{{6., 5.}, {8., 5.}, {8., 7.}, {6., 7.}, {6., 5.}}, {{6., 9.}, {8.,
@@ -9607,7 +9627,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
       RGBColor[0.070588, 0.556863, 0.819608], 
       RGBColor[0.129412, 0.294118, 0.411765]],
     ImageSize->{
-      Scaled[1], 5}]],ExpressionUUID->"4a4348a2-ab93-d34c-9371-6d40d4affab0"], 
+      Scaled[1], 5}]],ExpressionUUID->"564cc381-4d01-a54d-8b99-c89b0d93d3cd"], 
   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
       Symbol["Wolfram`Chatbook`ChatbookAction"]["MakeSidebarChatDockedCell"]],
      StandardForm],
@@ -9626,8 +9646,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"bdc8cd52-fd62-9a42-8241-\
-cd6676f04010"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"b6a3fd77-a699-714b-a8e8-\
+6156f6e9b21d"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9745,58 +9765,64 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"fe7221db-1c43-f344-8f42-\
-a8ed46ab138e"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"ebd0ef9b-6ff4-d54c-aad2-\
+b9532bf56715"],
 
-"ChatbarSettingsIcon" -> GraphicsBox[
-  {EdgeForm[None], FaceForm[LightDarkSwitched[
-    GrayLevel[0.5], 
-    GrayLevel[0.793978686602641]]], 
-   GeometricTransformationBox[DiskBox[{0, 0}, 0.3], {{{-1, 0}}, {{0, 0}}, {{1,
-     0}}}]},
-  AspectRatio->Automatic,
-  ImagePadding->{{0, 1}, {1, 0}},
-  ImageSize->10,
-  PlotRange->All],
+"ChatbarSettingsIcon" -> (GraphicsBox[{
+   Thickness[0.09090909090909091], 
+   FaceForm[#], 
+   FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {
+    1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+    3}}}, CompressedData["
+1:eJxTTMoPSmVmYGAAYV4gZmIAgwcic5UcgPSCH4YcIFrBq1oRmS/iMUEBRO/5
+086CzD9wkYEBmZ/g+/mbPZJ+hiqz9/ZI5sP4C+7vU0bmz4hbqYKsH8aHmQ/j
+w+yH6Ye5D939DFtFf9sj8yu4P6Hwz6U9tUcyD8aH2Qfjw9wD0w9zL8x8GP8A
+qxATsn8Y+PaxIvsHxoebD+XD7Ifpx+V+hVRJKWT9MD7MfIFEZwlk+yec/i+K
+4h6zPcIofIvngijug/Lh7oPy4eED1Q9zD8x8GB9mP7p7YfpR3A8AmRyVsg==
 
-"HideChatbarIcon" -> GraphicsBox[
-  {Thickness[0.125], 
-   {FaceForm[LightDarkSwitched[
-     GrayLevel[0.65], 
-     GrayLevel[0.669]]], 
-    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
-      3.9996001720428467`}, {3.999899983406067, 0.9996001720428467}, {
-     6.999899983406067, 3.9996001720428467`}, {0.9998999834060669, 
-     3.9996001720428467`}}}]}, 
-   {FaceForm[LightDarkSwitched[
-     GrayLevel[0.65], 
-     GrayLevel[0.669]]], 
-    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{0.9998999834060669,
-      7.000199794769287}, {3.999899983406067, 3.999199867248535}, {
-     6.999899983406067, 7.000199794769287}, {0.9998999834060669, 
-     7.000199794769287}}}]}},
-  AspectRatio->Automatic,
-  ImageSize->{8., 8.},
-  PlotRange->{{0., 8.}, {0., 8.}}],
+    "]]}, AspectRatio -> Automatic, ImageSize -> {12., 5.}, 
+  PlotRange -> {{-0.5, 11.5}, {-0.5, 4.5}}]& ),
 
-"SendChatArrow" -> GraphicsBox[
-  {LightDarkSwitched[
-    RGBColor[0.0705882, 0.5568627, 0.8196078], 
-    RGBColor[0.4980392, 0.7803921, 0.9843137]], AbsoluteThickness[1.75], 
-   JoinForm[Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter], 
-   LineBox[{{0, 0}, {12., 0}}], 
-   LineBox[{{6.92, 5.66}, {12.58, 0}, {6.92, -5.66}}]},
-  BaselinePosition->(Center -> Center),
-  ImageMargins->1,
-  ImageSize->13],
+"HideChatbarIcon" -> (GraphicsBox[{
+   Thickness[0.10811384857095399`], 
+   FaceForm[#], 
+   FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1,
+     3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+    3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+    0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGJ1IGZigIBoJSUHIHWAVeijPQNDQ/3ReWB+hlHoK2S+
+Q0jQbXsk9Q0umceBfAfzJ48VQXwGD731IPlNPyZC+AwGUvuBpC6vAwp/yry3
+Csh8gc2zFZD1e9jEKiCZz5Ag1SAE4j+IecsLVncD7E64PIOT3Tt7JP0MPfIv
+7ZHMZ7jC8ASFf2HzXRR+QtllFP0C/sdRzE/QW78f2f9QPjR84Oqh4cfAcAzi
+zgNP68HuhslLLIX4C6Z/xaRbKHyN4KWKyOp3OEDCmcHCFWyvhd58CP9G2CtU
+PsRemHpYeAnIcoo5IIUnTP6GJsReqP6GvFyIvXDzoPELVQ+Pf6j74Hy4+6Hq
+Yf5r8OYQQ/E/cvoCAK2oiUc=
+    "]]}, AspectRatio -> Automatic, ImageSize -> {11., 11.}, 
+  PlotRange -> {{-0.5, 9.74950885772705}, {-0.5, 9.75}}]& ),
+
+"SendChatArrow" -> (GraphicsBox[{
+   Thickness[0.072387709326665], 
+   FaceForm[#], 
+   FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+     1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{7.5348005294799805`, 
+    12.558600425720215`}, {6.296800494194031, 11.321600437164307`}, {
+    10.46380066871643, 7.154600143432617}, {-0.00019979476928710938`, 
+    7.154600143432617}, {-0.00019979476928710938`, 5.404600143432617}, {
+    10.46380066871643, 5.404600143432617}, {6.296800494194031, 
+    1.2375993728637695`}, {7.5348005294799805`, -0.00039958953857421875`}, {
+    13.81380033493042, 6.279600620269775}, {7.5348005294799805`, 
+    12.558600425720215`}}}]}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center), ImageSize -> {Automatic, #2}, 
+  PlotRange -> {{-0.5, 14.314499855041504`}, {-0.5, 
+   13.058600425720215`}}]& ),
 
 "StopChatButton" -> (OverlayBox[{
    DynamicBox[
     FEPrivate`FrontEndResource[
     "ChatbookExpressions", "ChatEvaluatingSpinner"][#, 
      LightDarkSwitched[
-      RGBColor[0.9607843, 0.9607843, 0.9607843], 
-      RGBColor[0.2194082, 0.2194082, 0.2194082]], 
+      RGBColor[0.9411764, 0.9411764, 0.9411764], 
+      GrayLevel[0.2]], 
      LightDarkSwitched[
       RGBColor[0.4588235, 0.7607843, 0.9215686], 
       RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
@@ -9855,9 +9881,7 @@ pJiv9ujhBQBkOk3/
    {LightDarkSwitched[
      RGBColor[
      0.4588235294117647, 0.7607843137254902, 0.9215686274509803, 1.]], 
-    Thickness[0.08196721311475409], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    Thickness[0.08196721311475409], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -9886,9 +9910,7 @@ pJiv9ujhBQBkOk3/
    {LightDarkSwitched[
      RGBColor[
      0.6941176470588235, 0.8352941176470589, 0.9098039215686274, 1.]], 
-    Thickness[0.08196721311475409], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    Thickness[0.08196721311475409], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -9900,7 +9922,133 @@ pJiv9ujhBQBkOk3/
      CurveClosed->{1}]}},
   AspectRatio->Automatic,
   ImageSize->{17., 17.},
-  PlotRange->{{-0.5, 15.75}, {-0.5, 16.3169002532959}}]
+  PlotRange->{{-0.5, 15.75}, {-0.5, 16.3169002532959}}],
+
+"ChatInputCellDingbat" -> GraphicsBox[
+  {Thickness[0.05714285714285714], 
+   {FaceForm[LightDarkSwitched[
+     GrayLevel[1], 
+     GrayLevel[0.0980392]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFvPxCDkC6QfiCCIh2+Nv+2R6Jz8C/7x0y
+v6H773MQn0NrpSgyPyhxkxgy/8Pt7wbI/AOaVobI5l3QLTBEtg/Gr5jlDtYH
+43u86EThR7zZD+bDzIPxYfbB+HrRG8WQ+Y+VV4gimwfzD8w+GH/DlZWKyHxY
++DDMWfTTHj28AEDaVb0=
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[0.6941176, 0.8352941, 0.9098039], 
+     RGBColor[0.3764705, 0.490196, 0.5607843]], Thickness[
+    0.08571428571428572], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFvPxCDkC6QfiCCIh2+Nv+2R6Jz8C/7x0y
+v6H773MQn0NrpSgyPyhxkxgy/8Pt7wbI/AOaVobI5l3QLTBEtg/Gr5jlDtYH
+43u86EThR7zZD+bDzIPxYfbB+HrRG8WQ+Y+VV4gimwfzD8w+GH/DlZWKyHxY
++DDMWfTTHj28AEDaVb0=
+     "],
+     CurveClosed->{1}]}},
+  AspectRatio->Automatic,
+  ImageSize->{19., 20.},
+  PlotRange->{{-0.5, 18.}, {-0.5, 18.688499450683594`}}],
+
+"ChatOutputCellDingbat" -> GraphicsBox[
+  {Thickness[0.057971014492753624`], 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[0.8784313, 0.9490196, 0.9882352], 
+     RGBColor[0.2039215, 0.2823529, 0.345098]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMG3n5BBxB9dJ8wiD7wp/2jPRKfgW/fK2R+
+Q9ffxyA+x53pIsj8IOGFosj8go7NBsj8A1O+GiCbF3BL2xDZPhi/YJY6WB2M
+7/AiE4Uf8GY+mA8zD8aH2Qfj6/EuEEXmP746TQTZPJh/YPbB+AuuZCoi82Hh
+w5AS+9UePbwAlwpaOA==
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[0.4588235, 0.7607843, 0.9215686], 
+     RGBColor[0.4, 0.6117647, 0.7411764]], Thickness[0.07246376811594203], 
+    CapForm["Butt"], JoinForm[{"Miter", 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMG3n5BBxB9dJ8wiD7wp/2jPRKfgW/fK2R+
+Q9ffxyA+x53pIsj8IOGFosj8go7NBsj8A1O+GiCbF3BL2xDZPhi/YJY6WB2M
+7/AiE4Uf8GY+mA8zD8aH2Qfj6/EuEEXmP746TQTZPJh/YPbB+AuuZCoi82Hh
+w5AS+9UePbwAlwpaOA==
+     "],
+     CurveClosed->{1}]}},
+  AspectRatio->Automatic,
+  ImageSize->{19., 19.},
+  PlotRange->{{-0.5, 17.75}, {-0.5, 18.29650115966797}}],
+
+"ChatbarChatBubbleIcon" -> (GraphicsBox[{
+   Thickness[0.06880276382684403], {
+    FaceForm[#], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFVox8DkBa4bmPIIg+8NT+gz0SnyF42ktk
+fsPOP49B/AoFRiFkfp7nXRT+h1X6Osj8gP1zdZDNE7jzXQfZPhifo41T2wGJ
+nzGrHIWvsf0imA8zD8aH2QfjeznfEULmB0sxCCGbB/MPzD4YP2FhmCwyHxY+
+DpNivtqjhxcAdaxRzg==
+     "]]}, {#2, 
+    Thickness[0.08600345478355505], 
+    CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMFVox8DkBa4bmPIIg+8NT+gz0SnyF42ktk
+fsPOP49B/AoFRiFkfp7nXRT+h1X6Osj8gP1zdZDNE7jzXQfZPhifo41T2wGJ
+nzGrHIWvsf0imA8zD8aH2QfjeznfEULmB0sxCCGbB/MPzD4YP2FhmCwyHxY+
+DpNivtqjhxcAdaxRzg==
+     "], CurveClosed -> {1}]}}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center), ImageSize -> {16., 17.}, 
+  PlotRange -> {{-0.5, 15.034299850463867`}, {-0.5, 
+   15.608600616455078`}}]& ),
+
+"ChatbarChatBubbleMinimizedIcon" -> (GraphicsBox[{
+   Thickness[0.03125], {
+    FaceForm[#], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMD0QwaDiB6CZ86mN7Ip4TMn6Dhq4jMzyhb
+rwCib19ejcJXeZCrgcyf0KxvjsxX8Jhgjmzehvv3zJHtg/EF4leYI/MXKHNa
+IPMNdodbIJsH48Psg/GFYiHugfFh7oWZB/MPzD4Y38PB2QAlPKDhY7HTRgGZ
+D5YHAFf2S08=
+     "]]}, {#2, 
+    Thickness[0.0390625], 
+    CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIMD0QwaDiB6CZ86mN7Ip4TMn6Dhq4jMzyhb
+rwCib19ejcJXeZCrgcyf0KxvjsxX8Jhgjmzehvv3zJHtg/EF4leYI/MXKHNa
+IPMNdodbIJsH48Psg/GFYiHugfFh7oWZB/MPzD4Y38PB2QAlPKDhY7HTRgGZ
+D5YHAFf2S08=
+     "], CurveClosed -> {1}]}}, AspectRatio -> Automatic, 
+  ImageSize -> {33., 33.}, PlotRange -> {{-0.5, 32.5}, {-0.5, 32.5}}]& ),
+
+"ChatbarSendIcon" -> (GraphicsBox[{
+   Thickness[0.072387709326665], 
+   FaceForm[#], 
+   FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+     1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{7.5348005294799805`, 
+    12.558600425720215`}, {6.296800494194031, 11.321600437164307`}, {
+    10.46380066871643, 7.154600143432617}, {-0.00019979476928710938`, 
+    7.154600143432617}, {-0.00019979476928710938`, 5.404600143432617}, {
+    10.46380066871643, 5.404600143432617}, {6.296800494194031, 
+    1.2375993728637695`}, {7.5348005294799805`, -0.00039958953857421875`}, {
+    13.81380033493042, 6.279600620269775}, {7.5348005294799805`, 
+    12.558600425720215`}}}]}, AspectRatio -> Automatic, 
+  BaselinePosition -> (Center -> Center), ImageSize -> {15., 14.}, 
+  PlotRange -> {{-0.5, 14.314499855041504`}, {-0.5, 
+   13.058600425720215`}}]& )
 }
 @|
 @|

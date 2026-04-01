@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.86.3983355658"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.91.3983874861"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -28,7 +28,7 @@ Notebook[
     "FramedChatCell",
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
-   CellFrame -> 2,
+   CellFrame -> 1.75,
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
@@ -45,8 +45,7 @@ Notebook[
     "ChatInput",
     StyleDefinitions -> StyleData["FramedChatCell"]
    ],
-   CellDingbat ->
-    TemplateBox[{}, "ChatInputActiveCellDingbat"],
+   CellDingbat -> TemplateBox[{}, "ChatInputCellDingbat"],
    CellMargins -> {{66, 32}, {1, 8}},
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
@@ -117,8 +116,8 @@ Notebook[
    },
    CellFrameColor ->
     LightDarkSwitched[
-     RGBColor[0.639216, 0.788235, 0.94902],
-     RGBColor[0.372097, 0.53277, 0.719639]
+     RGBColor[0.694118, 0.835294, 0.909804],
+     RGBColor[0.376471, 0.490196, 0.560784]
     ],
    CellFrameLabels -> {
     {
@@ -128,14 +127,12 @@ Notebook[
        DynamicBox[
         FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButton"][
          LightDarkSwitched[
-          RGBColor[0.639216, 0.788235, 0.94902],
-          RGBColor[0.372097, 0.53277, 0.719639]
+          RGBColor[0.694118, 0.835294, 0.909804],
+          RGBColor[0.376471, 0.490196, 0.560784]
          ],
-         LightDarkSwitched[
-          RGBColor[0.945098, 0.968627, 0.992157],
-          RGBColor[0.151078, 0.187077, 0.246627]
-         ],
-         20
+         {24, 24},
+         12,
+         18
         ]
        ]
       ],
@@ -149,131 +146,244 @@ Notebook[
    MenuSortingValue -> 1543
   ],
   Cell[
-   StyleData["ChatInputActiveCellDingbat"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      PaneSelectorBox[
-       {
-        True ->
-         DynamicBox[
-          FEPrivate`FrontEndResource["ChatbookExpressions", "ChatIconGeneric"][
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
-           LightDarkSwitched[
-            RGBColor[0.0, 0.52549, 0.8],
-            RGBColor[0.0, 0.52549, 0.8]
-           ],
-           21
-          ]
-         ],
-        False ->
-         DynamicModuleBox[
-          {Typeset`cell$$},
-          DynamicBox[
-           ToBoxes[
-            Catch[
-             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-             Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Typeset`cell$$,
-              Automatic
-             ],
-             Blank[]
-            ],
-            StandardForm
-           ],
-           TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
-          ],
-          Initialization :>
-           (Typeset`cell$$ = EvaluationCell[];
-           Needs["Wolfram`Chatbook`" -> None]),
-          DynamicModuleValues :> { },
-          UnsavedVariables :> {Typeset`cell$$}
-         ]
-       },
-       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
-       ImageSize -> Automatic
-      ]
-     ])
-   }
-  ],
-  Cell[
    StyleData["ChatInputCellDingbat"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
       PaneSelectorBox[
        {
-        "Cloud" ->
+        True ->
          DynamicBox[
           FEPrivate`FrontEndResource[
            "ChatbookExpressions",
            "ChatIconUser"
           ]
          ],
-        True ->
+        False ->
          DynamicModuleBox[
-          {Typeset`cell$$},
-          DynamicBox[
-           ToBoxes[
-            Catch[
-             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-             Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-              Typeset`cell$$,
-              True
+          {
+           Typeset`dingbatCell$$ = None,
+           Typeset`targetCell$$ = None,
+           Typeset`personaCache$$ = "CodeAssistant"
+          },
+          DynamicWrapperBox[
+           ButtonBox[
+            DynamicModuleBox[
+             {Typeset`down$$ = False},
+             TagBox[
+              PaneSelectorBox[
+               {
+                "Default" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background -> None,
+                  FrameMargins -> 0,
+                  FrameStyle -> None,
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ],
+                "Hover" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background ->
+                   LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+                  FrameMargins -> 0,
+                  FrameStyle ->
+                   LightDarkSwitched[
+                    RGBColor[0.694118, 0.835294, 0.909804],
+                    RGBColor[0.376471, 0.490196, 0.560784]
+                   ],
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ],
+                "Down" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background ->
+                   LightDarkSwitched[
+                    RGBColor[0.831373, 0.941176, 1.0],
+                    RGBColor[0.219608, 0.313725, 0.380392]
+                   ],
+                  FrameMargins -> 0,
+                  FrameStyle ->
+                   LightDarkSwitched[
+                    RGBColor[0.458824, 0.760784, 0.921569],
+                    RGBColor[0.4, 0.611765, 0.741176]
+                   ],
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ]
+               },
+               Dynamic[
+                Which[
+                 CurrentValue["MouseOver"] && Typeset`down$$,
+                 "Down",
+                 CurrentValue["MouseOver"],
+                 "Hover",
+                 True,
+                 "Default"
+                ]
+               ],
+               BaselinePosition -> Baseline,
+               ImageSize -> Automatic,
+               FrameMargins -> 0
+              ],
+              EventHandlerTag[
+               {
+                "MouseDown" :> FEPrivate`Set[Typeset`down$$, True],
+                "MouseUp" :> FEPrivate`Set[Typeset`down$$, False],
+                PassEventsDown -> True,
+                Method -> "Preemptive",
+                PassEventsUp -> True
+               }
+              ]
              ],
-             Blank[]
+             DynamicModuleValues :> { }
             ],
-            StandardForm
+            ButtonFunction :>
+             With[
+              {
+               Wolfram`Chatbook`UI`Private`attachedMenuCells$ = 
+                Cells[
+                 Typeset`dingbatCell$$,
+                 AttachedCell -> True,
+                 CellStyle -> "AttachedChatMenu"
+                ]
+              },
+              If[ Wolfram`Chatbook`UI`Private`attachedMenuCells$ === { },
+               Wolfram`Chatbook`Menus`MakeMenu[
+                Wolfram`Chatbook`UI`Private`makeChatActionMenu[
+                 "Input",
+                 Typeset`targetCell$$
+                ],
+                TaggingRules -> <|
+                 "ActionScope" -> Typeset`targetCell$$,
+                 "Anchor" -> Typeset`dingbatCell$$,
+                 "IsRoot" -> True
+                |>
+               ],
+               Map[
+                NotebookDelete,
+                Wolfram`Chatbook`UI`Private`attachedMenuCells$
+               ]
+              ]
+             ],
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
+            ContentPadding -> False,
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
            ],
+           Catch[
+            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+            With[
+             {
+              Wolfram`Chatbook`UI`Private`persona$ = 
+               Part[
+                Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                 Typeset`targetCell$$,
+                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                ],
+                2
+               ]
+             },
+             If[ UnsameQ[
+               Wolfram`Chatbook`UI`Private`persona$,
+               Typeset`personaCache$$
+              ],
+              
+              Typeset`personaCache$$ = 
+               Wolfram`Chatbook`UI`Private`persona$;
+
+              
+              Map[
+               NotebookDelete,
+               Cells[
+                Typeset`dingbatCell$$,
+                AttachedCell -> True,
+                CellStyle -> "NotebookAssistant`ChatInput`PersonaIcon"
+               ]
+              ];
+
+              If[ Typeset`personaCache$$ =!= "CodeAssistant",
+               AttachCell[
+                Typeset`dingbatCell$$,
+                Cell[
+                 BoxData[
+                  ToBoxes[
+                   Tooltip[
+                    Pane[
+                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                      Wolfram`Chatbook`UI`Private`persona$
+                     ],
+                     Alignment -> {Center, Center},
+                     ImageSize -> {25, 25},
+                     ImageSizeAction -> "ShrinkToFit"
+                    ],
+                    Wolfram`Chatbook`UI`Private`persona$
+                   ]
+                  ]
+                 ],
+                 "NotebookAssistant`ChatInput`PersonaIcon"
+                ],
+                {Left, Center},
+                0,
+                {Right, Center}
+               ]
+              ]
+             ]
+            ],
+            Blank[]
+           ],
+           SynchronousUpdating -> False,
            TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
           ],
           Initialization :>
-           (Typeset`cell$$ = EvaluationCell[];
-           Needs["Wolfram`Chatbook`" -> None]),
-          DynamicModuleValues :> { },
-          UnsavedVariables :> {Typeset`cell$$}
-         ],
-        False ->
-         ButtonBox[
-          FrameBox[
-           PaneBox[
-            DynamicBox[
-             FEPrivate`FrontEndResource["ChatbookExpressions", "ChatIconGeneric"][
-              LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
-              LightDarkSwitched[
-               RGBColor[0.0, 0.52549, 0.8],
-               RGBColor[0.0, 0.52549, 0.8]
-              ],
-              21
+           (
+           If[ Not[
+             IntegerQ[
+              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger
              ]
             ],
-            Alignment -> {Center, Center},
-            ImageSize -> {25, 25},
-            ImageSizeAction -> "ShrinkToFit"
-           ],
-           Background -> None,
-           ContentPadding -> False,
-           FrameMargins -> 0,
-           FrameStyle -> None,
-           ImageMargins -> 0,
-           RoundingRadius -> 2,
-           StripOnInput -> False
-          ],
-          ButtonFunction :> Null,
-          Appearance -> None,
-          ImageMargins -> 0,
-          FrameMargins -> 0,
-          ContentPadding -> False,
-          Evaluator -> Automatic,
-          Method -> "Preemptive"
+            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger = 0
+           ];
+
+           Typeset`dingbatCell$$ = EvaluationCell[];
+           Typeset`targetCell$$ = ParentCell[Typeset`dingbatCell$$];
+           Needs["Wolfram`Chatbook`" -> None];),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Typeset`dingbatCell$$, Typeset`targetCell$$}
          ]
        },
-       Dynamic[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         "Cloud",
-         CurrentValue["MouseOver"]
-        ]
-       ],
+       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
        ImageSize -> Automatic
       ]
      ])
@@ -285,8 +395,7 @@ Notebook[
     StyleDefinitions -> StyleData["ChatInput"]
    ],
    CellFrame -> {{0, 0}, {0, 2.5}},
-   CellDingbat ->
-    TemplateBox[{}, "ChatInputActiveCellDingbat"],
+   CellDingbat -> TemplateBox[{}, "ChatInputCellDingbat"],
    CellMargins -> {{42, 32}, {Inherited, Inherited}},
    CellDingbatMargin -> -20,
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
@@ -340,14 +449,9 @@ Notebook[
     "ChatOutput",
     StyleDefinitions -> StyleData["FramedChatCell"]
    ],
-   CellDingbat ->
-    DynamicBox[
-     FEPrivate`FrontEndResource[
-      "ChatbookExpressions",
-      "AssistantIcon"
-     ]
-    ],
+   CellDingbat -> TemplateBox[{}, "ChatOutputCellDingbat"],
    CellMargins -> {{66, 25}, {12, 5}},
+   CellDingbatMargin -> 6.5,
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
@@ -576,8 +680,8 @@ Notebook[
    CellAutoOverwrite -> True,
    CellFrameColor ->
     LightDarkSwitched[
-     RGBColor[0.92549, 0.941176, 0.960784],
-     RGBColor[0.1608, 0.2314, 0.30195]
+     RGBColor[0.921569, 0.952941, 0.968628],
+     RGBColor[0.215686, 0.258824, 0.290196]
     ],
    ShowAutoSpellCheck -> False,
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
@@ -585,11 +689,95 @@ Notebook[
    LanguageCategory -> None,
    Background ->
     LightDarkSwitched[
-     RGBColor[0.988235, 0.992157, 1.0],
-     RGBColor[0.1373, 0.1647, 0.1961]
+     RGBColor[0.976471, 0.992157, 1.0],
+     RGBColor[0.113726, 0.121569, 0.129412]
     ],
    GraphicsBoxOptions -> {ImageSizeRaw -> {{300}, {220}}},
    Graphics3DBoxOptions -> {ImageSizeRaw -> {{300}, {220}}}
+  ],
+  Cell[
+   StyleData["ChatOutputCellDingbat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneSelectorBox[
+       {
+        True -> "\"\"",
+        False ->
+         DynamicModuleBox[
+          {
+           Typeset`dingbatCell$$ = None,
+           Typeset`targetCell$$ = None,
+           Typeset`display$$ = 
+            Dynamic[
+             RawBoxes[
+              FEPrivate`FrontEndResource[
+               "ChatbookExpressions",
+               "ChatOutputCellDingbat"
+              ]
+             ]
+            ]
+          },
+          DynamicWrapperBox[
+           DynamicBox[ToBoxes[Typeset`display$$, StandardForm]],
+           Catch[
+            With[
+             {
+              Wolfram`Chatbook`UI`Private`tagRules$ = 
+               CurrentValue[Typeset`targetCell$$, TaggingRules]
+             },
+             Typeset`display$$ = 
+              Which[
+               KeyExistsQ[
+                Wolfram`Chatbook`UI`Private`tagRules$,
+                "PageData"
+               ],
+               Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
+                Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
+                Lookup[
+                 Wolfram`Chatbook`UI`Private`tagRules$,
+                 "PageData",
+                 <| |>
+                ]
+               ],
+               KeyExistsQ[
+                Wolfram`Chatbook`UI`Private`tagRules$,
+                "ChatData"
+               ],
+               Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
+                Lookup[
+                 Wolfram`Chatbook`UI`Private`tagRules$,
+                 "ChatData",
+                 <| |>,
+                 BinaryDeserialize[BaseDecode[#1]] &
+                ]
+               ],
+               True,
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ]
+              ]
+            ],
+            Blank[]
+           ],
+           SynchronousUpdating -> False,
+           TrackedSymbols :> { }
+          ],
+          Initialization :>
+           (Typeset`dingbatCell$$ = EvaluationCell[];
+           Typeset`targetCell$$ = ParentCell[Typeset`dingbatCell$$];
+           Needs["Wolfram`Chatbook`" -> None];),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Typeset`dingbatCell$$, Typeset`targetCell$$}
+         ]
+       },
+       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
+       ImageSize -> Automatic
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData[
@@ -1036,35 +1224,226 @@ Notebook[
         True -> "\"\"",
         False ->
          DynamicModuleBox[
-          {Typeset`cell$$},
-          DynamicBox[
-           ToBoxes[
-            Catch[
-             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-             Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
-              Typeset`cell$$
+          {
+           Typeset`dingbatCell$$ = None,
+           Typeset`targetCell$$ = None,
+           Typeset`personaCache$$ = "CodeAssistant"
+          },
+          DynamicWrapperBox[
+           ButtonBox[
+            DynamicModuleBox[
+             {Typeset`down$$ = False},
+             TagBox[
+              PaneSelectorBox[
+               {
+                "Default" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background -> None,
+                  FrameMargins -> 0,
+                  FrameStyle -> None,
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ],
+                "Hover" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background ->
+                   LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+                  FrameMargins -> 0,
+                  FrameStyle ->
+                   LightDarkSwitched[
+                    RGBColor[0.694118, 0.835294, 0.909804],
+                    RGBColor[0.376471, 0.490196, 0.560784]
+                   ],
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ],
+                "Down" ->
+                 FrameBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "ChatbookExpressions",
+                    "ChatInputCellDingbat"
+                   ]
+                  ],
+                  Alignment -> {Center, Center},
+                  Background ->
+                   LightDarkSwitched[
+                    RGBColor[0.831373, 0.941176, 1.0],
+                    RGBColor[0.219608, 0.313725, 0.380392]
+                   ],
+                  FrameMargins -> 0,
+                  FrameStyle ->
+                   LightDarkSwitched[
+                    RGBColor[0.458824, 0.760784, 0.921569],
+                    RGBColor[0.4, 0.611765, 0.741176]
+                   ],
+                  ImageSize -> {24, 24},
+                  RoundingRadius -> 4,
+                  StripOnInput -> False
+                 ]
+               },
+               Dynamic[
+                Which[
+                 CurrentValue["MouseOver"] && Typeset`down$$,
+                 "Down",
+                 CurrentValue["MouseOver"],
+                 "Hover",
+                 True,
+                 "Default"
+                ]
+               ],
+               BaselinePosition -> Baseline,
+               ImageSize -> Automatic,
+               FrameMargins -> 0
+              ],
+              EventHandlerTag[
+               {
+                "MouseDown" :> FEPrivate`Set[Typeset`down$$, True],
+                "MouseUp" :> FEPrivate`Set[Typeset`down$$, False],
+                PassEventsDown -> True,
+                Method -> "Preemptive",
+                PassEventsUp -> True
+               }
+              ]
              ],
-             Blank[]
+             DynamicModuleValues :> { }
             ],
-            StandardForm
+            ButtonFunction :>
+             With[
+              {
+               Wolfram`Chatbook`UI`Private`attachedMenuCells$ = 
+                Cells[
+                 Typeset`dingbatCell$$,
+                 AttachedCell -> True,
+                 CellStyle -> "AttachedChatMenu"
+                ]
+              },
+              If[ Wolfram`Chatbook`UI`Private`attachedMenuCells$ === { },
+               Wolfram`Chatbook`Menus`MakeMenu[
+                Wolfram`Chatbook`UI`Private`makeChatActionMenu[
+                 "Input",
+                 Typeset`targetCell$$
+                ],
+                TaggingRules -> <|
+                 "ActionScope" -> Typeset`targetCell$$,
+                 "Anchor" -> Typeset`dingbatCell$$,
+                 "IsRoot" -> True
+                |>
+               ],
+               Map[
+                NotebookDelete,
+                Wolfram`Chatbook`UI`Private`attachedMenuCells$
+               ]
+              ]
+             ],
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
+            ContentPadding -> False,
+            FrameMargins -> 0,
+            ImageMargins -> 0,
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
            ],
+           Catch[
+            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+            With[
+             {
+              Wolfram`Chatbook`UI`Private`persona$ = 
+               Part[
+                Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                 Typeset`targetCell$$,
+                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                ],
+                2
+               ]
+             },
+             If[ UnsameQ[
+               Wolfram`Chatbook`UI`Private`persona$,
+               Typeset`personaCache$$
+              ],
+              
+              Typeset`personaCache$$ = 
+               Wolfram`Chatbook`UI`Private`persona$;
+
+              
+              Map[
+               NotebookDelete,
+               Cells[
+                Typeset`dingbatCell$$,
+                AttachedCell -> True,
+                CellStyle -> "NotebookAssistant`ChatInput`PersonaIcon"
+               ]
+              ];
+
+              If[ Typeset`personaCache$$ =!= "CodeAssistant",
+               AttachCell[
+                Typeset`dingbatCell$$,
+                Cell[
+                 BoxData[
+                  ToBoxes[
+                   Tooltip[
+                    Pane[
+                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                      Wolfram`Chatbook`UI`Private`persona$
+                     ],
+                     Alignment -> {Center, Center},
+                     ImageSize -> {25, 25},
+                     ImageSizeAction -> "ShrinkToFit"
+                    ],
+                    Wolfram`Chatbook`UI`Private`persona$
+                   ]
+                  ]
+                 ],
+                 "NotebookAssistant`ChatInput`PersonaIcon"
+                ],
+                {Center, Bottom},
+                0,
+                {Center, Top}
+               ]
+              ]
+             ]
+            ],
+            Blank[]
+           ],
+           SynchronousUpdating -> False,
            TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
           ],
           Initialization :>
-           (Typeset`cell$$ = EvaluationCell[];
-           Needs["Wolfram`Chatbook`" -> None];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "UpdateDynamics",
-            "ChatBlock"
-           ]),
+           (
+           If[ Not[
+             IntegerQ[
+              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger
+             ]
+            ],
+            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger = 0
+           ];
+
+           Typeset`dingbatCell$$ = EvaluationCell[];
+           Typeset`targetCell$$ = ParentCell[Typeset`dingbatCell$$];
+           Needs["Wolfram`Chatbook`" -> None];),
           DynamicModuleValues :> { },
-          Deinitialization :>
-           (Needs["Wolfram`Chatbook`" -> None];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "UpdateDynamics",
-            "ChatBlock"
-           ]),
-          UnsavedVariables :> {Typeset`cell$$}
+          UnsavedVariables :> {Typeset`dingbatCell$$, Typeset`targetCell$$}
          ]
        },
        Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
@@ -1315,86 +1694,117 @@ Notebook[
     DisplayFunction ->
      (Function[
       TagBox[
-       PaneSelectorBox[
-        {
-         False ->
-          FrameBox[
-           ButtonBox[
-            DynamicBox[
-             FEPrivate`FrontEndResource[
-              "ChatbookExpressions",
-              "ChatMenuIcon"
+       ButtonBox[
+        DynamicModuleBox[
+         {Typeset`down$$ = False},
+         TagBox[
+          PaneSelectorBox[
+           {
+            "Default" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background -> None,
+              FrameMargins -> 0,
+              FrameStyle -> None,
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
+             ],
+            "Hover" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background ->
+               LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+              FrameMargins -> 0,
+              FrameStyle ->
+               LightDarkSwitched[
+                RGBColor[0.694118, 0.835294, 0.909804],
+                RGBColor[0.376471, 0.490196, 0.560784]
+               ],
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
+             ],
+            "Down" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background ->
+               LightDarkSwitched[
+                RGBColor[0.831373, 0.941176, 1.0],
+                RGBColor[0.219608, 0.313725, 0.380392]
+               ],
+              FrameMargins -> 0,
+              FrameStyle ->
+               LightDarkSwitched[
+                RGBColor[0.458824, 0.760784, 0.921569],
+                RGBColor[0.4, 0.611765, 0.741176]
+               ],
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
              ]
-            ],
-            ButtonFunction :>
-             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-              Quiet[Needs["Wolfram`Chatbook`" -> None]];
-              Symbol["Wolfram`Chatbook`ChatbookAction"][
-               "OpenChatMenu",
-               #1,
-               Wolfram`ChatNB`cell
-              ]
-             ],
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
+           },
+           Dynamic[
+            Which[
+             CurrentValue["MouseOver"] && Typeset`down$$,
+             "Down",
+             CurrentValue["MouseOver"],
+             "Hover",
+             True,
+             "Default"
+            ]
            ],
-           RoundingRadius -> 3,
-           FrameStyle -> None,
-           Background -> None,
-           FrameMargins -> 0,
-           ContentPadding -> False,
-           StripOnInput -> False
+           BaselinePosition -> Baseline,
+           ImageSize -> Automatic,
+           FrameMargins -> 0
           ],
-         True ->
-          FrameBox[
-           ButtonBox[
-            DynamicBox[
-             FEPrivate`FrontEndResource[
-              "ChatbookExpressions",
-              "ChatMenuIcon"
-             ]
-            ],
-            ButtonFunction :>
-             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-              Quiet[Needs["Wolfram`Chatbook`" -> None]];
-              Symbol["Wolfram`Chatbook`ChatbookAction"][
-               "OpenChatMenu",
-               #1,
-               Wolfram`ChatNB`cell
-              ]
-             ],
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
-           ],
-           RoundingRadius -> 3,
-           FrameStyle ->
-            LightDarkSwitched[
-             GrayLevel[1, 0],
-             GrayLevel[0.219195, 0.0]
-            ],
-           Background -> #2,
-           FrameMargins -> 0,
-           ContentPadding -> False,
-           StripOnInput -> False
+          EventHandlerTag[
+           {
+            "MouseDown" :> FEPrivate`Set[Typeset`down$$, True],
+            "MouseUp" :> FEPrivate`Set[Typeset`down$$, False],
+            PassEventsDown -> True,
+            Method -> "Preemptive",
+            PassEventsUp -> True
+           }
           ]
-        },
-        Dynamic[CurrentValue["MouseOver"]],
+         ],
+         DynamicModuleValues :> { }
+        ],
+        ButtonFunction :>
+         (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "OpenChatMenu",
+          #1,
+          EvaluationCell[]
+         ]),
+        Appearance ->
+         Dynamic[
+          FEPrivate`FrontEndResource[
+           "FEExpressions",
+           "SuppressMouseDownNinePatchAppearance"
+          ]
+         ],
+        Evaluator -> Automatic,
         ImageSize -> Automatic,
-        FrameMargins -> 0
+        Method -> "Preemptive"
        ],
        MouseAppearanceTag["LinkHand"]
       ]
@@ -2651,192 +3061,81 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      TagBox[
-       GridBox[
-        {
-         {
-          StyleBox[
-           "\"\"",
-           ShowStringCharacters -> False,
-           StripOnInput -> False
-          ]
-         },
-         {#1},
-         {
-          DynamicModuleBox[
-           {Typeset`cell$$},
-           TagBox[
-            GridBox[
+      PaneSelectorBox[
+       {
+        True -> "\"\"",
+        False ->
+         DynamicModuleBox[
+          {
+           Typeset`dingbatCell$$ = None,
+           Typeset`targetCell$$ = None,
+           Typeset`display$$ = 
+            Dynamic[
+             RawBoxes[
+              FEPrivate`FrontEndResource[
+               "ChatbookExpressions",
+               "ChatOutputCellDingbat"
+              ]
+             ]
+            ]
+          },
+          DynamicWrapperBox[
+           DynamicBox[ToBoxes[Typeset`display$$, StandardForm]],
+           Catch[
+            With[
              {
-              {
-               TemplateBox[
-                {
-                 ButtonBox[
-                  TagBox[
-                   PaneSelectorBox[
-                    {
-                     False ->
-                      FrameBox[
-                       GraphicsBox[
-                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
-                        ImageSize -> 4
-                       ],
-                       FrameMargins -> 3,
-                       FrameStyle -> None,
-                       ImageMargins -> 0,
-                       RoundingRadius -> 2,
-                       Background -> None,
-                       StripOnInput -> False
-                      ],
-                     True ->
-                      FrameBox[
-                       GraphicsBox[
-                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
-                        ImageSize -> 4
-                       ],
-                       FrameMargins -> 3,
-                       FrameStyle -> None,
-                       ImageMargins -> 0,
-                       RoundingRadius -> 2,
-                       Background -> GrayLevel[0.9],
-                       StripOnInput -> False
-                      ]
-                    },
-                    Dynamic[CurrentValue["MouseOver"]],
-                    ImageSize -> Automatic,
-                    FrameMargins -> 0
-                   ],
-                   MouseAppearanceTag["LinkHand"]
-                  ],
-                  ButtonFunction :>
-                   (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                   Catch[
-                    Symbol["Wolfram`Chatbook`ChatbookAction"][
-                     "TabLeft",
-                     Typeset`cell$$
-                    ],
-                    Blank[]
-                   ]),
-                  Appearance ->
-                   Dynamic[
-                    FEPrivate`FrontEndResource[
-                     "FEExpressions",
-                     "SuppressMouseDownNinePatchAppearance"
-                    ]
-                   ],
-                  Evaluator -> Automatic,
-                  Method -> "Preemptive"
-                 ],
-                 ButtonBox[
-                  TagBox[
-                   PaneSelectorBox[
-                    {
-                     False ->
-                      FrameBox[
-                       GraphicsBox[
-                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
-                        ImageSize -> 4
-                       ],
-                       FrameMargins -> 3,
-                       FrameStyle -> None,
-                       ImageMargins -> 0,
-                       RoundingRadius -> 2,
-                       Background -> None,
-                       StripOnInput -> False
-                      ],
-                     True ->
-                      FrameBox[
-                       GraphicsBox[
-                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
-                        ImageSize -> 4
-                       ],
-                       FrameMargins -> 3,
-                       FrameStyle -> None,
-                       ImageMargins -> 0,
-                       RoundingRadius -> 2,
-                       Background -> GrayLevel[0.9],
-                       StripOnInput -> False
-                      ]
-                    },
-                    Dynamic[CurrentValue["MouseOver"]],
-                    ImageSize -> Automatic,
-                    FrameMargins -> 0
-                   ],
-                   MouseAppearanceTag["LinkHand"]
-                  ],
-                  ButtonFunction :>
-                   (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                   Catch[
-                    Symbol["Wolfram`Chatbook`ChatbookAction"][
-                     "TabRight",
-                     Typeset`cell$$
-                    ],
-                    Blank[]
-                   ]),
-                  Appearance ->
-                   Dynamic[
-                    FEPrivate`FrontEndResource[
-                     "FEExpressions",
-                     "SuppressMouseDownNinePatchAppearance"
-                    ]
-                   ],
-                  Evaluator -> Automatic,
-                  Method -> "Preemptive"
-                 ]
-                },
-                "RowDefault"
-               ]
-              },
-              {
-               StyleBox[
-                RowBox[
-                 {
-                  DynamicBox[
-                   FrontEnd`CurrentValue[
-                    Typeset`cell$$,
-                    {TaggingRules, "PageData", "CurrentPage"},
-                    1
-                   ]
-                  ],
-                  "/",
-                  DynamicBox[
-                   FrontEnd`CurrentValue[
-                    Typeset`cell$$,
-                    {TaggingRules, "PageData", "PageCount"},
-                    1
-                   ]
-                  ]
-                 }
-                ],
-                FontFamily -> "Roboto",
-                FontSize -> 10
-               ]
-              }
+              Wolfram`Chatbook`UI`Private`tagRules$ = 
+               CurrentValue[Typeset`targetCell$$, TaggingRules]
              },
-             GridBoxAlignment -> {"Columns" -> {{Center}}},
-             DefaultBaseStyle -> "Column",
-             GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-             GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
+             Typeset`display$$ = 
+              Which[
+               KeyExistsQ[
+                Wolfram`Chatbook`UI`Private`tagRules$,
+                "PageData"
+               ],
+               Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
+                Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
+                Lookup[
+                 Wolfram`Chatbook`UI`Private`tagRules$,
+                 "PageData",
+                 <| |>
+                ]
+               ],
+               KeyExistsQ[
+                Wolfram`Chatbook`UI`Private`tagRules$,
+                "ChatData"
+               ],
+               Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
+                Lookup[
+                 Wolfram`Chatbook`UI`Private`tagRules$,
+                 "ChatData",
+                 <| |>,
+                 BinaryDeserialize[BaseDecode[#1]] &
+                ]
+               ],
+               True,
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ]
+              ]
             ],
-            "Column"
+            Blank[]
            ],
-           Initialization :>
-            (Typeset`cell$$ = 
-             If[ $CloudEvaluation,
-              EvaluationCell[],
-              ParentCell[EvaluationCell[]]
-             ]),
-           DynamicModuleValues :> { },
-           UnsavedVariables :> {Typeset`cell$$}
-          ]
-         }
-        },
-        GridBoxAlignment -> {"Columns" -> {{Center}}},
-        DefaultBaseStyle -> "Column",
-        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-        GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-       ],
-       "Column"
+           SynchronousUpdating -> False,
+           TrackedSymbols :> { }
+          ],
+          Initialization :>
+           (Typeset`dingbatCell$$ = EvaluationCell[];
+           Typeset`targetCell$$ = ParentCell[Typeset`dingbatCell$$];
+           Needs["Wolfram`Chatbook`" -> None];),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Typeset`dingbatCell$$, Typeset`targetCell$$}
+         ]
+       },
+       Dynamic[TrueQ[CloudSystem`$CloudNotebooks]],
+       ImageSize -> Automatic
       ]
      ])
    }
@@ -4738,7 +5037,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.85.3983354859"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.91.3983874586"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

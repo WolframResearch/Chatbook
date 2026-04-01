@@ -126,7 +126,7 @@ Cell[
 Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     AutoQuoteCharacters      -> { },
-    CellFrame                -> 2,
+    CellFrame                -> 1.75,
     CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
@@ -157,9 +157,8 @@ Cell[
             None,
             Cell[
                 BoxData[
-                    DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[
-                        color @ "SendChatButtonFrameHover",
-                        color @ "SendChatButtonBackgroundHover"
+                    DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[
+                        color @ "ChatInputFrame"
                     ]
                 ],
                 Background -> None
@@ -167,7 +166,7 @@ Cell[
         },
         { None, None }
     },
-	CellDingbat -> TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
+	CellDingbat -> TemplateBox[ { }, "ChatInputCellDingbat" ],
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
@@ -222,20 +221,6 @@ Cell[
 ]
 
 
-
-(* ::Subsubsection::Closed:: *)
-(*ChatInputActiveCellDingbat*)
-
-
-Cell[
-    StyleData[ "ChatInputActiveCellDingbat" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputActiveCellDingbat
-    }
-]
-
-
-
 (* ::Subsubsection::Closed:: *)
 (*ChatInputCellDingbat*)
 
@@ -243,7 +228,7 @@ Cell[
 Cell[
     StyleData[ "ChatInputCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputCellDingbat
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ]
     }
 ]
 
@@ -262,7 +247,7 @@ Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue      -> 1544,
     Background            -> Transparent,
-    CellDingbat           -> TemplateBox[ {}, "ChatInputActiveCellDingbat" ],
+    CellDingbat           -> TemplateBox[ { }, "ChatInputCellDingbat" ],
     CellDingbatMargin     -> -20,
     CellFrame             -> { { 0, 0 }, { 0, 2.5 } },
     CellFrameLabels       -> { { "", Inherited }, { Inherited, Inherited } },
@@ -321,7 +306,8 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background           -> color @ "ChatOutputBackground",
     CellAutoOverwrite    -> True,
-    CellDingbat          -> DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AssistantIcon" ],
+    CellDingbat          -> TemplateBox[ { }, "ChatOutputCellDingbat" ],
+    CellDingbatMargin    -> 6.5, (* the ChatInput dingbat is a button with frame margins so nudge over the output *)
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellFrameColor       -> color @ "ChatOutputFrame",
     CellGroupingRules    -> "OutputGrouping",
@@ -347,6 +333,17 @@ Cell[
     menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
 ]
 
+
+(* ::Subsubsection::Closed:: *)
+(*ChatOutputCellDingbat*)
+
+
+Cell[
+    StyleData[ "ChatOutputCellDingbat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatOutputCellDingbat[ ]
+    }
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -474,7 +471,7 @@ Cell[
 Cell[
     StyleData[ "ChatDelimiterCellDingbat" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatDelimiterCellDingbat
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ]
     }
 ]
 
@@ -759,49 +756,14 @@ With[
 Cell[
     StyleData[ "ChatMenuButton" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ TagBox[
-            PaneSelectorBox[
-                {
-                    False -> FrameBox[
-                        ButtonBox[
-                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
-                            ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
-                                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
-                            ],
-                            Appearance -> $suppressButtonAppearance,
-                            Evaluator  -> Automatic,
-                            Method     -> "Preemptive"
-                        ],
-                        RoundingRadius -> 3,
-                        FrameStyle     -> None,
-                        Background     -> None,
-                        FrameMargins   -> 0,
-                        ContentPadding -> False,
-                        StripOnInput   -> False
-                    ],
-                    True -> FrameBox[
-                        ButtonBox[
-                            DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatMenuIcon" ],
-                            ButtonFunction :> With[ { $CellContext`cell = EvaluationCell[ ] },
-                                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, $CellContext`cell ]
-                            ],
-                            Appearance -> $suppressButtonAppearance,
-                            Evaluator  -> Automatic,
-                            Method     -> "Preemptive"
-                        ],
-                        RoundingRadius -> 3,
-                        FrameStyle     -> frameColor,
-                        Background     -> #2,
-                        FrameMargins   -> 0,
-                        ContentPadding -> False,
-                        StripOnInput   -> False
-                    ]
-                },
-                Dynamic @ CurrentValue[ "MouseOver" ],
-                ImageSize    -> Automatic,
-                FrameMargins -> 0
+        DisplayFunction -> Function @ Evaluate @ TagBox[ ToBoxes @
+            Button[
+                Wolfram`Chatbook`Common`blueHueButtonAppearance[ Wolfram`Chatbook`Common`chatbookIcon[ "ChatMenuIcon", False ], { 14, 20 } ],
+                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", #1, EvaluationCell[ ] ],
+                Appearance -> $suppressButtonAppearance,
+                Evaluator  -> Automatic,
+                ImageSize  -> Automatic,
+                Method     -> "Preemptive"
             ],
             MouseAppearanceTag[ "LinkHand" ]
         ]
@@ -1100,7 +1062,7 @@ Cell[
 Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ tabbedChatOutputCellDingbat @ #
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Wolfram`Chatbook`UI`MakeChatOutputCellDingbat[ ]
     }
 ]
 

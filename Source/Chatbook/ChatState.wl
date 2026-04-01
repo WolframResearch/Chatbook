@@ -198,7 +198,7 @@ $defaultCellFrameLabels = {
     {
         None,
         Cell[
-            BoxData[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[ RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ] ] ],
+            BoxData[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[ RGBColor[ "#a3c9f2" ] ] ],
             Background -> None
         ]
     },
