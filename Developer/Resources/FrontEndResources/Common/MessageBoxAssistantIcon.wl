@@ -47,7 +47,7 @@ Graphics[
 		},
 		{
 			LightDarkSwitched @ RGBColor[0.4588235294117647, 0.7607843137254902, 0.9215686274509803, 1.],
-			Thickness @ 0.08196721311475409, CapForm @ Butt, JoinForm @ {Miter, 1.},
+			Thickness @ 0.08196721311475409, CapForm @ "Butt", JoinForm @ {"Miter", 1.},
 			JoinedCurve[
 				{
 					{
