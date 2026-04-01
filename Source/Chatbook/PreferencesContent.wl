@@ -249,7 +249,7 @@ disabledAIOverlay // beginDefinition;
 (* Option 1: Overlay
     Pros: can more closely match OS TabView background color
     Cons: ImageSize not well determined and can push Preferences reset button fairly low to the bottom of a pane *)
-disabledAIOverlay[ content_ ] :=
+(* disabledAIOverlay[ content_ ] :=
 If[ $preferencesContentEnabledQ,
     content
     ,
@@ -276,17 +276,16 @@ If[ $preferencesContentEnabledQ,
             Spacings  -> { 0, 0 }
         ]
     ]
-];
+]; *)
 
 (* Option 2: ContentsOpacity
     Pros: easier to implement; does not push down reset button
-    Cons: Enabled -> False does not disable all mouse-hover elements; opacity inline cell not a perfect style match *)
-(*
+    Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
+
 disabledAIOverlay[ content_ ] :=
 If[ $preferencesContentEnabledQ,
     content
     ,
-    
     Grid[
         {
             { disabledAIOverlayBanner[ ] },
@@ -294,6 +293,11 @@ If[ $preferencesContentEnabledQ,
                  (* "controlText" isn't a 1-to-1 match with the enabled state, but it's close *)
                 RawBoxes @ Cell[ BoxData @ ToBoxes @
                     Style[ content, "controlText", Enabled -> False ],
+                    Background -> Switch[ $OperatingSystem,
+                        "MacOSX", LightDarkSwitched[ GrayLevel[ 0.9745098039215686, 0.5 ], GrayLevel[ 0.15686274509803920, 0.5 ] ],
+                        _,        LightDarkSwitched[ GrayLevel[ 0.9607843137254901, 0.5 ], GrayLevel[ 0.15294117647058822, 0.5 ] ]
+                    ],
+                    Enabled            -> False,
                     PrivateCellOptions -> { "ContentsOpacity" -> 0.25 }
                 ]
             }
@@ -302,7 +306,7 @@ If[ $preferencesContentEnabledQ,
         Spacings  -> { 0, 0 }
     ]
 ];
-*)
+
 
 disabledAIOverlay // endDefinition;
 
