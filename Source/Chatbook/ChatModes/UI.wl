@@ -542,7 +542,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                         Boxes,
                                                         Alignment  -> { Automatic, Baseline },
                                                         Appearance -> "Frameless",
-                                                        BaseStyle  -> { FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ] }, 
+                                                        BaseStyle  -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ], FontSize  -> 13 },
                                                         BoxID      -> "AttachedChatInputField",
                                                         ContinuousAction -> True,
                                                         ImageSize  -> { Scaled[ 1 ], Automatic }
@@ -551,7 +551,12 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                         ToBoxes @ Row[
                                                             {
                                                                 chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 14 ],
-                                                                tr[ "ChatbarFieldHint" ]
+                                                                Style[ tr[ "ChatbarFieldHint" ],
+                                                                    "Text", "TextStyleInputField",
+                                                                    FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
+                                                                    FontSize        -> 13,
+                                                                    LineBreakWithin -> False
+                                                                ]
                                                             },
                                                             Spacer @ 7,
                                                             StripOnInput -> True
@@ -561,12 +566,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                 },
                                                 { 1, 2 },
                                                 1,
-                                                Alignment -> { Left, Baseline },
-                                                BaseStyle -> {
-                                                    "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                                                    FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
-                                                    FontSize        -> 13,
-                                                    LineBreakWithin -> False }
+                                                Alignment -> { Left, Baseline }
                                             ],
                                             sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
                                         } }
@@ -656,7 +656,7 @@ Overlay[
             Alignment        -> { Automatic, Baseline },
             Appearance       -> "Frameless",
             BaselinePosition -> Baseline,
-            BaseStyle        -> { FontColor -> LightDarkSwitched @ RGBColor["#333333"] }, 
+            BaseStyle        -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ], FontSize -> 15, FontSlant -> "Plain" },
             BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
             ImageSize        -> size
@@ -679,7 +679,13 @@ Overlay[
                         BaselinePosition -> Baseline,
                         ImageSize        -> All
                     ],
-                    tr[ "ChatbarFieldHint" ]
+                    Style[ tr[ "ChatbarFieldHint" ],
+                        "Text", "TextStyleInputField",
+                        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontSize        -> 15,
+                        FontSlant       -> "Plain",
+                        LineBreakWithin -> False
+                    ]
                 },
                 Spacer @ 7,
                 StripOnInput -> True
@@ -690,13 +696,7 @@ Overlay[
     { 1, 2 },
     1,
     Alignment        -> { Left, Baseline },
-    BaselinePosition -> Baseline,
-    BaseStyle        -> {
-        "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
-        FontSize        -> 15,
-        FontSlant       -> "Plain",
-        LineBreakWithin -> False }
+    BaselinePosition -> Baseline
 ]
 
 chatbarInputField // endDefinition;
@@ -1365,7 +1365,7 @@ Overlay[
             Alignment        -> { Automatic, Baseline },
             Appearance       -> "Frameless",
             BaselinePosition -> Baseline,
-            BaseStyle        -> { FontColor -> LightDarkSwitched @ RGBColor["#333333"] }, 
+            BaseStyle        -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ RGBColor["#333333"], FontSize -> 15, FontSlant -> "Plain" },
             BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
             ImageSize        -> { Scaled[ 1 ], Automatic }
@@ -1374,7 +1374,13 @@ Overlay[
             ToBoxes @ Row[
                 {
                     chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 13 ],
-                    tr[ "ChatbarFieldHint" ]
+                    Style[ tr[ "ChatbarFieldHint" ],
+                        "Text", "TextStyleInputField",
+                        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontSize        -> 15,
+                        FontSlant       -> "Plain",
+                        LineBreakWithin -> False
+                    ]
                 },
                 Spacer @ 7,
                 StripOnInput -> True
@@ -1384,14 +1390,7 @@ Overlay[
     },
     { 1, 2 },
     1,
-    Alignment        -> { Left, Baseline },
-    (* BaselinePosition -> Baseline, *)
-    BaseStyle        -> {
-        "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
-        FontSize        -> 15,
-        FontSlant       -> "Plain",
-        LineBreakWithin -> False }
+    Alignment -> { Left, Baseline }
 ]
 
 workspaceInputField // endDefinition;
