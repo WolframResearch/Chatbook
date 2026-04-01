@@ -341,6 +341,16 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
+$modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54" ],
+(*    "EndToken"                   -> None,*)
+(*    "HybridToolMethod"           -> True,*)
+    "MaxContextTokens"           -> 400000(*,*)
+(*    "Reasoning"                  -> Missing[ "NotSupported" ]*)(*,*)
+(*    "ToolCallExamplePromptStyle" -> Automatic,*)
+(*    "ToolMethod"                 -> Verbatim @ Automatic*)
+|>;
+
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
