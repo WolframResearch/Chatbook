@@ -2571,62 +2571,7 @@ activeAIAssistantCell[
                 True,                   # & ]
         },
         Cell[
-            BoxData @ outer @ ToBoxes @
-                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
-                    
-                    DynamicWrapper[
-                        PaneSelector[
-                            {
-                                "Active" -> Dynamic[
-                                    finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
-                                    scrollToEnd[ ];
-                                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
-                                    TrackedSymbols :> { },
-                                    UpdateInterval -> 0.5
-                                ],
-                                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
-                                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
-                            },
-                            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
-                            ImageSize -> Automatic
-                        ],
-
-                        If[ kernelWasQuitQ, NotebookDelete @ topCell ];
-                        If[ TrueQ @ finishedSignal,
-                            setCurrentValue[ topCell, Editable, True ];
-                            WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
-                        ],
-                        
-                        SynchronousUpdating -> False,
-                        TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
-                    ],
-
-                    BoxID            -> "DynamicTextDisplay",
-                    Deinitialization :> Quiet @ TaskRemove @ task,
-                    Initialization   :> (
-                        dmBox = EvaluationBox[ ];
-                        If[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat,
-                            topCell = ParentCell @ EvaluationCell[ ];
-                            If[ scrollOutputQ @ settings,
-                                If[ TrueQ @ $SidebarChat,
-                                    scrollToEnd = Lookup[
-                                        CurrentValue[ ParentCell @ topCell, TaggingRules ],
-                                        "ScrollPositionSymbol",
-                                        Function[ Null ],
-                                        Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
-                                    ]
-                                    ,
-                                    scrollToEnd = Function[ scrollOutput[ True, topCell ] ]
-                                ]
-                            ];
-                            ,
-                            topCell = EvaluationCell[ ];
-                            (* do not scroll main notebook chat evaluations *)
-                            (* If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ] *)
-                        ];
-                        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
-                        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
-                ],
+            BoxData @ outer @ ToBoxes @ activeAIAssistantDynamicModule[ container, settings, task, formatter, reformat ],
             "Output",
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
@@ -2636,10 +2581,10 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            If[ TrueQ @ settings[ "SetCellDingbat" ],
+            (* If[ TrueQ @ settings[ "SetCellDingbat" ],
                 CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                 Sequence @@ { }
-            ],
+            ], *)
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -2660,6 +2605,109 @@ activeAIAssistantCell[
     ];
 
 activeAIAssistantCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*activeAIAssistantDynamicModule*)
+activeAIAssistantDynamicModule // beginDefinition;
+
+activeAIAssistantDynamicModule // Attributes = { HoldFirst };
+
+(* Sidebar is a stack of inline cells. To avoid FE crash, asynchronously rewrite the ChatOutput after stream-of-thought finishes *)
+activeAIAssistantDynamicModule[ container_, settings_, task_, formatter_, reformat_ ] /; $SidebarChat :=
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
+    DynamicWrapper[
+        PaneSelector[
+            {
+                "Active" -> Dynamic[
+                    finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
+                    scrollToEnd[ ];
+                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
+                    TrackedSymbols :> { },
+                    UpdateInterval -> 0.5
+                ],
+                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
+                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
+            },
+            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
+            ImageSize -> Automatic
+        ],
+
+        If[ kernelWasQuitQ, NotebookDelete @ topCell ];
+        If[ TrueQ @ finishedSignal,
+            setCurrentValue[ topCell, Editable, True ];
+            WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
+        ],
+        
+        SynchronousUpdating -> False,
+        TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
+    ],
+
+    BoxID            -> "DynamicTextDisplay",
+    Deinitialization :> Quiet @ TaskRemove @ task,
+    Initialization   :> (
+        dmBox = EvaluationBox[ ];
+        topCell = ParentCell @ EvaluationCell[ ];
+        If[ scrollOutputQ @ settings,
+            scrollToEnd = Lookup[
+                CurrentValue[ ParentCell @ topCell, TaggingRules ],
+                "ScrollPositionSymbol",
+                Function[ Null ],
+                Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
+            ]
+        ];
+        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
+        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
+];
+
+(* Notebooks are safe from crashing when rewriting a top-level cell *)
+activeAIAssistantDynamicModule[ container_, settings_, task_, formatter_, reformat_ ] :=
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
+    DynamicWrapper[
+        PaneSelector[
+            {
+                False -> Dynamic[
+                    scrollToEnd[ ];
+                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ];
+                    If[ KeyExistsQ[ container, "FinishedCell" ],
+                        setCurrentValue[ topCell, Editable, True ];
+                        WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
+                    ];
+                    cachedDynamicOutput,
+                    TrackedSymbols :> { },
+                    UpdateInterval -> 0.5
+                ],
+                True  -> Spacer @ 0 (* hide content while we wait for the cell to delete *)
+            },
+            Dynamic @ kernelWasQuitQ,
+            ImageSize -> Automatic
+        ],
+
+        If[ kernelWasQuitQ, NotebookDelete @ topCell ],
+        
+        SynchronousUpdating -> False,
+        TrackedSymbols      :> { kernelWasQuitQ }
+    ],
+
+    BoxID            -> "DynamicTextDisplay",
+    Deinitialization :> Quiet @ TaskRemove @ task,
+    Initialization   :> (
+        dmBox = EvaluationBox[ ];
+        If[ TrueQ @ $WorkspaceChat,
+            topCell = ParentCell @ EvaluationCell[ ];
+            If[ scrollOutputQ @ settings,
+                scrollToEnd = Function[ scrollOutput[ True, topCell ] ]
+            ];
+            ,
+            topCell = EvaluationCell[ ];
+            (* do not scroll main notebook chat evaluations *)
+            (* If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ] *)
+        ];
+        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
+        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
+];
+
+activeAIAssistantDynamicModule // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
