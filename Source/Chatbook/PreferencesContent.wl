@@ -27,6 +27,8 @@ $$preferencesPage = Alternatives @@ $preferencesPages;
 $preferencesScope := $FrontEnd;
 $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_FrontEndObject } ];
 
+$preferencesContentEnabledQ = True;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cloud Overrides*)
@@ -204,6 +206,69 @@ preferencesContent[ "Tools" ] := scopedTrackedDynamic[ toolSettingsPanel[ ], { "
 preferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disabledAIOverlay*)
+
+disabledAIOverlay // beginDefinition;
+
+disabledAIOverlay[ content_ ] :=
+If[ $preferencesContentEnabledQ,
+    content
+    ,
+    DynamicModule[ { imageSize = { Scaled[ 1 ], All } },
+        Grid[
+            {
+                {
+                    Framed[
+                        Grid[
+                            { {
+                                Replace[
+                                    FrontEndResource[ "ChatbookExpressions", "InformationTooltip" ],
+                                    HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 40, 40 },
+                                    1
+                                ] // RawBoxes,
+                                Grid[
+                                    {
+                                        { "AI features have been disabled by an administrator" },
+                                        { "Learn more \[RightGuillemet]" }
+                                    },
+                                    Alignment -> { Left, Center }
+                                ]
+                            } },
+                            Alignment -> { Left, Center }
+                        ],
+                        Alignment      -> { Left, Top },
+                        Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+                        FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
+                        ImageMargins   -> { { 0, 0 }, { 10, 0 } },
+                        ImageSize      -> Scaled[ 1 ],
+                        RoundingRadius -> 1
+                    ]
+                },
+                {
+                    Overlay[
+                        {
+                            Pane[ content, Alignment -> { Left, Top }, AppearanceElements -> None, ImageSize -> Dynamic @ imageSize ],
+                            Deploy @ Graphics[
+                                Background -> Switch[ $OperatingSystem,
+                                    "MacOSX", LightDarkSwitched[ GrayLevel[ 0.9745098039215686, 0.5 ], GrayLevel[ 0.15686274509803920, 0.5 ] ],
+                                    _,        LightDarkSwitched[ GrayLevel[ 0.9607843137254901, 0.5 ], GrayLevel[ 0.15294117647058822, 0.5 ] ] ],
+                                ImageSize  -> Dynamic @ imageSize ]
+                        },
+                        { 1, 2 },
+                        2
+                    ]
+                }
+            },
+            Alignment -> { Left, Top },
+            Spacings  -> { 0, 0 }
+        ]
+    ]
+];
+
+disabledAIOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
 
@@ -212,18 +277,15 @@ preferencesContent // endDefinition;
 (*notebookSettingsPanel*)
 notebookSettingsPanel // beginDefinition;
 
-notebookSettingsPanel[ ] := Pane[
+notebookSettingsPanel[ ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> scopeInitialization[ display = createNotebookSettingsPanel[ ] ],
         SynchronousInitialization -> False
-    ],
-    FrameMargins -> { { 8, 8 }, { 13, 13 } },
-    Spacings     -> { 0, 1.5 }
-];
+    ];
 
 notebookSettingsPanel // endDefinition;
 
@@ -304,7 +366,11 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Cache the content in case panel is redrawn: *)
-        createNotebookSettingsPanel[ ] = content
+        createNotebookSettingsPanel[ ] =  Pane[
+            content,
+            FrameMargins -> { { 8, 8 }, { 13, 13 } },
+            Spacings     -> { 0, 1.5 }
+        ]
     ],
     throwInternalFailure
 ];
@@ -1206,7 +1272,7 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := Catch[ servicesSettingsPanel0[ ], $servicesSettingsTag ];
+servicesSettingsPanel[ ] := Catch[ Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ servicesSettingsPanel0[ ] ], $servicesSettingsTag ];
 servicesSettingsPanel // endDefinition;
 
 servicesSettingsPanel0 // beginDefinition;
@@ -1643,7 +1709,7 @@ personaSettingsPanel // beginDefinition;
 personaSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         Initialization            :> scopeInitialization[ display = CreatePersonaManagerPanel[ ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
@@ -1663,7 +1729,7 @@ toolSettingsPanel // beginDefinition;
 toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
