@@ -488,7 +488,7 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
             messages,
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                "\nENDRESULT(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")\n" :>
                     "\nENDRESULT\n"
             ]
         ]
@@ -1387,7 +1387,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write },
 
         boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
-        
+
         If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
@@ -1416,9 +1416,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             $$textDataList,
             "ReformatTextData"
         ];
-        
+
         write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
-        
+
         NotebookWrite[ NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
 
     ],
@@ -2562,7 +2562,7 @@ activeAIAssistantCell[
         Cell[
             BoxData @ outer @ ToBoxes @
                 DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
-                    
+
                     DynamicWrapper[
                         PaneSelector[
                             {
@@ -2585,7 +2585,7 @@ activeAIAssistantCell[
                             setCurrentValue[ topCell, Editable, True ];
                             WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
                         ],
-                        
+
                         SynchronousUpdating -> False,
                         TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
                     ],
