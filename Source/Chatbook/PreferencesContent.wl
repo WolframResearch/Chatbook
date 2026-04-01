@@ -207,44 +207,56 @@ preferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*disabledAIOverlayBanner*)
+
+disabledAIOverlayBanner // beginDefinition;
+
+disabledAIOverlayBanner[ ] :=
+Framed[
+    Grid[
+        { {
+            Replace[
+                FrontEndResource[ "ChatbookExpressions", "InformationTooltip" ],
+                HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 40, 40 },
+                1
+            ] // RawBoxes,
+            Grid[
+                {
+                    { "AI features have been disabled by an administrator" },
+                    { "Learn more \[RightGuillemet]" }
+                },
+                Alignment -> { Left, Center }
+            ]
+        } },
+        Alignment -> { Left, Center }
+    ],
+    Alignment      -> { Left, Top },
+    Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
+    ImageMargins   -> { { 0, 0 }, { 10, 0 } },
+    ImageSize      -> Scaled[ 1 ],
+    RoundingRadius -> 1
+];
+
+disabledAIOverlayBanner // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*disabledAIOverlay*)
 
 disabledAIOverlay // beginDefinition;
 
+(* Option 1: Overlay
+    Pros: can more closely match OS TabView background color
+    Cons: ImageSize not well determined and can push Preferences reset button fairly low to the bottom of a pane *)
 disabledAIOverlay[ content_ ] :=
 If[ $preferencesContentEnabledQ,
     content
     ,
-    DynamicModule[ { imageSize = { Scaled[ 1 ], All } },
+    DynamicModule[ { imageSize = { Scaled[ 1 ], Scaled[ 1 ] } },
         Grid[
             {
-                {
-                    Framed[
-                        Grid[
-                            { {
-                                Replace[
-                                    FrontEndResource[ "ChatbookExpressions", "InformationTooltip" ],
-                                    HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 40, 40 },
-                                    1
-                                ] // RawBoxes,
-                                Grid[
-                                    {
-                                        { "AI features have been disabled by an administrator" },
-                                        { "Learn more \[RightGuillemet]" }
-                                    },
-                                    Alignment -> { Left, Center }
-                                ]
-                            } },
-                            Alignment -> { Left, Center }
-                        ],
-                        Alignment      -> { Left, Top },
-                        Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
-                        FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
-                        ImageMargins   -> { { 0, 0 }, { 10, 0 } },
-                        ImageSize      -> Scaled[ 1 ],
-                        RoundingRadius -> 1
-                    ]
-                },
+                { disabledAIOverlayBanner[ ] },
                 {
                     Overlay[
                         {
@@ -265,6 +277,32 @@ If[ $preferencesContentEnabledQ,
         ]
     ]
 ];
+
+(* Option 2: ContentsOpacity
+    Pros: easier to implement; does not push down reset button
+    Cons: Enabled -> False does not disable all mouse-hover elements; opacity inline cell not a perfect style match *)
+(*
+disabledAIOverlay[ content_ ] :=
+If[ $preferencesContentEnabledQ,
+    content
+    ,
+    
+    Grid[
+        {
+            { disabledAIOverlayBanner[ ] },
+            {
+                 (* "controlText" isn't a 1-to-1 match with the enabled state, but it's close *)
+                RawBoxes @ Cell[ BoxData @ ToBoxes @
+                    Style[ content, "controlText", Enabled -> False ],
+                    PrivateCellOptions -> { "ContentsOpacity" -> 0.25 }
+                ]
+            }
+        },
+        Alignment -> { Left, Top },
+        Spacings  -> { 0, 0 }
+    ]
+];
+*)
 
 disabledAIOverlay // endDefinition;
 
