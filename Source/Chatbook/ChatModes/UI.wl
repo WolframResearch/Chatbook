@@ -218,18 +218,46 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
     throwInternalFailure
 ]
 
-writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTitle ] := writeSidebarChatSubDockedCell[
-    nbo,
-    sidebarCell,
-    Style[
-        FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-            CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ],
-            "NotebookAssistant`Sidebar`ToolbarTitle",
-            #,
-            Right
-        ]&[ AbsoluteCurrentValue[ "ViewSize" ][[1]] - 10 ],
-        "NotebookAssistant`Sidebar`ToolbarTitle"
-    ]
+(* chat title cells are added below the top stripe *)
+writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTitle ] := Enclose[
+    Module[ { subDockedCell, lastDockedCell, content, cellExpr },
+        content = Style[
+            FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ],
+                "NotebookAssistant`Sidebar`ToolbarTitle",
+                #,
+                Right
+            ]&[ AbsoluteCurrentValue[ "ViewSize" ][[1]] - 10 ],
+            "NotebookAssistant`Sidebar`ToolbarTitle"
+        ];
+        
+        cellExpr = Join[
+            Insert[
+                DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ],
+                "NotebookAssistant`Sidebar`SubDockedCell",
+                2
+            ],
+            Cell[
+                CellTags             -> "SidebarSubDockedCell",
+                Deletable            -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
+                FontSize             -> 12,
+                Magnification        -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
+                ShowStringCharacters -> False
+            ]
+        ];
+
+        subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], $Failed ];
+        If[ ! FailureQ @ subDockedCell,
+            (* if the sub-cell already exists then rewrite it *)
+            NotebookWrite[ subDockedCell, cellExpr ]
+            ,
+            (* else, write a new sub-cell after the top stripe *)
+            lastDockedCell = ConfirmMatch[ First[ Cells @ sidebarCell, $Failed ], _CellObject, "SidebarChatTitleCell" ];
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], cellExpr ]
+        ];
+        (* TODO: move selection to side bar chat's input field *)
+    ],
+    throwInternalFailure
 ]
 
 writeSidebarChatSubDockedCell // endDefinition;
@@ -2620,10 +2648,7 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
 attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := Enclose[
     Module[ { anchor },
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-        anchor = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSubDockedCell" ];
-        If[ MissingQ @ anchor,
-            (* There should at least be a main "DockedCell" to attach to *)
-            anchor = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "AttachOverlayToLastDockedCell" ] ];
+        anchor = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "AttachOverlayToLastDockedCell" ];
         AttachCell[
             anchor,
             Cell[
