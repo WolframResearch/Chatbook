@@ -218,18 +218,46 @@ writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, conte
     throwInternalFailure
 ]
 
-writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTitle ] := writeSidebarChatSubDockedCell[
-    nbo,
-    sidebarCell,
-    Style[
-        FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-            CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ],
-            "NotebookAssistant`Sidebar`ToolbarTitle",
-            #,
-            Right
-        ]&[ AbsoluteCurrentValue[ "ViewSize" ][[1]] - 10 ],
-        "NotebookAssistant`Sidebar`ToolbarTitle"
-    ]
+(* chat title cells are added below the top stripe *)
+writeSidebarChatSubDockedCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTitle ] := Enclose[
+    Module[ { subDockedCell, lastDockedCell, content, cellExpr },
+        content = Style[
+            FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ],
+                "NotebookAssistant`Sidebar`ToolbarTitle",
+                #,
+                Right
+            ]&[ AbsoluteCurrentValue[ "ViewSize" ][[1]] - 10 ],
+            "NotebookAssistant`Sidebar`ToolbarTitle"
+        ];
+        
+        cellExpr = Join[
+            Insert[
+                DeleteCases[ makeWorkspaceChatSubDockedCellExpression @ content, _[ Magnification | CellTags, _] ],
+                "NotebookAssistant`Sidebar`SubDockedCell",
+                2
+            ],
+            Cell[
+                CellTags             -> "SidebarSubDockedCell",
+                Deletable            -> True, (* this cell can be replaced so override Deletable -> False inherited from the main sidebar cell *)
+                FontSize             -> 12,
+                Magnification        -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ],
+                ShowStringCharacters -> False
+            ]
+        ];
+
+        subDockedCell = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], $Failed ];
+        If[ ! FailureQ @ subDockedCell,
+            (* if the sub-cell already exists then rewrite it *)
+            NotebookWrite[ subDockedCell, cellExpr ]
+            ,
+            (* else, write a new sub-cell after the top stripe *)
+            lastDockedCell = ConfirmMatch[ First[ Cells @ sidebarCell, $Failed ], _CellObject, "SidebarChatTitleCell" ];
+            NotebookWrite[ NotebookLocationSpecifier[ lastDockedCell, "After" ], cellExpr ]
+        ];
+        (* TODO: move selection to side bar chat's input field *)
+    ],
+    throwInternalFailure
 ]
 
 writeSidebarChatSubDockedCell // endDefinition;
@@ -857,13 +885,20 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                     False ->
                         Grid[
                             { {
-                                PaneSelector[
-                                    {
-                                        True  -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
-                                        False -> chatbarSignIn[ selectionWithinQ ]
-                                    },
-                                    Dynamic @ $CloudConnected,
-                                    ImageSize -> Automatic
+                                DynamicModule[ { connectionLevel = "Loading" },
+                                    DynamicWrapper[
+                                        PaneSelector[
+                                            {
+                                                "Loading" -> chatbarLoading[ ],
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
+                                                "SignIn"  -> chatbarSignIn[ selectionWithinQ ]
+                                            },
+                                            Dynamic @ connectionLevel,
+                                            ImageSize -> Automatic
+                                        ],
+                                        connectionLevel = If[ $CloudConnected, "Enabled", "SignIn" ],
+                                        SynchronousUpdating -> False
+                                    ]
                                 ]
                                 ,
                                 Framed[
@@ -892,15 +927,13 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ImageSize    -> Automatic
             ]
             ,
-            selectionWithinQ = CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ];
-            With[ { sidebarOpenQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] },
-                If[ !minimizeOverrideQ && sidebarOpenQ,
-                    minimizedQ = True
-                ];
-                If[ !sidebarOpenQ, minimizeOverrideQ = False ];
-            ];
+            FEPrivate`Set[ selectionWithinQ, Or[ FrontEnd`CurrentValue[ "MouseOver" ], FrontEnd`CurrentValue[ "SelectionWithin" ] ] ];
+                Function[
+                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
+                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
             ,
-            TrackedSymbols :> { }
+            Evaluator -> None
         ],
         Initialization :> (
             thisCell = EvaluationCell[ ];
@@ -970,6 +1003,31 @@ Button[
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarLoading*)
+
+chatbarLoading // beginDefinition;
+
+chatbarLoading[ ] :=
+Button[
+    Framed[
+        ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ] } ],
+        Alignment      -> { Automatic, Center },
+        Background     -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#494949"] ],
+        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+        FrameStyle     -> None,
+        ImageSize      -> { Scaled[ 1 ], 32 },
+        RoundingRadius -> 9
+    ],
+    CloudConnect[ ],
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+chatbarLoading // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2590,10 +2648,7 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
 attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := Enclose[
     Module[ { anchor },
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-        anchor = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSubDockedCell" ];
-        If[ MissingQ @ anchor,
-            (* There should at least be a main "DockedCell" to attach to *)
-            anchor = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "AttachOverlayToLastDockedCell" ] ];
+        anchor = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "AttachOverlayToLastDockedCell" ];
         AttachCell[
             anchor,
             Cell[
@@ -2657,7 +2712,7 @@ withLoadingOverlay // endDefinition;
 loadingOverlay // beginDefinition;
 
 loadingOverlay[ _NotebookObject, appContainer_ ] := Pane[
-    ProgressIndicator[ Appearance -> "Necklace" ],
+    ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_SidebarToolbarFrame" } ],
     Alignment    -> { Center, Automatic },
     ImageMargins -> { { 0, 0 }, { 0, 50 } },
     ImageSize    -> Scaled[ 1 ]
@@ -3154,7 +3209,7 @@ makeHistoryHeader // endDefinition;
 historySearchButton // beginDefinition;
 
 historySearchButton[ Dynamic[ searching_ ] ] := Button[
-    $searchButtonLabel,
+    chatbookIcon[ "WorkspaceHistorySearchIcon", False ],
     searching = ! TrueQ @ searching,
     Alignment  -> Right,
     Appearance -> "Suppressed"
@@ -3201,14 +3256,14 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                 Grid[
                     { {
                         Button[
-                            $popOutButtonLabel,
+                            chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ],
                             popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
                             Method           -> "Queued"
                         ],
                         Button[
-                            $trashButtonLabel,
+                            chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ],
                             DeleteChat @ chat;
                             removeChatFromRows[ Dynamic @ chats, chat ],
                             Appearance       -> "Suppressed",
@@ -3311,13 +3366,6 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
 loadConversation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*Icons*)
-$searchButtonLabel := $searchButtonLabel = chatbookIcon[ "WorkspaceHistorySearchIcon", False ];
-$popOutButtonLabel := $popOutButtonLabel = chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ];
-$trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Global Progress Bar*)
 
@@ -3327,53 +3375,21 @@ $trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashI
 withSidebarGlobalProgress // beginDefinition;
 withSidebarGlobalProgress // Attributes = { HoldRest };
 
-(* cheaper version if the CellObject of the docked cell is already known *)
-withSidebarGlobalProgress[ { nbo_NotebookObject, attachmentPoint_CellObject }, eval_ ] := Enclose[
-    Catch @ Module[ { attached },
+withSidebarGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
+    Catch @ Module[ { sidebarCell, attached },
 
+        sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCell" ];
+        
         attached = ConfirmMatch[
             AttachCell[
-                attachmentPoint,
+                sidebarCell,
                 Cell[
                     BoxData @ ToBoxes @ $workspaceChatProgressBar,
                     "WorkspaceChatProgressBar",
                     FontSize      -> 0.1,
                     Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
                 ],
-                { Center, Bottom },
-                Offset[ { 0, 1 }, { 0, 0 } ],
                 { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit" }
-            ],
-            _CellObject,
-            "Attached"
-        ];
-
-        WithCleanup[ eval, NotebookDelete @ attached ]
-    ],
-    throwInternalFailure
-]
-
-withSidebarGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
-    Catch @ Module[ { sidebarCell, attachmentPoint, attached },
-
-        (* first look for a sub-docked cell *)
-        sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCell" ];
-        attachmentPoint = Last[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSubDockedCell" ];
-        If[ MissingQ @ attachmentPoint,
-            attachmentPoint = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-        ];
-
-        attached = ConfirmMatch[
-            AttachCell[
-                attachmentPoint,
-                Cell[
-                    BoxData @ ToBoxes @ $workspaceChatProgressBar,
-                    "WorkspaceChatProgressBar",
-                    FontSize -> 0.1,
-                    Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
-                ],
-                { Center, Bottom },
                 Offset[ { 0, 1 }, { 0, 0 } ],
                 { Center, Top },
                 RemovalConditions -> { "EvaluatorQuit" }
@@ -3456,7 +3472,7 @@ $workspaceChatProgressBar := With[
         AspectRatio      -> Full,
         Background       -> background,
         ImageMargins     -> 0,
-        ImageSize        -> { Full, 4 },
+        ImageSize        -> { Full, 6 },
         PlotRange        -> { { 0, 1 }, Automatic },
         PlotRangePadding -> None
     ]

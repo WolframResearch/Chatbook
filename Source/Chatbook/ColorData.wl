@@ -1992,7 +1992,7 @@ Dispatch[{
 		 "Notes"  -> ""
 	|>,
 	"NA_OverlayMenuIconHover" -> <|
-		 "Light"  -> GrayLevel[0.2],
+		 "Light"  -> RGBColor[0.2, 0.5137254, 0.6745098],
 		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_OverlayMenu",
@@ -2112,7 +2112,7 @@ Dispatch[{
 	|>,
 	"NA_SidebarToolbarFrame" -> <|
 		 "Light"  -> RGBColor[0.070588, 0.556863, 0.819608],
-		 "Dark"   -> RGBColor[0.129412, 0.294118, 0.411765],
+		 "Dark"   -> RGBColor[0.4980392, 0.7803921, 0.9843137],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> ""
@@ -2140,7 +2140,7 @@ Dispatch[{
 	|>,
 	"NA_Toolbar" -> <|
 		 "Light"  -> RGBColor[0.9333333, 0.976471, 1.],
-		 "Dark"   -> RGBColor[0.1490196, 0.184314, 0.203922],
+		 "Dark"   -> RGBColor[0.1490196, 0.2078431, 0.2549019],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_Toolbar",
 		 "Notes"  -> ""
@@ -2483,7 +2483,7 @@ Dispatch[{
 	|>,
 	"ThumbsUpDownIcon" -> <|
 		 "Light"  -> RGBColor[0.4588235, 0.7607843, 0.9215686],
-		 "Dark"   -> RGBColor[0.3992060, 0.6126511, 0.7399585],
+		 "Dark"   -> RGBColor[0.3992061, 0.6126511, 0.7399585],
 		 "Method" -> "Content",
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"
