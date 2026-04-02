@@ -3350,53 +3350,21 @@ loadConversation // endDefinition;
 withSidebarGlobalProgress // beginDefinition;
 withSidebarGlobalProgress // Attributes = { HoldRest };
 
-(* cheaper version if the CellObject of the docked cell is already known *)
-withSidebarGlobalProgress[ { nbo_NotebookObject, attachmentPoint_CellObject }, eval_ ] := Enclose[
-    Catch @ Module[ { attached },
+withSidebarGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
+    Catch @ Module[ { sidebarCell, attached },
 
+        sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCell" ];
+        
         attached = ConfirmMatch[
             AttachCell[
-                attachmentPoint,
+                sidebarCell,
                 Cell[
                     BoxData @ ToBoxes @ $workspaceChatProgressBar,
                     "WorkspaceChatProgressBar",
                     FontSize      -> 0.1,
                     Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
                 ],
-                { Center, Bottom },
-                Offset[ { 0, 1 }, { 0, 0 } ],
                 { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit" }
-            ],
-            _CellObject,
-            "Attached"
-        ];
-
-        WithCleanup[ eval, NotebookDelete @ attached ]
-    ],
-    throwInternalFailure
-]
-
-withSidebarGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
-    Catch @ Module[ { sidebarCell, attachmentPoint, attached },
-
-        (* first look for a sub-docked cell *)
-        sidebarCell = ConfirmMatch[ sidebarCellObject @ nbo, _CellObject, "SidebarCell" ];
-        attachmentPoint = Last[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ], Missing @ "NoSubDockedCell" ];
-        If[ MissingQ @ attachmentPoint,
-            attachmentPoint = ConfirmMatch[ Last[ Cells[ sidebarCell, CellTags -> "SidebarDockedCell" ], $Failed ], _CellObject, "SidebarDockedCell" ];
-        ];
-
-        attached = ConfirmMatch[
-            AttachCell[
-                attachmentPoint,
-                Cell[
-                    BoxData @ ToBoxes @ $workspaceChatProgressBar,
-                    "WorkspaceChatProgressBar",
-                    FontSize -> 0.1,
-                    Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
-                ],
-                { Center, Bottom },
                 Offset[ { 0, 1 }, { 0, 0 } ],
                 { Center, Top },
                 RemovalConditions -> { "EvaluatorQuit" }
@@ -3479,7 +3447,7 @@ $workspaceChatProgressBar := With[
         AspectRatio      -> Full,
         Background       -> background,
         ImageMargins     -> 0,
-        ImageSize        -> { Full, 4 },
+        ImageSize        -> { Full, 6 },
         PlotRange        -> { { 0, 1 }, Automatic },
         PlotRangePadding -> None
     ]
