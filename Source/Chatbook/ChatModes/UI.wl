@@ -899,15 +899,13 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ImageSize    -> Automatic
             ]
             ,
-            selectionWithinQ = CurrentValue[ "MouseOver" ] || CurrentValue[ "SelectionWithin" ];
-            With[ { sidebarOpenQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] },
-                If[ !minimizeOverrideQ && sidebarOpenQ,
-                    minimizedQ = True
-                ];
-                If[ !sidebarOpenQ, minimizeOverrideQ = False ];
-            ];
+            FEPrivate`Set[ selectionWithinQ, Or[ FrontEnd`CurrentValue[ "MouseOver" ], FrontEnd`CurrentValue[ "SelectionWithin" ] ] ];
+                Function[
+                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
+                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
             ,
-            TrackedSymbols :> { }
+            Evaluator -> None
         ],
         Initialization :> (
             thisCell = EvaluationCell[ ];
