@@ -458,6 +458,10 @@ chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrPara
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
 
+chooseModelFamily0[ wordsPattern[ { "Grok", "3", ___ } ] ] := "Grok3";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4.2", ___ } ] ] := "Grok42";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4", ___ } ] ] := "Grok4";
+
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
 chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";
 chooseModelFamily0[ wordsPattern[ "CodeGemma" ~~ $$versionOrParams ] ] := "Gemma";
@@ -465,8 +469,6 @@ chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen"
 chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
-
-chooseModelFamily0[ wordsPattern[ "Grok"       ~~ $$versionOrParams ] ] := "Grok";
 
 chooseModelFamily0[ _String ] := None;
 
