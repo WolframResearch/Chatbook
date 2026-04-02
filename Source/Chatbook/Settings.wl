@@ -267,14 +267,47 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*xAI*)
+(*
+  * Grok model doc:
+    * Grok-4.2: https://docs.x.ai/developers/models/grok-4.2
+    * Grok-4: https://docs.x.ai/developers/models/grok-4
+      * changes compared to Grok-3: https://web.archive.org/web/20260402072522/https://docs.x.ai/developers/models
+    * Grok-3: https://docs.x.ai/developers/models/grok-3
+    * streaming: https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming
+*)
 
 $modelAutoSettings[ "xAI" ] = <| |>;
 
+$modelAutoSettings[ "xAI", "Grok3" ] = <|
+    "MaxContextTokens" -> 131072,
+    "Multimodal"       -> False,
+    "Reasoning"        -> False,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok4" ] = <|
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "MaxContextTokens" -> 256000,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "Reasoning"        -> True, (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately and use False. *)
+    "StopTokens"       -> Missing[ "NotSupported" ],
+    "ToolsEnabled"     -> True
+|>;
+
+(*$modelAutoSettings[ "xAI", "Grok4NonReasoning" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "Reasoning"        -> False
+|>;*)
+
+$modelAutoSettings[ "xAI", "Grok42" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "MaxContextTokens" -> 2000000
+|>;
+
 $modelAutoSettings[ "xAI", Automatic ] = <|
-    "PresencePenalty" -> Missing[ "NotSupported" ],
-    "StopTokens"      -> Missing[ "NotSupported" ],
-    "ToolMethod"      -> "Service",
-    "EndToken"        -> None
+    "EndToken"         -> None,
+    "ForceSynchronous" -> True, (* TODO: The doc indicates synchronous is supported and optional. I'm NOT sure if it should be forced. *)
+    "ToolMethod"       -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)
