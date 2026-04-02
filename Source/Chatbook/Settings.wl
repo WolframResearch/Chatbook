@@ -272,7 +272,9 @@ $modelAutoSettings[ "xAI" ] = <| |>;
 
 $modelAutoSettings[ "xAI", Automatic ] = <|
     "PresencePenalty" -> Missing[ "NotSupported" ],
-    "StopTokens" -> Missing[ "NotSupported" ]
+    "StopTokens"      -> Missing[ "NotSupported" ],
+    "ToolMethod"      -> "Service",
+    "EndToken"        -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)
