@@ -2687,7 +2687,7 @@ withLoadingOverlay // endDefinition;
 loadingOverlay // beginDefinition;
 
 loadingOverlay[ _NotebookObject, appContainer_ ] := Pane[
-    ProgressIndicator[ Appearance -> "Necklace" ],
+    ProgressIndicator[ Appearance -> { "Necklace", color @ "NA_SidebarToolbarFrame" } ],
     Alignment    -> { Center, Automatic },
     ImageMargins -> { { 0, 0 }, { 0, 50 } },
     ImageSize    -> Scaled[ 1 ]
@@ -3184,7 +3184,7 @@ makeHistoryHeader // endDefinition;
 historySearchButton // beginDefinition;
 
 historySearchButton[ Dynamic[ searching_ ] ] := Button[
-    $searchButtonLabel,
+    chatbookIcon[ "WorkspaceHistorySearchIcon", False ],
     searching = ! TrueQ @ searching,
     Alignment  -> Right,
     Appearance -> "Suppressed"
@@ -3231,14 +3231,14 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                 Grid[
                     { {
                         Button[
-                            $popOutButtonLabel,
+                            chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ],
                             popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
                             Method           -> "Queued"
                         ],
                         Button[
-                            $trashButtonLabel,
+                            chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ],
                             DeleteChat @ chat;
                             removeChatFromRows[ Dynamic @ chats, chat ],
                             Appearance       -> "Suppressed",
@@ -3339,13 +3339,6 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
 ];
 
 loadConversation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*Icons*)
-$searchButtonLabel := $searchButtonLabel = chatbookIcon[ "WorkspaceHistorySearchIcon", False ];
-$popOutButtonLabel := $popOutButtonLabel = chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ];
-$trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
