@@ -857,13 +857,20 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                     False ->
                         Grid[
                             { {
-                                PaneSelector[
-                                    {
-                                        True  -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
-                                        False -> chatbarSignIn[ selectionWithinQ ]
-                                    },
-                                    Dynamic @ $CloudConnected,
-                                    ImageSize -> Automatic
+                                DynamicModule[ { connectionLevel = "Loading" },
+                                    DynamicWrapper[
+                                        PaneSelector[
+                                            {
+                                                "Loading" -> chatbarLoading[ ],
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
+                                                "SignIn"  -> chatbarSignIn[ selectionWithinQ ]
+                                            },
+                                            Dynamic @ connectionLevel,
+                                            ImageSize -> Automatic
+                                        ],
+                                        connectionLevel = If[ $CloudConnected, "Enabled", "SignIn" ],
+                                        SynchronousUpdating -> False
+                                    ]
                                 ]
                                 ,
                                 Framed[
@@ -970,6 +977,31 @@ Button[
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarLoading*)
+
+chatbarLoading // beginDefinition;
+
+chatbarLoading[ ] :=
+Button[
+    Framed[
+        ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ] } ],
+        Alignment      -> { Automatic, Center },
+        Background     -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#494949"] ],
+        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+        FrameStyle     -> None,
+        ImageSize      -> { Scaled[ 1 ], 32 },
+        RoundingRadius -> 9
+    ],
+    CloudConnect[ ],
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+chatbarLoading // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
