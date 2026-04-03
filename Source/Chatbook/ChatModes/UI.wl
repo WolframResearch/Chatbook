@@ -1121,6 +1121,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                         If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
                     ];
+                    restoreVerticalScrollbar @ nbo
                 )
             )
         ],
@@ -2716,7 +2717,7 @@ attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Frame
     If[ MatchQ[ appContainer, _CellObject ],
         ImageSize -> Dynamic[ AbsoluteCurrentValue[ appContainer, "ViewSize" ]/(0.85*AbsoluteCurrentValue[ nbo, Magnification ]) ]
         ,
-        ImageSize -> { Scaled[ 1 ], Automatic }
+        ImageSize -> Dynamic @ { Scaled[ 1. ], 1.2*AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] }
     ]
 ]
 
