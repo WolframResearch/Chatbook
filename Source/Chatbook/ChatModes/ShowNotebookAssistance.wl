@@ -451,12 +451,11 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
                 
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
                 NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+                NotebookDelete /@ Cells[ sidebarCell, CellTags -> "SidebarSourcesDockedCell" | "SidebarChatTitleCell" ];
                 With[
                     {
-                        subDockedCell      = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ],        Missing @ "NoSidebarSubDockedCell" ],
                         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ]
                     },
-                    If[ ! MissingQ @ subDockedCell,      NotebookDelete @ subDockedCell ];
                     If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ];
                 ];
                 CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
@@ -675,7 +674,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
               ];
 
         If[ movedLastChatToSourcesIndicatorQ,
-            writeWorkspaceChatSubDockedCell[
+            writeWorkspaceChatSourcesDockedCell[
                 nbo,
                 With[ { nbo = nbo },
                     Button[
