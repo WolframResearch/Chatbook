@@ -135,12 +135,12 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             Framed[
                 Grid[
                     { {
-                        LogChatTiming @ sidebarNewChatButton[ nbo, sidebarCell ],
+                        sidebarNewChatButton[ nbo, sidebarCell ],
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                        LogChatTiming @ sidebarSourcesButton[ nbo, sidebarCell ],
-                        LogChatTiming @ sidebarHistoryButton[ nbo, sidebarCell ],
-                        LogChatTiming @ sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ],
-                        LogChatTiming @ sidebarHideButton @ nbo
+                        sidebarSourcesButton[ nbo, sidebarCell ],
+                        sidebarHistoryButton[ nbo, sidebarCell ],
+                        sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ],
+                        sidebarHideButton @ nbo
                     } },
                     Alignment -> { Automatic, Center },
                     Spacings  -> 0.2
@@ -464,12 +464,17 @@ sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ]
                     NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], {} ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
                     (* so far there's only one TemplateBox that needs to be unconverted *)
                     {
+                        Cell[ a___, CellTags -> { b___, "SidebarTopCell", c___ }, d___ ] :>
+                            RuleCondition[ Cell[ a, CellTags -> { b, c }, d ], True ],
+                        Cell[ a___, CellTags -> "SidebarTopCell" | { }, b___ ] :>
+                            RuleCondition[ Cell[ a, b ], True ],
                         Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
                             RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
                         TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___] :>
                             RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
                     }
-                ] ];
+                ]
+            ];
             attachWorkspaceChatInput @ newNB;
             
             (* remove sidebar and its content *)
@@ -1126,11 +1131,11 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
         DynamicModule[ { },
             Grid[
                 { {
-                    LogChatTiming @ newChatButton @ nbo,
+                    newChatButton @ nbo,
                     Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                    LogChatTiming @ sourcesButton @ nbo,
-                    LogChatTiming @ historyButton @ nbo,
-                    LogChatTiming @ openAsChatbookButton @ nbo
+                    sourcesButton @ nbo,
+                    historyButton @ nbo,
+                    openAsChatbookButton @ nbo
                 } },
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
