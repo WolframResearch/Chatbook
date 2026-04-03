@@ -1121,25 +1121,42 @@ $WorkspaceChatInput = "";
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-makeWorkspaceChatDockedCell[ ] := workspaceChatInitializer @ Framed[
-    DynamicModule[ { nbo },
-        Grid[
-            { {
-                LogChatTiming @ newChatButton @ Dynamic @ nbo,
-                Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                LogChatTiming @ sourcesButton @ Dynamic @ nbo,
-                LogChatTiming @ historyButton @ Dynamic @ nbo,
-                LogChatTiming @ openAsChatbookButton @ Dynamic @ nbo
-            } },
-            Alignment -> { Automatic, Center },
-            Spacings  -> 0.2
+makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
+    Framed[
+        DynamicModule[ { },
+            Grid[
+                { {
+                    LogChatTiming @ newChatButton @ nbo,
+                    Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                    LogChatTiming @ sourcesButton @ nbo,
+                    LogChatTiming @ historyButton @ nbo,
+                    LogChatTiming @ openAsChatbookButton @ nbo
+                } },
+                Alignment -> { Automatic, Center },
+                Spacings  -> 0.2
+            ],
+            SynchronousInitialization :> False,
+            Initialization :> (
+                withLoadingOverlay[ { nbo, None } ] @ (
+                    (* create the chat input cell first, then initialize chat *)
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    With[ { chatInputCell = Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                "AttachWorkspaceChatInput",
+                                nbo,
+                                If[ Cells[ nbo ] =!= { }, Bottom, Top ]
+                            ]
+                        },
+                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                        FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
+                    ];
+                )
+            )
         ],
-        Initialization :> (nbo = EvaluationNotebook[ ])
-    ],
-    Background   -> color @ "NA_Toolbar",
-    FrameStyle   -> color @ "NA_Toolbar",
-    FrameMargins -> { { 2, 4 }, { 0, 1 } },
-    ImageMargins -> 0
+        Background   -> color @ "NA_Toolbar",
+        FrameStyle   -> color @ "NA_Toolbar",
+        FrameMargins -> { { 2, 4 }, { 0, 1 } },
+        ImageMargins -> 0
+    ]
 ];
 
 makeWorkspaceChatDockedCell // endDefinition;
@@ -1214,7 +1231,7 @@ removeWorkspaceChatSubDockedCell // endDefinition;
 (*historyButton*)
 historyButton // beginDefinition;
 
-historyButton[ Dynamic[ nbo_ ] ] := Button[
+historyButton[ nbo_NotebookObject ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory" ],
         { Automatic, 24 },
@@ -1231,7 +1248,7 @@ historyButton // endDefinition;
 (*sourcesButton*)
 sourcesButton // beginDefinition;
 
-sourcesButton[ Dynamic[ nbo_ ] ] := Button[
+sourcesButton[ nbo_NotebookObject ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources" ],
         { Automatic, 24 },
@@ -1248,7 +1265,7 @@ sourcesButton // endDefinition;
 (*newChatButton*)
 newChatButton // beginDefinition;
 
-newChatButton[ Dynamic[ nbo_ ] ] :=
+newChatButton[ nbo_NotebookObject ] :=
     Button[
         blueHueButtonAppearance[
             toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew" ],
@@ -1274,7 +1291,7 @@ newChatButton // endDefinition;
 (*openAsChatbookButton*)
 openAsChatbookButton // beginDefinition;
 
-openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
+openAsChatbookButton[ nbo_NotebookObject ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }

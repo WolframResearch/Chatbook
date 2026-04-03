@@ -1,7 +1,12 @@
 Cell[
 	BoxData @
 		RowBox @ {
-			With[ { c = color @ "NA_SidebarToolbarFrame" }, Cell[ BoxData @ GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ] ] ],
+			With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
+				Cell[ BoxData @
+					GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ],
+					"NotebookAssistant`TopStripe"
+				]
+			],
 			DynamicBox[
 				ToBoxes[
 					Needs[ "Wolfram`Chatbook`" -> None ];
