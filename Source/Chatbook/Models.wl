@@ -459,7 +459,7 @@ chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrPara
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
 
 chooseModelFamily0[ wordsPattern[ { "Grok", "3", ___ } ] ] := "Grok3";
-chooseModelFamily0[ wordsPattern[ { "Grok", "4.2", ___ } ] ] := "Grok42";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4.2" | "4.20", ___ } ] ] := "Grok42";
 chooseModelFamily0[ wordsPattern[ { "Grok", "4", ___ } ] ] := "Grok4";
 
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
