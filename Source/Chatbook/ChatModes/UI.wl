@@ -2265,19 +2265,19 @@ DynamicModule[ { Typeset`menuActiveQ = False },
             {
                 "Default" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_NotebookBackground", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_NotebookBackground",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_BlueHueButtonIcon" ],
+                        Background -> None, RoundingRadius -> 4, FrameMargins -> 0, FrameStyle -> None,
+                        Alignment -> { Center, Center }, ImageSize -> { 24, 24 } ],
                 "Hover" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_OutputRaftBackgroundHover", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundHover",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_BlueHueButtonIcon" ],
+                        Background -> color @ "NA_BlueHueButtonBackgroundHover", RoundingRadius -> 4, FrameMargins -> 0, FrameStyle -> color @ "NA_BlueHueButtonFrameHover",
+                        Alignment -> { Center, Center }, ImageSize -> { 24, 24 } ],
                 "Down" ->
                     Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_OutputRaftIconPressed" ],
-                        Background -> color @ "NA_OutputRaftBackgroundPressed", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundPressed",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, color @ "NA_BlueHueButtonIcon" ],
+                        Background -> color @ "NA_BlueHueButtonBackgroundPressed", RoundingRadius -> 4, FrameMargins -> 0, FrameStyle -> color @ "NA_BlueHueButtonFramePressed",
+                        Alignment -> { Center, Center }, ImageSize -> { 24, 24 } ] },
             Dynamic[
                 Which[
                     Typeset`menuActiveQ, "Down",
