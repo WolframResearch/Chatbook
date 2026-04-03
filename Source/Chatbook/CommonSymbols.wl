@@ -388,7 +388,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `wolframAlphaToolEvaluate;
 `writeInlineChatOutputCell;
 `writeReformattedCell;
-`writeSidebarChatSubDockedCell;
-`writeWorkspaceChatSubDockedCell;
+`writeSidebarChatTitleCell;
+`writeWorkspaceChatSourcesDockedCell;
+`writeWorkspaceChatTitleDockedCell;
 
 EndPackage[ ];

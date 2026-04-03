@@ -479,13 +479,13 @@ setChatDisplayTitle // beginDefinition;
 setChatDisplayTitle[ nbo_NotebookObject, c_CellObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         setCurrentValue[ c, { TaggingRules, "ConversationTitle" }, title ];
-        writeSidebarChatSubDockedCell[ nbo, c, WindowTitle ]
+        writeSidebarChatTitleCell[ nbo, c, WindowTitle ]
     ];
 
 setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, title ];
-        writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ]
+        writeWorkspaceChatTitleDockedCell[ nbo, WindowTitle ]
     ];
 
 setChatDisplayTitle[ None, _ ] :=
