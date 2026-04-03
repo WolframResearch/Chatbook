@@ -1,59 +1,83 @@
 (* ::Package:: *)
 
 (*
-	#1 -> FrameStyle, "SendChatButtonFrameHover"
-	#2 -> Background, "SendChatButtonBackgroundHover"
+	#1 -> stop icon color
+	#2 -> ImageSize of framed button
 	#3 -> ImageSize of spinner *)
 Function[ Evaluate @ ToBoxes @
-	MouseAppearance[
-		Mouseover[
-			Framed[
-				Overlay[
-					{
-						With[
-							{
-								baseColor = color @ "StopChatButtonSpinnerBase",
-								highlightColor = color @ "StopChatButtonSpinnerHighlight"
-							},
-							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ]
-						],
-						Graphics[
-							{ color @ "StopChatButtonIcon", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-							ImageSize -> #3,
-							PlotRange -> 1.1
-						]
-					},
-					Alignment -> { Center, Center }
+	With[
+		{
+			baseColor      = color @ "StopChatButtonSpinnerBase",
+			highlightColor = color @ "StopChatButtonSpinnerHighlight"
+		},
+		MouseAppearance[
+			NotebookTools`Mousedown[
+				Framed[
+					Overlay[
+						{
+							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ],
+							Graphics[
+								{  #1, Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+								ImageSize -> #3,
+								PlotRange -> 1.1
+							]
+						},
+						Alignment        -> { Center, Center },
+						BaselinePosition -> Baseline
+					],
+					Alignment        -> { Center, Center },
+					Background       -> None,
+					BaselinePosition -> Baseline,
+					FrameMargins     -> 0,
+					FrameStyle       -> None,
+					ImageSize        -> #2,
+					RoundingRadius   -> 4
 				],
-				FrameStyle -> None,
-				Background -> None,
-				RoundingRadius -> 3,
-				FrameMargins -> 1
+				Framed[
+					Overlay[
+						{
+							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ],
+							Graphics[
+								{  #1, Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+								ImageSize -> #3,
+								PlotRange -> 1.1
+							]
+						},
+						Alignment        -> { Center, Center },
+						BaselinePosition -> Baseline
+					],
+					Alignment        -> { Center, Center },
+					Background       -> color @ "NA_BlueHueButtonBackgroundHover",
+					BaselinePosition -> Baseline,
+					FrameMargins     -> 0,
+					FrameStyle       -> color @ "NA_BlueHueButtonFrameHover",
+					ImageSize        -> #2,
+					RoundingRadius   -> 4
+				],
+				Framed[
+					Overlay[
+						{
+							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ],
+							Graphics[
+								{  #1, Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+								ImageSize -> #3,
+								PlotRange -> 1.1
+							]
+						},
+						Alignment        -> { Center, Center },
+						BaselinePosition -> Baseline
+					],
+					Alignment        -> { Center, Center },
+					Background       -> color @ "NA_BlueHueButtonBackgroundPressed",
+					BaselinePosition -> Baseline,
+					FrameMargins     -> 0,
+					FrameStyle       -> color @ "NA_BlueHueButtonFramePressed",
+					ImageSize        -> #2,
+					RoundingRadius   -> 4
+				],
+				BaselinePosition -> Baseline
 			],
-			Framed[
-				Overlay[
-					{
-						With[
-							{
-								baseColor = color @ "StopChatButtonSpinnerBase",
-								highlightColor = color @ "StopChatButtonSpinnerHighlight"
-							},
-							RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #3, baseColor, highlightColor ] ]
-						],
-						Graphics[
-							{ color @ "StopChatButtonIcon", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-							ImageSize -> #3,
-							PlotRange -> 1.1
-						]
-					},
-					Alignment -> { Center, Center }
-				],
-				FrameStyle -> #1,
-				Background -> #2,
-				RoundingRadius -> 3,
-				FrameMargins -> 1
-			]
-		],
-		"LinkHand"
+			"LinkHand"
+		]
 	]
 ]

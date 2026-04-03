@@ -45,7 +45,7 @@ Many settings depend on the resolved Model via `$autoSettingKeyDependencies`:
 
 `"Authentication"`, `"ForceSynchronous"`, `"HybridToolMethod"`, `"MaxCellStringLength"`, `"MaxContextTokens"`, `"MaxTokens"`, `"Multimodal"`, `"TokenizerName"`, `"ToolCallExamplePromptStyle"`, `"ToolCallRetryMessage"`, `"ToolExamplePrompt"`, `"ToolsEnabled"`
 
-The `$modelAutoSettings` table (`Settings.wl`) does not contain overrides for the Model setting itself — the resolved model's service and name/family are used as lookup keys to resolve other settings.
+The `$modelAutoSettings` table (`Settings.wl`) does not contain overrides for the Model setting itself — the resolved model's service and name/family are used as lookup keys to resolve other settings. For a guide on adding entries to this table for new models, see [Adding Model Support](../../adding-model-support.md).
 
 ### Service Name Extraction
 

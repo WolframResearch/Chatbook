@@ -1,8 +1,4 @@
-(* ::Package:: *)
-
-RawBoxes @ ToBoxes @ Mouseover[
- Framed[
-  Graphics[
+Graphics[
    {
     Thickness[ 0.071429 ],
     Style[
@@ -84,115 +80,10 @@ RawBoxes @ ToBoxes @ Mouseover[
        }
       ]
      },
-     FaceForm @ color @ "NA_OutputRaftIcon"
+     FaceForm @ color @ "NA_BlueHueButtonIcon"
     ]
    },
    ImageSize -> { 15.0, 15.0 },
    PlotRange -> { { -0.5, 14.5 }, { -0.5, 14.5 } },
    AspectRatio -> Automatic
-  ],
-  Alignment -> { Center, Center },
-  ImageSize -> { 22, 22 },
-  Background -> color @ "NA_NotebookBackground",
-  RoundingRadius -> 3,
-  FrameMargins -> 0,
-  FrameStyle -> color @ "NA_NotebookBackground"
- ],
- Framed[
-  Graphics[
-   {
-    Thickness[ 0.071429 ],
-    Style[
-     {
-      FilledCurve[
-       {
-        {
-         { 1, 4, 3 },
-         { 1, 3, 3 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 1, 3, 3 },
-         { 1, 3, 3 },
-         { 0, 1, 0 }
-        },
-        {
-         { 0, 2, 0 },
-         { 1, 3, 3 },
-         { 1, 3, 3 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 0, 1, 0 },
-         { 1, 3, 3 },
-         { 1, 3, 3 }
-        }
-       },
-       {
-        {
-         { 13.0, 7.0 },
-         { 13.0, 3.691 },
-         { 10.309, 1.0 },
-         { 7.0, 1.0 },
-         { 5.272, 1.0 },
-         { 3.668, 1.738 },
-         { 2.539, 3.0 },
-         { 5.0, 3.0 },
-         { 5.0, 4.0 },
-         { 1.0, 4.0 },
-         { 1.0, 0.0 },
-         { 2.0, 0.0 },
-         { 2.0, 2.116 },
-         { 3.303, 0.778 },
-         { 5.085, 0.0 },
-         { 7.0, 0.0 },
-         { 10.86, 0.0 },
-         { 14.0, 3.14 },
-         { 14.0, 7.0 },
-         { 13.0, 7.0 }
-        },
-        {
-         { 1.0, 7.0 },
-         { 0.0, 7.0 },
-         { 0.0, 10.86 },
-         { 3.14, 14.0 },
-         { 7.0, 14.0 },
-         { 8.915, 14.0 },
-         { 10.697, 13.222 },
-         { 12.0, 11.884 },
-         { 12.0, 14.0 },
-         { 13.0, 14.0 },
-         { 13.0, 10.0 },
-         { 9.0, 10.0 },
-         { 9.0, 11.0 },
-         { 11.461, 11.0 },
-         { 10.332, 12.262 },
-         { 8.728, 13.0 },
-         { 7.0, 13.0 },
-         { 3.691, 13.0 },
-         { 1.0, 10.309 },
-         { 1.0, 7.0 }
-        }
-       }
-      ]
-     },
-     FaceForm @ color @ "NA_OutputRaftIcon"
-    ]
-   },
-   ImageSize -> { 15.0, 15.0 },
-   PlotRange -> { { -0.5, 14.5 }, { -0.5, 14.5 } },
-   AspectRatio -> Automatic
-  ],
-  Alignment -> { Center, Center },
-  ImageSize -> { 22, 22 },
-  Background -> color @ "NA_OutputRaftBackgroundHover",
-  RoundingRadius -> 3,
-  FrameMargins -> 0,
-  FrameStyle -> color @ "NA_OutputRaftBackgroundHover"
- ]
-]
+  ]

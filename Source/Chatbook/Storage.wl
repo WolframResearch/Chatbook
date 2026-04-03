@@ -437,7 +437,8 @@ saveChat0[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ AddChatToSearchIndex @ as, _Success | Missing[ "NoSemanticSearch" ], "AddToSearchIndex" ];
 
-        setChatDisplayTitle[ $savingNotebook, $appContainer, metadata ];
+        (* don't add the title cell in the sidebar during regular chat, only if loading a saved chat *)
+        If[ ! MatchQ[ $appContainer, _CellObject ], setChatDisplayTitle[ $savingNotebook, $appContainer, metadata ] ];
 
         updateDynamics[ "SavedChats" ];
 

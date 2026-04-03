@@ -1,18 +1,18 @@
 RawBoxes @ DynamicModuleBox[
- { running$$ = True },
+ { Typeset`running$ = True },
  TagBox[
   TagBox[
    DynamicModuleBox[
-    { frame$$ },
+    { Typeset`frame$ },
     OverlayBox @ {
      PaneBox[
       AnimatorBox[
-       Dynamic @ frame$$,
+       Dynamic @ Typeset`frame$,
        { 1, 10, 1 },
        AutoAction -> False,
        AnimationRate -> Automatic,
        DisplayAllSteps -> True,
-       AnimationRunning -> Dynamic @ running$$,
+       AnimationRunning -> Dynamic @ Typeset`running$,
        DefaultDuration -> 0.2,
        AppearanceElements -> None
       ],
@@ -241,7 +241,7 @@ RawBoxes @ DynamicModuleBox[
          ImageSize -> 32
         ]
       },
-      Dynamic @ frame$$,
+      Dynamic @ Typeset`frame$,
       ImageSize -> All,
       Alignment -> Automatic,
       BaseStyle -> None,
@@ -255,7 +255,7 @@ RawBoxes @ DynamicModuleBox[
    MouseAppearanceTag[ "LinkHand" ]
   ],
   EventHandlerTag @ {
-   "MouseClicked" :> (running$$ = ! TrueQ @ running$$),
+   "MouseClicked" :> (Typeset`running$ = ! TrueQ @ Typeset`running$),
    Method -> "Preemptive",
    PassEventsDown -> Automatic,
    PassEventsUp -> True

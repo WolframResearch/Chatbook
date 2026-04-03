@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$snippetDebug                  = True;
 $snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
 $snippetFetchBatchSize         = 15;
@@ -345,15 +346,76 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         string = StringTrim @ StringRiffle[ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
 
+        If[ StringContainsQ[ string, StartOfLine~~"# WFR > " ], needsBasePrompt[ "FunctionRepositoryIntegration" ] ];
+
         If[ string === "",
             "",
-            prependRelatedDocsHeader[ string, filter ]
+            addExampleDataHint @ prependRelatedDocsHeader[ string, filter ]
         ]
     ],
     throwInternalFailure
 ];
 
 relatedDocumentationPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addExampleDataHint*)
+addExampleDataHint // beginDefinition;
+
+addExampleDataHint[ string_String ] := Enclose[
+    Catch @ Module[ { exampleDataFiles, hintText },
+
+        exampleDataFiles = Union @ StringCases[
+            string,
+            "\"" ~~ path: Shortest[ "ExampleData/" ~~ Except[ "\"" ].. ] ~~ "\"" /; exampleDataFileQ @ path :> path
+        ];
+
+        If[ exampleDataFiles === { }, Throw @ string ];
+
+        hintText = ConfirmBy[
+            TemplateApply[
+                $exampleDataHintTemplate,
+                <|
+                    "Files" -> StringRiffle[ "* \"" <> # <> "\"" & /@ exampleDataFiles, "\n" ],
+                    "First" -> First @ exampleDataFiles
+                |>
+            ],
+            StringQ,
+            "HintText"
+        ];
+
+        needsBasePrompt[ "ExampleDataFiles" ];
+
+        StringJoin[ string, "\n\n", hintText ]
+    ],
+    throwInternalFailure
+];
+
+addExampleDataHint // endDefinition;
+
+
+$exampleDataHintTemplate = StringTemplate[ "\
+<system-hint>
+The \"ExampleData/\" directory is included in every Wolfram Language installation and is automatically on $Path, \
+so paths like \"ExampleData/coneflower.jpg\" can be used immediately without any setup.
+
+Available ExampleData files from the snippets above:
+%%Files%%
+
+You can use the following to find the list of all available ExampleData files:
+
+```wl
+FileNameTake /@ FileNames[All, DirectoryName[FindFile[\"%%First%%\"]]]
+```
+</system-hint>", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*exampleDataFileQ*)
+exampleDataFileQ // beginDefinition;
+exampleDataFileQ[ path_String ] := exampleDataFileQ[ path ] = StringQ @ Quiet @ FindFile @ path;
+exampleDataFileQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1334,7 +1396,7 @@ getStreamSnippets[ name_String, { } ] :=
     { };
 
 getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
-    Module[ { file, keyGroups, stream, data, strings },
+    Module[ { file, keyGroups, stream, data, lookup, strings },
 
         file = ConfirmBy[ FileNameJoin @ { $streamableSnippetsDir, name, "Snippets.wxfl" }, FileExistsQ, "File" ];
         keyGroups = GroupBy[ keys, StringDelete[ #1, "#" ~~ ___ ~~ EndOfString ] & ];
@@ -1345,9 +1407,11 @@ getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
             Quiet @ Close @ stream
         ];
 
-        strings = ConfirmMatch[ Lookup[ data, keys ], { __String }, "Result" ];
+        lookup = If[ TrueQ @ $snippetDebug, Lookup, Lookup[ #1, #2, "" ] & ];
 
-        "# " <> StringDelete[ #, StartOfString~~"# " ] & /@ strings
+        strings = ConfirmMatch[ lookup[ data, keys ], { __String }, "Result" ];
+
+        If[ # === "", "", "# " <> StringDelete[ #, StartOfString~~"# " ] ] & /@ strings
     ] // LogChatTiming[ "GetStreamSnippets" ],
     throwInternalFailure
 ];
@@ -1392,7 +1456,7 @@ loadStreamIndex // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $snippetDebug = False;
 ];
 
 End[ ];

@@ -21,8 +21,8 @@ Graphics[
    FaceForm @ #
   ]
  },
- ImageSize -> { 20.0, 20.0 },
- PlotRange -> { { 0.0, 20.0 }, { 0.0, 20.0 } },
+ ImageSize -> { 11.23, 11.23 },
+ PlotRange -> { { 3.0, 17.0 }, { 4.0, 16.0 } },
  AspectRatio -> Automatic,
  BaselinePosition -> Center -> Center
 ]

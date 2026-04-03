@@ -261,13 +261,11 @@ updateCellDingbats // endDefinition;
 (*$evaluatedChatInputDingbat*)
 (* TODO: we should really have something better for this *)
 $evaluatedChatInputDingbat = Cell[
-    BoxData @ DynamicBox @ ToBoxes[
+    BoxData @ DynamicBox @
         If[ TrueQ @ CloudSystem`$CloudNotebooks,
-            RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
-            RawBoxes @ TemplateBox[ { }, "ChatInputCellDingbat" ]
+            FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatIconUser" ],
+            TemplateBox[ { }, "ChatInputCellDingbat" ]
         ],
-        StandardForm
-    ],
     Background  -> None,
     CellFrame   -> 0,
     CellMargins -> 0

@@ -23,6 +23,8 @@ PacletDirectoryLoad[ "path/to/Chatbook" ];
 Get[ "Wolfram`Chatbook`" ]
 ```
 
+Use fully qualified names for Chatbook symbols in the WolframLanguageEvaluator tool to avoid accidental shadowing with the global context.
+
 Note: Using the TestReport tool is much more reliable for testing code changes.
 
 If you've previously built an MX file for the paclet, you should delete it before testing your changes. You can find it in `Source/Chatbook/64Bit/Chatbook.mx`.
@@ -81,13 +83,14 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Settings.wl** — User preferences management; **PreferencesContent.wl** — preferences UI
 - **Sandbox.wl** — Sandboxed Wolfram Language evaluation for LLM-generated code
 - **Storage.wl** — Persistent chat storage; **SearchChats.wl** / **Search.wl** — search
-- **Models.wl** — LLM model definitions
+- **Models.wl** — LLM model definitions and family classification
+- **Prompting.wl** — Base prompt component management and on-demand prompt system
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
 - **UI.wl** — Chat UI components; **Actions.wl** — User actions
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
 
 **Subdirectories:**
-- **ChatModes/** — Chat mode extensions (Evaluate, Context, NotebookAssistance, ContentSuggestions)
+- **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
 - **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
 
@@ -136,3 +139,33 @@ GitHub Actions workflows in `.github/workflows/`:
 - **Build.yml** — PR validation: build + test (wolframengine:14.3.0 Docker container)
 - **Release.yml** — Publish to Wolfram Paclet Repository on push to `release/paclet`
 - **IncrementPacletVersion.yml** — Auto-increments version in PacletInfo.wl on main branch pushes
+
+## Documentation
+
+Developer documentation lives in the `docs/` directory:
+
+- **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
+- **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
+- **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
+- **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
+
+## Special Considerations
+
+The tools provided by the WolframLanguage MCP server are using Chatbook functions under the hood. For example:
+
+- WolframLanguageContext uses `RelatedDocumentation` (`Source/Chatbook/PromptGenerators/RelatedDocumentation.wl`)
+- WolframLanguageEvaluator uses `WolframLanguageToolEvaluate` (`Source/Chatbook/Sandbox.wl`)
+
+Be aware that making changes to these functions or their dependencies and reloading the paclet in the WolframLanguageEvaluator tool may have unexpected effects on these tools.
+
+As a fallback, you can write WL code in a temporary file and evaluate it with:
+```bash
+wolframscript -f "path/to/temporary.wl"
+```
+
+Or if it's very simple code:
+```bash
+wolframscript -code 'Print[1 + 1]'
+```
+
+Both of these will evaluate the code in an entirely separate process.

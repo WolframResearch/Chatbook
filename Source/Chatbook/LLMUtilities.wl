@@ -532,7 +532,7 @@ constructLLMConfiguration // endDefinition;
 (*addToolPostProcessing*)
 addToolPostProcessing // beginDefinition;
 
-addToolPostProcessing[ tool_LLMTool ] :=
+addToolPostProcessing[ tool: HoldPattern[ _LLMTool ] ] :=
     addToolPostProcessing @ tool[ "Data" ];
 
 addToolPostProcessing[ as: KeyValuePattern[ "Function" -> f_ ] ] :=

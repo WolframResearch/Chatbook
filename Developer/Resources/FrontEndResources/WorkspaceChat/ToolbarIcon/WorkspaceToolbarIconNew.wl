@@ -18,7 +18,10 @@ Graphics[{Thickness[0.058823529411764705], FaceForm[#],
        {0., 13.221999645233154}, {0., 13.651999950408936},
        {0.34799957275390625, 14.}, {0.7779998779296875, 14.},
        {13.222000002861023, 14.}}}]},
- ImageSize -> {22., 20.}, PlotRange -> {{-5., 17.}, {-3, 17}},
- AspectRatio -> Automatic, DefaultBaseStyle -> {},
- BaselinePosition -> Center -> Center]
+ AspectRatio -> Automatic,
+ BaselinePosition -> Center -> Center,
+ DefaultBaseStyle -> {},
+ ImageSize -> {15.45`, 14.045`},
+ PlotRange -> {{-1., 18.}, {-1, 15}}
+ ]
 ]
