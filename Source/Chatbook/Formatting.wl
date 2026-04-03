@@ -713,12 +713,18 @@ formatTextString // endDefinition;
 (*almostCertainlyWLCodeQ*)
 almostCertainlyWLCodeQ // beginDefinition;
 
-almostCertainlyWLCodeQ[ wl_String ] := TrueQ @ Or[
-    StringStartsQ[ wl, "\[FreeformPrompt]" ],
+almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
+
+almostCertainlyWLCodeQ[ wl_String, inline_ ] := TrueQ @ Or[
+    If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
     StringMatchQ[
         wl,
-        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ "[" ~~ ___ ~~ "]"
-    ]
+        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ Alternatives[
+            "[" ~~ ___ ~~ "]",
+            $$ws ~~ ("->"|":>") ~~ __
+        ]
+    ],
+    TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
 ];
 
 almostCertainlyWLCodeQ // endDefinition;
@@ -727,7 +733,16 @@ almostCertainlyWLCodeQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeInlineWL*)
 makeInlineWL // beginDefinition;
-makeInlineWL[ code_String ] := Cell[ BoxData @ wlStringToBoxes @ code, "InlineCode", "Input" ];
+
+makeInlineWL[ code_String ] := Cell[
+    BoxData @ wlStringToBoxes @ code,
+    "InlineWL", "Input",
+    LanguageCategory     -> "Input",
+    ShowAutoStyles       -> True,
+    ShowStringCharacters -> True,
+    ShowSyntaxStyles     -> True
+];
+
 makeInlineWL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -777,6 +792,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         ]
     ];
 
+(* this is a placeholder during active stream-of-thought *)
+floatingButtonGrid[ "Disabled", lang_ ] := buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", "Disabled" }, "FormattingCopyToClipboardLabel" ]
+
 (* TODO: I'm assuming this still works on the cloud as written *)
 (* For cloud notebooks (no attached cell) *)
 floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
@@ -816,7 +834,8 @@ evaluateLanguageLabel[ name_String, False ] :=
             MouseAppearance[
                 buttonMouseover[
                     buttonFrameDefault[ buttonPane @ icon, False ],
-                    buttonFrameActive[ buttonPane @ icon, False ]
+                    buttonFrameHover[   buttonPane @ icon, False ],
+                    buttonFramePressed[ buttonPane @ icon, False ]
                 ],
                 "LinkHand"
             ],
@@ -834,7 +853,11 @@ evaluateLanguageLabel[ name_String, True ] :=
 
         fancyTooltip[
             MouseAppearance[
-                buttonMouseover[ buttonFrameDefault[ labeled, True ], buttonFrameActive[ labeled, True ] ],
+                buttonMouseover[
+                    buttonFrameDefault[ labeled, True ],
+                    buttonFrameHover[   labeled, True ],
+                    buttonFramePressed[ labeled, True ]
+                ],
                 "LinkHand"
             ],
             targetNotebookLabel @ EvaluationNotebook[ ]
@@ -886,7 +909,8 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -900,7 +924,8 @@ $copyToClipboardButtonLabelWorkspaceChat := $copyToClipboardButtonLabelWorkspace
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ],
-            buttonFrameActive @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ]
+            buttonFrameHover   @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ],
+            buttonFramePressed @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -914,7 +939,8 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ]
         ],
         "LinkHand"
     ],
@@ -928,7 +954,8 @@ $insertInputButtonLabelWorkspaceChat := $insertInputButtonLabelWorkspaceChat = f
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
         ],
         "LinkHand"
     ],
@@ -942,7 +969,8 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ],
-            buttonFrameActive @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ]
+            buttonFrameHover   @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ],
+            buttonFramePressed @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ]
         ],
         "LinkHand"
     ],
@@ -1278,6 +1306,7 @@ button // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*buttonMouseover*)
 buttonMouseover[ a_, b_ ] := Mouseover[ a, b, BaselinePosition -> Baseline ];
+buttonMouseover[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1289,20 +1318,33 @@ buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
         Background       -> None,
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
-        RoundingRadius   -> 3
+        RoundingRadius   -> 2
     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*buttonFrameActive*)
-buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
+(*buttonFrameHover*)
+buttonFrameHover[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
         FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
         Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundHover",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
-        RoundingRadius   -> 3
+        RoundingRadius   -> 2
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*buttonFramePressed*)
+buttonFramePressed[ expr_, extendMarginsQ: True|False : True ] :=
+    Framed[
+        expr,
+        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFramePressed",
+        Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundPressed",
+        BaselinePosition -> Baseline,
+        FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
+        RoundingRadius   -> 2
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1318,7 +1360,7 @@ labeledIcon // beginDefinition;
 
 
 labeledIcon[ iconTemplateName_String, textResource_String ] :=
-    labeledIcon[ { iconTemplateName, True }, textResource ];
+    labeledIcon[ { iconTemplateName, False }, textResource ];
 
 
 labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
@@ -1330,6 +1372,22 @@ labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String 
         textResource
     ];
 
+labeledIcon[ { iconTemplateName_String, "Disabled" }, textResource_String ] := Grid[
+    {
+        {
+            buttonPane @ chatbookExpression @ iconTemplateName,
+            Style[
+                tr @ textResource,
+                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFontDisabled",
+                FontFamily -> "Source Sans Pro",
+                FontSize   -> 12
+            ]
+        }
+    },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 2 },
+    Spacings         -> { 0, 0 }
+];
 
 labeledIcon[ icon_, textResource_String ] := Grid[
     {
@@ -1434,6 +1492,9 @@ $textDataFormatRules = {
     table: $$mdTable :> tableCell @ table
     ,
     quote: $$blockQuote :> blockQuoteCell @ quote
+    ,
+    "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")" :>
+        inlineCodeCell[ "ResourceFunction[" <> name <> "]" ]
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
 
@@ -2579,7 +2640,7 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ code_String? almostCertainlyWLCodeQ ] :=
+makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
 
 makeInlineCodeCell[ s_String? LowerCaseQ ] :=
@@ -2600,7 +2661,7 @@ codeBlockFrame // beginDefinition;
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
-    BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
+    BoxData @ templateBox[ { cell, lang }, If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", "ChatCodeBlockTemplate" ] ],
     "ChatCodeBlock"
 ];
 
@@ -3033,7 +3094,7 @@ hyperlink[ label_String, uri_String? expressionURIQ ] :=
         ]
     ];
 
-hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, "ResourceFunction[" ~~ ___ ~~ "]" ] :=
+hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, ("`"|"")~~"ResourceFunction[" ~~ ___ ~~ "]"~~("`"|"") ] :=
     makeInlineWL @ rf;
 
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
@@ -3333,13 +3394,13 @@ assistantMessageBoxActive[ box_, "Inline" ] :=
 assistantMessageBoxActive[ box_, "Workspace" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "AssistantMessageBox"
+        "AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive[ box_, "Sidebar" ] :=
     TemplateBox[
         { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
-        "NotebookAssistant`Sidebar`AssistantMessageBox"
+        "NotebookAssistant`Sidebar`AssistantMessageBoxActive"
     ];
 
 assistantMessageBoxActive // endDefinition;

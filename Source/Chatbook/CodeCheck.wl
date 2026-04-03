@@ -249,10 +249,11 @@ mergeFixes[prevFix_, newFix_] :=
 (* ::Section:: *)
 (*Brackets Fix*)
 
+$$FatalGroupMissingCloserORANDFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}|{"Fatal", "UnexpectedCloser"}, ___};
 
-fixPattern[target_][code_String, pat : $$FatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}] := fixBrackets[target][code, pat]
+fixPattern[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexpectedCloser, patToIgnore_ : {}] := fixBrackets[target][code, pat]
 
-fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUnexpectedCloser, patToIgnore_ : {}]:=
+fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexpectedCloser, patToIgnore_ : {}]:=
 (
 	With[
 		{fix = iterateBracketFixes[code, pat]}
@@ -287,14 +288,21 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 								, 0
 								, $MaxIter
 					];
+
 			Echo[iter, "number of iterations"];
-			If[success, selectFixWithHighestScore[res], Missing["No fix found"]]
+
+			resf= ( Flatten[res] // EchoFunction["final: raw number", Length] //
+					Select[#Status === "Fixed" &] // EchoFunction["final: fixed", Length] //
+					Select[SyntaxQ @ #Code &] // EchoFunction["final: SyntaxQ", Length]
+
+			);
+
+			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
   ]
 
 
 selectFixWithHighestScore[listAsc_] :=
-(		Flatten[listAsc] // EchoFunction["final: raw number", Length]
-	//	Select[#Status === "Fixed" &] // EchoFunction["final: fixed", Length]
+(		listAsc
 	//	ReverseSortBy[#DefaultScore &] // DeleteDuplicatesBy[#Code &] // EchoFunction["final: without duplicates", Length]
 	//	With[{maxscore = Max[#[[All, "Score"]]]}, Select[#, #Score == maxscore &]] & // EchoFunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
@@ -621,7 +629,7 @@ $funcsSyntax={};
 newsyntax=
 {
 	"Table"->{_,"List"...},
-	"N"->{_,$MachinePrecision|Repeated[Integer| Real,{0,1}]},
+	"N"->Alternatives[{_,Repeated[Integer| Real,{0,1}]},{_,"$MachinePrecision"}],
 	"FaceForm"->Alternatives[{},{_},{_,Except["EdgeForm"->_]}],
 	"Prepend"->Alternatives[{_},{_,_}]
 };
@@ -646,28 +654,29 @@ scoreCallNode[cn_CallNode]:=
 Catch[
 	With[
 		{
-		syntaxPattern=(funcnameCN[cn] // ReplaceAll[ $funcsSyntax ] // Replace[_String -> Missing["No syntax pattern"]])
+		syntaxPattern=(funcnameCN[cn] // ReplaceAll[ $funcsSyntax ] // Replace[f_String :> getSyntaxPattern@f])
 		}
 		,
 		If[MissingQ[syntaxPattern](*//EchoLabel["syntaxPattern MissingQ"]*), Throw[0]];
 		(
-
 		Sequence@@getCallNodeArgs[cn]
 		//
 		Function[{funcname,args},
 			If[MatchQ[args,syntaxPattern](*//EchoLabel["MatchQ"]*)
-			, Replace[args , r:HoldPattern[Rule]["Rule",{optionName_,_}]:>
-							If[MemberQ[$systemOptions[funcname]/.{_Missing->{}}, optionName]
-								, "validOptionName"
-								, Nothing
-							]
+				,
+				Replace[args , HoldPattern[Rule]["Rule",{optionName_,_}]:>
+									If[MemberQ[$systemOptions[funcname]/.{_Missing->{}}, optionName]
+										, "validOptionName"
+										, Nothing
+									]
 						,{1}
-			](*//EchoLabel["After options check"]*)
-			//Length (* score == number of correct arguments*)
-			, 0
-		]
-	](*//EchoLabel["score"]*)
-	)
+				](*//EchoLabel["After options check"]*)
+				//Length (* score == number of correct arguments*)
+				,
+				0
+			]
+		](*//EchoLabel["score"]*)
+		)
 	]
 ]
 
