@@ -288,8 +288,9 @@ $modelAutoSettings[ "xAI", "Grok3" ] = <|
 $modelAutoSettings[ "xAI", "Grok4" ] = <|
     "FrequencyPenalty" -> Missing[ "NotSupported" ],
     "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
     "PresencePenalty"  -> Missing[ "NotSupported" ],
-    "Reasoning"        -> True, (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately and use False. *)
+    "Reasoning"        -> Missing[ "NotSupported" ], (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately? *)
     "StopTokens"       -> Missing[ "NotSupported" ],
     "ToolsEnabled"     -> True
 |>;
@@ -306,7 +307,12 @@ $modelAutoSettings[ "xAI", "Grok42" ] = <|
 
 $modelAutoSettings[ "xAI", Automatic ] = <|
     "EndToken"         -> None,
-    "ForceSynchronous" -> True, (* TODO: The doc indicates synchronous is supported and optional. I'm NOT sure if it should be forced. *)
+    "ForceSynchronous" -> True,
+
+    (* TODO *)
+    (*"HybridToolMethod" -> True,
+    "ToolMethod"        -> Verbatim @ Automatic*)(*,*)
+    (* TODO *)
     "ToolMethod"       -> "Service"
 |>;
 
