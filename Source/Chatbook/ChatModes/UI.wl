@@ -1010,6 +1010,7 @@ chatbarInputFieldEnabled // beginDefinition;
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, selectionWithinQ_ ] :=
+RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteAnchor, selectionAtTopQ = False, returnKeyDownQ = False },
     EventHandler[(* pre-emptive mouse-down event *)
         DynamicWrapper[
@@ -1043,32 +1044,7 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
             TrackedSymbols      :> { returnKeyDownQ }
         ],
         {
-            "MouseDown" :> ((* a hack until we get notebook selection snapshotting *)
-                Module[ { nextCell },
-                    selectionAtTopQ = False;
-                    If[ CurrentValue[ nbo, "SelectionType" ] === "CellCaret",
-                        notebookWriteAnchor = PreviousCell @ NotebookSelection @ nbo;
-                        If[ notebookWriteAnchor === None, selectionAtTopQ = True ]
-                        ,
-                        notebookWriteAnchor = Last[ SelectedCells @ nbo, None ] ];
-                    If[ notebookWriteAnchor =!= None,
-                        Which[
-                            MemberQ[ CurrentValue[ notebookWriteAnchor, CellStyle ], "Output" | "ChatOutput" | "Input" | "ChatInput" ],
-                                nextCell = NextCell @ notebookWriteAnchor;
-                                If[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
-                                    notebookWriteAnchor = nextCell;
-                                    nextCell = NextCell @ notebookWriteAnchor;
-                                    While[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
-                                        notebookWriteAnchor = nextCell;
-                                        nextCell = NextCell @ notebookWriteAnchor;]
-                                    ,
-                                    Null
-                                ],
-                            True,
-                                Null
-                        ]
-                    ]
-                ]),
+            "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo),
             (*
                 The EventHandler, if queued, still won't update the ChatOutput dynamics until the payload is completed.
                 Instead of trying to write the new ChatInput cell from this event, use a DynamicWrapper above to listen for the key event and evaluate asynchronously. *)
