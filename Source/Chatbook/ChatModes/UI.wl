@@ -1037,7 +1037,7 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
             If[ TrueQ @ returnKeyDownQ,
                 returnKeyDownQ = False;
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
+                evaluateChatbarChat[ nbo, None, False, input ]
             ]
             ,
             SynchronousUpdating -> False,
