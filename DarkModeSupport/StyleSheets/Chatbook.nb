@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.93.3984194706"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.94.3984462208"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -126,7 +126,8 @@ Notebook[
      RGBColor[0.282973, 0.31239, 0.372334]
     ],
    AutoQuoteCharacters -> { },
-   PasteAutoQuoteCharacters -> { }
+   PasteAutoQuoteCharacters -> { },
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData[
@@ -832,6 +833,11 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"
@@ -3232,6 +3238,11 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"

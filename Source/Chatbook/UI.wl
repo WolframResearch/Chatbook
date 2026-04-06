@@ -1185,6 +1185,8 @@ DynamicModule[
 		Catch[
 			With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
 				Typeset`display = Which[
+					FailureQ @ tagRules,
+						chatbookIcon[ "ChatOutputCellDingbat", False ],
 					KeyExistsQ[ tagRules, "PageData" ],
 						makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
 					KeyExistsQ[ tagRules, "ChatData" ],
