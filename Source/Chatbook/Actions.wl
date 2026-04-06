@@ -82,8 +82,7 @@ ChatbookAction[ "ExplodeDuplicate"             , args___ ] := catchMine @ Explod
 ChatbookAction[ "ExplodeInPlace"               , args___ ] := catchMine @ ExplodeInPlace @ args;
 ChatbookAction[ "InsertCodeBelow"              , args___ ] := catchMine @ insertCodeBelow @ args;
 ChatbookAction[ "InsertInlineReference"        , args___ ] := catchMine @ InsertInlineReference @ args;
-ChatbookAction[ "MakeFooterChatInputCellContent" , args___ ] := catchMine @ makeFooterChatInputCellContent @ args;
-ChatbookAction[ "MakeMidlineChatInputCellContent", args___ ] := catchMine @ makeMidlineChatInputCellContent @ args;
+ChatbookAction[ "MakeChatbarChatInputCellContent" , args___ ] := catchMine @ makeChatbarChatInputCellContent @ args;
 ChatbookAction[ "MakeSidebarChatDockedCell"    , args___ ] := catchMine @ makeSidebarChatDockedCell @ args;
 ChatbookAction[ "MakeSidebarChatInputCell"     , args___ ] := catchMine @ makeSidebarChatInputCell @ args;
 ChatbookAction[ "MakeSidebarChatScrollingCell" , args___ ] := catchMine @ makeSidebarChatScrollingCell @ args;
@@ -408,9 +407,9 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
         newPage     = Mod[ currentPage + n, pageCount, 1 ];
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
-        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ], "Content" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ] | KeyValuePattern[ { "Response" -> _ } ], "Content" ];
 
-        writePageContent[ cell, newPage, content ]
+        writePageContent[ cell, newPage, If[ AssociationQ @ content, content["Response"], content ] ]
     ],
     throwInternalFailure[ rotateTabPage[ cell, n ], ## ] &
 ];
@@ -1335,7 +1334,7 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                     Which[
                         MemberQ[ tags, Alternatives[ "NotebookAssistantSidebarCell" ] ],
                             c,
-                        MemberQ[ tags, Alternatives[ "SidebarChatInputCell", "SidebarDockedCell", "SidebarSubDockedCell", "SidebarScrollingContentCell" ] ],
+                        MemberQ[ tags, Alternatives[ "SidebarChatInputCell", "SidebarDockedCell", "SidebarSubDockedCell", "SidebarSourcesDockedCell", "SidebarChatTitleCell", "SidebarScrollingContentCell" ] ],
                             ParentCell @ c,
                         MemberQ[ tags, Alternatives[ "SidebarTopCell" ] ],
                             ParentCell @ ParentCell @ c,

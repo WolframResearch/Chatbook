@@ -172,6 +172,7 @@
 "UIModelsServices" -> "Services",
 "UIAISettings" -> "AI Settings",
 "UIAdvancedSettings" -> "Advanced Settings",
+"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
 "UIModelsServicesGet" -> "Getting available services\[Ellipsis]",
 "UIModelsGet" -> "Getting available models\[Ellipsis]",
 "UIModelsNoList" -> "Connect for model list",
@@ -214,6 +215,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Ask me anything",
+"ChatbarFieldHint" -> "What would you like to do?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",

@@ -437,7 +437,8 @@ saveChat0[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ AddChatToSearchIndex @ as, _Success | Missing[ "NoSemanticSearch" ], "AddToSearchIndex" ];
 
-        setChatDisplayTitle[ $savingNotebook, $appContainer, metadata ];
+        (* don't add the title cell in the sidebar during regular chat, only if loading a saved chat *)
+        If[ ! MatchQ[ $appContainer, _CellObject ], setChatDisplayTitle[ $savingNotebook, $appContainer, metadata ] ];
 
         updateDynamics[ "SavedChats" ];
 
@@ -478,13 +479,13 @@ setChatDisplayTitle // beginDefinition;
 setChatDisplayTitle[ nbo_NotebookObject, c_CellObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         setCurrentValue[ c, { TaggingRules, "ConversationTitle" }, title ];
-        writeSidebarChatSubDockedCell[ nbo, c, WindowTitle ]
+        writeSidebarChatTitleCell[ nbo, c, WindowTitle ]
     ];
 
 setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
     If[ title =!= $defaultConversationTitle,
         setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, title ];
-        writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ]
+        writeWorkspaceChatTitleDockedCell[ nbo, WindowTitle ]
     ];
 
 setChatDisplayTitle[ None, _ ] :=

@@ -172,6 +172,7 @@
 "UIModelsServices" -> "\:C11C\:BE44\:C2A4",
 "UIAISettings" -> "AI \:C124\:C815",
 "UIAdvancedSettings" -> "\:ACE0\:AE09 \:C124\:C815",
+"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
 "UIModelsServicesGet" -> "\:C0AC\:C6A9 \:AC00\:B2A5\:D55C \:C11C\:BE44\:C2A4\:B97C \:AC00\:C838\:C624\:B294 \:C911\[Ellipsis]",
 "UIModelsGet" -> "\:C0AC\:C6A9 \:AC00\:B2A5\:D55C \:BAA8\:B378 \:AC00\:C838\:C624\:AE30\[Ellipsis]",
 "UIModelsNoList" -> "\:BAA8\:B378 \:BAA9\:B85D\:C5D0 \:C5F0\:ACB0",
@@ -214,6 +215,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:BB34\:C5C7\:C774\:B4E0 \:BB3C\:C5B4\:BCF4\:C138\:C694",
+"ChatbarFieldHint" -> "\:BB34\:C5C7\:C744 \:B3C4\:C640\:B4DC\:B9B4\:AE4C\:C694?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8 \:CC44\:D305\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:C120\:D0DD\:D55C \:BD80\:BD84\:C5D0 \:B300\:D55C \:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
@@ -242,7 +244,7 @@
 "WorkspaceHistoryNextPage" -> "\:B2E4\:C74C \:D398\:C774\:C9C0",
 "WorkspaceHistoryLastPage" -> "\:B9C8\:C9C0\:B9C9 \:D398\:C774\:C9C0",
 "WorkspaceHistoryTitle" -> "\:D788\:C2A4\:D1A0\:B9AC",
-"WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryFieldHint" -> "\:AC80\:C0C9",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:B2F5\:BCC0\:C744 \:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:B2F5\:BCC0\:C744 \:BCF5\:C0AC\[Ellipsis]",

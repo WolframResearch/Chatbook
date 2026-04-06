@@ -3,12 +3,12 @@ Cell[
 		DynamicBox[
 			ToBoxes[
 				Needs[ "Wolfram`Chatbook`" -> None ];
-				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeFooterChatInputCellContent" ],
+				Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeChatbarChatInputCellContent" ],
 				StandardForm ],
 			DestroyAfterEvaluation -> True
 		],
 	"ChatInputField",
-	CellTags          -> "NotebookAssistantFooterChatInputCell",
+	CellTags          -> "NotebookAssistantChatbarCell",
 	Editable          -> False,
 	LineIndent        -> 0,
 	LineSpacing       -> { 1, 0 },
