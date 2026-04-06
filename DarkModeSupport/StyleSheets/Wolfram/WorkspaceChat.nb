@@ -39,6 +39,24 @@ Notebook[
    DockedCells -> {
     Cell[
      BoxData[
+      GraphicsBox[
+       { },
+       Background ->
+        LightDarkSwitched[
+         RGBColor[0.070588, 0.556863, 0.819608],
+         RGBColor[0.498039, 0.780392, 0.984314]
+        ],
+       AspectRatio -> Full,
+       ImageSize -> {Scaled[1], 5}
+      ]
+     ],
+     "NotebookAssistant`TopStripe",
+     CellFrame -> False,
+     CellFrameMargins -> {{0, 0}, {-3, -6}},
+     CellMargins -> 0
+    ],
+    Cell[
+     BoxData[
       DynamicBox[
        ToBoxes[
         Needs["Wolfram`Chatbook`" -> None];
@@ -47,16 +65,7 @@ Notebook[
         ],
         StandardForm
        ],
-       Initialization :>
-        With[ { Wolfram`ChatNB`nbo = EvaluationNotebook[] },
-         Needs["Wolfram`Chatbook`" -> None];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "AttachWorkspaceChatInput",
-          Wolfram`ChatNB`nbo,
-          If[ Cells[Wolfram`ChatNB`nbo] =!= { }, Bottom, Top ]
-         ]
-        ],
-       TrackedSymbols :> { }
+       DestroyAfterEvaluation -> True
       ]
      ],
      CellFrame -> 0,
@@ -88,7 +97,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.89.3983615581"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.93.3984194706"|>
   ],
   Cell[
    StyleData["AttachedCell"],

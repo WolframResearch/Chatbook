@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.89.3983615581"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.93.3984194706"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -734,6 +734,7 @@ Notebook[
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
@@ -1693,86 +1694,117 @@ Notebook[
     DisplayFunction ->
      (Function[
       TagBox[
-       PaneSelectorBox[
-        {
-         False ->
-          FrameBox[
-           ButtonBox[
-            DynamicBox[
-             FEPrivate`FrontEndResource[
-              "ChatbookExpressions",
-              "ChatMenuIcon"
+       ButtonBox[
+        DynamicModuleBox[
+         {Typeset`down$$ = False},
+         TagBox[
+          PaneSelectorBox[
+           {
+            "Default" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background -> None,
+              FrameMargins -> 0,
+              FrameStyle -> None,
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
+             ],
+            "Hover" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background ->
+               LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+              FrameMargins -> 0,
+              FrameStyle ->
+               LightDarkSwitched[
+                RGBColor[0.694118, 0.835294, 0.909804],
+                RGBColor[0.376471, 0.490196, 0.560784]
+               ],
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
+             ],
+            "Down" ->
+             FrameBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookExpressions",
+                "ChatMenuIcon"
+               ]
+              ],
+              Alignment -> {Center, Center},
+              Background ->
+               LightDarkSwitched[
+                RGBColor[0.831373, 0.941176, 1.0],
+                RGBColor[0.219608, 0.313725, 0.380392]
+               ],
+              FrameMargins -> 0,
+              FrameStyle ->
+               LightDarkSwitched[
+                RGBColor[0.458824, 0.760784, 0.921569],
+                RGBColor[0.4, 0.611765, 0.741176]
+               ],
+              ImageSize -> {14, 20},
+              RoundingRadius -> 4,
+              StripOnInput -> False
              ]
-            ],
-            ButtonFunction :>
-             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-              Quiet[Needs["Wolfram`Chatbook`" -> None]];
-              Symbol["Wolfram`Chatbook`ChatbookAction"][
-               "OpenChatMenu",
-               #1,
-               Wolfram`ChatNB`cell
-              ]
-             ],
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
+           },
+           Dynamic[
+            Which[
+             CurrentValue["MouseOver"] && Typeset`down$$,
+             "Down",
+             CurrentValue["MouseOver"],
+             "Hover",
+             True,
+             "Default"
+            ]
            ],
-           RoundingRadius -> 3,
-           FrameStyle -> None,
-           Background -> None,
-           FrameMargins -> 0,
-           ContentPadding -> False,
-           StripOnInput -> False
+           BaselinePosition -> Baseline,
+           ImageSize -> Automatic,
+           FrameMargins -> 0
           ],
-         True ->
-          FrameBox[
-           ButtonBox[
-            DynamicBox[
-             FEPrivate`FrontEndResource[
-              "ChatbookExpressions",
-              "ChatMenuIcon"
-             ]
-            ],
-            ButtonFunction :>
-             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-              Quiet[Needs["Wolfram`Chatbook`" -> None]];
-              Symbol["Wolfram`Chatbook`ChatbookAction"][
-               "OpenChatMenu",
-               #1,
-               Wolfram`ChatNB`cell
-              ]
-             ],
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
-           ],
-           RoundingRadius -> 3,
-           FrameStyle ->
-            LightDarkSwitched[
-             GrayLevel[1, 0],
-             GrayLevel[0.219195, 0.0]
-            ],
-           Background -> #2,
-           FrameMargins -> 0,
-           ContentPadding -> False,
-           StripOnInput -> False
+          EventHandlerTag[
+           {
+            "MouseDown" :> FEPrivate`Set[Typeset`down$$, True],
+            "MouseUp" :> FEPrivate`Set[Typeset`down$$, False],
+            PassEventsDown -> True,
+            Method -> "Preemptive",
+            PassEventsUp -> True
+           }
           ]
-        },
-        Dynamic[CurrentValue["MouseOver"]],
+         ],
+         DynamicModuleValues :> { }
+        ],
+        ButtonFunction :>
+         (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "OpenChatMenu",
+          #1,
+          EvaluationCell[]
+         ]),
+        Appearance ->
+         Dynamic[
+          FEPrivate`FrontEndResource[
+           "FEExpressions",
+           "SuppressMouseDownNinePatchAppearance"
+          ]
+         ],
+        Evaluator -> Automatic,
         ImageSize -> Automatic,
-        FrameMargins -> 0
+        Method -> "Preemptive"
        ],
        MouseAppearanceTag["LinkHand"]
       ]
@@ -3063,6 +3095,7 @@ Notebook[
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
@@ -4864,7 +4897,6 @@ Notebook[
    CellDingbat -> None,
    ShowCellBracket -> False,
    CellMargins -> {{10, 5}, {30, 12}},
-   CellDingbatMargin -> 6.5,
    Initialization :> None,
    Background -> None,
    FrameBoxOptions -> {BaselinePosition -> Baseline},
@@ -5005,7 +5037,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.89.3983615517"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.93.3984193667"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
