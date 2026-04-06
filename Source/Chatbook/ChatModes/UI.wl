@@ -548,7 +548,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                         ImageSize  -> { Scaled[ 1 ], Automatic }
                                                     ],
                                                     With[ { fieldHintBoxes =
-                                                        ToBoxes @ Row[
+                                                        ToBoxes @ Grid[ {
                                                             {
                                                                 chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 14 ],
                                                                 Style[ tr[ "ChatbarFieldHint" ],
@@ -557,9 +557,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                                     FontSize        -> 13,
                                                                     LineBreakWithin -> False
                                                                 ]
-                                                            },
-                                                            Spacer @ 7,
-                                                            StripOnInput -> True
+                                                            } }, Alignment -> { Left, Center }, BaselinePosition -> { 1, 2 }, Spacings -> { 10, 0 }
                                                         ] },
                                                         Dynamic @ RawBoxes @ If[ fieldContent === "", fieldHintBoxes, "" ]
                                                     ]
@@ -569,7 +567,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                 Alignment -> { Left, Baseline }
                                             ],
                                             sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
-                                        } }
+                                        } }, Alignment -> { Left, Center }
                                     ],
                                     $inputFieldFrameOptions
                                 ]
