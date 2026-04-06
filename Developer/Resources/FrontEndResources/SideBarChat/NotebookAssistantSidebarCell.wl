@@ -1,5 +1,5 @@
 Cell[
-	BoxData @
+	BoxData @ TagBox[
 		RowBox @ {
 			With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
 				Cell[ BoxData @
@@ -15,6 +15,8 @@ Cell[
 				DestroyAfterEvaluation -> True
 			]
 		},
+		"NotebookSelectionSnapshotExclusionZone"
+	],
 	"NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
 	Background        -> color @ "NA_ChatInputFieldBackgroundArea", (* this colors the entire initial sidebar as gray to make it easier to see *)
 	CellFrameMargins  -> 0,

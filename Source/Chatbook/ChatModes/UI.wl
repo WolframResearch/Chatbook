@@ -519,7 +519,7 @@ sidebarChatInputCellSendButton // endDefinition;
 makeSidebarChatInputCell // beginDefinition;
 
 makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
-    BoxData @ TagBox[ ToBoxes @ DynamicModule[
+    BoxData @ ToBoxes @ DynamicModule[
         {
             thisCell, chatEvalCell,
             fieldContent = "", returnKeyDownQ, input,
@@ -624,7 +624,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
             cachedSessionID = $SessionID;
             focusArea = focusedNotebookDisplay[ nbo, sidebarCell ]
         )
-    ], "NotebookSelectionSnapshotExclusionZone" ], (* TagBox tag *)
+    ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> "SidebarChatInputCell",
