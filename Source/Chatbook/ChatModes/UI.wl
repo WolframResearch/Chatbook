@@ -26,6 +26,7 @@ $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
+$assistantTier               = "Basic";
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -647,7 +648,7 @@ makeSidebarChatInputCell // endDefinition;
 chatbarInputField // beginDefinition;
 
 (* FieldHint implemented as an Overlay such that it can appear while the text caret is present in an empty field *)
-chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ selectionWithinQ_ ], size_ ] :=
+chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ mouseOverQ_ ], Dynamic[ selectionWithinQ_ ], size_ ] :=
 Overlay[
     {
         InputField[
@@ -675,8 +676,9 @@ Overlay[
                                 LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ]
                             ]
                         },
-                        Dynamic @ selectionWithinQ,
+                        Dynamic[ selectionWithinQ || mouseOverQ ],
                         BaselinePosition -> Baseline,
+                        ImageMargins -> { { 0, 3 }, { 0, 0 } },
                         ImageSize        -> All
                     ],
                     Style[ tr[ "ChatbarFieldHint" ],
@@ -687,10 +689,9 @@ Overlay[
                         LineBreakWithin -> False
                     ]
                 },
-                Spacer @ 7,
                 StripOnInput -> True
             ] },
-            RawBoxes @ DynamicBox @ If[ fieldContent === "", fieldHintBoxes, "" ]
+            RawBoxes @ DynamicBox @ If[ selectionWithinQ || fieldContent =!= "", "", fieldHintBoxes ]
         ]
     },
     { 1, 2 },
@@ -850,7 +851,7 @@ makeChatbarChatInputCellContent // beginDefinition;
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
-    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, selectionWithinQ = False },
+    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False },
         DynamicWrapper[
             PaneSelector[
                 {
@@ -862,7 +863,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         PaneSelector[
                                             {
                                                 "Loading" -> chatbarLoading[ ],
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, mouseOverQ, selectionWithinQ ],
                                                 "SignIn"  -> chatbarSignIn[ selectionWithinQ ]
                                             },
                                             Dynamic @ connectionLevel,
@@ -899,11 +900,12 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ImageSize    -> Automatic
             ]
             ,
-            FEPrivate`Set[ selectionWithinQ, Or[ FrontEnd`CurrentValue[ "MouseOver" ], FrontEnd`CurrentValue[ "SelectionWithin" ] ] ];
-                Function[
-                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
-                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
-                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
+            FEPrivate`Set[ mouseOverQ, FrontEnd`CurrentValue[ "MouseOver" ] ];
+            FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
+            Function[
+                If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
+                If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+            ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
             ,
             Evaluator -> None
         ],
@@ -1009,7 +1011,7 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, mouseOverQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteAnchor, selectionAtTopQ = False, returnKeyDownQ = False },
     EventHandler[(* pre-emptive mouse-down event *)
@@ -1017,8 +1019,8 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
             Framed[
                 Grid[
                     { {
-                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
-                        chatbarSendButton[ fieldContent, selectionWithinQ, input, returnKeyDownQ ]
+                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ mouseOverQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
+                        chatbarSendButton[ fieldContent, mouseOverQ || selectionWithinQ, input, returnKeyDownQ ]
                     } },
                     Alignment        -> { Left, Center },
                     BaselinePosition -> { 1, 1 },
@@ -1026,10 +1028,10 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
                 ],
                 Alignment      -> { Automatic, Center },
                 Background     -> color @ "NA_ChatInputFieldBackground",
-                FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                FrameMargins   -> { { 12, 1 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
-                        If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
+                        If[ mouseOverQ || selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
                     ]&[ color @ "NA_ChatInputFieldFrame", LightDarkSwitched @ RGBColor["#898989"] ]),
                 RoundingRadius -> 9
             ]
@@ -1052,10 +1054,55 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
         },
         Method         -> "Preemptive",
         PassEventsDown -> True
-    ]
+    ],
+    SynchronousInitialization -> False,
+    Initialization :> (AttachCell[ EvaluationBox[ ], chatbarInputFieldEnabledTierIndicator[ ], { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top } ])
 ];
 
 chatbarInputFieldEnabled // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarInputFieldEnabledTierIndicatorFrame*)
+
+chatbarInputFieldEnabledTierIndicatorFrame // beginDefinition;
+
+chatbarInputFieldEnabledTierIndicatorFrame[ text_ ] :=
+Framed[
+    Style[
+        text,
+        FontColor      -> LightDarkSwitched @ GrayLevel[ 1 ],
+        FontTracking   -> "SemiCondensed",
+        FontVariations -> { "CapsType" -> "AllCaps" },
+        FontWeight     -> "SemiBold"
+    ],
+    Background     -> LightDarkSwitched @ RGBColor["#0092D1"],
+    ContentPadding -> False,
+    FrameMargins   -> { { 6, 6 }, { 3, 3 } },
+    FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    RoundingRadius -> 7
+]
+
+chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarInputFieldEnabledTierIndicator*)
+
+chatbarInputFieldEnabledTierIndicator // beginDefinition;
+
+chatbarInputFieldEnabledTierIndicator[ ] :=
+PaneSelector[
+    {
+        "Basic"    -> Graphics[ Background -> None, ImageSize -> { 1, 1 } ],
+        "Pro"      -> chatbarInputFieldEnabledTierIndicatorFrame @ "Pro",
+        "Research" -> chatbarInputFieldEnabledTierIndicatorFrame @ "Research"
+    },
+    Dynamic @ $assistantTier,
+    ImageSize -> Automatic
+]
+
+chatbarInputFieldEnabledTierIndicator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
