@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.94.3984455001"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.94.3984462208"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -38,7 +38,8 @@ Notebook[
      RGBColor[0.282973, 0.31239, 0.372334]
     ],
    AutoQuoteCharacters -> { },
-   PasteAutoQuoteCharacters -> { }
+   PasteAutoQuoteCharacters -> { },
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData[
@@ -4885,7 +4886,8 @@ Notebook[
    CellEventActions -> None,
    CellFrameLabels -> None,
    FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
+   PaneBoxOptions -> {BaselinePosition -> Baseline},
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ChatInputField"],
@@ -4910,7 +4912,8 @@ Notebook[
    Initialization :> None,
    Background -> None,
    FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
+   PaneBoxOptions -> {BaselinePosition -> Baseline},
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData[
@@ -5047,7 +5050,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.93.3984194706"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.94.3984455001"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
