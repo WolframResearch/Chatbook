@@ -519,7 +519,7 @@ sidebarChatInputCellSendButton // endDefinition;
 makeSidebarChatInputCell // beginDefinition;
 
 makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[
+    BoxData @ TagBox[ ToBoxes @ DynamicModule[
         {
             thisCell, chatEvalCell,
             fieldContent = "", returnKeyDownQ, input,
@@ -608,6 +608,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                 FrameMargins -> $inputFieldPaneMargins
             ],
             {
+                "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo),
                 "ReturnKeyDown" :> (
                     If[ ! validInputStringQ @ fieldContent,
                         fieldContent = ""
@@ -615,7 +616,8 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                         input = fieldContent; fieldContent = ""; returnKeyDownQ = True
                     ])
             },
-            Method -> "Preemptive"
+            Method         -> "Preemptive",
+            PassEventsDown -> True
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
         Initialization :> (
@@ -624,7 +626,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
             cachedSessionID = $SessionID;
             focusArea = focusedNotebookDisplay[ nbo, sidebarCell ]
         )
-    ],
+    ], "NotebookSelectionSnapshotExclusionZone" ], (* TagBox tag *)
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> "SidebarChatInputCell",
