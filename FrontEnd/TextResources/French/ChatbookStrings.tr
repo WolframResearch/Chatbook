@@ -172,6 +172,7 @@
 "UIModelsServices" -> "Services",
 "UIAISettings" -> "Param\[EGrave]tres de l\[CloseCurlyQuote]IA",
 "UIAdvancedSettings" -> "Param\[EGrave]tres avanc\[EAcute]s",
+"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
 "UIModelsServicesGet" -> "Obtention des services disponibles\[Ellipsis]",
 "UIModelsGet" -> "Obtenir les mod\[EGrave]les disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Se connecter pour obtenir la liste des mod\[EGrave]les",
@@ -214,6 +215,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Demande\[Hyphen]moi quelque chose",
+"ChatbarFieldHint" -> "Que voulez\[Hyphen]vous faire\[NonBreakingSpace]?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
@@ -242,7 +244,7 @@
 "WorkspaceHistoryNextPage" -> "Page suivante",
 "WorkspaceHistoryLastPage" -> "Derni\[EGrave]re page",
 "WorkspaceHistoryTitle" -> "Historique",
-"WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryFieldHint" -> "Recherche",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",

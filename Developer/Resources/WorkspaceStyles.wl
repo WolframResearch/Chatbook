@@ -27,6 +27,7 @@ Cell[
     Saveable               -> False,
     Selectable             -> False,
     ShowCellBracket        -> False,
+    "ShowChatbar"          -> False,
     TaggingRules           -> <| "ChatNotebookSettings" -> $workspaceDefaultSettings |>,
     WindowClickSelect      -> True,
     WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },
@@ -74,9 +75,11 @@ Cell[
 (*WorkspaceChatToolbarLabel*)
 Cell[
     StyleData[ "WorkspaceChatToolbarButtonLabel", StyleDefinitions -> StyleData[ "Text" ] ],
-    FontColor  -> color @ "NA_ToolbarFont",
-    FontSize   -> 13,
-    FontWeight -> "DemiBold"
+    FontColor       -> color @ "NA_BlueHueButtonIcon",
+    FontFamily      -> "Source Sans Pro",
+    FontSize        -> 13.5,
+    FontWeight      -> "DemiBold",
+    LineBreakWithin -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -93,33 +96,15 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput" ],
-    CellDingbat           -> None,
-    CellEventActions      -> None,
-    CellFrame             -> 0,
-    CellFrameLabelMargins -> -15,
-    CellMargins           -> { { 15, 15 }, { 5, 10 } },
-    FrameBoxOptions       -> { BaselinePosition -> Baseline },
-    PaneBoxOptions        -> { BaselinePosition -> Baseline },
-    Selectable            -> False,
-    ShowCellBracket       -> False,
-    CellFrameLabels       -> {
-        {
-            None,
-            Cell[
-                BoxData @ DynamicBox[
-                    ToBoxes[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UserMessageLabel" ],
-                        StandardForm
-                    ],
-                    SingleEvaluation -> True
-                ],
-                Background   -> None,
-                CellBaseline -> Baseline
-            ]
-        },
-        { None, None }
-    }
+    CellDingbat      -> None,
+    CellEventActions -> None,
+    CellFrame        -> 0,
+    CellFrameLabels  -> None,
+    CellMargins      -> { { 10, 5 }, { 5, 10 } },
+    FrameBoxOptions  -> { BaselinePosition -> Baseline },
+    PaneBoxOptions   -> { BaselinePosition -> Baseline },
+    Selectable       -> False,
+    ShowCellBracket  -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -127,34 +112,15 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput" ],
-    Background            -> None,
-    CellDingbat           -> None,
-    CellFrame             -> 0,
-    CellFrameLabelMargins -> -5,
-    CellMargins           -> { { 10, 15 }, { 30, 12 } },
-    FrameBoxOptions       -> { BaselinePosition -> Baseline },
-    Initialization        -> None,
-    PaneBoxOptions        -> { BaselinePosition -> Baseline },
-    Selectable            -> False,
-    ShowCellBracket       -> False,
-    CellFrameLabels       -> {
-        {
-            Cell[
-                BoxData @ DynamicBox[
-                    ToBoxes[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
-                        StandardForm
-                    ],
-                    SingleEvaluation -> True
-                ],
-                Background   -> None,
-                CellBaseline -> Baseline
-            ],
-            None
-        },
-        { None, None }
-    }
+    Background      -> None,
+    CellDingbat     -> None,
+    CellFrame       -> 0,
+    CellMargins     -> { { 10, 5 }, { 30, 12 } },
+    FrameBoxOptions -> { BaselinePosition -> Baseline },
+    Initialization  -> None,
+    PaneBoxOptions  -> { BaselinePosition -> Baseline },
+    Selectable      -> False,
+    ShowCellBracket -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -195,23 +161,11 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*UserMessageBox - one minor style tweaks compared to definition in Chatbook.nb *)
+(*UserMessageBox - user icon on left side but content right-aligned *)
 Cell[
     StyleData[ "UserMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ PaneBox[
-            FrameBox[
-                #,
-                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> color @ "UserMessageBoxBackground",
-                FrameMargins   -> { { 8, 15 }, { 8, 8 } },
-                FrameStyle     -> color @ "UserMessageBoxFrame",
-                RoundingRadius -> 8, (* TWEAK *)
-                StripOnInput   -> False
-            ],
-            Alignment -> Right,
-            ImageSize -> { Full, Automatic }
-        ]
+        DisplayFunction -> Function @ Evaluate @ userMessageBoxFrame[ # ]
     }
 ]
 
@@ -221,10 +175,7 @@ Cell[
 Cell[
     StyleData[ "AssistantMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ TagBox[
-            assistantMessageBoxFrame[ # ],
-            assistantMessageBoxEventHandler
-        ]
+        DisplayFunction -> Function @ Evaluate @ TagBox[ assistantMessageBoxFrame[ # ], assistantMessageBoxEventHandler ]
     }
 ]
 

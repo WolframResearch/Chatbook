@@ -1,12 +1,20 @@
 Cell[
 	BoxData @
-		DynamicBox[
-			ToBoxes[
-				Needs[ "Wolfram`Chatbook`" -> None ];
-				RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatDockedCell" ],
-				StandardForm ],
-			DestroyAfterEvaluation -> True
-		],
+		RowBox @ {
+			With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
+				Cell[ BoxData @
+					GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ],
+					"NotebookAssistant`TopStripe"
+				]
+			],
+			DynamicBox[
+				ToBoxes[
+					Needs[ "Wolfram`Chatbook`" -> None ];
+					RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatDockedCell" ],
+					StandardForm ],
+				DestroyAfterEvaluation -> True
+			]
+		},
 	"NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
 	Background        -> color @ "NA_ChatInputFieldBackgroundArea", (* this colors the entire initial sidebar as gray to make it easier to see *)
 	CellFrameMargins  -> 0,

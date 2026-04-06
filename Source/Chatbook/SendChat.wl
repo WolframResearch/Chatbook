@@ -199,6 +199,10 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
 
+        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
+            SelectionMove[ cellObj, After, Cell ]
+        ];
+
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         { messages, data } = Reap[
@@ -227,7 +231,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        (* If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -235,7 +239,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
                     TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
                 ]
             ] // LogChatTiming[ "SetCellDingbat" ]
-        ];
+        ]; *)
 
         applyHandlerFunction[
             settings,
@@ -2409,7 +2413,14 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         ];
 
         encoded = ConfirmBy[
-            BaseEncode @ BinarySerialize[ prevPage, PerformanceGoal -> "Size" ],
+            makeMinimalPageData[
+                prevPage,
+                FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] :>
+                    BinaryDeserialize @ BaseDecode @ cd,
+                    <| |>,
+                    { 0, Infinity }
+                ]
+            ],
             StringQ,
             "BaseEncode"
         ];
@@ -2749,7 +2760,7 @@ makeActiveOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] :=
     makeActiveOutputDingbat[ as, icon ];
 
 makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
-    makeActiveOutputDingbat[ as, RawBoxes @ TemplateBox[ { }, "AssistantIconActive" ] ];
+    makeActiveOutputDingbat[ as, chatbookIcon[ "AssistantIconActive", False ] ];
 
 makeActiveOutputDingbat[ as_, icon_ ] :=
     If[ TrueQ @ $noActiveProgress,
@@ -2770,7 +2781,7 @@ makeOutputDingbat[ as_, name_String ] := makeOutputDingbat[ as, GetCachedPersona
 makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
-makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := TemplateBox[ { }, "AssistantIcon" ];
+makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := chatbookIcon[ "AssistantIcon", False ];
 makeOutputDingbat[ as_, icon_ ] := toDingbatBoxes @ resizeDingbat @ icon;
 makeOutputDingbat // endDefinition;
 
@@ -2783,7 +2794,7 @@ resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
     icon,
     ContentPadding  -> False,
     FrameMargins    -> 0,
-    ImageSize       -> { 35, 35 },
+    ImageSize       -> { Automatic, 19 },
     ImageSizeAction -> "ShrinkToFit",
     Alignment       -> { Center, Center }
 ];
@@ -2940,7 +2951,7 @@ reformatCell // beginDefinition;
 
 (* FIXME: why does this actually need UsingFrontEnd here? *)
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
-    Module[ { formatter, toolFormatter, content, rules, dingbat, outer },
+    Module[ { formatter, toolFormatter, content, rules, outer },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
@@ -2961,8 +2972,6 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             AssociationQ,
             "TaggingRules"
         ];
-
-        dingbat = makeOutputDingbat @ settings;
 
         outer = Which[
             TrueQ @ $WorkspaceChat,
@@ -2993,13 +3002,6 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             CellAutoOverwrite -> True,
             CellTags          -> Flatten @ { uuid, cellTags },
             TaggingRules      -> rules,
-            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
-                If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ],
-                    Sequence @@ { }
-                ]
-            ],
             If[ TrueQ @ open,
                 Sequence @@ { },
                 Sequence @@ Flatten @ {
@@ -3096,7 +3098,7 @@ makeReformattedCellTaggingRules[
             "MessageTag"       -> tag,
             "ChatData"         -> makeCompactChatData[ string, tag, settings ],
             "PageData"         -> <|
-                "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+                "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
                 "CurrentPage"-> p
             |>
@@ -3151,6 +3153,41 @@ makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeMinimalPageData*)
+makeMinimalPageData // beginDefinition;
+
+makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
+
+makeMinimalPageData[ content_, settings_Association ] :=
+BaseEncode @ BinarySerialize[
+    <|
+        "Response"     -> content,
+        "LLMEvaluator" -> Lookup[ settings, "LLMEvaluator" ],
+        "Messages"     -> Lookup[
+            settings, "Data", Missing[ "NoData" ],
+            If[ ! AssociationQ[ # ],
+                Missing[ "UnexpectedData" ]
+                ,
+                Lookup[
+                    #, "Messages", Missing[ "NoMessages" ],
+                    If[ ! MatchQ[ #, { ___Association } ],
+                        Missing[ "UnexpectedMessages" ]
+                        , (* remove any surrounding non-user prompts and response messages *)
+                        If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
+                            If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
+                                #
+                    ]&
+                ]
+            ]&
+        ]
+    |>,
+    PerformanceGoal -> "Size"
+];
+
+makeMinimalPageData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*toSmallSettings*)
 toSmallSettings // beginDefinition;
 toSmallSettings[ as_Association ] := toSmallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
@@ -3184,26 +3221,21 @@ $exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 restoreLastPage // beginDefinition;
 
 restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclose[
-    Module[ { pageData, b64, bytes, content, dingbat, uuid, cell },
+    Module[ { pageData, b64, bytes, content, uuid, cell },
 
         pageData = ConfirmBy[ rules[ "PageData" ], AssociationQ, "PageData" ];
         b64      = ConfirmBy[ pageData[ "Pages", pageData[ "CurrentPage" ] ], StringQ, "Base64" ];
         bytes    = ConfirmBy[ ByteArray @ b64, ByteArrayQ, "ByteArray" ];
-        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData, "TextData" ];
-        dingbat  = makeOutputDingbat @ settings;
+        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData | _Association, "TextData" ];
         uuid     = CreateUUID[ ];
 
         cell = Cell[
-            content,
+            If[ AssociationQ @ content, Lookup[ content, "Response" ], content ],
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
-            ExpressionUUID    -> uuid,  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
-            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
-                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
-            ]
+            ExpressionUUID    -> uuid  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
         ];
 
         WithCleanup[

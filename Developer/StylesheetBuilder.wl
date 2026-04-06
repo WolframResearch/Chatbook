@@ -487,94 +487,6 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     250
 ];
 
-
-
-(* ::Subsection::Closed:: *)
-(*Tabbed Output CellDingbat*)
-
-
-tabArrowFrame[ gfx_, opts___ ] := Framed[
-    Graphics[ { GrayLevel[ 0.4 ], gfx }, ImageSize -> 4 ],
-    FrameMargins   -> 3,
-    FrameStyle     -> None,
-    ImageMargins   -> 0,
-    RoundingRadius -> 2,
-    opts
-];
-
-
-tabArrowButtonLabel[ gfx_ ] := MouseAppearance[
-    Mouseover[
-        tabArrowFrame[ gfx, Background -> None ],
-        tabArrowFrame[ gfx, Background -> GrayLevel[ 0.9 ] ]
-    ],
-    "LinkHand"
-];
-
-
-$tabButtonLabels = <|
-    "TabLeft"  -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } } ],
-    "TabRight" -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } } ]
-|>;
-
-
-tabScrollButton[ direction_, cell_ ] := Button[
-    $tabButtonLabels[ direction ],
-    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-    Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, cell ], _ ],
-    Appearance -> $suppressButtonAppearance
-];
-
-
-$tabbedOutputControls =
-    DynamicModule[ { cell },
-        Column[
-            {
-                Row @ { tabScrollButton[ "TabLeft", cell ], tabScrollButton[ "TabRight", cell ] },
-                RawBoxes @ StyleBox[
-                    RowBox @ {
-                        DynamicBox @ ToBoxes[
-                            CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" }, 1 ],
-                            StandardForm
-                        ],
-                        "/",
-                        DynamicBox @ ToBoxes[
-                            CurrentValue[ cell, { TaggingRules, "PageData", "PageCount" }, 1 ],
-                            StandardForm
-                        ]
-                    },
-                    FontFamily -> "Roboto",
-                    FontSize   -> 10
-                ]
-            },
-            Alignment -> Center,
-            Spacings  -> 0.1
-        ],
-        Initialization   :> (
-            cell = If[ $CloudEvaluation,
-                       Wolfram`ChatNB`x; EvaluationCell[ ],
-                       ParentCell @ EvaluationCell[ ]
-                   ]
-        ),
-        UnsavedVariables :> { cell }
-    ];
-
-
-tabbedChatOutputCellDingbat[ arg_ ] := Column[
-    {
-        Style[ "", ShowStringCharacters -> False ],
-        RawBoxes @ arg,
-        $tabbedOutputControls
-    },
-    Alignment -> Center,
-    Spacings  -> 0.1
-];
-
-$chatInputActiveCellDingbat = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[ ];
-$chatInputCellDingbat       = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ];
-$chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ];
-
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cell Insertion Point Cell*)
@@ -750,6 +662,15 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 $workspaceChatDockedCells = {
+    With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
+        Cell[ BoxData @
+            GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ],
+            "NotebookAssistant`TopStripe",
+            CellFrame        -> False,
+            CellFrameMargins -> { { 0, 0 }, { -3, -6 } }, (* negative margins to reduce cell height *)
+            CellMargins      -> 0
+        ]
+    ],
     Cell[
         BoxData @ DynamicBox[
             ToBoxes[
@@ -757,15 +678,7 @@ $workspaceChatDockedCells = {
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeWorkspaceChatDockedCell" ],
                 StandardForm
             ],
-            Initialization :> With[ { nbo = EvaluationNotebook[ ] },
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                    "AttachWorkspaceChatInput",
-                    nbo,
-                    If[ Cells[ nbo ] =!= { }, Bottom, Top ]
-                ]
-            ],
-            TrackedSymbols :> { }
+            DestroyAfterEvaluation -> True
         ],
         CellFrame        -> 0,
         CellFrameMargins -> 0,
@@ -802,6 +715,36 @@ inlineResources[ expr_ ] := expr /. {
 (*other box constructs*)
 
 
+userMessageBoxFrame = Function[ x, Evaluate @
+    PaneBox[
+        OverlayBox[
+            {
+                FrameBox[
+                    x,
+                    BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                    Background     -> color @ "UserMessageBoxBackground",
+                    FrameMargins   -> { { 14, 8 }, { 8, 8 } },
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "UserMessageBoxFrame" ],
+                    ImageMargins   -> { { 8, 0 }, { 0, 0 } },
+                    RoundingRadius -> 8,
+                    StripOnInput   -> False
+                ],
+                DynamicBox[
+                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "MessageBoxUserIcon" ],
+                    FrameMargins -> { { 0, 0 }, { 0, 13 } },
+                    SingleEvaluation -> True
+                ]
+            },
+            All,
+            1,
+            Alignment -> { Left, Top }
+        ],
+        Alignment -> Right,
+        ImageSize -> { Full, Automatic }
+    ]
+]
+
+
 assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
     FrameBox[
         x,
@@ -816,31 +759,33 @@ assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
 ]
 
 assistantMessageBoxFrame = Function[ x, Evaluate @
-    FrameBox[
-        x,
-        BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-        Background     -> color @ "NA_AssistantMessageBoxBackground", (* TWEAK *)
-        FrameMargins   -> 8,
-        FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ], (* TWEAK *)
-        ImageSize      -> { Scaled[ 1 ], Automatic },
-        RoundingRadius -> 8, (* tweaked *)
-        StripOnInput   -> False
-    ]
-]
-
-
-(* Sidebar: this used to be a CellFrameLabel within the ChatOutput style, but that option isn't supported in inline cells in the side bar *)
-assistantMessageBoxLabel =
-PaneBox[
-    DynamicBox[
-        ToBoxes[
-            Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
-            StandardForm
+    PaneBox[
+        OverlayBox[
+            {
+                FrameBox[
+                    x,
+                    BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                    Background     -> color @ "NA_AssistantMessageBoxBackground",
+                    FrameMargins   -> { { 14, 8 }, { 8, 8 } },
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ],
+                    ImageMargins   -> { { 8, 0 }, { 0, 0 } },
+                    ImageSize      -> { Scaled[ 1 ], Automatic },
+                    RoundingRadius -> 8,
+                    StripOnInput   -> False
+                ],
+                DynamicBox[
+                    FEPrivate`FrontEndResource[ "ChatbookExpressions", "MessageBoxAssistantIcon" ],
+                    FrameMargins -> { { 0, 0 }, { 0, 13 } },
+                    SingleEvaluation -> True                                        
+                ]
+            },
+            All,
+            1,
+            Alignment -> { Left, Top }
         ],
-        SingleEvaluation -> True
-    ],
-    FrameMargins -> { { 5, 0 }, { 0, 23 } }  (* TWEAK: push down the icon to align in the overlay *)
+        Alignment -> Left,
+        ImageSize -> { Full, Automatic }
+    ]
 ]
 
 

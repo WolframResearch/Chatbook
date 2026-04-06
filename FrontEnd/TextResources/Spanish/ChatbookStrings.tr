@@ -172,6 +172,7 @@
 "UIModelsServices" -> "Servicios",
 "UIAISettings" -> "Configuraci\[OAcute]n de IA",
 "UIAdvancedSettings" -> "Configuraci\[OAcute]n avanzada",
+"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
 "UIModelsServicesGet" -> "Obteniendo los servicios disponibles\[Ellipsis]",
 "UIModelsGet" -> "Obteniendo modelos disponibles\[Ellipsis]",
 "UIModelsNoList" -> "Conectar para la lista de modelos",
@@ -214,6 +215,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
+"ChatbarFieldHint" -> "\[DownQuestion]Qu\[EAcute] te gustar\[IAcute]a hacer?",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de Notebook Assistant\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",
@@ -242,7 +244,7 @@
 "WorkspaceHistoryNextPage" -> "Siguiente p\[AAcute]gina",
 "WorkspaceHistoryLastPage" -> "\[CapitalUAcute]ltima p\[AAcute]gina",
 "WorkspaceHistoryTitle" -> "Historial",
-"WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryFieldHint" -> "Buscar",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",
