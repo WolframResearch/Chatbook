@@ -296,6 +296,7 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
 
 			);
+			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
   ]
@@ -349,17 +350,7 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> co
 					If[	asc["Status"] === "Fixed"
 						,	$fixed[asc["Iteration"]] = (True // decholabel["fixed:"])
 							;
-							asc["Score"] =
-								(scoreCode@fixed["Code"] -
-									(CodeInspect[fixed["Code"]]
-										//	Cases[InspectionObject[	___,
-															"UnusedVariable", ___,
-															"Scoping", ___,
-															KeyValuePattern["Argument" -> "Module"],
-															 ___]]
-										// Length
-									)
-								)
+							asc["Score"] = scoreCode@fixed["Code"]
 					]
 					;
 					asc["Code"] = fixed["Code"]
@@ -376,7 +367,7 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> co
 (*Patterns*)
 
 
-$$AllBracketsPatterns= Alternatives[$$FatalGroupMissingCloserFatalUnexpectedCloser,$$FatalUnexpectedCloser,$$FatalGroupMissingCloser]
+$$AllBracketsPatterns= Alternatives[$$FatalGroupMissingCloserFatalUnexpectedCloser, $$FatalUnexpectedCloser, $$FatalGroupMissingCloser]
 
 (* ::Subsection:: *)
 (*MCUC*)
@@ -422,7 +413,7 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
        					,
        						(* UC outside GMC *)
        						decho["UC outside GMC"];
-       						 ; (* 1st solution: replace the bad closing bracket type with the expected type *)
+       							(* 1st solution: replace the bad closing bracket type with the expected type *)
 								codeTokenized = CodeTokenize[code, SourceConvention -> "SourceCharacterIndex"];
 								wrongLeafNode = SelectFirst[codeTokenized, 	And[ #[[-1, 1, 2]] > gmc[[-1, 1, 2]]
 																				,MatchQ[#[[2]], wrongClosingBrackets]] &]//
@@ -443,14 +434,16 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
 									,Join[extraLeafNodes,{wrongLeafNode}]
 								] // Map[<|"Code"->#,"Pattern"->"MCUC", "Type"->"D","DefaultScore"->0|>&]//MapAt[0.5&,{-1,"DefaultScore"}]//DeleteDuplicates (*//EchoLabel["fix2"]*)
 								(*fix2=ReplaceAll[ccp,extraLeafNodes->Nothing]//ToSourceCharacterString//List//EchoLabel["fix2"]*)
+
 								; (* 3rd solution: add missing closer *)
 								fix3=fixPatternBrackets[$EvaluatorPattern][code,$$FatalGroupMissingCloser]//MapAt[StringJoin["MCUC/",#]&, {All,"Pattern"}](*//EchoLabel["fix3"]*)
 								;
 								Join[fix1,fix2,fix3] // Replace[{_Failure..} :> Failure["ToSourceCharacterString","MCUC"]]
        					,
-       					(* UC inside GMC *)
+       						(* UC inside GMC *)
        						decho["UC inside GMC"];
-								fix1=(
+								fix1=
+								(
 								ccp
 								//
 								If[gmc[[1]] === Association
@@ -460,22 +453,23 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
 									#
 								]&
 								// ReplaceAll[Extract[gmc, Most@posUC[[1]]] -> ErrorNode[Token`Error`UnexpectedCloser, newClosingBracket, _]]
-       						 // ToSourceCharacterString // Replace[Failure[x_,___]:>Failure["ToSourceCharacterString","MCUC"]]
-       						 )//<|"Code"->#,"DefaultScore"->1,"Type"->"R2", "Pattern"->"MCUC"|>&//List;
-       						 fix3=fixPatternBrackets[$EvaluatorPattern][code,$$FatalGroupMissingCloser]//MapAt[StringJoin["MCUC/",#]&, {All,"Pattern"}]
-       						 ;
-       						 Join[fix1,fix3] // Replace[{_Failure..} :> Failure["ToSourceCharacterString","MCUC"]]
-       		]
-				;
-    			success = Not@FailureQ@codeFixed
-				;
-				If[success, Throw[Null]]
-				;
-    		,
-			{iGMCpos, Length@allGMCpos}
+       							// ToSourceCharacterString // Replace[Failure[x_,___]:>Failure["ToSourceCharacterString","MCUC"]]
+       							)//<|"Code"->#,"DefaultScore"->1,"Type"->"R2", "Pattern"->"MCUC"|>&//List;
+
+								fix3=fixPatternBrackets[$EvaluatorPattern][code,$$FatalGroupMissingCloser]//MapAt[StringJoin["MCUC/",#]&, {All,"Pattern"}]
+       							;
+       							Join[fix1,fix3] // Replace[{_Failure..} :> Failure["ToSourceCharacterString","MCUC"]]
+       				]
+					;
+    				success = Not@FailureQ@codeFixed
+					;
+					If[success, Throw[Null]]
+					;
+    			,
+				{iGMCpos, Length@allGMCpos}
 			]
 			;
-   		codeFixed // Replace[x_String :> {x}] //dechofunction["MCUC: Number of possible fixes",Length]
+   			codeFixed // Replace[x_String :> {x}] //dechofunction["MCUC: Number of possible fixes",Length]
 	]
 
 deleteTokenBarBeforeClosingBracket[cst_, errorNode_]:=
@@ -643,9 +637,21 @@ scoreCode[code_String]:=
 		,
 		Block[{$funcsSyntax=allpat},
 			(*Echo[$funcsSyntax,"$funcsSyntax"];*)
-			Map[scoreCallNode, cns]//Total
+			Total@Map[scoreCallNode, cns] - countModuleUnusedVariables[code]
+
 		]
 	]
+
+countModuleUnusedVariables[code_String]:=
+	(
+	CodeInspect[code]	//	Count[	InspectionObject[	___,
+														"UnusedVariable", ___,
+														"Scoping", ___,
+														KeyValuePattern["Argument" -> "Module"],
+														___
+									]
+							]
+	)
 
 funcsNotToScore=Alternatives["Rule","List","Plus","Times","Power"]
 
