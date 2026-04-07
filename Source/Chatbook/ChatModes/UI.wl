@@ -39,7 +39,7 @@ $inputFieldOptions = Sequence[
 $inputFieldFrameOptions = Sequence[
     Alignment      -> { Automatic, Baseline },
     Background     -> color @ "NA_ChatInputFieldBackground",
-    FrameMargins   -> { { 5, 1 }, { 1, 1 } },
+    FrameMargins   -> { { 7, 3 }, { 3, 3 } },
     FrameStyle     -> Directive[ AbsoluteThickness[ 1.75 ], color @ "NA_ChatInputFieldFrame" ],
     RoundingRadius -> 8
 ];
@@ -1405,7 +1405,7 @@ Overlay[
                         LineBreakWithin -> False
                     ]
                 },
-                Spacer @ 7,
+                Spacer @ 0,
                 StripOnInput -> True
             ] },
             RawBoxes @ DynamicBox @ If[ cachedChatInput === "", fieldHintBoxes, "" ]
