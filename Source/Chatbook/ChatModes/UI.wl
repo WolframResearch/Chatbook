@@ -199,7 +199,10 @@ writeSidebarChatTitleCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTit
         
         cellExpr = Join[
             Insert[
-                DeleteCases[ makeWorkspaceChatSubDockedCellExpression[ content, "SidebarChatTitleCell" ], _[ Magnification, _] ],
+                DeleteCases[
+                    makeWorkspaceChatSubDockedCellExpression[ content, color @ "NA_ToolbarTitleBackground", "SidebarChatTitleCell" ],
+                    _[ Magnification, _]
+                ],
                 "NotebookAssistant`Sidebar`ChatTitleCell",
                 2
             ],
@@ -1162,12 +1165,13 @@ makeWorkspaceChatDockedCell // endDefinition;
 (*makeWorkspaceChatSubDockedCellExpression*)
 makeWorkspaceChatSubDockedCellExpression // beginDefinition;
 
-makeWorkspaceChatSubDockedCellExpression[ content_, tag_String ] := Cell[ BoxData @ ToBoxes @
+makeWorkspaceChatSubDockedCellExpression[ content_, bgColor_, tag_String ] := Cell[ BoxData @ ToBoxes @
     Framed[
         content,
-        Background   -> color @ "NA_ToolbarTitleBackground",
+        Alignment    -> { Center, Center },
+        Background   -> bgColor,
         FrameMargins -> { { 7, 7 }, { 4, 4 } },
-        FrameStyle   -> color @ "NA_ToolbarTitleBackground",
+        FrameStyle   -> bgColor,
         ImageMargins -> 0,
         ImageSize    -> Scaled[1.]
     ],
@@ -1179,20 +1183,6 @@ makeWorkspaceChatSubDockedCellExpression[ content_, tag_String ] := Cell[ BoxDat
 ];
 
 makeWorkspaceChatSubDockedCellExpression // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*writeWorkspaceChatSourcesDockedCell*)
-writeWorkspaceChatSourcesDockedCell // beginDefinition;
-
-writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
-setCurrentValue[ nbo, DockedCells, Join[
-    AbsoluteCurrentValue[ nbo, DockedCells ],
-    { makeWorkspaceChatSubDockedCellExpression[ content, "WorkspaceChatSubDockedCell" ] } ]
-];
-(* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
-If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
-);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1214,6 +1204,7 @@ setCurrentValue[ nbo, DockedCells,
                     ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
                     "WorkspaceChatToolbarTitle"
                 ],
+                color @ "NA_ToolbarTitleBackground",
                 "WorkspaceChatTitleDockedCell"
             ],
             b
@@ -2620,8 +2611,11 @@ toggleOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
                                     makeWorkspaceChatSubDockedCellExpression[
                                         Style[
                                             tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                            FontColor -> color @ "NA_SourcesDockedCellFont", FontFamily -> "Source Sans Pro", FontSlant -> Italic
+                                            FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                            FontFamily -> "Source Sans Pro",
+                                            FontSlant  -> Italic
                                         ],
+                                        LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                                         "SidebarSourcesDockedCell"
                                     ],
                                     _[ Magnification, _]
@@ -2676,19 +2670,32 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
                         Framed[
                             Style[
                                 tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                FontColor -> color @ "NA_SourcesDockedCellFont", FontFamily -> "Source Sans Pro", FontSlant -> Italic
+                                FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                FontFamily -> "Source Sans Pro",
+                                FontSlant  -> Italic
                             ],
-                            Background   -> color @ "NA_ToolbarTitleBackground",
+                            Alignment    -> { Center, Center },
+                            Background   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                             FrameMargins -> { { 7, 7 }, { 4, 4 } },
-                            FrameStyle   -> color @ "NA_ToolbarTitleBackground",
+                            FrameStyle   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                             ImageMargins -> 0,
                             ImageSize    -> Scaled[ 1. ]
                         ],
-                        attachedOverlayMenuFrame[ nbo, None, ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ] ]
+                        attachedOverlayMenuFrame[
+                            nbo,
+                            None,
+                            ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                            LightDarkSwitched[ RGBColor["#FFFFFF"], RGBColor["#191919"] ]
+                        ]
                     },
                     Spacings -> { 0, 0 }
                 ],
-                attachedOverlayMenuFrame[ nbo, None, ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ] ]
+                attachedOverlayMenuFrame[
+                    nbo,
+                    None,
+                    ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                    color @ "NA_ChatInputFieldBackgroundArea"
+                ]
             ],
             "AttachedOverlayMenu",
             CellTags -> name,
@@ -2712,7 +2719,12 @@ attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
         AttachCell[
             anchor,
             Cell[
-                BoxData @ ToBoxes @ attachedOverlayMenuFrame[ nbo, sidebarCell, ConfirmMatch[ overlayMenu[ nbo, sidebarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ] ],
+                BoxData @ ToBoxes @ attachedOverlayMenuFrame[
+                    nbo,
+                    sidebarCell,
+                    ConfirmMatch[ overlayMenu[ nbo, sidebarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                    If[ name == "Sources", LightDarkSwitched[ RGBColor["#FFFFFF"], RGBColor["#191919"] ], color @ "NA_ChatInputFieldBackgroundArea" ]
+                ],
                 "AttachedOverlayMenu",
                 CellTags      -> name,
                 Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
@@ -2730,12 +2742,12 @@ attachOverlayMenu // endDefinition;
 
 attachedOverlayMenuFrame // beginDefinition;
 
-attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Framed[
+attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_, bgColor_ ] := Framed[
     content,
     Alignment    -> { Left, Top },
-    Background   -> color @ "NA_ChatInputFieldBackgroundArea",
+    Background   -> bgColor,
     FrameMargins -> { { 5, 5 }, { 5, 5 } },
-    FrameStyle   -> color @ "NA_ChatInputFieldBackgroundArea",
+    FrameStyle   -> bgColor,
     If[ MatchQ[ appContainer, _CellObject ],
         ImageSize -> Dynamic[ AbsoluteCurrentValue[ appContainer, "ViewSize" ]/(0.85*AbsoluteCurrentValue[ nbo, Magnification ]) ]
         ,

@@ -2131,13 +2131,6 @@ Dispatch[{
 		 "DC"     -> "NA_SidebarToolbar",
 		 "Notes"  -> "NA docked cell area is already dark"
 	|>,
-	"NA_SourcesDockedCellFont" -> <|
-		 "Light"  -> GrayLevel[0.2],
-		 "Dark"   -> RGBColor[0.7411764, 0.8941176, 1.],
-		 "Method" -> "Design",
-		 "DC"     -> "NA_Toolbar",
-		 "Notes"  -> "NA docked cell area is already dark"
-	|>,
 	"NA_Toolbar" -> <|
 		 "Light"  -> RGBColor[0.9333333, 0.976471, 1.],
 		 "Dark"   -> RGBColor[0.1490196, 0.2078431, 0.2549019],
