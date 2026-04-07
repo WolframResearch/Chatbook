@@ -103,6 +103,8 @@
 "PreferencesContentToolsTab" -> "Herramientas",
 "PreferencesContentEnableAssistanceLabel" -> "Habilitar asistencia autom\[AAcute]tica",
 "PreferencesContentEnableAssistanceTooltip" -> "Si han sido habilitadas, las sugerencias autom\[AAcute]ticas proporcionadas por IA ser\[AAcute]n agregadas luego de los resultados de la evaluaci\[OAcute]n.",
+"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
+"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
 "PreferencesContentPersonaLabel" -> "Persona:",
 "PreferencesContentLLMServiceLabel" -> "Servicio LLM:",
 "PreferencesContentModelLabel" -> "Modelo:",

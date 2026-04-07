@@ -27,6 +27,8 @@ $$preferencesPage = Alternatives @@ $preferencesPages;
 $preferencesScope := $FrontEnd;
 $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_FrontEndObject } ];
 
+$preferencesContentEnabledQ = True;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cloud Overrides*)
@@ -118,12 +120,12 @@ createPreferencesContent[ ] := Enclose[
                 Background   -> None,
                 FrameMargins -> { { 2, 2 }, { 2, 3 } },
                 ImageMargins -> { { 10, 10 }, { 2, 2 } },
-                ImageSize    -> { $preferencesWidth, Automatic },
+                ImageSize    -> { Scaled[ 1 ], Automatic },
                 LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
             ];
 
             (* Create a reset button that will reset preferences to default settings: *)
-            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
+            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> Scaled[ 1 ] ];
 
             (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
             makeScrollableInCloud @ Grid[
@@ -159,7 +161,7 @@ makeScrollableInCloud // beginDefinition;
 
 makeScrollableInCloud[ expr_ ] /; $CloudEvaluation :=
     Pane[ Pane[ expr, ImageMargins -> { { 0, 10 }, { 0, 0 } } ],
-          ImageSize  -> { Automatic, $cloudPreferencesHeight },
+          ImageSize  -> { $preferencesWidth, $cloudPreferencesHeight },
           Scrollbars -> { None, True }
     ];
 
@@ -204,6 +206,111 @@ preferencesContent[ "Tools" ] := scopedTrackedDynamic[ toolSettingsPanel[ ], { "
 preferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disabledAIOverlayBanner*)
+
+disabledAIOverlayBanner // beginDefinition;
+
+disabledAIOverlayBanner[ ] :=
+Framed[
+    Grid[
+        { {
+            Replace[
+                FrontEndResource[ "ChatbookExpressions", "InformationTooltip" ],
+                HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 40, 40 },
+                1
+            ] // RawBoxes,
+            Grid[
+                {
+                    { tr @ "PreferencesContentAIDisabledByAdmin" },
+                    { tr @ "PreferencesContentAIDisabledLearnMore" }
+                },
+                Alignment -> { Left, Center }
+            ]
+        } },
+        Alignment -> { Left, Center }
+    ],
+    Alignment      -> { Left, Top },
+    Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
+    ImageMargins   -> { { 0, 0 }, { 10, 0 } },
+    ImageSize      -> Scaled[ 1 ],
+    RoundingRadius -> 1
+];
+
+disabledAIOverlayBanner // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disabledAIOverlay*)
+
+disabledAIOverlay // beginDefinition;
+
+(* Option 1: Overlay
+    Pros: can more closely match OS TabView background color
+    Cons: ImageSize not well determined and can push Preferences reset button fairly low to the bottom of a pane *)
+(* disabledAIOverlay[ content_ ] :=
+If[ $preferencesContentEnabledQ,
+    content
+    ,
+    DynamicModule[ { imageSize = { Scaled[ 1 ], Scaled[ 1 ] } },
+        Grid[
+            {
+                { disabledAIOverlayBanner[ ] },
+                {
+                    Overlay[
+                        {
+                            Pane[ content, Alignment -> { Left, Top }, AppearanceElements -> None, ImageSize -> Dynamic @ imageSize ],
+                            Deploy @ Graphics[
+                                Background -> Switch[ $OperatingSystem,
+                                    "MacOSX", LightDarkSwitched[ GrayLevel[ 0.9745098039215686, 0.5 ], GrayLevel[ 0.15686274509803920, 0.5 ] ],
+                                    _,        LightDarkSwitched[ GrayLevel[ 0.9607843137254901, 0.5 ], GrayLevel[ 0.15294117647058822, 0.5 ] ] ],
+                                ImageSize  -> Dynamic @ imageSize ]
+                        },
+                        { 1, 2 },
+                        2
+                    ]
+                }
+            },
+            Alignment -> { Left, Top },
+            Spacings  -> { 0, 0 }
+        ]
+    ]
+]; *)
+
+(* Option 2: ContentsOpacity
+    Pros: easier to implement; does not push down reset button
+    Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
+
+disabledAIOverlay[ content_ ] :=
+If[ $preferencesContentEnabledQ,
+    content
+    ,
+    Grid[
+        {
+            { disabledAIOverlayBanner[ ] },
+            {
+                 (* "controlText" isn't a 1-to-1 match with the enabled state, but it's close *)
+                RawBoxes @ Cell[ BoxData @ ToBoxes @
+                    Style[ content, "controlText", Enabled -> False ],
+                    Background -> Switch[ $OperatingSystem,
+                        "MacOSX", LightDarkSwitched[ GrayLevel[ 0.9745098039215686, 0.5 ], GrayLevel[ 0.15686274509803920, 0.5 ] ],
+                        _,        LightDarkSwitched[ GrayLevel[ 0.9607843137254901, 0.5 ], GrayLevel[ 0.15294117647058822, 0.5 ] ]
+                    ],
+                    Enabled            -> False,
+                    PrivateCellOptions -> { "ContentsOpacity" -> 0.25 }
+                ]
+            }
+        },
+        Alignment -> { Left, Top },
+        Spacings  -> { 0, 0 }
+    ]
+];
+
+
+disabledAIOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
 
@@ -212,18 +319,15 @@ preferencesContent // endDefinition;
 (*notebookSettingsPanel*)
 notebookSettingsPanel // beginDefinition;
 
-notebookSettingsPanel[ ] := Pane[
+notebookSettingsPanel[ ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> scopeInitialization[ display = createNotebookSettingsPanel[ ] ],
         SynchronousInitialization -> False
-    ],
-    FrameMargins -> { { 8, 8 }, { 13, 13 } },
-    Spacings     -> { 0, 1.5 }
-];
+    ];
 
 notebookSettingsPanel // endDefinition;
 
@@ -304,7 +408,11 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Cache the content in case panel is redrawn: *)
-        createNotebookSettingsPanel[ ] = content
+        createNotebookSettingsPanel[ ] =  Pane[
+            content,
+            FrameMargins -> { { 8, 8 }, { 13, 13 } },
+            Spacings     -> { 0, 1.5 }
+        ]
     ],
     throwInternalFailure
 ];
@@ -490,7 +598,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
 ];
 
 makeModelSelector0[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
-    Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ];
+    Pane[ failure, ImageSize -> { Scaled[ 0.922 ], Automatic } ];
 
 makeModelSelector0 // endDefinition;
 
@@ -1206,7 +1314,7 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := Catch[ servicesSettingsPanel0[ ], $servicesSettingsTag ];
+servicesSettingsPanel[ ] := Catch[ Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ servicesSettingsPanel0[ ] ], $servicesSettingsTag ];
 servicesSettingsPanel // endDefinition;
 
 servicesSettingsPanel0 // beginDefinition;
@@ -1488,7 +1596,7 @@ makeServiceGridRows[ services_Association ] :=
     KeyValueMap[ makeServiceGridRow, DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ] ];
 
 makeServiceGridRows[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
-    Throw[ Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ], $servicesSettingsTag ];
+    Throw[ Pane[ failure, ImageSize -> { Scaled[ 0.922 ], Automatic } ], $servicesSettingsTag ];
 
 makeServiceGridRows // endDefinition;
 
@@ -1643,7 +1751,7 @@ personaSettingsPanel // beginDefinition;
 personaSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         Initialization            :> scopeInitialization[ display = CreatePersonaManagerPanel[ ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
@@ -1663,7 +1771,7 @@ toolSettingsPanel // beginDefinition;
 toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ display ],
+        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
         Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
