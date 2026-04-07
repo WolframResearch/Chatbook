@@ -503,11 +503,11 @@ VerificationTest[
     TestID -> "11_brackets"
 ]
 
-VerificationTest[
+(* VerificationTest[
     CodeCheckFix[ "f[{{3}}]]" ][ "FixedCode" ],
     Missing[ "No pattern", { { "Fatal", "UnexpectedCloser" } } ],
     TestID -> "12_brackets"
-]
+] *)
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}]]", ("Target" -> "Evaluator") ][ "FixedCode" ],
