@@ -222,8 +222,8 @@ Framed[
             ] // RawBoxes,
             Grid[
                 {
-                    { "AI features have been disabled by an administrator" },
-                    { "Learn more \[RightGuillemet]" }
+                    { tr @ "PreferencesContentAIDisabledByAdmin" },
+                    { tr @ "PreferencesContentAIDisabledLearnMore" }
                 },
                 Alignment -> { Left, Center }
             ]
