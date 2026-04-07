@@ -261,7 +261,7 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 		{success = MatchQ[fix, KeyValuePattern[{"Code"->_String, "Status"->"Fixed"}]]}
 		,
 		{ "Success" -> success
-		, "TotalFixes" -> Length@Keys@Lookup[fix, "Fixes", <||>]
+		, "TotalFixes" -> If[success, Length@Keys@Lookup[fix, "Fixes", <||>], Missing["No fix found"]]
 		, "LikelyFalsePositive" -> False
 		, "SafeToEvaluate" -> If[success, True, False]
 		, "Pattern" -> pat
@@ -273,10 +273,10 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 )
 
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
-	Block[	{$fixed = <||>, $MaxIter = 10, iter = 0, success}
+	Block[	{$fixed = <||>, $MaxIter = 10, iter = 0, success, res, resf}
 			,
 			res =	NestWhile[	(
-								Echo[iter = iter + 1, "iter----------------"];
+								decho[iter = iter + 1, "iter----------------"];
 								ReplaceAll[#, asc : KeyValuePattern[{"Code" -> _String, "Status" -> "ToFix"}] :> generateBracketFixes[asc]]
 								)&
 								,
@@ -289,11 +289,11 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 								, $MaxIter
 					];
 
-			Echo[iter, "number of iterations"];
+			decho[iter, "number of iterations"];
 
-			resf= ( Flatten[res] // EchoFunction["final: raw number", Length] //
-					Select[#Status === "Fixed" &] // EchoFunction["final: fixed", Length] //
-					Select[SyntaxQ @ #Code &] // EchoFunction["final: SyntaxQ", Length]
+			resf= ( Flatten[res] // dechofunction["final: raw number", Length] //
+					Select[#Status === "Fixed" &] // dechofunction["final: fixed", Length] //
+					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
 
 			);
 
@@ -303,11 +303,13 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 
 selectFixWithHighestScore[listAsc_] :=
 (		listAsc
-	//	ReverseSortBy[#DefaultScore &] // DeleteDuplicatesBy[#Code &] // EchoFunction["final: without duplicates", Length]
-	//	With[{maxscore = Max[#[[All, "Score"]]]}, Select[#, #Score == maxscore &]] & // EchoFunction["Final number with max score:", Length]
+	//	ReverseSortBy[#DefaultScore &] // DeleteDuplicatesBy[#Code &]
+	//	dechofunction["final: without duplicates", Length]
+	//	With[{maxscore = Max[#[[All, "Score"]]]}, Select[#, #Score == maxscore &]] &
+	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
-	//	EchoFunction["Final number with max score + highest default score :", Length]
-	//	Replace[{{asc_}:>asc, {__}->Missing["Too many fixes"], {}->Missing["No fix found"]}]
+	//	dechofunction["Final number with max score + highest default score :", Length]
+	//	Replace[{{asc_}:>asc, {__}->Missing["Mulitple fixes found"], {}->Missing["No fix found"]}]
 )
 
 
@@ -345,9 +347,19 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> co
 									]
 					;
 					If[	asc["Status"] === "Fixed"
-						,	$fixed[asc["Iteration"]] = (True // EchoLabel["fixed:"])
+						,	$fixed[asc["Iteration"]] = (True // decholabel["fixed:"])
 							;
-							asc["Score"] = scoreCode@fixed["Code"]
+							asc["Score"] =
+								(scoreCode@fixed["Code"] -
+									(CodeInspect[fixed["Code"]]
+										//	Cases[InspectionObject[	___,
+															"UnusedVariable", ___,
+															"Scoping", ___,
+															KeyValuePattern["Argument" -> "Module"],
+															 ___]]
+										// Length
+									)
+								)
 					]
 					;
 					asc["Code"] = fixed["Code"]
@@ -365,20 +377,6 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> co
 
 
 $$AllBracketsPatterns= Alternatives[$$FatalGroupMissingCloserFatalUnexpectedCloser,$$FatalUnexpectedCloser,$$FatalGroupMissingCloser]
-
-
-(*$$SupportedPatterns=
-	Alternatives[
-	$$ErrorCommaFatalExpectedOperand={{"Error", "Comma"}.., {"Fatal", "ExpectedOperand"}..},
-	$$ErrorComma={{"Error","Comma"}..},
-	$$FatalExpectedOperandFatalOpenSquare={{"Error", "ImplicitTimesFunction"}...,{"Fatal", "ExpectedOperand"}.., {"Fatal", "OpenSquare"}..},
-	$$BadSingleSnakeUsage = HoldPattern[{___, {"Fatal", "BadSingleSnakeUsage"}->#, ___}]&@_,
-	$$BadSnakeUsage = HoldPattern[{___, {"Fatal", "BadSnakeUsage"}->#, ___}]&@_,
-	$$SuspiciousQuantityUnitName = HoldPattern[{___, {"Fatal", "SuspiciousQuantityUnitName"}->#, ___}]&@_,
-	$$SuspiciousSymbol = HoldPattern[{___, {"WarningChatbook", "SuspiciousFunctionSymbol"}->#, ___}]&@_,
-	$$FatalExpectedOperand={{"Fatal","ExpectedOperand"}..}
-	]*)
-
 
 (* ::Subsection:: *)
 (*MCUC*)
@@ -406,7 +404,7 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
    			, success = False
    			}
   			,
-  			Echo["********** MCUC **********"];
+  			decho["********** MCUC **********"];
 
   			allGMCpos = Position[ccp, _GroupMissingCloserNode];
 
@@ -423,7 +421,7 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
 					If[	posUC === {}
        					,
        						(* UC outside GMC *)
-       						Echo["UC outside GMC"];
+       						decho["UC outside GMC"];
        						 ; (* 1st solution: replace the bad closing bracket type with the expected type *)
 								codeTokenized = CodeTokenize[code, SourceConvention -> "SourceCharacterIndex"];
 								wrongLeafNode = SelectFirst[codeTokenized, 	And[ #[[-1, 1, 2]] > gmc[[-1, 1, 2]]
@@ -451,7 +449,7 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
 								Join[fix1,fix2,fix3] // Replace[{_Failure..} :> Failure["ToSourceCharacterString","MCUC"]]
        					,
        					(* UC inside GMC *)
-       						Echo["UC inside GMC"];
+       						decho["UC inside GMC"];
 								fix1=(
 								ccp
 								//
@@ -477,7 +475,7 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
 			{iGMCpos, Length@allGMCpos}
 			]
 			;
-   		codeFixed // Replace[x_String :> {x}] //EchoFunction["MCUC: Number of possible fixes",Length]
+   		codeFixed // Replace[x_String :> {x}] //dechofunction["MCUC: Number of possible fixes",Length]
 	]
 
 deleteTokenBarBeforeClosingBracket[cst_, errorNode_]:=
@@ -500,7 +498,7 @@ $$FatalUnexpectedCloser = {___, {"Fatal", "UnexpectedCloser"}, ___};
 
 fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ : {}] :=
 	Module[{success,fixedCode,allCodeScore,allCodeNoScore},
-	Echo["**********  UC  **********"];
+	decho["**********  UC  **********"];
 	With[
 		{
 		ccp=CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"],
@@ -527,7 +525,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ :
 					//
 					Map[<|"Code"->#,"DefaultScore"->0,"Type"->"D", "Pattern"->"UC"|>&]// MapAt[1&,{-1,"DefaultScore"}]
 					//
-					DeleteDuplicates //EchoFunction["UC: Number of possible fixes",Length]
+					DeleteDuplicates //dechofunction["UC: Number of possible fixes",Length]
 ]]
 
 
@@ -548,7 +546,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_
 			,allCodeNoScore
 			}
 			,
-			Echo["**********  MC  **********"]
+			decho["**********  MC  **********"]
 			;
 			With[
 			{
@@ -590,7 +588,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_
 							)&
 							, finalgnso
 							]//MapAt[1&,{-1,"DefaultScore"}]//
-						DeleteDuplicates //EchoFunction["MC: Number of possible fixes",Length]
+						DeleteDuplicates //dechofunction["MC: Number of possible fixes",Length]
 	]]
 
 
@@ -628,10 +626,11 @@ $funcsSyntax={};
 (*updating SyntaxInformation*)
 newsyntax=
 {
-	"Table"->{_,"List"...},
-	"N"->Alternatives[{_,Repeated[Integer| Real,{0,1}]},{_,"$MachinePrecision"}],
+	"Table"->{_,Alternatives["List"->_, Integer]...},
+	"N"->Alternatives[{_,Repeated[Integer| Real,{0,1}]}],
 	"FaceForm"->Alternatives[{},{_},{_,Except["EdgeForm"->_]}],
-	"Prepend"->Alternatives[{_},{_,_}]
+	"Prepend"->Alternatives[{_},{_,_}],
+	"Column"->{"List" -> {_, __}} | {"List" -> {_, __}, Symbol -> _} | {"List" -> {_, __}, Symbol -> _, _}
 };
 Map[($syntargs[#[[1]]]=#[[2]])&,newsyntax];
 
@@ -664,14 +663,20 @@ Catch[
 		Function[{funcname,args},
 			If[MatchQ[args,syntaxPattern](*//EchoLabel["MatchQ"]*)
 				,
-				Replace[args , HoldPattern[Rule]["Rule",{optionName_,_}]:>
+				Replace[args ,	{
+								HoldPattern[Rule]["Rule",{optionName_,_}]:>
 									If[MemberQ[$systemOptions[funcname]/.{_Missing->{}}, optionName]
-										, "validOptionName"
-										, Nothing
+										, 2
+										, 0
 									]
+								(* ,
+								HoldPattern[Rule]["List", a:{__}] :> Length@a *)
+								,
+								Except[_Integer]:>1
+								}
 						,{1}
 				](*//EchoLabel["After options check"]*)
-				//Length (* score == number of correct arguments*)
+				//Total (* score == number of correct arguments*)
 				,
 				0
 			]
@@ -689,7 +694,7 @@ getCallNodeArgs[cn_CallNode]:=
 							,
 							(
 								args//If[funcname=!="Rule"
-										, ReplaceAll[#,LeafNode[type_,_,_]:>type]
+										, ReplaceAll[#, {LeafNode[Symbol, name_, _] :> (Symbol -> name), LeafNode[type_, _, _] :> type}]
 										, ReplaceAll[#,{LeafNode[Symbol,name_,_],__}:>{name, _}]
 									]&
 							)
@@ -710,6 +715,7 @@ getSyntaxPattern[funcname_String]:=
 		,#
 		,(#	//ReplaceAll[#,Verbatim[RepeatedNull][s_String]:>RepeatedNull@Alternatives[s->_,s]]&
 			//ReplaceAll[Verbatim[_:"def"]->RepeatedNull[_,1]]
+			//Replace[#,Symbol->(Symbol->_),{1}]&
 		)
 	]&(*//EchoLabel["SyntaxPattern"]*)
 )
