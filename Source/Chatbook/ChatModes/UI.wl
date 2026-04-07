@@ -2187,7 +2187,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
             ],
             { Left, Bottom },
             (* The side bar's TemplateBox uses ImageMargins, so use Offset to undo those margins *)
-            If[ sidebarCellQ, Offset[ { 15, 30 }, Automatic ], 0 ],
+            If[ sidebarCellQ, Offset[ { 23, 30 }, Automatic ], Offset[ { 8, 0 }, Automatic ] ],
             { Left, Top },
             RemovalConditions -> "MouseExit"
         ]
@@ -2244,7 +2244,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
-                        Spacer[ If[ sidebarCellQ, 60, 45 ] ] 
+                        Spacer[ If[ sidebarCellQ, 40, 27 ] ]
                     },
                     Nothing
                 ]
