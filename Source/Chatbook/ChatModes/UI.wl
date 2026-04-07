@@ -940,8 +940,8 @@ Button[
                             LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ]
                         ],
                         False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ RGBColor["#F9F9F9"], RGBColor["#333333"] ],
-                            LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ]
+                            LightDarkSwitched[ RGBColor["#F9F9F9"], RGBColor["#2E2E2E"] ],
+                            LightDarkSwitched[ RGBColor["#898989"], RGBColor["#C1C1C1"] ]
                         ]
                     },
                     Dynamic @ selectionWithinQ,
