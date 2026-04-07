@@ -97,7 +97,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.94.3984462208"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.95.3984537572"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -210,8 +210,8 @@ Notebook[
            Directive[
             AbsoluteThickness[2],
             LightDarkSwitched[
-             RGBColor[0.694118, 0.835294, 0.909804],
-             RGBColor[0.376471, 0.490196, 0.560784]
+             RGBColor[0.831373, 0.941177, 1.0],
+             RGBColor[0.203922, 0.282353, 0.345098]
             ]
            ],
           ImageMargins -> {{8, 0}, {0, 0}},

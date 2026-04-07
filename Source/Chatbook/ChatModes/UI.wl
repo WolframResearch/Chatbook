@@ -1031,8 +1031,8 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
                 FrameMargins   -> { { 12, 1 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
-                        If[ mouseOverQ || selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
-                    ]&[ color @ "NA_ChatInputFieldFrame", LightDarkSwitched @ RGBColor["#898989"] ]),
+                        If[ mouseOverQ || selectionWithinQ, #1, #2 ]
+                    ]&[ LightDarkSwitched[ RGBColor["#75C2EB"], RGBColor["#669CBD"] ], LightDarkSwitched[ RGBColor["#A6A6A6"], RGBColor["#646464"] ] ]),
                 RoundingRadius -> 9
             ]
             ,
