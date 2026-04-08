@@ -129,6 +129,7 @@ Cell[
     CellFrame                -> 1.75,
     CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
+    System`CellFrameRoundingRadius -> 8,
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
     TaggingRules             -> <| "ChatNotebookSettings" -> <| |> |>
