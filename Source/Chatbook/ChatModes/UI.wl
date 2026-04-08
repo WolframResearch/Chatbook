@@ -542,34 +542,32 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                                         Boxes,
                                                         Alignment  -> { Automatic, Baseline },
                                                         Appearance -> "Frameless",
-                                                        BaseStyle  -> { FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ] }, 
+                                                        BaseStyle  -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ], FontSize  -> 13 },
                                                         BoxID      -> "AttachedChatInputField",
                                                         ContinuousAction -> True,
                                                         ImageSize  -> { Scaled[ 1 ], Automatic }
                                                     ],
                                                     With[ { fieldHintBoxes =
-                                                        ToBoxes @ Row[
+                                                        ToBoxes @ Grid[ {
                                                             {
                                                                 chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 14 ],
-                                                                tr[ "ChatbarFieldHint" ]
-                                                            },
-                                                            Spacer @ 7,
-                                                            StripOnInput -> True
+                                                                Style[ tr[ "ChatbarFieldHint" ],
+                                                                    "Text", "TextStyleInputField",
+                                                                    FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
+                                                                    FontSize        -> 13,
+                                                                    LineBreakWithin -> False
+                                                                ]
+                                                            } }, Alignment -> { Left, Center }, BaselinePosition -> { 1, 2 }, Spacings -> { 10, 0 }
                                                         ] },
                                                         Dynamic @ RawBoxes @ If[ fieldContent === "", fieldHintBoxes, "" ]
                                                     ]
                                                 },
                                                 { 1, 2 },
                                                 1,
-                                                Alignment -> { Left, Baseline },
-                                                BaseStyle -> {
-                                                    "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                                                    FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
-                                                    FontSize        -> 13,
-                                                    LineBreakWithin -> False }
+                                                Alignment -> { Left, Baseline }
                                             ],
                                             sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
-                                        } }
+                                        } }, Alignment -> { Left, Center }
                                     ],
                                     $inputFieldFrameOptions
                                 ]
@@ -608,6 +606,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                 FrameMargins -> $inputFieldPaneMargins
             ],
             {
+                "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo),
                 "ReturnKeyDown" :> (
                     If[ ! validInputStringQ @ fieldContent,
                         fieldContent = ""
@@ -615,7 +614,8 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                         input = fieldContent; fieldContent = ""; returnKeyDownQ = True
                     ])
             },
-            Method -> "Preemptive"
+            Method         -> "Preemptive",
+            PassEventsDown -> True
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
         Initialization :> (
@@ -656,7 +656,7 @@ Overlay[
             Alignment        -> { Automatic, Baseline },
             Appearance       -> "Frameless",
             BaselinePosition -> Baseline,
-            BaseStyle        -> { FontColor -> LightDarkSwitched @ RGBColor["#333333"] }, 
+            BaseStyle        -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ], FontSize -> 15, FontSlant -> "Plain" },
             BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
             ImageSize        -> size
@@ -679,7 +679,13 @@ Overlay[
                         BaselinePosition -> Baseline,
                         ImageSize        -> All
                     ],
-                    tr[ "ChatbarFieldHint" ]
+                    Style[ tr[ "ChatbarFieldHint" ],
+                        "Text", "TextStyleInputField",
+                        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontSize        -> 15,
+                        FontSlant       -> "Plain",
+                        LineBreakWithin -> False
+                    ]
                 },
                 Spacer @ 7,
                 StripOnInput -> True
@@ -690,13 +696,7 @@ Overlay[
     { 1, 2 },
     1,
     Alignment        -> { Left, Baseline },
-    BaselinePosition -> Baseline,
-    BaseStyle        -> {
-        "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
-        FontSize        -> 15,
-        FontSlant       -> "Plain",
-        LineBreakWithin -> False }
+    BaselinePosition -> Baseline
 ]
 
 chatbarInputField // endDefinition;
@@ -1010,6 +1010,7 @@ chatbarInputFieldEnabled // beginDefinition;
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, selectionWithinQ_ ] :=
+RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteAnchor, selectionAtTopQ = False, returnKeyDownQ = False },
     EventHandler[(* pre-emptive mouse-down event *)
         DynamicWrapper[
@@ -1036,39 +1037,14 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
             If[ TrueQ @ returnKeyDownQ,
                 returnKeyDownQ = False;
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                evaluateChatbarChat[ nbo, notebookWriteAnchor, selectionAtTopQ, input ]
+                evaluateChatbarChat[ nbo, None, False, input ]
             ]
             ,
             SynchronousUpdating -> False,
             TrackedSymbols      :> { returnKeyDownQ }
         ],
         {
-            "MouseDown" :> ((* a hack until we get notebook selection snapshotting *)
-                Module[ { nextCell },
-                    selectionAtTopQ = False;
-                    If[ CurrentValue[ nbo, "SelectionType" ] === "CellCaret",
-                        notebookWriteAnchor = PreviousCell @ NotebookSelection @ nbo;
-                        If[ notebookWriteAnchor === None, selectionAtTopQ = True ]
-                        ,
-                        notebookWriteAnchor = Last[ SelectedCells @ nbo, None ] ];
-                    If[ notebookWriteAnchor =!= None,
-                        Which[
-                            MemberQ[ CurrentValue[ notebookWriteAnchor, CellStyle ], "Output" | "ChatOutput" | "Input" | "ChatInput" ],
-                                nextCell = NextCell @ notebookWriteAnchor;
-                                If[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
-                                    notebookWriteAnchor = nextCell;
-                                    nextCell = NextCell @ notebookWriteAnchor;
-                                    While[ nextCell =!= None && MemberQ[ CurrentValue[ nextCell, CellStyle ], "Output" | "ChatOutput" ],
-                                        notebookWriteAnchor = nextCell;
-                                        nextCell = NextCell @ notebookWriteAnchor;]
-                                    ,
-                                    Null
-                                ],
-                            True,
-                                Null
-                        ]
-                    ]
-                ]),
+            "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo),
             (*
                 The EventHandler, if queued, still won't update the ChatOutput dynamics until the payload is completed.
                 Instead of trying to write the new ChatInput cell from this event, use a DynamicWrapper above to listen for the key event and evaluate asynchronously. *)
@@ -1365,7 +1341,7 @@ Overlay[
             Alignment        -> { Automatic, Baseline },
             Appearance       -> "Frameless",
             BaselinePosition -> Baseline,
-            BaseStyle        -> { FontColor -> LightDarkSwitched @ RGBColor["#333333"] }, 
+            BaseStyle        -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ RGBColor["#333333"], FontSize -> 15, FontSlant -> "Plain" },
             BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
             ImageSize        -> { Scaled[ 1 ], Automatic }
@@ -1374,7 +1350,13 @@ Overlay[
             ToBoxes @ Row[
                 {
                     chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 13 ],
-                    tr[ "ChatbarFieldHint" ]
+                    Style[ tr[ "ChatbarFieldHint" ],
+                        "Text", "TextStyleInputField",
+                        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontSize        -> 15,
+                        FontSlant       -> "Plain",
+                        LineBreakWithin -> False
+                    ]
                 },
                 Spacer @ 7,
                 StripOnInput -> True
@@ -1384,14 +1366,7 @@ Overlay[
     },
     { 1, 2 },
     1,
-    Alignment        -> { Left, Baseline },
-    (* BaselinePosition -> Baseline, *)
-    BaseStyle        -> {
-        "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-        FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
-        FontSize        -> 15,
-        FontSlant       -> "Plain",
-        LineBreakWithin -> False }
+    Alignment -> { Left, Baseline }
 ]
 
 workspaceInputField // endDefinition;
