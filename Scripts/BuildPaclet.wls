@@ -42,6 +42,10 @@ If[ $download,
         snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
         targetDir = FileNameJoin @ { $pacletDir, "Assets/Snippets/Streamable" };
         If[ DirectoryQ @ targetDir, DeleteDirectory[ targetDir, DeleteContents -> True ] ];
+        Print["[mengDEBUG] targetDir: ", targetDir];
+        Print["[mengDEBUG] DirectoryQ[ DirectoryExistsQ @ targetDir ]: ", DirectoryQ[ DirectoryExistsQ @ targetDir ]];
+        Print["[mengDEBUG] DirectoryQ[FileNameDrop[ targetDir, -1]]: ", DirectoryQ[FileNameDrop[ targetDir, -1]]];
+        (*GeneralUtilities`EnsureDirectory @ ParentDirectory @ targetDir;*)
         GeneralUtilities`EnsureDirectory @ FileNameDrop[ targetDir, -1];
         copied = cDir @ CopyDirectory[ snippetDir, targetDir ];
         cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets to: ", copied ];
