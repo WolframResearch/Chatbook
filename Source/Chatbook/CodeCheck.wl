@@ -276,16 +276,16 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
  Catch[
-	TimeConstrained[
+	(* TimeConstrained[ *)
 		Block[	{$fixed = <||> ,iter = 0, success, res, resf}
 			,
 			res =	NestWhile[	(
 								decho[iter = iter + 1, "iter====================================="];
-								ReplaceAll[#, asc : KeyValuePattern[{"Code" -> _String, "Status" -> "ToFix"}] :> generateBracketFixes[asc]]
+								ReplaceAll[#, asc : KeyValuePattern[{"Code" -> _String, "Status" -> "ToFix"|"Failed"}] :> generateBracketFixes[asc]]
 								)&
 								,
 								(* initial expression-association to fix*)
-								<|"Code" -> code, "Pattern"-> pattern, "Status" -> "ToFix", "Fixes" -> <||>|>
+								<|"Code" -> code, "Pattern"-> pattern, "Status" -> "ToFix", "Fixes" -> <||>, "RemainingErrors"-> <||>|>
 								,
 								(* Condition to stop iteration: by default as soon as one fix is found *)
 								(Not[(success = (Length@Keys@$fixed === extraiter))] &)
@@ -300,12 +300,12 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
 
 			);
-			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
+			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=res];
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
 		]
-		, $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
-	]
+		(* , $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
+	] *)
  ]
 
 
@@ -319,6 +319,8 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 	//	dechofunction["Final number with max score + highest default score :", Length]
 	//	Replace[{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Mulitple fixes found"]], {}->Missing["No fix found"]}]
 )
+
+generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "Failed"}]]:=Nothing
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> code_String, "Pattern"->pattern_}]]:=
 	generateBracketFixes[ascode, fixPatternBrackets[""][code,pattern]]
@@ -345,13 +347,20 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], fixes_] :=
 					;
 					asc["Pattern"] = generatePatternFromCodeCheck@CodeCheck[$EvaluatorPattern]@fixed["Code"]
 					;
-					(*Echo[asc,"asc"];*)
-					asc["Status"] = Replace[	asc["Pattern"]
-												,
-												{	Except[$$AllBracketsPatterns] -> "Fixed"
-													, {__} ->"ToFix"
-													, _ -> "Failed"
-												}
+					asc["RemainingErrors", asc["Iteration"]] = Count[asc["Pattern"], {_, "GroupMissingCloser" | "UnexpectedCloser"}]
+					;
+					(**)
+					asc["Status"] = Replace[	asc["RemainingErrors", asc["Iteration"]]
+													,
+													{	0	-> 	"Fixed",
+
+														x_	:> 	If[	TrueQ[	(x - asc["RemainingErrors", asc["Iteration"]-1]) >= 0 ]
+																	,
+																	"Failed"
+																	,
+																	"ToFix"
+																]
+													}
 									]
 					;
 					If[	asc["Status"] === "Fixed"
@@ -369,6 +378,7 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], fixes_] :=
 		]
 	]
 
+countMCUCerrors[patterns_]:=Count[patterns["InspectionObjects"], CodeInspector`InspectionObject["GroupMissingCloser" | "UnexpectedCloser", _, __]]
 
 (* ::Subsection::Closed:: *)
 (*Patterns*)
