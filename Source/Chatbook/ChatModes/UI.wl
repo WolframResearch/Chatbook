@@ -814,10 +814,11 @@ ActionMenu[
             minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] =
                 Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ])
     },
-    Appearance   -> None,
-    ImageMargins -> { { 1, 0 }, { 0, 1 } },
-    ImageSize    -> Automatic,
-    Method       -> "Preemptive"
+    Appearance       -> None,
+    DefaultBaseStyle -> {},
+    ImageMargins     -> { { 1, 0 }, { 0, 1 } },
+    ImageSize        -> Automatic,
+    Method           -> "Preemptive"
 ]
 
 chatbarOptionsMenu // endDefinition;
