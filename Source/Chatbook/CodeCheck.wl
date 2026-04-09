@@ -18,6 +18,8 @@ Needs["CodeParser`"]
 
 `CodeCheckFix
 `$UserDefinedFunctionsQ=<||>
+`$MaxIterateTimeBracketsFix=10. (*seconds*)
+`$MaxIterationsBracketsFix=10	(*iterations*)
 
 
 Begin[ "`Private`" ];
@@ -273,10 +275,12 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 )
 
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
-	Block[	{$fixed = <||>, $MaxIter = 10, iter = 0, success, res, resf}
+ Catch[
+	TimeConstrained[
+		Block[	{$fixed = <||> ,iter = 0, success, res, resf}
 			,
 			res =	NestWhile[	(
-								decho[iter = iter + 1, "iter----------------"];
+								decho[iter = iter + 1, "iter====================================="];
 								ReplaceAll[#, asc : KeyValuePattern[{"Code" -> _String, "Status" -> "ToFix"}] :> generateBracketFixes[asc]]
 								)&
 								,
@@ -286,7 +290,7 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 								(* Condition to stop iteration: by default as soon as one fix is found *)
 								(Not[(success = (Length@Keys@$fixed === extraiter))] &)
 								, 0
-								, $MaxIter
+								, $MaxIterationsBracketsFix
 					];
 
 			decho[iter, "number of iterations"];
@@ -299,10 +303,13 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
-  ]
+		]
+		, $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
+	]
+ ]
 
 
-selectFixWithHighestScore[listAsc_] :=
+selectFixWithHighestScore[listAsc_, multiple_:False] :=
 (		listAsc
 	//	ReverseSortBy[#DefaultScore &] // DeleteDuplicatesBy[#Code &]
 	//	dechofunction["final: without duplicates", Length]
@@ -310,7 +317,7 @@ selectFixWithHighestScore[listAsc_] :=
 	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
 	//	dechofunction["Final number with max score + highest default score :", Length]
-	//	Replace[{{asc_}:>asc, {__}->Missing["Mulitple fixes found"], {}->Missing["No fix found"]}]
+	//	Replace[{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Mulitple fixes found"]], {}->Missing["No fix found"]}]
 )
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> code_String, "Pattern"->pattern_}]]:=
