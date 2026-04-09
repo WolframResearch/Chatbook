@@ -238,7 +238,6 @@ $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
     "EndToken"          -> None,
-    "ForceSynchronous"  -> True,
     "ToolMethod"        -> "Service",
     "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
