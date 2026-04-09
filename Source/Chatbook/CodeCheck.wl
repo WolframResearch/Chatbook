@@ -511,7 +511,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ :
 		}
 		,
 		{
-		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&]//EchoLabel["UC finalBrackets:"]
+		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&](* //EchoLabel["UC finalBrackets:"] *)
 		}
 		,
 		If[ finalBrackets==={}
