@@ -313,15 +313,15 @@ selectFixWithHighestScore[listAsc_] :=
 	//	Replace[{{asc_}:>asc, {__}->Missing["Mulitple fixes found"], {}->Missing["No fix found"]}]
 )
 
+generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> code_String, "Pattern"->pattern_}]]:=
+	generateBracketFixes[ascode, fixPatternBrackets[""][code,pattern]]
 
-generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> code_String, "Pattern"->pattern_}]] :=
+generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], _Missing] := Association@@{ascode, "Status" -> "Failed"}
+
+generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], fixes_] :=
 	Module[{asc}
 		,
 		With[
-			{
-			fixes = fixPatternBrackets[$EvaluatorPattern][code,pattern](*//EchoLabel["fixes"]*)
-			}
-			,
 			{nfixes = Length@fixes}
 			,
 			Table[
@@ -390,7 +390,6 @@ fixPatternBrackets[target_][code_String, pat : $$FatalGroupMissingCloserFatalUne
    			, extraBracketType
    			, extraLeafNodes
    			, fix1, fix2, fix3
-   			, hs
    			, codeFixed = Missing[]
    			, success = False
    			}
@@ -507,19 +506,24 @@ fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ :
 		{allbrackets=Cases[codetoken,LeafNode[_,bracket,so_]:>so]//Select[#[[1,2]]<=errorNode[[3,1,1]]&](*//EchoLabel["UC allbrackets"]*)}
 		,
 		{
-		excludedRanges=Cases[ccp,GroupNode[Except[bracket/.{"]"->GroupSquare,")"->GroupParen,"}"->List},_],_,so_]:>so,Infinity]
-						//Select[#[[1,2]]<errorNode[[3,1,1]]&]}
-		,
-		{
-		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&](*//EchoLabel["UC finalBrackets:"]*)
+		excludedRanges=Cases[ccp,GroupNode[Except[bracket/.{"]"->GroupSquare,")"->GroupParen,"}"->List,"|>"->Association},_],_,so_]:>so,Infinity]
+						//Select[#[[1,2]]<errorNode[[3,1,1]]&]
 		}
 		,
-		fixedCode=
-					Map[(DeleteCases[codetoken,LeafNode[_,bracket,#]]//Map[ToSourceCharacterString]//StringJoin)&,finalBrackets]
-					//
-					Map[<|"Code"->#,"DefaultScore"->0,"Type"->"D", "Pattern"->"UC"|>&]// MapAt[1&,{-1,"DefaultScore"}]
-					//
-					DeleteDuplicates //dechofunction["UC: Number of possible fixes",Length]
+		{
+		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&]//EchoLabel["UC finalBrackets:"]
+		}
+		,
+		If[ finalBrackets==={}
+			,
+			Missing["UC: No fixes"]
+			,
+			Map[(DeleteCases[codetoken,LeafNode[_,bracket,#]]//Map[ToSourceCharacterString]//StringJoin)&,finalBrackets]
+			//
+			Map[<|"Code"->#,"DefaultScore"->0,"Type"->"D", "Pattern"->"UC"|>&]// MapAt[1&,{-1,"DefaultScore"}]
+			//
+			DeleteDuplicates //dechofunction["UC: Number of possible fixes",Length]
+		]
 ]]
 
 
@@ -534,10 +538,7 @@ $$FatalGroupMissingCloser = {___, {"Fatal", "GroupMissingCloser"}, ___};
 fixPatternBrackets[_][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_ : {}] :=
 	Module[{
 			 fixedCode=Missing[]
-			,success=False
 			,finalgnso
-			,allCodeScore
-			,allCodeNoScore
 			}
 			,
 			decho["**********  MC  **********"]
@@ -624,7 +625,8 @@ newsyntax=
 	"N"->Alternatives[{_,Repeated[Integer| Real,{0,1}]}],
 	"FaceForm"->Alternatives[{},{_},{_,Except["EdgeForm"->_]}],
 	"Prepend"->Alternatives[{_},{_,_}],
-	"Column"->{"List" -> {_, __}} | {"List" -> {_, __}, Symbol -> _} | {"List" -> {_, __}, Symbol -> _, _}
+	"Column"->{"List" -> {_, __}} | {"List" -> {_, __}, Symbol -> _} | {"List" -> {_, __}, Symbol -> _, _},
+	"D"->{_,__,"Rule"...}
 };
 Map[($syntargs[#[[1]]]=#[[2]])&,newsyntax];
 
@@ -682,7 +684,7 @@ Catch[
 								}
 						,{1}
 				](*//EchoLabel["After options check"]*)
-				//Total (* score == number of correct arguments*)
+				//Total
 				,
 				0
 			]
@@ -727,40 +729,6 @@ getSyntaxPattern[funcname_String]:=
 )
 
 funcnameCN[CallNode[LeafNode[Symbol,funcname_,_],_,_]]:=funcname
-
-
-(* ::Subsection::Closed:: *)
-(*Old scoring*)
-
-
-(* checkFunctionsSyntax[code_String]:=
-	Module[{cpp=CodeConcreteParse[code]},
-		code//
-		CodeParse//
-		Cases[#,CallNode[LeafNode[_,funcname_,_], _,_],{0,Infinity}]&//
-		Map[If[scoreArgsCallNodeCP[#]===False,#,Nothing]&]//
-		ReplaceAll[CallNode[_,_,so_]:>so]//decholabel["all so:"]//
-		dechofunction["Number of syntax problems found:", Length]//
-		Map[(Cases[cpp, cn:Alternatives[
-							_[{LeafNode[Symbol,funcname_String,_]},_,#],
-							_[_,{LeafNode[Symbol,funcname_String,_], ___},#], 	(*BinaryNode*)
-							_[funcname_,_,#]									(*BinaryNode*)
-						]:>{funcname,ToSourceCharacterString@cn},Infinity]//
-			First)&]
-	]
-
-scoreArgsCallNodeCP[cn:{_CallNode..}]:=scoreArgsCallNodeCP/@cn //Total
-scoreArgsCallNodeCP[cn_CallNode]:=checkArgsCallNodeCP[cn]
-checkArgsCallNodeCP[cn_CallNode]:=$syntargs@funcNameCallNodeCP[cn]//If[MissingQ@#,Null,MatchQ[argsCallNodeCP@cn,#]]&
-
-argsCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],args_List,_]]:=
-	Replace[args,CallNode[LeafNode[Symbol,"List",_],a_List,_]:>a,Infinity]//
-	Replace[#,CallNode[LeafNode[Symbol,"Rule"|"RuleDelayed",_],__]:>Rule,Infinity]&//
-	Replace[#,{Rule}:>Rule,Infinity]&//
-	Replace[#,{a__,CallNode[LeafNode[Symbol, "BlankNullSequence", <||>], {}, _]}:>{a,Rule}]&//
-	Replace[#,Except[Rule,_]->"arg",Infinity]&;
-
-funcNameCallNodeCP[CallNode[LeafNode[Symbol,funcname_,_],_,_]]=funcname *)
 
 
 (* ::Section::Closed:: *)
