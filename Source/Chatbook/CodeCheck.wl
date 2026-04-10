@@ -276,7 +276,7 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
  Catch[
-	(* TimeConstrained[ *)
+	TimeConstrained[
 		Block[	{$fixed = <||> ,iter = 0, success, res, resf}
 			,
 			res =	NestWhile[	(
@@ -300,12 +300,12 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
 
 			);
-			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=res];
+			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
 		]
-		(* , $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
-	] *)
+		, $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
+	]
  ]
 
 
@@ -323,7 +323,9 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "Failed"}]]:=Nothing
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix", "Code" -> code_String, "Pattern"->pattern_}]]:=
+(	decho[Keys@ascode["Fixes"],"Fix ID: "];
 	generateBracketFixes[ascode, fixPatternBrackets[""][code,pattern]]
+)
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], _Missing] := Association@@{ascode, "Status" -> "Failed"}
 
@@ -573,7 +575,8 @@ fixPatternBrackets[_][code_String, pat : $$FatalGroupMissingCloser, patToIgnore_
 			{
 			gmcn= 	codeF//
 					CodeConcreteParse[#,SourceConvention->"SourceCharacterIndex"]& //
-					Cases[#, _GroupMissingCloserNode,Infinity]&//dechofunction["Number of GMCs:", Length]//First
+					Cases[#, _GroupMissingCloserNode,Infinity]& // dechofunction["MC: all GMCs source",#[[All,-1]]&] //
+					First // dechofunction["MC: GMC selected",Last@#&]
 			}
 			,
 			{
