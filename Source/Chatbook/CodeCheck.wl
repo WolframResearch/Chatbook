@@ -18,7 +18,7 @@ Needs["CodeParser`"]
 
 `CodeCheckFix
 `$UserDefinedFunctionsQ=<||>
-`$MaxIterateTimeBracketsFix=10. (*seconds*)
+`$MaxIterateTimeBracketsFix=1. (*seconds*)
 `$MaxIterationsBracketsFix=10	(*iterations*)
 
 
