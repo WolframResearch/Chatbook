@@ -103,8 +103,8 @@
 "PreferencesContentToolsTab" -> "\:5DE5\:5177",
 "PreferencesContentEnableAssistanceLabel" -> "\:542F\:7528\:81EA\:52A8\:534F\:52A9\:529F\:80FD",
 "PreferencesContentEnableAssistanceTooltip" -> "\:5982\:679C\:542F\:7528\:ff0cAI \:63D0\:4F9B\:7684\:5EFA\:8BAE\:5C06\:88AB\:6DFB\:52A0\:5230\:8BA1\:7B97\:7ED3\:679C\:7684\:540E\:9762\:3002",
-"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
-"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
+"PreferencesContentAIDisabledByAdmin" -> "[[AI \:529F\:80FD\:5DF2\:88AB\:7BA1\:7406\:5458\:7981\:7528]]",
+"PreferencesContentAIDisabledLearnMore" -> "[[\:4E86\:89E3\:66F4\:591A \[RightGuillemet]]]",
 "PreferencesContentPersonaLabel" -> "\:89D2\:8272\:ff1a",
 "PreferencesContentLLMServiceLabel" -> "LLM \:670D\:52A1\:5546\:ff1a",
 "PreferencesContentModelLabel" -> "\:6A21\:578B\:ff1a",
@@ -174,7 +174,7 @@
 "UIModelsServices" -> "\:670D\:52A1\:5546",
 "UIAISettings" -> "AI \:8BBE\:7F6E",
 "UIAdvancedSettings" -> "\:9AD8\:7EA7\:8BBE\:7F6E",
-"UIPersonasGet" -> "Getting available personas\[Ellipsis]",
+"UIPersonasGet" -> "\:6B63\:5728\:83B7\:53D6\:53EF\:7528\:7684\:89D2\:8272\[Ellipsis]",
 "UIModelsServicesGet" -> "\:6B63\:5728\:83B7\:53D6\:53EF\:7528\:7684\:670D\:52A1\[Ellipsis]",
 "UIModelsGet" -> "\:83B7\:53D6\:53EF\:7528\:6A21\:578B\[Ellipsis]",
 "UIModelsNoList" -> "\:8FDE\:63A5\:83B7\:53D6\:6A21\:578B\:5217\:8868",
@@ -217,7 +217,7 @@
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:6709\:95EE\:5FC5\:7B54",
-"ChatbarFieldHint" -> "What would you like to do?",
+"ChatbarFieldHint" -> "\:60A8\:60F3\:505A\:4EC0\:4E48\:ff1f",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:4E0E\:7B14\:8BB0\:672C\:52A9\:624B\:804A\:5929\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:4E3A\:6240\:9009\:5185\:5BB9\:5BFB\:6C42\:7B14\:8BB0\:672C\:52A9\:624B\:7684\:5E2E\:52A9",
