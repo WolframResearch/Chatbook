@@ -27,6 +27,7 @@ $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
 $assistantTier               = "Basic";
+$assistantUsage              = 0.5;
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -863,16 +864,19 @@ Row[
     StripOnInput -> True
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatbarOptionsMenu*)
-chatbarOptionsMenu // beginDefinition;
+(*chatbarOptionsButton*)
 
-Attributes[ chatbarOptionsMenu ] = { HoldRest };
+chatbarOptionsButton // beginDefinition;
 
-chatbarOptionsMenu[ nbo_NotebookObject, chatbarCell_, activeQ_ ] :=
-ActionMenu[
-    PaneSelector[
+Attributes[ chatbarOptionsButton ] = { HoldRest };
+
+chatbarOptionsButton[ nbo_NotebookObject, chatbarCell_, activeQ_ ] :=
+Button[
+	PaneSelector[
         {
             True -> 
                 blueHueButtonAppearance[
@@ -897,35 +901,459 @@ ActionMenu[
         Dynamic @ activeQ,
         ImageSize -> Automatic
     ],
-    {
-        menuTick[
-            Dynamic @ AbsoluteCurrentValue[ nbo, "ShowChatbar" ],
-            "[[Show Chatbar in this Notebook]]"
-        ] :> (
-            CurrentValue[ nbo, "ShowChatbar" ] = !AbsoluteCurrentValue[ nbo, "ShowChatbar" ]),
-        Delimiter,
-        menuTick[
-            Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, "ShowChatbar" ],
-            "[[Show Chatbar in All Notebooks by Default]]"
-        ] :> (
-            CurrentValue[ $FrontEnd, "ShowChatbar" ] = !AbsoluteCurrentValue[ $FrontEndSession, "ShowChatbar" ];
-            CurrentValue[ nbo, "ShowChatbar" ] = Inherited),
-        menuTick[
-            Dynamic @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ],
-            "[[Minimize Chatbar in All Notebooks by Default]]"
-        ] :> (
-            CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] =
-                Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ])
-    },
-    Appearance       -> None,
-    DefaultBaseStyle -> { },
-    ImageMargins     -> { { 1, 0 }, { 0, 1 } },
-    ImageSize        -> Automatic,
-    MenuStyle        -> { Magnification -> 1 },
-    Method           -> "Preemptive"
+    If[ activeQ && Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`Menu" ] === { }, (* only attach once *)
+    	AttachCell[
+    		EvaluationBox[],
+    		Cell[ BoxData @ ToBoxes @ chatbarOptionsDisplay[nbo, Dynamic[chatbarCell], "NotebookAssistant`Chatbar`Menu" ] ],
+    		{Right, Top},
+    		Offset[{0, 5}, Automatic],
+    		{Right, Bottom},
+    		RemovalConditions -> {"MouseClickOutside"}
+    	]
+    ],
+	Appearance       -> "Suppressed",
+	DefaultBaseStyle -> {},
+	BaseStyle        -> {},
+	ImageMargins     -> { { 1, 0 }, { 0, 1 } },
+	ImageSize        -> Automatic,
+	Method           -> "Preemptive"
 ]
 
-chatbarOptionsMenu // endDefinition;
+chatbarOptionsButton // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarOptionsDisplay*)
+
+
+$coDividerColor = LightDarkSwitched[GrayLevel[0.90]];
+$coInnerBackground = LightDarkSwitched[GrayLevel[0.98]];
+$coOuterBackground = LightDarkSwitched[GrayLevel[1]];
+$coTitleColor = LightDarkSwitched[RGBColor[0.038, 0.346, 0.776]];
+
+
+chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_]] :=
+	chatbarOptionsDisplay[nbo, Dynamic[chatbarCell], $CloudAccountName, $assistantTier, $assistantUsage]
+
+
+chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, usage_] :=
+	Framed[
+		Column[
+			{
+				Framed[
+					Column[
+						{
+							Grid[
+								{{
+									chatbarOptionsTitle[tier],
+									chatbarOptionsUser[user]
+								}},
+								ItemSize -> Scaled[0.5],
+								Alignment -> {{Left, Right}, Baseline}
+							],
+							"Monthly usage:",
+							chatbarUsageThermometer[tier, usage],
+							chatbarWarningStripe[tier, usage],
+							chatbarUpgradeStripe[tier, usage]
+						},
+						Spacings -> {Automatic, {Automatic,1,0.4,{1.3}}}
+						
+					],
+					RoundingRadius -> 6,
+					FrameMargins -> 10,
+					FrameStyle -> $coDividerColor,
+					Background -> $coInnerBackground		
+				],
+				Column[
+					{
+						"Show assistant in notebooks:",
+						chatbarStateSetter[nbo, Dynamic[chatbarCell]]
+					}
+				]
+			},
+			Dividers -> Center,
+			FrameStyle -> $coDividerColor,
+			Spacings -> 3
+		],
+		RoundingRadius -> 8,
+		FrameMargins -> 13,
+		FrameStyle -> $coDividerColor,
+		Background -> $coOuterBackground,
+		ImageSize -> {600, Automatic},
+		BaseStyle -> {
+			FontFamily -> "Source Sans Pro",
+			FontSize -> 15,
+			ShowStringCharacters -> False
+		}
+	]
+
+chatbarOptionsTitle[tier_] :=
+	Style[Row[{"AI Assistant: ", tier}],
+		FontColor -> $coTitleColor,
+		FontFamily -> "Source Sans Pro",
+		FontSize -> 16,
+		FontWeight -> "DemiBold"
+	]
+
+chatbarOptionsUser[user_] := 
+	ActionMenu[
+		Grid[{{"\:26f9", user, " \[DownPointer]"}}],
+		{
+			"To do" :> Null
+		},
+		Appearance -> None,
+		DefaultBaseStyle -> {}
+	]
+
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarUsageThermometer*)
+
+
+$cutHeight = 26;
+$cutMargin = 2;
+$cutBlue = First @ LightDarkSwitched[RGBColor[0.402, 0.617, 0.84]];
+$cutRed = First @ LightDarkSwitched[RGBColor[0.899, 0.286, 0.332]];
+$cutBlueHover = $coTitleColor;
+$cutGray = LightDarkSwitched[GrayLevel[0.75]];
+$cutWhite = LightDarkSwitched[GrayLevel[1]];
+
+chatbarUsageThermometerBase[width_, usage_, label_] :=
+	Overlay[
+		{
+			Framed[
+				Graphics[{},
+					ImageSize -> {(width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2},
+					Background -> If[usage >= 1, $cutRed, $cutBlue],
+					ImageMargins -> 0
+				],
+				ImageSize -> {width, $cutHeight},
+				RoundingRadius -> 2,
+				FrameStyle -> If[usage >= 1, $cutRed, $cutBlue],
+				ContentPadding -> False,
+				FrameMargins -> $cutMargin,
+				Background -> $cutWhite
+			],
+			Framed[label,
+				FrameStyle -> LightDarkSwitched @ GrayLevel[1,0],
+				FrameMargins -> 2,
+				ContentPadding -> False,
+				Background -> LightDarkSwitched @ GrayLevel[1, 0.8],
+				ImageMargins -> {{$cutMargin, 3*$cutMargin-1},{$cutMargin, $cutMargin}},
+				BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[GrayLevel[0.4]]}]
+		},
+		Alignment -> {Right, Center}
+	]
+
+
+chatbarUsageThermometerCap[width_, label_, finalcap_: False] := 
+	Overlay[
+		{
+			Graphics[
+				{
+					$cutGray,
+					JoinForm["Round"],
+					If[TrueQ @ finalcap, {},
+						Line[{{width-5, 0}, {width, 0}, {width, $cutHeight}, {width, $cutHeight}}]
+					],
+					Dashed,
+					Line[{
+						{{0,0}, {width, 0}},
+						{{width, $cutHeight}, {0, $cutHeight}}
+					}]
+				},
+				ImageSize-> {width, $cutHeight},
+				AspectRatio -> Full]
+			,
+			Framed[If[TrueQ @ finalcap, Row[{label, " \[RightGuillemet]"}], label],
+				FrameStyle -> GrayLevel[1,0],
+				FrameMargins -> 2,
+				ContentPadding -> False,
+				Background -> None,
+				ImageMargins -> {{$cutMargin, If[TrueQ @ finalcap, -5, 3*$cutMargin-1]},{$cutMargin, $cutMargin}},
+				BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[GrayLevel[0.4]]}]
+		},
+		Alignment -> {Right, Center}
+	]
+
+
+$cutSegmentWidth = 500/4;
+
+chatbarUsageThermometer[tier: "Basic", usage_] := 
+	Grid[{{
+		chatbarUsageThermometerBase[$cutSegmentWidth, usage, "Basic"],
+		chatbarUsageThermometerCap[$cutSegmentWidth, "Pro"],
+		chatbarUsageThermometerCap[$cutSegmentWidth, "Research", True]
+		}},
+		Spacings->{0,0},
+		Alignment ->{Left, Center}
+	]
+
+chatbarUsageThermometer[tier: "Pro", usage_] := 
+	Grid[{{
+		chatbarUsageThermometerBase[2*$cutSegmentWidth, usage, "Pro"],
+		chatbarUsageThermometerCap[$cutSegmentWidth, "Research", True]
+		}},
+		Spacings->{0,0},
+		Alignment ->{Left, Center}
+	]
+
+chatbarUsageThermometer[tier: "Research", usage_] := 
+	Grid[{{
+		chatbarUsageThermometerBase[4*$cutSegmentWidth, usage, "Research"]
+		}},
+		Spacings->{0,0},
+		Alignment ->{Left, Center}
+	]
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarWarningStripe*)
+
+
+chatbarWarningStripe[tier: "Basic" | "Pro", usage_] := 
+	(* TODO: How to get the number of days to display? *)
+	If[usage >= 1, 
+		Grid[
+			{{
+				"\[WarningSign]",
+				"Usage limit reached",
+				Style["(resets in xx days)", FontColor -> StandardGray]
+			}},
+			BaseStyle -> {FontColor -> $cutRed}
+		],
+		Nothing
+	]
+
+chatbarWarningStripe[tier_, usage_] := Nothing
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarUpgradeStripe*)
+
+
+chatbarUpgradeStripe[tier: "Basic", usage_] :=
+	Button[
+		Style[
+			Row[{"Upgrade to ", Style["Pro", FontWeight -> "DemiBold"], " or ", Style["Research\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
+			FontColor -> Dynamic[If[CurrentValue["MouseOver"], $cutBlueHover, $cutBlue]]
+		],
+		MessageDialog["To do"],
+		Appearance -> None,
+		ImageSize -> Automatic,
+		BaseStyle -> {},
+		DefaultBaseStyle -> {}
+	]
+
+chatbarUpgradeStripe[tier: "Pro", usage_] :=
+	Grid[
+		{{
+			Button[
+				Style[
+					Row[{"Upgrade to ", Style["Research\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
+					FontColor -> Dynamic[If[CurrentValue["MouseOver"], $cutBlueHover, $cutBlue]]
+				],
+				MessageDialog["To do"],
+				Appearance -> None,
+				ImageSize -> Automatic,
+				BaseStyle -> {},
+				DefaultBaseStyle -> {}
+			],
+			Sequence @@ If[usage >= 1, {Spacer[20], chatbarAddServiceCreditsButton[tier]}, {}]
+		}},
+		Alignment -> {Left, Baseline}
+	]
+
+chatbarUpgradeStripe[tier: "Research", usage_] := 
+	If[usage >= 1, chatbarAddServiceCreditsButton[tier], Nothing]
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarAddServiceCredits*)
+
+
+chatbarAddServiceCreditsButton[tier_] := 
+	Button[
+		"Extend usage with service credits \[DownPointer]",
+		AttachCell[
+			EvaluationBox[],
+			chatbarAddServiceCreditsDisplay[tier],
+			{Left, Bottom}, 0, {Left, Top},
+			RemovalConditions -> {"MouseClickOutside"}
+		],
+		Appearance -> None,
+		BaseStyle -> {},
+		DefaultBaseStyle -> {},
+		ImageSize -> Automatic
+	]
+
+
+chatbarAddServiceCreditsThermometer["Pro", level_ : (1|2|3)] := 
+	Grid[
+		{{
+			Block[{$cutRed = LightDarkSwitched[GrayLevel[0.75]]}, chatbarUsageThermometerBase[120, 1, "Pro"]],
+			Block[{$cutRed = $cutBlue}, chatbarUsageThermometerBase[Switch[level, 1, 50, 2, 120, 3, 250], 1, "+"]]
+		}},
+		Spacings -> {0,0},
+		BaseStyle -> {Magnification -> 0.8}
+	]
+
+
+chatbarAddServiceCreditsThermometer["Research", level_ : (1|2|3)] := 
+	Grid[
+		{{
+			Block[{$cutRed = LightDarkSwitched[GrayLevel[0.75]]}, chatbarUsageThermometerBase[120, 1, "Research"]],
+			Block[{$cutRed = $cutBlue}, chatbarUsageThermometerBase[Switch[level, 1, 30, 2, 60, 3, 120], 1, "+"]]
+		}},
+		Spacings -> {0,0},
+		BaseStyle -> {Magnification -> 0.8}
+	]
+
+
+chatbarAddServiceCreditsDisplay[tier: "Pro"] := 
+	Framed[
+		Grid[
+			{
+				{"1000 credits", chatbarAddServiceCreditsThermometer["Pro", 1]},
+				{"2000 credits", chatbarAddServiceCreditsThermometer["Pro", 2]},
+				{"5000 credits", chatbarAddServiceCreditsThermometer["Pro", 3]},
+				{chatbarUpgradeStripe["Pro", 0], SpanFromLeft}
+			},
+			ItemStyle -> {{$cutBlue, None}, None},
+			Alignment -> Left,
+			Dividers -> {False, {False, False, False, True}},
+			FrameStyle -> $coDividerColor,
+			Spacings -> {1,{.7,.7,.7,2}},
+			ItemSize -> {{All, Fit}}
+		],
+		FrameStyle -> $coDividerColor,
+		RoundingRadius -> 5,
+		FrameMargins -> 10,
+		ImageSize -> {420, Automatic},
+		Background -> $coOuterBackground,
+		BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro"}
+	]
+
+
+chatbarAddServiceCreditsDisplay[tier: "Research"] := 
+	Framed[
+		Grid[
+			{
+				{"1000 credits", chatbarAddServiceCreditsThermometer["Research", 1]},
+				{"2000 credits", chatbarAddServiceCreditsThermometer["Research", 2]},
+				{"5000 credits", chatbarAddServiceCreditsThermometer["Research", 3]}
+			},
+			ItemStyle -> {{$cutBlue, None}, None},
+			Alignment -> Left,
+			Spacings -> {1,{.7,.7,.7,2}},
+			ItemSize -> {{All, Fit}}
+		],
+		FrameStyle -> $coDividerColor,
+		RoundingRadius -> 5,
+		FrameMargins -> 10,
+		ImageSize -> {420, Automatic},
+		Background -> $coOuterBackground,
+		BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro"}
+	]
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarStateSetter*)
+
+
+chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] := 
+	With[{
+		dynamic = Dynamic[
+			Which[
+				Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEnd, "ShowChatbar" ],
+					"Off",
+				TrueQ @ AbsoluteCurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ],
+					"Minimized",
+				True,
+					"Full"
+			],
+			(* FIXME: @KevinD, please double check the state getters / setters / settings here. *)
+			Switch[#,
+				"Full",
+					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+					CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
+					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] = False,
+				"Minimized",
+					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+					CurrentValue[ nbo, "ShowChatbar" ] = True;
+					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
+					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] = True,
+				"Off",
+					CurrentValue[ nbo, "ShowChatbar" ] = True; (* FIXME: Not sure about this one *)
+					CurrentValue[ $FrontEnd, "ShowChatbar" ] = False;
+			]&
+		]},
+		Framed[
+			Grid[
+				{Table[
+					Pane[
+						Column[
+							{
+								Setter[
+									dynamic,
+									state,
+									Framed["[[image]]",
+										ImageSize -> {80, 40},
+										RoundingRadius -> 5,
+										FrameStyle -> $coDividerColor,
+										BaseStyle -> {FontColor -> $coDividerColor},
+										Alignment -> Center
+									],
+									Appearance -> None,
+									BaselinePosition -> Baseline
+								],
+								Grid[
+									{{
+										RadioButton[
+											dynamic,
+											state
+										],
+										Setter[
+											dynamic,
+											state,
+											state,
+											Appearance -> None,
+											BaselinePosition -> Baseline
+										]
+									}},
+									Alignment -> Left,
+									BaselinePosition -> {1,2}
+								]
+							},
+							Alignment -> Center,
+							BaselinePosition -> 2,
+							ItemSize -> Scaled[1]
+						],
+						{100, 70},
+						Alignment -> {Bottom, Center},
+						ImageMargins -> {{5,5}, {3,5}}
+					],
+					{state, {"Full", "Minimized", "Off"}}
+				]
+				},
+				Dividers -> {Center, Center},
+				FrameStyle -> $coDividerColor,
+				Alignment -> {Center, Baseline}
+			],
+			RoundingRadius -> 8,
+			FrameStyle -> $coDividerColor,
+			ImageMargins -> {{10,0},{0,0}}
+		]
+	]
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1013,8 +1441,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     Framed[
                                         Grid[
                                             {
-                                                { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] },
-                                                { chatbarOptionsMenu[ nbo, Typeset`thisCell, Typeset`activeQ ] }
+                                                { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] },
+                                                { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] }
                                             },
                                             Alignment -> { Left, Baseline },
                                             Spacings  -> { 0, 0 }
