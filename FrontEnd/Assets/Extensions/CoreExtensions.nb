@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.90.3983868558"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.94.3984462208"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -38,7 +38,8 @@ Notebook[
      RGBColor[0.282973, 0.31239, 0.372334]
     ],
    AutoQuoteCharacters -> { },
-   PasteAutoQuoteCharacters -> { }
+   PasteAutoQuoteCharacters -> { },
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData[
@@ -728,12 +729,18 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
@@ -3088,12 +3095,18 @@ Notebook[
              },
              Typeset`display$$ = 
               Which[
+               FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+               Wolfram`Chatbook`Common`chatbookIcon[
+                "ChatOutputCellDingbat",
+                False
+               ],
                KeyExistsQ[
                 Wolfram`Chatbook`UI`Private`tagRules$,
                 "PageData"
                ],
                Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
                 Typeset`targetCell$$,
+                Typeset`dingbatCell$$,
                 Lookup[
                  Wolfram`Chatbook`UI`Private`tagRules$,
                  "PageData",
@@ -4873,7 +4886,8 @@ Notebook[
    CellEventActions -> None,
    CellFrameLabels -> None,
    FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
+   PaneBoxOptions -> {BaselinePosition -> Baseline},
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ChatInputField"],
@@ -4898,7 +4912,8 @@ Notebook[
    Initialization :> None,
    Background -> None,
    FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
+   PaneBoxOptions -> {BaselinePosition -> Baseline},
+   CellFrameRoundingRadius -> 8
   ],
   Cell[
    StyleData[
@@ -5035,7 +5050,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.89.3983615581"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.94.3984455001"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],
