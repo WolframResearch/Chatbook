@@ -3368,7 +3368,7 @@ toErrorBoxes[ text_String ] := Enclose[
     throwInternalFailure
 ];
 
-toErrorBoxes[ text: $$testDataList ] := Enclose[
+toErrorBoxes[ text: $$textDataList ] := Enclose[
     Module[ { label, box },
         label = RawBoxes @ Cell[
             TextData @ Flatten @ { $errorIconBox, text },
