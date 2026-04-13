@@ -110,7 +110,7 @@ wolframAlphaToolEvaluate0[ query_String, steps: True|False|_Missing ] :=
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
             PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] },
-            Method -> {"Reinterpret" -> $allowReinterpret}
+            Method    -> { "Reinterpret" -> TrueQ @ $allowReinterpret }
         ];
         string = wolframAlphaToolEvaluate0[ query, steps, data ];
         url = StringReplace[ URLBuild[ "https://www.wolframalpha.com/input", <| "i" -> query |> ], "%20" -> "+" ];
@@ -163,7 +163,7 @@ fasterWolframAlphaPods[ query_String, steps: True|False|_Missing ] := Enclose[
                 query,
                 { All, { "Title", "Cell" } },
                 PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] },
-                Method -> {"Reinterpret" -> $allowReinterpret}
+                Method    -> { "Reinterpret" -> TrueQ @ $allowReinterpret }
             ],
             "WolframAlpha"
         ];
