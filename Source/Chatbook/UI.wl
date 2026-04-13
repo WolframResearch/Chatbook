@@ -1185,8 +1185,10 @@ DynamicModule[
 		Catch[
 			With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
 				Typeset`display = Which[
+					FailureQ @ tagRules,
+						chatbookIcon[ "ChatOutputCellDingbat", False ],
 					KeyExistsQ[ tagRules, "PageData" ],
-						makeChatOutputPagedDingbat[ Typeset`targetCell, Lookup[ tagRules, "PageData", <| |> ] ],
+						makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
 					KeyExistsQ[ tagRules, "ChatData" ],
 						makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
 					True,
@@ -1215,7 +1217,7 @@ makeChatOutputActiveCellDingbat // endDefinition;
 (*makeChatOutputPagedDingbat*)
 makeChatOutputPagedDingbat // beginDefinition;
 
-makeChatOutputPagedDingbat[ targetCell_CellObject, allPageData_Association ] :=
+makeChatOutputPagedDingbat[ targetCell_CellObject, dingbatCell_CellObject, allPageData_Association ] :=
 Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 	currentPage = Lookup[ allPageData, "CurrentPage", 1 ];
 	currentPageData = Lookup[ allPageData, "Pages", <| |>, Lookup[ #, currentPage, Missing[ "NoPageData" ], BinaryDeserialize[ BaseDecode[ # ] ]& ]& ];
@@ -1234,70 +1236,93 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		displayName = None
 		,
 		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
-			icon = getPersonaMenuIcon @ personaSettings;
+			icon = Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ];
 			displayName = personaDisplayName[ evaluatorName, personaSettings ]
 		]
 	];
 
-	Grid[
-		{
-			{
-				If[ displayName === None, icon, Tooltip[ icon, displayName ] ]
-			},
-			{
-				Grid[
-					{
-						{
-							Button[
-								ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
-								blueHueButtonAppearance[
-									Graphics[
-										{
-											FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
-											Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
-										},
-										ImageSize -> 3 ],
-									{ 8, 11 }
-								],
-								Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
-								Appearance -> "Suppressed",
-								ImageSize  -> Automatic
-							],
-							Button[
-								ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
-								blueHueButtonAppearance[
-									Graphics[
-										{
-											FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
-											Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
-										},
-										ImageSize -> 3 ],
-									{ 8, 11 }
-								],
-								Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
-								Appearance -> "Suppressed",
-								ImageSize  -> Automatic
-							]
-						}
-					},
-					Spacings -> { 0, 0 }
+	DynamicModule[ { },
+		If[ displayName === None, icon, Tooltip[ icon, displayName ] ],
+		SynchronousInitialization -> False,
+		Initialization            :> (
+			If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatOutput`PagedNavigation" ] === { },
+				AttachCell[
+					dingbatCell,
+					Cell[ BoxData @ ToBoxes @
+						Grid[
+							{
+								{
+									makeChatOutputPagedDingbatNavButtons @ targetCell
+								},
+								{
+									RawBoxes @ StyleBox[
+										RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
+										FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+										FontFamily -> "Roboto",
+										FontSize   -> 8
+									]
+								}
+							},
+							BaseStyle -> { FontSize -> 0.5 },
+							Spacings -> { 0, 0 }
+						],
+						"NotebookAssistant`ChatOutput`PagedNavigation"
+					],
+					{ Center, Bottom }, 0, { Center, Top }
 				]
-			},
-			{
-				RawBoxes @ StyleBox[
-					RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
-					FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
-					FontFamily -> "Roboto",
-					FontSize   -> 8
-				]
-			}
-		},
-		BaseStyle -> { FontSize -> 0.5 },
-		Spacings -> { 0, 0 }
+			]
+		)
 	]
 ];
 
 makeChatOutputPagedDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatOutputPagedDingbatNavButtons*)
+
+makeChatOutputPagedDingbatNavButtons // beginDefinition;
+
+makeChatOutputPagedDingbatNavButtons[ targetCell_CellObject ] :=
+Grid[
+	{
+		{
+			Button[
+				ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
+				blueHueButtonAppearance[
+					Graphics[
+						{
+							FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+							Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
+						},
+						ImageSize -> 3 ],
+					{ 8, 11 }
+				],
+				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
+				Appearance -> "Suppressed",
+				ImageSize  -> Automatic
+			],
+			Button[
+				ReplaceAll[ #, HoldPattern[ RoundingRadius -> _ ] :> RoundingRadius -> 2 ]& @
+				blueHueButtonAppearance[
+					Graphics[
+						{
+							FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+							Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
+						},
+						ImageSize -> 3 ],
+					{ 8, 11 }
+				],
+				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
+				Appearance -> "Suppressed",
+				ImageSize  -> Automatic
+			]
+		}
+	},
+	Spacings -> { 0, 0 }
+]
+
+makeChatOutputPagedDingbatNavButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

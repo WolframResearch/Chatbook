@@ -662,6 +662,15 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 $workspaceChatDockedCells = {
+    With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
+        Cell[ BoxData @
+            GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ],
+            "NotebookAssistant`TopStripe",
+            CellFrame        -> False,
+            CellFrameMargins -> { { 0, 0 }, { -3, -6 } }, (* negative margins to reduce cell height *)
+            CellMargins      -> 0
+        ]
+    ],
     Cell[
         BoxData @ DynamicBox[
             ToBoxes[
@@ -669,15 +678,7 @@ $workspaceChatDockedCells = {
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeWorkspaceChatDockedCell" ],
                 StandardForm
             ],
-            Initialization :> With[ { nbo = EvaluationNotebook[ ] },
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                    "AttachWorkspaceChatInput",
-                    nbo,
-                    If[ Cells[ nbo ] =!= { }, Bottom, Top ]
-                ]
-            ],
-            TrackedSymbols :> { }
+            DestroyAfterEvaluation -> True
         ],
         CellFrame        -> 0,
         CellFrameMargins -> 0,
