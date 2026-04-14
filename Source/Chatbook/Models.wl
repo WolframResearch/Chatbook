@@ -466,6 +466,8 @@ chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemot
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
 
+chooseModelFamily0[ wordsPattern[ {"MoonshotAI/Kimi", "K2.5", ___} ] ] := "KimiK25"; (* OpenRouter: moonshotai/kimi-k2.5 *)
+
 chooseModelFamily0[ _String ] := None;
 
 chooseModelFamily0 // endDefinition;

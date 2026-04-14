@@ -266,6 +266,35 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(* OpenRouter MoonshotAI/Kimi *)
+
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+
+(*
+* model doc:
+  * Kimi K2.5:
+    * <https://github.com/MoonshotAI/Kimi-K2.5>
+
+* doc instructs "Use temperature=1.0 and top_p=0.95 across all tasks and serving backends -- reasoning, tool calling,
+  and general chat alike."
+
+*)
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    (*"ForceSynchronous" -> True,*)
+    "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
+    "Reasoning"        -> True,
+    "Temperature"      -> 1.,
+    "ToolMethod"       -> "Service",
+    "ToolsEnabled"     -> True,
+    "TopP"             -> 0.95
+|>;
+
+$modelAutoSettings[ "OpenRouter", Automatic ] = <||>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*Any Service*)
 $modelAutoSettings[ Automatic ] = <| |>;
 
