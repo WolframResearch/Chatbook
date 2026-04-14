@@ -60,7 +60,8 @@ $DefaultToolOptions = <|
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
         "FoldPods"        -> False,
-        "MaxPodByteCount" -> 1000000
+        "MaxPodByteCount" -> 1000000,
+        "Reinterpret"     -> True
     |>,
     "WolframLanguageEvaluator" -> <|
         "AllowedExecutePaths"      -> Automatic,
