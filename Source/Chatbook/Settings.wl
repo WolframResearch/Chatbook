@@ -344,12 +344,9 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 $modelAutoSettings[ Automatic, "GPT5Mini" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
     "MaxContextTokens"           -> 400000,
-    "ToolMethod"                 -> {Verbatim @ Automatic, "Service"}[[2]],
+    "ToolMethod"                 -> "Service",
     "ToolsEnabled"               -> True,
-    (*"EndToken"                   -> None,*)
-    (*"HybridToolMethod"           -> True,*)
     "Reasoning"                  -> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ]
-    (*"ToolCallExamplePromptStyle" -> Automatic,*)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
