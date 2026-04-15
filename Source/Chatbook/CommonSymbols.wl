@@ -389,7 +389,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `writeInlineChatOutputCell;
 `writeReformattedCell;
 `writeSidebarChatTitleCell;
-`writeWorkspaceChatSourcesDockedCell;
 `writeWorkspaceChatTitleDockedCell;
 
 EndPackage[ ];
