@@ -4,6 +4,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
 color = Wolfram`Chatbook`Common`color;
+System`ShowChatbar;
 
 
 (* ::**************************************************************************************************************:: *)
@@ -27,7 +28,7 @@ Cell[
     Saveable               -> False,
     Selectable             -> False,
     ShowCellBracket        -> False,
-    "ShowChatbar"          -> False,
+    ShowChatbar            -> False,
     TaggingRules           -> <| "ChatNotebookSettings" -> $workspaceDefaultSettings |>,
     WindowClickSelect      -> True,
     WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },
