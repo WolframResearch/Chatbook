@@ -152,16 +152,24 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                 ImageMargins -> 0
             ],
             SynchronousInitialization -> False,
-            Initialization :> (
+            Initialization :> ((* 473816: this runs whenever the kernel is quit, so avoid duplicating existing cell *)
                 thisCell = EvaluationCell[ ];
                 
                 withLoadingOverlay[ { nbo, sidebarCell } ] @ (
                     (* create the chat input cell first, then the scrolling cell *)
-                    NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ];
+                    If[ NextCell[ thisCell, CellStyle -> "ChatInputField" ] === None,
+                        NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ]
+                    ];
+                    If[ Cells[ sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
+                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
+                    ];
+                    If[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
+                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
+                    ];
+                    If[ Not @ TrueQ @ $workspaceChatInitialized,
+                        initializeWorkspaceChat[ ]
+                    ];
                     With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
-                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
-                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ];
-                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
                     ];
                 );
