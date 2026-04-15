@@ -673,20 +673,38 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                   ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
-        If[ movedLastChatToSourcesIndicatorQ,
-            writeWorkspaceChatSourcesDockedCell[
-                nbo,
-                With[ { nbo = nbo },
-                    Button[
-                        MouseAppearance[
-                            Style[
-                                Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
-                                "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
+        If[ movedLastChatToSourcesIndicatorQ && TrueQ @ new,
+            With[ { nbo = nbo },
+                AttachCell[
+                    nbo,
+                    Cell[ BoxData @ ToBoxes @
+                        Framed[
+                            Button[
+                                MouseAppearance[
+                                    Style[
+                                        Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
+                                        "WorkspaceChatToolbarTitle",
+                                        FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                        FontFamily -> "Source Sans Pro",
+                                        FontSlant  -> Italic,
+                                        FontWeight -> Plain
+                                    ],
+                                    "LinkHand"
+                                ], (* using LinkHand to indicate the sub-docked cell is clickable *)
+                                toggleOverlayMenu[ nbo, None, "History" ],
+                                Appearance -> "Suppressed"
                             ],
-                            "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                        toggleOverlayMenu[ nbo, "History" ],
-                        Appearance -> "Suppressed"
-                    ]
+                            Alignment    -> { Center, Center },
+                            Background   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
+                            FrameMargins -> { { 7, 7 }, { 4, 4 } },
+                            FrameStyle   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
+                            ImageMargins -> 0,
+                            ImageSize    -> Scaled[ 1. ]
+                        ],
+                        "AttachedOverlayMenu",
+                        CellTags -> "MovedLastChatToSourcesIndicator"
+                    ],
+                    { Left, Top }, 0, { Left, Top }
                 ]
             ]
         ];
