@@ -4,6 +4,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
 color = Wolfram`Chatbook`Common`color;
+System`CellFrameRoundingRadius; (* in case stylesheets build prior to 15.0 *)
 
 
 (* ::Section::Closed:: *)
@@ -129,7 +130,7 @@ Cell[
     CellFrame                -> 1.75,
     CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
-    System`CellFrameRoundingRadius -> 8,
+    CellFrameRoundingRadius  -> 8,
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
     TaggingRules             -> <| "ChatNotebookSettings" -> <| |> |>
