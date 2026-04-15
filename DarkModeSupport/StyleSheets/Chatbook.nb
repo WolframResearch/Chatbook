@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.95.3984537572"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.96.3985243007"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -120,14 +120,14 @@ Notebook[
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
+   CellFrameRoundingRadius -> 8,
    CellFrameColor ->
     LightDarkSwitched[
      RGBColor[0.92549, 0.941176, 0.960784],
      RGBColor[0.282973, 0.31239, 0.372334]
     ],
    AutoQuoteCharacters -> { },
-   PasteAutoQuoteCharacters -> { },
-   CellFrameRoundingRadius -> 8
+   PasteAutoQuoteCharacters -> { }
   ],
   Cell[
    StyleData[
