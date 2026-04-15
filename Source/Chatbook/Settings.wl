@@ -284,7 +284,7 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     (*"ForceSynchronous" -> True,*)
     "MaxContextTokens" -> 256000,
     "Multimodal"       -> True,
-    "Reasoning"        -> True,
+    "Reasoning"        -> <|"Effort" -> "Medium"|>,
     "Temperature"      -> 1.,
     "ToolMethod"       -> "Service",
     "ToolsEnabled"     -> True,
