@@ -89,7 +89,7 @@ Notebook[
     |>
    |>,
    DefaultNewCellStyle -> "AutoMoveToChatInputField",
-   "ShowChatbar" -> False,
+   ShowChatbar -> False,
    Magnification -> 0.85,
    Background ->
     LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]]
@@ -97,7 +97,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.95.3984537572"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.96.3985243007"|>
   ],
   Cell[
    StyleData["AttachedCell"],

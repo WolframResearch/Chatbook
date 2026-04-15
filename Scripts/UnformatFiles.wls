@@ -35,6 +35,7 @@ cicd`ConsoleLog[ "Unformatting " <> ToString @ Length @ files <> " files..." ];
 (* These symbols are known for 14.2+, but this script may run in 14.1. *)
 System`LightDark;
 System`LightDarkSwitched;
+System`ShowChatbar; (* new in 15.0, but may run in 14.3 *)
 
 result = cicd`ScriptConfirmMatch[ UsingFrontEnd[
     CurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "ExperimentalNotebookParser" } ] = False; (* ensure the file outline cache is built with the old parser *)

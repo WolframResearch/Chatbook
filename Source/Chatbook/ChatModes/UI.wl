@@ -1135,7 +1135,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                 Spacings  -> 0.2
             ],
             SynchronousInitialization :> False,
-            Initialization :> (
+            Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ] === { } || Not @ TrueQ @ $workspaceChatInitialized,
                 withLoadingOverlay[ { nbo, None } ] @ (
                     (* create the chat input cell first, then initialize chat *)
                     Needs[ "Wolfram`Chatbook`" -> None ];
@@ -1150,7 +1150,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                     ];
                     restoreVerticalScrollbar @ nbo
                 )
-            )
+            ]
         ],
         Background   -> color @ "NA_Toolbar",
         FrameStyle   -> color @ "NA_Toolbar",
@@ -1187,7 +1187,32 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*writeWorkspaceChatSourcesDockedCell*)
+writeWorkspaceChatSourcesDockedCell // beginDefinition;
+
+writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
+setCurrentValue[ nbo, DockedCells,
+    Replace[
+        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSourcesDockedCell", ___ ] ],
+        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
+            a,
+            makeWorkspaceChatSubDockedCellExpression[
+                content,
+                color @ "NA_ToolbarTitleBackground",
+                "WorkspaceChatSourcesDockedCell"
+            ],
+            b
+        }
+    ]
+]
+);
+
+writeWorkspaceChatSourcesDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*writeWorkspaceChatTitleDockedCell*)
+writeWorkspaceChatTitleDockedCell // beginDefinition;
 
 writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] := (
 setCurrentValue[ nbo, DockedCells,
@@ -2584,7 +2609,6 @@ toggleOverlayMenu[ nbo_NotebookObject, None(*appContainer*), name_String ] :=
         If[ MissingQ @ cell,
             attachOverlayMenu[ nbo, None, name ];
             ,
-            setCurrentValue[ nbo, DockedCells, DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSubDockedCell", ___ ] ] ];
             restoreVerticalScrollbar @ nbo;
             NotebookDelete @ cell
         ]
