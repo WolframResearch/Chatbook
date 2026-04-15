@@ -103,6 +103,8 @@
 "PreferencesContentToolsTab" -> "Outils",
 "PreferencesContentEnableAssistanceLabel" -> "Activer l\[CloseCurlyQuote]assistance automatique",
 "PreferencesContentEnableAssistanceTooltip" -> "Si cette option est activ\[EAcute]e, des suggestions automatiques fournies par l\[CloseCurlyQuote]IA seront ajout\[EAcute]es en fonction des r\[EAcute]sultats de l\[CloseCurlyQuote]\[EAcute]valuation.",
+"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
+"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
 "PreferencesContentPersonaLabel" -> "Personnage\[NonBreakingSpace]:",
 "PreferencesContentLLMServiceLabel" -> "Service LLM\[NonBreakingSpace]:",
 "PreferencesContentModelLabel" -> "Mod\[EGrave]le\[NonBreakingSpace]:",

@@ -1334,7 +1334,7 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
                     Which[
                         MemberQ[ tags, Alternatives[ "NotebookAssistantSidebarCell" ] ],
                             c,
-                        MemberQ[ tags, Alternatives[ "SidebarChatInputCell", "SidebarDockedCell", "SidebarSubDockedCell", "SidebarScrollingContentCell" ] ],
+                        MemberQ[ tags, Alternatives[ "SidebarChatInputCell", "SidebarDockedCell", "SidebarSubDockedCell", "SidebarSourcesDockedCell", "SidebarChatTitleCell", "SidebarScrollingContentCell" ] ],
                             ParentCell @ c,
                         MemberQ[ tags, Alternatives[ "SidebarTopCell" ] ],
                             ParentCell @ ParentCell @ c,

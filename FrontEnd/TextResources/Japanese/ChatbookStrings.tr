@@ -103,6 +103,8 @@
 "PreferencesContentToolsTab" -> "\:30c4\:30fc\:30eb",
 "PreferencesContentEnableAssistanceLabel" -> "\:81ea\:52d5\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8\:3092\:6709\:52b9\:5316",
 "PreferencesContentEnableAssistanceTooltip" -> "\:6709\:52b9\:306b\:3059\:308b\:3068\:ff0cAI\:304c\:81ea\:52d5\:7684\:306b\:63d0\:4f9b\:3059\:308b\:63d0\:6848\:304c\:4ee5\:4e0b\:306e\:8a55\:4fa1\:7d50\:679c\:306b\:8ffd\:52a0\:3055\:308c\:307e\:3059\:ff0e",
+"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
+"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
 "PreferencesContentPersonaLabel" -> "\:30da\:30eb\:30bd\:30ca\:ff1a",
 "PreferencesContentLLMServiceLabel" -> "\:5927\:898f\:6a21\:8a00\:8a9e\:30e2\:30c7\:30eb\:30b5\:30fc\:30d3\:30b9\:ff1a",
 "PreferencesContentModelLabel" -> "\:30e2\:30c7\:30eb\:ff1a",
