@@ -10,6 +10,7 @@ Cell[
 	"ChatInputField",
 	CellTags          -> "NotebookAssistantChatbarCell",
 	Editable          -> False,
+	Evaluator         -> "System",
 	LineIndent        -> 0,
 	LineSpacing       -> { 1, 0 },
 	Magnification     -> 1.,
