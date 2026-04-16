@@ -718,9 +718,9 @@ chatbarInputField // endDefinition;
 (*chatbarSendButton*)
 chatbarSendButton // beginDefinition;
 
-Attributes[ chatbarSendButton ] = { HoldAll };
+Attributes[ chatbarSendButton ] = { HoldRest };
 
-chatbarSendButton[ fieldContent_, selectionWithinQ_, input_, returnKeyDownQ_ ] :=
+chatbarSendButton[ nbo_NotebookObject, fieldContent_, selectionWithinQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -730,7 +730,11 @@ Button[
         Dynamic @ selectionWithinQ,
         ImageSize -> Automatic
     ],
-    If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+    If[ ! validInputStringQ @ fieldContent,
+        fieldContent = ""
+        ,
+        With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+    ],
     Appearance   -> "Suppressed",
     BoxID        -> "SidebarChatInputCellSendButton",
     FrameMargins -> 0,
@@ -1040,14 +1044,14 @@ Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, mouseOverQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { fieldContent = initialText, input = initialText, returnKeyDownQ = False },
-    EventHandler[(* pre-emptive mouse-down event *)
-        DynamicWrapper[
+DynamicModule[ { fieldContent = initialText },
+    EventHandler[(* pre-emptive mouse-down event for selection snapshot, moves selection into field *)
+        EventHandler[(* pre-emptive mouse-down event for return key *)
             Framed[
                 Grid[
                     { {
                         chatbarInputField[ Dynamic @ fieldContent, Dynamic @ mouseOverQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
-                        chatbarSendButton[ fieldContent, mouseOverQ || selectionWithinQ, input, returnKeyDownQ ]
+                        chatbarSendButton[ nbo, fieldContent, mouseOverQ || selectionWithinQ ]
                     } },
                     Alignment        -> { Left, Center },
                     BaselinePosition -> { 1, 1 },
@@ -1061,23 +1065,19 @@ DynamicModule[ { fieldContent = initialText, input = initialText, returnKeyDownQ
                         If[ mouseOverQ || selectionWithinQ, #1, #2 ]
                     ]&[ LightDarkSwitched[ RGBColor["#75C2EB"], RGBColor["#669CBD"] ], LightDarkSwitched[ RGBColor["#A6A6A6"], RGBColor["#646464"] ] ]),
                 RoundingRadius -> 9
-            ]
-            ,
-            If[ TrueQ @ returnKeyDownQ,
-                returnKeyDownQ = False;
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                evaluateChatbarChat[ nbo, None, False, input ]
-            ]
-            ,
-            SynchronousUpdating -> False,
-            TrackedSymbols      :> { returnKeyDownQ }
+            ],
+            {
+                "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
+                    fieldContent = ""
+                    ,
+                    With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+                ]
+            },
+            Method         -> "Preemptive",
+            PassEventsDown -> False
         ],
         {
-            "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo),
-            (*
-                The EventHandler, if queued, still won't update the ChatOutput dynamics until the payload is completed.
-                Instead of trying to write the new ChatInput cell from this event, use a DynamicWrapper above to listen for the key event and evaluate asynchronously. *)
-            "ReturnKeyDown" :> (If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ])
+            "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo)
         },
         Method         -> "Preemptive",
         PassEventsDown -> True
@@ -1087,6 +1087,39 @@ DynamicModule[ { fieldContent = initialText, input = initialText, returnKeyDownQ
 ];
 
 chatbarInputFieldEnabled // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatbarWriteAndEvaluateChatInputCell*)
+chatbarWriteAndEvaluateChatInputCell // beginDefinition;
+
+chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
+    Module[ { text, uuid, cellExpr, cellObject },
+
+        cellObject = None;
+        text = makeBoxesInputMoreTextLike @ input;
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+
+        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
+
+        (* FIXME: could really use selection snapshot... *)
+        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
+            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
+            NotebookWrite[ nbo, cellExpr ]
+            ,
+            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
+        ];
+        cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
+        ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
+        setCurrentValue[ cellObject, CellTags, Inherited ];
+        
+        SelectionMove[ cellObject, All, Cell ];
+        FrontEndTokenExecute[ nbo, "EvaluateCells" ]
+    ],
+    throwInternalFailure
+];
+
+chatbarWriteAndEvaluateChatInputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
