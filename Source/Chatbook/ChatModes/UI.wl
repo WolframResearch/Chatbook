@@ -1059,7 +1059,7 @@ DynamicModule[ { fieldContent = initialText },
                 ],
                 Alignment      -> { Automatic, Center },
                 Background     -> color @ "NA_ChatInputFieldBackground",
-                FrameMargins   -> { { 12, 1 }, { 7, 7 } },
+                FrameMargins   -> { { 12, 7 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
                         If[ mouseOverQ || selectionWithinQ, #1, #2 ]
