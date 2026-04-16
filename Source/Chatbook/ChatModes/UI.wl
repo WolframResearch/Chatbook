@@ -858,6 +858,21 @@ chatbarMaximizeButton // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeChatbarChatInputCellContent*)
 
+
+(* this is a temporary solution that should do the right thing on desktop and cloud
+   we are not simply using $CloudConnected because it will attempt to connect you if you are not
+   https://jira.wolfram.com/jira/browse/CLOUD-25562 *)
+cloudAuthenticatedQ[ ] := ($CloudUserID =!= None)
+
+(* on desktop FE, check if they have credentials stored (what you see in the splash screen)
+   note: $Notebooks is True in a cloud kernel! *)
+cloudCredentialsQ[ ] /; $Notebooks && !$CloudEvaluation := CurrentValue[ "WolframCloudConnected" ]
+(* in a cloud session, check if there is a user ID set *)
+cloudCredentialsQ[ ] /; $CloudEvaluation := cloudAuthenticatedQ[ ]
+(* we can still check this in a standalone kernel because it will get set by LLMKitDialog *)
+cloudCredentialsQ[ ] /; !($Notebooks || $CloudEvaluation) := cloudAuthenticatedQ[ ]
+
+
 makeChatbarChatInputCellContent // beginDefinition;
 
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
@@ -881,7 +896,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             Dynamic @ connectionLevel,
                                             ImageSize -> Automatic
                                         ],
-                                        connectionLevel = If[ $CloudConnected, "Enabled", "SignIn" ],
+                                        connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
                                         SynchronousUpdating -> False
                                     ]
                                 ]
