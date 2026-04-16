@@ -26,6 +26,7 @@ $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
+$assistantTier               = "Basic";
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -38,7 +39,7 @@ $inputFieldOptions = Sequence[
 $inputFieldFrameOptions = Sequence[
     Alignment      -> { Automatic, Baseline },
     Background     -> color @ "NA_ChatInputFieldBackground",
-    FrameMargins   -> { { 5, 1 }, { 1, 1 } },
+    FrameMargins   -> { { 7, 3 }, { 3, 3 } },
     FrameStyle     -> Directive[ AbsoluteThickness[ 1.75 ], color @ "NA_ChatInputFieldFrame" ],
     RoundingRadius -> 8
 ];
@@ -151,16 +152,24 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
                 ImageMargins -> 0
             ],
             SynchronousInitialization -> False,
-            Initialization :> (
+            Initialization :> ((* 473816: this runs whenever the kernel is quit, so avoid duplicating existing cell *)
                 thisCell = EvaluationCell[ ];
                 
                 withLoadingOverlay[ { nbo, sidebarCell } ] @ (
                     (* create the chat input cell first, then the scrolling cell *)
-                    NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ];
+                    If[ NextCell[ thisCell, CellStyle -> "ChatInputField" ] === None,
+                        NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ]
+                    ];
+                    If[ Cells[ sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
+                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
+                    ];
+                    If[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
+                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
+                    ];
+                    If[ Not @ TrueQ @ $workspaceChatInitialized,
+                        initializeWorkspaceChat[ ]
+                    ];
                     With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
-                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ];
-                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ];
-                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
                     ];
                 );
@@ -198,7 +207,10 @@ writeSidebarChatTitleCell[ nbo_NotebookObject, sidebarCell_CellObject, WindowTit
         
         cellExpr = Join[
             Insert[
-                DeleteCases[ makeWorkspaceChatSubDockedCellExpression[ content, "SidebarChatTitleCell" ], _[ Magnification, _] ],
+                DeleteCases[
+                    makeWorkspaceChatSubDockedCellExpression[ content, color @ "NA_ToolbarTitleBackground", "SidebarChatTitleCell" ],
+                    _[ Magnification, _]
+                ],
                 "NotebookAssistant`Sidebar`ChatTitleCell",
                 2
             ],
@@ -647,7 +659,7 @@ makeSidebarChatInputCell // endDefinition;
 chatbarInputField // beginDefinition;
 
 (* FieldHint implemented as an Overlay such that it can appear while the text caret is present in an empty field *)
-chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ selectionWithinQ_ ], size_ ] :=
+chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ mouseOverQ_ ], Dynamic[ selectionWithinQ_ ], size_ ] :=
 Overlay[
     {
         InputField[
@@ -675,8 +687,9 @@ Overlay[
                                 LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ]
                             ]
                         },
-                        Dynamic @ selectionWithinQ,
+                        Dynamic[ selectionWithinQ || mouseOverQ ],
                         BaselinePosition -> Baseline,
+                        ImageMargins -> { { 0, 3 }, { 0, 0 } },
                         ImageSize        -> All
                     ],
                     Style[ tr[ "ChatbarFieldHint" ],
@@ -687,10 +700,9 @@ Overlay[
                         LineBreakWithin -> False
                     ]
                 },
-                Spacer @ 7,
                 StripOnInput -> True
             ] },
-            RawBoxes @ DynamicBox @ If[ fieldContent === "", fieldHintBoxes, "" ]
+            RawBoxes @ DynamicBox @ If[ selectionWithinQ || fieldContent =!= "", "", fieldHintBoxes ]
         ]
     },
     { 1, 2 },
@@ -810,10 +822,11 @@ ActionMenu[
             minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] =
                 Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ])
     },
-    Appearance   -> None,
-    ImageMargins -> { { 1, 0 }, { 0, 1 } },
-    ImageSize    -> Automatic,
-    Method       -> "Preemptive"
+    Appearance       -> None,
+    DefaultBaseStyle -> {},
+    ImageMargins     -> { { 1, 0 }, { 0, 1 } },
+    ImageSize        -> Automatic,
+    Method           -> "Preemptive"
 ]
 
 chatbarOptionsMenu // endDefinition;
@@ -850,7 +863,7 @@ makeChatbarChatInputCellContent // beginDefinition;
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
-    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, selectionWithinQ = False },
+    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False },
         DynamicWrapper[
             PaneSelector[
                 {
@@ -862,7 +875,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         PaneSelector[
                                             {
                                                 "Loading" -> chatbarLoading[ ],
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, selectionWithinQ ],
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, mouseOverQ, selectionWithinQ ],
                                                 "SignIn"  -> chatbarSignIn[ selectionWithinQ ]
                                             },
                                             Dynamic @ connectionLevel,
@@ -899,11 +912,12 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ImageSize    -> Automatic
             ]
             ,
-            FEPrivate`Set[ selectionWithinQ, Or[ FrontEnd`CurrentValue[ "MouseOver" ], FrontEnd`CurrentValue[ "SelectionWithin" ] ] ];
-                Function[
-                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
-                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
-                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
+            FEPrivate`Set[ mouseOverQ, FrontEnd`CurrentValue[ "MouseOver" ] ];
+            FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
+            Function[
+                If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
+                If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+            ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
             ,
             Evaluator -> None
         ],
@@ -935,8 +949,8 @@ Button[
                             LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ]
                         ],
                         False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ RGBColor["#F9F9F9"], RGBColor["#333333"] ],
-                            LightDarkSwitched[ RGBColor["#898989"], RGBColor["#A6A6A6"] ]
+                            LightDarkSwitched[ RGBColor["#F9F9F9"], RGBColor["#2E2E2E"] ],
+                            LightDarkSwitched[ RGBColor["#898989"], RGBColor["#C1C1C1"] ]
                         ]
                     },
                     Dynamic @ selectionWithinQ,
@@ -1009,7 +1023,7 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, mouseOverQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteAnchor, selectionAtTopQ = False, returnKeyDownQ = False },
     EventHandler[(* pre-emptive mouse-down event *)
@@ -1017,8 +1031,8 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
             Framed[
                 Grid[
                     { {
-                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
-                        chatbarSendButton[ fieldContent, selectionWithinQ, input, returnKeyDownQ ]
+                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ mouseOverQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
+                        chatbarSendButton[ fieldContent, mouseOverQ || selectionWithinQ, input, returnKeyDownQ ]
                     } },
                     Alignment        -> { Left, Center },
                     BaselinePosition -> { 1, 1 },
@@ -1026,11 +1040,11 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
                 ],
                 Alignment      -> { Automatic, Center },
                 Background     -> color @ "NA_ChatInputFieldBackground",
-                FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                FrameMargins   -> { { 12, 1 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
-                        If[ selectionWithinQ, Directive[ AbsoluteThickness[ 2 ], #1 ], Directive[ AbsoluteThickness[ 2 ], #2 ] ]
-                    ]&[ color @ "NA_ChatInputFieldFrame", LightDarkSwitched @ RGBColor["#898989"] ]),
+                        If[ mouseOverQ || selectionWithinQ, #1, #2 ]
+                    ]&[ LightDarkSwitched[ RGBColor["#75C2EB"], RGBColor["#669CBD"] ], LightDarkSwitched[ RGBColor["#A6A6A6"], RGBColor["#646464"] ] ]),
                 RoundingRadius -> 9
             ]
             ,
@@ -1052,10 +1066,55 @@ DynamicModule[ { fieldContent = initialText, input = initialText, notebookWriteA
         },
         Method         -> "Preemptive",
         PassEventsDown -> True
-    ]
+    ],
+    SynchronousInitialization -> False,
+    Initialization :> (AttachCell[ EvaluationBox[ ], chatbarInputFieldEnabledTierIndicator[ ], { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top } ])
 ];
 
 chatbarInputFieldEnabled // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarInputFieldEnabledTierIndicatorFrame*)
+
+chatbarInputFieldEnabledTierIndicatorFrame // beginDefinition;
+
+chatbarInputFieldEnabledTierIndicatorFrame[ text_ ] :=
+Framed[
+    Style[
+        text,
+        FontColor      -> LightDarkSwitched @ GrayLevel[ 1 ],
+        FontTracking   -> "SemiCondensed",
+        FontVariations -> { "CapsType" -> "AllCaps" },
+        FontWeight     -> "SemiBold"
+    ],
+    Background     -> LightDarkSwitched @ RGBColor["#0092D1"],
+    ContentPadding -> False,
+    FrameMargins   -> { { 6, 6 }, { 3, 3 } },
+    FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    RoundingRadius -> 7
+]
+
+chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarInputFieldEnabledTierIndicator*)
+
+chatbarInputFieldEnabledTierIndicator // beginDefinition;
+
+chatbarInputFieldEnabledTierIndicator[ ] :=
+PaneSelector[
+    {
+        "Basic"    -> Graphics[ Background -> None, ImageSize -> { 1, 1 } ],
+        "Pro"      -> chatbarInputFieldEnabledTierIndicatorFrame @ "Pro",
+        "Research" -> chatbarInputFieldEnabledTierIndicatorFrame @ "Research"
+    },
+    Dynamic @ $assistantTier,
+    ImageSize -> Automatic
+]
+
+chatbarInputFieldEnabledTierIndicator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1084,7 +1143,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                 Spacings  -> 0.2
             ],
             SynchronousInitialization :> False,
-            Initialization :> (
+            Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ] === { } || Not @ TrueQ @ $workspaceChatInitialized,
                 withLoadingOverlay[ { nbo, None } ] @ (
                     (* create the chat input cell first, then initialize chat *)
                     Needs[ "Wolfram`Chatbook`" -> None ];
@@ -1099,7 +1158,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                     ];
                     restoreVerticalScrollbar @ nbo
                 )
-            )
+            ]
         ],
         Background   -> color @ "NA_Toolbar",
         FrameStyle   -> color @ "NA_Toolbar",
@@ -1115,12 +1174,13 @@ makeWorkspaceChatDockedCell // endDefinition;
 (*makeWorkspaceChatSubDockedCellExpression*)
 makeWorkspaceChatSubDockedCellExpression // beginDefinition;
 
-makeWorkspaceChatSubDockedCellExpression[ content_, tag_String ] := Cell[ BoxData @ ToBoxes @
+makeWorkspaceChatSubDockedCellExpression[ content_, bgColor_, tag_String ] := Cell[ BoxData @ ToBoxes @
     Framed[
         content,
-        Background   -> color @ "NA_ToolbarTitleBackground",
+        Alignment    -> { Center, Center },
+        Background   -> bgColor,
         FrameMargins -> { { 7, 7 }, { 4, 4 } },
-        FrameStyle   -> color @ "NA_ToolbarTitleBackground",
+        FrameStyle   -> bgColor,
         ImageMargins -> 0,
         ImageSize    -> Scaled[1.]
     ],
@@ -1139,17 +1199,28 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 writeWorkspaceChatSourcesDockedCell // beginDefinition;
 
 writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
-setCurrentValue[ nbo, DockedCells, Join[
-    AbsoluteCurrentValue[ nbo, DockedCells ],
-    { makeWorkspaceChatSubDockedCellExpression[ content, "WorkspaceChatSubDockedCell" ] } ]
-];
-(* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
-If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
+setCurrentValue[ nbo, DockedCells,
+    Replace[
+        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSourcesDockedCell", ___ ] ],
+        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
+            a,
+            makeWorkspaceChatSubDockedCellExpression[
+                content,
+                color @ "NA_ToolbarTitleBackground",
+                "WorkspaceChatSourcesDockedCell"
+            ],
+            b
+        }
+    ]
+]
 );
+
+writeWorkspaceChatSourcesDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*writeWorkspaceChatTitleDockedCell*)
+writeWorkspaceChatTitleDockedCell // beginDefinition;
 
 writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] := (
 setCurrentValue[ nbo, DockedCells,
@@ -1167,6 +1238,7 @@ setCurrentValue[ nbo, DockedCells,
                     ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
                     "WorkspaceChatToolbarTitle"
                 ],
+                color @ "NA_ToolbarTitleBackground",
                 "WorkspaceChatTitleDockedCell"
             ],
             b
@@ -1358,7 +1430,7 @@ Overlay[
                         LineBreakWithin -> False
                     ]
                 },
-                Spacer @ 7,
+                Spacer @ 0,
                 StripOnInput -> True
             ] },
             RawBoxes @ DynamicBox @ If[ cachedChatInput === "", fieldHintBoxes, "" ]
@@ -2140,7 +2212,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
             ],
             { Left, Bottom },
             (* The side bar's TemplateBox uses ImageMargins, so use Offset to undo those margins *)
-            If[ sidebarCellQ, Offset[ { 15, 30 }, Automatic ], 0 ],
+            If[ sidebarCellQ, Offset[ { 23, 30 }, Automatic ], Offset[ { 8, 0 }, Automatic ] ],
             { Left, Top },
             RemovalConditions -> "MouseExit"
         ]
@@ -2197,7 +2269,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
-                        Spacer[ If[ sidebarCellQ, 60, 45 ] ] 
+                        Spacer[ If[ sidebarCellQ, 40, 27 ] ]
                     },
                     Nothing
                 ]
@@ -2545,7 +2617,6 @@ toggleOverlayMenu[ nbo_NotebookObject, None(*appContainer*), name_String ] :=
         If[ MissingQ @ cell,
             attachOverlayMenu[ nbo, None, name ];
             ,
-            setCurrentValue[ nbo, DockedCells, DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSubDockedCell", ___ ] ] ];
             restoreVerticalScrollbar @ nbo;
             NotebookDelete @ cell
         ]
@@ -2573,8 +2644,11 @@ toggleOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
                                     makeWorkspaceChatSubDockedCellExpression[
                                         Style[
                                             tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                            FontColor -> color @ "NA_SourcesDockedCellFont", FontFamily -> "Source Sans Pro", FontSlant -> Italic
+                                            FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                            FontFamily -> "Source Sans Pro",
+                                            FontSlant  -> Italic
                                         ],
+                                        LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                                         "SidebarSourcesDockedCell"
                                     ],
                                     _[ Magnification, _]
@@ -2629,19 +2703,32 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
                         Framed[
                             Style[
                                 tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                FontColor -> color @ "NA_SourcesDockedCellFont", FontFamily -> "Source Sans Pro", FontSlant -> Italic
+                                FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                FontFamily -> "Source Sans Pro",
+                                FontSlant  -> Italic
                             ],
-                            Background   -> color @ "NA_ToolbarTitleBackground",
+                            Alignment    -> { Center, Center },
+                            Background   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                             FrameMargins -> { { 7, 7 }, { 4, 4 } },
-                            FrameStyle   -> color @ "NA_ToolbarTitleBackground",
+                            FrameStyle   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
                             ImageMargins -> 0,
                             ImageSize    -> Scaled[ 1. ]
                         ],
-                        attachedOverlayMenuFrame[ nbo, None, ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ] ]
+                        attachedOverlayMenuFrame[
+                            nbo,
+                            None,
+                            ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                            LightDarkSwitched[ RGBColor["#FFFFFF"], RGBColor["#191919"] ]
+                        ]
                     },
                     Spacings -> { 0, 0 }
                 ],
-                attachedOverlayMenuFrame[ nbo, None, ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ] ]
+                attachedOverlayMenuFrame[
+                    nbo,
+                    None,
+                    ConfirmMatch[ overlayMenu[ nbo, appContainer, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                    color @ "NA_ChatInputFieldBackgroundArea"
+                ]
             ],
             "AttachedOverlayMenu",
             CellTags -> name,
@@ -2665,7 +2752,12 @@ attachOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
         AttachCell[
             anchor,
             Cell[
-                BoxData @ ToBoxes @ attachedOverlayMenuFrame[ nbo, sidebarCell, ConfirmMatch[ overlayMenu[ nbo, sidebarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ] ],
+                BoxData @ ToBoxes @ attachedOverlayMenuFrame[
+                    nbo,
+                    sidebarCell,
+                    ConfirmMatch[ overlayMenu[ nbo, sidebarCell, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                    If[ name == "Sources", LightDarkSwitched[ RGBColor["#FFFFFF"], RGBColor["#191919"] ], color @ "NA_ChatInputFieldBackgroundArea" ]
+                ],
                 "AttachedOverlayMenu",
                 CellTags      -> name,
                 Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
@@ -2683,12 +2775,12 @@ attachOverlayMenu // endDefinition;
 
 attachedOverlayMenuFrame // beginDefinition;
 
-attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_ ] := Framed[
+attachedOverlayMenuFrame[ nbo_NotebookObject, appContainer_, content_, bgColor_ ] := Framed[
     content,
     Alignment    -> { Left, Top },
-    Background   -> color @ "NA_ChatInputFieldBackgroundArea",
+    Background   -> bgColor,
     FrameMargins -> { { 5, 5 }, { 5, 5 } },
-    FrameStyle   -> color @ "NA_ChatInputFieldBackgroundArea",
+    FrameStyle   -> bgColor,
     If[ MatchQ[ appContainer, _CellObject ],
         ImageSize -> Dynamic[ AbsoluteCurrentValue[ appContainer, "ViewSize" ]/(0.85*AbsoluteCurrentValue[ nbo, Magnification ]) ]
         ,
@@ -3453,15 +3545,19 @@ withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
 withWorkspaceGlobalProgress // endDefinition;
 
 
-(* Work around VertexColors not understanding LightDarkSwitched. This must work in all versions 14.1, 14.2, etc. *)
+(* Work around VertexColors not understanding LightDarkSwitched. *)
 $workspaceChatProgressBar := With[
     {
         darkModeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[], LightDark ] === "Dark"
     },
-    {
+    {(* (* save for posterity *)
         background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
         colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
         colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
+        *)
+        background  = Replace[ LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
+        colorCenter = Replace[ LightDarkSwitched[ RGBColor["#E0F2FC"], RGBColor["#F5F5F5"] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
+        colorEdges  = Replace[ LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][l] ],
         duration    = 2.5
     },
     Graphics[
