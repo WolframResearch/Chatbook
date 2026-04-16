@@ -274,6 +274,7 @@ $modelAutoSettings[ "OpenRouter" ] = <| |>;
 (*
 * model doc:
   * Kimi K2.5:
+    * <https://platform.kimi.ai/docs/guide/kimi-k2-5-quickstart>
     * <https://github.com/MoonshotAI/Kimi-K2.5>
 
 * doc instructs "Use temperature=1.0 and top_p=0.95 across all tasks and serving backends -- reasoning, tool calling,
@@ -282,13 +283,23 @@ $modelAutoSettings[ "OpenRouter" ] = <| |>;
 *)
 $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     (*"ForceSynchronous" -> True,*)
+    "Temperature"      -> 1.,
+    "TopP"             -> 0.95,
     "MaxContextTokens" -> 256000,
     "Multimodal"       -> True,
+
     "Reasoning"        -> <|"Effort" -> "Medium"|>,
-    "Temperature"      -> 1.,
-    "ToolMethod"       -> "Service",
+
     "ToolsEnabled"     -> True,
-    "TopP"             -> 0.95
+    "ToolMethod"       -> "Service"(*,*)
+
+    (*,
+    "ToolMethod"       -> {
+        "Service", *)(* TODO: need testing that all/most test inputs work with it. *)(*
+        Verbatim @ Automatic
+    }[[1]],
+    *)(*"HybridToolMethod" -> True,*)(*
+    "ToolCallExamplePromptStyle" -> Automatic*)
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <||>;
