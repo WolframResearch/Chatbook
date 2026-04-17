@@ -1357,7 +1357,7 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
         __,
         "<|tool_calls_section_end|>",
         WhitespaceCharacter...
-    ] :> EchoEvaluation @ rewriteMoonshotToolText @ toolCalls
+    ] :> rewriteMoonshotToolText @ toolCalls
 };
 
 (* TODO:
