@@ -1096,7 +1096,7 @@ autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
 
 autoStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
-        methodStopTokens @ as[ "ToolMethod" ],
+        methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
         If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
     },
@@ -1109,10 +1109,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
-methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
-methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
-methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Simple"        , end_ ] := Select[ { "\n/exec", end }, StringQ ];
+methodStopTokens[ "Service"       , end_ ] := Select[ { end }, StringQ ];
+methodStopTokens[ "Textual"|"JSON", end_ ] := Select[ { "ENDTOOLCALL", end }, StringQ ];
+methodStopTokens[ _               , end_ ] := Select[ { "ENDTOOLCALL", "\n/exec", end }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
