@@ -202,6 +202,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `forceRefreshCloudPreferences;
 `formatNotebookTitle;
 `formatSpeechInput;
+`formatToolCallExample;
 `functionTemplateBoxes;
 `getAvailableServiceNames;
 `getBoxObjectFromBoxID;
