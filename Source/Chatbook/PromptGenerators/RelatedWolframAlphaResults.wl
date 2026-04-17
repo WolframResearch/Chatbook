@@ -1022,7 +1022,7 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
                 query,
                 "URL",
                 PodStates -> $podStates,
-                Method    -> { "Formats" -> $formats }
+                Method    -> { "Formats" -> $formats, "Reinterpret" -> $reinterpret }
             ],
             StringQ,
             "URL"
