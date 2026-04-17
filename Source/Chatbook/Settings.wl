@@ -264,6 +264,19 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
 |>;
 
+$modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
+    (* "Reasoning" -> <| "enabled" -> False |> *) (* Waiting on bug 474121 *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenRouter*)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Any Service*)
@@ -396,6 +409,18 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
     "Temperature"                -> Missing[ "NotSupported" ],
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Kimi K2.5*)
+$modelAutoSettings[ Automatic, "KimiK25" ] = <|
+    "EndToken"             -> None,
+    "HybridToolMethod"     -> False,
+    "MaxContextTokens"     -> 262144,
+    "Multimodal"           -> True,
+    "ToolCallRetryMessage" -> False,
+    "ToolMethod"           -> "Simple"
 |>;
 
 (* ::**************************************************************************************************************:: *)
