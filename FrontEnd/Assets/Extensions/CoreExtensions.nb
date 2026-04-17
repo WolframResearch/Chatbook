@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.100.3985402285"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.100.3985410210"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4708,7 +4708,6 @@ Notebook[
           PaneBox[
            #1,
            AppearanceElements -> None,
-           BaseStyle -> {LineBreakWithin -> False},
            ImageSize -> {Scaled[1], UpTo[400]},
            Scrollbars -> Automatic
           ],
@@ -4777,7 +4776,6 @@ Notebook[
           Alignment -> {Left, Top},
           Background ->
            LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
-          BaseStyle -> {LineBreakWithin -> False},
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -5049,7 +5047,7 @@ Notebook[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
    TaggingRules -> <|
-    "WorkspaceChatStyleSheetVersion" -> "2.5.100.3985340914"
+    "WorkspaceChatStyleSheetVersion" -> "2.5.100.3985410187"
    |>
   ],
   Cell[
