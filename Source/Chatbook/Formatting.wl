@@ -590,7 +590,7 @@ delimiterAlignment[ s_String ] := delimiterAlignment @ StringSplit[ StringDelete
 delimiterAlignment[ { ":", " "      } ] := Left;
 delimiterAlignment[ { ":", " ", ":" } ] := Center;
 delimiterAlignment[ {      " ", ":" } ] := Right;
-delimiterAlignment[ ___               ] := Center;
+delimiterAlignment[ ___               ] := Left;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
