@@ -1350,7 +1350,14 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters
+    $longNameCharacters,
+    toolCalls: StringExpression[
+        WhitespaceCharacter...,
+        "<|tool_calls_section_begin|>",
+        __,
+        "<|tool_calls_section_end|>",
+        WhitespaceCharacter...
+    ] :> EchoEvaluation @ rewriteMoonshotToolText @ toolCalls
 };
 
 (* TODO:
@@ -1384,6 +1391,64 @@ Automatically rewrite these as WL tool calls:
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*rewriteMoonshotToolText*)
+rewriteMoonshotToolText // beginDefinition;
+
+rewriteMoonshotToolText[ string_String ] :=
+    rewriteMoonshotToolText[ string, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+rewriteMoonshotToolText[ string_String, method_ ] := Enclose[
+    Catch @ Module[ { calls, call, new },
+        calls = ConfirmMatch[ StringCases[ string, $moonShotTools, 1 ], { { _String, _String }... }, "Calls" ];
+        call = First[ calls, None ];
+        new = ConfirmMatch[ rewriteMoonshotToolText[ call, method ], _String | $Failed, "New" ];
+        rewriteMoonshotToolText[ string, method ] = If[ FailureQ @ new, string, new ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ { name0_String, params0_String }, method_ ] := Enclose[
+    Catch @ Module[ { name, params, toolCall },
+
+        name = ConfirmBy[ StringTrim @ name0, StringQ, "Name" ];
+        params = Quiet @ Developer`ReadRawJSONString @ StringTrim @ params0;
+        If[ ! AssociationQ @ params, Throw @ $Failed ];
+
+        toolCall = ConfirmBy[ formatToolCallExample[ name, params, method ], StringQ, "Result" ];
+
+        "\n" <> StringDelete[
+            StringTrim @ toolCall,
+            {
+                "\n/exec"~~EndOfString,
+                "\nENDTOOLCALL"~~EndOfString
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ None, _ ] := $Failed;
+
+rewriteMoonshotToolText // endDefinition;
+
+
+$moonShotTools = Apply[
+    StringExpression,
+    Riffle[
+        {
+            "<|tool_call_begin|>",
+            "functions." ~~ name__ ~~ ":" ~~ DigitCharacter..,
+            "<|tool_call_argument_begin|>",
+            params__,
+            "<|tool_call_end|>"
+        },
+        WhitespaceCharacter...,
+        { 1, -1, 2 }
+    ]
+] :> { name, params };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*writeDynamicChunkAsStatic*)
 writeDynamicChunkAsStatic // beginDefinition;
 
@@ -1391,7 +1456,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write },
 
         boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
-        
+
         If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
@@ -1420,9 +1485,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             $$textDataList,
             "ReformatTextData"
         ];
-        
+
         write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
-        
+
         NotebookWrite[ NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
 
     ],
@@ -2644,7 +2709,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
             setCurrentValue[ topCell, Editable, True ];
             WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
         ],
-        
+
         SynchronousUpdating -> False,
         TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
     ],
@@ -2696,7 +2761,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
         ],
 
         If[ kernelWasQuitQ, NotebookDelete @ topCell ],
-        
+
         SynchronousUpdating -> False,
         TrackedSymbols      :> { kernelWasQuitQ }
     ],
