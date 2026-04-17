@@ -3565,27 +3565,15 @@ withWorkspaceGlobalProgress // beginDefinition;
 withWorkspaceGlobalProgress // Attributes = { HoldRest };
 
 withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
-    Catch @ Module[ { attached },
+    Catch @ Module[ { cell },
 
-        attached = ConfirmMatch[
-            AttachCell[
-                nbo,
-                Cell[
-                    BoxData @ ToBoxes @ $workspaceChatProgressBar,
-                    "WorkspaceChatProgressBar",
-                    FontSize -> 0.1,
-                    Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
-                ],
-                { Center, Top },
-                Offset[ { 0, 1 }, { 0, 0 } ],
-                { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit" }
-            ],
+        cell = ConfirmMatch[
+            First[ Cells[ nbo, DockedCell -> True, CellStyle -> "NotebookAssistant`TopStripe" ], None ],
             _CellObject,
-            "Attached"
+            "WorkspaceTopStripeCellObject"
         ];
-
-        WithCleanup[ eval, NotebookDelete @ attached ]
+        setCurrentValue[ cell, { TaggingRules, "ProgressIndicator" }, True ];
+        WithCleanup[ eval, setCurrentValue[ cell, { TaggingRules, "ProgressIndicator" }, False ] ]
     ],
     throwInternalFailure
 ];
