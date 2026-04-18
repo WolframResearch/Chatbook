@@ -298,8 +298,9 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
         "Service", *)(* TODO: need testing that all/most test inputs work with it. *)(*
         Verbatim @ Automatic
     }[[1]],
-    *)(*"HybridToolMethod" -> True,*)(*
-    "ToolCallExamplePromptStyle" -> Automatic*)
+    *)
+    (*"HybridToolMethod" -> True,*)
+    (*"ToolCallExamplePromptStyle" -> Automatic*)
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <||>;
