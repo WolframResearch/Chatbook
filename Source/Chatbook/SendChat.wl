@@ -1350,37 +1350,73 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters
+    $longNameCharacters,
+    toolCalls: StringExpression[
+        WhitespaceCharacter...,
+        "<|tool_calls_section_begin|>",
+        __,
+        "<|tool_calls_section_end|>",
+        WhitespaceCharacter...
+    ] :> rewriteMoonshotToolText @ toolCalls
 };
 
-(* TODO:
-Automatically rewrite these as WL tool calls:
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMoonshotToolText*)
+rewriteMoonshotToolText // beginDefinition;
+
+rewriteMoonshotToolText[ string_String ] :=
+    rewriteMoonshotToolText[ string, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+rewriteMoonshotToolText[ string_String, method_ ] := Enclose[
+    Catch @ Module[ { calls, call, new },
+        calls = ConfirmMatch[ StringCases[ string, $moonShotTools, 1 ], { { _String, _String }... }, "Calls" ];
+        call = First[ calls, None ];
+        new = ConfirmMatch[ rewriteMoonshotToolText[ call, method ], _String | $Failed, "New" ];
+        rewriteMoonshotToolText[ string, method ] = If[ FailureQ @ new, string, new ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ { name0_String, params0_String }, method_ ] := Enclose[
+    Catch @ Module[ { name, params, toolCall },
+
+        name = ConfirmBy[ StringTrim @ name0, StringQ, "Name" ];
+        params = Quiet @ Developer`ReadRawJSONString @ StringTrim @ params0;
+        If[ ! AssociationQ @ params, Throw @ $Failed ];
+
+        toolCall = ConfirmBy[ formatToolCallExample[ name, params, method ], StringQ, "Result" ];
+
+        "\n" <> StringDelete[
+            StringTrim @ toolCall,
+            {
+                "\n/exec"~~EndOfString,
+                "\nENDTOOLCALL"~~EndOfString
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ None, _ ] := $Failed;
+
+rewriteMoonshotToolText // endDefinition;
 
 
-    Sure! I will use `EmbeddedService` to show a map of Tokyo by utilizing the OpenStreetMap service.
-
-    ```wl
-    EmbeddedService[{\"OpenStreetMap\", GeoPosition[\[FreeformPrompt][\"Tokyo\"]]}]
-    ``` /exec
-
-=====
-
-    To show a map of the United States with all its state capitals, we can use the [GeoGraphics](paclet:ref/GeoGraphics) function along with [Entity](paclet:ref/Entity) to get the positions of the capitals. Here's how you can do it:
-
-    ```wl
-    GeoGraphics[
-        {Red, PointSize[Large],
-        Point[GeoPosition /@ EntityValue[
-            EntityClass["AdministrativeDivision", "USStates"],
-            "CapitalLocation"
-        ]]
+$moonShotTools = Apply[
+    StringExpression,
+    Riffle[
+        {
+            "<|tool_call_begin|>",
+            "functions." ~~ name__ ~~ ":" ~~ DigitCharacter..,
+            "<|tool_call_argument_begin|>",
+            params__,
+            "<|tool_call_end|>"
         },
-        GeoRange -> Entity["Country", "UnitedStates"]
+        WhitespaceCharacter...,
+        { 1, -1, 2 }
     ]
-    ```
-
-    Let me create this map for you. /wl
-*)
+] :> { name, params };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1391,7 +1427,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write },
 
         boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
-        
+
         If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
@@ -1420,9 +1456,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             $$textDataList,
             "ReformatTextData"
         ];
-        
+
         write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
-        
+
         NotebookWrite[ NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
 
     ],
@@ -2613,7 +2649,61 @@ activeAIAssistantDynamicModule // beginDefinition;
 
 activeAIAssistantDynamicModule // Attributes = { HoldFirst };
 
-(* Let the writeResult function do the final rewrite of the cell; it also ensures the cell is editable before rewrite *)
+(* Sidebar is a stack of inline cells. To avoid FE crash, asynchronously rewrite the ChatOutput after stream-of-thought finishes *)
+activeAIAssistantDynamicModule[
+    container_,
+    settings_,
+    task_,
+    formatter_,
+    reformat_
+] /; $SidebarChat :=
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
+    DynamicWrapper[
+        PaneSelector[
+            {
+                "Active" -> Dynamic[
+                    finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
+                    scrollToEnd[ ];
+                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
+                    TrackedSymbols :> { },
+                    UpdateInterval -> 0.5
+                ],
+                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
+                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
+            },
+            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
+            ImageSize -> Automatic
+        ],
+
+        If[ kernelWasQuitQ, NotebookDelete @ topCell ];
+        If[ TrueQ @ finishedSignal,
+            setCurrentValue[ topCell, Editable, True ];
+            WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
+        ],
+
+        SynchronousUpdating -> False,
+        TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
+    ],
+
+    BoxID            -> "DynamicTextDisplay",
+    Deinitialization :> Quiet @ TaskRemove @ task,
+    Initialization   :> (
+        dmBox = EvaluationBox[ ];
+        topCell = ParentCell @ EvaluationCell[ ];
+        If[ scrollOutputQ @ settings,
+            scrollToEnd = Lookup[
+                CurrentValue[ ParentCell @ topCell, TaggingRules ],
+                "ScrollPositionSymbol",
+                Function[ Null ],
+                Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
+            ]
+        ];
+        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
+        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
+];
+
+(* Notebooks are safe from crashing when rewriting a top-level cell *)
+
 activeAIAssistantDynamicModule[
     container_,
     settings_,
@@ -2644,7 +2734,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
         ],
 
         If[ kernelWasQuitQ, NotebookDelete @ topCell ],
-        
+
         SynchronousUpdating -> False,
         TrackedSymbols      :> { kernelWasQuitQ }
     ],

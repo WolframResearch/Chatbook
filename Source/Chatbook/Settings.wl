@@ -264,6 +264,19 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
 |>;
 
+$modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
+    (* "Reasoning" -> <| "enabled" -> False |> *) (* Waiting on bug 474121 *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenRouter*)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (* OpenRouter MoonshotAI/Kimi *)
@@ -437,6 +450,18 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
     "Temperature"                -> Missing[ "NotSupported" ],
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Kimi K2.5*)
+$modelAutoSettings[ Automatic, "KimiK25" ] = <|
+    "EndToken"             -> None,
+    "HybridToolMethod"     -> False,
+    "MaxContextTokens"     -> 262144,
+    "Multimodal"           -> True,
+    "ToolCallRetryMessage" -> False,
+    "ToolMethod"           -> "Simple"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1112,7 +1137,7 @@ autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
 
 autoStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
-        methodStopTokens @ as[ "ToolMethod" ],
+        methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
         If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
     },
@@ -1125,10 +1150,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
-methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
-methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
-methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Simple"        , end_ ] := Select[ { "\n/exec", end }, StringQ ];
+methodStopTokens[ "Service"       , end_ ] := Select[ { end }, StringQ ];
+methodStopTokens[ "Textual"|"JSON", end_ ] := Select[ { "ENDTOOLCALL", end }, StringQ ];
+methodStopTokens[ _               , end_ ] := Select[ { "ENDTOOLCALL", "\n/exec", end }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
