@@ -270,19 +270,9 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*OpenRouter*)
-$modelAutoSettings[ "OpenRouter" ] = <| |>;
-
-$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
-    "Reasoning" -> <| "effort" -> "none" |>
-|>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(* OpenRouter MoonshotAI/Kimi *)
+(* OpenRouter *)
 
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
-
 
 (*
 * model doc:
@@ -295,25 +285,8 @@ $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
 *)
 $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
-    (*"ForceSynchronous" -> True,*)
-    "Temperature"      -> 1.,
-    "TopP"             -> 0.95,
-    "MaxContextTokens" -> 256000,
-    "Multimodal"       -> True,
-
-    "Reasoning"        -> <|"Effort" -> "Medium"|>,
-
-    "ToolsEnabled"     -> True,
-    "ToolMethod"       -> "Service"(*,*)
-
-    (*,
-    "ToolMethod"       -> {
-        "Service", *)(* TODO: need testing that all/most test inputs work with it. *)(*
-        Verbatim @ Automatic
-    }[[1]],
-    *)
-    (*"HybridToolMethod" -> True,*)
-    (*"ToolCallExamplePromptStyle" -> Automatic*)
+    (*"Reasoning"        -> <|"Effort" -> "Medium"|>,*)
+    "Reasoning"        -> <|"effort" -> "none"|>
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <||>;
@@ -458,10 +431,21 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "EndToken"             -> None,
     "HybridToolMethod"     -> False,
-    "MaxContextTokens"     -> 262144,
+    (*"MaxContextTokens"     -> 262144,*)
+    "MaxContextTokens"     -> 256000,
     "Multimodal"           -> True,
     "ToolCallRetryMessage" -> False,
-    "ToolMethod"           -> "Simple"
+    "ToolMethod"           -> "Simple"(*,*)
+    (*"ToolMethod"         -> "Service"*)
+
+    (*"ForceSynchronous" -> True,*)
+    (*"Temperature"      -> 1.,
+    "TopP"             -> 0.95,
+    "ToolsEnabled"     -> True*)(*,*)
+
+    (*"HybridToolMethod" -> True,*)
+    (*"ToolCallExamplePromptStyle" -> Automatic*)
+
 |>;
 
 (* ::**************************************************************************************************************:: *)
