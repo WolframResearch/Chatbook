@@ -431,8 +431,7 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "EndToken"             -> None,
     "HybridToolMethod"     -> False,
-    (*"MaxContextTokens"     -> 262144,*)
-    "MaxContextTokens"     -> 256000,
+    "MaxContextTokens"     -> 262144,
     "Multimodal"           -> True,
     "ToolCallRetryMessage" -> False,
     "ToolMethod"           -> "Simple"(*,*)
