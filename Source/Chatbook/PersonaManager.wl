@@ -37,7 +37,7 @@ CreatePersonaManagerDialog // endDefinition;
 (*CreatePersonaManagerPanel*)
 CreatePersonaManagerPanel // beginDefinition;
 
-CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
+CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dialogWindow },
     favorites = Replace[
         CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ],
         Except[ { ___String } ] :> $corePersonaNames
@@ -65,7 +65,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
                             Button[
                                 grayDialogButtonLabel @ tr[ "URLButton" ],
                                 If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
-                                Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt" ] ],
+                                Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt", Dynamic @ dialogWindow ] ],
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
                                 Method           -> "Queued"
@@ -182,9 +182,12 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
             ]
         ]
     ),
-    Deinitialization :> If[ MatchQ[ favorites, { ___String } ],
-        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites
-    ]
+    Deinitialization :> (
+        If[ MatchQ[ favorites, { ___String } ], CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites ];
+        If[ Head[ NotebookGet @ dialogWindow ] === Notebook,
+            NotebookClose @ dialogWindow; System`FEDump`$DialogReturnValue = $Canceled; System`FEDump`$DialogDone = True
+        ];
+    )
 ];
 
 CreatePersonaManagerPanel // endDefinition;
