@@ -542,78 +542,71 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
             scrollPosition
         },
         EventHandler[
-            EventHandler[
-                Pane[
-                    Grid[
+            Pane[
+                Grid[
+                    {
                         {
-                            {
-                                DynamicWrapper[
-                                    Framed[
-                                        Grid[
-                                            { {
-                                                Pane[
-                                                    sidebarChatInputField[ Dynamic @ fieldContent ],
-                                                    AppearanceElements -> { },
-                                                    ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
-                                                    Scrollbars         -> { False, Automatic },
-                                                    ScrollPosition     -> Dynamic @ scrollPosition
-                                                ],
-                                                sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
-                                            } }, Alignment -> { Left, Center }
-                                        ],
-                                        $inputFieldFrameOptions
-                                    ]
-                                    ,
-                                    If[ TrueQ @ returnKeyDownQ,
-                                        clearOverlayMenus @ nbo;
-                                        returnKeyDownQ = False;
-                                        Needs[ "Wolfram`Chatbook`" -> None ];
-                                        If[ kernelWasQuitQ,
-                                            If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                            kernelWasQuitQ = False ];
-                                        evaluateSidebarChat[ nbo, sidebarCell, input, Dynamic @ chatEvalCell ]
-                                    ];
-                                    (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
-                                    If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
-                                        chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
-                                        FrontEndExecute[ {
-                                            FrontEnd`SetOptions[ thisCell, CellTags -> "SidebarChatInputCell" ],
-                                            FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ], Inherited ]
-                                        } ];
-                                        If[ Head @ chatEvalCell === CellObject, ChatCellEvaluate[ chatEvalCell, nbo ] ]
-                                    ]
-                                    ,
-                                    SynchronousUpdating -> False,
-                                    TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                            DynamicWrapper[
+                                Framed[
+                                    Grid[
+                                        { {
+                                            Pane[
+                                                sidebarChatInputField[ Dynamic @ fieldContent ],
+                                                AppearanceElements -> { },
+                                                ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
+                                                Scrollbars         -> { False, Automatic },
+                                                ScrollPosition     -> Dynamic @ scrollPosition
+                                            ],
+                                            sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
+                                        } }, Alignment -> { Left, Center }
+                                    ],
+                                    $inputFieldFrameOptions
                                 ]
-                            },
-                            {
-                                Item[ Dynamic @ focusArea, Alignment -> Left ],
-                                SpanFromLeft
-                            }
+                                ,
+                                If[ TrueQ @ returnKeyDownQ,
+                                    clearOverlayMenus @ nbo;
+                                    returnKeyDownQ = False;
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    If[ kernelWasQuitQ,
+                                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                                        kernelWasQuitQ = False ];
+                                    evaluateSidebarChat[ nbo, sidebarCell, input, Dynamic @ chatEvalCell ]
+                                ];
+                                (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
+                                If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
+                                    chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
+                                    FrontEndExecute[ {
+                                        FrontEnd`SetOptions[ thisCell, CellTags -> "SidebarChatInputCell" ],
+                                        FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ], Inherited ]
+                                    } ];
+                                    If[ Head @ chatEvalCell === CellObject, ChatCellEvaluate[ chatEvalCell, nbo ] ]
+                                ]
+                                ,
+                                SynchronousUpdating -> False,
+                                TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                            ]
                         },
-                        BaseStyle -> { Magnification -> $inputFieldGridMagnification },
-                        Spacings  -> { 0.5, 0.0 }
-                    ],
-                    FrameMargins -> $inputFieldPaneMargins
+                        {
+                            Item[ Dynamic @ focusArea, Alignment -> Left ],
+                            SpanFromLeft
+                        }
+                    },
+                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                    Spacings  -> { 0.5, 0.0 }
                 ],
-                {
-                    "ReturnKeyDown" :> (
-                        If[ ! validInputStringQ @ fieldContent,
-                            fieldContent = ""
-                            , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
-                            input = fieldContent; fieldContent = ""; returnKeyDownQ = True
-                        ]),
-                    { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
-                },
-                Method         -> "Preemptive",
-                PassEventsDown -> False
+                FrameMargins -> $inputFieldPaneMargins
             ],
             {
-                "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo)
+                "ReturnKeyDown" :> (
+                    If[ ! validInputStringQ @ fieldContent,
+                        fieldContent = ""
+                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
+                        input = fieldContent; fieldContent = ""; returnKeyDownQ = True
+                    ]),
+                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
             },
             Method         -> "Preemptive",
-            PassEventsDown -> True
+            PassEventsDown -> False
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
         Initialization :> (
