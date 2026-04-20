@@ -252,6 +252,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `llmSynthesize;
 `llmSynthesizeSubmit;
 `logUsage;
+`makeBoxesInputMoreTextLike;
 `makeCellStringBudget;
 `makeChatCloudDefaultNotebookDockedCell;
 `makeChatCloudDockedCellContents;
@@ -389,7 +390,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `writeInlineChatOutputCell;
 `writeReformattedCell;
 `writeSidebarChatTitleCell;
-`writeWorkspaceChatSourcesDockedCell;
 `writeWorkspaceChatTitleDockedCell;
 
 EndPackage[ ];
