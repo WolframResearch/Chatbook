@@ -695,7 +695,8 @@ Overlay[
             BaseStyle        -> { "Text", "TextStyleInputField", FontColor -> LightDarkSwitched @ GrayLevel[ 0.2 ], FontSize -> 15, FontSlant -> "Plain" },
             BoxID            -> "AttachedChatInputField",
             ContinuousAction -> True,
-            ImageSize        -> size
+            ImageSize        -> size,
+            TrapEnterKey     -> False (* needed for shift+enter support for addint new lines *)
         ],
         With[ { fieldHintBoxes =
             ToBoxes @ Row[
