@@ -1194,7 +1194,7 @@ chatbarAddServiceCreditsButton[tier_] :=
 	]
 
 
-chatbarAddServiceCreditsThermometer["Pro", level_ : (1|2|3)] := 
+chatbarAddServiceCreditsThermometer["Pro", level : (1|2|3)] := 
 	Grid[
 		{{
 			Block[{$cutRed = LightDarkSwitched[GrayLevel[0.75]]}, chatbarUsageThermometerBase[120, 1, "Pro"]],
@@ -1205,7 +1205,7 @@ chatbarAddServiceCreditsThermometer["Pro", level_ : (1|2|3)] :=
 	]
 
 
-chatbarAddServiceCreditsThermometer["Research", level_ : (1|2|3)] := 
+chatbarAddServiceCreditsThermometer["Research", level : (1|2|3)] := 
 	Grid[
 		{{
 			Block[{$cutRed = LightDarkSwitched[GrayLevel[0.75]]}, chatbarUsageThermometerBase[120, 1, "Research"]],
@@ -1274,25 +1274,24 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 			Which[
 				Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEnd, "ShowChatbar" ],
 					"Off",
-				TrueQ @ AbsoluteCurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ],
+				TrueQ @ AbsoluteCurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ],
 					"Minimized",
 				True,
 					"Full"
 			],
-			(* FIXME: @KevinD, please double check the state getters / setters / settings here. *)
 			Switch[#,
 				"Full",
 					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
 					CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
 					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
-					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] = False,
+					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
 				"Minimized",
 					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
 					CurrentValue[ nbo, "ShowChatbar" ] = True;
 					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "FooterOpenMinimized" } ] = True,
+					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
 				"Off",
-					CurrentValue[ nbo, "ShowChatbar" ] = True; (* FIXME: Not sure about this one *)
+					CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
 					CurrentValue[ $FrontEnd, "ShowChatbar" ] = False;
 			]&
 		]},
