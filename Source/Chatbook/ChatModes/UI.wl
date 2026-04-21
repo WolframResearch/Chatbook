@@ -714,7 +714,7 @@ Overlay[
                         },
                         Dynamic[ selectionWithinQ || mouseOverQ ],
                         BaselinePosition -> Baseline,
-                        ImageMargins -> { { 0, 3 }, { 0, 0 } },
+                        ImageMargins -> { { 0, 6 }, { 0, 0 } },
                         ImageSize        -> All
                     ],
                     Style[ tr[ "ChatbarFieldHint" ],
@@ -945,6 +945,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     Background     -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[0.0980392] ],
                                     FrameMargins   -> 0,
                                     FrameStyle     -> None,
+                                    ImageMargins   -> { { 2, 0 }, { 0, 0 } },
                                     RoundingRadius -> 1
                                 ]
                             } },
