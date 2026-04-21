@@ -907,6 +907,9 @@ makeChatbarChatInputCellContent // beginDefinition;
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
+    Style[ #, Magnification -> Dynamic @
+        AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+    ]& @
     DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False },
         DynamicWrapper[
             PaneSelector[
@@ -945,7 +948,6 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     RoundingRadius -> 1
                                 ]
                             } },
-                            BaseStyle -> { Magnification -> $inputFieldGridMagnification },
                             Spacings  -> { 0, 0 }
                         ],
                     True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ, selectionWithinQ ]
@@ -967,7 +969,26 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
         ],
         Initialization :> (
             thisCell = EvaluationCell[ ];
-            minimizedQ = TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ]
+            FE`Evaluate @ {
+                (* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
+                FrontEnd`CurrentValue[
+                    FrontEnd`$FrontEnd,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" },
+                    FEPrivate`Switch[ FEPrivate`$SystemID, "MacOSX-ARM64", 1., "MacOSX-x86-64", 1., _, .75 ]
+                ],
+                FrontEnd`CurrentValue[
+                    FrontEnd`$FrontEnd,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
+                    False
+                ],
+                FEPrivate`Set[
+                    minimizedQ,
+                    TrueQ @ FrontEnd`AbsoluteCurrentValue[
+                        FrontEnd`$FrontEndSession,
+                        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
+                    ]
+                ]
+            }
         )
     ];
 
