@@ -289,6 +289,10 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     "Reasoning"        -> <|"effort" -> "none"|>
 |>;
 
+$modelAutoSettings[ "OpenRouter", "KimiK26" ] = <|
+    $modelAutoSettings[ "OpenRouter", "KimiK25" ]
+|>;
+
 $modelAutoSettings[ "OpenRouter", Automatic ] = <||>;
 
 (* ::**************************************************************************************************************:: *)
@@ -445,6 +449,10 @@ $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     (*"HybridToolMethod" -> True,*)
     (*"ToolCallExamplePromptStyle" -> Automatic*)
 
+|>;
+
+$modelAutoSettings[ Automatic, "KimiK26" ] = <|
+    $modelAutoSettings[ Automatic, "KimiK25" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)

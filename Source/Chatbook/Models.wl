@@ -468,6 +468,7 @@ chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistr
 
 (*chooseModelFamily0[ wordsPattern[ {"MoonshotAI/Kimi", "K2.5", ___} ] ] := "KimiK25";*) (* OpenRouter: moonshotai/kimi-k2.5 *)
 chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.5", ___ } ] ] := "KimiK25";
+chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.6", ___ } ] ] := "KimiK26";
 
 chooseModelFamily0[ _String ] := None;
 
