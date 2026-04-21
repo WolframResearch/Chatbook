@@ -39,21 +39,92 @@ Notebook[
    DockedCells -> {
     Cell[
      BoxData[
-      GraphicsBox[
-       { },
-       Background ->
-        LightDarkSwitched[
-         RGBColor[0.070588, 0.556863, 0.819608],
-         RGBColor[0.498039, 0.780392, 0.984314]
-        ],
-       AspectRatio -> Full,
-       ImageSize -> {Scaled[1], 5}
+      PaneSelectorBox[
+       {
+        True ->
+         DynamicModuleBox[
+          {Typeset`v$$ = 0},
+          OverlayBox[
+           {
+            AnimatorBox[
+             Dynamic[Typeset`v$$],
+             {0, 1.2},
+             AppearanceElements -> { },
+             ImageSize -> {1, 1},
+             DefaultDuration -> 2.5
+            ],
+            GraphicsBox[
+             {
+              Thickness[1],
+              LineBox[
+               Dynamic[
+                {
+                 {-0.2 + Typeset`v$$, 0},
+                 {-0.1 + Typeset`v$$, 0},
+                 {Typeset`v$$, 0}
+                }
+               ],
+               VertexColors -> {
+                LightDarkSwitched[
+                 RGBColor[0.0705882, 0.556863, 0.819608],
+                 RGBColor[0.498039, 0.780392, 0.984314]
+                ],
+                LightDarkSwitched[
+                 RGBColor[0.878431, 0.94902, 0.988235],
+                 RGBColor[0.960784, 0.960784, 0.960784]
+                ],
+                LightDarkSwitched[
+                 RGBColor[0.0705882, 0.556863, 0.819608],
+                 RGBColor[0.498039, 0.780392, 0.984314]
+                ]
+               }
+              ]
+             },
+             AspectRatio -> Full,
+             Background ->
+              LightDarkSwitched[
+               RGBColor[0.0705882, 0.556863, 0.819608],
+               RGBColor[0.498039, 0.780392, 0.984314]
+              ],
+             ImageMargins -> 0,
+             ImageSize -> {Scaled[1], 15},
+             PlotRange -> {{0, 1}, Automatic},
+             PlotRangePadding -> None
+            ]
+           }
+          ],
+          DynamicModuleValues :> { }
+         ]
+       },
+       Dynamic[
+        AbsoluteCurrentValue[
+         FrontEnd`EvaluationCell[],
+         {TaggingRules, "ProgressIndicator"}
+        ]
+       ],
+       GraphicsBox[
+        Background ->
+         LightDarkSwitched[
+          RGBColor[0.0705882, 0.556863, 0.819608],
+          RGBColor[0.498039, 0.780392, 0.984314]
+         ],
+        ImageSize -> {1, 1}
+       ],
+       ImageSize -> Automatic
       ]
      ],
      "NotebookAssistant`TopStripe",
+     Background ->
+      LightDarkSwitched[
+       RGBColor[0.0705882, 0.556863, 0.819608],
+       RGBColor[0.498039, 0.780392, 0.984314]
+      ],
      CellFrame -> False,
-     CellFrameMargins -> {{0, 0}, {-3, -6}},
-     CellMargins -> 0
+     CellFrameMargins -> {{0, 0}, {0, -5}},
+     CellMargins -> 0,
+     CellSize -> {Automatic, 12},
+     Evaluator -> None,
+     TaggingRules -> <|"ProgressIndicator" -> None|>
     ],
     Cell[
      BoxData[
@@ -97,7 +168,9 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.5.99.3985249845"|>
+   TaggingRules -> <|
+    "WorkspaceChatStyleSheetVersion" -> "2.5.100.3985410210"
+   |>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -367,7 +440,6 @@ Notebook[
           PaneBox[
            #1,
            AppearanceElements -> None,
-           BaseStyle -> {LineBreakWithin -> False},
            ImageSize -> {Scaled[1], UpTo[400]},
            Scrollbars -> Automatic
           ],
@@ -432,7 +504,6 @@ Notebook[
           Alignment -> {Left, Top},
           Background ->
            LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
-          BaseStyle -> {LineBreakWithin -> False},
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[

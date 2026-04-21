@@ -286,9 +286,9 @@ channelCleanup // endDefinition;
 ResourceInstallFromURL // beginDefinition;
 
 ResourceInstallFromURL[ ] :=
-    catchMine @ ResourceInstallFromURL @ Automatic;
+    DynamicModule[ { nbObject }, catchMine @ ResourceInstallFromURL[ Automatic, Dynamic @ nbObject ] ];
 
-ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Enclose[
+ResourceInstallFromURL[ rType: $$installableType|Automatic, Dynamic[ nb_ ] ] := catchMine @ Enclose[
     Module[ { url },
 
         url = ConfirmMatch[
@@ -312,7 +312,8 @@ ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Encl
                         CellMargins -> { { Inherited, Inherited }, { Inherited, 4 } },
                         TextAlignment -> Right ]
                 },
-                WindowSize -> { 500, All }
+                Initialization :> Function[ nb = # ], (* backdoor to evaluate before dialog appears *)
+                WindowSize     -> { 500, All }
             ],
             _String|$Canceled,
             "InputString"
@@ -323,7 +324,7 @@ ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Encl
             ConfirmBy[ ResourceInstallFromURL[ rType, url ], AssociationQ, "Install" ]
         ]
     ],
-    throwInternalFailure[ ResourceInstallFromURL @ rType, ## ] &
+    throwInternalFailure[ ResourceInstallFromURL[ rType, Dynamic @ nbObject ], ## ] &
 ];
 
 ResourceInstallFromURL[ rType: $$installableType|Automatic, url_String ] := Enclose[

@@ -14,7 +14,7 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $defaultLLMKitService  := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
-$defaultLLMKitModelName = "gpt-4.1-2025-04-14";
+$defaultLLMKitModelName = "gpt-5.4-2026-03-05";
 
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
