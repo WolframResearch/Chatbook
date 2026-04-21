@@ -911,7 +911,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     Style[ #, Magnification -> Dynamic @
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
-    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False },
+    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False, bgColor = ThemeColor[ "Background" ] },
         DynamicWrapper[
             PaneSelector[
                 {
@@ -923,7 +923,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         PaneSelector[
                                             {
                                                 "Loading" -> chatbarLoading[ ],
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, mouseOverQ, selectionWithinQ ],
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, bgColor, mouseOverQ, selectionWithinQ ],
                                                 "SignIn"  -> chatbarSignIn[ selectionWithinQ ]
                                             },
                                             Dynamic @ connectionLevel,
@@ -943,7 +943,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         Alignment -> { Left, Baseline },
                                         Spacings  -> { 0, 0 }
                                     ],
-                                    Background     -> ThemeColor[ "Background" ],
+                                    Background     -> Dynamic @ bgColor,
                                     FrameMargins   -> 0,
                                     FrameStyle     -> None,
                                     ImageMargins   -> { { 2, 0 }, { 0, 0 } },
@@ -965,7 +965,17 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
             Function[
                 If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
                 If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
-            ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ]
+            ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ];
+            (* set ThemeColor[ "Background" ] to half opacity if chatbar is inactive *)
+            FEPrivate`Set[ bgColor,
+                FEPrivate`If[ FEPrivate`Or[ mouseOverQ, selectionWithinQ ],
+                    ThemeColor[ "Background" ]
+                    ,
+                    Function[
+                        FEPrivate`Apply[ FEPrivate`Head[ # ], FEPrivate`Join[ Apply[ FEPrivate`List, # ], FEPrivate`List[ 0.5 ] ] ]
+                    ][ FrontEnd`AbsoluteCurrentValue[ { FrontEnd`NotebookTheme, If[ FrontEnd`AbsoluteCurrentValue[ LightDark ] === "Dark", "DarkModeColors", "LightModeColors" ], "Background" } ] ]
+                ]
+            ]
             ,
             Evaluator -> None
         ],
@@ -1090,7 +1100,7 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, mouseOverQ_, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, bgColor_, mouseOverQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { fieldContent = initialText, scrollPosition },
     EventHandler[(* pre-emptive mouse-down event for selection snapshot, moves selection into field *)
@@ -1112,7 +1122,7 @@ DynamicModule[ { fieldContent = initialText, scrollPosition },
                     Spacings         -> { 0, 0 }
                 ],
                 Alignment      -> { Automatic, Center },
-                Background     -> ThemeColor[ "Background" ],
+                Background     -> Dynamic @ bgColor,
                 FrameMargins   -> { { 12, 7 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
