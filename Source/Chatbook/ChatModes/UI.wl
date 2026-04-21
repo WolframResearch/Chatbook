@@ -942,7 +942,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         Alignment -> { Left, Baseline },
                                         Spacings  -> { 0, 0 }
                                     ],
-                                    Background     -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[0.0980392] ],
+                                    Background     -> ThemeColor[ "Background" ],
                                     FrameMargins   -> 0,
                                     FrameStyle     -> None,
                                     ImageMargins   -> { { 2, 0 }, { 0, 0 } },
@@ -1111,7 +1111,7 @@ DynamicModule[ { fieldContent = initialText, scrollPosition },
                     Spacings         -> { 0, 0 }
                 ],
                 Alignment      -> { Automatic, Center },
-                Background     -> color @ "NA_ChatInputFieldBackground",
+                Background     -> ThemeColor[ "Background" ],
                 FrameMargins   -> { { 12, 7 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
