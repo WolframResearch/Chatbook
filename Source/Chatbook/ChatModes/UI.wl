@@ -714,12 +714,13 @@ Overlay[
                         },
                         Dynamic[ selectionWithinQ || mouseOverQ ],
                         BaselinePosition -> Baseline,
-                        ImageMargins -> { { 0, 3 }, { 0, 0 } },
+                        ImageMargins -> { { 0, 6 }, { 0, 0 } },
                         ImageSize        -> All
                     ],
                     Style[ tr[ "ChatbarFieldHint" ],
                         "Text", "TextStyleInputField",
                         FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontFamily      -> "Source Sans Pro",
                         FontSize        -> 15,
                         FontSlant       -> "Plain",
                         LineBreakWithin -> False
@@ -845,11 +846,11 @@ ActionMenu[
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = !AbsoluteCurrentValue[ $FrontEndSession, "ShowChatbar" ];
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited),
         menuTick[
-            Dynamic @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "OpenMinimized" } ],
+            Dynamic @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ],
             "[[Minimize Chatbar in All Notebooks by Default]]"
         ] :> (
-            minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "OpenMinimized" } ] =
-                Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "OpenMinimized" } ])
+            minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] =
+                Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ])
     },
     Appearance       -> None,
     DefaultBaseStyle -> {},
@@ -907,6 +908,9 @@ makeChatbarChatInputCellContent // beginDefinition;
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
+    Style[ #, Magnification -> Dynamic @
+        AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+    ]& @
     DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, mouseOverQ = False, selectionWithinQ = False },
         DynamicWrapper[
             PaneSelector[
@@ -939,13 +943,13 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                         Alignment -> { Left, Baseline },
                                         Spacings  -> { 0, 0 }
                                     ],
-                                    Background     -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[0.0980392] ],
+                                    Background     -> ThemeColor[ "Background" ],
                                     FrameMargins   -> 0,
                                     FrameStyle     -> None,
+                                    ImageMargins   -> { { 2, 0 }, { 0, 0 } },
                                     RoundingRadius -> 1
                                 ]
                             } },
-                            BaseStyle -> { Magnification -> $inputFieldGridMagnification },
                             Spacings  -> { 0, 0 }
                         ],
                     True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ, selectionWithinQ ]
@@ -967,7 +971,26 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
         ],
         Initialization :> (
             thisCell = EvaluationCell[ ];
-            minimizedQ = TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "OpenMinimized" } ]
+            FE`Evaluate @ {
+                (* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
+                FrontEnd`CurrentValue[
+                    FrontEnd`$FrontEnd,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" },
+                    FEPrivate`Switch[ FEPrivate`$SystemID, "MacOSX-ARM64", 1., "MacOSX-x86-64", 1., _, .75 ]
+                ],
+                FrontEnd`CurrentValue[
+                    FrontEnd`$FrontEnd,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
+                    False
+                ],
+                FEPrivate`Set[
+                    minimizedQ,
+                    TrueQ @ FrontEnd`AbsoluteCurrentValue[
+                        FrontEnd`$FrontEndSession,
+                        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
+                    ]
+                ]
+            }
         )
     ];
 
@@ -1089,7 +1112,7 @@ DynamicModule[ { fieldContent = initialText, scrollPosition },
                     Spacings         -> { 0, 0 }
                 ],
                 Alignment      -> { Automatic, Center },
-                Background     -> color @ "NA_ChatInputFieldBackground",
+                Background     -> ThemeColor[ "Background" ],
                 FrameMargins   -> { { 12, 7 }, { 7, 7 } },
                 FrameStyle     -> (
                     Dynamic[
