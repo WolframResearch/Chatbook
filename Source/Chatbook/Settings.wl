@@ -553,12 +553,7 @@ modelUnsupportedParameters // endDefinition;
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-
-$DefaultModel :=
-    If[ $VersionNumber >= 14.1,
-        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
-    ];
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -201,9 +201,8 @@ Cell[
                     FrameBox[
                         PaneBox[
                             #1,
-                            (* Don't line break: assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
+                            (* assume the LLM returns code that is compact, and rely on automatic scrollbars otherwise *)
                             AppearanceElements -> None,
-                            BaseStyle          -> { LineBreakWithin -> False }, 
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
                             Scrollbars         -> Automatic
                         ],
@@ -236,7 +235,6 @@ Cell[
                         #1, (* don't use Pane during active stream-of-thought as it may capture mouse-wheel events *)
                         Alignment    -> { Left, Top },
                         Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
-                        BaseStyle    -> { LineBreakWithin -> False }, 
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
                         FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
                         ImageMargins -> { { 0, 0 }, { 0, 8 } },

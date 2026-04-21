@@ -253,6 +253,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `llmSynthesize;
 `llmSynthesizeSubmit;
 `logUsage;
+`makeBoxesInputMoreTextLike;
 `makeCellStringBudget;
 `makeChatCloudDefaultNotebookDockedCell;
 `makeChatCloudDockedCellContents;
