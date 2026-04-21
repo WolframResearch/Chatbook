@@ -1495,7 +1495,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIPersonas",
 			"Icon"    -> resizeMenuIcon @ chatbookIcon[ "ChatIconCodeAssistant", False ],
 			"MenuTag" -> "Personas",
-			"Menu"    :> createPersonasMenu @ targetObj,
+			"Menu"    :> createMenuPersonas @ targetObj,
 			"Width"   -> 200,
 			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
@@ -1505,7 +1505,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIModels",
 			"Icon"    -> chatbookIcon[ "ChatBlockSettingsMenuIcon", False ],
 			"MenuTag" -> "Services",
-			"Menu"    :> createServiceMenu @ targetObj,
+			"Menu"    :> createMenuService @ targetObj,
 			"Width"    -> 150,
 			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =!= Inherited)
@@ -1515,7 +1515,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIAdvancedSettings",
 			"Icon"    -> chatbookIcon[ "AdvancedSettings", False ],
 			"MenuTag" -> "AdvancedSettings",
-			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
+			"Menu"    :> createMenuAdvancedSettings[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
@@ -1526,11 +1526,11 @@ makeChatActionMenu[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createPersonasMenu*)
+(*createMenuPersonas*)
 
-createPersonasMenu // beginDefinition;
+createMenuPersonas // beginDefinition;
 
-createPersonasMenu[ targetObj_ ] :=
+createMenuPersonas[ targetObj_ ] :=
 With[
 	{
 		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
@@ -1584,7 +1584,7 @@ With[
 	]
 ] /; AssociationQ @ Wolfram`Chatbook`Personas`$CachedPersonaData;
 
-createPersonasMenu[ targetObj_ ] := {
+createMenuPersonas[ targetObj_ ] := {
 With[
 	{
 		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
@@ -1681,7 +1681,7 @@ With[
 ]
 };
 
-createPersonasMenu // endDefinition;
+createMenuPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1689,10 +1689,10 @@ createPersonasMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createAdvancedSettingsMenu*)
-createAdvancedSettingsMenu // beginDefinition;
+(*createMenuAdvancedSettings*)
+createMenuAdvancedSettings // beginDefinition;
 
-createAdvancedSettingsMenu[ targetObj_, appContainer_ ] :=
+createMenuAdvancedSettings[ targetObj_, appContainer_ ] :=
 With[
 	{
 		roleValue = Replace[ currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" } ], { source_, Inherited } :> { source, "User" } ]
@@ -1723,7 +1723,7 @@ With[
 	]
 ];
 
-createAdvancedSettingsMenu // endDefinition;
+createMenuAdvancedSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1749,10 +1749,10 @@ wolframServiceMenuItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createServiceMenu*)
-createServiceMenu // beginDefinition;
+(*createMenuService*)
+createMenuService // beginDefinition;
 
-createServiceMenu[ targetObj_ ] :=
+createMenuService[ targetObj_ ] :=
 With[
 	{
 		model = currentChatSettings[ targetObj, "Model" ]
@@ -1769,7 +1769,7 @@ With[
 	]
 ] /; AssociationQ @ $serviceCache;
 
-createServiceMenu[ targetObj_ ] := {
+createMenuService[ targetObj_ ] := {
 With[
 	{
 		model = currentChatSettings[ targetObj, "Model" ]
@@ -1807,7 +1807,7 @@ With[
 ]
 };
 
-createServiceMenu // endDefinition;
+createMenuService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
