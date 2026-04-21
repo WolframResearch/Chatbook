@@ -69,6 +69,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -274,6 +275,23 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
 $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "ProviderPreferences" -> <|
+        (* Some providers seem to have misconfigured inference stacks for this model,
+           so we specify that OpenRouter should avoid selecting them. *)
+        "ignore" -> {
+            (* no response after tool call *)
+            "deepinfra",
+            "venice",
+
+            (* stop tokens don't work *)
+            "cloudflare",
+            "siliconflow",
+            "atlas-cloud",
+
+            (* repeated punctuation issue across line breaks *)
+            "novita"
+        }
+    |>,
     "Reasoning" -> <| "effort" -> "none" |>
 |>;
 
@@ -448,6 +466,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,

@@ -1030,11 +1030,16 @@ chatSubmit0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
+makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
+makeLLMConfiguration // endDefinition;
 
-makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
-    makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
-makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
+makeLLMConfiguration0 // beginDefinition;
+
+makeLLMConfiguration0[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
+    makeLLMConfiguration0 @ Append[ as, "Model" -> { "OpenAI", model } ];
+
+makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1045,7 +1050,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration[ as_Association ] :=
+makeLLMConfiguration0[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1054,16 +1059,68 @@ makeLLMConfiguration[ as_Association ] :=
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration // endDefinition;
+makeLLMConfiguration0 // endDefinition;
 
 
 $llmConfigPassedKeys = {
     "MaxTokens",
     "Model",
     "PresencePenalty",
+    "ProviderPreferences",
     "Reasoning",
     "Temperature"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchServices*)
+patchServices // beginDefinition;
+patchServices[ as_Association ] := patchServices[ as, as[ "Model", "Service" ] ];
+patchServices[ as_Association, "OpenRouter" ] := patchOpenRouter @ as;
+patchServices[ as_Association, _ ] := Null;
+patchServices // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchOpenRouter*)
+(* FIXME: Verify this works in 14.3 *)
+patchOpenRouter // beginDefinition;
+patchOpenRouter[ as_Association ] := patchOpenRouter[ as, as[ "ProviderPreferences" ] ];
+patchOpenRouter[ as_, <| |> | None | $$unspecified ] := Null;
+patchOpenRouter[ as_, prefs_Association ] := registerParameter[ "OpenRouter", "ProviderPreferences" ];
+patchOpenRouter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*registerParameter*)
+registerParameter // beginDefinition;
+
+registerParameter[ service_String, param_String ] := (
+    registerParameter[ service, param, LLMServices`Chat       ];
+    registerParameter[ service, param, LLMServices`ChatSubmit ];
+);
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+registerParameter[ service_String, param_String, f_Symbol ] := Enclose[
+    If[ FreeQ[ LLMServices`LLMServiceInformation[ f ][ service, "SupportedParameters" ], param ],
+        LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]] =
+            DeleteDuplicates @ Append[
+                ConfirmMatch[
+                    LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]],
+                    { (_String|_Symbol)... },
+                    "SupportedParameters"
+                ],
+                param
+            ]
+    ];
+    registerParameter[ service, param, f ] = Null
+    ,
+    throwInternalFailure
+];
+(* :!CodeAnalysis::EndBlock:: *)
+
+registerParameter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2928,7 +2985,7 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
                             "FinishedCellInfo" -> KeyTake[ info, { "ExpressionUUID", "ScrollOutput" } ] } ],
                         HoldFirst ] ]
             ];
-        
+
             setCurrentValue[ cell, Editable, True ];
             With[ { new = new, info = info },
                 applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
