@@ -720,6 +720,7 @@ Overlay[
                     Style[ tr[ "ChatbarFieldHint" ],
                         "Text", "TextStyleInputField",
                         FontColor       -> LightDarkSwitched @ RGBColor["#898989"],
+                        FontFamily      -> "Source Sans Pro",
                         FontSize        -> 15,
                         FontSlant       -> "Plain",
                         LineBreakWithin -> False
