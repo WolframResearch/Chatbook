@@ -688,7 +688,7 @@ sidebarChatInputField // endDefinition;
 chatbarInputField // beginDefinition;
 
 (* FieldHint implemented as an Overlay such that it can appear while the text caret is present in an empty field *)
-chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ activeQ_ ], size_ ] :=
+chatbarInputField[ Dynamic[ fieldContent_ ], Dynamic[ activeQ_ ], Dynamic[ selectionWithinQ_ ], size_ ] :=
 Overlay[
     {
         InputField[
@@ -724,11 +724,9 @@ Overlay[
                     ],
                     Style[ tr[ "ChatbarFieldHint" ],
                         "Text", "TextStyleInputField",
-                        FontColor       -> Dynamic @ If[ activeQ,
-                            LightDarkSwitched[ GrayLevel[ 0.537255 ], GrayLevel[ 0.756700 ] ],
-                            LightDarSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756700, 0.5 ] ]
-                        ],
+                        FontColor       -> LightDarkSwitched[ GrayLevel[ 0.537255 ], GrayLevel[ 0.756700 ] ],
                         FontFamily      -> "Source Sans Pro",
+                        FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
                         FontSize        -> 15,
                         FontSlant       -> "Plain",
                         LineBreakWithin -> False
@@ -736,7 +734,7 @@ Overlay[
                 },
                 StripOnInput -> True
             ] },
-            RawBoxes @ DynamicBox @ If[ activeQ || fieldContent =!= "", "", fieldHintBoxes ]
+            RawBoxes @ DynamicBox @ If[ selectionWithinQ || fieldContent =!= "", "", fieldHintBoxes ]
         ]
     },
     { 1, 2 },
@@ -799,7 +797,7 @@ Button[
             True ->
                 blueHueButtonAppearance[
                     {
-                        chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803 0.5 ], GrayLevel[ 0.6509803, 0.5 ] ] ],
+                        chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803 ], GrayLevel[ 0.6509803 ] ] ],
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ],
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ]
                     },
@@ -807,7 +805,7 @@ Button[
                 ],
             False ->
                 Framed[
-                    chatbookIcon[ "ChatbarSettingsIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803, 0.5 ], GrayLevel[ 0.6509803, 0.5 ] ] ],
+                    chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803, 0.5 ], GrayLevel[ 0.6509803, 0.5 ] ] ],
                     Alignment      -> { Center, Center },
                     Background     -> None,
                     FrameMargins   -> 0,
@@ -908,6 +906,7 @@ ActionMenu[
     DefaultBaseStyle -> { },
     ImageMargins     -> { { 1, 0 }, { 0, 1 } },
     ImageSize        -> Automatic,
+    MenuStyle        -> { Magnification -> 1 },
     Method           -> "Preemptive"
 ]
 
@@ -963,27 +962,25 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     Style[ Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ], Magnification -> Dynamic @
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
-    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, activeQ = False, bgColor = ThemeColor[ "Background" ] },
+    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
         DynamicWrapper[
             PaneSelector[
                 {
                     False ->
                         Grid[
                             { {
-                                DynamicModule[ { connectionLevel = "Loading" },
-                                    DynamicWrapper[
-                                        PaneSelector[
-                                            {
-                                                "Loading" -> chatbarLoading @ activeQ,
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo, initialText }, bgColor, activeQ ],
-                                                "SignIn"  -> chatbarSignIn @ activeQ
-                                            },
-                                            Dynamic @ connectionLevel,
-                                            ImageSize -> Automatic
-                                        ],
-                                        connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
-                                        SynchronousUpdating -> False
-                                    ]
+                                DynamicWrapper[
+                                    PaneSelector[
+                                        {
+                                            "Loading" -> chatbarLoading @ activeQ,
+                                            "Enabled" -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
+                                            "SignIn"  -> chatbarSignIn @ activeQ
+                                        },
+                                        Dynamic @ connectionLevel,
+                                        ImageSize -> Automatic
+                                    ],
+                                    connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
+                                    SynchronousUpdating -> False
                                 ]
                                 ,
                                 Framed[
@@ -1010,7 +1007,15 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ImageSize -> Automatic
             ]
             ,
-            FEPrivate`Set[ activeQ, FEPrivate`Or[ FrontEnd`CurrentValue[ "MouseOver" ], FrontEnd`CurrentValue[ "SelectionWithin" ] ] ];
+            (* Note: not ticklish when toggling light/dark mode *)
+            FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
+            FEPrivate`Set[ activeQ,
+                FEPrivate`Or[
+                    FrontEnd`CurrentValue[ "MouseOver" ],
+                    selectionWithinQ,
+                    FEPrivate`And[ connectionLevel === "Enabled" && fieldContent =!= "" ]
+                ]
+            ];
             Function[
                 If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
                 If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
@@ -1086,9 +1091,10 @@ Button[
                 Style[
                     "[[Sign in to use assistant chat]]",
                     FontColor -> Dynamic @ If[ activeQ,
-                        LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ],
-                        LightDarkSwitched[ GrayLevel[ 0.2, 0.5 ], GrayLevel[ 0.960784, 0.5 ] ]
-                    ]
+                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+                    ],
+                    FontOpacity -> Dynamic @ If[ activeQ, 1., 0.5 ]
                 ]
             } },
             BaseStyle -> {
@@ -1100,7 +1106,7 @@ Button[
         ],
         Alignment      -> { Automatic, Center },
         Background     -> Dynamic @ If[ activeQ,
-            LightDarkSwitched[ RGBColor["#D4F0FF"], RGBColor["#385061"] ],
+            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
             LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
         ],
         FrameMargins   -> { { 12, 1 }, { 1, 1 } },
@@ -1161,22 +1167,22 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject, initialText_ }, bgColor_, activeQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject }, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { fieldContent = initialText, scrollPosition },
+DynamicModule[ { scrollPosition },
     EventHandler[(* pre-emptive mouse-down event for selection snapshot, moves selection into field *)
         EventHandler[(* pre-emptive mouse-down event for return key *)
             Framed[
                 Grid[
                     { {
                         Pane[
-                            chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, { Scaled[ 1 ], Automatic } ],
+                            chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
                             AppearanceElements -> { },
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
                             Scrollbars         -> { False, Automatic },
                             ScrollPosition     -> Dynamic @ scrollPosition
                         ],
-                        chatbarSendButton[ nbo, fieldContent, activeQ ]
+                        chatbarSendButton[ nbo, fieldContent, activeQ || fieldContent =!= "" ]
                     } },
                     Alignment        -> { Left, Center },
                     BaselinePosition -> { 1, 1 },
@@ -1185,9 +1191,9 @@ DynamicModule[ { fieldContent = initialText, scrollPosition },
                 Alignment      -> { Automatic, Center },
                 Background     -> Dynamic @ bgColor,
                 FrameMargins   -> { { 12, 7 }, { 7, 7 } },
-                FrameStyle     -> Dynamic @ If[ activeQ,
+                FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
                     LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
-                    LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], Graylevel[ 0.392157, 0.5 ] ]
+                    LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
                 ],
                 RoundingRadius -> 9
             ],
@@ -1209,7 +1215,18 @@ DynamicModule[ { fieldContent = initialText, scrollPosition },
         PassEventsDown -> True
     ],
     SynchronousInitialization -> False,
-    Initialization :> (AttachCell[ EvaluationBox[ ], chatbarInputFieldEnabledTierIndicator[ Dynamic @ activeQ ], { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top } ])
+    Initialization :> AttachCell[
+        EvaluationBox[ ],
+        Cell[
+            BoxData @ ToBoxes @ DynamicModule[ { },
+                chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
+                InheritScope -> True
+            ],
+            "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+            Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+        ],
+        { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+    ]
 ];
 
 chatbarInputFieldEnabled // endDefinition;
@@ -1257,10 +1274,8 @@ chatbarInputFieldEnabledTierIndicatorFrame[ text_, Dynamic[ activeQ_ ] ] :=
 Framed[
     Style[
         text,
-        FontColor      -> Dynamic @ If[ activeQ,
-            LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
-            LightDarkSwitched[ GrayLevel[ 1, 0.5 ], GrayLevel[ 0.099919, 0.5 ] ]
-        ],
+        FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
+        FontOpacity    -> Dynamic @ If[ activeQ, 1., 0.5 ],
         FontTracking   -> "SemiCondensed",
         FontVariations -> { "CapsType" -> "AllCaps" },
         FontWeight     -> "SemiBold"
