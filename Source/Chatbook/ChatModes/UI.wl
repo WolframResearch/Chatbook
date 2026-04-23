@@ -903,20 +903,24 @@ Button[
     ],
     If[ activeQ && Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`Menu" ] === { }, (* only attach once *)
     	AttachCell[
-    		EvaluationBox[],
-    		Cell[ BoxData @ ToBoxes @ chatbarOptionsDisplay[nbo, Dynamic[chatbarCell], "NotebookAssistant`Chatbar`Menu" ] ],
-    		{Right, Top},
-    		Offset[{0, 5}, Automatic],
-    		{Right, Bottom},
-    		RemovalConditions -> {"MouseClickOutside"}
-    	]
+            EvaluationBox[],
+            Cell[
+                BoxData @ ToBoxes @ DynamicModule[ { }, chatbarOptionsDisplay[nbo, Dynamic[chatbarCell]], InheritScope -> True ],
+                "NotebookAssistant`Chatbar`Menu",
+                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+            ],
+            {Right, Top},
+            Offset[{0, 5}, Automatic],
+            {Right, Bottom},
+            RemovalConditions -> {"MouseClickOutside"}
+        ]
     ],
-	Appearance       -> "Suppressed",
-	DefaultBaseStyle -> {},
-	BaseStyle        -> {},
-	ImageMargins     -> { { 1, 0 }, { 0, 1 } },
-	ImageSize        -> Automatic,
-	Method           -> "Preemptive"
+    Appearance       -> "Suppressed",
+    DefaultBaseStyle -> {},
+    BaseStyle        -> {},
+    ImageMargins     -> { { 1, 0 }, { 0, 1 } },
+    ImageSize        -> Automatic,
+    Method           -> "Preemptive"
 ]
 
 chatbarOptionsButton // endDefinition;
