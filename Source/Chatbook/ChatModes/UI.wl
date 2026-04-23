@@ -1331,7 +1331,7 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 			ImageMargins -> {{10,0},{0,0}}
 		],
         Initialization :> (localSetting = "Full"), (* the only way to open the menu is from a full state *)
-        Deinitialization :> Switch[localSetting,
+        Deinitialization :> (Switch[localSetting,
             "Full",
                 CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
                 CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
@@ -1345,7 +1345,7 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
             "Off",
                 CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
                 CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
-        ]
+        ])
     ];
 
 
@@ -1452,7 +1452,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                             ],
                         True -> chatbarMaximizeButton[ nbo, Typeset`thisCell ]
                     },
-                    Dynamic @ AbsoluteCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" } ],
+                    Dynamic @ TrueQ @ AbsoluteCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" } ],
                     ImageSize -> Automatic
                 ]
                 ,
