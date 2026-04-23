@@ -295,11 +295,6 @@ $modelAutoSettings[ "xAI", "Grok4" ] = <|
     "ToolsEnabled"     -> True
 |>;
 
-(*$modelAutoSettings[ "xAI", "Grok4NonReasoning" ] = <|
-    $modelAutoSettings[ "xAI", "Grok4" ],
-    "Reasoning"        -> False
-|>;*)
-
 $modelAutoSettings[ "xAI", "Grok42" ] = <|
     $modelAutoSettings[ "xAI", "Grok4" ],
     "MaxContextTokens" -> 2000000
@@ -308,11 +303,6 @@ $modelAutoSettings[ "xAI", "Grok42" ] = <|
 $modelAutoSettings[ "xAI", Automatic ] = <|
     "EndToken"         -> None,
     "ForceSynchronous" -> True,
-
-    (* TODO *)
-    (*"HybridToolMethod" -> True,
-    "ToolMethod"        -> Verbatim @ Automatic*)(*,*)
-    (* TODO *)
     "ToolMethod"       -> "Service"
 |>;
 
