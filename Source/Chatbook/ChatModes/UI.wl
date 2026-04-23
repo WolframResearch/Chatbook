@@ -63,8 +63,8 @@ mouseDown[
         chatbookIcon[
             "ChatbarChatBubbleMinimizedIcon",
             False,
-            LightDarkSwitched[ RGBColor[ 0.8784313, 0.9490196, 0.9882352, 0.5 ], RGBColor[ 0.2039215, 0.2823529, 0.345098, 0.5 ] ],
-            LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078, 0.5 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137, 0.5 ] ]
+            LightDarkSwitched[ RGBColor[ 0.8784313, 0.9490196, 0.9882352 ], RGBColor[ 0.2039215, 0.2823529, 0.345098 ] ],
+            LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ]
         ],
         Alignment      -> { Center, Center },
         Background     -> LightDarkSwitched[ GrayLevel[ 1., 0.5 ], GrayLevel[ 0.0980392, 0.5 ] ],
