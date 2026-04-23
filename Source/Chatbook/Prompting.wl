@@ -44,6 +44,7 @@ $basePromptOrder = {
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
+    "ExpressionURIResults",
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
@@ -108,6 +109,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "SpecialURIAudio"                      -> { "SpecialURI" },
     "SpecialURIVideo"                      -> { "SpecialURI" },
     "SpecialURIDynamic"                    -> { "SpecialURI" },
+    "ExpressionURIResults"                 -> { "SpecialURI" },
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
     "WolframSymbolCapitalization"          -> { },
@@ -137,7 +139,8 @@ $excludedBasePrompts = { };
 $disabledBasePrompts = {
     "FunctionRepositoryIntegration",
     "FunctionRepositoryFunctionSyntax",
-    "WolframLanguageEvaluatorToolInteractive"
+    "WolframLanguageEvaluatorToolInteractive",
+    "ExpressionURIResults"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -311,6 +314,11 @@ $basePromptComponents[ "SpecialURIVideo" ] = "\
 
 $basePromptComponents[ "SpecialURIDynamic" ] = "\
 	* ![label](dynamic://content-id) represents an embedded dynamic UI.";
+
+$basePromptComponents[ "ExpressionURIResults" ] = "\
+* When wolfram_language_evaluator returns a result containing an expression URI \
+(e.g. ![result](expression://content-id)), always display it using that URI. Never attempt to reproduce or summarize \
+the formatted result as markdown text.";
 
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
