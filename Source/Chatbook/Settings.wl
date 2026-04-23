@@ -237,8 +237,9 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "EndToken"          -> None,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
