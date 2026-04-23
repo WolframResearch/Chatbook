@@ -963,75 +963,87 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
     DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
-        DynamicWrapper[
-            PaneSelector[
-                {
-                    False ->
-                        Grid[
-                            { {
-                                DynamicWrapper[
-                                    PaneSelector[
-                                        {
-                                            "Loading" -> chatbarLoading @ activeQ,
-                                            "Enabled" -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
-                                            "SignIn"  -> chatbarSignIn @ activeQ
-                                        },
-                                        Dynamic @ connectionLevel,
-                                        ImageSize -> Automatic
-                                    ],
-                                    connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
-                                    SynchronousUpdating -> False
-                                ]
-                                ,
-                                Framed[
-                                    Grid[
-                                        {
-                                            { chatbarMinimizeButton[ minimizedQ, activeQ ] },
-                                            { chatbarOptionsMenu[ nbo, minimizedQ, activeQ ] }
-                                        },
-                                        Alignment -> { Left, Baseline },
-                                        Spacings  -> { 0, 0 }
-                                    ],
-                                    Background     -> Dynamic @ bgColor,
-                                    FrameMargins   -> 0,
-                                    FrameStyle     -> None,
-                                    ImageMargins   -> { { 2, 0 }, { 0, 0 } },
-                                    RoundingRadius -> 1
-                                ]
-                            } },
-                            Spacings  -> { 0, 0 }
-                        ],
-                    True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ ]
-                },
-                Dynamic @ minimizedQ,
-                ImageSize -> Automatic
-            ]
-            ,
-            (* Note: not ticklish when toggling light/dark mode *)
-            FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
-            FEPrivate`Set[ activeQ,
-                FEPrivate`Or[
-                    FrontEnd`CurrentValue[ "MouseOver" ],
-                    selectionWithinQ,
-                    FEPrivate`And[ connectionLevel === "Enabled" && fieldContent =!= "" ]
+        EventHandler[
+            DynamicWrapper[
+                PaneSelector[
+                    {
+                        False ->
+                            Grid[
+                                { {
+                                    DynamicWrapper[
+                                        PaneSelector[
+                                            {
+                                                "Loading" -> chatbarLoading @ activeQ,
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
+                                                "SignIn"  -> chatbarSignIn @ activeQ
+                                            },
+                                            Dynamic @ connectionLevel,
+                                            ImageSize -> Automatic
+                                        ],
+                                        connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
+                                        SynchronousUpdating -> False
+                                    ]
+                                    ,
+                                    Framed[
+                                        Grid[
+                                            {
+                                                { chatbarMinimizeButton[ minimizedQ, activeQ ] },
+                                                { chatbarOptionsMenu[ nbo, minimizedQ, activeQ ] }
+                                            },
+                                            Alignment -> { Left, Baseline },
+                                            Spacings  -> { 0, 0 }
+                                        ],
+                                        Background     -> Dynamic @ bgColor,
+                                        FrameMargins   -> 0,
+                                        FrameStyle     -> None,
+                                        ImageMargins   -> { { 2, 0 }, { 0, 0 } },
+                                        RoundingRadius -> 1
+                                    ]
+                                } },
+                                Spacings  -> { 0, 0 }
+                            ],
+                        True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ ]
+                    },
+                    Dynamic @ minimizedQ,
+                    ImageSize -> Automatic
                 ]
-            ];
-            Function[
-                If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
-                If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
-            ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ];
-            (* it's unclear to me how robust this is *)
-            FEPrivate`Set[ bgColor,
-                FEPrivate`If[ activeQ,
-                    ThemeColor[ "Background" ]
-                    ,
-                    Function[
-                        FEPrivate`Apply[ FEPrivate`Head[ # ], FEPrivate`Join[ Apply[ FEPrivate`List, # ], FEPrivate`List[ 0.5 ] ] ]
-                    ][ FrontEnd`AbsoluteCurrentValue[ { FrontEnd`NotebookTheme, If[ FrontEnd`AbsoluteCurrentValue[ LightDark ] === "Dark", "DarkModeColors", "LightModeColors" ], "Background" } ] ]
-                ]
-            ]
-            ,
-            Evaluator -> None
+                ,
+                (* Note: not ticklish when toggling light/dark mode *)
+                FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
+                FEPrivate`Set[ activeQ,
+                    FEPrivate`Or[
+                        FrontEnd`CurrentValue[ "MouseOver" ],
+                        selectionWithinQ,
+                        FEPrivate`And[ connectionLevel === "Enabled", fieldContent =!= "" ]
+                    ]
+                ];
+                Function[
+                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
+                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ];
+                ,
+                Evaluator -> None
+            ],
+            {
+                "MouseEntered" :> (
+                    (* FEPrivate`Set[ mouseOverQ, True ]; *)
+                    FEPrivate`Set[ bgColor, ThemeColor[ "Background" ] ]
+                ),
+                "MouseExited"  :> (
+                    (* FEPrivate`Set[ mouseOverQ, False ]; *)
+                    FEPrivate`Set[ bgColor,
+                        SetAlphaChannel[
+                            FrontEnd`AbsoluteCurrentValue[ nbo, {
+                                FrontEnd`NotebookTheme,
+                                If[ FrontEnd`AbsoluteCurrentValue[ nbo, LightDark ] === "Dark", "DarkModeColors", "LightModeColors" ],
+                                "Background"
+                            } ],
+                            0.5
+                        ]
+                    ]
+                )
+            },
+            PassEventsDown -> True
         ],
         Initialization :> (
             thisCell = EvaluationCell[ ];
