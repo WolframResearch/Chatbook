@@ -1117,6 +1117,9 @@ arg1
 arg2
 /exec
 
+Any tool indicator or /command MUST begin on its own new line. It MUST NEVER appear inline after preceding \
+sentence text.
+
 After you write /exec, the system will execute the tool call for you and return the result.
 
 If your arguments require multiple lines, specify the name of each argument followed by a colon and a space, \
