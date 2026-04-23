@@ -1273,32 +1273,7 @@ chatbarAddServiceCreditsDisplay[tier: "Research"] :=
 
 
 chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] := 
-	With[{
-		dynamic = Dynamic[
-			Which[
-				Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEnd, "ShowChatbar" ],
-					"Off",
-				TrueQ @ AbsoluteCurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ],
-					"Minimized",
-				True,
-					"Full"
-			],
-			Switch[#,
-				"Full",
-					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
-					CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
-					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
-					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
-				"Minimized",
-					CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
-					CurrentValue[ nbo, "ShowChatbar" ] = True;
-					CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-					CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
-				"Off",
-					CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
-					CurrentValue[ $FrontEnd, "ShowChatbar" ] = False;
-			]&
-		]},
+    DynamicModule[ { localSetting },
 		Framed[
 			Grid[
 				{Table[
@@ -1306,7 +1281,7 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 						Column[
 							{
 								Setter[
-									dynamic,
+									Dynamic[localSetting],
 									state,
 									Framed["[[image]]",
 										ImageSize -> {80, 40},
@@ -1321,11 +1296,11 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 								Grid[
 									{{
 										RadioButton[
-											dynamic,
+											Dynamic[localSetting],
 											state
 										],
 										Setter[
-											dynamic,
+											Dynamic[localSetting],
 											state,
 											state,
 											Appearance -> None,
@@ -1354,8 +1329,24 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 			RoundingRadius -> 8,
 			FrameStyle -> $coDividerColor,
 			ImageMargins -> {{10,0},{0,0}}
-		]
-	]
+		],
+        Initialization :> (localSetting = "Full"), (* the only way to open the menu is from a full state *)
+        Deinitialization :> Switch[localSetting,
+            "Full",
+                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+                CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+                CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
+                CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
+            "Minimized",
+                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+                CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+                CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
+                CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
+            "Off",
+                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+                CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
+        ]
+    ];
 
 
 (* ::**************************************************************************************************************:: *)
