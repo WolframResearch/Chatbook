@@ -1205,18 +1205,20 @@ DynamicModule[ { scrollPosition },
         PassEventsDown -> False
     ],
     SynchronousInitialization -> False,
-    Initialization :> AttachCell[
-        EvaluationBox[ ],
-        Cell[
-            BoxData @ ToBoxes @ DynamicModule[ { },
-                chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
-                InheritScope -> True
+    Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ] === { },
+        AttachCell[
+            EvaluationBox[ ],
+            Cell[
+                BoxData @ ToBoxes @ DynamicModule[ { },
+                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
+                    InheritScope -> True
+                ],
+                "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+                Evaluator     -> "System",
+                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
-            Evaluator     -> "System",
-            Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
-        ],
-        { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+        ]
     ]
 ];
 
