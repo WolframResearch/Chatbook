@@ -1043,15 +1043,16 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                     FrontEnd`$FrontEnd,
                     { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
                     False
-                ],
-                FEPrivate`Set[
-                    FrontEnd`CurrentValue[ thisCell, { TaggingRules, "MinimizedQ" } ],
-                    TrueQ @ FrontEnd`AbsoluteCurrentValue[
-                        FrontEnd`$FrontEndSession,
-                        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
-                    ]
                 ]
-            }
+            };
+            setCurrentValue[
+                thisCell,
+                { TaggingRules, "MinimizedQ" },
+                TrueQ @ FrontEnd`AbsoluteCurrentValue[
+                    FrontEnd`$FrontEndSession,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
+                ]
+            ]
         ]
     ];
 
