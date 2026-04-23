@@ -48,6 +48,7 @@ $basePromptOrder = {
     "TrivialCode",
     "Packages",
     "FunctionRepositoryIntegration",
+    "FunctionRepositoryFunctionSyntax",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
@@ -134,6 +135,7 @@ $excludedBasePrompts = { };
    enabled via the "EnabledBasePrompts" setting. *)
 $disabledBasePrompts = {
     "FunctionRepositoryIntegration",
+    "FunctionRepositoryFunctionSyntax",
     "WolframLanguageEvaluatorToolInteractive"
 };
 
@@ -321,6 +323,11 @@ $basePromptComponents[ "Packages" ] = "\
 $basePromptComponents[ "FunctionRepositoryIntegration" ] = "\
 * ResourceFunctions published in the Function Repository are reviewed and approved by Wolfram staff, \
 so you can treat them as first-class citizens of the Wolfram Language if there isn't already a built-in equivalent.";
+
+$basePromptComponents[ "FunctionRepositoryFunctionSyntax" ] = "\
+* ALWAYS call repository functions via the wrapped head, with the name as a string: \
+`ResourceFunction[\"SomeFunctionName\"][args]`. A bare `SomeFunctionName` is just an unbound symbol and will not \
+resolve.";
 
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
