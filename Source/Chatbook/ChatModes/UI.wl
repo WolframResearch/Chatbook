@@ -1008,29 +1008,18 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                     ImageSize -> Automatic
                 ]
                 ,
-                (* Note: not ticklish when toggling light/dark mode *)
-                FEPrivate`Set[ selectionWithinQ, FrontEnd`CurrentValue[ "SelectionWithin" ] ];
-                FEPrivate`Set[ activeQ,
-                    FEPrivate`Or[
-                        FrontEnd`CurrentValue[ "MouseOver" ],
-                        selectionWithinQ,
-                        FEPrivate`And[ connectionLevel === "Enabled", fieldContent =!= "" ]
-                    ]
-                ];
+                selectionWithinQ = CurrentValue[ "SelectionWithin" ];
+                activeQ = selectionWithinQ || CurrentValue[ "MouseOver" ] || (connectionLevel === "Enabled" && fieldContent =!= "");
                 Function[
-                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], FEPrivate`Set[ minimizedQ, True ] ];
-                    If[ Not @ #, FEPrivate`Set[ minimizeOverrideQ, False ] ];
+                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], minimizedQ = True ];
+                    If[ Not @ #, minimizeOverrideQ = False ];
                 ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ];
-                ,
-                Evaluator -> None
             ],
             {
                 "MouseEntered" :> (
-                    (* FEPrivate`Set[ mouseOverQ, True ]; *)
                     FEPrivate`Set[ bgColor, ThemeColor[ "Background" ] ]
                 ),
                 "MouseExited"  :> (
-                    (* FEPrivate`Set[ mouseOverQ, False ]; *)
                     FEPrivate`Set[ bgColor,
                         SetAlphaChannel[
                             FrontEnd`AbsoluteCurrentValue[ nbo, {
@@ -1182,49 +1171,42 @@ Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 chatbarInputFieldEnabled[ { nbo_NotebookObject }, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { scrollPosition },
-    EventHandler[(* pre-emptive mouse-down event for selection snapshot, moves selection into field *)
-        EventHandler[(* pre-emptive mouse-down event for return key *)
-            Framed[
-                Grid[
-                    { {
-                        Pane[
-                            chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
-                            AppearanceElements -> { },
-                            ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
-                            Scrollbars         -> { False, Automatic },
-                            ScrollPosition     -> Dynamic @ scrollPosition
-                        ],
-                        chatbarSendButton[ nbo, fieldContent, activeQ || fieldContent =!= "" ]
-                    } },
-                    Alignment        -> { Left, Center },
-                    BaselinePosition -> { 1, 1 },
-                    Spacings         -> { 0, 0 }
-                ],
-                Alignment      -> { Automatic, Center },
-                Background     -> Dynamic @ bgColor,
-                FrameMargins   -> { { 12, 7 }, { 7, 7 } },
-                FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
-                    LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
-                    LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
-                ],
-                RoundingRadius -> 9
+    EventHandler[(* pre-emptive mouse-down event for return key *)
+        Framed[
+            Grid[
+                { {
+                    Pane[
+                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
+                        AppearanceElements -> { },
+                        ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
+                        Scrollbars         -> { False, Automatic },
+                        ScrollPosition     -> Dynamic @ scrollPosition
+                    ],
+                    chatbarSendButton[ nbo, fieldContent, activeQ || fieldContent =!= "" ]
+                } },
+                Alignment        -> { Left, Center },
+                BaselinePosition -> { 1, 1 },
+                Spacings         -> { 0, 0 }
             ],
-            {
-                "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
-                    fieldContent = ""
-                    ,
-                    With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
-                ],
-                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
-            },
-            Method         -> "Preemptive",
-            PassEventsDown -> False
+            Alignment      -> { Automatic, Center },
+            Background     -> Dynamic @ bgColor,
+            FrameMargins   -> { { 12, 7 }, { 7, 7 } },
+            FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
+                LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
+                LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
+            ],
+            RoundingRadius -> 9
         ],
         {
-            "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo)
+            "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
+                fieldContent = ""
+                ,
+                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+            ],
+            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
         },
         Method         -> "Preemptive",
-        PassEventsDown -> True
+        PassEventsDown -> False
     ],
     SynchronousInitialization -> False,
     Initialization :> AttachCell[
@@ -1235,6 +1217,7 @@ DynamicModule[ { scrollPosition },
                 InheritScope -> True
             ],
             "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+            Evaluator     -> "System",
             Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
         ],
         { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
