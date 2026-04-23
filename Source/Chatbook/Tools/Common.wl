@@ -1140,6 +1140,8 @@ $simpleToolPost = "\
 
 You must write the tool call in your CURRENT response.
 Do not state that you will use a tool and end your message before making the tool call.
+If a tool call yields output that helps answer the original question, display that output INLINE where \
+appropriate. Do not rely solely on paraphrasing or describing it in words.
 Only make one tool call at a time.";
 
 
