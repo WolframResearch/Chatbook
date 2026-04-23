@@ -1388,6 +1388,7 @@ $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
+    StartOfLine ~~ text: Except[ "\n" ].. ~~ "/wl" ~~ WhitespaceCharacter... ~~ "\n" :> StringTrim[text] <> "\n/wl\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
