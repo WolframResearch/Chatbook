@@ -1190,7 +1190,7 @@ DynamicModule[ { scrollPosition },
             ],
             Alignment      -> { Automatic, Center },
             Background     -> Dynamic @ bgColor,
-            FrameMargins   -> { { 12, 7 }, { 7, 7 } },
+            FrameMargins   -> { { 10, 5 }, { 5, 5 } },
             FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
                 LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
                 LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
@@ -1221,7 +1221,7 @@ DynamicModule[ { scrollPosition },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -6, 7 }, Automatic ], { Left, Top }
         ]
     ]
 ];
@@ -1273,6 +1273,7 @@ Framed[
         text,
         FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
         FontOpacity    -> Dynamic @ If[ activeQ, 1., 0.5 ],
+        FontSize       -> 11,
         FontTracking   -> "SemiCondensed",
         FontVariations -> { "CapsType" -> "AllCaps" },
         FontWeight     -> "SemiBold"
