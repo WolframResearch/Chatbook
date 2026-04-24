@@ -2375,8 +2375,11 @@ preprocessForResultString // beginDefinition;
 preprocessForResultString[ expr_ ] := ReplaceAll[
     expr,
     {
-        gfx_? safeGraphicsQ :>
-            RuleCondition @ markdownExpression @ MakeExpressionURI[ ToString @ Head @ Unevaluated @ gfx, gfx ]
+        e_? markdownExpressionQ :>
+            RuleCondition @ markdownExpression @ MakeExpressionURI[
+                ToString @ Head @ Unevaluated @ e,
+                Unevaluated @ e
+            ]
     }
 ];
 
@@ -2384,11 +2387,21 @@ preprocessForResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*safeGraphicsQ*)
-safeGraphicsQ // beginDefinition;
-safeGraphicsQ // Attributes = { HoldAllComplete };
-safeGraphicsQ[ e_ ] := graphicsQ @ Unevaluated @ e;
-safeGraphicsQ // endDefinition;
+(*markdownExpressionQ*)
+markdownExpressionQ // beginDefinition;
+markdownExpressionQ // Attributes = { HoldAllComplete };
+markdownExpressionQ[ e_Audio ] := AudioQ @ Unevaluated @ e;
+markdownExpressionQ[ e_Video ] := VideoQ @ Unevaluated @ e;
+markdownExpressionQ[ e_Manipulate ] := manipulateQ @ Unevaluated @ e;
+markdownExpressionQ[ e_ ] := graphicsQ @ Unevaluated @ e;
+markdownExpressionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*manipulateQ*)
+manipulateQ // beginDefinition;
+manipulateQ[ m_Manipulate ] := MatchQ[ Quiet @ MakeBoxes @ m, TagBox[ _, _Manipulate`InterpretManipulate, ___ ] ];
+manipulateQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
