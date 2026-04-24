@@ -709,12 +709,12 @@ $hintData[ "InlineMarkdownExpression" ] = <|
 |>;
 
 $hintData[ "InlineMarkdownExpression", "Template" ] = StringTemplate[ "\
-The following URIs are available to use in your response:
+The following URIs are now available to you:
 
 `1`
 
-Show an expression to the user using ![label](uri).
-Inline an expression in WL code blocks or evaluator inputs using <!uri!>." ];
+Show a formatted expression to the user with ![label](uri).
+Inline an expression in WL code blocks or evaluator inputs with <!uri!>." ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -878,7 +878,7 @@ appendXMLHints // endDefinition;
 
 
 $xmlHintsTemplate = "`1`\n\n<system-hints>\n`2`\n</system-hints>";
-$xmlHintTemplate  = "<hint>`1`</hint>";
+$xmlHintTemplate  = "<hint>\n`1`\n</hint>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
