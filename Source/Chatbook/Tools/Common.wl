@@ -68,6 +68,7 @@ $DefaultToolOptions = <|
         "AllowedReadPaths"         -> All,
         "AllowedWritePaths"        -> Automatic,
         "AppendURIPrompt"          -> False,
+        "DisabledHints"            -> None,
         "EvaluationTimeConstraint" -> 60,
         "HintMethod"               -> Automatic,
         "Method"                   -> Automatic,
