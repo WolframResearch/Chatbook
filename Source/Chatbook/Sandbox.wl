@@ -248,7 +248,7 @@ getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", 
 getOption[ "DisabledHints", $$unspecified ] := { };
 getOption[ "DisabledHints", hints: _String | { ___String } ] := Flatten @ { hints };
 getOption[ "DisabledHints", None ] := { };
-getOption[ "DisabledHints", All ] := Keys @ $hintData;
+getOption[ "DisabledHints", All ] := All;
 getOption[ "DisabledHints", hints_ ] := throwFailure[ "InvalidOptionValue", "DisabledHints", hints ];
 
 getOption[ "HintMethod", $$unspecified ] := Automatic;
