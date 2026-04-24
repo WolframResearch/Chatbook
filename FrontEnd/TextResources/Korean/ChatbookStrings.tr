@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "\:BB34\:C5C7\:C774\:B4E0 \:BB3C\:C5B4\:BCF4\:C138\:C694",
 "ChatbarFieldHint" -> "\:BB34\:C5C7\:C744 \:B3C4\:C640\:B4DC\:B9B4\:AE4C\:C694?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use assistant chat",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8 \:CC44\:D305\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:C120\:D0DD\:D55C \:BD80\:BD84\:C5D0 \:B300\:D55C \:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
