@@ -27,6 +27,7 @@ $readPaths                := toolOptionValue[ "WolframLanguageEvaluator", "Allow
 $writePaths               := toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"        ];
 $executePaths             := toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths"      ];
 $hintMethod               := toolOptionValue[ "WolframLanguageEvaluator", "HintMethod"               ];
+$disabledHints            := toolOptionValue[ "WolframLanguageEvaluator", "DisabledHints"            ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -141,6 +142,7 @@ WolframLanguageToolEvaluate // Options = {
     "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
+    "DisabledHints"         -> None,
     "HintMethod"            -> Automatic,
     "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
@@ -206,6 +208,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
+            $disabledHints            = getOption[ "DisabledHints"        , opts ],
             $hintMethod               = getOption[ "HintMethod"           , opts ],
             $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
             $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
@@ -241,6 +244,12 @@ getOption[ "AppendURIInstructions", append_ ] := throwFailure[ "InvalidOptionVal
 getOption[ "Method", $$unspecified ] := Automatic;
 getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
 getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
+
+getOption[ "DisabledHints", $$unspecified ] := { };
+getOption[ "DisabledHints", hints: _String | { ___String } ] := Flatten @ { hints };
+getOption[ "DisabledHints", None ] := { };
+getOption[ "DisabledHints", All ] := Keys @ $hintData;
+getOption[ "DisabledHints", hints_ ] := throwFailure[ "InvalidOptionValue", "DisabledHints", hints ];
 
 getOption[ "HintMethod", $$unspecified ] := Automatic;
 getOption[ "HintMethod", method: "Comment"|"Data"|"XML"|None ] := method;
@@ -721,8 +730,13 @@ Inline an expression in WL code blocks or evaluator inputs with <!uri!>." ];
 (*addEvaluatorHint*)
 addEvaluatorHint // beginDefinition;
 
-addEvaluatorHint[ ___ ] /; $hintMethod === None := Null;
+(* Do nothing when hints are globally disabled: *)
+addEvaluatorHint[ ___ ] /; $hintMethod === None || $disabledHints === All := Null;
 
+(* Do nothing when the specified hint is disabled: *)
+addEvaluatorHint[ name_String, ___ ] /; MemberQ[ $disabledHints, name ] := Null;
+
+(* Add hint with no arguments: *)
 addEvaluatorHint[ name_String ] :=
     Internal`StuffBag[
         $collectedEvaluatorHints,
@@ -732,6 +746,7 @@ addEvaluatorHint[ name_String ] :=
         |>
     ];
 
+(* Add hint with arguments: *)
 addEvaluatorHint[ name_String, args: _List|_Association ] :=
     Internal`StuffBag[
         $collectedEvaluatorHints,
@@ -741,6 +756,7 @@ addEvaluatorHint[ name_String, args: _List|_Association ] :=
         |>
     ];
 
+(* Conform hint arguments to a list: *)
 addEvaluatorHint[ name_String, other__ ] :=
     addEvaluatorHint[ name, { other } ];
 
