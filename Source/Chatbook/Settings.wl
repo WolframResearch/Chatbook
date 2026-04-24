@@ -394,7 +394,7 @@ $modelAutoSettings[ Automatic, "GPT5Mini" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     $modelAutoSettings[ Automatic, "GPT5Mini" ],
-    "Reasoning"                  -> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning"                  -> If[ TrueQ @ $gpt5Reasoning, "Low", Missing[ "NotSupported" ] ]
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
