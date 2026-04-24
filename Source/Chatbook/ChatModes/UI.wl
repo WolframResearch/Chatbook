@@ -931,6 +931,7 @@ chatbarOptionsButton // endDefinition;
 (*chatbarOptionsDisplay*)
 
 
+$coWidth = 600;
 $coDividerColor = LightDarkSwitched[GrayLevel[0.90]];
 $coInnerBackground = LightDarkSwitched[GrayLevel[0.98]];
 $coOuterBackground = LightDarkSwitched[GrayLevel[1]];
@@ -984,7 +985,7 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 		FrameMargins -> 13,
 		FrameStyle -> $coDividerColor,
 		Background -> $coOuterBackground,
-		ImageSize -> {600, Automatic},
+		ImageSize -> {$coWidth, Automatic},
 		BaseStyle -> {
 			FontFamily -> "Source Sans Pro",
 			FontSize -> 15,
@@ -1053,44 +1054,62 @@ chatbarUsageThermometerBase[width_, usage_, label_] :=
 	]
 
 
-chatbarUsageThermometerCap[width_, label_, finalcap_: False] := 
+chatbarUsageThermometerCap[width_, label_, ellipsisQ_ : False] := 
 	Overlay[
 		{
 			Graphics[
 				{
 					$cutGray,
 					JoinForm["Round"],
-					If[TrueQ @ finalcap, {},
-						Line[{{width-5, 0}, {width, 0}, {width, $cutHeight}, {width, $cutHeight}}]
-					],
+					Line[{{width-2, 0}, {width, 0}, {width, $cutHeight}, {width-2, $cutHeight}}],
+					AbsoluteThickness[1.5],
 					Dashed,
-					Line[{
-						{{0,0}, {width, 0}},
-						{{width, $cutHeight}, {0, $cutHeight}}
-					}]
+					If[TrueQ[ellipsisQ],
+						With[{
+							xvals = width * {0, 3/10, 7/15, 8/15, 7/10, 1},
+							colors = {#, #, #2, #2, #, #}&[$cutGray, $coInnerBackground]
+							},
+							{
+								Line[Table[{x, 0}, {x, xvals}], VertexColors -> colors],
+								Line[Table[{x, $cutHeight}, {x, xvals}], VertexColors -> colors],
+								Text["\[CenterEllipsis]" , {width, $cutHeight} / 2,
+									BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[GrayLevel[0.4]]}]
+							}
+						],
+						Line[{
+							{{0,0}, {width, 0}},
+							{{width, $cutHeight}, {0, $cutHeight}}
+						}]
+
+					]
 				},
-				ImageSize-> {width, $cutHeight},
+				ImageSize -> {width, $cutHeight},
+				PlotRange -> {{0,width}, {0, $cutHeight}},
+				PlotRangePadding -> 1,
 				AspectRatio -> Full]
 			,
-			Framed[If[TrueQ @ finalcap, Row[{label, " \[RightGuillemet]"}], label],
-				FrameStyle -> GrayLevel[1,0],
+			Framed[label,
+				FrameStyle -> LightDarkSwitched @ GrayLevel[1,0],
 				FrameMargins -> 2,
 				ContentPadding -> False,
 				Background -> None,
-				ImageMargins -> {{$cutMargin, If[TrueQ @ finalcap, -5, 3*$cutMargin-1]},{$cutMargin, $cutMargin}},
+				ImageMargins -> {{$cutMargin,3*$cutMargin-1},{$cutMargin, $cutMargin}},
 				BaseStyle -> {FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[GrayLevel[0.4]]}]
 		},
 		Alignment -> {Right, Center}
 	]
 
 
-$cutSegmentWidth = 500/4;
+$cutTotalWidth = $coWidth - 60;
+$cutShortWidth = $cutTotalWidth * 0.265;
+$cutLongWidth = $cutTotalWidth * (1 - 2*0.265);
+(* $cutTotalWidth == 2*$cutShortWidth + $cutLongWidth *)
 
 chatbarUsageThermometer[tier: "Basic", usage_] := 
 	Grid[{{
-		chatbarUsageThermometerBase[$cutSegmentWidth, usage, "Basic"],
-		chatbarUsageThermometerCap[$cutSegmentWidth, "Pro"],
-		chatbarUsageThermometerCap[$cutSegmentWidth, "Research", True]
+		chatbarUsageThermometerBase[$cutShortWidth, usage, "Basic"],
+		chatbarUsageThermometerCap[$cutShortWidth, "Pro"],
+		chatbarUsageThermometerCap[$cutLongWidth, "Research", True]
 		}},
 		Spacings->{0,0},
 		Alignment ->{Left, Center}
@@ -1098,8 +1117,8 @@ chatbarUsageThermometer[tier: "Basic", usage_] :=
 
 chatbarUsageThermometer[tier: "Pro", usage_] := 
 	Grid[{{
-		chatbarUsageThermometerBase[2*$cutSegmentWidth, usage, "Pro"],
-		chatbarUsageThermometerCap[$cutSegmentWidth, "Research", True]
+		chatbarUsageThermometerBase[2*$cutShortWidth, usage, "Pro"],
+		chatbarUsageThermometerCap[$cutLongWidth, "Research", True]
 		}},
 		Spacings->{0,0},
 		Alignment ->{Left, Center}
@@ -1107,7 +1126,7 @@ chatbarUsageThermometer[tier: "Pro", usage_] :=
 
 chatbarUsageThermometer[tier: "Research", usage_] := 
 	Grid[{{
-		chatbarUsageThermometerBase[4*$cutSegmentWidth, usage, "Research"]
+		chatbarUsageThermometerBase[$cutTotalWidth, usage, "Research"]
 		}},
 		Spacings->{0,0},
 		Alignment ->{Left, Center}
