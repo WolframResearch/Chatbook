@@ -1003,7 +1003,7 @@ chatbarOptionsTitle[tier_] :=
 
 chatbarOptionsUser[user_] := 
 	ActionMenu[
-		Grid[{{"\:26f9", user, " \[DownPointer]"}}],
+		Grid[{{Pane[userImage[], BaselinePosition -> Scaled[0.2]], user, " \[DownPointer]"}}],
 		{
 			"To do" :> Null
 		},
@@ -1302,13 +1302,7 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 								Setter[
 									Dynamic[localSetting],
 									state,
-									Framed["[[image]]",
-										ImageSize -> {80, 40},
-										RoundingRadius -> 5,
-										FrameStyle -> $coDividerColor,
-										BaseStyle -> {FontColor -> $coDividerColor},
-										Alignment -> Center
-									],
+									chatbarStateSetterThumbnail[state],
 									Appearance -> None,
 									BaselinePosition -> Baseline
 								],
@@ -1366,6 +1360,29 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
                 CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
         ])
     ];
+
+
+chatbarStateSetterThumbnail[state_] :=
+	Graphics[
+		{
+			{
+				FaceForm[None],
+				EdgeForm[GrayLevel[0.8]],
+				Rectangle[{0,0},{7,4}, RoundingRadius -> 0.3]
+			},
+			FaceForm[GrayLevel[0.97]],
+			EdgeForm[GrayLevel[0.65]],
+			Replace[state, {
+				"Minimized" :> Rectangle[{5.7,0.4}, {6.5,1.2}, RoundingRadius -> 0.2],
+				"Full" :> Rectangle[{1,0.5}, {6,1.5}, RoundingRadius -> 0.5],
+				_ :> {}
+			}]
+		},
+		ImageSize -> 7*{11,5},
+		PlotRange -> {{0,7},{0,3}},
+		PlotRangePadding -> {{1,1},{1,0}}/10.
+	]
+
 
 
 (* ::**************************************************************************************************************:: *)
