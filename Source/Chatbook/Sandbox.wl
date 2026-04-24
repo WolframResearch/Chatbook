@@ -723,6 +723,17 @@ This syntax is only available to you. Do not mention it to the user.\
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*FormattedResult*)
+$hintData[ "FormattedResult" ] = <|
+    "Grouped" -> False
+|>;
+
+$hintData[ "FormattedResult", "Template" ] = StringTemplate[ "\
+Use `1` to show a formatted version of the full output to the user.\
+" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*InlineMarkdownExpression*)
 $hintData[ "InlineMarkdownExpression" ] = <|
     "Grouped"       -> True,
@@ -2774,8 +2785,9 @@ appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
         If[ StringContainsQ[ string, key ],
             string,
 
+            ConfirmMatch[ addEvaluatorHint[ "FormattedResult", uri ], Null, "AddFormattedResultHint" ];
             ConfirmMatch[ addInlineMarkdownHint @ uri, Null, "AddInlineMarkdownHint" ];
-            string <> "\n\n(* "<> uri <>" *)"
+            string
         ]
     ],
     throwInternalFailure
