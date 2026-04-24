@@ -677,8 +677,10 @@ $hintData = <| |>;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Retry*)
-$hintData[ "Retry" ] = <| |>;
-$hintData[ "Retry", "Grouped" ] = False;
+$hintData[ "Retry" ] = <|
+    "Grouped" -> False
+|>;
+
 $hintData[ "Retry", "Template" ] = "\
 IMPORTANT! If this tool call failed to provide the desired result for any reason, \
 you MUST write /retry before making the next tool call.";
@@ -686,8 +688,10 @@ you MUST write /retry before making the next tool call.";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*URIPrompt*)
-$hintData[ "URIPrompt" ] = <| |>;
-$hintData[ "URIPrompt", "Grouped" ] = False;
+$hintData[ "URIPrompt" ] = <|
+    "Grouped" -> False
+|>;
+
 $hintData[ "URIPrompt", "Template" ] = StringTemplate[ "\
 You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://`1`!>
 
@@ -698,10 +702,12 @@ This syntax is only available to you. Do not mention it to the user.\
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*InlineMarkdownExpression*)
-$hintData[ "InlineMarkdownExpression" ] = <| |>;
-$hintData[ "InlineMarkdownExpression", "Grouped" ] = True;
-$hintData[ "InlineMarkdownExpression", "ItemTemplate" ] = "`1`";
-$hintData[ "InlineMarkdownExpression", "ItemSeparator" ] = "\n";
+$hintData[ "InlineMarkdownExpression" ] = <|
+    "Grouped"       -> True,
+    "ItemTemplate"  -> "`1`",
+    "ItemSeparator" -> "\n"
+|>;
+
 $hintData[ "InlineMarkdownExpression", "Template" ] = StringTemplate[ "\
 The following URIs are available to use in your response:
 
@@ -810,18 +816,9 @@ addHintContent[ name_String, hints_List ] :=
 addHintContent[ name_String, hints_List, hintData_Association ] :=
     addHintContent[ name, hints, hintData, TrueQ @ hintData[ "Grouped" ] ];
 
-addHintContent[ name_String, hints: { __Association }, hintData_Association, False ] := Enclose[
-    Module[ { template },
-        template = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
-        ConfirmAssert[ AllTrue[ hints, KeyExistsQ[ "Arguments" ] ], "ArgumentsCheck" ];
-        <|
-            #,
-            "Content" -> ConfirmBy[ TemplateApply[ template, #Arguments ], StringQ, "Content" ]
-        |> & /@ hints
-    ],
-    throwInternalFailure
-];
-
+(* Grouped hints have a main template and a per-item template.
+   These hints are combined into a single hint with per-item templating being used to generate the
+   argument for the main template. *)
 addHintContent[ name_String, hints: { __Association }, hintData_Association, True ] := Enclose[
     Module[ { mainTemplate, itemTemplate, itemArguments, items, separator, itemContent, content },
         mainTemplate = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
@@ -832,6 +829,19 @@ addHintContent[ name_String, hints: { __Association }, hintData_Association, Tru
         itemContent = ConfirmBy[ StringRiffle[ items, separator ], StringQ, "ItemContent" ];
         content = ConfirmBy[ TemplateApply[ mainTemplate, itemContent ], StringQ, "Content" ];
         <| "Name" -> name, "Content" -> content, "Arguments" -> itemArguments |>
+    ],
+    throwInternalFailure
+];
+
+(* Non-grouped hints have a single template that is applied to each hint. *)
+addHintContent[ name_String, hints: { __Association }, hintData_Association, False ] := Enclose[
+    Module[ { template },
+        template = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
+        ConfirmAssert[ AllTrue[ hints, KeyExistsQ[ "Arguments" ] ], "ArgumentsCheck" ];
+        <|
+            #,
+            "Content" -> ConfirmBy[ TemplateApply[ template, #Arguments ], StringQ, "Content" ]
+        |> & /@ hints
     ],
     throwInternalFailure
 ];
