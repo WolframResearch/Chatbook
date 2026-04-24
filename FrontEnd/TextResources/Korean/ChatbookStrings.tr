@@ -103,8 +103,8 @@
 "PreferencesContentToolsTab" -> "\:B3C4\:AD6C",
 "PreferencesContentEnableAssistanceLabel" -> "\:C790\:B3D9 \:B3C4\:C6B0\:BBF8 \:D65C\:C131\:D654",
 "PreferencesContentEnableAssistanceTooltip" -> "\:D65C\:C131\:D654\:D558\:BA74 AI\:AC00 \:C81C\:ACF5\:D558\:B294 \:C81C\:C548\:C774 \:C790\:B3D9\:C73C\:B85C \:B2E4\:C74C \:D3C9\:AC00 \:ACB0\:ACFC\:C5D0 \:CD94\:AC00\:B429\:B2C8\:B2E4.",
-"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
-"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
+"PreferencesContentAIDisabledByAdmin" -> "AI features have been disabled by an administrator",
+"PreferencesContentAIDisabledLearnMore" -> "Learn more \[RightGuillemet]",
 "PreferencesContentPersonaLabel" -> "\:D398\:B974\:C18C\:B098:",
 "PreferencesContentLLMServiceLabel" -> "\:B300\:D615 \:C5B8\:C5B4 \:BAA8\:B378 \:C11C\:BE44\:C2A4:",
 "PreferencesContentModelLabel" -> "\:BAA8\:B378:",
@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "\:BB34\:C5C7\:C774\:B4E0 \:BB3C\:C5B4\:BCF4\:C138\:C694",
 "ChatbarFieldHint" -> "\:BB34\:C5C7\:C744 \:B3C4\:C640\:B4DC\:B9B4\:AE4C\:C694?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use assistant chat",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8 \:CC44\:D305\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:C120\:D0DD\:D55C \:BD80\:BD84\:C5D0 \:B300\:D55C \:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
