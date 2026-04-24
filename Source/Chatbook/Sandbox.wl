@@ -185,7 +185,7 @@ validCodeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validPropertyQ*)
-$$propertyName = "Packets"|"Result"|"SessionMX"|"String";
+$$propertyName = "Packets"|"Result"|"SessionMX"|"String"|"Hints";
 
 validPropertyQ // beginDefinition;
 validPropertyQ[ $$propertyName ] := True;
