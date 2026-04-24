@@ -2651,20 +2651,14 @@ makeInlineMDExpression // beginDefinition;
 makeInlineMDExpression // Attributes = { HoldAllComplete };
 
 makeInlineMDExpression[ e_ ] := Enclose[
-    Module[ { md, uri },
+    Module[ { md },
         md = ConfirmBy[
             MakeExpressionURI[ ToString @ Head @ Unevaluated @ e, Unevaluated @ e ],
             StringQ,
             "Markdown"
         ];
 
-        uri = ConfirmBy[
-            StringDelete[ md, { StartOfString ~~ "![" ~~ __ ~~ "](", ")"~~EndOfString } ],
-            StringFreeQ @ { "!", "[", "]", "(", ")" },
-            "URI"
-        ];
-
-        addEvaluatorHint[ "InlineMarkdownExpression", uri ];
+        ConfirmMatch[ addInlineMarkdownHint @ md, Null, "AddInlineMarkdownHint" ];
 
         markdownExpression @ md
     ],
@@ -2672,6 +2666,26 @@ makeInlineMDExpression[ e_ ] := Enclose[
 ];
 
 makeInlineMDExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addInlineMarkdownHint*)
+addInlineMarkdownHint // beginDefinition;
+
+addInlineMarkdownHint[ md_String ] := Enclose[
+    Module[ { uri },
+        uri = ConfirmBy[
+            StringDelete[ md, { StartOfString ~~ "![" ~~ __ ~~ "](", ")"~~EndOfString } ],
+            StringFreeQ @ { "!", "[", "]", "(", ")" },
+            "URI"
+        ];
+
+        addEvaluatorHint[ "InlineMarkdownExpression", uri ]
+    ],
+    throwInternalFailure
+];
+
+addInlineMarkdownHint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2737,7 +2751,7 @@ appendURIInstructions[ string_String, HoldComplete[ e_? simpleFormattingQ ] ] :=
 appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
     Module[ { uri, key },
         uri = ConfirmBy[
-            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "Formatted Result", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
@@ -2746,6 +2760,8 @@ appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
 
         If[ StringContainsQ[ string, key ],
             string,
+
+            ConfirmMatch[ addInlineMarkdownHint @ uri, Null, "AddInlineMarkdownHint" ];
             string <> "\n\n(* "<> uri <>" *)"
         ]
     ],
@@ -2767,14 +2783,15 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
     Module[ { uri, key },
 
         uri = ConfirmBy[
-            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "Formatted Result", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
 
         key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
 
-        addEvaluatorHint[ "URIPrompt", key ];
+        ConfirmMatch[ addEvaluatorHint[ "URIPrompt", key ], Null, "AddURIPromptHint" ];
+        ConfirmMatch[ addInlineMarkdownHint @ uri, Null, "AddInlineMarkdownHint" ];
 
         string
     ],
