@@ -2764,7 +2764,7 @@ appendURIInstructions[ string_String, HoldComplete[ e_? simpleFormattingQ ] ] :=
 appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
     Module[ { uri, key },
         uri = ConfirmBy[
-            MakeExpressionURI[ "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "label", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
@@ -2796,7 +2796,7 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
     Module[ { uri, key },
 
         uri = ConfirmBy[
-            MakeExpressionURI[ "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "expression", "label", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
