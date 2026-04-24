@@ -814,7 +814,8 @@ Button[
         Dynamic @ activeQ,
         ImageSize -> Automatic
     ],
-    CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True,
+    CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
+    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
     Appearance   -> "Suppressed",
     ImageMargins -> { { 1, 0 }, { 1, 0 } },
     ImageSize    -> Automatic
@@ -921,6 +922,7 @@ Button[
     blueHueButtonAppearance @ "ChatbarMinimized"
     ,
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
+    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False;
     With[ { n = nbo, c = chatbarCell },
         FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued @ FrontEnd`MoveCursorToInputField[ n, "AttachedChatInputField", c, c ]
     ],
