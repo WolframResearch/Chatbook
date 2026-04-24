@@ -159,26 +159,23 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             SynchronousInitialization -> False,
             Initialization :> ((* 473816: this runs whenever the kernel is quit, so avoid duplicating existing cell *)
                 thisCell = EvaluationCell[ ];
-                
-                withLoadingOverlay[ { nbo, sidebarCell } ] @ (
-                    (* create the chat input cell first, then the scrolling cell *)
-                    If[ NextCell[ thisCell, CellStyle -> "ChatInputField" ] === None,
-                        NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ]
-                    ];
-                    If[ Cells[ sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
-                        AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
-                    ];
-                    If[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
-                        setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
-                    ];
-                    If[ Not @ TrueQ @ $workspaceChatInitialized,
-                        initializeWorkspaceChat[ ]
-                    ];
-                    With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
-                        FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
-                    ];
-                );
+                (* create the chat input cell first, then the scrolling cell *)
+                If[ NextCell[ thisCell, CellStyle -> "ChatInputField" ] === None,
+                    NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ]
+                ];
+                If[ Cells[ sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
+                    AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
+                ];
+                If[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
+                    setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
+                ];
+                With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
+                    FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
+                ];
 
+                (* most costly step of initialization *)
+                If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                
                 ReleaseHold @ $sidebarChatInitialAction;
             )
         ],
@@ -655,7 +652,7 @@ Overlay[
         With[ { fieldHintBoxes =
             ToBoxes @ Grid[ {
                 {
-                    chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 14 ],
+                    "",
                     Style[ tr[ "ChatbarFieldHint" ],
                         "Text", "TextStyleInputField",
                         FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
@@ -790,7 +787,7 @@ chatbarMinimizeButton // beginDefinition;
 
 Attributes[ chatbarMinimizeButton ] = { HoldAll };
 
-chatbarMinimizeButton[ minimizedQ_, activeQ_ ] :=
+chatbarMinimizeButton[ chatbarCell_, activeQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -817,7 +814,7 @@ Button[
         Dynamic @ activeQ,
         ImageSize -> Automatic
     ],
-    minimizedQ = True,
+    CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True,
     Appearance   -> "Suppressed",
     ImageMargins -> { { 1, 0 }, { 1, 0 } },
     ImageSize    -> Automatic
@@ -855,7 +852,7 @@ chatbarOptionsMenu // beginDefinition;
 
 Attributes[ chatbarOptionsMenu ] = { HoldRest };
 
-chatbarOptionsMenu[ nbo_NotebookObject, minimizedQ_, activeQ_ ] :=
+chatbarOptionsMenu[ nbo_NotebookObject, chatbarCell_, activeQ_ ] :=
 ActionMenu[
     PaneSelector[
         {
@@ -899,7 +896,7 @@ ActionMenu[
             Dynamic @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ],
             "[[Minimize Chatbar in All Notebooks by Default]]"
         ] :> (
-            minimizedQ = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] =
+            CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] =
                 Not @ TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ])
     },
     Appearance       -> None,
@@ -919,12 +916,11 @@ chatbarMaximizeButton // beginDefinition;
 
 Attributes[ chatbarMaximizeButton ] = { HoldAll };
 
-chatbarMaximizeButton[ nbo_, chatbarCell_, minimizedQ_, minimizeOverrideQ_ ] :=
+chatbarMaximizeButton[ nbo_, chatbarCell_ ] :=
 Button[
     blueHueButtonAppearance @ "ChatbarMinimized"
     ,
-    minimizedQ = False;
-    minimizeOverrideQ = TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ];
+    CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
     With[ { n = nbo, c = chatbarCell },
         FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued @ FrontEnd`MoveCursorToInputField[ n, "AttachedChatInputField", c, c ]
     ],
@@ -962,7 +958,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     Style[ Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ], Magnification -> Dynamic @
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
-    DynamicModule[ { thisCell, minimizedQ, minimizeOverrideQ = False, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
+    DynamicModule[ { initializedQ = False, thisCell, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
         EventHandler[
             DynamicWrapper[
                 PaneSelector[
@@ -987,8 +983,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     Framed[
                                         Grid[
                                             {
-                                                { chatbarMinimizeButton[ minimizedQ, activeQ ] },
-                                                { chatbarOptionsMenu[ nbo, minimizedQ, activeQ ] }
+                                                { chatbarMinimizeButton[ thisCell, activeQ ] },
+                                                { chatbarOptionsMenu[ nbo, thisCell, activeQ ] }
                                             },
                                             Alignment -> { Left, Baseline },
                                             Spacings  -> { 0, 0 }
@@ -1002,18 +998,14 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                 } },
                                 Spacings  -> { 0, 0 }
                             ],
-                        True -> chatbarMaximizeButton[ nbo, thisCell, minimizedQ, minimizeOverrideQ ]
+                        True -> chatbarMaximizeButton[ nbo, thisCell ]
                     },
-                    Dynamic @ minimizedQ,
+                    Dynamic @ AbsoluteCurrentValue[ thisCell, { TaggingRules, "MinimizedQ" } ],
                     ImageSize -> Automatic
                 ]
                 ,
                 selectionWithinQ = CurrentValue[ "SelectionWithin" ];
                 activeQ = selectionWithinQ || CurrentValue[ "MouseOver" ] || (connectionLevel === "Enabled" && fieldContent =!= "");
-                Function[
-                    If[ And[ Not @ TrueQ @ minimizeOverrideQ, # ], minimizedQ = True ];
-                    If[ Not @ #, minimizeOverrideQ = False ];
-                ][ TrueQ @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ] ];
             ],
             {
                 "MouseEntered" :> (
@@ -1034,7 +1026,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
             },
             PassEventsDown -> True
         ],
-        Initialization :> (
+        Initialization :> If[ !initializedQ,
+            initializedQ = True;
             thisCell = EvaluationCell[ ];
             FE`Evaluate @ {
                 (* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
@@ -1047,16 +1040,17 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                     FrontEnd`$FrontEnd,
                     { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
                     False
-                ],
-                FEPrivate`Set[
-                    minimizedQ,
-                    TrueQ @ FrontEnd`AbsoluteCurrentValue[
-                        FrontEnd`$FrontEndSession,
-                        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
-                    ]
                 ]
-            }
-        )
+            };
+            setCurrentValue[
+                thisCell,
+                { TaggingRules, "MinimizedQ" },
+                TrueQ @ FrontEnd`AbsoluteCurrentValue[
+                    FrontEnd`$FrontEndSession,
+                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
+                ]
+            ]
+        ]
     ];
 
 makeChatbarChatInputCellContent // endDefinition;
@@ -1209,18 +1203,20 @@ DynamicModule[ { scrollPosition },
         PassEventsDown -> False
     ],
     SynchronousInitialization -> False,
-    Initialization :> AttachCell[
-        EvaluationBox[ ],
-        Cell[
-            BoxData @ ToBoxes @ DynamicModule[ { },
-                chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
-                InheritScope -> True
+    Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ] === { },
+        AttachCell[
+            EvaluationBox[ ],
+            Cell[
+                BoxData @ ToBoxes @ DynamicModule[ { },
+                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
+                    InheritScope -> True
+                ],
+                "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+                Evaluator     -> "System",
+                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
-            Evaluator     -> "System",
-            Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
-        ],
-        { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+        ]
     ]
 ];
 
