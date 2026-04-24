@@ -958,7 +958,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     Style[ Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ], Magnification -> Dynamic @
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
-    DynamicModule[ { initializedQ = False, thisCell, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
+    DynamicModule[ { initializedQ = False, thisCell, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, state = "Loading" },
         EventHandler[
             DynamicWrapper[
                 PaneSelector[
@@ -969,14 +969,21 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     DynamicWrapper[
                                         PaneSelector[
                                             {
-                                                "Loading" -> chatbarLoading @ activeQ,
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
-                                                "SignIn"  -> chatbarSignIn @ activeQ
+                                                "Loading"          -> chatbarLoading @ activeQ,
+                                                "NoInternet"       -> chatbarNoInternet @ activeQ,
+                                                "InternetDisabled" -> chatbarDisabledInternet @ activeQ,
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
+                                                "SignIn"           -> chatbarSignIn @ activeQ
                                             },
-                                            Dynamic @ connectionLevel,
+                                            Dynamic @ state,
                                             ImageSize -> Automatic
                                         ],
-                                        connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
+                                        state = Which[
+                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads"], "InternetDisabled",
+                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable"], "NoInternet",
+                                            cloudCredentialsQ[ ], "Enabled",
+                                            True, "SignIn"
+                                        ],
                                         SynchronousUpdating -> False
                                     ]
                                     ,
@@ -1005,7 +1012,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ]
                 ,
                 selectionWithinQ = CurrentValue[ "SelectionWithin" ];
-                activeQ = selectionWithinQ || CurrentValue[ "MouseOver" ] || (connectionLevel === "Enabled" && fieldContent =!= "");
+                activeQ = selectionWithinQ || CurrentValue[ "MouseOver" ] || (state === "Enabled" && fieldContent =!= "");
             ],
             {
                 "MouseEntered" :> (
@@ -1084,7 +1091,7 @@ Button[
                     ImageSize        -> All
                 ],
                 Style[
-                    "[[Sign in to use assistant chat]]",
+                    tr @ "ChatbarSignIn",
                     FontColor -> Dynamic @ If[ activeQ,
                         LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
                         LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
@@ -1116,6 +1123,108 @@ Button[
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarDisabledInternet*)
+
+chatbarDisabledInternet // beginDefinition;
+
+Attributes[ chatbarDisabledInternet ] = { HoldAll };
+
+chatbarDisabledInternet[ activeQ_ ] :=
+Button[
+    Framed[
+        Grid[
+            { {
+                Style[
+                    "\[WarningSign]",
+                    "Text", "TextStyling",
+                    FontWeight -> Bold,
+                    FontColor  -> StandardYellow,
+                    FontSize   -> 18
+                ],
+                Style[
+                    tr @ "ChatbarWolframDisabledInternet",
+                    FontColor -> Dynamic @ If[ activeQ,
+                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+                    ]
+                ]
+            } },
+            BaseStyle -> {
+                "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+                FontFamily      -> "Roboto",
+                FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+                FontSize        -> 15,
+                FontSlant       -> "Plain",
+                LineBreakWithin -> False }
+        ],
+        Alignment      -> { Automatic, Center },
+        Background     -> Dynamic @ If[ activeQ,
+            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+            LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+        ],
+        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+        FrameStyle     -> None,
+        ImageSize      -> { Scaled[ 1 ], 32 },
+        RoundingRadius -> 9
+    ],
+    NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+chatbarDisabledInternet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarNoInternet*)
+
+chatbarNoInternet // beginDefinition;
+
+Attributes[ chatbarNoInternet ] = { HoldAll };
+
+chatbarNoInternet[ activeQ_ ] :=
+Framed[
+    Grid[
+        { {
+            Style[
+                "\[WarningSign]",
+                "Text", "TextStyling",
+                FontWeight -> Bold,
+                FontColor  -> StandardYellow,
+                FontSize   -> 18
+            ],
+            Style[
+                tr @ "ChatbarNoInternet",
+                FontColor -> Dynamic @ If[ activeQ,
+                    LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                    LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+                ]
+            ]
+        } },
+        BaseStyle -> {
+            "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+            FontFamily      -> "Roboto",
+            FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+            FontSize        -> 15,
+            FontSlant       -> "Plain",
+            LineBreakWithin -> False }
+    ],
+    Alignment      -> { Automatic, Center },
+    Background     -> Dynamic @ If[ activeQ,
+        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+    ],
+    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+    FrameStyle     -> None,
+    ImageSize      -> { Scaled[ 1 ], 32 },
+    RoundingRadius -> 9
+];
+
+chatbarNoInternet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
