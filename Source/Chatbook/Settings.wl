@@ -292,10 +292,14 @@ $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     (*"Reasoning"      -> <|"Effort" -> {"None", "Minimal", "Medium", "High"}[[2]]|>*) (* TODO: what's the effective effort used if using `"Enabled" -> True`? Does it matter? *)
     "Temperature"      -> 1.,
     "HybridToolMethod" -> True,
-    "ToolMethod"       -> {
-        "Service", (* TODO: As of 2026-04-01 and 15.0.0 (13312387, 202603316635) build seems to still have some bug in the OpenRouter paclet for this to work. *)
-        Verbatim @ Automatic
-    }[[1]],
+    "ToolMethod"       -> Verbatim @ Automatic,
+    (* TODO: Use `"ToolMethod" -> "Service"` ?
+    * 2026-04-01: Tested with 15.0.0 (13312387, 202603316635) build seems to still have some bug in the \
+    OpenRouter paclet for this to work.
+    * 2026-04-24: Tested with WL 15.0.0 (13420882, 202604203305). Encountered no crash but some hangs and \
+    generally very slow.
+    *)
+    (*"ToolMethod"       -> "Service",*)
     "ToolsEnabled"     -> True,
     "TopP"             -> 0.95
 |>;
