@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "Ask me anything",
 "ChatbarFieldHint" -> "What would you like to do?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use assistant chat",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
