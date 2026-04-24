@@ -26,6 +26,7 @@ $evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Metho
 $readPaths                := toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"         ];
 $writePaths               := toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"        ];
 $executePaths             := toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths"      ];
+$hintMethod               := toolOptionValue[ "WolframLanguageEvaluator", "HintMethod"               ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -121,6 +122,8 @@ $$probableFailure = Alternatives[
 $$pathItem = _String | $$unspecified | ParentList | All | None | _Hold | _HoldComplete | _HoldCompleteForm;
 $$pathSpec = $$pathItem | { $$pathItem... };
 
+$collectedEvaluatorHints = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -138,6 +141,7 @@ WolframLanguageToolEvaluate // Options = {
     "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
+    "HintMethod"            -> Automatic,
     "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
     "MaxCharacterCount"     -> 10000,
@@ -202,6 +206,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
+            $hintMethod               = getOption[ "HintMethod"           , opts ],
             $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
             $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
@@ -236,6 +241,10 @@ getOption[ "AppendURIInstructions", append_ ] := throwFailure[ "InvalidOptionVal
 getOption[ "Method", $$unspecified ] := Automatic;
 getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
 getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
+
+getOption[ "HintMethod", $$unspecified ] := Automatic;
+getOption[ "HintMethod", method: "Comment"|"Data"|"XML"|None ] := method;
+getOption[ "HintMethod", method_ ] := throwFailure[ "InvalidOptionValue", "HintMethod", method ];
 
 getOption[ "PageWidth", $$unspecified ] := $toolOutputPageWidth;
 getOption[ "PageWidth", width: $$size ] := Floor @ width;
@@ -662,6 +671,236 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Hints*)
+$hintData = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Retry*)
+$hintData[ "Retry" ] = <| |>;
+$hintData[ "Retry", "Grouped" ] = False;
+$hintData[ "Retry", "Template" ] = "\
+IMPORTANT! If this tool call failed to provide the desired result for any reason, \
+you MUST write /retry before making the next tool call.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*URIPrompt*)
+$hintData[ "URIPrompt" ] = <| |>;
+$hintData[ "URIPrompt", "Grouped" ] = False;
+$hintData[ "URIPrompt", "Template" ] = StringTemplate[ "\
+You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://`1`!>
+
+Always use this syntax when referring to this expression instead of writing it out manually.
+This syntax is only available to you. Do not mention it to the user.\
+" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*InlineMarkdownExpression*)
+$hintData[ "InlineMarkdownExpression" ] = <| |>;
+$hintData[ "InlineMarkdownExpression", "Grouped" ] = True;
+$hintData[ "InlineMarkdownExpression", "ItemTemplate" ] = "`1`";
+$hintData[ "InlineMarkdownExpression", "ItemSeparator" ] = "\n";
+$hintData[ "InlineMarkdownExpression", "Template" ] = StringTemplate[ "\
+The following URIs are available to use in your response:
+
+`1`
+
+Show an expression to the user using ![label](uri).
+Inline an expression in WL code blocks or evaluator inputs using <!uri!>." ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addEvaluatorHint*)
+addEvaluatorHint // beginDefinition;
+
+addEvaluatorHint[ ___ ] /; $hintMethod === None := Null;
+
+addEvaluatorHint[ name_String ] :=
+    Internal`StuffBag[
+        $collectedEvaluatorHints,
+        <|
+            "Name"      -> name,
+            "Arguments" -> { }
+        |>
+    ];
+
+addEvaluatorHint[ name_String, args: _List|_Association ] :=
+    Internal`StuffBag[
+        $collectedEvaluatorHints,
+        <|
+            "Name"      -> name,
+            "Arguments" -> args
+        |>
+    ];
+
+addEvaluatorHint[ name_String, other__ ] :=
+    addEvaluatorHint[ name, { other } ];
+
+addEvaluatorHint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*includeEvaluatorHints*)
+includeEvaluatorHints // beginDefinition;
+
+includeEvaluatorHints[ result_ ] :=
+    includeEvaluatorHints[ result, $hintMethod, getCollectedHints[ ] ];
+
+includeEvaluatorHints[ result_String, Automatic, hints_ ] :=
+    includeEvaluatorHints[ result, "XML", hints ];
+
+includeEvaluatorHints[ result_String, "XML"    , hints_ ] := appendXMLHints[ result, hints ];
+includeEvaluatorHints[ result_String, "Comment", hints_ ] := appendCommentHints[ result, hints ];
+includeEvaluatorHints[ result_String, "Data"   , hints_ ] := result;
+
+includeEvaluatorHints[ None, method_, hints_ ] := Missing[ "NotAvailable" ];
+
+includeEvaluatorHints[ result_, None, hints_ ] := result;
+
+includeEvaluatorHints[ as_Association, method_, hints: _List|None ] := DeleteMissing @ <|
+    as,
+    "Hints"  -> hints,
+    "String" -> includeEvaluatorHints[ Lookup[ as, "String", None ], method, hints ]
+|>;
+
+includeEvaluatorHints // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCollectedHints*)
+getCollectedHints // beginDefinition;
+
+getCollectedHints[ ] := getCollectedHints @ $hintMethod;
+getCollectedHints[ None ] := None;
+
+getCollectedHints[ method_ ] := Enclose[
+    Catch @ Module[ { hints, grouped, flat },
+        hints = ConfirmMatch[
+            DeleteDuplicates @ Internal`BagPart[ $collectedEvaluatorHints, All ],
+            { ___Association },
+            "Hints"
+        ];
+        If[ hints === { }, Throw @ { } ];
+
+        grouped = GroupBy[ hints, Lookup[ "Name" ] ];
+
+        flat = ConfirmMatch[
+            Flatten @ KeyValueMap[ addHintContent, grouped ],
+            { KeyValuePattern[ "Content" -> _String ].. },
+            "Flat"
+        ];
+
+        DeleteDuplicatesBy[ flat, Lookup[ "Content" ] ]
+    ],
+    throwInternalFailure
+];
+
+getCollectedHints // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addHintContent*)
+addHintContent // beginDefinition;
+
+addHintContent[ name_String, hints_List ] :=
+    addHintContent[ name, hints, $hintData[ name ] ];
+
+addHintContent[ name_String, hints_List, hintData_Association ] :=
+    addHintContent[ name, hints, hintData, TrueQ @ hintData[ "Grouped" ] ];
+
+addHintContent[ name_String, hints: { __Association }, hintData_Association, False ] := Enclose[
+    Module[ { template },
+        template = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
+        ConfirmAssert[ AllTrue[ hints, KeyExistsQ[ "Arguments" ] ], "ArgumentsCheck" ];
+        <|
+            #,
+            "Content" -> ConfirmBy[ TemplateApply[ template, #Arguments ], StringQ, "Content" ]
+        |> & /@ hints
+    ],
+    throwInternalFailure
+];
+
+addHintContent[ name_String, hints: { __Association }, hintData_Association, True ] := Enclose[
+    Module[ { mainTemplate, itemTemplate, itemArguments, items, separator, itemContent, content },
+        mainTemplate = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
+        itemTemplate = ConfirmMatch[ hintData[ "ItemTemplate" ], _String|_TemplateObject, "ItemTemplate" ];
+        itemArguments = ConfirmMatch[ Lookup[ hints, "Arguments" ], { (_List|_Association).. }, "ItemArguments" ];
+        items = ConfirmMatch[ TemplateApply[ itemTemplate, # ] & /@ itemArguments, { __String }, "Items" ];
+        separator = ConfirmMatch[ hintData[ "ItemSeparator" ], _String, "ItemSeparator" ];
+        itemContent = ConfirmBy[ StringRiffle[ items, separator ], StringQ, "ItemContent" ];
+        content = ConfirmBy[ TemplateApply[ mainTemplate, itemContent ], StringQ, "Content" ];
+        <| "Name" -> name, "Content" -> content, "Arguments" -> itemArguments |>
+    ],
+    throwInternalFailure
+];
+
+addHintContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendXMLHints*)
+appendXMLHints // beginDefinition;
+
+appendXMLHints[ result_String, { } ] := result;
+
+appendXMLHints[ result_String, hints: { __Association } ] := Enclose[
+    Module[ { content, parts },
+        content = DeleteDuplicates @ ConfirmMatch[
+            Cases[ hints, KeyValuePattern[ "Content" -> s_ ] :> s ],
+            { __String },
+            "Content"
+        ];
+
+        parts = ConfirmMatch[ TemplateApply[ $xmlHintTemplate, # ] & /@ content, { __String }, "Parts" ];
+
+        ConfirmBy[
+            TemplateApply[ $xmlHintsTemplate, { result, StringRiffle[ parts, "\n" ] } ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+appendXMLHints // endDefinition;
+
+
+$xmlHintsTemplate = "`1`\n\n<system-hints>\n`2`\n</system-hints>";
+$xmlHintTemplate  = "<hint>`1`</hint>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendCommentHints*)
+appendCommentHints // beginDefinition;
+
+appendCommentHints[ result_String, { } ] := result;
+
+appendCommentHints[ result_String, hints: { __Association } ] := Enclose[
+    Module[ { content },
+        content = DeleteDuplicates @ ConfirmMatch[
+            Cases[ hints, KeyValuePattern[ "Content" -> s_ ] :> s ],
+            { __String },
+            "Content"
+        ];
+
+        ConfirmBy[
+            TemplateApply[ $commentHintsTemplate, { result, StringRiffle[ content, "\n\n" ] } ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+appendCommentHints // endDefinition;
+
+
+$commentHintsTemplate = "`1`\n\n(* `2` *)";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Evaluate*)
 
 (* ::**************************************************************************************************************:: *)
@@ -670,8 +909,13 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 sandboxEvaluate // beginDefinition;
 
 sandboxEvaluate[ eval_ ] :=
-    Block[ { $kernelQuit = False, $verifiedResult = True },
-        sandboxEvaluate0 @ eval
+    Block[
+        {
+            $kernelQuit              = False,
+            $verifiedResult          = True,
+            $collectedEvaluatorHints = Internal`Bag[ ]
+        },
+        includeEvaluatorHints @ sandboxEvaluate0 @ eval
     ];
 
 sandboxEvaluate // endDefinition;
@@ -2371,19 +2615,37 @@ sandboxResultString2 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*preprocessForResultString*)
 preprocessForResultString // beginDefinition;
+preprocessForResultString[ expr_ ] := expr /. e_? markdownExpressionQ :> RuleCondition @ makeInlineMDExpression @ e;
+preprocessForResultString // endDefinition;
 
-preprocessForResultString[ expr_ ] := ReplaceAll[
-    expr,
-    {
-        e_? markdownExpressionQ :>
-            RuleCondition @ markdownExpression @ MakeExpressionURI[
-                ToString @ Head @ Unevaluated @ e,
-                Unevaluated @ e
-            ]
-    }
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInlineMDExpression*)
+makeInlineMDExpression // beginDefinition;
+makeInlineMDExpression // Attributes = { HoldAllComplete };
+
+makeInlineMDExpression[ e_ ] := Enclose[
+    Module[ { md, uri },
+        md = ConfirmBy[
+            MakeExpressionURI[ ToString @ Head @ Unevaluated @ e, Unevaluated @ e ],
+            StringQ,
+            "Markdown"
+        ];
+
+        uri = ConfirmBy[
+            StringDelete[ md, { StartOfString ~~ "![" ~~ __ ~~ "](", ")"~~EndOfString } ],
+            StringFreeQ @ { "!", "[", "]", "(", ")" },
+            "URI"
+        ];
+
+        addEvaluatorHint[ "InlineMarkdownExpression", uri ];
+
+        markdownExpression @ md
+    ],
+    throwInternalFailure
 ];
 
-preprocessForResultString // endDefinition;
+makeInlineMDExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2423,18 +2685,12 @@ mergeComments // endDefinition;
 (*appendRetryNotice*)
 appendRetryNotice // beginDefinition;
 
-appendRetryNotice[ string_String ] :=
-    If[ $appendRetryNotice =!= False && StringContainsQ[ string, "General::messages" ],
-        string<>"\n\n"<>$retryMessage,
-        string
-    ];
+appendRetryNotice[ string_String ] := (
+    If[ $appendRetryNotice =!= False && StringContainsQ[ string, "General::messages" ], addEvaluatorHint[ "Retry" ] ];
+    string
+);
 
 appendRetryNotice // endDefinition;
-
-$retryMessage = "(* \
-IMPORTANT! If this tool call failed to provide the desired result for any reason, \
-you MUST write /retry before making the next tool call. \
-*)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2482,7 +2738,7 @@ appendURIInstructions0[ string_String, (HoldForm|HoldCompleteForm)[ expr_ ] ] :=
     appendURIInstructions0[ string, HoldComplete @ expr ];
 
 appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
-    Module[ { uri, key, message },
+    Module[ { uri, key },
 
         uri = ConfirmBy[
             makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
@@ -2490,10 +2746,11 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
             "ExpressionURI"
         ];
 
-        key     = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
-        message = ConfirmBy[ TemplateApply[ $uriPromptTemplate, key ], StringQ, "URIPrompt" ];
+        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
 
-        string <> "\n\n" <> message
+        addEvaluatorHint[ "URIPrompt", key ];
+
+        string
     ],
     throwInternalFailure
 ];
@@ -2501,16 +2758,6 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
 appendURIInstructions0[ string_String, _ ] := string;
 
 appendURIInstructions0 // endDefinition;
-
-
-$uriPromptTemplate = StringTemplate[ "\
-(* You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://%%1%%!>
-
-Always use this syntax when referring to this expression instead of writing it out manually.
-This syntax is only available to you. Do not mention it to the user. *)\
-", Delimiters -> "%%" ];
-
-(* FIXME: there should be post processing that automatically strips this message if the URI is no longer available *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
