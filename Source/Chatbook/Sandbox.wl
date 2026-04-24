@@ -14,6 +14,19 @@ $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 sp`\[FreeformPrompt];
 sp`InlinedExpression;
 
+(* TODO: This file is too large. We should split it up into multiple files, e.g.
+    - Sandbox/Sandbox.wl
+    - Sandbox/Configuration.wl
+    - Sandbox/Evaluation.wl
+    - Sandbox/Hints.wl
+    - Sandbox/Kernels.wl
+    - Sandbox/NaturalLanguageInput.wl
+    - Sandbox/OutputFormatting.wl
+    - Sandbox/Preprocessing.wl
+    - Sandbox/Verification.wl
+    - Sandbox/WolframLanguageToolEvaluate.wl
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -26,6 +39,8 @@ $evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Metho
 $readPaths                := toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"         ];
 $writePaths               := toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"        ];
 $executePaths             := toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths"      ];
+$hintMethod               := toolOptionValue[ "WolframLanguageEvaluator", "HintMethod"               ];
+$disabledHints            := toolOptionValue[ "WolframLanguageEvaluator", "DisabledHints"            ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -121,6 +136,14 @@ $$probableFailure = Alternatives[
 $$pathItem = _String | $$unspecified | ParentList | All | None | _Hold | _HoldComplete | _HoldCompleteForm;
 $$pathSpec = $$pathItem | { $$pathItem... };
 
+$collectedEvaluatorHints = None;
+
+(* Hints involving expression URIs aren't applicable to all environments (e.g. MCP server).
+   To avoid breaking other code that relies on `WolframLanguageToolEvaluate`, we disable these by default.
+   Note that this only applies when using `WolframLanguageToolEvaluate` as the entry point for evaluator calls.
+   Built-in Chatbook tools rely on $DefaultToolOptions for defaults, so this won't apply to them. *)
+$defaultDisabledHints = { "FormattedResult", "InlineMarkdownExpression" };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -138,6 +161,8 @@ WolframLanguageToolEvaluate // Options = {
     "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
+    "DisabledHints"         -> Automatic,
+    "HintMethod"            -> Automatic,
     "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
     "MaxCharacterCount"     -> 10000,
@@ -179,7 +204,7 @@ validCodeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validPropertyQ*)
-$$propertyName = "Packets"|"Result"|"SessionMX"|"String";
+$$propertyName = "Packets"|"Result"|"SessionMX"|"String"|"Hints";
 
 validPropertyQ // beginDefinition;
 validPropertyQ[ $$propertyName ] := True;
@@ -202,6 +227,8 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
             $executePaths             = getOption[ "AllowedExecutePaths"  , opts ],
+            $disabledHints            = getOption[ "DisabledHints"        , opts ],
+            $hintMethod               = getOption[ "HintMethod"           , opts ],
             $includeDefinitions       = getOption[ "IncludeDefinitions"   , opts ],
             $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
@@ -236,6 +263,16 @@ getOption[ "AppendURIInstructions", append_ ] := throwFailure[ "InvalidOptionVal
 getOption[ "Method", $$unspecified ] := Automatic;
 getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
 getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
+
+getOption[ "DisabledHints", $$unspecified ] := $defaultDisabledHints;
+getOption[ "DisabledHints", hints: _String | { ___String } ] := Flatten @ { hints };
+getOption[ "DisabledHints", None ] := { };
+getOption[ "DisabledHints", All ] := All;
+getOption[ "DisabledHints", hints_ ] := throwFailure[ "InvalidOptionValue", "DisabledHints", hints ];
+
+getOption[ "HintMethod", $$unspecified ] := Automatic;
+getOption[ "HintMethod", method: "Comment"|"Data"|"XML"|None ] := method;
+getOption[ "HintMethod", method_ ] := throwFailure[ "InvalidOptionValue", "HintMethod", method ];
 
 getOption[ "PageWidth", $$unspecified ] := $toolOutputPageWidth;
 getOption[ "PageWidth", width: $$size ] := Floor @ width;
@@ -662,6 +699,264 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Hints*)
+$hintData = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Retry*)
+$hintData[ "Retry" ] = <|
+    "Grouped" -> False
+|>;
+
+$hintData[ "Retry", "Template" ] = "\
+IMPORTANT! If this tool call failed to provide the desired result for any reason, \
+you MUST write /retry before making the next tool call.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*URIPrompt*)
+$hintData[ "URIPrompt" ] = <|
+    "Grouped" -> False
+|>;
+
+$hintData[ "URIPrompt", "Template" ] = StringTemplate[ "\
+You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://`1`!>
+
+Always use this syntax when referring to this expression instead of writing it out manually.
+This syntax is only available to you. Do not mention it to the user.\
+" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormattedResult*)
+$hintData[ "FormattedResult" ] = <|
+    "Grouped" -> False
+|>;
+
+$hintData[ "FormattedResult", "Template" ] = StringTemplate[ "\
+Use `1` to show a formatted version of the full output to the user.\
+" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*InlineMarkdownExpression*)
+$hintData[ "InlineMarkdownExpression" ] = <|
+    "Grouped"       -> True,
+    "ItemTemplate"  -> "`1`",
+    "ItemSeparator" -> "\n"
+|>;
+
+$hintData[ "InlineMarkdownExpression", "Template" ] = StringTemplate[ "\
+The following URIs are now available to you:
+
+`1`
+
+Show a formatted expression to the user with ![label](uri).
+Inline an expression in WL code blocks or evaluator inputs with <!uri!>." ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addEvaluatorHint*)
+addEvaluatorHint // beginDefinition;
+
+(* Do nothing when hints are globally disabled: *)
+addEvaluatorHint[ ___ ] /; $hintMethod === None || $disabledHints === All := Null;
+
+(* Do nothing when the specified hint is disabled: *)
+addEvaluatorHint[ name_String, ___ ] /; MemberQ[ $disabledHints, name ] := Null;
+
+(* Add hint with no arguments: *)
+addEvaluatorHint[ name_String ] :=
+    Internal`StuffBag[
+        $collectedEvaluatorHints,
+        <|
+            "Name"      -> name,
+            "Arguments" -> { }
+        |>
+    ];
+
+(* Add hint with arguments: *)
+addEvaluatorHint[ name_String, args: _List|_Association ] :=
+    Internal`StuffBag[
+        $collectedEvaluatorHints,
+        <|
+            "Name"      -> name,
+            "Arguments" -> args
+        |>
+    ];
+
+(* Conform hint arguments to a list: *)
+addEvaluatorHint[ name_String, other__ ] :=
+    addEvaluatorHint[ name, { other } ];
+
+addEvaluatorHint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*includeEvaluatorHints*)
+includeEvaluatorHints // beginDefinition;
+
+includeEvaluatorHints[ result_ ] :=
+    includeEvaluatorHints[ result, $hintMethod, getCollectedHints[ ] ];
+
+includeEvaluatorHints[ result_String, Automatic, hints_ ] :=
+    includeEvaluatorHints[ result, "XML", hints ];
+
+includeEvaluatorHints[ result_String, "XML"    , hints_ ] := appendXMLHints[ result, hints ];
+includeEvaluatorHints[ result_String, "Comment", hints_ ] := appendCommentHints[ result, hints ];
+includeEvaluatorHints[ result_String, "Data"   , hints_ ] := result;
+
+includeEvaluatorHints[ None, method_, hints_ ] := Missing[ "NotAvailable" ];
+
+includeEvaluatorHints[ result_, None, hints_ ] := result;
+
+includeEvaluatorHints[ as_Association, method_, hints: _List|None ] := DeleteMissing @ <|
+    as,
+    "Hints"  -> hints,
+    "String" -> includeEvaluatorHints[ Lookup[ as, "String", None ], method, hints ]
+|>;
+
+includeEvaluatorHints // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCollectedHints*)
+getCollectedHints // beginDefinition;
+
+getCollectedHints[ ] := getCollectedHints @ $hintMethod;
+getCollectedHints[ None ] := None;
+
+getCollectedHints[ method_ ] := Enclose[
+    Catch @ Module[ { hints, grouped, flat },
+        hints = ConfirmMatch[
+            DeleteDuplicates @ Internal`BagPart[ $collectedEvaluatorHints, All ],
+            { ___Association },
+            "Hints"
+        ];
+        If[ hints === { }, Throw @ { } ];
+
+        grouped = GroupBy[ hints, Lookup[ "Name" ] ];
+
+        flat = ConfirmMatch[
+            Flatten @ KeyValueMap[ addHintContent, grouped ],
+            { KeyValuePattern[ "Content" -> _String ].. },
+            "Flat"
+        ];
+
+        DeleteDuplicatesBy[ flat, Lookup[ "Content" ] ]
+    ],
+    throwInternalFailure
+];
+
+getCollectedHints // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addHintContent*)
+addHintContent // beginDefinition;
+
+addHintContent[ name_String, hints_List ] :=
+    addHintContent[ name, hints, $hintData[ name ] ];
+
+addHintContent[ name_String, hints_List, hintData_Association ] :=
+    addHintContent[ name, hints, hintData, TrueQ @ hintData[ "Grouped" ] ];
+
+(* Grouped hints have a main template and a per-item template.
+   These hints are combined into a single hint with per-item templating being used to generate the
+   argument for the main template. *)
+addHintContent[ name_String, hints: { __Association }, hintData_Association, True ] := Enclose[
+    Module[ { mainTemplate, itemTemplate, itemArguments, items, separator, itemContent, content },
+        mainTemplate = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
+        itemTemplate = ConfirmMatch[ hintData[ "ItemTemplate" ], _String|_TemplateObject, "ItemTemplate" ];
+        itemArguments = ConfirmMatch[ Lookup[ hints, "Arguments" ], { (_List|_Association).. }, "ItemArguments" ];
+        items = ConfirmMatch[ TemplateApply[ itemTemplate, # ] & /@ itemArguments, { __String }, "Items" ];
+        separator = ConfirmMatch[ hintData[ "ItemSeparator" ], _String, "ItemSeparator" ];
+        itemContent = ConfirmBy[ StringRiffle[ items, separator ], StringQ, "ItemContent" ];
+        content = ConfirmBy[ TemplateApply[ mainTemplate, itemContent ], StringQ, "Content" ];
+        <| "Name" -> name, "Content" -> content, "Arguments" -> itemArguments |>
+    ],
+    throwInternalFailure
+];
+
+(* Non-grouped hints have a single template that is applied to each hint. *)
+addHintContent[ name_String, hints: { __Association }, hintData_Association, False ] := Enclose[
+    Module[ { template },
+        template = ConfirmMatch[ hintData[ "Template" ], _String|_TemplateObject, "Template" ];
+        ConfirmAssert[ AllTrue[ hints, KeyExistsQ[ "Arguments" ] ], "ArgumentsCheck" ];
+        <|
+            #,
+            "Content" -> ConfirmBy[ TemplateApply[ template, #Arguments ], StringQ, "Content" ]
+        |> & /@ hints
+    ],
+    throwInternalFailure
+];
+
+addHintContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendXMLHints*)
+appendXMLHints // beginDefinition;
+
+appendXMLHints[ result_String, { } ] := result;
+
+appendXMLHints[ result_String, hints: { __Association } ] := Enclose[
+    Module[ { content, parts },
+        content = DeleteDuplicates @ ConfirmMatch[
+            Cases[ hints, KeyValuePattern[ "Content" -> s_ ] :> s ],
+            { __String },
+            "Content"
+        ];
+
+        parts = ConfirmMatch[ TemplateApply[ $xmlHintTemplate, # ] & /@ content, { __String }, "Parts" ];
+
+        ConfirmBy[
+            TemplateApply[ $xmlHintsTemplate, { result, StringRiffle[ parts, "\n" ] } ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+appendXMLHints // endDefinition;
+
+
+$xmlHintsTemplate = "`1`\n\n<system-hints>\n`2`\n</system-hints>";
+$xmlHintTemplate  = "<hint>\n`1`\n</hint>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendCommentHints*)
+appendCommentHints // beginDefinition;
+
+appendCommentHints[ result_String, { } ] := result;
+
+appendCommentHints[ result_String, hints: { __Association } ] := Enclose[
+    Module[ { content },
+        content = DeleteDuplicates @ ConfirmMatch[
+            Cases[ hints, KeyValuePattern[ "Content" -> s_ ] :> s ],
+            { __String },
+            "Content"
+        ];
+
+        ConfirmBy[
+            TemplateApply[ $commentHintsTemplate, { result, StringRiffle[ content, "\n\n" ] } ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+appendCommentHints // endDefinition;
+
+
+$commentHintsTemplate = "`1`\n\n(* `2` *)";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Evaluate*)
 
 (* ::**************************************************************************************************************:: *)
@@ -670,8 +965,13 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 sandboxEvaluate // beginDefinition;
 
 sandboxEvaluate[ eval_ ] :=
-    Block[ { $kernelQuit = False, $verifiedResult = True },
-        sandboxEvaluate0 @ eval
+    Block[
+        {
+            $kernelQuit              = False,
+            $verifiedResult          = True,
+            $collectedEvaluatorHints = Internal`Bag[ ]
+        },
+        includeEvaluatorHints @ sandboxEvaluate0 @ eval
     ];
 
 sandboxEvaluate // endDefinition;
@@ -2371,24 +2671,69 @@ sandboxResultString2 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*preprocessForResultString*)
 preprocessForResultString // beginDefinition;
-
-preprocessForResultString[ expr_ ] := ReplaceAll[
-    expr,
-    {
-        gfx_? safeGraphicsQ :>
-            RuleCondition @ markdownExpression @ MakeExpressionURI[ ToString @ Head @ Unevaluated @ gfx, gfx ]
-    }
-];
-
+preprocessForResultString[ expr_ ] := expr /. e_? markdownExpressionQ :> RuleCondition @ makeInlineMDExpression @ e;
 preprocessForResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*safeGraphicsQ*)
-safeGraphicsQ // beginDefinition;
-safeGraphicsQ // Attributes = { HoldAllComplete };
-safeGraphicsQ[ e_ ] := graphicsQ @ Unevaluated @ e;
-safeGraphicsQ // endDefinition;
+(*makeInlineMDExpression*)
+makeInlineMDExpression // beginDefinition;
+makeInlineMDExpression // Attributes = { HoldAllComplete };
+
+makeInlineMDExpression[ e_ ] := Enclose[
+    Module[ { md },
+        md = ConfirmBy[
+            MakeExpressionURI[ ToString @ Head @ Unevaluated @ e, Unevaluated @ e ],
+            StringQ,
+            "Markdown"
+        ];
+
+        ConfirmMatch[ addInlineMarkdownHint @ md, Null, "AddInlineMarkdownHint" ];
+
+        markdownExpression @ md
+    ],
+    throwInternalFailure
+];
+
+makeInlineMDExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addInlineMarkdownHint*)
+addInlineMarkdownHint // beginDefinition;
+
+addInlineMarkdownHint[ md_String ] := Enclose[
+    Module[ { uri },
+        uri = ConfirmBy[
+            StringDelete[ md, { StartOfString ~~ "![" ~~ __ ~~ "](", ")"~~EndOfString } ],
+            StringFreeQ @ { "!", "[", "]", "(", ")" },
+            "URI"
+        ];
+
+        addEvaluatorHint[ "InlineMarkdownExpression", uri ]
+    ],
+    throwInternalFailure
+];
+
+addInlineMarkdownHint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*markdownExpressionQ*)
+markdownExpressionQ // beginDefinition;
+markdownExpressionQ // Attributes = { HoldAllComplete };
+markdownExpressionQ[ e_Audio ] := AudioQ @ Unevaluated @ e;
+markdownExpressionQ[ e_Video ] := VideoQ @ Unevaluated @ e;
+markdownExpressionQ[ e_Manipulate ] := manipulateQ @ Unevaluated @ e;
+markdownExpressionQ[ e_ ] := graphicsQ @ Unevaluated @ e;
+markdownExpressionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*manipulateQ*)
+manipulateQ // beginDefinition;
+manipulateQ[ m_Manipulate ] := MatchQ[ Quiet @ MakeBoxes @ m, TagBox[ _, _Manipulate`InterpretManipulate, ___ ] ];
+manipulateQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2410,18 +2755,12 @@ mergeComments // endDefinition;
 (*appendRetryNotice*)
 appendRetryNotice // beginDefinition;
 
-appendRetryNotice[ string_String ] :=
-    If[ $appendRetryNotice =!= False && StringContainsQ[ string, "General::messages" ],
-        string<>"\n\n"<>$retryMessage,
-        string
-    ];
+appendRetryNotice[ string_String ] := (
+    If[ $appendRetryNotice =!= False && StringContainsQ[ string, "General::messages" ], addEvaluatorHint[ "Retry" ] ];
+    string
+);
 
 appendRetryNotice // endDefinition;
-
-$retryMessage = "(* \
-IMPORTANT! If this tool call failed to provide the desired result for any reason, \
-you MUST write /retry before making the next tool call. \
-*)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2442,7 +2781,7 @@ appendURIInstructions[ string_String, HoldComplete[ e_? simpleFormattingQ ] ] :=
 appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
     Module[ { uri, key },
         uri = ConfirmBy[
-            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "label", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
@@ -2451,7 +2790,10 @@ appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
 
         If[ StringContainsQ[ string, key ],
             string,
-            string <> "\n\n(* "<> uri <>" *)"
+
+            ConfirmMatch[ addEvaluatorHint[ "FormattedResult", uri ], Null, "AddFormattedResultHint" ];
+            ConfirmMatch[ addInlineMarkdownHint @ uri, Null, "AddInlineMarkdownHint" ];
+            string
         ]
     ],
     throwInternalFailure
@@ -2469,18 +2811,20 @@ appendURIInstructions0[ string_String, (HoldForm|HoldCompleteForm)[ expr_ ] ] :=
     appendURIInstructions0[ string, HoldComplete @ expr ];
 
 appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
-    Module[ { uri, key, message },
+    Module[ { uri, key },
 
         uri = ConfirmBy[
-            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            MakeExpressionURI[ "expression", "label", Unevaluated @ expr ],
             StringQ,
             "ExpressionURI"
         ];
 
-        key     = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
-        message = ConfirmBy[ TemplateApply[ $uriPromptTemplate, key ], StringQ, "URIPrompt" ];
+        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
 
-        string <> "\n\n" <> message
+        ConfirmMatch[ addEvaluatorHint[ "URIPrompt", key ], Null, "AddURIPromptHint" ];
+        ConfirmMatch[ addInlineMarkdownHint @ uri, Null, "AddInlineMarkdownHint" ];
+
+        string
     ],
     throwInternalFailure
 ];
@@ -2488,16 +2832,6 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
 appendURIInstructions0[ string_String, _ ] := string;
 
 appendURIInstructions0 // endDefinition;
-
-
-$uriPromptTemplate = StringTemplate[ "\
-(* You can inline this expression in future evaluator inputs or WL code blocks using the syntax: <!expression://%%1%%!>
-
-Always use this syntax when referring to this expression instead of writing it out manually.
-This syntax is only available to you. Do not mention it to the user. *)\
-", Delimiters -> "%%" ];
-
-(* FIXME: there should be post processing that automatically strips this message if the URI is no longer available *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
