@@ -14,6 +14,19 @@ $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 sp`\[FreeformPrompt];
 sp`InlinedExpression;
 
+(* TODO: This file is too large. We should split it up into multiple files, e.g.
+    - Sandbox/Sandbox.wl
+    - Sandbox/Configuration.wl
+    - Sandbox/Evaluation.wl
+    - Sandbox/Hints.wl
+    - Sandbox/Kernels.wl
+    - Sandbox/NaturalLanguageInput.wl
+    - Sandbox/OutputFormatting.wl
+    - Sandbox/Preprocessing.wl
+    - Sandbox/Verification.wl
+    - Sandbox/WolframLanguageToolEvaluate.wl
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
