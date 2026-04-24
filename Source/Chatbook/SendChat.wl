@@ -492,7 +492,7 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
             messages,
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                "\nENDRESULT(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")\n" :>
                     "\nENDRESULT\n"
             ]
         ]
@@ -692,7 +692,7 @@ toolStringSplit[ req_String, result_String ] :=
     toolStringSplit[ toolRequestParser @ req, result ];
 
 toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash @ req },
+    With[ { id = tinyHash[ req, 9 ] },
         toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
     ];
 
@@ -1775,7 +1775,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "GenerateLLMToolResponse"
         ];
 
-        toolID = tinyHash @ toolResponse;
+        toolID = tinyHash[ toolResponse, 9 ];
         toolCall = insertToolID[ toolCall, toolID ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
