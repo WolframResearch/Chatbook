@@ -237,8 +237,9 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "EndToken"          -> None,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -294,13 +295,55 @@ $modelAutoSettings[ "OpenRouter", "Nemotron3" ] = <|
     "ToolMethod"       -> {
         "Service", (* TODO: As of 2026-04-01 and 15.0.0 (13312387, 202603316635) build seems to still have some bug in the OpenRouter paclet for this to work. *)
         Verbatim @ Automatic
-    }[[2]],
+    }[[1]],
     "ToolsEnabled"     -> True,
     "TopP"             -> 0.95
 |>;
 
 $modelAutoSettings[ "OpenRouter", Automatic ] = <|
     (*"PresencePenalty" -> Missing[ "NotSupported" ]*)  (* TODO *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xAI*)
+(*
+  * Grok model doc:
+    * Grok-4.2: https://docs.x.ai/developers/models/grok-4.2
+    * Grok-4: https://docs.x.ai/developers/models/grok-4
+      * changes compared to Grok-3: https://web.archive.org/web/20260402072522/https://docs.x.ai/developers/models
+    * Grok-3: https://docs.x.ai/developers/models/grok-3
+    * streaming: https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming
+*)
+
+$modelAutoSettings[ "xAI" ] = <| |>;
+
+$modelAutoSettings[ "xAI", "Grok3" ] = <|
+    "MaxContextTokens" -> 131072,
+    "Multimodal"       -> False,
+    "Reasoning"        -> False,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok4" ] = <|
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "Reasoning"        -> Missing[ "NotSupported" ], (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately? *)
+    "StopTokens"       -> Missing[ "NotSupported" ],
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok42" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "MaxContextTokens" -> 2000000
+|>;
+
+$modelAutoSettings[ "xAI", Automatic ] = <|
+    "EndToken"         -> None,
+    "ForceSynchronous" -> True,
+    "ToolMethod"       -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -480,11 +523,11 @@ autoModelSetting[ KeyValuePattern[ "Model" -> model_Association ], key_ ] :=
 autoModelSetting[ model0_Association, key_String ] :=
     With[ { model = resolveFullModelSpec @ model0 },
         autoModelSetting[
-            (toBaseServiceName @ (model[ "Service" ](*//Echo*)))(*//Echo*), (*OpenRouter*)
-            model[ "Name" ](*//Echo*), (*nvidia/nemotron-3-super-120b-a12b:free*)
-            model[ "BaseID" ](*//Echo*), (*Nemotron3SuperA12bFree*)
-            model[ "Family" ](*//Echo*), (*Nemotron3*)
-            key(*//Echo*)
+            toBaseServiceName @ model[ "Service" ],
+            model[ "Name" ],
+            model[ "BaseID" ],
+            model[ "Family" ],
+            key
         ]
     ];
 
@@ -567,12 +610,7 @@ modelUnsupportedParameters // endDefinition;
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-
-$DefaultModel :=
-    If[ $VersionNumber >= 14.1,
-        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
-    ];
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -859,7 +897,7 @@ resolveAutoSetting0 // beginDefinition;
 
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
-    With[ { s = autoModelSetting[ as(*//Echo*), name(*//Echo*) ] },
+    With[ { s = autoModelSetting[ as, name ] },
         s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
     ];
 
