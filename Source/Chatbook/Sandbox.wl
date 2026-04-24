@@ -138,6 +138,12 @@ $$pathSpec = $$pathItem | { $$pathItem... };
 
 $collectedEvaluatorHints = None;
 
+(* Hints involving expression URIs aren't applicable to all environments (e.g. MCP server).
+   To avoid breaking other code that relies on `WolframLanguageToolEvaluate`, we disable these by default.
+   Note that this only applies when using `WolframLanguageToolEvaluate` as the entry point for evaluator calls.
+   Built-in Chatbook tools rely on $DefaultToolOptions for defaults, so this won't apply to them. *)
+$defaultDisabledHints = { "FormattedResult", "InlineMarkdownExpression" };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -155,7 +161,7 @@ WolframLanguageToolEvaluate // Options = {
     "AllowedWritePaths"     -> Automatic,
     "AppendRetryNotice"     -> False,
     "AppendURIInstructions" -> True,
-    "DisabledHints"         -> None,
+    "DisabledHints"         -> Automatic,
     "HintMethod"            -> Automatic,
     "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
@@ -258,7 +264,7 @@ getOption[ "Method", $$unspecified ] := Automatic;
 getOption[ "Method", method: "Cloud"|"Local"|"Session"|None ] := method;
 getOption[ "Method", method_ ] := throwFailure[ "InvalidOptionValue", "Method", method ];
 
-getOption[ "DisabledHints", $$unspecified ] := { };
+getOption[ "DisabledHints", $$unspecified ] := $defaultDisabledHints;
 getOption[ "DisabledHints", hints: _String | { ___String } ] := Flatten @ { hints };
 getOption[ "DisabledHints", None ] := { };
 getOption[ "DisabledHints", All ] := All;
