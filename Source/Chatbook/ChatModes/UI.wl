@@ -652,7 +652,7 @@ Overlay[
         With[ { fieldHintBoxes =
             ToBoxes @ Grid[ {
                 {
-                    chatbookIcon[ "ChatIconGeneric", False, LightDarkSwitched @ RGBColor["#E0F2FC"], LightDarkSwitched @ RGBColor["#128ED1"], 14 ],
+                    "",
                     Style[ tr[ "ChatbarFieldHint" ],
                         "Text", "TextStyleInputField",
                         FontColor       -> LightDarkSwitched @ GrayLevel[ 0.74902 ],
