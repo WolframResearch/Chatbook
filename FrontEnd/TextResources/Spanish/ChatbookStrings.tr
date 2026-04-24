@@ -103,8 +103,8 @@
 "PreferencesContentToolsTab" -> "Herramientas",
 "PreferencesContentEnableAssistanceLabel" -> "Habilitar asistencia autom\[AAcute]tica",
 "PreferencesContentEnableAssistanceTooltip" -> "Si han sido habilitadas, las sugerencias autom\[AAcute]ticas proporcionadas por IA ser\[AAcute]n agregadas luego de los resultados de la evaluaci\[OAcute]n.",
-"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
-"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
+"PreferencesContentAIDisabledByAdmin" -> "AI features have been disabled by an administrator",
+"PreferencesContentAIDisabledLearnMore" -> "Learn more \[RightGuillemet]",
 "PreferencesContentPersonaLabel" -> "Persona:",
 "PreferencesContentLLMServiceLabel" -> "Servicio LLM:",
 "PreferencesContentModelLabel" -> "Modelo:",
@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
 "ChatbarFieldHint" -> "\[DownQuestion]Qu\[EAcute] te gustar\[IAcute]a hacer?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use assistant chat",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de Notebook Assistant\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",

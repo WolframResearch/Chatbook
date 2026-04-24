@@ -103,8 +103,8 @@
 "PreferencesContentToolsTab" -> "Tools",
 "PreferencesContentEnableAssistanceLabel" -> "Enable automatic assistance",
 "PreferencesContentEnableAssistanceTooltip" -> "If enabled, automatic AI provided suggestions will be added following evaluation results.",
-"PreferencesContentAIDisabledByAdmin" -> "[[AI features have been disabled by an administrator]]",
-"PreferencesContentAIDisabledLearnMore" -> "[[Learn more \[RightGuillemet]]]",
+"PreferencesContentAIDisabledByAdmin" -> "AI features have been disabled by an administrator",
+"PreferencesContentAIDisabledLearnMore" -> "Learn more \[RightGuillemet]",
 "PreferencesContentPersonaLabel" -> "Persona:",
 "PreferencesContentLLMServiceLabel" -> "LLM Service:",
 "PreferencesContentModelLabel" -> "Model:",
@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "Ask me anything",
 "ChatbarFieldHint" -> "What would you like to do?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use assistant chat",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
