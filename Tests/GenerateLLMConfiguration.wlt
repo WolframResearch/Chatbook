@@ -61,7 +61,7 @@ VerificationTest[
 (*Tools*)
 VerificationTest[
     Sort[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ] ],
-    { "CreateNotebook", "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" },
+    { "CreateNotebook", "DocumentationSearcher", "WebFetcher", "WolframAlpha", "WolframLanguageEvaluator" },
     SameTest -> MatchQ,
     TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:62,1-67,2"
 ]
