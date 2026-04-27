@@ -220,7 +220,7 @@
 "ChatbarFieldHint" -> "\[DownQuestion]Qu\[EAcute] te gustar\[IAcute]a hacer?",
 "ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
 "ChatbarNoInternet" -> "No internet connection",
-"ChatbarSignIn" -> "Sign in to use assistant chat",
+"ChatbarSignIn" -> "Sign in to use AI Assistant",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de Notebook Assistant\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",
