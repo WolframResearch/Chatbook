@@ -957,7 +957,7 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 								ItemSize -> Scaled[0.5],
 								Alignment -> {{Left, Right}, Baseline}
 							],
-							"Monthly usage:",
+							tr @ "ChatbarOptionsMonthlyUsage",
 							chatbarUsageThermometer[tier, usage],
 							chatbarWarningStripe[tier, usage],
 							chatbarUpgradeStripe[tier, usage]
@@ -972,7 +972,7 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 				],
 				Column[
 					{
-						"Show assistant in notebooks:",
+						tr @ "ChatbarOptionsStateTitle",
 						chatbarStateSetter[nbo, Dynamic[chatbarCell]]
 					}
 				]
@@ -994,7 +994,7 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 	]
 
 chatbarOptionsTitle[tier_] :=
-	Style[Row[{"AI Assistant: ", tier}],
+	Style[Row[{tr @ "ChatbarOptionsTitle", " ", tier}],
 		FontColor -> $coTitleColor,
 		FontFamily -> "Source Sans Pro",
 		FontSize -> 16,
@@ -1042,7 +1042,10 @@ chatbarUsageThermometerBase[width_, usage_, label_] :=
 				FrameMargins -> $cutMargin,
 				Background -> $cutWhite
 			],
-			Framed[label,
+			Framed[Replace[label, {
+					tier: "Basic" | "Pro" | "Research" :> tr["ChatbarOptions" <> tier],
+					else_ :> else
+				}],
 				FrameStyle -> LightDarkSwitched @ GrayLevel[1,0],
 				FrameMargins -> 2,
 				ContentPadding -> False,
@@ -1088,7 +1091,10 @@ chatbarUsageThermometerCap[width_, label_, ellipsisQ_ : False] :=
 				PlotRangePadding -> 1,
 				AspectRatio -> Full]
 			,
-			Framed[label,
+			Framed[Replace[label, {
+					tier: "Basic" | "Pro" | "Research" :> tr["ChatbarOptions" <> tier],
+					else_ :> else
+				}],
 				FrameStyle -> LightDarkSwitched @ GrayLevel[1,0],
 				FrameMargins -> 2,
 				ContentPadding -> False,
@@ -1144,8 +1150,8 @@ chatbarWarningStripe[tier: "Basic" | "Pro", usage_] :=
 		Grid[
 			{{
 				"\[WarningSign]",
-				"Usage limit reached",
-				Style["(resets in xx days)", FontColor -> StandardGray]
+				tr @ "ChatbarOptionsLimit",
+				Style[StringTemplate[trRaw @ "ChatbarOptionsLimitReset"][ "xx" ], FontColor -> StandardGray]
 			}},
 			BaseStyle -> {FontColor -> $cutRed}
 		],
@@ -1163,7 +1169,7 @@ chatbarWarningStripe[tier_, usage_] := Nothing
 chatbarUpgradeStripe[tier: "Basic", usage_] :=
 	Button[
 		Style[
-			Row[{"Upgrade to ", Style["Pro", FontWeight -> "DemiBold"], " or ", Style["Research\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
+			Row[{tr @ "ChatbarOptionsUpgradeProResearch" Style["\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
 			FontColor -> Dynamic[If[CurrentValue["MouseOver"], $cutBlueHover, $cutBlue]]
 		],
 		MessageDialog["To do"],
@@ -1178,7 +1184,7 @@ chatbarUpgradeStripe[tier: "Pro", usage_] :=
 		{{
 			Button[
 				Style[
-					Row[{"Upgrade to ", Style["Research\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
+					Row[{tr @ "ChatbarOptionsUpgradeResearch", Style["\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold"]}],
 					FontColor -> Dynamic[If[CurrentValue["MouseOver"], $cutBlueHover, $cutBlue]]
 				],
 				MessageDialog["To do"],
@@ -1203,7 +1209,7 @@ chatbarUpgradeStripe[tier: "Research", usage_] :=
 
 chatbarAddServiceCreditsButton[tier_] := 
 	Button[
-		"Extend usage with service credits \[DownPointer]",
+		Row[{tr @ "ChatbarOptionsExtendUsage", " \[DownPointer]"}],
 		AttachCell[
 			EvaluationBox[],
 			chatbarAddServiceCreditsDisplay[tier],
@@ -1243,9 +1249,9 @@ chatbarAddServiceCreditsDisplay[tier: "Pro"] :=
 	Framed[
 		Grid[
 			{
-				{"1000 credits", chatbarAddServiceCreditsThermometer["Pro", 1]},
-				{"2000 credits", chatbarAddServiceCreditsThermometer["Pro", 2]},
-				{"5000 credits", chatbarAddServiceCreditsThermometer["Pro", 3]},
+				{Row[{"1000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Pro", 1]},
+				{Row[{"2000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Pro", 2]},
+				{Row[{"5000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Pro", 3]},
 				{chatbarUpgradeStripe["Pro", 0], SpanFromLeft}
 			},
 			ItemStyle -> {{$cutBlue, None}, None},
@@ -1268,9 +1274,9 @@ chatbarAddServiceCreditsDisplay[tier: "Research"] :=
 	Framed[
 		Grid[
 			{
-				{"1000 credits", chatbarAddServiceCreditsThermometer["Research", 1]},
-				{"2000 credits", chatbarAddServiceCreditsThermometer["Research", 2]},
-				{"5000 credits", chatbarAddServiceCreditsThermometer["Research", 3]}
+				{Row[{"1000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Research", 1]},
+				{Row[{"2000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Research", 2]},
+				{Row[{"5000 ", tr @ "ChatbarOptionsCredits"}], chatbarAddServiceCreditsThermometer["Research", 3]}
 			},
 			ItemStyle -> {{$cutBlue, None}, None},
 			Alignment -> Left,
@@ -1315,7 +1321,7 @@ chatbarStateSetter[nbo_, Dynamic[chatbarCell_]] :=
 										Setter[
 											Dynamic[localSetting],
 											state,
-											state,
+											tr["ChatbarOptions" <> state],
 											Appearance -> None,
 											BaselinePosition -> Baseline
 										]
