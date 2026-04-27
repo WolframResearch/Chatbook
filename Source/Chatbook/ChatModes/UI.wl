@@ -960,7 +960,11 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     Style[ Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ], Magnification -> Dynamic @
         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
     ]& @
-    DynamicModule[ { initializedQ = False, thisCell, activeQ = False, bgColor = ThemeColor[ "Background" ], fieldContent = initialText, connectionLevel = "Loading" },
+    DynamicModule[
+        {
+            Typeset`initializedQ = False, Typeset`thisCell, Typeset`activeQ = False, Typeset`selectionWithinQ = False,
+            Typeset`bgColor = ThemeColor[ "Background" ], Typeset`fieldContent = initialText, Typeset`state = "Loading"
+        },
         EventHandler[
             DynamicWrapper[
                 PaneSelector[
@@ -971,27 +975,27 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     DynamicWrapper[
                                         PaneSelector[
                                             {
-                                                "Loading" -> chatbarLoading @ activeQ,
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo }, fieldContent, bgColor, activeQ, selectionWithinQ ],
-                                                "SignIn"  -> chatbarSignIn @ activeQ
+                                                "Loading" -> chatbarLoading @ Typeset`activeQ,
+                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo }, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "SignIn"  -> chatbarSignIn @ Typeset`activeQ
                                             },
-                                            Dynamic @ connectionLevel,
+                                            Dynamic @ Typeset`state,
                                             ImageSize -> Automatic
                                         ],
-                                        connectionLevel = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
+                                        Typeset`state = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
                                         SynchronousUpdating -> False
                                     ]
                                     ,
                                     Framed[
                                         Grid[
                                             {
-                                                { chatbarMinimizeButton[ thisCell, activeQ ] },
-                                                { chatbarOptionsMenu[ nbo, thisCell, activeQ ] }
+                                                { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] },
+                                                { chatbarOptionsMenu[ nbo, Typeset`thisCell, Typeset`activeQ ] }
                                             },
                                             Alignment -> { Left, Baseline },
                                             Spacings  -> { 0, 0 }
                                         ],
-                                        Background     -> Dynamic @ bgColor,
+                                        Background     -> Dynamic @ Typeset`bgColor,
                                         FrameMargins   -> 0,
                                         FrameStyle     -> None,
                                         ImageMargins   -> { { 2, 0 }, { 0, 0 } },
@@ -1000,21 +1004,21 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                 } },
                                 Spacings  -> { 0, 0 }
                             ],
-                        True -> chatbarMaximizeButton[ nbo, thisCell ]
+                        True -> chatbarMaximizeButton[ nbo, Typeset`thisCell ]
                     },
-                    Dynamic @ AbsoluteCurrentValue[ thisCell, { TaggingRules, "MinimizedQ" } ],
+                    Dynamic @ AbsoluteCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" } ],
                     ImageSize -> Automatic
                 ]
                 ,
-                selectionWithinQ = CurrentValue[ "SelectionWithin" ];
-                activeQ = selectionWithinQ || CurrentValue[ "MouseOver" ] || (connectionLevel === "Enabled" && fieldContent =!= "");
+                Typeset`selectionWithinQ = CurrentValue[ "SelectionWithin" ];
+                Typeset`activeQ = Typeset`selectionWithinQ || CurrentValue[ "MouseOver" ] || (Typeset`state === "Enabled" && Typeset`fieldContent =!= "");
             ],
             {
                 "MouseEntered" :> (
-                    FEPrivate`Set[ bgColor, ThemeColor[ "Background" ] ]
+                    FEPrivate`Set[ Typeset`bgColor, ThemeColor[ "Background" ] ]
                 ),
                 "MouseExited"  :> (
-                    FEPrivate`Set[ bgColor,
+                    FEPrivate`Set[ Typeset`bgColor,
                         SetAlphaChannel[
                             FrontEnd`AbsoluteCurrentValue[ nbo, {
                                 FrontEnd`NotebookTheme,
@@ -1028,9 +1032,9 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
             },
             PassEventsDown -> True
         ],
-        Initialization :> If[ !initializedQ,
-            initializedQ = True;
-            thisCell = EvaluationCell[ ];
+        Initialization :> If[ !Typeset`initializedQ,
+            Typeset`initializedQ = True;
+            Typeset`thisCell = EvaluationCell[ ];
             FE`Evaluate @ {
                 (* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
                 FrontEnd`CurrentValue[
@@ -1045,7 +1049,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 ]
             };
             setCurrentValue[
-                thisCell,
+                Typeset`thisCell,
                 { TaggingRules, "MinimizedQ" },
                 TrueQ @ FrontEnd`AbsoluteCurrentValue[
                     FrontEnd`$FrontEndSession,
