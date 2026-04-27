@@ -1051,8 +1051,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
             setCurrentValue[
                 Typeset`thisCell,
                 { TaggingRules, "MinimizedQ" },
-                TrueQ @ FrontEnd`AbsoluteCurrentValue[
-                    FrontEnd`$FrontEndSession,
+                TrueQ @ AbsoluteCurrentValue[
+                    $FrontEndSession,
                     { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" }
                 ]
             ]
