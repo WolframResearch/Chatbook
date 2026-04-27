@@ -538,8 +538,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
             thisCell, chatEvalCell,
             fieldContent = "", returnKeyDownQ, input,
             kernelWasQuitQ = False, cachedSessionID = $SessionID,
-            focusArea = "", (* initialization is synchronous, else we could use a progress indicator here *)
-            scrollPosition
+            focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
         },
         EventHandler[
             Pane[
@@ -564,6 +563,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                                 ]
                                 ,
                                 If[ TrueQ @ returnKeyDownQ,
+                                    CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
                                     clearOverlayMenus @ nbo;
                                     returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
@@ -603,7 +603,7 @@ makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
                         , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
                         input = fieldContent; fieldContent = ""; returnKeyDownQ = True
                     ]),
-                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
+                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
             },
             Method         -> "Preemptive",
             PassEventsDown -> False
