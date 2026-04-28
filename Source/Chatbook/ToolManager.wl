@@ -106,7 +106,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                 toolLookup   = Association @ MapThread[
                     Rule,
                     { tools[[ All, "CanonicalName" ]], Range @ Length @ tools }
-                ]
+                ],
+                dialogWindow
             },
 
             preppedPersonas     = prepPersonas[ personas, Dynamic @ { row, column } ];
@@ -134,7 +135,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                         titleSection[ ],
 
                         (* ----- Install Tools ----- *)
-                        installToolsSection[ ],
+                        installToolsSection[ Dynamic @ dialogWindow ],
 
                         (* ----- Configure and Enable Tools ----- *)
                         If[ TrueQ @ OptionValue[ "GlobalScopeOnly" ],
@@ -398,7 +399,10 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                 ]
             ],
             UnsavedVariables :> { sH, sV, w, h, row, column },
-            Initialization   :> (scopeMode = $FrontEnd &)
+            Initialization   :> (scopeMode = $FrontEnd &),
+            Deinitialization :> If[ Head[ NotebookGet @ dialogWindow ] === Notebook,
+                NotebookClose @ dialogWindow; System`FEDump`$DialogReturnValue = $Canceled; System`FEDump`$DialogDone = True
+            ]
         ]
     ];
 
@@ -1225,7 +1229,7 @@ titleSection // endDefinition;
 (*installToolsSection*)
 installToolsSection // beginDefinition;
 
-installToolsSection[ ] := Sequence[
+installToolsSection[ Dynamic[ dialogWindow_ ] ] := Sequence[
     dialogSubHeader @ tr[ "ToolManagerInstallTools" ],
     dialogBody[
         Grid @ {
@@ -1242,7 +1246,7 @@ installToolsSection[ ] := Sequence[
                 Button[
                     grayDialogButtonLabel @ tr[ "URLButton" ],
                     If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
-                    Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool" ] ],
+                    Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool", Dynamic @ dialogWindow ] ],
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
                     Method           -> "Queued"
@@ -1329,7 +1333,7 @@ cloudToolManager[ tools: { __Association } ] := Grid[
         titleSection[ ],
 
         (* ----- Install Tools ----- *)
-        installToolsSection[ ],
+        DynamicModule[ { dialogWindow }, installToolsSection[ Dynamic @ dialogWindow ] ],
 
         (* ----- Configure and Enable Tools ----- *)
         manageAndEnableToolsSection[ ],
