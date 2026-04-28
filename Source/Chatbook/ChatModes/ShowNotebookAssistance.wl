@@ -614,13 +614,15 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
         Which[
             FailureQ @ sidebarCell,
                  (* don't do anything else because this is the first time we've opened the sidebar in this notebook *)
-                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ], 
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ], 
             
             TrueQ @ toggle,
                 If[ TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ],
                     FrontEndTokenExecute[ nbo, "HideSidebar" ]
                     ,
-                    FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ]
+                    FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                    setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ]
                 ],
             
             (* The sidebar assistant is persistant to a given notebook. *)

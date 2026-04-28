@@ -63,13 +63,24 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                                 mag, 90, en ] },
                         ItemSize -> Automatic, Spacings -> { 0, 0 }, Alignment -> Left
                     ],
+                "Personas" ->
+                    Dynamic @ Column[
+                        {
+                            linkTrailFrame[ tr @ "UIPersonas", aiPane = "Main" ],
+                            scrollablePane[
+                                Column[
+                                    sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ createMenuPersonas[ en ],
+                                    Spacings -> { 0, 0 } ],
+                                mag, 90, en ] },
+                        BaseStyle -> FontSize -> 1, ItemSize -> Automatic, Spacings -> { 0, -4 }, Alignment -> Left
+                    ],
                 "Services" ->
                     Dynamic @ Column[(* oddity: dynamic column doesn't get the spacings right, leaving a gap, so close the gap by hand *)
                         {
                             linkTrailFrame[ tr @ "UIModels", aiPane = "Main" ],
                             scrollablePane[
                                 Column[
-                                    sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ Wolfram`Chatbook`UI`Private`createServiceMenu[ en ],
+                                    sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@ createMenuService[ en ],
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
                         BaseStyle -> FontSize -> 1, ItemSize -> Automatic, Spacings -> { 0, -4 }, Alignment -> Left
@@ -93,7 +104,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                             linkTrailFrame[ tr @ "UIAdvancedSettings", aiPane = "Main" ],
                             scrollablePane[
                                 Column[
-                                    sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  Wolfram`Chatbook`UI`Private`createAdvancedSettingsMenu[ en, sidebarCell ],
+                                    sidebarMenuItem[ #, generatedMenu, aiPane, modelPaneLabel, en ]& /@  createMenuAdvancedSettings[ en, sidebarCell ],
                                     Spacings -> { 0, 0 } ],
                                 mag, 90, en ] },
                         ItemSize -> Automatic, Spacings -> { 0, 0 }, Alignment -> Left

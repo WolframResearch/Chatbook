@@ -10,6 +10,7 @@
         "DocumentationSearcher",
         "WolframAlpha",
         "CreateNotebook",
+        "WebFetcher",
         ParentList
     }
 |>

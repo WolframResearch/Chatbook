@@ -237,8 +237,9 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "EndToken"          -> None,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -262,6 +263,48 @@ $modelAutoSettings[ "TogetherAI" ] = <| |>;
 
 $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xAI*)
+(*
+  * Grok model doc:
+    * Grok-4.2: https://docs.x.ai/developers/models/grok-4.2
+    * Grok-4: https://docs.x.ai/developers/models/grok-4
+      * changes compared to Grok-3: https://web.archive.org/web/20260402072522/https://docs.x.ai/developers/models
+    * Grok-3: https://docs.x.ai/developers/models/grok-3
+    * streaming: https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming
+*)
+
+$modelAutoSettings[ "xAI" ] = <| |>;
+
+$modelAutoSettings[ "xAI", "Grok3" ] = <|
+    "MaxContextTokens" -> 131072,
+    "Multimodal"       -> False,
+    "Reasoning"        -> False,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok4" ] = <|
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "Reasoning"        -> Missing[ "NotSupported" ], (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately? *)
+    "StopTokens"       -> Missing[ "NotSupported" ],
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok42" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "MaxContextTokens" -> 2000000
+|>;
+
+$modelAutoSettings[ "xAI", Automatic ] = <|
+    "EndToken"         -> None,
+    "ForceSynchronous" -> True,
+    "ToolMethod"       -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -540,12 +583,7 @@ modelUnsupportedParameters // endDefinition;
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-
-$DefaultModel :=
-    If[ $VersionNumber >= 14.1,
-        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
-    ];
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
