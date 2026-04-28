@@ -27,8 +27,6 @@ $$preferencesPage = Alternatives @@ $preferencesPages;
 $preferencesScope := $FrontEnd;
 $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_FrontEndObject } ];
 
-$preferencesContentEnabledQ = True;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cloud Overrides*)
@@ -282,10 +280,8 @@ If[ $preferencesContentEnabledQ,
     Pros: easier to implement; does not push down reset button
     Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
 
-disabledAIOverlay[ content_ ] :=
-If[ $preferencesContentEnabledQ,
-    content
-    ,
+disabledAIOverlay[ content_, localAIOnlyQ_ ] :=
+If[ localAIOnlyQ,
     Grid[
         {
             { disabledAIOverlayBanner[ ] },
@@ -305,6 +301,8 @@ If[ $preferencesContentEnabledQ,
         Alignment -> { Left, Top },
         Spacings  -> { 0, 0 }
     ]
+    ,
+    content
 ];
 
 
@@ -323,7 +321,7 @@ notebookSettingsPanel[ ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
+        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> scopeInitialization[ display = createNotebookSettingsPanel[ ] ],
         SynchronousInitialization -> False
@@ -1314,7 +1312,7 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := Catch[ Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ servicesSettingsPanel0[ ] ], $servicesSettingsTag ];
+servicesSettingsPanel[ ] := Catch[ Dynamic[ disabledAIOverlay[ servicesSettingsPanel0[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ], $servicesSettingsTag ];
 servicesSettingsPanel // endDefinition;
 
 servicesSettingsPanel0 // beginDefinition;
@@ -1751,7 +1749,7 @@ personaSettingsPanel // beginDefinition;
 personaSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
+        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
         Initialization            :> scopeInitialization[ display = CreatePersonaManagerPanel[ ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
@@ -1771,7 +1769,7 @@ toolSettingsPanel // beginDefinition;
 toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ $preferencesContentEnabledQ; disabledAIOverlay @ display ],
+        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
         Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
