@@ -2275,7 +2275,7 @@ parseCellGroupBlock // endDefinition;
 $$equals          = ":=" | "=";
 $$inLabel         = "In" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
 $$outLabel        = "Out" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
-$$echoLabel       = Longest[ ">>".. | "<<".. ];
+$$echoLabel       = ">>";
 $$echoTimingLabel = "\[WatchIcon]";
 $$messageLabel    = Except[ WhitespaceCharacter ].. ~~ "::" ~~ (LetterCharacter|DigitCharacter) .. ~~ ":";
 $$printLabel      = "During evaluation of " ~~ $$inLabel;
