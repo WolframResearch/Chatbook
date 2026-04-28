@@ -975,14 +975,21 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     DynamicWrapper[
                                         PaneSelector[
                                             {
-                                                "Loading" -> chatbarLoading @ Typeset`activeQ,
-                                                "Enabled" -> chatbarInputFieldEnabled[ { nbo }, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
-                                                "SignIn"  -> chatbarSignIn @ Typeset`activeQ
+                                                "Loading"          -> chatbarLoading @ Typeset`activeQ,
+                                                "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
+                                                "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
                                             Dynamic @ Typeset`state,
                                             ImageSize -> Automatic
                                         ],
-                                        Typeset`state = If[ cloudCredentialsQ[ ], "Enabled", "SignIn" ],
+                                        Typeset`state = Which[
+                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads"], "InternetDisabled",
+                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable"], "NoInternet",
+                                            cloudCredentialsQ[ ], "Enabled",
+                                            True, "SignIn"
+                                        ],
                                         SynchronousUpdating -> False
                                     ]
                                     ,
@@ -1090,7 +1097,7 @@ Button[
                     ImageSize        -> All
                 ],
                 Style[
-                    "[[Sign in to use assistant chat]]",
+                    tr @ "ChatbarSignIn",
                     FontColor -> Dynamic @ If[ activeQ,
                         LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
                         LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
@@ -1122,6 +1129,108 @@ Button[
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarDisabledInternet*)
+
+chatbarDisabledInternet // beginDefinition;
+
+Attributes[ chatbarDisabledInternet ] = { HoldAll };
+
+chatbarDisabledInternet[ activeQ_ ] :=
+Button[
+    Framed[
+        Grid[
+            { {
+                Style[
+                    "\[WarningSign]",
+                    "Text", "TextStyling",
+                    FontWeight -> Bold,
+                    FontColor  -> StandardYellow,
+                    FontSize   -> 18
+                ],
+                Style[
+                    tr @ "ChatbarWolframDisabledInternet",
+                    FontColor -> Dynamic @ If[ activeQ,
+                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+                    ]
+                ]
+            } },
+            BaseStyle -> {
+                "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+                FontFamily      -> "Roboto",
+                FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+                FontSize        -> 15,
+                FontSlant       -> "Plain",
+                LineBreakWithin -> False }
+        ],
+        Alignment      -> { Automatic, Center },
+        Background     -> Dynamic @ If[ activeQ,
+            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+            LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+        ],
+        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+        FrameStyle     -> None,
+        ImageSize      -> { Scaled[ 1 ], 32 },
+        RoundingRadius -> 9
+    ],
+    NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+chatbarDisabledInternet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarNoInternet*)
+
+chatbarNoInternet // beginDefinition;
+
+Attributes[ chatbarNoInternet ] = { HoldAll };
+
+chatbarNoInternet[ activeQ_ ] :=
+Framed[
+    Grid[
+        { {
+            Style[
+                "\[WarningSign]",
+                "Text", "TextStyling",
+                FontWeight -> Bold,
+                FontColor  -> StandardYellow,
+                FontSize   -> 18
+            ],
+            Style[
+                tr @ "ChatbarNoInternet",
+                FontColor -> Dynamic @ If[ activeQ,
+                    LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                    LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+                ]
+            ]
+        } },
+        BaseStyle -> {
+            "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+            FontFamily      -> "Roboto",
+            FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+            FontSize        -> 15,
+            FontSlant       -> "Plain",
+            LineBreakWithin -> False }
+    ],
+    Alignment      -> { Automatic, Center },
+    Background     -> Dynamic @ If[ activeQ,
+        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+    ],
+    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+    FrameStyle     -> None,
+    ImageSize      -> { Scaled[ 1 ], 32 },
+    RoundingRadius -> 9
+];
+
+chatbarNoInternet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1190,7 +1299,7 @@ DynamicModule[ { scrollPosition },
             ],
             Alignment      -> { Automatic, Center },
             Background     -> Dynamic @ bgColor,
-            FrameMargins   -> { { 12, 7 }, { 7, 7 } },
+            FrameMargins   -> { { 10, 5 }, { 5, 5 } },
             FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
                 LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
                 LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
@@ -1221,7 +1330,7 @@ DynamicModule[ { scrollPosition },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -5, 5 }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -6, 7 }, Automatic ], { Left, Top }
         ]
     ]
 ];
@@ -1273,6 +1382,7 @@ Framed[
         text,
         FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
         FontOpacity    -> Dynamic @ If[ activeQ, 1., 0.5 ],
+        FontSize       -> 11,
         FontTracking   -> "SemiCondensed",
         FontVariations -> { "CapsType" -> "AllCaps" },
         FontWeight     -> "SemiBold"

@@ -218,6 +218,9 @@
 
 "AttachedChatFieldHint" -> "Demande\[Hyphen]moi quelque chose",
 "ChatbarFieldHint" -> "Que voulez\[Hyphen]vous faire\[NonBreakingSpace]?",
+"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
+"ChatbarNoInternet" -> "No internet connection",
+"ChatbarSignIn" -> "Sign in to use AI Assistant",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
