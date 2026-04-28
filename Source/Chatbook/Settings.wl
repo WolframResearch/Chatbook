@@ -307,6 +307,33 @@ $modelAutoSettings[ "xAI", Automatic ] = <|
     "ToolMethod"       -> "Service"
 |>;
 
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(* OpenRouter *)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+(*
+  * <https://openrouter.ai/compare/deepseek/deepseek-v4-flash>
+*)
+$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
+    "MaxContextTokens"       -> 1048576,
+    "Multimodal"             -> False,
+
+    "Reasoning"              -> <| "effort" -> {"high", "xhigh"}[[1]] |>,
+
+    "ToolMethod"             -> "Simple",
+    (*"ToolMethod"             -> "Service",*)
+    "ToolResponseRole"       -> "User",
+    "HybridToolMethod"       -> False,
+
+    "ToolCallRetryMessage"   -> False,
+
+    (*"EndToken"               -> None*)
+    "EndToken"               -> "<\:ff5cend\:2581of\:2581sentence\:ff5c>"
+
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Any Service*)
@@ -439,6 +466,12 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
     "Temperature"                -> Missing[ "NotSupported" ],
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(* DeepSeek *)
+$modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1137,6 +1170,7 @@ styleStopTokens[ "Llama"         ] := { "<|start_header_id|>" };
 styleStopTokens[ "Gemma"         ] := { "<start_of_turn>" };
 styleStopTokens[ "Nemotron"      ] := { "<extra_id_0>", "<extra_id_1>" };
 styleStopTokens[ "DeepSeekCoder" ] := { "<\:ff5cbegin\:2581of\:2581sentence\:ff5c>" };
+styleStopTokens[ "DeepSeekFlash" ] := { "<\:ff5cend\:2581of\:2581sentence\:ff5c>" };
 styleStopTokens[ _String | None  ] := { };
 styleStopTokens // endDefinition;
 
