@@ -3,7 +3,7 @@
     "Description"      -> "Help with writing and generating Wolfram Language code",
     "DisplayName"      -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameNotebookAssistant" ],
     "Hidden"           -> True,
-    "Icon"             -> RawBoxes @ TemplateBox[ { }, "ChatIconNotebookAssistant" ],
+    "Icon"             -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputCellDingbat" ],
     "PromptGenerators" -> { "RelatedDocumentation", ParentList },
     "Tools"            -> {
         "WolframLanguageEvaluator",

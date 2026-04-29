@@ -1486,6 +1486,58 @@ makeLLMPanel[ ] :=
                 Method     -> "Queued",
                 ImageSize  -> Automatic ];
 
+        upgradeToProOrResearchButton =
+            Button[
+                Style[
+                    StringReplace[
+                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradePro" ],
+                        {
+                            "`SubscriptionLevelPro`" :>
+                                StringJoin[
+                                    "\!\(\*StyleBox[\"",
+                                    FrontEndResource[ "ChatbookStrings", "SubscriptionLevelPro" ],
+                                    "\",FontWeight->\"Bold\"]\)"
+                                ],
+                            "`SubscriptionLevelResearch`" :>
+                                StringJoin[
+                                    "\!\(\*StyleBox[\"",
+                                    FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ],
+                                    "\",FontWeight->\"Bold\"]\)"
+                                ]
+                        }
+                    ],
+                    FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                        color @ "PreferencesContentFont_1",
+                        color @ "PreferencesContentFont_3" ])
+                ],
+                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Appearance -> "Suppressed",
+                BaseStyle  -> "DialogTextCommon",
+                Method     -> "Queued",
+                ImageSize  -> Automatic ];
+
+        upgradeToResearchButton =
+            Button[
+                Style[
+                    StringReplace[
+                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradeResearch" ],
+                        "`SubscriptionLevelResearch`" :>
+                            StringJoin[
+                                "\!\(\*StyleBox[\"",
+                                FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ],
+                                "\",FontWeight->\"Bold\"]\)"
+                            ]
+                    ],
+                    FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                        color @ "PreferencesContentFont_1",
+                        color @ "PreferencesContentFont_3" ])
+                ],
+                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Appearance -> "Suppressed",
+                BaseStyle  -> "DialogTextCommon",
+                Method     -> "Queued",
+                ImageSize  -> Automatic ];
+
         Framed[
             Grid[
                 {
@@ -1523,8 +1575,34 @@ makeLLMPanel[ ] :=
                                 "CloudConnectedAndSubscribed" ->
                                     Grid[
                                         {
-                                            { chatbookExpression[ "CheckmarkGreen" ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> color @ "PreferencesContentFont_1" ] },
-                                            { "", manageButton }
+                                            {
+                                                chatbookExpression[ "CheckmarkGreen" ],
+                                                Style[
+                                                    Dynamic @ StringReplace[
+                                                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ],
+                                                        "`SubscriptionLevel`" :>
+                                                            FrontEndResource[
+                                                                "ChatbookStrings",
+                                                                Switch[ Wolfram`Chatbook`ChatModes`UI`Private`$assistantTier,
+                                                                    "Basic",    "SubscriptionLevelBasic",
+                                                                    "Pro",      "SubscriptionLevelPro",
+                                                                    "Research", "SubscriptionLevelResearch"
+                                                                ]
+                                                            ]
+                                                    ],
+                                                    FontColor -> color @ "PreferencesContentFont_1" ] },
+                                            {
+                                                "",
+                                                PaneSelector[
+                                                    {
+                                                        "Basic"    -> upgradeToProOrResearchButton,
+                                                        "Pro"      -> upgradeToResearchButton,
+                                                        "Research" -> manageButton
+                                                    },
+                                                    Dynamic @ Wolfram`Chatbook`ChatModes`UI`Private`$assistantTier,
+                                                    ImageSize -> Automatic
+                                                ]
+                                            }
                                         },
                                         Alignment        -> { Left, Baseline },
                                         BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
