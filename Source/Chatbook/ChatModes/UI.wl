@@ -808,7 +808,16 @@ Button[
         ImageSize -> Automatic
     ],
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
+    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
+    With[
+        { sel = FE`Evaluate @ FEPrivate`GetCurrentSelections @ EvaluationNotebook[ ] },
+        { makeActive = System`Echo @ Lookup[ sel, "RemnantSelection", None ] },
+        WithCleanup[
+            If[ makeActive =!= None, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> makeActive |> ]
+            ,
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ sel
+        ]
+    ],
     Appearance   -> "Suppressed",
     ImageMargins -> { { 1, 0 }, { 1, 0 } },
     ImageSize    -> Automatic
