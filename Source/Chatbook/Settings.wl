@@ -384,35 +384,9 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
-$modelAutoSettings[ Automatic, "GPT5Mini" ] = <|
-    $modelAutoSettings[ Automatic, "GPT5" ],
-    "MaxContextTokens"           -> 400000,
-    "ToolMethod"                 -> "Service",
-    "ToolsEnabled"               -> True,
-    "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ]
-|>;
-
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
-    $modelAutoSettings[ Automatic, "GPT5Mini" ],
-
-    (*
-    * Function tools with reasoning_effort are NOT supported for gpt-5.4-mini in
-      the "completions" endpoint (/v1/chat/completions). Instead, it requires using
-      the responses endpoint (/v1/responses)
-
-    * As of 2026-04-28 and "LLMFunctions" v.2.2.14, using one of the following
-      documented reasoning effort level does NOT work:
-
-      "Reasoning" -> {"none", "low", "medium", "high", "xhigh"}[[1]]
-
-    * TODO: Determine if $gpt5MiniReasoning is correct, or even really should be but
-      somehow currently NOT the same as $gpt5Reasoning.
-
-    *)
-    "Reasoning"                  -> If[ TrueQ @ $gpt5MiniReasoning, "Medium", Missing[ "NotSupported" ] ]
+    "MaxContextTokens" -> 400000
 |>;
-
-$gpt5MiniReasoning := $gpt5MiniReasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.14" ];
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
