@@ -1272,7 +1272,7 @@ Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject }, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { scrollPosition },
+DynamicModule[ { },
     EventHandler[(* pre-emptive mouse-down event for return key *)
         Framed[
             Grid[
@@ -1305,7 +1305,7 @@ DynamicModule[ { scrollPosition },
                 ,
                 With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
             ],
-            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
+            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
         },
         Method         -> "Preemptive",
         PassEventsDown -> False
