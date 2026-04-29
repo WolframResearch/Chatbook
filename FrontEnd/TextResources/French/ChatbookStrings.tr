@@ -223,9 +223,9 @@
 
 "AttachedChatFieldHint" -> "Demande\[Hyphen]moi quelque chose",
 "ChatbarFieldHint" -> "Que voulez\[Hyphen]vous faire\[NonBreakingSpace]?",
-"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
-"ChatbarNoInternet" -> "No internet connection",
-"ChatbarSignIn" -> "Sign in to use AI Assistant",
+"ChatbarWolframDisabledInternet" -> "Acc\[EGrave]s Internet non autoris\[EAcute] \[RightGuillemet]",
+"ChatbarNoInternet" -> "Aucune connexion Internet",
+"ChatbarSignIn" -> "Connectez\[Hyphen]vous pour utiliser l\[CloseCurlyQuote]assistant d\[CloseCurlyQuote]IA",
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Usage this month:",
