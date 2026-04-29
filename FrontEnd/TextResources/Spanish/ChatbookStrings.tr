@@ -223,9 +223,9 @@
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
 "ChatbarFieldHint" -> "\[DownQuestion]Qu\[EAcute] te gustar\[IAcute]a hacer?",
-"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
-"ChatbarNoInternet" -> "No internet connection",
-"ChatbarSignIn" -> "Sign in to use AI Assistant",
+"ChatbarWolframDisabledInternet" -> "El acceso a internet no est\[AAcute] permitido \[RightGuillemet]",
+"ChatbarNoInternet" -> "No hay conexi\[OAcute]n a internet",
+"ChatbarSignIn" -> "Inicie sesi\[OAcute]n para utilizar el asistente de IA",
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Usage this month:",
