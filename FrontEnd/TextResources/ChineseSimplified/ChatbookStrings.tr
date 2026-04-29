@@ -223,9 +223,9 @@
 
 "AttachedChatFieldHint" -> "\:6709\:95EE\:5FC5\:7B54",
 "ChatbarFieldHint" -> "\:60A8\:60F3\:505A\:4EC0\:4E48\:ff1f",
-"ChatbarWolframDisabledInternet" -> "Internet access not allowed \[RightGuillemet]",
-"ChatbarNoInternet" -> "No internet connection",
-"ChatbarSignIn" -> "Sign in to use AI Assistant",
+"ChatbarWolframDisabledInternet" -> "\:4E0D\:5141\:8BB8\:8BBF\:95EE\:4E92\:8054\:7F51 \[RightGuillemet]",
+"ChatbarNoInternet" -> "\:6CA1\:6709\:4E92\:8054\:7F51\:8FDE\:63A5",
+"ChatbarSignIn" -> "\:767B\:5F55\:4F7F\:7528 AI \:52A9\:624B",
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Usage this month:",
