@@ -826,7 +826,7 @@ Button[
     CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
     With[
         { sel = FE`Evaluate @ FEPrivate`GetCurrentSelections @ EvaluationNotebook[ ] },
-        { makeActive = Lookup[ sel, "RemnantSelection", None ] },
+        { makeActive = If[ AssociationQ @ sel, Lookup[ sel, "RemnantSelection", None ], None ] },
         WithCleanup[
             If[ makeActive =!= None, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> makeActive |> ]
             ,
@@ -1368,7 +1368,7 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
-        currentSelections = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
+        currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo, Except[ _Association ] -> <| |> ];
         activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
         remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
         If[ remnantSelection === None,
