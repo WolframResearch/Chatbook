@@ -1345,7 +1345,7 @@ chatbarInputFieldEnabled // endDefinition;
 chatbarWriteAndEvaluateChatInputCell // beginDefinition;
 
 chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject, input_ ] := Enclose[
-    Module[ { text, uuid, cellExpr, cellObject, currentSelections, activeSelection, remnantSelection, nextCell },
+    Module[ { text, uuid, cellExpr, cellObject, currentSelections, activeSelection, remnantSelection, newCellPosition },
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
@@ -1353,13 +1353,28 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
-        (* FIXME: could really use selection snapshot... *)
-        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
-            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
+        currentSelections = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
+        activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
+        remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
+        If[ remnantSelection === None,
+            SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
             NotebookWrite[ nbo, cellExpr ]
             ,
-            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
+            With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ];
+            newCellPosition = NextCell @ NotebookSelection @ nbo;
+            While[ newCellPosition =!= None && MemberQ[ AbsoluteCurrentValue[ newCellPosition, CellStyle ], "Output" | "ChatOutput" ],
+                newCellPosition = NextCell @ newCellPosition
+            ];
+            If[ newCellPosition === None,
+                SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+                NotebookWrite[ nbo, cellExpr ]
+                ,
+                NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "Before" ], cellExpr ]
+            ]
         ];
+        With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
+        With[ { s = currentSelections }, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s ];
+
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
         setCurrentValue[ cellObject, CellTags, Inherited ];
