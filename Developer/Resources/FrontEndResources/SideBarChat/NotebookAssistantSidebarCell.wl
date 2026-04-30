@@ -46,13 +46,8 @@ Cell[
 		            TaggingRules     -> <| "ProgressIndicator" -> False |>
 		        ]
 		    ],
-			DynamicBox[
-				ToBoxes[
-					Needs[ "Wolfram`Chatbook`" -> None ];
-					RawBoxes @ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeSidebarChatDockedCell" ],
-					StandardForm ],
-				DestroyAfterEvaluation -> True
-			]
+			Wolfram`Chatbook`ChatbookAction[ "MakeSidebarChatDockedCell" ],
+			Wolfram`Chatbook`ChatbookAction[ "MakeSidebarChatInputCell" ]
 		},
 		"NotebookSelectionSnapshotExclusionZone"
 	],
