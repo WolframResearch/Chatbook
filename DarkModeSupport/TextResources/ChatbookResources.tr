@@ -9676,11 +9676,1253 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"0cbc3a47-3ebd-2044-a600-deaf9cd7a5e4"], 
-   DynamicBox[ToBoxes[Needs["Wolfram`Chatbook`" -> None]; RawBoxes[
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "MakeSidebarChatDockedCell"]], StandardForm],
-    DestroyAfterEvaluation->True]}],
+    ExpressionUUID->"9c696ed3-4de6-5f45-b7bc-86b218169f4c"], Cell[BoxData[
+    DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
+     Typeset`sidebarCell$$}, 
+     FrameBox[
+      TagBox[GridBox[{
+         {
+          ButtonBox[
+           DynamicModuleBox[{Typeset`down$$ = False}, 
+            TagBox[
+             PaneSelectorBox[{"Default"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconNew"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+                    
+                    ImageSizeCache->{
+                    13.132499999999999`, {1.8897624999999996`, 10.0484875}}], 
+                    
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
+                    StandardForm],
+                    
+                    ImageSizeCache->{
+                    47.402998208999634`, {0.13799999713897737`, 
+                    8.118999831676483}}]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->None,
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->None,
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Hover"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconNew"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 GrayLevel[1.], 
+                 GrayLevel[0.0980392]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                 RGBColor[0.3764705, 0.490196, 0.5607843]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Down"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconNew"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipNew"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 RGBColor[0.8313725, 0.9411764, 1.], 
+                 RGBColor[0.2196078, 0.3137254, 0.3803921]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                 RGBColor[0.4, 0.6117647, 0.7411764]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False]}, Dynamic[
+               Which[
+                And[
+                 CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                CurrentValue["MouseOver"], "Hover", True, "Default"]],
+              BaselinePosition->Baseline,
+              FrameMargins->0,
+              ImageSize->Automatic],
+             
+             EventHandlerTag[{
+              "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+               FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
+               Method -> "Preemptive", PassEventsUp -> True}]],
+            DynamicModuleValues:>{}],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+           ButtonFunction:>(NotebookDelete[
+              Cells[
+              Typeset`thisNotebook$$, CellStyle -> "AttachedOverlayMenu", 
+               AttachedCell -> True]]; 
+            Wolfram`Chatbook`ChatModes`UI`Private`\
+removeSidebarScrollingCellContent[
+             Typeset`thisNotebook$$, Typeset`sidebarCell$$]; 
+            Wolfram`Chatbook`ChatModes`UI`Private`\
+removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$]; 
+            Wolfram`Chatbook`CurrentChatSettings[
+              Typeset`sidebarCell$$, "ConversationUUID"] = CreateUUID[]; 
+            Wolfram`Chatbook`Common`setCurrentValue[
+             Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}, ""]),
+           
+           Evaluator->Automatic,
+           Method->"Queued"], 
+          ItemBox[
+           TemplateBox[{0},
+            "Spacer1"],
+           ItemSize->Fit,
+           StripOnInput->False], 
+          ButtonBox[
+           DynamicModuleBox[{Typeset`down$$ = False}, 
+            TagBox[
+             PaneSelectorBox[{"Default"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconSources"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+                    
+                    ImageSizeCache->{
+                    10.497499999999999`, {1.1693874999999991`, 9.3281125}}], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
+                    StandardForm],
+                    
+                    ImageSizeCache->{
+                    39.36449933052063, {0.13799999713897737`, 
+                    7.658999841213227}}]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->None,
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->None,
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Hover"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconSources"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 GrayLevel[1.], 
+                 GrayLevel[0.0980392]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                 RGBColor[0.3764705, 0.490196, 0.5607843]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Down"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconSources"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipSources"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 RGBColor[0.8313725, 0.9411764, 1.], 
+                 RGBColor[0.2196078, 0.3137254, 0.3803921]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                 RGBColor[0.4, 0.6117647, 0.7411764]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False]}, Dynamic[
+               Which[
+                And[
+                 CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                CurrentValue["MouseOver"], "Hover", True, "Default"]],
+              BaselinePosition->Baseline,
+              FrameMargins->0,
+              ImageSize->Automatic],
+             
+             EventHandlerTag[{
+              "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+               FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
+               Method -> "Preemptive", PassEventsUp -> True}]],
+            DynamicModuleValues:>{}],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+           
+           ButtonFunction:>
+            Wolfram`Chatbook`ChatModes`Common`toggleOverlayMenu[
+            Typeset`thisNotebook$$, Typeset`sidebarCell$$, "Sources"],
+           Evaluator->Automatic,
+           Method->"Preemptive"], 
+          ButtonBox[
+           DynamicModuleBox[{Typeset`down$$ = False}, 
+            TagBox[
+             PaneSelectorBox[{"Default"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconHistory"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+                    ImageSizeCache->{9.5455, {0.6933875, 8.8521125}}], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
+                    StandardForm],
+                    
+                    ImageSizeCache->{
+                    36.04099881649017, {2.3229999518394466`, 
+                    8.141999831199646}}]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->None,
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->None,
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Hover"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconHistory"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 GrayLevel[1.], 
+                 GrayLevel[0.0980392]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                 RGBColor[0.3764705, 0.490196, 0.5607843]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Down"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 TagBox[GridBox[{
+                    {
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "WorkspaceToolbarIconHistory"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]], 
+                    DynamicBox[ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
+                    StandardForm]]}
+                   },
+                   AutoDelete->False,
+                   BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
+                   BaselinePosition->{1, 2},
+                   
+                   GridBoxAlignment->{
+                    "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
+                   GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+                   GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
+                  "Grid"],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"],
+                    StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", "WorkspaceToolbarButtonTooltipHistory"]],
+                  "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 RGBColor[0.8313725, 0.9411764, 1.], 
+                 RGBColor[0.2196078, 0.3137254, 0.3803921]],
+               FrameMargins->{{5, 5}, {0, 0}},
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                 RGBColor[0.4, 0.6117647, 0.7411764]],
+               ImageSize->{Automatic, 24},
+               RoundingRadius->4,
+               StripOnInput->False]}, Dynamic[
+               Which[
+                And[
+                 CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                CurrentValue["MouseOver"], "Hover", True, "Default"]],
+              BaselinePosition->Baseline,
+              FrameMargins->0,
+              ImageSize->Automatic],
+             
+             EventHandlerTag[{
+              "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+               FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
+               Method -> "Preemptive", PassEventsUp -> True}]],
+            DynamicModuleValues:>{}],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+           
+           ButtonFunction:>
+            Wolfram`Chatbook`ChatModes`Common`toggleOverlayMenu[
+            Typeset`thisNotebook$$, Typeset`sidebarCell$$, "History"],
+           Evaluator->Automatic,
+           Method->"Preemptive"], 
+          ButtonBox[
+           DynamicModuleBox[{Typeset`down$$ = False}, 
+            TagBox[
+             PaneSelectorBox[{"Default"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "WorkspaceToolbarIconOpenAsChatbook"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+                  ImageSizeCache->{9.5625, {1.26171875, 8.30078125}}],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->None,
+               FrameMargins->0,
+               FrameStyle->None,
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Hover"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "WorkspaceToolbarIconOpenAsChatbook"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 GrayLevel[1.], 
+                 GrayLevel[0.0980392]],
+               FrameMargins->0,
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                 RGBColor[0.3764705, 0.490196, 0.5607843]],
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Down"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "WorkspaceToolbarIconOpenAsChatbook"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"], 
+                   StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipOpenAsWindowedAssistant"]], 
+                 "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 RGBColor[0.8313725, 0.9411764, 1.], 
+                 RGBColor[0.2196078, 0.3137254, 0.3803921]],
+               FrameMargins->0,
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                 RGBColor[0.4, 0.6117647, 0.7411764]],
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False]}, Dynamic[
+               Which[
+                And[
+                 CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                CurrentValue["MouseOver"], "Hover", True, "Default"]],
+              BaselinePosition->Baseline,
+              FrameMargins->0,
+              ImageSize->Automatic],
+             
+             EventHandlerTag[{
+              "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+               FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
+               Method -> "Preemptive", PassEventsUp -> True}]],
+            DynamicModuleValues:>{}],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+           
+           ButtonFunction:>
+            With[{Wolfram`Chatbook`ChatModes`UI`Private`newNB$ = 
+              Wolfram`Chatbook`ShowNotebookAssistance[
+               Typeset`thisNotebook$$, "Window", "ChatNotebookSettings" -> 
+                KeyDrop[
+                  CurrentValue[
+                  Typeset`sidebarCell$$, {
+                   TaggingRules, "ChatNotebookSettings"}], "SidebarChat"]]}, 
+             If[
+              MatchQ[Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
+               Blank[NotebookObject]], 
+              SelectionMove[
+               Wolfram`Chatbook`ChatModes`UI`Private`newNB$, Before, 
+                Notebook]; 
+              NotebookWrite[Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
+                ReplaceRepeated[
+                 NotebookRead[
+                  Cells[
+                   First[
+                    Cells[
+                    Typeset`sidebarCell$$, CellTags -> 
+                    "SidebarScrollingContentCell"], {}], CellTags -> 
+                   "SidebarTopCell"]], {Cell[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    BlankNullSequence[]], CellTags -> {
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    BlankNullSequence[]], "SidebarTopCell", 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`c, 
+                    BlankNullSequence[]]}, 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`d, 
+                    BlankNullSequence[]]] :> RuleCondition[
+                    Cell[
+                    Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    CellTags -> {
+                    Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    Wolfram`Chatbook`ChatModes`UI`Private`c}, 
+                    Wolfram`Chatbook`ChatModes`UI`Private`d], True], Cell[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    BlankNullSequence[]], CellTags -> 
+                    Alternatives["SidebarTopCell", {}], 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    BlankNullSequence[]]] :> RuleCondition[
+                    Cell[
+                    Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    Wolfram`Chatbook`ChatModes`UI`Private`b], True], Cell[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    Blank[]], 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    BlankNullSequence[String]], 
+                    Condition[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`c, 
+                    Blank[String]], 
+                    StringStartsQ[
+                    Wolfram`Chatbook`ChatModes`UI`Private`c, 
+                    "NotebookAssistant`Sidebar`"]], 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`d, 
+                    BlankNullSequence[]]] :> RuleCondition[
+                    Cell[
+                    Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    StringReplace[
+                    Wolfram`Chatbook`ChatModes`UI`Private`c, 
+                    StringExpression[
+                    StartOfString, "NotebookAssistant`Sidebar`"] -> ""], 
+                    Wolfram`Chatbook`ChatModes`UI`Private`d], True], 
+                  TemplateBox[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    Blank[]], 
+                    Condition[
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    Blank[String]], 
+                    StringStartsQ[
+                    Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    "NotebookAssistant`Sidebar`"]], 
+                    Pattern[Wolfram`Chatbook`ChatModes`UI`Private`c, 
+                    BlankNullSequence[]]] :> RuleCondition[
+                    TemplateBox[Wolfram`Chatbook`ChatModes`UI`Private`a, 
+                    StringReplace[
+                    Wolfram`Chatbook`ChatModes`UI`Private`b, 
+                    StringExpression[
+                    StartOfString, "NotebookAssistant`Sidebar`"] -> ""], 
+                    Wolfram`Chatbook`ChatModes`UI`Private`c], True]}]]; 
+              Wolfram`Chatbook`Common`attachWorkspaceChatInput[
+               Wolfram`Chatbook`ChatModes`UI`Private`newNB$]; 
+              With[{Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ = 
+                 CurrentValue[
+                  Typeset`sidebarCell$$, {
+                   TaggingRules, "ConversationTitle"}]}, 
+                If[
+                Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ =!= "", 
+                 Wolfram`Chatbook`Common`setCurrentValue[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, {
+                   TaggingRules, "ConversationTitle"}, 
+                   Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$]; 
+                 Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
+                   WindowTitle]]]; NotebookDelete[
+                Cells[
+                Typeset`thisNotebook$$, CellStyle -> "AttachedOverlayMenu", 
+                 AttachedCell -> True]]; 
+              Wolfram`Chatbook`ChatModes`UI`Private`\
+removeSidebarScrollingCellContent[
+               Typeset`thisNotebook$$, Typeset`sidebarCell$$]; 
+              Wolfram`Chatbook`ChatModes`UI`Private`\
+removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$]; 
+              Wolfram`Chatbook`CurrentChatSettings[
+                Typeset`sidebarCell$$, "ConversationUUID"] = CreateUUID[]; 
+              Wolfram`Chatbook`Common`setCurrentValue[
+               Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}, 
+                ""]; FrontEndTokenExecute[
+               Typeset`thisNotebook$$, "HideSidebar"]; Null]],
+           Evaluator->Automatic,
+           Method->"Queued"], 
+          ButtonBox[
+           DynamicModuleBox[{Typeset`down$$ = False}, 
+            TagBox[
+             PaneSelectorBox[{"Default"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "SidebarIconHide"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+                  
+                  ImageSizeCache->{
+                   7.6499999999999995`, {0.3054687500000002, 
+                    7.344531249999999}}],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipHideSidebar"], StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipHideSidebar"]], "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->None,
+               FrameMargins->0,
+               FrameStyle->None,
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Hover"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "SidebarIconHide"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipHideSidebar"], StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipHideSidebar"]], "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 GrayLevel[1.], 
+                 GrayLevel[0.0980392]],
+               FrameMargins->0,
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                 RGBColor[0.3764705, 0.490196, 0.5607843]],
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False], "Down"->
+              FrameBox[
+               TagBox[
+                TooltipBox[
+                 
+                 DynamicBox[FEPrivate`FrontEndResource[
+                  "ChatbookExpressions", "SidebarIconHide"][
+                   LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]]]],
+                 DynamicBox[
+                  ToBoxes[
+                   FEPrivate`FrontEndResource[
+                   "ChatbookStrings", 
+                    "SidebarToolbarButtonTooltipHideSidebar"], StandardForm]]],
+                Annotation[#, 
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                  "ChatbookStrings", 
+                   "SidebarToolbarButtonTooltipHideSidebar"]], "Tooltip"]& ],
+               Alignment->{Center, Center},
+               Background->LightDarkSwitched[
+                 RGBColor[0.8313725, 0.9411764, 1.], 
+                 RGBColor[0.2196078, 0.3137254, 0.3803921]],
+               FrameMargins->0,
+               FrameStyle->LightDarkSwitched[
+                 RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                 RGBColor[0.4, 0.6117647, 0.7411764]],
+               ImageSize->{24, 24},
+               RoundingRadius->4,
+               StripOnInput->False]}, Dynamic[
+               Which[
+                And[
+                 CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                CurrentValue["MouseOver"], "Hover", True, "Default"]],
+              BaselinePosition->Baseline,
+              FrameMargins->0,
+              ImageSize->Automatic],
+             
+             EventHandlerTag[{
+              "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], "MouseUp" :> 
+               FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
+               Method -> "Preemptive", PassEventsUp -> True}]],
+            DynamicModuleValues:>{}],
+           
+           Appearance->FEPrivate`FrontEndResource[
+            "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+           
+           ButtonFunction:>(
+            Wolfram`Chatbook`Common`setCurrentValue[$FrontEndSession, 
+              "ShowNotebookAssistant", False]; 
+            FrontEndTokenExecute[Typeset`thisNotebook$$, "HideSidebar"]),
+           Evaluator->Automatic,
+           Method->"Preemptive"]}
+        },
+        AutoDelete->False,
+        GridBoxAlignment->{"Columns" -> {{Automatic}}, "Rows" -> {{Center}}},
+        GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+        GridBoxSpacings->{"Columns" -> {{0.2}}}],
+       "Grid"],
+      Background->LightDarkSwitched[
+        RGBColor[0.9333333, 0.976471, 1.], 
+        RGBColor[0.1490196, 0.2078431, 0.2549019]],
+      FrameMargins->{{2, 0}, {0, 1}},
+      FrameStyle->LightDarkSwitched[
+        RGBColor[0.9333333, 0.976471, 1.], 
+        RGBColor[0.1490196, 0.2078431, 0.2549019]],
+      ImageMargins->0,
+      StripOnInput->False],
+     DynamicModuleValues:>{},
+     Initialization:>(Typeset`sidebarDockedCell$$ = EvaluationCell[]; 
+      Typeset`sidebarCell$$ = ParentCell[Typeset`sidebarDockedCell$$]; 
+      Typeset`thisNotebook$$ = EvaluationNotebook[]; 
+      If[Cells[Typeset`sidebarCell$$, AttachedCell -> True, CellTags -> 
+          "NotebookAssistantSidebarAttachedHelperCell"] === {}, 
+        AttachCell[Typeset`sidebarCell$$, 
+         Cell["", CellTags -> "NotebookAssistantSidebarAttachedHelperCell"], {
+         Left, Top}, 0, {Left, Top}]]; 
+      If[CurrentValue[
+         Typeset`sidebarCell$$, {
+          TaggingRules, "ChatNotebookSettings", "SidebarChat"}] === Inherited, 
+        Wolfram`Chatbook`Common`setCurrentValue[
+        Typeset`sidebarCell$$, TaggingRules, <|
+         "ChatNotebookSettings" -> 
+          Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
+          "ConversationTitle" -> ""|>]]; If[
+        Not[
+         TrueQ[
+         Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized]], 
+        Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChat[]]; 
+      Null),
+     SynchronousInitialization->False]], 
+    "NotebookAssistant`Sidebar`DockedCell",
+    CellFrame->0,
+    CellFrameMargins->0,
+    Magnification->Dynamic[0.85 AbsoluteCurrentValue[
+        FrontEnd`EvaluationNotebook[], Magnification]],
+    CellTags->"SidebarDockedCell",ExpressionUUID->
+    "cd4316ff-0188-fe40-bb53-8bbb05af031f"], Cell[BoxData[
+    DynamicModuleBox[{Typeset`chatInputFieldCell$$, Typeset`chatEvalCell$$, 
+     Typeset`nbo$$, Typeset`sidebarCell$$, Typeset`fieldContent$$ = "", 
+     Typeset`returnKeyDownQ$$ = False, Typeset`input$$, 
+     Typeset`kernelWasQuitQ$$ = False, Typeset`cachedSessionID$$ = 
+     33718505776974410849, Typeset`focusArea$$ = ""}, 
+     TagBox[
+      PaneBox[
+       TagBox[GridBox[{
+          {
+           DynamicWrapperBox[
+            FrameBox[
+             TagBox[GridBox[{
+                {
+                 PaneBox[
+                  OverlayBox[{
+                   InputFieldBox[Dynamic[Typeset`fieldContent$$], Boxes,
+                    BoxID -> "AttachedChatInputField",
+                    Alignment->{Automatic, Baseline},
+                    Appearance->"Frameless",
+                    
+                    BaseStyle->{
+                    "Text", "TextStyleInputField", FontColor -> 
+                    LightDarkSwitched[
+                    GrayLevel[0.2]], FontSize -> 13},
+                    ContinuousAction->True,
+                    ImageSize->{
+                    Scaled[1], Automatic}], 
+                   DynamicBox[If[Typeset`fieldContent$$ === "", 
+                    TagBox[
+                    GridBox[{{"\"\"", 
+                    StyleBox[
+                    DynamicBox[
+                    ToBoxes[
+                    FEPrivate`FrontEndResource[
+                    "ChatbookStrings", "ChatbarFieldHint"], StandardForm]], 
+                    "Text", "TextStyleInputField", FontColor -> 
+                    LightDarkSwitched[
+                    GrayLevel[0.74902]], FontSize -> 13, LineBreakWithin -> 
+                    False, StripOnInput -> False]}}, 
+                    GridBoxAlignment -> {
+                    "Columns" -> {{Left}}, "Rows" -> {{Center}}}, AutoDelete -> 
+                    False, GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+                    GridBoxSpacings -> {"Columns" -> {{10}}, "Rows" -> {{0}}},
+                     BaselinePosition -> {1, 2}], "Grid"], ""],
+                    ImageSizeCache->{4., {0., 0.}}]}, {1, 2}, 1,
+                   Alignment->{Left, Baseline}],
+                  AppearanceElements->{},
+                  ImageSize->{
+                    Scaled[1], 
+                    UpTo[100]},
+                  
+                  ScrollPosition->Dynamic[
+                   Wolfram`Chatbook`ChatModes`UI`Private`scrollPosition],
+                  Scrollbars->{False, Automatic}], 
+                 PaneSelectorBox[{False->
+                  ButtonBox[
+                   DynamicModuleBox[{Typeset`down$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "SendChatArrow"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]], 13],
+                    
+                    ImageSizeCache->{
+                    12.07353401223291, {2.0054687500000004`, 
+                    9.044531249999999}}],
+                    Alignment->{Center, Center},
+                    Background->None,
+                    FrameMargins->0,
+                    FrameStyle->None,
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False], "Hover"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "SendChatArrow"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]], 13]],
+                    Alignment->{Center, Center},
+                    Background->LightDarkSwitched[
+                    GrayLevel[1.], 
+                    GrayLevel[0.0980392]],
+                    FrameMargins->0,
+                    FrameStyle->LightDarkSwitched[
+                    RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                    RGBColor[0.3764705, 0.490196, 0.5607843]],
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False], "Down"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "SendChatArrow"][
+                    LightDarkSwitched[
+                    RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]], 13]],
+                    Alignment->{Center, Center},
+                    Background->LightDarkSwitched[
+                    RGBColor[0.8313725, 0.9411764, 1.], 
+                    RGBColor[0.2196078, 0.3137254, 0.3803921]],
+                    FrameMargins->0,
+                    FrameStyle->LightDarkSwitched[
+                    RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                    RGBColor[0.4, 0.6117647, 0.7411764]],
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False]}, Dynamic[
+                    Which[
+                    And[
+                    CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                    CurrentValue["MouseOver"], "Hover", True, "Default"]],
+                    BaselinePosition->Baseline,
+                    FrameMargins->0,
+                    ImageSize->Automatic],
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], 
+                    "MouseUp" :> FEPrivate`Set[Typeset`down$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]],
+                    DynamicModuleValues:>{}],
+                   BoxID -> "SidebarChatInputCellSendButton",
+                   
+                   Appearance->FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+                   ButtonFunction:>If[
+                    Not[
+                    Wolfram`Chatbook`ChatModes`Common`validInputStringQ[
+                    Typeset`fieldContent$$]], Typeset`fieldContent$$ = "", 
+                    Typeset`input$$ = Typeset`fieldContent$$; 
+                    Typeset`fieldContent$$ = ""; 
+                    Typeset`returnKeyDownQ$$ = True],
+                   Evaluator->Automatic,
+                   FrameMargins->0,
+                   Method->"Preemptive"], True->
+                  ButtonBox[
+                   DynamicModuleBox[{Typeset`down$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "StopChatButton"][21],
+                    
+                    ImageSizeCache->{
+                    17.849999999999998`, {6.948999060387722, 
+                    10.901000939612276`}}],
+                    Alignment->{Center, Center},
+                    Background->None,
+                    FrameMargins->0,
+                    FrameStyle->None,
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False], "Hover"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "StopChatButton"][21]],
+                    Alignment->{Center, Center},
+                    Background->LightDarkSwitched[
+                    GrayLevel[1.], 
+                    GrayLevel[0.0980392]],
+                    FrameMargins->0,
+                    FrameStyle->LightDarkSwitched[
+                    RGBColor[0.6941176, 0.8352941, 0.9098039], 
+                    RGBColor[0.3764705, 0.490196, 0.5607843]],
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False], "Down"->
+                    FrameBox[
+                    
+                    DynamicBox[FEPrivate`FrontEndResource[
+                    "ChatbookExpressions", "StopChatButton"][21]],
+                    Alignment->{Center, Center},
+                    Background->LightDarkSwitched[
+                    RGBColor[0.8313725, 0.9411764, 1.], 
+                    RGBColor[0.2196078, 0.3137254, 0.3803921]],
+                    FrameMargins->0,
+                    FrameStyle->LightDarkSwitched[
+                    RGBColor[0.4588235, 0.7607843, 0.9215686], 
+                    RGBColor[0.4, 0.6117647, 0.7411764]],
+                    ImageSize->{24.5, 24.5},
+                    RoundingRadius->4,
+                    StripOnInput->False]}, Dynamic[
+                    Which[
+                    And[
+                    CurrentValue["MouseOver"], Typeset`down$$], "Down", 
+                    CurrentValue["MouseOver"], "Hover", True, "Default"]],
+                    BaselinePosition->Baseline,
+                    FrameMargins->0,
+                    ImageSize->Automatic],
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[Typeset`down$$, True], 
+                    "MouseUp" :> FEPrivate`Set[Typeset`down$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]],
+                    DynamicModuleValues:>{}],
+                   
+                   Appearance->FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+                   
+                   ButtonFunction:>(Needs["Wolfram`Chatbook`" -> None]; 
+                    Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
+                   Evaluator->Automatic,
+                   FrameMargins->0,
+                   Method->"Preemptive"]}, Dynamic[
+                  Wolfram`Chatbook`$ChatEvaluationCell === 
+                   Typeset`chatEvalCell$$],
+                  Alignment->{Automatic, Baseline},
+                  BaselinePosition->Baseline]}
+               },
+               AutoDelete->False,
+               GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Center}}},
+               
+               GridBoxItemSize->{
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+              "Grid"],
+             Alignment->{Automatic, Baseline},
+             Background->LightDarkSwitched[
+               GrayLevel[1], 
+               GrayLevel[0.0980392]],
+             FrameMargins->{{7, 3}, {3, 3}},
+             FrameStyle->Directive[
+               AbsoluteThickness[1.75], 
+               LightDarkSwitched[
+                RGBColor[0.0705882, 0.5568627, 0.8196078], 
+                RGBColor[0.4980392, 0.7803921, 0.9843137]]],
+             RoundingRadius->8,
+             StripOnInput->False], If[
+              TrueQ[Typeset`returnKeyDownQ$$], 
+              CurrentValue[
+                Typeset`sidebarCell$$, {TaggingRules, "CurrentSelections"}] = 
+               FE`Evaluate[
+                 FEPrivate`GetCurrentSelections[Typeset`nbo$$]]; 
+              Wolfram`Chatbook`ChatModes`UI`Private`clearOverlayMenus[
+               Typeset`nbo$$]; Typeset`returnKeyDownQ$$ = False; 
+              Needs["Wolfram`Chatbook`" -> None]; 
+              If[Typeset`kernelWasQuitQ$$, If[
+                  Not[
+                   TrueQ[
+                   Wolfram`Chatbook`ChatModes`UI`Private`$\
+workspaceChatInitialized]], 
+                  
+                  Wolfram`Chatbook`ChatModes`UI`Private`\
+initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False]; 
+              Wolfram`Chatbook`Common`evaluateSidebarChat[
+               Typeset`nbo$$, Typeset`sidebarCell$$, Typeset`input$$, 
+                Dynamic[Typeset`chatEvalCell$$]]]; If[
+              Wolfram`Chatbook`Common`cellTaggedQ[
+              Typeset`chatInputFieldCell$$, "RegenerateChatOutput"], 
+              Typeset`chatEvalCell$$ = 
+               CurrentValue[
+                Typeset`sidebarCell$$, {TaggingRules, "ChatEvaluationCell"}]; 
+              FrontEndExecute[{
+                 FrontEnd`SetOptions[
+                 Typeset`chatInputFieldCell$$, CellTags -> 
+                  "SidebarChatInputCell"], 
+                 FrontEnd`SetValue[
+                  FEPrivate`Set[
+                   FrontEnd`CurrentValue[
+                   Typeset`sidebarCell$$, {
+                    TaggingRules, "ChatEvaluationCell"}], Inherited]]}]; 
+              If[Head[Typeset`chatEvalCell$$] === CellObject, 
+                Wolfram`Chatbook`ChatCellEvaluate[
+                Typeset`chatEvalCell$$, Typeset`nbo$$]]],
+            
+            ImageSizeCache->{
+             982.9374999999999, {14.350793453089137`, 14.549206546910863`}},
+            SynchronousUpdating->False,
+            TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
+          {
+           ItemBox[
+            DynamicBox[ToBoxes[Typeset`focusArea$$, StandardForm],
+             
+             ImageSizeCache->{
+              4.700830332934856, {0.09140625363215804, 0.32849122399056796`}}],
+            Alignment->Left,
+            StripOnInput->False], "\[SpanFromLeft]"}
+         },
+         AutoDelete->False,
+         BaseStyle->{Magnification -> Inherited},
+         GridBoxItemSize->{
+          "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+         GridBoxSpacings->{"Columns" -> {{0.5}}, "Rows" -> {{0.}}}],
+        "Grid"],
+       FrameMargins->{{5, 5}, {0, 5}}],
+      EventHandlerTag[{"ReturnKeyDown" :> If[
+          Not[
+           Wolfram`Chatbook`ChatModes`Common`validInputStringQ[
+           Typeset`fieldContent$$]], Typeset`fieldContent$$ = "", 
+          Typeset`input$$ = Typeset`fieldContent$$; 
+          Typeset`fieldContent$$ = ""; Typeset`returnKeyDownQ$$ = True], {
+         "MenuCommand", "HandleShiftReturn"} :> NotebookWrite[
+          InputNotebook[], "\n"], Method -> "Preemptive", PassEventsDown -> 
+        False, PassEventsUp -> True}]],
+     DynamicModuleValues:>{},
+     Initialization:>(Typeset`nbo$$ = EvaluationNotebook[]; 
+      Typeset`chatInputFieldCell$$ = EvaluationCell[]; 
+      Typeset`sidebarCell$$ = ParentCell[Typeset`chatInputFieldCell$$]; 
+      Typeset`kernelWasQuitQ$$ = Typeset`cachedSessionID$$ =!= $SessionID; 
+      Typeset`cachedSessionID$$ = $SessionID; 
+      Typeset`focusArea$$ = 
+       Wolfram`Chatbook`ChatModes`Common`focusedNotebookDisplay[
+        Typeset`nbo$$, Typeset`sidebarCell$$])]], "ChatInputField",
+    Magnification->Dynamic[0.85 AbsoluteCurrentValue[
+        FrontEnd`EvaluationNotebook[], Magnification]],
+    Background->LightDarkSwitched[
+      RGBColor[0.933333, 0.976471, 1.], 
+      RGBColor[0.1490196, 0.2078431, 0.2549019]],
+    CellTags->"SidebarChatInputCell",ExpressionUUID->
+    "4816aa92-bf7e-3946-947d-f57c37144c3b"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -9696,8 +10938,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"d0c6730f-f099-ec4e-af2e-\
-cc6166e30e69"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"51a42c58-28a5-6a4d-96a5-\
+5a0c1f944050"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -9816,8 +11058,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"81764254-c1c5-e24c-b7ce-\
-2c488b3d9b34"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"434e79a8-6838-c34b-9828-\
+6f7225856049"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
