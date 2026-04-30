@@ -513,6 +513,7 @@ PaneSelector[
                 Appearance   -> "Suppressed",
                 BoxID        -> "SidebarChatInputCellSendButton",
                 FrameMargins -> 0,
+                ImageSize    -> Automatic,
                 Method       -> "Preemptive"
             ],
         True ->
@@ -521,12 +522,14 @@ PaneSelector[
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",
-                FrameMargins -> 0
+                FrameMargins -> 0,
+                ImageSize    -> Automatic
             ]
     },
     Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === chatEvalCell ],
     Alignment        -> { Automatic, Baseline },
-    BaselinePosition -> Baseline
+    BaselinePosition -> Baseline,
+    ImageSize        -> Automatic
 ];
 
 sidebarChatInputCellSendButton // endDefinition;
@@ -558,8 +561,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                                 sidebarChatInputField[ Dynamic @ Typeset`fieldContent ],
                                                 AppearanceElements -> { },
                                                 ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
-                                                Scrollbars         -> { False, Automatic },
-                                                ScrollPosition     -> Dynamic @ scrollPosition
+                                                Scrollbars         -> { False, Automatic }
                                             ],
                                             sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`chatEvalCell ]
                                         } }, Alignment -> { Left, Center }

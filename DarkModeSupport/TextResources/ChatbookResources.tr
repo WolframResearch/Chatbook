@@ -9676,7 +9676,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"f7fba724-f554-8548-bd87-f8d78efeb9b7"], Cell[BoxData[
+    ExpressionUUID->"536661ce-43f9-e24a-81f3-95213b0b92a7"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10603,12 +10603,12 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "0afc83a6-33bb-9d4e-9fd5-559c3bbdc051"], Cell[BoxData[
+    "6c57631d-3142-004e-be77-fec985d0eb63"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
      Typeset`input$$, Typeset`kernelWasQuitQ$$ = False, 
-     Typeset`cachedSessionID$$ = 33718542243835662179, Typeset`focusArea$$ = 
+     Typeset`cachedSessionID$$ = 33718575325856049531, Typeset`focusArea$$ = 
      ""}, 
      TagBox[
       PaneBox[
@@ -10656,9 +10656,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                   ImageSize->{
                     Scaled[1], 
                     UpTo[100]},
-                  
-                  ScrollPosition->Dynamic[
-                   Wolfram`Chatbook`ChatModes`UI`Private`scrollPosition],
                   Scrollbars->{False, Automatic}], 
                  PaneSelectorBox[{False->
                   ButtonBox[
@@ -10671,11 +10668,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     "ChatbookExpressions", "SendChatArrow"][
                     LightDarkSwitched[
                     RGBColor[0.0705882, 0.5568627, 0.8196078], 
-                    RGBColor[0.4980392, 0.7803921, 0.9843137]], 13],
-                    
-                    ImageSizeCache->{
-                    12.07353401223291, {2.0054687500000004`, 
-                    9.044531249999999}}],
+                    RGBColor[0.4980392, 0.7803921, 0.9843137]], 13]],
                     Alignment->{Center, Center},
                     Background->None,
                     FrameMargins->0,
@@ -10746,6 +10739,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     Typeset`returnKeyDownQ$$ = True],
                    Evaluator->Automatic,
                    FrameMargins->0,
+                   ImageSize->Automatic,
                    Method->"Preemptive"], True->
                   ButtonBox[
                    DynamicModuleBox[{Typeset`down$$ = False}, 
@@ -10754,11 +10748,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     FrameBox[
                     
                     DynamicBox[FEPrivate`FrontEndResource[
-                    "ChatbookExpressions", "StopChatButton"][21],
-                    
-                    ImageSizeCache->{
-                    17.849999999999998`, {6.948999060387722, 
-                    10.901000939612276`}}],
+                    "ChatbookExpressions", "StopChatButton"][21]],
                     Alignment->{Center, Center},
                     Background->None,
                     FrameMargins->0,
@@ -10818,11 +10808,13 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
                    Evaluator->Automatic,
                    FrameMargins->0,
+                   ImageSize->Automatic,
                    Method->"Preemptive"]}, Dynamic[
                   Wolfram`Chatbook`$ChatEvaluationCell === 
                    Typeset`chatEvalCell$$],
                   Alignment->{Automatic, Baseline},
-                  BaselinePosition->Baseline]}
+                  BaselinePosition->Baseline,
+                  ImageSize->Automatic]}
                },
                AutoDelete->False,
                GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Center}}},
@@ -10880,7 +10872,7 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
                 Typeset`chatEvalCell$$, Typeset`nbo$$]]],
             
             ImageSizeCache->{
-             982.9374999999999, {14.350793453089137`, 14.549206546910863`}},
+             982.9375, {11.733218453089135`, 11.931631546910864`}},
             SynchronousUpdating->False,
             TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
           {
@@ -10927,7 +10919,7 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "8eb16ac2-e70f-1b44-a54d-fb4c245c4186"]}],
+    "c70ce346-7454-6444-af8f-99606797e750"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10943,8 +10935,8 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"8f336a76-adce-e949-bd3e-\
-5599f45d8cd2"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"2bcf287d-019a-cb4c-8946-\
+d85aa8e1192a"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11063,8 +11055,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"5502cac7-6761-e64d-aaea-\
-fda70974f86b"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"0493792b-aee4-9c4a-9601-\
+abae0f8c7abf"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
