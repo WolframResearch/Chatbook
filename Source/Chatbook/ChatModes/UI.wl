@@ -928,6 +928,20 @@ chatbarOptionsButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*chatbarUserData*)
+
+chatbarUserData[ ] :=
+	<|
+		"credentialsQ" -> cloudCredentialsQ[ ],
+		"username" -> $CloudAccountName,
+		"tier" -> $assistantTier,
+		"usage" -> $assistantUsage,
+		"daysToReset" -> 15
+	|>
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatbarOptionsDisplay*)
 
 
@@ -939,36 +953,39 @@ $coTitleColor = LightDarkSwitched[RGBColor[0.038, 0.346, 0.776]];
 
 
 chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_]] :=
-	chatbarOptionsDisplay[nbo, Dynamic[chatbarCell], $CloudAccountName, $assistantTier, $assistantUsage]
+	chatbarOptionsDisplay[nbo, Dynamic[chatbarCell], chatbarUserData[ ]]
 
 
-chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, usage_] :=
+chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], userdata_] :=
 	Framed[
 		Column[
 			{
-				Framed[
-					Column[
-						{
-							Grid[
-								{{
-									chatbarOptionsTitle[tier],
-									chatbarOptionsUser[user]
-								}},
-								ItemSize -> Scaled[0.5],
-								Alignment -> {{Left, Right}, Baseline}
-							],
-							tr @ "ChatbarOptionsMonthlyUsage",
-							chatbarUsageThermometer[tier, usage],
-							chatbarWarningStripe[tier, usage],
-							chatbarUpgradeStripe[tier, usage]
-						},
-						Spacings -> {Automatic, {Automatic,1,0.4,{1.3}}}
-						
+				If[TrueQ @ userdata["credentialsQ"],
+					Framed[
+						Column[
+							{
+								Grid[
+									{{
+										chatbarOptionsTitle[userdata],
+										chatbarOptionsUser[userdata]
+									}},
+									ItemSize -> Scaled[0.5],
+									Alignment -> {{Left, Right}, Baseline}
+								],
+								tr @ "ChatbarOptionsMonthlyUsage",
+								chatbarUsageThermometer[userdata],
+								chatbarWarningStripe[userdata],
+								chatbarUpgradeStripe[userdata]
+							},
+							Spacings -> {Automatic, {Automatic,1,0.4,{1.3}}}
+							
+						],
+						RoundingRadius -> 6,
+						FrameMargins -> 10,
+						FrameStyle -> $coDividerColor,
+						Background -> $coInnerBackground		
 					],
-					RoundingRadius -> 6,
-					FrameMargins -> 10,
-					FrameStyle -> $coDividerColor,
-					Background -> $coInnerBackground		
+					Nothing
 				],
 				Column[
 					{
@@ -985,7 +1002,7 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 		FrameMargins -> 13,
 		FrameStyle -> $coDividerColor,
 		Background -> $coOuterBackground,
-		ImageSize -> {$coWidth, Automatic},
+		ImageSize -> {If[TrueQ @ userdata["credentialsQ"], $coWidth, Automatic], Automatic},
 		BaseStyle -> {
 			FontFamily -> "Source Sans Pro",
 			FontSize -> 15,
@@ -993,17 +1010,18 @@ chatbarOptionsDisplay[nbo_NotebookObject, Dynamic[chatbarCell_], user_, tier_, u
 		}
 	]
 
-chatbarOptionsTitle[tier_] :=
-	Style[Row[{tr @ "ChatbarOptionsTitle", " ", tier}],
+
+chatbarOptionsTitle[userdata_] :=
+	Style[Row[{tr @ "ChatbarOptionsTitle", " ", Lookup[userdata, "tier"]}],
 		FontColor -> $coTitleColor,
 		FontFamily -> "Source Sans Pro",
 		FontSize -> 16,
 		FontWeight -> "DemiBold"
 	]
 
-chatbarOptionsUser[user_] := 
+chatbarOptionsUser[userdata_] := 
 	ActionMenu[
-		Grid[{{Pane[userImage[], BaselinePosition -> Scaled[0.2]], user, " \[DownPointer]"}}],
+		Grid[{{Pane[userImage[], BaselinePosition -> Scaled[0.2]], Lookup[userdata, "username"], " \[DownPointer]"}}],
 		{
 			"To do" :> Null
 		},
@@ -1111,6 +1129,10 @@ $cutShortWidth = $cutTotalWidth * 0.265;
 $cutLongWidth = $cutTotalWidth * (1 - 2*0.265);
 (* $cutTotalWidth == 2*$cutShortWidth + $cutLongWidth *)
 
+
+chatbarUsageThermometer[userdata_] :=
+	chatbarUsageThermometer @@ Lookup[userdata, {"tier", "usage"}]
+
 chatbarUsageThermometer[tier: "Basic", usage_] := 
 	Grid[{{
 		chatbarUsageThermometerBase[$cutShortWidth, usage, "Basic"],
@@ -1144,27 +1166,32 @@ chatbarUsageThermometer[tier: "Research", usage_] :=
 (*chatbarWarningStripe*)
 
 
-chatbarWarningStripe[tier: "Basic" | "Pro", usage_] := 
-	(* TODO: How to get the number of days to display? *)
+chatbarWarningStripe[userdata_] :=
+	chatbarWarningStripe @@ Lookup[userdata, {"tier", "usage", "daysToReset"}]
+
+chatbarWarningStripe[tier: "Basic" | "Pro", usage_, daysToReset_] := 
 	If[usage >= 1, 
 		Grid[
 			{{
 				"\[WarningSign]",
 				tr @ "ChatbarOptionsLimit",
-				Style[StringTemplate[trRaw @ "ChatbarOptionsLimitReset"][ "xx" ], FontColor -> StandardGray]
+				Style[StringTemplate[trRaw @ "ChatbarOptionsLimitReset"][ daysToReset ], FontColor -> StandardGray]
 			}},
 			BaseStyle -> {FontColor -> $cutRed}
 		],
 		Nothing
 	]
 
-chatbarWarningStripe[tier_, usage_] := Nothing
+chatbarWarningStripe[tier_, usage_, daysToReset_] := Nothing
 
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*chatbarUpgradeStripe*)
 
+
+chatbarUpgradeStripe[userdata_] := 
+	chatbarUpgradeStripe @@ Lookup[userdata, {"tier", "usage"}]
 
 chatbarUpgradeStripe[tier: "Basic", usage_] :=
 	Button[
