@@ -742,7 +742,7 @@ chatbarSendButton // beginDefinition;
 
 Attributes[ chatbarSendButton ] = { HoldRest };
 
-chatbarSendButton[ nbo_NotebookObject, fieldContent_, activeQ_ ] :=
+chatbarSendButton[ nbo_NotebookObject, chatbarCell_, fieldContent_, activeQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -763,7 +763,7 @@ Button[
     If[ ! validInputStringQ @ fieldContent,
         fieldContent = ""
         ,
-        With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+        With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
     ],
     Appearance   -> "Suppressed",
     BoxID        -> "SidebarChatInputCellSendButton",
@@ -811,7 +811,7 @@ Button[
     CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
     With[
         { sel = FE`Evaluate @ FEPrivate`GetCurrentSelections @ EvaluationNotebook[ ] },
-        { makeActive = System`Echo @ Lookup[ sel, "RemnantSelection", None ] },
+        { makeActive = Lookup[ sel, "RemnantSelection", None ] },
         WithCleanup[
             If[ makeActive =!= None, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> makeActive |> ]
             ,
@@ -980,7 +980,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "Loading"          -> chatbarLoading @ Typeset`activeQ,
                                                 "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
-                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
                                             Dynamic @ Typeset`state,
@@ -1279,7 +1279,7 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject }, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { },
     EventHandler[(* pre-emptive mouse-down event for return key *)
@@ -1293,7 +1293,7 @@ DynamicModule[ { },
                         Scrollbars         -> { False, Automatic },
                         ScrollPosition     -> Dynamic @ scrollPosition
                     ],
-                    chatbarSendButton[ nbo, fieldContent, activeQ || fieldContent =!= "" ]
+                    chatbarSendButton[ nbo, chatbarCell, fieldContent, activeQ || fieldContent =!= "" ]
                 } },
                 Alignment        -> { Left, Center },
                 BaselinePosition -> { 1, 1 },
@@ -1312,7 +1312,7 @@ DynamicModule[ { },
             "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
                 fieldContent = ""
                 ,
-                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
             ],
             { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
         },
@@ -1344,8 +1344,8 @@ chatbarInputFieldEnabled // endDefinition;
 (*chatbarWriteAndEvaluateChatInputCell*)
 chatbarWriteAndEvaluateChatInputCell // beginDefinition;
 
-chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
-    Module[ { text, uuid, cellExpr, cellObject },
+chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject, input_ ] := Enclose[
+    Module[ { text, uuid, cellExpr, cellObject, currentSelections, activeSelection, remnantSelection, nextCell },
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
@@ -1363,6 +1363,9 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, anchor:_CellObject | N
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
         setCurrentValue[ cellObject, CellTags, Inherited ];
+
+        (* mark chatbar as the source of the chat input/output *)
+        setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, True ];
         
         SelectionMove[ cellObject, All, Cell ];
         FrontEndTokenExecute[ nbo, "EvaluateCells" ]

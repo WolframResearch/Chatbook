@@ -200,7 +200,24 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ] // LogChatTiming[ "CreateChatOutput" ];
 
         If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
-            SelectionMove[ cellObj, After, Cell ]
+            SelectionMove[ cellObj, After, Cell ];
+
+            (*
+                At this point, the selection behavior mimics standard cell evaluations.
+                But if the ChatInput/Output came from the chatbar, then move back to the chatbar.
+            *)
+            With[ { chatbarCell = First[ Cells[ AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], None ] },
+                If[
+                    And[
+                        chatbarCell =!= None,
+                        Not @ TrueQ @ AbsoluteCurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ],
+                        TrueQ @ AbsoluteCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" } ]
+                    ]
+                    ,
+                    setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, Inherited ];
+                    FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatbarCell, chatbarCell ]
+                ]
+            ];
         ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
