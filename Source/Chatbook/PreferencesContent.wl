@@ -516,9 +516,11 @@ makeModelSelector0 // beginDefinition;
 makeModelSelector0[ type_String ] :=
     makeModelSelector0[
         type,
-        If[ KeyExistsQ[ $availableServices, "LLMKit" ],
+        <|
             $availableServices,
-            <| "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>, $availableServices |> ] ]
+            "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+        |>
+    ]
 
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelNameSelector, highlight },
