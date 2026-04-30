@@ -135,18 +135,18 @@ mouseDown[
 (*makeSidebarChatDockedCell*)
 makeSidebarChatDockedCell // beginDefinition;
 
-makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell = EvaluationCell[ ] },
+makeSidebarChatDockedCell[ ] :=
     Cell[
-        BoxData @ ToBoxes @ DynamicModule[ { thisCell },
+        BoxData @ ToBoxes @ DynamicModule[ { Typeset`sidebarDockedCell, Typeset`thisNotebook, Typeset`sidebarCell },
             Framed[
                 Grid[
                     { {
-                        sidebarNewChatButton[ nbo, sidebarCell ],
+                        sidebarNewChatButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                        sidebarSourcesButton[ nbo, sidebarCell ],
-                        sidebarHistoryButton[ nbo, sidebarCell ],
-                        sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ],
-                        sidebarHideButton @ nbo
+                        sidebarSourcesButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
+                        sidebarHistoryButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
+                        sidebarOpenAsAssistantWindowButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
+                        sidebarHideButton @ Typeset`thisNotebook
                     } },
                     Alignment -> { Automatic, Center },
                     Spacings  -> 0.2
@@ -158,34 +158,29 @@ makeSidebarChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ], sidebarCell
             ],
             SynchronousInitialization -> False,
             Initialization :> ((* 473816: this runs whenever the kernel is quit, so avoid duplicating existing cell *)
-                thisCell = EvaluationCell[ ];
-                (* create the chat input cell first, then the scrolling cell *)
-                If[ NextCell[ thisCell, CellStyle -> "ChatInputField" ] === None,
-                    NotebookWrite[ NotebookLocationSpecifier[ thisCell, "After" ], makeSidebarChatInputCell[ nbo, sidebarCell ] ]
+                Typeset`sidebarDockedCell = EvaluationCell[ ];
+                Typeset`sidebarCell       = ParentCell @ Typeset`sidebarDockedCell;
+                Typeset`thisNotebook      = EvaluationNotebook[ ];
+
+                If[ Cells[ Typeset`sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
+                    AttachCell[ Typeset`sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
                 ];
-                If[ Cells[ sidebarCell, AttachedCell -> True, CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ] === { },
-                    AttachCell[ sidebarCell, Cell[ "", CellTags -> "NotebookAssistantSidebarAttachedHelperCell" ], { Left, Top }, 0, { Left, Top } ]
-                ];
-                If[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
-                    setCurrentValue[ sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
-                ];
-                With[ { chatInputCell = NextCell[ thisCell, CellStyle -> "ChatInputField" ] },
-                    FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
+                
+                (* The following may trip the dynamic warning system *)
+                If[ CurrentValue[ Typeset`sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
+                    setCurrentValue[ Typeset`sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
                 ];
 
                 (* most costly step of initialization *)
                 If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                
-                ReleaseHold @ $sidebarChatInitialAction;
             )
         ],
         "NotebookAssistant`Sidebar`DockedCell",
         CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellTags         -> "SidebarDockedCell",
-        Magnification    -> Dynamic[ 0.85*AbsoluteCurrentValue[ nbo, Magnification ] ]
-    ]
-];
+        Magnification    -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
+    ];
 
 makeSidebarChatDockedCell // endDefinition;
 
@@ -362,7 +357,9 @@ removeSidebarScrollingCellContent // endDefinition;
 (*sidebarHistoryButton*)
 sidebarHistoryButton // beginDefinition;
 
-sidebarHistoryButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
+Attributes[ sidebarHistoryButton ] = { HoldAll };
+
+sidebarHistoryButton[ nbo_, sidebarCell_ ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconHistory", "WorkspaceToolbarButtonLabelHistory", "WorkspaceToolbarButtonTooltipHistory" ],
         { Automatic, 24 },
@@ -379,7 +376,9 @@ sidebarHistoryButton // endDefinition;
 (*sidebarSourcesButton*)
 sidebarSourcesButton // beginDefinition;
 
-sidebarSourcesButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
+Attributes[ sidebarSourcesButton ] = { HoldAll };
+
+sidebarSourcesButton[ nbo_, sidebarCell_ ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconSources", "WorkspaceToolbarButtonLabelSources", "WorkspaceToolbarButtonTooltipSources" ],
         { Automatic, 24 },
@@ -396,7 +395,9 @@ sidebarSourcesButton // endDefinition;
 (*sidebarNewChatButton*)
 sidebarNewChatButton // beginDefinition;
 
-sidebarNewChatButton[ nbo_NotebookObject, sidebarCell_CellObject ] :=
+Attributes[ sidebarNewChatButton ] = { HoldAll };
+
+sidebarNewChatButton[ nbo_, sidebarCell_ ] :=
     Button[
         blueHueButtonAppearance[
             toolbarButtonLabel[ "WorkspaceToolbarIconNew", "WorkspaceToolbarButtonLabelNew", "WorkspaceToolbarButtonTooltipNew" ],
@@ -421,7 +422,9 @@ sidebarNewChatButton // endDefinition;
 (*sidebarOpenAsAssistantWindowButton*)
 sidebarOpenAsAssistantWindowButton // beginDefinition;
 
-sidebarOpenAsAssistantWindowButton[ nbo_NotebookObject, sidebarCell_CellObject ] := Button[
+Attributes[ sidebarOpenAsAssistantWindowButton ] = { HoldAll };
+
+sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
@@ -479,7 +482,9 @@ sidebarOpenAsAssistantWindowButton // endDefinition;
 
 sidebarHideButton // beginDefinition;
 
-sidebarHideButton[ nbo_NotebookObject ] := Button[
+Attributes[ sidebarHideButton ] = { HoldAll };
+
+sidebarHideButton[ nbo_ ] := Button[
     blueHueButtonAppearance[
         toolbarButtonLabel[ "SidebarIconHide", None, "SidebarToolbarButtonTooltipHideSidebar" ],
         { 24, 24 }
@@ -508,6 +513,7 @@ PaneSelector[
                 Appearance   -> "Suppressed",
                 BoxID        -> "SidebarChatInputCellSendButton",
                 FrameMargins -> 0,
+                ImageSize    -> Automatic,
                 Method       -> "Preemptive"
             ],
         True ->
@@ -516,12 +522,14 @@ PaneSelector[
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",
-                FrameMargins -> 0
+                FrameMargins -> 0,
+                ImageSize    -> Automatic
             ]
     },
     Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === chatEvalCell ],
     Alignment        -> { Automatic, Baseline },
-    BaselinePosition -> Baseline
+    BaselinePosition -> Baseline,
+    ImageSize        -> Automatic
 ];
 
 sidebarChatInputCellSendButton // endDefinition;
@@ -532,101 +540,101 @@ sidebarChatInputCellSendButton // endDefinition;
 
 makeSidebarChatInputCell // beginDefinition;
 
-makeSidebarChatInputCell[ nbo_NotebookObject, sidebarCell_CellObject ] := Cell[
+makeSidebarChatInputCell[ ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[
         {
-            thisCell, chatEvalCell,
-            fieldContent = "", returnKeyDownQ, input,
-            kernelWasQuitQ = False, cachedSessionID = $SessionID,
-            focusArea = "", (* initialization is synchronous, else we could use a progress indicator here *)
-            scrollPosition
+            Typeset`chatInputFieldCell, Typeset`chatEvalCell = { }(* don't use None *), Typeset`nbo, Typeset`sidebarCell,
+            Typeset`fieldContent = "", Typeset`returnKeyDownQ = False, Typeset`input,
+            Typeset`kernelWasQuitQ = False, Typeset`cachedSessionID = $SessionID,
+            Typeset`focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
         },
         EventHandler[
-            EventHandler[
-                Pane[
-                    Grid[
+            Pane[
+                Grid[
+                    {
                         {
-                            {
-                                DynamicWrapper[
-                                    Framed[
-                                        Grid[
-                                            { {
-                                                Pane[
-                                                    sidebarChatInputField[ Dynamic @ fieldContent ],
-                                                    AppearanceElements -> { },
-                                                    ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
-                                                    Scrollbars         -> { False, Automatic },
-                                                    ScrollPosition     -> Dynamic @ scrollPosition
-                                                ],
-                                                sidebarChatInputCellSendButton[ fieldContent, input, returnKeyDownQ, chatEvalCell ]
-                                            } }, Alignment -> { Left, Center }
-                                        ],
-                                        $inputFieldFrameOptions
-                                    ]
-                                    ,
-                                    If[ TrueQ @ returnKeyDownQ,
-                                        clearOverlayMenus @ nbo;
-                                        returnKeyDownQ = False;
-                                        Needs[ "Wolfram`Chatbook`" -> None ];
-                                        If[ kernelWasQuitQ,
-                                            If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                            kernelWasQuitQ = False ];
-                                        evaluateSidebarChat[ nbo, sidebarCell, input, Dynamic @ chatEvalCell ]
-                                    ];
-                                    (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
-                                    If[ cellTaggedQ[ thisCell, "RegenerateChatOutput" ],
-                                        chatEvalCell = CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
-                                        FrontEndExecute[ {
-                                            FrontEnd`SetOptions[ thisCell, CellTags -> "SidebarChatInputCell" ],
-                                            FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ sidebarCell, { TaggingRules, "ChatEvaluationCell" } ], Inherited ]
-                                        } ];
-                                        If[ Head @ chatEvalCell === CellObject, ChatCellEvaluate[ chatEvalCell, nbo ] ]
-                                    ]
-                                    ,
-                                    SynchronousUpdating -> False,
-                                    TrackedSymbols      :> { returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                            DynamicWrapper[
+                                Framed[
+                                    Grid[
+                                        { {
+                                            Pane[
+                                                sidebarChatInputField[ Dynamic @ Typeset`fieldContent ],
+                                                AppearanceElements -> { },
+                                                ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
+                                                Scrollbars         -> { False, Automatic }
+                                            ],
+                                            sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`chatEvalCell ]
+                                        } }, Alignment -> { Left, Center }
+                                    ],
+                                    $inputFieldFrameOptions
                                 ]
-                            },
-                            {
-                                Item[ Dynamic @ focusArea, Alignment -> Left ],
-                                SpanFromLeft
-                            }
+                                ,
+                                If[ TrueQ @ Typeset`returnKeyDownQ,
+                                    CurrentValue[ Typeset`sidebarCell, { TaggingRules, "CurrentSelections" } ] = FE`Evaluate @ FEPrivate`GetCurrentSelections @ Typeset`nbo;
+                                    clearOverlayMenus @ Typeset`nbo;
+                                    Typeset`returnKeyDownQ = False;
+                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                    If[ Typeset`kernelWasQuitQ,
+                                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
+                                        Typeset`kernelWasQuitQ = False ];
+                                    evaluateSidebarChat[ Typeset`nbo, Typeset`sidebarCell, Typeset`input, Dynamic @ Typeset`chatEvalCell ]
+                                ];
+                                (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
+                                If[ cellTaggedQ[ Typeset`chatInputFieldCell, "RegenerateChatOutput" ],
+                                    Typeset`chatEvalCell = CurrentValue[ Typeset`sidebarCell, { TaggingRules, "ChatEvaluationCell" } ]; (* get the CellObject stored in the TaggingRules *)
+                                    FrontEndExecute[ {
+                                        FrontEnd`SetOptions[ Typeset`chatInputFieldCell, CellTags -> "SidebarChatInputCell" ],
+                                        FrontEnd`SetValue @ FEPrivate`Set[ FrontEnd`CurrentValue[ Typeset`sidebarCell, { TaggingRules, "ChatEvaluationCell" } ], Inherited ]
+                                    } ];
+                                    If[ Head @ Typeset`chatEvalCell === CellObject, ChatCellEvaluate[ Typeset`chatEvalCell, Typeset`nbo ] ]
+                                ]
+                                ,
+                                SynchronousUpdating -> False,
+                                TrackedSymbols      :> { Typeset`returnKeyDownQ } (* changes to TaggingRules are automatically tracked *)
+                            ]
                         },
-                        BaseStyle -> { Magnification -> $inputFieldGridMagnification },
-                        Spacings  -> { 0.5, 0.0 }
-                    ],
-                    FrameMargins -> $inputFieldPaneMargins
+                        {
+                            Item[ Dynamic @ Typeset`focusArea, Alignment -> Left ],
+                            SpanFromLeft
+                        }
+                    },
+                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                    Spacings  -> { 0.5, 0.0 }
                 ],
-                {
-                    "ReturnKeyDown" :> (
-                        If[ ! validInputStringQ @ fieldContent,
-                            fieldContent = ""
-                            , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
-                            input = fieldContent; fieldContent = ""; returnKeyDownQ = True
-                        ]),
-                    { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
-                },
-                Method         -> "Preemptive",
-                PassEventsDown -> False
+                FrameMargins -> $inputFieldPaneMargins
             ],
             {
-                "MouseDown" :> (FE`Evaluate @ FEPrivate`SnapshotMainNotebookSelection @ nbo)
+                "ReturnKeyDown" :> (
+                    If[ ! validInputStringQ @ Typeset`fieldContent,
+                        Typeset`fieldContent = ""
+                        , (* The EventHandler, if queued, still won't update the dynamics until the payload is completed. Use a DynamicWrapper above to listen for the change and evaluate asynchronously. *)
+                        Typeset`input = Typeset`fieldContent; Typeset`fieldContent = ""; Typeset`returnKeyDownQ = True
+                    ]),
+                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
             },
             Method         -> "Preemptive",
-            PassEventsDown -> True
+            PassEventsDown -> False
         ],
         (* 15.0: the side bar is a Row of cells: docked cells, scrollable pane cell, footer cell (ChatInput) *)
         Initialization :> (
-            thisCell = EvaluationCell[ ];
-            kernelWasQuitQ = cachedSessionID =!= $SessionID;
-            cachedSessionID = $SessionID;
-            focusArea = focusedNotebookDisplay[ nbo, sidebarCell ]
+            Typeset`nbo                = EvaluationNotebook[ ];
+            Typeset`chatInputFieldCell = EvaluationCell[ ];
+            Typeset`sidebarCell        = ParentCell @ Typeset`chatInputFieldCell;
+            Typeset`kernelWasQuitQ     = Typeset`cachedSessionID =!= $SessionID;
+            Typeset`cachedSessionID    = $SessionID;
+            Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ];
         )
     ],
     "ChatInputField",
-    Background    -> $inputFieldOuterBackground,
-    CellTags      -> "SidebarChatInputCell",
-    Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
+    Background     -> $inputFieldOuterBackground,
+    CellTags       -> "SidebarChatInputCell",
+    (*
+        ShowNotebookAssistance will do this whenever the sidebar is toggled.
+        However, the first time the CellObject is drawn, ShowNotebookAssistance is too slow.
+        Thus, this init is needed and only runs once since the sidebar CellObject is never destroyed.
+    *)
+    Initialization :> FrontEnd`MoveCursorToInputField[ EvaluationNotebook[ ], "AttachedChatInputField", EvaluationCell[ ], EvaluationCell[ ] ],
+    Magnification  -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
 makeSidebarChatInputCell // endDefinition;
@@ -749,7 +757,7 @@ chatbarSendButton // beginDefinition;
 
 Attributes[ chatbarSendButton ] = { HoldRest };
 
-chatbarSendButton[ nbo_NotebookObject, fieldContent_, activeQ_ ] :=
+chatbarSendButton[ nbo_NotebookObject, chatbarCell_, fieldContent_, activeQ_ ] :=
 Button[
     PaneSelector[
         {
@@ -770,7 +778,7 @@ Button[
     If[ ! validInputStringQ @ fieldContent,
         fieldContent = ""
         ,
-        With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+        With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
     ],
     Appearance   -> "Suppressed",
     BoxID        -> "SidebarChatInputCellSendButton",
@@ -815,7 +823,16 @@ Button[
         ImageSize -> Automatic
     ],
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
+    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
+    With[
+        { sel = FE`Evaluate @ FEPrivate`GetCurrentSelections @ EvaluationNotebook[ ] },
+        { makeActive = If[ AssociationQ @ sel, Lookup[ sel, "RemnantSelection", None ], None ] },
+        WithCleanup[
+            If[ makeActive =!= None, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> makeActive |> ]
+            ,
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ sel
+        ]
+    ],
     Appearance   -> "Suppressed",
     ImageMargins -> { { 1, 0 }, { 1, 0 } },
     ImageSize    -> Automatic
@@ -978,7 +995,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "Loading"          -> chatbarLoading @ Typeset`activeQ,
                                                 "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
-                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
                                             Dynamic @ Typeset`state,
@@ -1277,9 +1294,9 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject }, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { scrollPosition },
+DynamicModule[ { },
     EventHandler[(* pre-emptive mouse-down event for return key *)
         Framed[
             Grid[
@@ -1291,7 +1308,7 @@ DynamicModule[ { scrollPosition },
                         Scrollbars         -> { False, Automatic },
                         ScrollPosition     -> Dynamic @ scrollPosition
                     ],
-                    chatbarSendButton[ nbo, fieldContent, activeQ || fieldContent =!= "" ]
+                    chatbarSendButton[ nbo, chatbarCell, fieldContent, activeQ || fieldContent =!= "" ]
                 } },
                 Alignment        -> { Left, Center },
                 BaselinePosition -> { 1, 1 },
@@ -1310,9 +1327,9 @@ DynamicModule[ { scrollPosition },
             "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
                 fieldContent = ""
                 ,
-                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, None, False, input ] ]
+                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
             ],
-            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ]; scrollPosition = { 0, Scaled[ 1 ] })
+            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
         },
         Method         -> "Preemptive",
         PassEventsDown -> False
@@ -1342,8 +1359,8 @@ chatbarInputFieldEnabled // endDefinition;
 (*chatbarWriteAndEvaluateChatInputCell*)
 chatbarWriteAndEvaluateChatInputCell // beginDefinition;
 
-chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
-    Module[ { text, uuid, cellExpr, cellObject },
+chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject, input_ ] := Enclose[
+    Module[ { text, uuid, cellExpr, cellObject, currentSelections, activeSelection, remnantSelection, newCellPosition },
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
@@ -1351,16 +1368,34 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, anchor:_CellObject | N
 
         cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
-        (* FIXME: could really use selection snapshot... *)
-        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
-            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
+        currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo, Except[ _Association ] -> <| |> ];
+        activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
+        remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
+        If[ remnantSelection === None,
+            SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
             NotebookWrite[ nbo, cellExpr ]
             ,
-            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
+            With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ];
+            newCellPosition = NextCell @ NotebookSelection @ nbo;
+            While[ newCellPosition =!= None && MemberQ[ AbsoluteCurrentValue[ newCellPosition, CellStyle ], "Output" | "ChatOutput" ],
+                newCellPosition = NextCell @ newCellPosition
+            ];
+            If[ newCellPosition === None,
+                SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+                NotebookWrite[ nbo, cellExpr ]
+                ,
+                NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "Before" ], cellExpr ]
+            ]
         ];
+        With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
+        With[ { s = currentSelections }, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s ];
+
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
         setCurrentValue[ cellObject, CellTags, Inherited ];
+
+        (* mark chatbar as the source of the chat input/output *)
+        setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, True ];
         
         SelectionMove[ cellObject, All, Cell ];
         FrontEndTokenExecute[ nbo, "EvaluateCells" ]
