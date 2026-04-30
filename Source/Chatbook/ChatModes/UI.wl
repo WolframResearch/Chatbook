@@ -540,7 +540,7 @@ makeSidebarChatInputCell // beginDefinition;
 makeSidebarChatInputCell[ ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[
         {
-            Typeset`chatInputFieldCell, Typeset`chatEvalCell, Typeset`nbo, Typeset`sidebarCell,
+            Typeset`chatInputFieldCell, Typeset`chatEvalCell = { }(* don't use None *), Typeset`nbo, Typeset`sidebarCell,
             Typeset`fieldContent = "", Typeset`returnKeyDownQ = False, Typeset`input,
             Typeset`kernelWasQuitQ = False, Typeset`cachedSessionID = $SessionID,
             Typeset`focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
@@ -620,13 +620,19 @@ makeSidebarChatInputCell[ ] := Cell[
             Typeset`sidebarCell        = ParentCell @ Typeset`chatInputFieldCell;
             Typeset`kernelWasQuitQ     = Typeset`cachedSessionID =!= $SessionID;
             Typeset`cachedSessionID    = $SessionID;
-            Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ]
+            Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ];
         )
     ],
     "ChatInputField",
-    Background    -> $inputFieldOuterBackground,
-    CellTags      -> "SidebarChatInputCell",
-    Magnification -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
+    Background     -> $inputFieldOuterBackground,
+    CellTags       -> "SidebarChatInputCell",
+    (*
+        ShowNotebookAssistance will do this whenever the sidebar is toggled.
+        However, the first time the CellObject is drawn, ShowNotebookAssistance is too slow.
+        Thus, this init is needed and only runs once since the sidebar CellObject is never destroyed.
+    *)
+    Initialization :> FrontEnd`MoveCursorToInputField[ EvaluationNotebook[ ], "AttachedChatInputField", EvaluationCell[ ], EvaluationCell[ ] ],
+    Magnification  -> Dynamic[ 0.85*AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ] ]
 ];
 
 makeSidebarChatInputCell // endDefinition;
