@@ -242,6 +242,7 @@
 "ChatbarOptionsFull" -> "Full",
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
+"ChatbarOptionsSignOut" -> "Sign Out",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant\:30c1\:30e3\:30c3\:30c8\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306eNotebook Assistant",

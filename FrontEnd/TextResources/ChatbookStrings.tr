@@ -242,6 +242,7 @@
 "ChatbarOptionsFull" -> "Full",
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
+"ChatbarOptionsSignOut" -> "Sign Out",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",

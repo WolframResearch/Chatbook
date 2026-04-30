@@ -242,6 +242,7 @@
 "ChatbarOptionsFull" -> "Full",
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
+"ChatbarOptionsSignOut" -> "Sign Out",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",

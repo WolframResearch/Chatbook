@@ -1023,10 +1023,15 @@ chatbarOptionsUser[userdata_] :=
 	ActionMenu[
 		Grid[{{Pane[userImage[], BaselinePosition -> Scaled[0.2]], Lookup[userdata, "username"], " \[DownPointer]"}}],
 		{
-			"To do" :> Null
+			tr["ChatbarOptionsSignOut"] :> (
+				(* Sign out and close the attached cell *)
+				FE`Evaluate[FEPrivate`WolframCloudSignOut[]];
+				NotebookDelete[EvaluationCell[]]
+			)
 		},
 		Appearance -> None,
-		DefaultBaseStyle -> {}
+		DefaultBaseStyle -> {},
+		Method -> "Queued"
 	]
 
 
