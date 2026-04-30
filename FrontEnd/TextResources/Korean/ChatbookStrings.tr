@@ -242,6 +242,7 @@
 "ChatbarOptionsFull" -> "Full",
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
+"ChatbarOptionsSignOut" -> "Sign Out",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8 \:CC44\:D305\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:C120\:D0DD\:D55C \:BD80\:BD84\:C5D0 \:B300\:D55C \:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
