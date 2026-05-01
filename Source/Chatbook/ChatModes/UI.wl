@@ -1026,7 +1026,22 @@ chatbarOptionsTitle[ userdata_ ] :=
 
 chatbarOptionsUser[ userdata_ ] :=
     ActionMenu[
-        Grid[ { { Pane[ userImage[ ] (* FIXME *), BaselinePosition -> Scaled[ 0.2 ] ], Lookup[ userdata, "username" ], " \[DownPointer]" } } ],
+        Grid[
+        	{ {
+        		Pane[
+        			RawBoxes[
+        				DynamicBox[FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ # ] ]&[
+                             LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]      
+                    	]
+                	],
+                	ImageSize -> Dynamic[{Automatic, 1.25*CurrentValue["FontLineHeight"]}],
+                	ImageSizeAction -> "ShrinkToFit",
+                	BaselinePosition -> Scaled[0.15]
+        		],
+        		Lookup[ userdata, "username" ],
+        		" \[DownPointer]"
+        	} }
+        ],
         {
             tr[ "ChatbarOptionsSignOut" ] :> (
                 (* Sign out and close the attached cell *)
