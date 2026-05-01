@@ -1017,8 +1017,15 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
 
 
 chatbarOptionsTitle[ userdata_ ] :=
-    Style[ Row[ { tr @ "ChatbarOptionsTitle", " ", Lookup[ userdata, "tier" ] } ],
-        FontColor  -> $coTitleColor,
+    Style[
+    	Row[{
+			tr @ "ChatbarOptionsTitle",
+			" ",
+			Style[
+				Lookup[ userdata, "tier" ],
+				FontColor  -> $coTitleColor
+			]
+    	}],
         FontFamily -> "Source Sans Pro",
         FontSize   -> 16,
         FontWeight -> "DemiBold"
