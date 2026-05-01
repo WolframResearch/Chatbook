@@ -1484,81 +1484,73 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
             Typeset`initializedQ = False, Typeset`thisCell, Typeset`activeQ = False, Typeset`selectionWithinQ = False,
-            Typeset`bgColor = ThemeColor[ "Background" ], Typeset`fieldContent = initialText, Typeset`state = "Loading"
+            Typeset`fieldContent = initialText, Typeset`state = "Loading"
         },
-        EventHandler[
-            DynamicWrapper[
-                PaneSelector[
-                    {
-                        False ->
-                            Framed[
-                                Grid[
-                                    { {
-                                        DynamicWrapper[
-                                            PaneSelector[
-                                                {
-                                                    "Loading"          -> chatbarLoading @ Typeset`activeQ,
-                                                    "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
-                                                    "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
-                                                    "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
-                                                    "SignIn"           -> chatbarSignIn @ Typeset`activeQ
-                                                },
-                                                Dynamic @ Typeset`state,
-                                                ImageSize -> Automatic
-                                            ],
-                                            Typeset`state = Which[
-                                                Not @ TrueQ @ CurrentValue[ "AllowDownloads" ], "InternetDisabled",
-                                                Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ], "NoInternet",
-                                                cloudCredentialsQ[ ], "Enabled",
-                                                True, "SignIn"
-                                            ],
-                                            SynchronousUpdating -> False
-                                        ]
-                                        ,
-                                        Grid[
+        DynamicWrapper[
+            PaneSelector[
+                {
+                    False ->
+                        Framed[
+                            Grid[
+                                { {
+                                    DynamicWrapper[
+                                        PaneSelector[
                                             {
-                                                { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] },
-                                                { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] }
+                                                "Loading"          -> chatbarLoading @ Typeset`activeQ,
+                                                "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
+                                                "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
-                                            Alignment -> { Left, Baseline },
-                                            Spacings  -> { 0, 0 }
-                                        ]
-                                    } },
-                                    Spacings  -> { 0, 0 }
-                                ],
-                                Background     -> Dynamic @ Typeset`bgColor,
-                                FrameMargins   -> 0,
-                                FrameStyle     -> None,
-                                ImageMargins   -> { { 2, 0 }, { 0, 0 } },
-                                RoundingRadius -> 1
+                                            Dynamic @ Typeset`state,
+                                            ImageSize -> Automatic
+                                        ],
+                                        Typeset`state = Which[
+                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ], "InternetDisabled",
+                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ], "NoInternet",
+                                            cloudCredentialsQ[ ], "Enabled",
+                                            True, "SignIn"
+                                        ],
+                                        SynchronousUpdating -> False
+                                    ]
+                                    ,
+                                    Grid[
+                                        {
+                                            { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] },
+                                            { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] }
+                                        },
+                                        Alignment -> { Left, Baseline },
+                                        Spacings  -> { 0, 0 }
+                                    ]
+                                } },
+                                Spacings  -> { 0, 0 }
                             ],
-                        True -> chatbarMaximizeButton[ nbo, Typeset`thisCell ]
-                    },
-                    Dynamic @ TrueQ @ AbsoluteCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" } ],
-                    ImageSize -> Automatic
-                ]
-                ,
-                Typeset`selectionWithinQ = CurrentValue[ "SelectionWithin" ];
-                Typeset`activeQ = Typeset`selectionWithinQ || CurrentValue[ "MouseOver" ] || (Typeset`state === "Enabled" && Typeset`fieldContent =!= "");
-            ],
-            {
-                "MouseEntered" :> (
-                    FEPrivate`Set[ Typeset`bgColor, ThemeColor[ "Background" ] ]
-                ),
-                "MouseExited"  :> (
-                    FEPrivate`Set[ Typeset`bgColor,
-                        SetAlphaChannel[
-                            FrontEnd`AbsoluteCurrentValue[ nbo, {
-                                FrontEnd`NotebookTheme,
-                                If[ FrontEnd`AbsoluteCurrentValue[ nbo, LightDark ] === "Dark", "DarkModeColors", "LightModeColors" ],
-                                "Background"
-                            } ],
-                            0.5
-                        ]
-                    ]
-                )
-            },
-            PassEventsDown -> True
+                            Background -> Dynamic @ If[ Typeset`activeQ,
+                                ThemeColor[ "Background" ]
+                                ,
+                                SetAlphaChannel[
+                                    FrontEnd`AbsoluteCurrentValue[ nbo, {
+                                        FrontEnd`NotebookTheme,
+                                        If[ FrontEnd`AbsoluteCurrentValue[ nbo, LightDark ] === "Dark", "DarkModeColors", "LightModeColors" ],
+                                        "Background" } ],
+                                    0.5
+                                ]
+                            ],
+                            FrameMargins   -> { { 2, 3 }, { 2, 2 } },
+                            FrameStyle     -> None,
+                            ImageMargins   -> 0,
+                            RoundingRadius -> 11
+                        ],
+                    True -> chatbarMaximizeButton[ nbo, Typeset`thisCell ]
+                },
+                Dynamic @ TrueQ @ AbsoluteCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" } ],
+                ImageSize -> Automatic
+            ]
+            ,
+            Typeset`selectionWithinQ = CurrentValue[ "SelectionWithin" ];
+            Typeset`activeQ = Typeset`selectionWithinQ || CurrentValue[ "MouseOver" ] || (Typeset`state === "Enabled" && Typeset`fieldContent =!= "");
+            ,
+            TrackedSymbols :> { Typeset`state, Typeset`fieldContent }
         ],
         Initialization :> If[ !Typeset`initializedQ,
             Typeset`initializedQ = True;
