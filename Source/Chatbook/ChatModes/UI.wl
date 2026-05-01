@@ -1072,7 +1072,7 @@ $cutHeight = 26;
 $cutMargin = 2;
 $cutBlue = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor["#7FC7FB"] ];
 $cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#ED4047"] ];
-$cutBlueHover = $coTitleColor; (* FIXME *)
+$cutBlueHover = LightDarkSwitched[ Darker[RGBColor[ "#128ED1" ], 0.25], Lighter[RGBColor["#7FC7FB"], 0.25]]; (* FIXME *)
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
@@ -1229,32 +1229,69 @@ chatbarUpgradeStripe[ userdata_ ] :=
     chatbarUpgradeStripe @@ Lookup[ userdata, { "tier", "usage" } ]
 
 chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
-    Button[
-        Style[
-            Row[ { tr @ "ChatbarOptionsUpgradeProResearch" Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ] } ],
-            FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], $cutBlueHover, $cutBlue ] ]
-        ],
-        MessageDialog[ "To do" ],
-        Appearance       -> None,
-        BaseStyle        -> { },
-        DefaultBaseStyle -> { },
-        ImageSize        -> Automatic
-    ]
+    MouseAppearance[
+		Button[
+			(* There might be a simpler way to do this, but this'll do for a start *)
+			Mouseover[
+				Row[ {
+					StringForm[
+						FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate"],
+						Style[tr["ChatbarOptionsPro"], FontColor -> $cutBlue, FontWeight -> "DemiBold"],
+						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
+					],
+					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+				} ]
+				,
+				Row[ {
+					StringForm[
+						FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate"],
+						Style[tr["ChatbarOptionsPro"], FontWeight -> "DemiBold"],
+						Style[tr["ChatbarOptionsResearch"], FontWeight -> "DemiBold"]
+					],
+					Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ]
+				}, BaseStyle -> {FontColor -> $cutBlueHover}]
+			]
+			,
+			MessageDialog[ "To do" ],
+			Appearance       -> None,
+			BaseStyle        -> { },
+			DefaultBaseStyle -> { },
+			ImageSize        -> Automatic
+		],
+		"LinkHand"
+	]
 
 chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
     Grid[
         { {
-            Button[
-                Style[
-                    Row[ { tr @ "ChatbarOptionsUpgradeResearch", Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ] } ],
-                    FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], $cutBlueHover, $cutBlue ] ]
-                ],
-                MessageDialog[ "To do" ],
-                Appearance       -> None,
-                BaseStyle        -> { },
-                DefaultBaseStyle -> { },
-                ImageSize        -> Automatic
-            ],
+            MouseAppearance[
+				Button[
+					Mouseover[
+						Row[ {
+							StringForm[
+								FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTemplate"],
+								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
+							],
+							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+						} ]
+						,
+						Row[ {
+							StringForm[
+								FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTemplate"],
+								Style[tr["ChatbarOptionsResearch"], FontWeight -> "DemiBold"]
+							],
+							Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ]
+						}, BaseStyle -> {FontColor -> $cutBlueHover}]
+					
+					],
+					MessageDialog[ "To do" ],
+					Appearance       -> None,
+					BaseStyle        -> { },
+					DefaultBaseStyle -> { },
+					ImageSize        -> Automatic
+				],
+				"LinkHand"
+			],
             Sequence @@ If[ usage >= 1, { Spacer[ 20 ], chatbarAddServiceCreditsButton[ tier ] }, { } ]
         } },
         Alignment -> { Left, Baseline }
