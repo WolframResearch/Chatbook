@@ -1091,7 +1091,7 @@ DynamicModule[
 	{
 		Typeset`dingbatCell  = None,
 		Typeset`targetCell   = None,
-		Typeset`personaCache = "CodeAssistant"
+		Typeset`personaCache = "WolframAIAssistant"
 	},
 	DynamicWrapper[
 		Button[
@@ -1122,7 +1122,7 @@ DynamicModule[
 				If[ persona =!= Typeset`personaCache,
 					Typeset`personaCache = persona;
 					NotebookDelete /@ Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatInput`PersonaIcon" ];
-					If[ Typeset`personaCache =!= "CodeAssistant",
+					If[ Typeset`personaCache =!= "WolframAIAssistant",
 						AttachCell[
 							Typeset`dingbatCell,
 							Cell[ BoxData @ ToBoxes @
@@ -1133,7 +1133,7 @@ DynamicModule[
 										ImageSize       -> { 25, 25 },
 										ImageSizeAction -> "ShrinkToFit"
 									],
-									persona
+									personaDisplayName @ persona
 								],
 								"NotebookAssistant`ChatInput`PersonaIcon"
 							],
@@ -1414,7 +1414,7 @@ Module[ { personas },
 		]
 	];
 	If[!MatchQ[CurrentChatSettings[$FrontEnd, "PersonaFavorites"], {___String}],
-        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"CodeAssistant", "CodeWriter", "PlainChat"}
+        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"WolframAIAssistant", "PlainChat"}
 	];
 
 	(* only show visible personas and sort visible personas based on favorites setting *)
@@ -1451,7 +1451,7 @@ Module[ { personas },
 					"PlainChat",
 					"RawModel",
 					"CodeWriter",
-					"CodeAssistant"
+					"WolframAIAssistant"
 				}
 			],
 			personas
@@ -1543,8 +1543,8 @@ With[
 				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 			|>,
-			(* always display the Code Assistant persona as it is the default *)
-			With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+			(* always display the WolframAIAssistant persona as it is the default *)
+			With[ { persona = "WolframAIAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "WolframAIAssistant" ] },
 				<|
 					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
 					"Label"  -> personaDisplayName[ persona, personaSettings ],
@@ -1579,7 +1579,7 @@ With[
 				"Value"    -> persona,
 				"Category" -> "Persona"
 			|>,
-			KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
+			KeyDrop[ filterPersonas @ targetObj, "WolframAIAssistant" ]
 		]
 	]
 ] /; AssociationQ @ Wolfram`Chatbook`Personas`$CachedPersonaData;
@@ -1599,10 +1599,10 @@ With[
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 			|>,
 			(* always display the Code Assistant persona as it is the default; construct such that we don't need to read the info *)
-			With[ { persona = "CodeAssistant" },
+			With[ { persona = "WolframAIAssistant" },
 				<|
 					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
-					"Label"  -> tr @ "PersonaNameCodeAssistant",
+					"Label"  -> tr @ "PersonaNameNotebookAssistant",
 					"Icon"   -> chatbookIcon[ "ChatOutputCellDingbat", False ],
 					"Check"  -> styleListItem[ persona, personaValue ],
 					"Action" :> (
@@ -1639,7 +1639,7 @@ With[
 						"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 					|>,
 					(* always display the Code Assistant persona as it is the default *)
-					With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+					With[ { persona = "WolframAIAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "WolframAIAssistant" ] },
 						<|
 							"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
 							"Label"  -> personaDisplayName[ persona, personaSettings ],
@@ -1674,7 +1674,7 @@ With[
 						"Value"    -> persona,
 						"Category" -> "Persona"
 					|>,
-					KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
+					KeyDrop[ filterPersonas @ targetObj, "WolframAIAssistant" ]
 				]
 			]
 	|>
