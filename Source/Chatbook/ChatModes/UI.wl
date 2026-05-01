@@ -933,7 +933,7 @@ chatbarOptionsButton // endDefinition;
 chatbarUserData[ ] :=
 	<|
 		"credentialsQ" -> cloudCredentialsQ[ ],
-		"username" -> $CloudAccountName,
+		"username" -> userName[ ],
 		"tier" -> $assistantTier,
 		"usage" -> $assistantUsage,
 		"daysToReset" -> 15
