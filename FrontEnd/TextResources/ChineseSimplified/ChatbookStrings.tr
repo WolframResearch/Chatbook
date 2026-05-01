@@ -228,7 +228,7 @@
 "ChatbarSignIn" -> "Sign in to use AI Assistant",
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
-"ChatbarOptionsMonthlyUsage" -> "Monthly usage:",
+"ChatbarOptionsMonthlyUsage" -> "Usage this month:",
 "ChatbarOptionsBasic" -> "Basic",
 "ChatbarOptionsPro" -> "Pro",
 "ChatbarOptionsResearch" -> "Research",
@@ -238,7 +238,7 @@
 "ChatbarOptionsUpgradeResearch" -> "Upgrade to \!\(\*StyleBox[\"Research\",FontWeight->\"DemiBold\"]\)",
 "ChatbarOptionsExtendUsage" -> "Extend usage with service credits",
 "ChatbarOptionsCredits" -> "credits",
-"ChatbarOptionsStateTitle" -> "Show assistant in notebooks:",
+"ChatbarOptionsStateTitle" -> "Default notebook chatbar state:",
 "ChatbarOptionsFull" -> "Full",
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
