@@ -1491,30 +1491,30 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                 PaneSelector[
                     {
                         False ->
-                            Grid[
-                                { {
-                                    DynamicWrapper[
-                                        PaneSelector[
-                                            {
-                                                "Loading"          -> chatbarLoading @ Typeset`activeQ,
-                                                "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
-                                                "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
-                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`bgColor, Typeset`activeQ, Typeset`selectionWithinQ ],
-                                                "SignIn"           -> chatbarSignIn @ Typeset`activeQ
-                                            },
-                                            Dynamic @ Typeset`state,
-                                            ImageSize -> Automatic
-                                        ],
-                                        Typeset`state = Which[
-                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ], "InternetDisabled",
-                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ], "NoInternet",
-                                            cloudCredentialsQ[ ], "Enabled",
-                                            True, "SignIn"
-                                        ],
-                                        SynchronousUpdating -> False
-                                    ]
-                                    ,
-                                    Framed[
+                            Framed[
+                                Grid[
+                                    { {
+                                        DynamicWrapper[
+                                            PaneSelector[
+                                                {
+                                                    "Loading"          -> chatbarLoading @ Typeset`activeQ,
+                                                    "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
+                                                    "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
+                                                    "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                    "SignIn"           -> chatbarSignIn @ Typeset`activeQ
+                                                },
+                                                Dynamic @ Typeset`state,
+                                                ImageSize -> Automatic
+                                            ],
+                                            Typeset`state = Which[
+                                                Not @ TrueQ @ CurrentValue[ "AllowDownloads" ], "InternetDisabled",
+                                                Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ], "NoInternet",
+                                                cloudCredentialsQ[ ], "Enabled",
+                                                True, "SignIn"
+                                            ],
+                                            SynchronousUpdating -> False
+                                        ]
+                                        ,
                                         Grid[
                                             {
                                                 { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] },
@@ -1522,15 +1522,15 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             },
                                             Alignment -> { Left, Baseline },
                                             Spacings  -> { 0, 0 }
-                                        ],
-                                        Background     -> Dynamic @ Typeset`bgColor,
-                                        FrameMargins   -> 0,
-                                        FrameStyle     -> None,
-                                        ImageMargins   -> { { 2, 0 }, { 0, 0 } },
-                                        RoundingRadius -> 1
-                                    ]
-                                } },
-                                Spacings  -> { 0, 0 }
+                                        ]
+                                    } },
+                                    Spacings  -> { 0, 0 }
+                                ],
+                                Background     -> Dynamic @ Typeset`bgColor,
+                                FrameMargins   -> 0,
+                                FrameStyle     -> None,
+                                ImageMargins   -> { { 2, 0 }, { 0, 0 } },
+                                RoundingRadius -> 1
                             ],
                         True -> chatbarMaximizeButton[ nbo, Typeset`thisCell ]
                     },
@@ -1798,7 +1798,7 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, bgColor_, activeQ_, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
 DynamicModule[ { },
     EventHandler[(* pre-emptive mouse-down event for return key *)
@@ -1819,7 +1819,7 @@ DynamicModule[ { },
                 Spacings         -> { 0, 0 }
             ],
             Alignment      -> { Automatic, Center },
-            Background     -> Dynamic @ bgColor,
+            Background     -> None,
             FrameMargins   -> { { 10, 5 }, { 5, 5 } },
             FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
                 LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
