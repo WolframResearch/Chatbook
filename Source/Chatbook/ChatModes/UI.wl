@@ -953,10 +953,9 @@ chatbarUserData[ ] :=
 
 
 $coWidth = 600;
-$coDividerColor = LightDarkSwitched[ GrayLevel[ 0.90 ] ];
-$coInnerBackground = LightDarkSwitched[ GrayLevel[ 0.98 ] ];
-$coOuterBackground = LightDarkSwitched[ GrayLevel[ 1 ] ];
-$coTitleColor = LightDarkSwitched[ RGBColor[ 0.038, 0.346, 0.776 ] ];
+$coDividerColor = LightDarkSwitched[ GrayLevel[ 0.90 ], GrayLevel[0.29] ];
+$coBackground = LightDarkSwitched[ GrayLevel[ 1 ] ];
+$coTitleColor = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ];
 
 
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
@@ -966,52 +965,51 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] :=
     Framed[
         Column[
-            {
-                If[ TrueQ @ userdata[ "credentialsQ" ],
-                    Framed[
-                        Column[
-                            {
-                                Grid[
-                                    { {
-                                        chatbarOptionsTitle[ userdata ],
-                                        chatbarOptionsUser[ userdata ]
-                                    } },
-                                    ItemSize  -> Scaled[ 0.5 ],
-                                    Alignment -> { { Left, Right }, Baseline }
-                                ],
-                                tr @ "ChatbarOptionsMonthlyUsage",
-                                chatbarUsageThermometer[ userdata ],
-                                chatbarWarningStripe[ userdata ],
-                                chatbarUpgradeStripe[ userdata ]
-                            },
-                            Spacings -> { Automatic, { Automatic, 1, 0.4, { 1.3 } } }
+			{
+				If[
+					TrueQ @ userdata[ "credentialsQ" ],
+					Grid[
+						{ {
+							chatbarOptionsTitle[ userdata ],
+							chatbarOptionsUser[ userdata ]
+						} },
+						ItemSize  -> Scaled[ 0.5 ],
+						Alignment -> { { Left, Right }, Baseline }
+					],
+					Nothing
+				],
+				If[
+					TrueQ @ userdata[ "credentialsQ" ],
+					Column[
+						{
+							tr @ "ChatbarOptionsMonthlyUsage",
+							chatbarUsageThermometer[ userdata ],
+							chatbarWarningStripe[ userdata ],
+							chatbarUpgradeStripe[ userdata ]
+						},
+						Spacings -> {Automatic, {0.9, {2 -> 0.6}}}
+					],
+					Nothing
+				],
+				Column[
+					{
+						tr @ "ChatbarOptionsStateTitle",
+						chatbarStateSetter[ nbo, Dynamic[ chatbarCell ] ]
+					}
+				]
+			},
+			Dividers   -> {False, Center},
+			FrameStyle -> $coDividerColor,
+			Spacings -> { Automatic, 2.5}
 
-                        ],
-                        Background     -> $coInnerBackground,
-                        FrameMargins   -> 10,
-                        FrameStyle     -> $coDividerColor,
-                        RoundingRadius -> 6
-                    ],
-                    Nothing
-                ],
-                Column[
-                    {
-                        tr @ "ChatbarOptionsStateTitle",
-                        chatbarStateSetter[ nbo, Dynamic[ chatbarCell ] ]
-                    }
-                ]
-            },
-            Dividers   -> Center,
-            FrameStyle -> $coDividerColor,
-            Spacings   -> 3
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> {
             FontFamily           -> "Source Sans Pro",
             FontSize             -> 15,
             ShowStringCharacters -> False
         },
-        FrameMargins   -> 13,
+        FrameMargins   -> 20,
         FrameStyle     -> $coDividerColor,
         ImageSize      -> { If[ TrueQ @ userdata[ "credentialsQ" ], $coWidth, Automatic ], Automatic },
         RoundingRadius -> 8
@@ -1028,7 +1026,7 @@ chatbarOptionsTitle[ userdata_ ] :=
 
 chatbarOptionsUser[ userdata_ ] :=
     ActionMenu[
-        Grid[ { { Pane[ userImage[ ], BaselinePosition -> Scaled[ 0.2 ] ], Lookup[ userdata, "username" ], " \[DownPointer]" } } ],
+        Grid[ { { Pane[ userImage[ ] (* FIXME *), BaselinePosition -> Scaled[ 0.2 ] ], Lookup[ userdata, "username" ], " \[DownPointer]" } } ],
         {
             tr[ "ChatbarOptionsSignOut" ] :> (
                 (* Sign out and close the attached cell *)
@@ -1050,9 +1048,9 @@ chatbarOptionsUser[ userdata_ ] :=
 
 $cutHeight = 26;
 $cutMargin = 2;
-$cutBlue = First @ LightDarkSwitched[ RGBColor[ 0.402, 0.617, 0.84 ] ];
-$cutRed = First @ LightDarkSwitched[ RGBColor[ 0.899, 0.286, 0.332 ] ];
-$cutBlueHover = $coTitleColor;
+$cutBlue = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor["#7FC7FB"] ];
+$cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#ED4047"] ];
+$cutBlueHover = $coTitleColor; (* FIXME *)
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
@@ -1101,7 +1099,7 @@ chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
                     If[ TrueQ[ ellipsisQ ],
                         With[ {
                             xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
-                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coInnerBackground ]
+                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
                             },
                             {
                                 Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
@@ -1303,7 +1301,7 @@ chatbarAddServiceCreditsDisplay[ tier: "Pro" ] :=
             ItemSize   -> { { All, Fit } },
             Spacings   -> { 1, { .7, .7, .7, 2 } }
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro" },
         FrameMargins   -> 10,
         FrameStyle     -> $coDividerColor,
@@ -1325,7 +1323,7 @@ chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
             ItemSize  -> { { All, Fit } },
             ItemStyle -> { { $cutBlue, None }, None }
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro" },
         FrameMargins   -> 10,
         FrameStyle     -> $coDividerColor,
