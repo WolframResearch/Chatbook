@@ -1341,7 +1341,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
                         Column[
                             {
                                 Setter[
-                                    Dynamic[ localSetting ],
+                                    Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
                                     state,
                                     chatbarStateSetterThumbnail[ state ],
                                     Appearance       -> None,
@@ -1350,11 +1350,11 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
                                 Grid[
                                     { {
                                         RadioButton[
-                                            Dynamic[ localSetting ],
+                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
                                             state
                                         ],
                                         Setter[
-                                            Dynamic[ localSetting ],
+                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
                                             state,
                                             tr[ "ChatbarOptions" <> state ],
                                             Appearance       -> None,
@@ -1384,23 +1384,28 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
             ImageMargins   -> { { 10, 0 }, { 0, 0 } },
             RoundingRadius -> 8
         ],
-        Initialization   :> (localSetting = "Full"), (* the only way to open the menu is from a full state *)
-        Deinitialization :> (Switch[ localSetting,
-            "Full",
-                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
-                CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
-                CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
-                CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
-            "Minimized",
-                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
-                CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
-                CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-                CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
-            "Off",
-                CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
-                CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
-        ])
+        Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
+
+
+setChatbarStateAndCloseChatbarMenu[ nbo_, chatbarCell_, newValue_ ] := (
+    Switch[ newValue,
+        "Full",
+            CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+            CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+            CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
+            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
+        "Minimized",
+            CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+            CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
+            CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
+            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
+        "Off",
+            CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
+            CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
+    ];
+    NotebookDelete @ EvaluationCell[ ]
+)
 
 
 chatbarStateSetterThumbnail[ state_ ] :=
