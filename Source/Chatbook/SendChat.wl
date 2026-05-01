@@ -1030,11 +1030,16 @@ chatSubmit0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
+makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
+makeLLMConfiguration // endDefinition;
 
-makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
-    makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
-makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
+makeLLMConfiguration0 // beginDefinition;
+
+makeLLMConfiguration0[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
+    makeLLMConfiguration0 @ Append[ as, "Model" -> { "OpenAI", model } ];
+
+makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1045,7 +1050,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration[ as_Association ] :=
+makeLLMConfiguration0[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1054,16 +1059,68 @@ makeLLMConfiguration[ as_Association ] :=
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration // endDefinition;
+makeLLMConfiguration0 // endDefinition;
 
 
 $llmConfigPassedKeys = {
     "MaxTokens",
     "Model",
     "PresencePenalty",
+    "ProviderPreferences",
     "Reasoning",
     "Temperature"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchServices*)
+patchServices // beginDefinition;
+patchServices[ as_Association ] := patchServices[ as, as[ "Model", "Service" ] ];
+patchServices[ as_Association, "OpenRouter" ] := patchOpenRouter @ as;
+patchServices[ as_Association, _ ] := Null;
+patchServices // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchOpenRouter*)
+(* FIXME: Verify this works in 14.3 *)
+patchOpenRouter // beginDefinition;
+patchOpenRouter[ as_Association ] := patchOpenRouter[ as, as[ "ProviderPreferences" ] ];
+patchOpenRouter[ as_, <| |> | None | $$unspecified ] := Null;
+patchOpenRouter[ as_, prefs_Association ] := registerParameter[ "OpenRouter", "ProviderPreferences" ];
+patchOpenRouter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*registerParameter*)
+registerParameter // beginDefinition;
+
+registerParameter[ service_String, param_String ] := (
+    registerParameter[ service, param, LLMServices`Chat       ];
+    registerParameter[ service, param, LLMServices`ChatSubmit ];
+);
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+registerParameter[ service_String, param_String, f_Symbol ] := Enclose[
+    If[ FreeQ[ LLMServices`LLMServiceInformation[ f ][ service, "SupportedParameters" ], param ],
+        LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]] =
+            DeleteDuplicates @ Append[
+                ConfirmMatch[
+                    LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]],
+                    { (_String|_Symbol)... },
+                    "SupportedParameters"
+                ],
+                param
+            ]
+    ];
+    registerParameter[ service, param, f ] = Null
+    ,
+    throwInternalFailure
+];
+(* :!CodeAnalysis::EndBlock:: *)
+
+registerParameter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1331,6 +1388,7 @@ $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
+    StartOfLine ~~ text: Except[ "\n" ].. ~~ "/wl" ~~ WhitespaceCharacter... ~~ "\n" :> StringTrim[text] <> "\n/wl\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -1350,37 +1408,73 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters
+    $longNameCharacters,
+    toolCalls: StringExpression[
+        WhitespaceCharacter...,
+        "<|tool_calls_section_begin|>",
+        __,
+        "<|tool_calls_section_end|>",
+        WhitespaceCharacter...
+    ] :> rewriteMoonshotToolText @ toolCalls
 };
 
-(* TODO:
-Automatically rewrite these as WL tool calls:
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMoonshotToolText*)
+rewriteMoonshotToolText // beginDefinition;
+
+rewriteMoonshotToolText[ string_String ] :=
+    rewriteMoonshotToolText[ string, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+rewriteMoonshotToolText[ string_String, method_ ] := Enclose[
+    Catch @ Module[ { calls, call, new },
+        calls = ConfirmMatch[ StringCases[ string, $moonShotTools, 1 ], { { _String, _String }... }, "Calls" ];
+        call = First[ calls, None ];
+        new = ConfirmMatch[ rewriteMoonshotToolText[ call, method ], _String | $Failed, "New" ];
+        rewriteMoonshotToolText[ string, method ] = If[ FailureQ @ new, string, new ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ { name0_String, params0_String }, method_ ] := Enclose[
+    Catch @ Module[ { name, params, toolCall },
+
+        name = ConfirmBy[ StringTrim @ name0, StringQ, "Name" ];
+        params = Quiet @ Developer`ReadRawJSONString @ StringTrim @ params0;
+        If[ ! AssociationQ @ params, Throw @ $Failed ];
+
+        toolCall = ConfirmBy[ formatToolCallExample[ name, params, method ], StringQ, "Result" ];
+
+        "\n" <> StringDelete[
+            StringTrim @ toolCall,
+            {
+                "\n/exec"~~EndOfString,
+                "\nENDTOOLCALL"~~EndOfString
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ None, _ ] := $Failed;
+
+rewriteMoonshotToolText // endDefinition;
 
 
-    Sure! I will use `EmbeddedService` to show a map of Tokyo by utilizing the OpenStreetMap service.
-
-    ```wl
-    EmbeddedService[{\"OpenStreetMap\", GeoPosition[\[FreeformPrompt][\"Tokyo\"]]}]
-    ``` /exec
-
-=====
-
-    To show a map of the United States with all its state capitals, we can use the [GeoGraphics](paclet:ref/GeoGraphics) function along with [Entity](paclet:ref/Entity) to get the positions of the capitals. Here's how you can do it:
-
-    ```wl
-    GeoGraphics[
-        {Red, PointSize[Large],
-        Point[GeoPosition /@ EntityValue[
-            EntityClass["AdministrativeDivision", "USStates"],
-            "CapitalLocation"
-        ]]
+$moonShotTools = Apply[
+    StringExpression,
+    Riffle[
+        {
+            "<|tool_call_begin|>",
+            "functions." ~~ name__ ~~ ":" ~~ DigitCharacter..,
+            "<|tool_call_argument_begin|>",
+            params__,
+            "<|tool_call_end|>"
         },
-        GeoRange -> Entity["Country", "UnitedStates"]
+        WhitespaceCharacter...,
+        { 1, -1, 2 }
     ]
-    ```
-
-    Let me create this map for you. /wl
-*)
+] :> { name, params };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2664,7 +2758,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
         ],
 
         If[ kernelWasQuitQ, NotebookDelete @ topCell ],
-        
+
         SynchronousUpdating -> False,
         TrackedSymbols      :> { kernelWasQuitQ }
     ],
@@ -2912,7 +3006,7 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
                             "FinishedCellInfo" -> KeyTake[ info, { "ExpressionUUID", "ScrollOutput" } ] } ],
                         HoldFirst ] ]
             ];
-        
+
             setCurrentValue[ cell, Editable, True ];
             With[ { new = new, info = info },
                 applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]

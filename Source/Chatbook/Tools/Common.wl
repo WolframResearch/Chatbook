@@ -1119,6 +1119,9 @@ arg1
 arg2
 /exec
 
+Any tool indicator or /command MUST begin on its own new line. It MUST NEVER appear inline after preceding \
+sentence text.
+
 After you write /exec, the system will execute the tool call for you and return the result.
 
 If your arguments require multiple lines, specify the name of each argument followed by a colon and a space, \
@@ -1139,6 +1142,8 @@ $simpleToolPost = "\
 
 You must write the tool call in your CURRENT response.
 Do not state that you will use a tool and end your message before making the tool call.
+If a tool call yields output that helps answer the original question, display that output INLINE where \
+appropriate. Do not rely solely on paraphrasing or describing it in words.
 Only make one tool call at a time.";
 
 

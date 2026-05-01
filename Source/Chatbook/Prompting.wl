@@ -44,10 +44,12 @@ $basePromptOrder = {
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
+    "ExpressionURIResults",
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
     "FunctionRepositoryIntegration",
+    "FunctionRepositoryFunctionSyntax",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
@@ -107,6 +109,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "SpecialURIAudio"                      -> { "SpecialURI" },
     "SpecialURIVideo"                      -> { "SpecialURI" },
     "SpecialURIDynamic"                    -> { "SpecialURI" },
+    "ExpressionURIResults"                 -> { "SpecialURI" },
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
     "WolframSymbolCapitalization"          -> { },
@@ -123,7 +126,8 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebookAssistanceInstructionsHeader" -> { },
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
-    "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" }
+    "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" },
+    "FunctionRepositoryFunctionSyntax"     -> { "FunctionRepositoryFunction" }
 |>;
 
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
@@ -134,7 +138,9 @@ $excludedBasePrompts = { };
    enabled via the "EnabledBasePrompts" setting. *)
 $disabledBasePrompts = {
     "FunctionRepositoryIntegration",
-    "WolframLanguageEvaluatorToolInteractive"
+    "FunctionRepositoryFunctionSyntax",
+    "WolframLanguageEvaluatorToolInteractive",
+    "ExpressionURIResults"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -309,6 +315,11 @@ $basePromptComponents[ "SpecialURIVideo" ] = "\
 $basePromptComponents[ "SpecialURIDynamic" ] = "\
 	* ![label](dynamic://content-id) represents an embedded dynamic UI.";
 
+$basePromptComponents[ "ExpressionURIResults" ] = "\
+* When wolfram_language_evaluator returns a result containing an expression URI \
+(e.g. ![result](expression://content-id)), always display it using that URI. Never attempt to reproduce or summarize \
+the formatted result as markdown text.";
+
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
 
@@ -321,6 +332,11 @@ $basePromptComponents[ "Packages" ] = "\
 $basePromptComponents[ "FunctionRepositoryIntegration" ] = "\
 * ResourceFunctions published in the Function Repository are reviewed and approved by Wolfram staff, \
 so you can treat them as first-class citizens of the Wolfram Language if there isn't already a built-in equivalent.";
+
+$basePromptComponents[ "FunctionRepositoryFunctionSyntax" ] = "\
+* ALWAYS call repository functions via the wrapped head, with the name as a string: \
+`ResourceFunction[\"SomeFunctionName\"][args]`. A bare `SomeFunctionName` is just an unbound symbol and will not \
+resolve.";
 
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
