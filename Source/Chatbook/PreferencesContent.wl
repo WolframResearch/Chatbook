@@ -213,27 +213,43 @@ disabledAIOverlayBanner[ ] :=
 Framed[
     Grid[
         { {
-            Replace[
-                FrontEndResource[ "ChatbookExpressions", "InformationTooltip" ],
-                HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 40, 40 },
-                1
-            ] // RawBoxes,
+            chatbookExpression[ "DisabledByAdmin" ],
             Grid[
                 {
                     { tr @ "PreferencesContentAIDisabledByAdmin" },
-                    { tr @ "PreferencesContentAIDisabledLearnMore" }
+                    {
+                        Button[
+                            Style[
+                                tr @ "PreferencesContentAIDisabledLearnMore",
+                                FontColor ->
+                                    Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                                        color @ "PreferencesContentLLMSignInButtonFontHover",
+                                        color @ "PreferencesContentLLMSignInButtonFont"
+                                    ],
+                                FontSize  -> 13,
+                                FontSlant -> Italic
+                            ],
+                            Beep[ ], (* FIXME *)
+                            Appearance -> "Suppressed",
+                            ImageSize  -> Automatic
+                        ]
+                    }
                 },
-                Alignment -> { Left, Center }
+                Alignment -> { Left, Center },
+                BaseStyle -> { FontSize -> 14 },
+                Spacings  -> { 0, 0.1 }
             ]
         } },
-        Alignment -> { Left, Center }
+        Alignment -> { Left, Center },
+        Spacings  -> { 1.0, 0 }
     ],
     Alignment      -> { Left, Top },
     Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    FrameMargins   -> 14,
     FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
     ImageMargins   -> { { 0, 0 }, { 10, 0 } },
     ImageSize      -> Scaled[ 1 ],
-    RoundingRadius -> 1
+    RoundingRadius -> 8
 ];
 
 disabledAIOverlayBanner // endDefinition;
