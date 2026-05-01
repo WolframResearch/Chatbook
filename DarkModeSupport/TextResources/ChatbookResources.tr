@@ -9676,7 +9676,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"536661ce-43f9-e24a-81f3-95213b0b92a7"], Cell[BoxData[
+    ExpressionUUID->"49d333f5-36c3-dc43-9047-3f0b5bc51833"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10603,12 +10603,12 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "6c57631d-3142-004e-be77-fec985d0eb63"], Cell[BoxData[
+    "6bbb80a2-13c5-e54a-bd21-d7f3f1deba71"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
      Typeset`input$$, Typeset`kernelWasQuitQ$$ = False, 
-     Typeset`cachedSessionID$$ = 33718575325856049531, Typeset`focusArea$$ = 
+     Typeset`cachedSessionID$$ = 33719195241325259103, Typeset`focusArea$$ = 
      ""}, 
      TagBox[
       PaneBox[
@@ -10919,7 +10919,7 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "c70ce346-7454-6444-af8f-99606797e750"]}],
+    "e9732f2c-f80d-ba42-836c-80d523fc9975"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10935,8 +10935,8 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"2bcf287d-019a-cb4c-8946-\
-d85aa8e1192a"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"8ee25a64-0620-4943-b820-\
+7e5d44771e6e"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11055,8 +11055,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"0493792b-aee4-9c4a-9601-\
-abae0f8c7abf"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"4373a28e-60cd-3a4c-9ccc-\
+270e5c9db61a"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -11338,7 +11338,227 @@ D5YHAFf2S08=
     12.558600425720215`}}}]}, AspectRatio -> Automatic, 
   BaselinePosition -> (Center -> Center), ImageSize -> {15., 14.}, 
   PlotRange -> {{-0.5, 14.314499855041504`}, {-0.5, 
-   13.058600425720215`}}]& )
+   13.058600425720215`}}]& ),
+
+"DisabledByAdmin" -> GraphicsBox[
+  {Thickness[0.035373811849924705`], 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[
+     0.6509803921568628, 0.6509803921568628, 0.6509803921568628, 1.]]], 
+    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+     0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGJZIGZiAIMGmxpTByC9QEpfA0g3tEw6BeZzXVfWBNEL
+3/CZgWg+3SIwnyO4FMzP2rMFzL8iz2QOom3u82uB6DsLysH8UwuPguUvnJwM
+5teIrAPzDxT+AvONOHLAfIWmIAsQffDUQ5D9DB+W9IL4Aj+ClZH5DB+qSsyQ
++Re+ngCbU5FaAaY3fL4LFp/6StkMmc+Q78eMwjcI/WiPzGdYYGyPZB6MD7MP
+xj/g2aOAzGdYcUwa2TyGVYXiyPYh+AZiWPlQkMClpoksL7H6nSEyf8fRWiMw
+XzMGbJ8MI4TfMD0PzEeJPwBr0WsF
+     "]]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIJIGZigIDEYlMHINWQw64BovdePQbmzzmmrQmiX8TE
+moForbhbYP6M86zmyHwuC3MUvpJgmjnEvONgPkPiZDC/4sAqFL5AVIkZCv+m
+HZi+1PwOLL6h5DGYf51FBYXPYOrLjMKv+vTTHpnfEPjeHsk8OB9mH5Rv0d2j
+gMxvkHovi2zegaXR0sj2wfgHAqSksPEbvLczgOiEn/kayPI/7tcaIfNRwhsA
+HMNaig==
+     "]]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[
+     0.043137254901960784`, 0.14901960784313725`, 0.32941176470588235`, 1.]]],
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {
+     1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+     3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1,
+      3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, CompressedData["
+1:eJxV01tIU3EcB/B/tjUJiimhPqx5tspMnZ62FcWszrCLkYI0qJMhHgZL1oou
+LwmBHWjE1gUsKrKnacmGD2NvG0zq6GJEN3yYYT7owS4MujCqWTq09v+ePWyD
+w5fPufz+v/P77xicF4671hJC1uSP1vxRRvALJBvruXxyRzt35ZML/+qhvmtK
+dlCL3dp+6u6nXphkHNdLvNwQ3FFseTTeQDOq2QCLdrGRZmj2sZVmTeReE03v
+PwKng3UmmladzUKTWWeAY5rzZppdsVXcH7kR3Ulzz63bcPkDFaziP6A+e9nN
+4rlsO0zq51qwzuQ0+skse5ppCuMpWFjogyN6F8zM5lD3oJPF89zNH0rd+Rb0
+M7X5CMzbnsNkpQp+dOgE6jCnvqCOr+0rLF0ag/nPF9FHwOOGteGT6DNQnaRz
+Iy+NrxVnNmEfujauKE6HttEcnFTjPYX4bpgTsrjOqBNbcf37G5i8d8Eh3Rgs
+fKqEfeeuKPUOf9yC97G0wSK3AJfzQ0yx250sU3y/WDVUi/VOV6BeYFgNc719
+MCnz6HHe/QyWOo2wPGJGv9LSflhKjMCy44m+ML/t6HPfK9QTXSHMQ875Dbj/
+5zXMqyZSacR6vgTM+odh0b0Kz4za0OdUrbmwHw/RB6cJw6klfR3NzNu9TcUm
+A99MJdevTjQr87+jzH3iD/at/6wO/tt6DHO7/4JT3vvAIsxrY1h/vCeOfZKY
+QWWOWT/+v+ngGVhrt1uU/ZyG38k52Lo+inoDDq+10D/W+12hwvezmJpBf4Xv
+s/R7/Q/HreaV
+     "]]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[
+     0.16470588235294117`, 0.49411764705882355`, 0.7607843137254902, 1.]]], 
+    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+     0, 1, 0}, {1, 3, 3}}}, {{{23.022701263427734`, 11.926599502563477`}, {
+     23.296701282262802`, 11.926599502563477`}, {23.57070130109787, 
+     11.790599510073662`}, {23.726701259613037`, 11.518599510192871`}, {
+     28.161701202392578`, 3.762598991394043}, {28.470701217651367`, 
+     3.222599983215332}, {28.07970142364502, 2.5495996475219727`}, {
+     27.457701683044434`, 2.5495996475219727`}, {18.587700843811035`, 
+     2.5495996475219727`}, {17.96570110321045, 2.5495996475219727`}, {
+     17.5747013092041, 3.222599983215332}, {17.884701251983643`, 
+     3.762598991394043}, {22.31870126724243, 11.518599510192871`}, {
+     22.4747012257576, 11.790599510073662`}, {22.748701244592667`, 
+     11.926599502563477`}, {23.022701263427734`, 11.926599502563477`}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
+      1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{
+      23.576000213623047`, 8.02400016784668}, {23.241000205278397`, 
+      5.565000057220459}, {22.794000267982483`, 5.565000057220459}, {
+      22.45900022983551, 8.02400016784668}, {22.45900022983551, 
+      8.918000161647797}, {22.45900022983551, 9.22700023651123}, {
+      22.709000170230865`, 9.477000117301941}, {23.017000198364258`, 
+      9.477000117301941}, {23.326000213623047`, 9.477000117301941}, {
+      23.576000213623047`, 9.22700023651123}, {23.576000213623047`, 
+      8.918000161647797}, {23.576000213623047`, 8.02400016784668}}, {{
+      23.017000198364258`, 3.756000518798828}, {22.693000197410583`, 
+      3.756000518798828}, {22.431000232696533`, 4.01800012588501}, {
+      22.431000232696533`, 4.343000411987305}, {22.431000232696533`, 
+      4.6670002937316895`}, {22.693000197410583`, 4.92900013923645}, {
+      23.017000198364258`, 4.92900013923645}, {23.341000214219093`, 
+      4.92900013923645}, {23.604000214487314`, 4.6670002937316895`}, {
+      23.604000214487314`, 4.343000411987305}, {23.604000214487314`, 
+      4.01800012588501}, {23.341000214219093`, 3.756000518798828}, {
+      23.017000198364258`, 3.756000518798828}}}]}},
+  AspectRatio->Automatic,
+  ImageSize->{30., 26.},
+  PlotRange->{{-0.5, 28.769500732421875`}, {-0.5, 25.367198944091797`}}],
+
+"ChatUnavailableHover" -> GraphicsBox[
+  {Thickness[0.06880323785500898], 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZigIB8Rj4HIPXgjI8giG7wc/hgj8xXmf4Smc/Q
+/fcxiG/BxiiEzNfTv4vCvzBXXweZb7Bprg6yeR/OfddBtg/GV5jMqe2ALL+8
+HIXvcOQimA8zD8aH2Qfjc2neEULmCzMwCCGbB/MPzD4Yf8LuMFlkPix8HDRj
+vtqjhxcARmhTiQ==
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[
+     0.07058823529411765, 0.5568627450980392, 0.8196078431372549, 1.]], 
+    Thickness[0.08600404731876123], CapForm[
+    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
+    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZigIB8Rj4HIPXgjI8giG7wc/hgj8xXmf4Smc/Q
+/fcxiG/BxiiEzNfTv4vCvzBXXweZb7Bprg6yeR/OfddBtg/GV5jMqe2ALL+8
+HIXvcOQimA8zD8aH2Qfjc2neEULmCzMwCCGbB/MPzD4Yf8LuMFlkPix8HDRj
+vtqjhxcARmhTiQ==
+     "],
+     CurveClosed->{1}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[
+     0.4588235294117647, 0.7607843137254902, 0.9215686274509803, 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}}}, {{{6.635500431060791, 11.999899864196777`}, {
+     4.137500524520874, 7.6738996505737305`}, {3.7935004234313965`, 
+     7.077899932861328}, {4.2235002517700195`, 6.333899974822998}, {
+     4.911500453948975, 6.333899974822998}, {9.906500339508057, 
+     6.333899974822998}, {10.594500541687012`, 6.333899974822998}, {
+     11.023500442504883`, 7.077899932861328}, {10.680500507354736`, 
+     7.6738996505737305`}, {8.18250036239624, 11.999899864196777`}, {
+     7.838500499725342, 12.594899833202362`}, {6.979500442743301, 
+     12.594899833202362`}, {6.635500431060791, 11.999899864196777`}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
+      1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{
+      7.8471999168396, 9.370399475097656}, {7.58419993519783, 
+      8.441399455070496}, {7.233199894428253, 8.441399455070496}, {
+      6.970199882984161, 9.370399475097656}, {6.970199882984161, 
+      10.481399536132812`}, {6.970199882984161, 10.704399347305298`}, {
+      7.167199909687042, 10.885399460792542`}, {7.409199923276901, 
+      10.885399460792542`}, {7.651199921965599, 10.885399460792542`}, {
+      7.8471999168396, 10.704399347305298`}, {7.8471999168396, 
+      10.481399536132812`}, {7.8471999168396, 9.370399475097656}}, {{
+      7.409199923276901, 7.092399597167969}, {7.167199909687042, 
+      7.092399597167969}, {6.970199882984161, 7.2883994579315186`}, {
+      6.970199882984161, 7.530399560928345}, {6.970199882984161, 
+      7.772399425506592}, {7.167199909687042, 7.969399452209473}, {
+      7.409199923276901, 7.969399452209473}, {7.651199921965599, 
+      7.969399452209473}, {7.8471999168396, 7.772399425506592}, {
+      7.8471999168396, 7.530399560928345}, {7.8471999168396, 
+      7.2883994579315186`}, {7.651199921965599, 7.092399597167969}, {
+      7.409199923276901, 7.092399597167969}}}]}},
+  AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
+  ImageSize->{16., 17.},
+  PlotRange->{{-0.5, 15.034199714660645`}, {-0.5, 15.608500480651855`}}],
+
+"ChatUnavailable" -> GraphicsBox[
+  {Thickness[0.06880276382684403], 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZigIB8Rj4HIPXgjI8giG7wc/hgj8xXmf4Smc/Q
+/fcxiG/BxiiEzNfTv4vCvzBXXweZb7Bprg6yeR/OfddBtg/GV5jMqe2ALK9V
+gcJ3OHIRzIeZB+PD7IPxuTTvCCHzhRkYhJDNg/kHZh+MP2F3mCwyHxY+Dpox
+X+3RwwsA1fdSkQ==
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[
+     0.5372549019607843, 0.5372549019607843, 0.5372549019607843, 1.]], 
+    Thickness[0.08600345478355505], CapForm[
+    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
+    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZigIB8Rj4HIPXgjI8giG7wc/hgj8xXmf4Smc/Q
+/fcxiG/BxiiEzNfTv4vCvzBXXweZb7Bprg6yeR/OfddBtg/GV5jMqe2ALK9V
+gcJ3OHIRzIeZB+PD7IPxuTTvCCHzhRkYhJDNg/kHZh+MP2F3mCwyHxY+Dpox
+X+3RwwsA1fdSkQ==
+     "],
+     CurveClosed->{1}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[
+     0.6509803921568628, 0.6509803921568628, 0.6509803921568628, 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}}}, {{{6.635500431060791, 12.060200691223145`}, {
+     4.137500524520874, 7.734200477600098}, {3.7935004234313965`, 
+     7.138200759887695}, {4.2235002517700195`, 6.394200801849365}, {
+     4.911500453948975, 6.394200801849365}, {9.906500339508057, 
+     6.394200801849365}, {10.594500541687012`, 6.394200801849365}, {
+     11.023500442504883`, 7.138200759887695}, {10.680500507354736`, 
+     7.734200477600098}, {8.18250036239624, 12.060200691223145`}, {
+     7.838500499725342, 12.65520066022873}, {6.979500442743301, 
+     12.65520066022873}, {6.635500431060791, 12.060200691223145`}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
+      1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{
+      7.847300052642822, 9.430699348449707}, {7.584300071001053, 
+      8.501699328422546}, {7.233300030231476, 8.501699328422546}, {
+      6.970300018787384, 9.430699348449707}, {6.970300018787384, 
+      10.541699409484863`}, {6.970300018787384, 10.764699220657349`}, {
+      7.167300045490265, 10.945699334144592`}, {7.409300059080124, 
+      10.945699334144592`}, {7.651300057768822, 10.945699334144592`}, {
+      7.847300052642822, 10.764699220657349`}, {7.847300052642822, 
+      10.541699409484863`}, {7.847300052642822, 9.430699348449707}}, {{
+      7.409300059080124, 7.1526994705200195`}, {7.167300045490265, 
+      7.1526994705200195`}, {6.970300018787384, 7.348699331283569}, {
+      6.970300018787384, 7.5906994342803955`}, {6.970300018787384, 
+      7.832699298858643}, {7.167300045490265, 8.029699325561523}, {
+      7.409300059080124, 8.029699325561523}, {7.651300057768822, 
+      8.029699325561523}, {7.847300052642822, 7.832699298858643}, {
+      7.847300052642822, 7.5906994342803955`}, {7.847300052642822, 
+      7.348699331283569}, {7.651300057768822, 7.1526994705200195`}, {
+      7.409300059080124, 7.1526994705200195`}}}]}},
+  AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
+  ImageSize->{16., 17.},
+  PlotRange->{{-0.5, 15.034299850463867`}, {-0.5, 15.608600616455078`}}]
 }
 @|
 @|

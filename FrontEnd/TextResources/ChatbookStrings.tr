@@ -106,7 +106,7 @@
 "PreferencesContentToolsTab" -> "Tools",
 "PreferencesContentEnableAssistanceLabel" -> "Enable automatic assistance",
 "PreferencesContentEnableAssistanceTooltip" -> "If enabled, automatic AI provided suggestions will be added following evaluation results.",
-"PreferencesContentAIDisabledByAdmin" -> "AI features have been disabled by an administrator",
+"PreferencesContentAIDisabledByAdmin" -> "AI features have been disabled by an administrator.",
 "PreferencesContentAIDisabledLearnMore" -> "Learn more \[RightGuillemet]",
 "PreferencesContentPersonaLabel" -> "Persona:",
 "PreferencesContentLLMServiceLabel" -> "LLM Service:",
