@@ -1592,8 +1592,8 @@ Attributes[ chatbarSignIn ] = { HoldAll };
 chatbarSignIn[ activeQ_ ] :=
 Button[
     Framed[
-        Grid[
-            { {
+        Row[
+            {
                 PaneSelector[
                     {
                         True  -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
@@ -1611,19 +1611,20 @@ Button[
                 ],
                 Style[
                     tr @ "ChatbarSignIn",
+                    "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
                     FontColor -> Dynamic @ If[ activeQ,
                         LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
                         LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
                     ],
-                    FontOpacity -> Dynamic @ If[ activeQ, 1., 0.5 ]
+                    FontFamily      -> "Roboto",
+                    FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+                    FontSize        -> 15,
+                    FontSlant       -> "Plain",
+                    LineBreakWithin -> False
                 ]
-            } },
-            BaseStyle -> {
-                "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                FontFamily      -> "Roboto",
-                FontSize        -> 15,
-                FontSlant       -> "Plain",
-                LineBreakWithin -> False }
+            },
+            Spacer @ 0,
+            StripOnInput -> True
         ],
         Alignment      -> { Automatic, Center },
         Background     -> Dynamic @ If[ activeQ,
@@ -1632,7 +1633,7 @@ Button[
         ],
         FrameMargins   -> { { 12, 1 }, { 1, 1 } },
         FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 32 },
+        ImageSize      -> { Scaled[ 1 ], 38 },
         RoundingRadius -> 9
     ],
     CloudConnect[ ],
@@ -1654,29 +1655,29 @@ Attributes[ chatbarDisabledInternet ] = { HoldAll };
 chatbarDisabledInternet[ activeQ_ ] :=
 Button[
     Framed[
-        Grid[
-            { {
+        Row[
+            {
                 PaneSelector[
                     { True -> chatbookIcon[ "ChatUnavailableHover", False ], False -> chatbookIcon[ "ChatUnavailable", False ] },
                     Dynamic @ activeQ,
                     BaselinePosition -> Baseline,
                     ImageSize        -> Automatic
                 ],
-                Style[
-                    tr @ "ChatbarWolframDisabledInternet",
-                    FontColor -> Dynamic @ If[ activeQ,
+                Style[ tr @ "ChatbarWolframDisabledInternet",
+                    "Text", "TextStyleInputField",
+                    FontColor       -> Dynamic @ If[ activeQ,
                         LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
                         LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
-                    ]
+                    ],
+                    FontFamily      -> "Roboto",
+                    FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+                    FontSize        -> 15,
+                    FontSlant       -> "Plain",
+                    LineBreakWithin -> False
                 ]
-            } },
-            BaseStyle -> {
-                "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                FontFamily      -> "Roboto",
-                FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
-                FontSize        -> 15,
-                FontSlant       -> "Plain",
-                LineBreakWithin -> False }
+            },
+            Spacer @ 0,
+            StripOnInput -> True
         ],
         Alignment      -> { Automatic, Center },
         Background     -> Dynamic @ If[ activeQ,
@@ -1685,7 +1686,7 @@ Button[
         ],
         FrameMargins   -> { { 12, 1 }, { 1, 1 } },
         FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 32 },
+        ImageSize      -> { Scaled[ 1 ], 38 },
         RoundingRadius -> 9
     ],
     NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
@@ -1706,38 +1707,33 @@ Attributes[ chatbarNoInternet ] = { HoldAll };
 
 chatbarNoInternet[ activeQ_ ] :=
 Framed[
-    Grid[
-        { {
+    Row[
+        {
             PaneSelector[
                 { True -> chatbookIcon[ "ChatUnavailableHover", False ], False -> chatbookIcon[ "ChatUnavailable", False ] },
                 Dynamic @ activeQ,
                 BaselinePosition -> Baseline,
                 ImageSize        -> Automatic
             ],
-            Style[
-                tr @ "ChatbarNoInternet",
-                FontColor -> Dynamic @ If[ activeQ,
+            Style[ tr @ "ChatbarNoInternet",
+                "Text", "TextStyleInputField",
+                FontColor       -> Dynamic @ If[ activeQ,
                     LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
                     LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
-                ]
+                ],
+                FontFamily      -> "Roboto",
+                FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+                FontSize        -> 15,
+                FontSlant       -> "Plain",
+                LineBreakWithin -> False
             ]
-        } },
-        BaseStyle -> {
-            "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-            FontFamily      -> "Roboto",
-            FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
-            FontSize        -> 15,
-            FontSlant       -> "Plain",
-            LineBreakWithin -> False }
-    ],
-    Alignment      -> { Automatic, Center },
-    Background     -> Dynamic @ If[ activeQ,
-        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
-        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+        },
+        Spacer @ 0,
+        StripOnInput -> True
     ],
     FrameMargins   -> { { 12, 1 }, { 1, 1 } },
     FrameStyle     -> None,
-    ImageSize      -> { Scaled[ 1 ], 32 },
+    ImageSize      -> { Scaled[ 1 ], 38 },
     RoundingRadius -> 9
 ];
 
@@ -1760,7 +1756,8 @@ Button[
                 False -> ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ] } ]
             },
             Dynamic @ activeQ,
-            ImageSize -> Automatic
+            BaselinePosition -> Baseline,
+            ImageSize        -> Automatic
         ],
         Alignment      -> { Automatic, Center },
         Background     -> Dynamic @ If[ activeQ,
