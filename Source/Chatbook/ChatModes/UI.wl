@@ -1188,7 +1188,7 @@ chatbarWarningStripe[ tier: "Basic" | "Pro", usage_, daysToReset_ ] :=
     If[ usage >= 1,
         Grid[
             { {
-                "\[WarningSign]",
+				Pane[chatbookIcon["ChatbarMenuAlert", False], BaselinePosition -> Scaled[0.2]],
                 tr @ "ChatbarOptionsLimit",
                 Style[ StringTemplate[ trRaw @ "ChatbarOptionsLimitReset" ][ daysToReset ], FontColor -> StandardGray ]
             } },
@@ -1341,58 +1341,59 @@ chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
 
 chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
     DynamicModule[ { localSetting },
-        Framed[
+        Pane[
             Grid[
-                { Table[
-                    Pane[
-                        Column[
-                            {
-                                Setter[
-                                    Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                    state,
-                                    chatbarStateSetterThumbnail[ state ],
-                                    Appearance       -> None,
-                                    BaselinePosition -> Baseline
-                                ],
-                                Grid[
-                                    { {
-                                        RadioButton[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                            state
-                                        ],
-                                        Setter[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                            state,
-                                            tr[ "ChatbarOptions" <> state ],
-                                            Appearance       -> None,
-                                            BaselinePosition -> Baseline
-                                        ]
-                                    } },
-                                    Alignment        -> Left,
-                                    BaselinePosition -> { 1, 2 }
-                                ]
-                            },
-                            Alignment        -> Center,
-                            BaselinePosition -> 2,
-                            ItemSize         -> Scaled[ 1 ]
-                        ],
-                        { 100, 70 },
-                        Alignment    -> { Bottom, Center },
-                        ImageMargins -> { { 5, 5 }, { 3, 5 } }
-                    ],
-                    { state, { "Full", "Minimized", "Off" } }
-                ]
-                },
-                Alignment  -> { Center, Baseline },
-                Dividers   -> { Center, Center },
-                FrameStyle -> $coDividerColor
+                { 
+					Table[
+						chatbarStateSetterButton[nbo, Dynamic[chatbarCell], Dynamic[localSetting], state],
+						{state, {"Full", "Minimized", "Off"}}
+					]
+                }
             ],
-            FrameStyle     -> $coDividerColor,
-            ImageMargins   -> { { 10, 0 }, { 0, 0 } },
-            RoundingRadius -> 8
+            ImageMargins -> 0
         ],
         Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
+
+chatbarStateSetterButton[nbo_, Dynamic[chatbarCell_], Dynamic[localSetting_], state_] :=
+	Button[
+		Pane[
+			Column[
+				{
+					Dynamic[
+						If[CurrentValue["MouseOver"],
+							chatbookIcon[ "ChatbarThumbnail" <> state <> "Hover" ],
+							If[localSetting === state,
+								chatbookIcon[ "ChatbarThumbnail" <> state <> "Selected" ],
+								chatbookIcon[ "ChatbarThumbnail" <> state]
+							]
+						]
+					],
+					Grid[
+						{{
+							RadioButton[
+								Dynamic[localSetting],
+								state
+							],
+							tr["ChatbarOptions" <> state]
+						}},
+						Alignment -> Left,
+						BaselinePosition -> {1,2}
+					]
+				},
+				Alignment -> Center,
+				BaselinePosition -> 2,
+				Spacings -> 0.7
+			],
+			ImageMargins -> 10,
+			BaselinePosition -> Baseline
+		],
+		setChatbarStateAndCloseChatbarMenu[nbo, chatbarCell, localSetting = state],
+		Appearance -> "Suppressed",
+		BaselinePosition -> Baseline,
+		BaseStyle -> {FontSize -> Inherited-1},
+		DefaultBaseStyle -> {}
+	]
 
 
 setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
@@ -1412,28 +1413,6 @@ setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
     ];
 )
-
-
-chatbarStateSetterThumbnail[ state_ ] :=
-    Graphics[
-        {
-            {
-                FaceForm[ None ],
-                EdgeForm[ GrayLevel[ 0.8 ] ],
-                Rectangle[ { 0, 0 }, { 7, 4 }, RoundingRadius -> 0.3 ]
-            },
-            FaceForm[ GrayLevel[ 0.97 ] ],
-            EdgeForm[ GrayLevel[ 0.65 ] ],
-            Replace[ state, {
-                "Minimized" :> Rectangle[ { 5.7, 0.4 }, { 6.5, 1.2 }, RoundingRadius -> 0.2 ],
-                "Full"      :> Rectangle[ { 1, 0.5 }, { 6, 1.5 }, RoundingRadius -> 0.5 ],
-                _           :> { }
-            } ]
-        },
-        ImageSize        -> 7*{ 11, 5 },
-        PlotRange        -> { { 0, 7 }, { 0, 3 } },
-        PlotRangePadding -> { { 1, 1 }, { 1, 0 } }/10.
-    ]
 
 
 
