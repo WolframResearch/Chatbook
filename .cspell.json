@@ -124,7 +124,8 @@
         "wolframresearch",
         "wolframscript",
         "wstp",
-        "wxfl"
+        "wxfl",
+        "xhigh"
     ],
     "ignoreRegExpList": [
         "\\:\\:[a-z]+", // message names
