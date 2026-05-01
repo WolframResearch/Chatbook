@@ -1656,12 +1656,11 @@ Button[
     Framed[
         Grid[
             { {
-                Style[
-                    "\[WarningSign]",
-                    "Text", "TextStyling",
-                    FontWeight -> Bold,
-                    FontColor  -> StandardYellow,
-                    FontSize   -> 18
+                PaneSelector[
+                    { True -> chatbookIcon[ "ChatUnavailableHover", False ], False -> chatbookIcon[ "ChatUnavailable", False ] },
+                    Dynamic @ activeQ,
+                    BaselinePosition -> Baseline,
+                    ImageSize        -> Automatic
                 ],
                 Style[
                     tr @ "ChatbarWolframDisabledInternet",
@@ -1709,12 +1708,11 @@ chatbarNoInternet[ activeQ_ ] :=
 Framed[
     Grid[
         { {
-            Style[
-                "\[WarningSign]",
-                "Text", "TextStyling",
-                FontWeight -> Bold,
-                FontColor  -> StandardYellow,
-                FontSize   -> 18
+            PaneSelector[
+                { True -> chatbookIcon[ "ChatUnavailableHover", False ], False -> chatbookIcon[ "ChatUnavailable", False ] },
+                Dynamic @ activeQ,
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic
             ],
             Style[
                 tr @ "ChatbarNoInternet",
