@@ -997,7 +997,7 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
 				Column[
 					{
 						tr @ "ChatbarOptionsStateTitle",
-						chatbarStateSetter[ nbo, Dynamic[ chatbarCell ] ]
+						chatbarStateSetterBar[ nbo, Dynamic[ chatbarCell ] ]
 					}
 				]
 			},
@@ -1426,16 +1426,16 @@ chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatbarStateSetter*)
+(*chatbarStateSetterBar*)
 
 
-chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
+chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
     DynamicModule[ { localSetting },
         Pane[
             Grid[
                 { 
 					Table[
-						chatbarStateSetterButton[nbo, Dynamic[chatbarCell], Dynamic[localSetting], state],
+						chatbarStateSetter[nbo, Dynamic[chatbarCell], Dynamic[localSetting], state],
 						{state, {"Full", "Minimized", "Off"}}
 					]
                 }
@@ -1445,7 +1445,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
         Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
 
-chatbarStateSetterButton[nbo_, Dynamic[chatbarCell_], Dynamic[localSetting_], state_] :=
+chatbarStateSetter[nbo_, Dynamic[chatbarCell_], Dynamic[localSetting_], state_] :=
 	Button[
 		Pane[
 			Column[
@@ -1478,7 +1478,7 @@ chatbarStateSetterButton[nbo_, Dynamic[chatbarCell_], Dynamic[localSetting_], st
 			ImageMargins -> 10,
 			BaselinePosition -> Baseline
 		],
-		setChatbarStateAndCloseChatbarMenu[nbo, chatbarCell, localSetting = state],
+		setChatbarState[nbo, chatbarCell, localSetting = state],
 		Appearance -> "Suppressed",
 		BaselinePosition -> Baseline,
 		BaseStyle -> {FontSize -> Inherited-1},
