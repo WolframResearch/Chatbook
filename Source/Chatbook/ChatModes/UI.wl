@@ -1084,41 +1084,54 @@ chatbarOptionsArrowDown[] :=
 $cutHeight = 26;
 $cutMargin = 2;
 $cutBlue = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor["#7FC7FB"] ];
-$cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#ED4047"] ];
+$cutYellow = LightDarkSwitched[ RGBColor["#FFBB45"], RGBColor["#FFBB45"] ];
+$cutOrange = LightDarkSwitched[ RGBColor["#FF8945"], RGBColor["#FF8945"] ];
+$cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#FB5351"] ];
+$cutGreen = LightDarkSwitched[ RGBColor["#00BF22"], RGBColor["#00BF22"] ];
 $cutBlueHover = LightDarkSwitched[ Darker[RGBColor[ "#128ED1" ], 0.25], Lighter[RGBColor["#7FC7FB"], 0.25]]; (* FIXME *)
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
 chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
-    Overlay[
-        {
-            Framed[
-                Graphics[ { },
-                    ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
-                    Background   -> If[ usage >= 1, $cutRed, $cutBlue ],
-                    ImageMargins -> 0
-                ],
-                Background     -> $cutWhite,
-                ContentPadding -> False,
-                FrameMargins   -> $cutMargin,
-                FrameStyle     -> If[ usage >= 1, $cutRed, $cutBlue ],
-                ImageSize      -> { width, $cutHeight },
-                RoundingRadius -> 2
-            ],
-            Framed[ Replace[ label, {
-                    tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
-                    else_ :> else
-                } ],
-                Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-                BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
-                ContentPadding -> False,
-                FrameMargins   -> 2,
-                FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-            ]
-        },
-        Alignment -> { Right, Center }
-    ]
+	With[
+		{
+			color = Which[
+				usage >= 0.95, $cutRed,
+				usage >= 0.80, $cutOrange,
+				usage >= 0.75, $cutYellow,
+				True, $cutBlue
+			]
+		},
+		Overlay[
+			{
+				Framed[
+					Graphics[ { },
+						ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
+						Background   -> color,
+						ImageMargins -> 0
+					],
+					Background     -> $cutWhite,
+					ContentPadding -> False,
+					FrameMargins   -> $cutMargin,
+					FrameStyle     -> color,
+					ImageSize      -> { width, $cutHeight },
+					RoundingRadius -> 2
+				],
+				Framed[ Replace[ label, {
+						tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
+						else_ :> else
+					} ],
+					Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
+					ContentPadding -> False,
+					FrameMargins   -> 2,
+					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+					ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
+				]
+			},
+			Alignment -> { Right, Center }
+		]
+	]
 
 
 chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
@@ -1343,7 +1356,7 @@ chatbarAddServiceCreditsThermometer[ "Pro", level : (1|2|3) ] :=
     Grid[
         { {
             Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutBlue }, chatbarUsageThermometerBase[ Switch[ level, 1, 50, 2, 120, 3, 250 ], 1, "+" ] ]
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 50, 2, 120, 3, 250 ], 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1354,7 +1367,7 @@ chatbarAddServiceCreditsThermometer[ "Research", level : (1|2|3) ] :=
     Grid[
         { {
             Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Research" ] ],
-            Block[ { $cutRed = $cutBlue }, chatbarUsageThermometerBase[ Switch[ level, 1, 30, 2, 60, 3, 120 ], 1, "+" ] ]
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 30, 2, 60, 3, 120 ], 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
