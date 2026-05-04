@@ -955,8 +955,10 @@ chatbarUserData[ ] :=
 $coWidth = 600;
 $coDividerColor = LightDarkSwitched[ GrayLevel[ 0.90 ], GrayLevel[0.29] ];
 $coBackground = LightDarkSwitched[ GrayLevel[ 1 ] ];
-$coTitleColor = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ];
-
+$coTitleColor = LightDarkSwitched[ RGBColor[ "#333333" ], RGBColor[ "#F5F5F5" ] ];
+$coTitleAccentColor = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ];
+$coBodyColor = LightDarkSwitched[ RGBColor[ "#646464" ], RGBColor[ "#E5E5E5" ] ];
+$coBodyColorHover = LightDarkSwitched[RGBColor["#898989"], RGBColor["#BFBFBF"]];
 
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
     chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ], chatbarUserData[ ] ]
@@ -974,7 +976,8 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
 							chatbarOptionsUser[ userdata ]
 						} },
 						ItemSize  -> Scaled[ 0.5 ],
-						Alignment -> { { Left, Right }, Baseline }
+						Alignment -> { { Left, Right }, Baseline },
+						BaseStyle -> { FontColor -> $coTitleColor }
 					],
 					Nothing
 				],
@@ -1005,6 +1008,7 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
         ],
         Background     -> $coBackground,
         BaseStyle      -> {
+        	FontColor -> $coBodyColor,
             FontFamily           -> "Source Sans Pro",
             FontSize             -> 15,
             ShowStringCharacters -> False
@@ -1023,7 +1027,7 @@ chatbarOptionsTitle[ userdata_ ] :=
 			" ",
 			Style[
 				Lookup[ userdata, "tier" ],
-				FontColor  -> $coTitleColor
+				FontColor  -> $coTitleAccentColor
 			]
     	}],
         FontFamily -> "Source Sans Pro",
@@ -1090,8 +1094,6 @@ $cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#FB5351"] ];
 $cutGreen = LightDarkSwitched[ RGBColor["#00BF22"], RGBColor["#00BF22"] ];
 $cutBlueHover = LightDarkSwitched[RGBColor["#75C2EB"], RGBColor["#669CBD"]]
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
-$cutGrayText = LightDarkSwitched[RGBColor["#646464"], RGBColor["#E5E5E5"]];
-$cutGrayTextHover = LightDarkSwitched[RGBColor["#898989"], RGBColor["#BFBFBF"]];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
 chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
@@ -1124,7 +1126,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
 						else_ :> else
 					} ],
 					Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
 					ContentPadding -> False,
 					FrameMargins   -> 2,
 					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
@@ -1267,7 +1269,7 @@ chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
 						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
 					],
 					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
-				}, BaseStyle -> {FontColor -> $cutGrayText} ]
+				}, BaseStyle -> {FontColor -> $coBodyColor} ]
 				,
 				Row[ {
 					StringForm[
@@ -1276,7 +1278,7 @@ chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
 						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
 					],
 					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
-				}, BaseStyle -> {FontColor -> $cutGrayTextHover}]
+				}, BaseStyle -> {FontColor -> $coBodyColorHover}]
 			]
 			,
 			MessageDialog[ "To do" ],
@@ -1300,7 +1302,7 @@ chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
 								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
 							],
 							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
-						}, BaseStyle -> {FontColor -> $cutGrayText} ]
+						}, BaseStyle -> {FontColor -> $coBodyColor} ]
 						,
 						Row[ {
 							StringForm[
@@ -1308,7 +1310,7 @@ chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
 								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
 							],
 							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
-						}, BaseStyle -> {FontColor -> $cutGrayTextHover}]
+						}, BaseStyle -> {FontColor -> $coBodyColorHover}]
 					
 					],
 					MessageDialog[ "To do" ],
