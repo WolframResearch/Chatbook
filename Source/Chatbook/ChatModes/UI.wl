@@ -903,15 +903,13 @@ Button[
     ],
     If[ activeQ && Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`Menu" ] === { }, (* only attach once *)
         AttachCell[
-            EvaluationBox[ ],
+           nbo,
             Cell[
                 BoxData @ ToBoxes @ DynamicModule[ { }, chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ] ], InheritScope -> True ],
                 "NotebookAssistant`Chatbar`Menu",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Right, Top },
-            Offset[ { 0, 5 }, Automatic ],
-            { Right, Bottom },
+            Sequence @@ $chatbarOptionsAttachment[],
             RemovalConditions -> { "MouseClickOutside" }
         ]
     ],
@@ -922,6 +920,12 @@ Button[
     ImageSize        -> Automatic,
     Method           -> "Preemptive"
 ]
+
+$chatbarOptionsAttachment[] := {
+	{Right, Bottom},
+	Offset[{-15., 55.} / AbsoluteCurrentValue[EvaluationNotebook[], Magnification], Automatic],
+	{Right, Bottom}
+};
 
 chatbarOptionsButton // endDefinition;
 
@@ -1341,7 +1345,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
                         Column[
                             {
                                 Setter[
-                                    Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
+                                    Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
                                     state,
                                     chatbarStateSetterThumbnail[ state ],
                                     Appearance       -> None,
@@ -1350,11 +1354,11 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
                                 Grid[
                                     { {
                                         RadioButton[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
+                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
                                             state
                                         ],
                                         Setter[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarStateAndCloseChatbarMenu[ nbo, chatbarCell, # ] ] ],
+                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
                                             state,
                                             tr[ "ChatbarOptions" <> state ],
                                             Appearance       -> None,
@@ -1388,7 +1392,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
     ];
 
 
-setChatbarStateAndCloseChatbarMenu[ nbo_, chatbarCell_, newValue_ ] := (
+setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
     Switch[ newValue,
         "Full",
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
@@ -1404,7 +1408,6 @@ setChatbarStateAndCloseChatbarMenu[ nbo_, chatbarCell_, newValue_ ] := (
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
     ];
-    NotebookDelete @ EvaluationCell[ ]
 )
 
 
@@ -1516,8 +1519,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     ,
                                     Grid[
                                         {
-                                            { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] },
-                                            { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] }
+                                            { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] },
+                                            { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] }
                                         },
                                         Alignment -> { Left, Baseline },
                                         Spacings  -> { 0, 0 }
