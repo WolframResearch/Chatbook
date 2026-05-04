@@ -953,11 +953,12 @@ chatbarUserData[ ] :=
 
 
 $coWidth = 600;
-$coDividerColor = LightDarkSwitched[ GrayLevel[ 0.90 ] ];
-$coInnerBackground = LightDarkSwitched[ GrayLevel[ 0.98 ] ];
-$coOuterBackground = LightDarkSwitched[ GrayLevel[ 1 ] ];
-$coTitleColor = LightDarkSwitched[ RGBColor[ 0.038, 0.346, 0.776 ] ];
-
+$coDividerColor = LightDarkSwitched[ GrayLevel[ 0.90 ], GrayLevel[0.29] ];
+$coBackground = LightDarkSwitched[ GrayLevel[ 1 ] ];
+$coTitleColor = LightDarkSwitched[ RGBColor[ "#333333" ], RGBColor[ "#F5F5F5" ] ];
+$coTitleAccentColor = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ];
+$coBodyColor = LightDarkSwitched[ RGBColor[ "#646464" ], RGBColor[ "#E5E5E5" ] ];
+$coBodyColorHover = LightDarkSwitched[RGBColor["#898989"], RGBColor["#BFBFBF"]];
 
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
     chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ], chatbarUserData[ ] ]
@@ -966,52 +967,53 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] :=
     Framed[
         Column[
-            {
-                If[ TrueQ @ userdata[ "credentialsQ" ],
-                    Framed[
-                        Column[
-                            {
-                                Grid[
-                                    { {
-                                        chatbarOptionsTitle[ userdata ],
-                                        chatbarOptionsUser[ userdata ]
-                                    } },
-                                    ItemSize  -> Scaled[ 0.5 ],
-                                    Alignment -> { { Left, Right }, Baseline }
-                                ],
-                                tr @ "ChatbarOptionsMonthlyUsage",
-                                chatbarUsageThermometer[ userdata ],
-                                chatbarWarningStripe[ userdata ],
-                                chatbarUpgradeStripe[ userdata ]
-                            },
-                            Spacings -> { Automatic, { Automatic, 1, 0.4, { 1.3 } } }
+			{
+				If[
+					TrueQ @ userdata[ "credentialsQ" ],
+					Grid[
+						{ {
+							chatbarOptionsTitle[ userdata ],
+							chatbarOptionsUser[ userdata ]
+						} },
+						ItemSize  -> Scaled[ 0.5 ],
+						Alignment -> { { Left, Right }, Baseline },
+						BaseStyle -> { FontColor -> $coTitleColor }
+					],
+					Nothing
+				],
+				If[
+					TrueQ @ userdata[ "credentialsQ" ],
+					Column[
+						{
+							tr @ "ChatbarOptionsMonthlyUsage",
+							chatbarUsageThermometer[ userdata ],
+							chatbarWarningStripe[ userdata ],
+							chatbarUpgradeStripe[ userdata ]
+						},
+						Spacings -> {Automatic, {0.9, {2 -> 0.6}}}
+					],
+					Nothing
+				],
+				Column[
+					{
+						tr @ "ChatbarOptionsStateTitle",
+						chatbarStateSetterBar[ nbo, Dynamic[ chatbarCell ] ]
+					}
+				]
+			},
+			Dividers   -> {False, Center},
+			FrameStyle -> $coDividerColor,
+			Spacings -> { Automatic, 2.5}
 
-                        ],
-                        Background     -> $coInnerBackground,
-                        FrameMargins   -> 10,
-                        FrameStyle     -> $coDividerColor,
-                        RoundingRadius -> 6
-                    ],
-                    Nothing
-                ],
-                Column[
-                    {
-                        tr @ "ChatbarOptionsStateTitle",
-                        chatbarStateSetter[ nbo, Dynamic[ chatbarCell ] ]
-                    }
-                ]
-            },
-            Dividers   -> Center,
-            FrameStyle -> $coDividerColor,
-            Spacings   -> 3
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> {
+        	FontColor -> $coBodyColor,
             FontFamily           -> "Source Sans Pro",
             FontSize             -> 15,
             ShowStringCharacters -> False
         },
-        FrameMargins   -> 13,
+        FrameMargins   -> 20,
         FrameStyle     -> $coDividerColor,
         ImageSize      -> { If[ TrueQ @ userdata[ "credentialsQ" ], $coWidth, Automatic ], Automatic },
         RoundingRadius -> 8
@@ -1019,8 +1021,15 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
 
 
 chatbarOptionsTitle[ userdata_ ] :=
-    Style[ Row[ { tr @ "ChatbarOptionsTitle", " ", Lookup[ userdata, "tier" ] } ],
-        FontColor  -> $coTitleColor,
+    Style[
+    	Row[{
+			tr @ "ChatbarOptionsTitle",
+			" ",
+			Style[
+				Lookup[ userdata, "tier" ],
+				FontColor  -> $coTitleAccentColor
+			]
+    	}],
         FontFamily -> "Source Sans Pro",
         FontSize   -> 16,
         FontWeight -> "DemiBold"
@@ -1028,7 +1037,22 @@ chatbarOptionsTitle[ userdata_ ] :=
 
 chatbarOptionsUser[ userdata_ ] :=
     ActionMenu[
-        Grid[ { { Pane[ userImage[ ], BaselinePosition -> Scaled[ 0.2 ] ], Lookup[ userdata, "username" ], " \[DownPointer]" } } ],
+        Grid[
+        	{ {
+        		Pane[
+        			RawBoxes[
+        				DynamicBox[FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ # ] ]&[
+                             LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]      
+                    	]
+                	],
+                	ImageSize -> Dynamic[{Automatic, 1.25*CurrentValue["FontLineHeight"]}],
+                	ImageSizeAction -> "ShrinkToFit",
+                	BaselinePosition -> Scaled[0.15]
+        		],
+        		Lookup[ userdata, "username" ],
+        		chatbarOptionsArrowDown[]
+        	} }
+        ],
         {
             tr[ "ChatbarOptionsSignOut" ] :> (
                 (* Sign out and close the attached cell *)
@@ -1042,6 +1066,19 @@ chatbarOptionsUser[ userdata_ ] :=
     ]
 
 
+chatbarOptionsArrowDown[] := 
+	Pane[
+		RawBoxes[
+			DynamicBox[FEPrivate`FrontEndResource[ "FEBitmaps", "ArrowDownIcon" ][ # ] ]&[
+				 LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]      
+			]
+		],
+		BaseStyle -> {Magnification -> Inherited * 0.8},
+		BaselinePosition -> Scaled[0]
+	]
+
+
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1050,42 +1087,55 @@ chatbarOptionsUser[ userdata_ ] :=
 
 $cutHeight = 26;
 $cutMargin = 2;
-$cutBlue = First @ LightDarkSwitched[ RGBColor[ 0.402, 0.617, 0.84 ] ];
-$cutRed = First @ LightDarkSwitched[ RGBColor[ 0.899, 0.286, 0.332 ] ];
-$cutBlueHover = $coTitleColor;
+$cutBlue = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor["#7FC7FB"] ];
+$cutYellow = LightDarkSwitched[ RGBColor["#FFBB45"], RGBColor["#FFBB45"] ];
+$cutOrange = LightDarkSwitched[ RGBColor["#FF8945"], RGBColor["#FF8945"] ];
+$cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#FB5351"] ];
+$cutGreen = LightDarkSwitched[ RGBColor["#00BF22"], RGBColor["#00BF22"] ];
+$cutBlueHover = LightDarkSwitched[RGBColor["#75C2EB"], RGBColor["#669CBD"]]
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
 chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
-    Overlay[
-        {
-            Framed[
-                Graphics[ { },
-                    ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
-                    Background   -> If[ usage >= 1, $cutRed, $cutBlue ],
-                    ImageMargins -> 0
-                ],
-                Background     -> $cutWhite,
-                ContentPadding -> False,
-                FrameMargins   -> $cutMargin,
-                FrameStyle     -> If[ usage >= 1, $cutRed, $cutBlue ],
-                ImageSize      -> { width, $cutHeight },
-                RoundingRadius -> 2
-            ],
-            Framed[ Replace[ label, {
-                    tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
-                    else_ :> else
-                } ],
-                Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-                BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
-                ContentPadding -> False,
-                FrameMargins   -> 2,
-                FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-            ]
-        },
-        Alignment -> { Right, Center }
-    ]
+	With[
+		{
+			color = Which[
+				usage >= 0.95, $cutRed,
+				usage >= 0.80, $cutOrange,
+				usage >= 0.75, $cutYellow,
+				True, $cutBlue
+			]
+		},
+		Overlay[
+			{
+				Framed[
+					Graphics[ { },
+						ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
+						Background   -> color,
+						ImageMargins -> 0
+					],
+					Background     -> $cutWhite,
+					ContentPadding -> False,
+					FrameMargins   -> $cutMargin,
+					FrameStyle     -> color,
+					ImageSize      -> { width, $cutHeight },
+					RoundingRadius -> 2
+				],
+				Framed[ Replace[ label, {
+						tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
+						else_ :> else
+					} ],
+					Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+					ContentPadding -> False,
+					FrameMargins   -> 2,
+					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+					ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
+				]
+			},
+			Alignment -> { Right, Center }
+		]
+	]
 
 
 chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
@@ -1101,7 +1151,7 @@ chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
                     If[ TrueQ[ ellipsisQ ],
                         With[ {
                             xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
-                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coInnerBackground ]
+                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
                             },
                             {
                                 Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
@@ -1188,7 +1238,7 @@ chatbarWarningStripe[ tier: "Basic" | "Pro", usage_, daysToReset_ ] :=
     If[ usage >= 1,
         Grid[
             { {
-                "\[WarningSign]",
+				Pane[chatbookIcon["ChatbarMenuAlert", False], BaselinePosition -> Scaled[0.2]],
                 tr @ "ChatbarOptionsLimit",
                 Style[ StringTemplate[ trRaw @ "ChatbarOptionsLimitReset" ][ daysToReset ], FontColor -> StandardGray ]
             } },
@@ -1209,32 +1259,68 @@ chatbarUpgradeStripe[ userdata_ ] :=
     chatbarUpgradeStripe @@ Lookup[ userdata, { "tier", "usage" } ]
 
 chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
-    Button[
-        Style[
-            Row[ { tr @ "ChatbarOptionsUpgradeProResearch" Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ] } ],
-            FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], $cutBlueHover, $cutBlue ] ]
-        ],
-        MessageDialog[ "To do" ],
-        Appearance       -> None,
-        BaseStyle        -> { },
-        DefaultBaseStyle -> { },
-        ImageSize        -> Automatic
-    ]
+    MouseAppearance[
+		Button[
+			Mouseover[
+				Row[ {
+					StringForm[
+						FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate"],
+						Style[tr["ChatbarOptionsPro"], FontColor -> $cutBlue, FontWeight -> "DemiBold"],
+						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
+					],
+					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+				}, BaseStyle -> {FontColor -> $coBodyColor} ]
+				,
+				Row[ {
+					StringForm[
+						FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate"],
+						Style[tr["ChatbarOptionsPro"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"],
+						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
+					],
+					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+				}, BaseStyle -> {FontColor -> $coBodyColorHover}]
+			]
+			,
+			MessageDialog[ "To do" ],
+			Appearance       -> None,
+			BaseStyle        -> { },
+			DefaultBaseStyle -> { },
+			ImageSize        -> Automatic
+		],
+		"LinkHand"
+	]
 
 chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
     Grid[
         { {
-            Button[
-                Style[
-                    Row[ { tr @ "ChatbarOptionsUpgradeResearch", Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ] } ],
-                    FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], $cutBlueHover, $cutBlue ] ]
-                ],
-                MessageDialog[ "To do" ],
-                Appearance       -> None,
-                BaseStyle        -> { },
-                DefaultBaseStyle -> { },
-                ImageSize        -> Automatic
-            ],
+            MouseAppearance[
+				Button[
+					Mouseover[
+						Row[ {
+							StringForm[
+								FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTemplate"],
+								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
+							],
+							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+						}, BaseStyle -> {FontColor -> $coBodyColor} ]
+						,
+						Row[ {
+							StringForm[
+								FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTemplate"],
+								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
+							],
+							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+						}, BaseStyle -> {FontColor -> $coBodyColorHover}]
+					
+					],
+					MessageDialog[ "To do" ],
+					Appearance       -> None,
+					BaseStyle        -> { },
+					DefaultBaseStyle -> { },
+					ImageSize        -> Automatic
+				],
+				"LinkHand"
+			],
             Sequence @@ If[ usage >= 1, { Spacer[ 20 ], chatbarAddServiceCreditsButton[ tier ] }, { } ]
         } },
         Alignment -> { Left, Baseline }
@@ -1251,7 +1337,11 @@ chatbarUpgradeStripe[ tier: "Research", usage_ ] :=
 
 chatbarAddServiceCreditsButton[ tier_ ] :=
     Button[
-        Row[ { tr @ "ChatbarOptionsExtendUsage", " \[DownPointer]" } ],
+        Row[ {
+        	tr @ "ChatbarOptionsExtendUsage",
+        	"  ",
+        	chatbarOptionsArrowDown[]
+		} ],
         AttachCell[
             EvaluationBox[ ],
             chatbarAddServiceCreditsDisplay[ tier ],
@@ -1269,7 +1359,7 @@ chatbarAddServiceCreditsThermometer[ "Pro", level : (1|2|3) ] :=
     Grid[
         { {
             Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutBlue }, chatbarUsageThermometerBase[ Switch[ level, 1, 50, 2, 120, 3, 250 ], 1, "+" ] ]
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 50, 2, 120, 3, 250 ], 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1280,7 +1370,7 @@ chatbarAddServiceCreditsThermometer[ "Research", level : (1|2|3) ] :=
     Grid[
         { {
             Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Research" ] ],
-            Block[ { $cutRed = $cutBlue }, chatbarUsageThermometerBase[ Switch[ level, 1, 30, 2, 60, 3, 120 ], 1, "+" ] ]
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 30, 2, 60, 3, 120 ], 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1303,7 +1393,7 @@ chatbarAddServiceCreditsDisplay[ tier: "Pro" ] :=
             ItemSize   -> { { All, Fit } },
             Spacings   -> { 1, { .7, .7, .7, 2 } }
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro" },
         FrameMargins   -> 10,
         FrameStyle     -> $coDividerColor,
@@ -1325,7 +1415,7 @@ chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
             ItemSize  -> { { All, Fit } },
             ItemStyle -> { { $cutBlue, None }, None }
         ],
-        Background     -> $coOuterBackground,
+        Background     -> $coBackground,
         BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro" },
         FrameMargins   -> 10,
         FrameStyle     -> $coDividerColor,
@@ -1336,63 +1426,64 @@ chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatbarStateSetter*)
+(*chatbarStateSetterBar*)
 
 
-chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ] ] :=
+chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
     DynamicModule[ { localSetting },
-        Framed[
+        Pane[
             Grid[
-                { Table[
-                    Pane[
-                        Column[
-                            {
-                                Setter[
-                                    Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                    state,
-                                    chatbarStateSetterThumbnail[ state ],
-                                    Appearance       -> None,
-                                    BaselinePosition -> Baseline
-                                ],
-                                Grid[
-                                    { {
-                                        RadioButton[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                            state
-                                        ],
-                                        Setter[
-                                            Dynamic[ localSetting, Function[ localSetting = #; setChatbarState[ nbo, chatbarCell, # ] ] ],
-                                            state,
-                                            tr[ "ChatbarOptions" <> state ],
-                                            Appearance       -> None,
-                                            BaselinePosition -> Baseline
-                                        ]
-                                    } },
-                                    Alignment        -> Left,
-                                    BaselinePosition -> { 1, 2 }
-                                ]
-                            },
-                            Alignment        -> Center,
-                            BaselinePosition -> 2,
-                            ItemSize         -> Scaled[ 1 ]
-                        ],
-                        { 100, 70 },
-                        Alignment    -> { Bottom, Center },
-                        ImageMargins -> { { 5, 5 }, { 3, 5 } }
-                    ],
-                    { state, { "Full", "Minimized", "Off" } }
-                ]
-                },
-                Alignment  -> { Center, Baseline },
-                Dividers   -> { Center, Center },
-                FrameStyle -> $coDividerColor
+                { 
+					Table[
+						chatbarStateSetter[nbo, Dynamic[chatbarCell], Dynamic[localSetting], state],
+						{state, {"Full", "Minimized", "Off"}}
+					]
+                }
             ],
-            FrameStyle     -> $coDividerColor,
-            ImageMargins   -> { { 10, 0 }, { 0, 0 } },
-            RoundingRadius -> 8
+            ImageMargins -> 0
         ],
         Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
+
+chatbarStateSetter[nbo_, Dynamic[chatbarCell_], Dynamic[localSetting_], state_] :=
+	Button[
+		Pane[
+			Column[
+				{
+					Dynamic[
+						If[CurrentValue["MouseOver"],
+							chatbookIcon[ "ChatbarThumbnail" <> state <> "Hover" ],
+							If[localSetting === state,
+								chatbookIcon[ "ChatbarThumbnail" <> state <> "Selected" ],
+								chatbookIcon[ "ChatbarThumbnail" <> state]
+							]
+						]
+					],
+					Grid[
+						{{
+							RadioButton[
+								Dynamic[localSetting],
+								state
+							],
+							tr["ChatbarOptions" <> state]
+						}},
+						Alignment -> Left,
+						BaselinePosition -> {1,2}
+					]
+				},
+				Alignment -> Center,
+				BaselinePosition -> 2,
+				Spacings -> 0.7
+			],
+			ImageMargins -> 10,
+			BaselinePosition -> Baseline
+		],
+		setChatbarState[nbo, chatbarCell, localSetting = state],
+		Appearance -> "Suppressed",
+		BaselinePosition -> Baseline,
+		BaseStyle -> {FontSize -> Inherited-1},
+		DefaultBaseStyle -> {}
+	]
 
 
 setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
@@ -1412,28 +1503,6 @@ setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
     ];
 )
-
-
-chatbarStateSetterThumbnail[ state_ ] :=
-    Graphics[
-        {
-            {
-                FaceForm[ None ],
-                EdgeForm[ GrayLevel[ 0.8 ] ],
-                Rectangle[ { 0, 0 }, { 7, 4 }, RoundingRadius -> 0.3 ]
-            },
-            FaceForm[ GrayLevel[ 0.97 ] ],
-            EdgeForm[ GrayLevel[ 0.65 ] ],
-            Replace[ state, {
-                "Minimized" :> Rectangle[ { 5.7, 0.4 }, { 6.5, 1.2 }, RoundingRadius -> 0.2 ],
-                "Full"      :> Rectangle[ { 1, 0.5 }, { 6, 1.5 }, RoundingRadius -> 0.5 ],
-                _           :> { }
-            } ]
-        },
-        ImageSize        -> 7*{ 11, 5 },
-        PlotRange        -> { { 0, 7 }, { 0, 3 } },
-        PlotRangePadding -> { { 1, 1 }, { 1, 0 } }/10.
-    ]
 
 
 
