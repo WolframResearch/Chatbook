@@ -1046,7 +1046,7 @@ chatbarOptionsUser[ userdata_ ] :=
                 	BaselinePosition -> Scaled[0.15]
         		],
         		Lookup[ userdata, "username" ],
-        		" \[DownPointer]"
+        		chatbarOptionsArrowDown[]
         	} }
         ],
         {
@@ -1060,6 +1060,19 @@ chatbarOptionsUser[ userdata_ ] :=
         DefaultBaseStyle -> { },
         Method           -> "Queued"
     ]
+
+
+chatbarOptionsArrowDown[] := 
+	Pane[
+		RawBoxes[
+			DynamicBox[FEPrivate`FrontEndResource[ "FEBitmaps", "ArrowDownIcon" ][ # ] ]&[
+				 LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]      
+			]
+		],
+		BaseStyle -> {Magnification -> Inherited * 0.8},
+		BaselinePosition -> Scaled[0]
+	]
+
 
 
 
@@ -1308,7 +1321,11 @@ chatbarUpgradeStripe[ tier: "Research", usage_ ] :=
 
 chatbarAddServiceCreditsButton[ tier_ ] :=
     Button[
-        Row[ { tr @ "ChatbarOptionsExtendUsage", " \[DownPointer]" } ],
+        Row[ {
+        	tr @ "ChatbarOptionsExtendUsage",
+        	"  ",
+        	chatbarOptionsArrowDown[]
+		} ],
         AttachCell[
             EvaluationBox[ ],
             chatbarAddServiceCreditsDisplay[ tier ],
