@@ -1088,8 +1088,10 @@ $cutYellow = LightDarkSwitched[ RGBColor["#FFBB45"], RGBColor["#FFBB45"] ];
 $cutOrange = LightDarkSwitched[ RGBColor["#FF8945"], RGBColor["#FF8945"] ];
 $cutRed = LightDarkSwitched[ RGBColor["#ED4047"], RGBColor["#FB5351"] ];
 $cutGreen = LightDarkSwitched[ RGBColor["#00BF22"], RGBColor["#00BF22"] ];
-$cutBlueHover = LightDarkSwitched[ Darker[RGBColor[ "#128ED1" ], 0.25], Lighter[RGBColor["#7FC7FB"], 0.25]]; (* FIXME *)
+$cutBlueHover = LightDarkSwitched[RGBColor["#75C2EB"], RGBColor["#669CBD"]]
 $cutGray = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
+$cutGrayText = LightDarkSwitched[RGBColor["#646464"], RGBColor["#E5E5E5"]];
+$cutGrayTextHover = LightDarkSwitched[RGBColor["#898989"], RGBColor["#BFBFBF"]];
 $cutWhite = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
 chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
@@ -1257,7 +1259,6 @@ chatbarUpgradeStripe[ userdata_ ] :=
 chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
     MouseAppearance[
 		Button[
-			(* There might be a simpler way to do this, but this'll do for a start *)
 			Mouseover[
 				Row[ {
 					StringForm[
@@ -1266,16 +1267,16 @@ chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
 						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
 					],
 					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
-				} ]
+				}, BaseStyle -> {FontColor -> $cutGrayText} ]
 				,
 				Row[ {
 					StringForm[
 						FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate"],
-						Style[tr["ChatbarOptionsPro"], FontWeight -> "DemiBold"],
-						Style[tr["ChatbarOptionsResearch"], FontWeight -> "DemiBold"]
+						Style[tr["ChatbarOptionsPro"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"],
+						Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
 					],
-					Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ]
-				}, BaseStyle -> {FontColor -> $cutBlueHover}]
+					Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+				}, BaseStyle -> {FontColor -> $cutGrayTextHover}]
 			]
 			,
 			MessageDialog[ "To do" ],
@@ -1299,15 +1300,15 @@ chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
 								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlue, FontWeight -> "DemiBold"]
 							],
 							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
-						} ]
+						}, BaseStyle -> {FontColor -> $cutGrayText} ]
 						,
 						Row[ {
 							StringForm[
 								FrontEndResource["ChatbookStrings", "ChatbarOptionsUpgradeTemplate"],
-								Style[tr["ChatbarOptionsResearch"], FontWeight -> "DemiBold"]
+								Style[tr["ChatbarOptionsResearch"], FontColor -> $cutBlueHover, FontWeight -> "DemiBold"]
 							],
-							Style[ "\[ThickSpace]\[RightGuillemet]", FontWeight -> "DemiBold" ]
-						}, BaseStyle -> {FontColor -> $cutBlueHover}]
+							Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+						}, BaseStyle -> {FontColor -> $cutGrayTextHover}]
 					
 					],
 					MessageDialog[ "To do" ],
