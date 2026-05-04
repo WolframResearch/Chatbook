@@ -921,17 +921,14 @@ Button[
     Method           -> "Preemptive"
 ]
 
-$chatbarOptionsAttachment[] /; $OperatingSystem === "MacOSX" := {
-	{Right, Bottom},
-	Offset[{-15., 55.} / AbsoluteCurrentValue[EvaluationNotebook[], Magnification], Automatic],
-	{Right, Bottom}
-};
-
-$chatbarOptionsAttachment[] := {
-    {Right, Bottom},
-    Offset[{-13., 45.} / AbsoluteCurrentValue[EvaluationNotebook[], Magnification], Automatic],
-    {Right, Bottom}
-};
+$chatbarOptionsAttachment[] := 
+	With[{offset = If[$OperatingSystem === "MacOSX", {-15., 55.}, {-13., 45.}]},
+		{
+			{Right, Bottom},
+			Offset[offset / AbsoluteCurrentValue[EvaluationNotebook[], Magnification], Automatic],
+			{Right, Bottom}
+		}
+	]
 
 chatbarOptionsButton // endDefinition;
 
