@@ -34,64 +34,6 @@ $displayedPreferencesPages := $preferencesPages;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Scope Utilities*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*expandScope*)
-expandScope // beginDefinition;
-expandScope // Attributes = { HoldFirst };
-
-expandScope[ expr_ ] := ReleaseHold[
-    HoldComplete @ expr /.
-        OwnValues @ $preferencesScope /.
-            HoldPattern @ $scopePlaceholder :> $preferencesScope
-];
-
-expandScope // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*scopeInitialization*)
-scopeInitialization // beginDefinition;
-
-scopeInitialization[ Initialization :> init_ ] :=
-    expandScope[ Initialization :> Block[ { $scopePlaceholder := $preferencesScope }, init ] ];
-
-scopeInitialization /: RuleDelayed[ Initialization, scopeInitialization[ init_ ] ] :=
-    scopeInitialization[ Initialization :> init ];
-
-scopeInitialization // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*scopedDynamic*)
-scopedDynamic // beginDefinition;
-scopedDynamic // Attributes = { HoldFirst };
-
-scopedDynamic[ expr_, handlers0: Except[ _Rule|_RuleDelayed ], args___ ] :=
-    With[ { handlers = handlers0 /. (f_ &) :> (Block[ { $scopePlaceholder = $preferencesScope }, f ] &) },
-        expandScope @ Dynamic[ expr, handlers, args ]
-    ];
-
-scopedDynamic[ args___ ] :=
-    expandScope @ Dynamic @ args;
-
-scopedDynamic // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*scopedTrackedDynamic*)
-scopedTrackedDynamic // beginDefinition;
-scopedTrackedDynamic // Attributes = { HoldFirst };
-
-scopedTrackedDynamic[ expr_, args___ ] :=
-    expandScope @ trackedDynamic[ Block[ { $scopePlaceholder = $preferencesScope }, expr ], args ];
-
-scopedTrackedDynamic // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Main*)
 
 (* ::**************************************************************************************************************:: *)
@@ -105,7 +47,7 @@ createPreferencesContent[ ] := Enclose[
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
         tabs = ConfirmMatch[
             createTabViewTabs[ ],
-            { { _String, _Dynamic|_String -> _Dynamic|_DynamicModule }.. },
+            { { _String, _Dynamic|_String -> _Pane|_Dynamic|_DynamicModule }.. },
             "Tabs"
         ];
 
@@ -142,8 +84,8 @@ createPreferencesContent[ ] := Enclose[
                 Spacings   -> { 0, 0.7 }
             ],
 
-            Initialization :> (tab = Replace[ CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]),
-            Deinitialization :> (CurrentChatSettings[ $preferencesScope, "CurrentPreferencesTab" ] = tab)
+            Initialization :> (tab = Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]),
+            Deinitialization :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
     ],
@@ -190,16 +132,16 @@ createTabViewTab // endDefinition;
 preferencesContent // beginDefinition;
 
 (* Content for the "Notebooks" tab: *)
-preferencesContent[ "Notebooks" ] := scopedTrackedDynamic[ notebookSettingsPanel[ ], { "Models" } ];
+preferencesContent[ "Notebooks" ] := notebookSettingsPanel[ ];
 
 (* Content for the "Personas" tab: *)
-preferencesContent[ "Personas" ] := scopedTrackedDynamic[ personaSettingsPanel[ ], { "Personas" } ];
+preferencesContent[ "Personas" ] := personaSettingsPanel[ ];
 
 (* Content for the "Services" tab: *)
-preferencesContent[ "Services" ] := scopedTrackedDynamic[ servicesSettingsPanel[ ], { "Models", "Services" } ];
+preferencesContent[ "Services" ] := servicesSettingsPanel[ ];
 
 (* Content for the "Tools" tab: *)
-preferencesContent[ "Tools" ] := scopedTrackedDynamic[ toolSettingsPanel[ ], { "Personas" } ];
+preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
 
 preferencesContent // endDefinition;
 
@@ -297,7 +239,7 @@ If[ $preferencesContentEnabledQ,
     Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
 
 disabledAIOverlay[ content_, localAIOnlyQ_ ] :=
-If[ localAIOnlyQ,
+If[ TrueQ @ localAIOnlyQ, (* Cloud may not be aware of new licence bit *)
     Grid[
         {
             { disabledAIOverlayBanner[ ] },
@@ -337,9 +279,9 @@ notebookSettingsPanel[ ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
+        Dynamic @ display,
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
-        Initialization :> scopeInitialization[ display = createNotebookSettingsPanel[ ] ],
+        Initialization :> (display = disabledAIOverlay[ createNotebookSettingsPanel[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
         SynchronousInitialization -> False
     ];
 
@@ -350,7 +292,9 @@ notebookSettingsPanel // endDefinition;
 (*createNotebookSettingsPanel*)
 createNotebookSettingsPanel // beginDefinition;
 
-createNotebookSettingsPanel[ ] := Enclose[
+(* Cache the content in case panel is redrawn: *)
+createNotebookSettingsPanel[ ] := createNotebookSettingsPanel[ ] = Enclose[
+DynamicModule[ { globalPrefs },
     Module[
         {
             defaultSettingsContent,
@@ -362,8 +306,8 @@ createNotebookSettingsPanel[ ] := Enclose[
 
         (* Retrieve and confirm the content for default settings: *)
         defaultSettingsContent = ConfirmMatch[
-            scopedTrackedDynamic[ makeDefaultSettingsContent[ ], "Preferences" ],
-            _Dynamic,
+            makeDefaultSettingsContent[ Dynamic @ globalPrefs ],
+            Except[ _makeDefaultSettingsContent ],
             "DefaultSettings"
         ];
 
@@ -372,7 +316,7 @@ createNotebookSettingsPanel[ ] := Enclose[
 
         (* Retrieve and confirm the content for personalization: *)
         instructionsContent = ConfirmMatch[
-            scopedTrackedDynamic[ makeInstructionsContent[ ], "Preferences" ],
+            makeInstructionsContent[ Dynamic @ globalPrefs ],
             Except[ _makeInstructionsContent ],
             "Instructions"
         ];
@@ -383,7 +327,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         (* Retrieve and confirm the content for the chat notebook interface,
            ensuring it is not an error from makeInterfaceContent: *)
         interfaceContent = ConfirmMatch[
-            makeInterfaceContent[ ],
+            makeInterfaceContent[ Dynamic @ globalPrefs ],
             Except[ _makeInterfaceContent ],
             "Interface"
         ];
@@ -394,7 +338,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         (* Retrieve and confirm the content for the chat notebook features,
            ensuring it is not an error from makeFeaturesContent: *)
         featuresContent = ConfirmMatch[
-            makeFeaturesContent[ ],
+            makeFeaturesContent[ Dynamic @ globalPrefs ],
             Except[ _makeFeaturesContent ],
             "Features"
         ];
@@ -421,13 +365,15 @@ createNotebookSettingsPanel[ ] := Enclose[
             Spacings  -> { 0, 0.7 }
         ];
 
-        (* Cache the content in case panel is redrawn: *)
-        createNotebookSettingsPanel[ ] =  Pane[
+        
+        Pane[
             content,
             FrameMargins -> { { 8, 8 }, { 13, 13 } },
             Spacings     -> { 0, 1.5 }
         ]
     ],
+    Initialization :> (globalPrefs = CurrentChatSettings[ $FrontEnd ]) (* load values once and pass them into individual controls for initialization *)
+],
     throwInternalFailure
 ];
 
@@ -438,19 +384,19 @@ createNotebookSettingsPanel // endDefinition;
 (*makeDefaultSettingsContent*)
 makeDefaultSettingsContent // beginDefinition;
 
-makeDefaultSettingsContent[ ] := Enclose[
+makeDefaultSettingsContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
     Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style|Nothing, "AssistanceCheckbox" ];
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ globalPrefs ], _Style|Nothing, "AssistanceCheckbox" ];
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
-        personaSelector = ConfirmMatch[ makePersonaSelector[ ], _Dynamic, "PersonaSelector" ];
+        personaSelector = makePersonaSelector[ Dynamic @ globalPrefs ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
-        modelSelector = ConfirmMatch[ makeModelSelector[ "Notebooks" ], _Dynamic, "ModelSelector" ];
+        modelSelector = makeModelSelector[ "Notebooks" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
-        temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Style, "TemperatureInput" ];
+        temperatureInput = ConfirmMatch[ makeTemperatureInput[ Dynamic @ globalPrefs ], _Style, "TemperatureInput" ];
         (* The openAICompletionURLInput is an input field for setting URL used for API calls to OpenAI: *)
         openAICompletionURLInput = ConfirmMatch[
-            makeOpenAICompletionURLInput[ ],
+            makeOpenAICompletionURLInput[ Dynamic @ globalPrefs ],
             _Style|Nothing, (* Returns Nothing if we're relying on LLMServices for API requests *)
             "OpenAICompletionURLInput"
         ];
@@ -477,28 +423,33 @@ makeDefaultSettingsContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makePersonaSelector*)
 makePersonaSelector // beginDefinition;
-makePersonaSelector[ ] := scopedTrackedDynamic[ makePersonaSelector0[ ], { "Personas" } ];
+makePersonaSelector[ Dynamic[ globalPrefs_ ] ] := makePersonaSelector0[ Dynamic @ globalPrefs ];
 makePersonaSelector // endDefinition;
 
 makePersonaSelector0 // beginDefinition;
 
-(* Top-level function without arguments, calls the version with personas from GetPersonasAssociation *)
-makePersonaSelector0[ ] :=
-    makePersonaSelector0 @ GetPersonasAssociation[ "IncludeHidden" -> False ];
+(* Top-level function, calls the version with personas from GetPersonasAssociation *)
+makePersonaSelector0[ Dynamic[ globalPrefs_ ] ] :=
+    makePersonaSelector0[ Dynamic @ globalPrefs, GetPersonasAssociation[ "IncludeHidden" -> False ] ];
 
 (* Overload of makePersonaSelector0 that takes an Association of personas,
    converts it to a list of labels for PopupMenu *)
-makePersonaSelector0[ personas_Association? AssociationQ ] :=
-    makePersonaSelector0 @ KeyValueMap[ personaPopupLabel, personas ];
+makePersonaSelector0[ Dynamic[ globalPrefs_ ], personas_Association? AssociationQ ] :=
+    makePersonaSelector0[ Dynamic @ globalPrefs, KeyValueMap[ personaPopupLabel, personas ] ];
 
 (* Overload of makePersonaSelector0 that takes a list of rules where each rule is a string to an association,
    creates a PopupMenu with this list *)
-makePersonaSelector0[ personas: { (_String -> _).. } ] :=
+makePersonaSelector0[ Dynamic[ globalPrefs_ ], personas: { (_String -> _).. } ] :=
     highlightControl[
         Row @ {
             tr[ "PreferencesContentPersonaLabel" ],
             Spacer[ 3 ],
-            PopupMenu[ scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ], personas ]
+            prefsPopupMenu[
+                Function[ CurrentChatSettings[ $FrontEnd, "LLMEvaluator" ] = # ],
+                personas,
+                Hold @ Lookup[ globalPrefs, "LLMEvaluator" ],
+                MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
+            ]
         },
         "Notebooks",
         "LLMEvaluator"
@@ -523,7 +474,7 @@ personaPopupLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeModelSelector*)
 makeModelSelector // beginDefinition;
-makeModelSelector[ type_String ] := scopedTrackedDynamic[ makeModelSelector0[ type ], { "Models", "Services" } ];
+makeModelSelector[ type_String ] := makeModelSelector0[ type ];
 makeModelSelector // endDefinition;
 
 
@@ -541,7 +492,7 @@ makeModelSelector0[ type_String ] :=
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelNameSelector, highlight },
 
-        default = CurrentChatSettings[ $preferencesScope, "Model" ];
+        default = CurrentChatSettings[ $FrontEnd, "Model" ];
         service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
         model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
         state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
@@ -597,7 +548,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
             "Model"
         ],
 
-        Initialization :> scopeInitialization[
+        Initialization :> (
             modelNameSelector = catchAlways @ makeModelNameSelector[
                 Dynamic @ service,
                 Dynamic @ model,
@@ -605,7 +556,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                 Dynamic @ state
             ];
             state = "Loaded";
-        ],
+        ),
         SynchronousInitialization -> False,
         SynchronousUpdating       -> False,
         UnsavedVariables          :> { state }
@@ -630,7 +581,7 @@ makeServiceSelector[
     Dynamic[ state_ ],
     services_
 ] :=
-    DynamicModule[ { changedValueQ = False, displayValue = expandScope @ extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] },
+    DynamicModule[ { changedValueQ = False, displayValue = extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] },
         DynamicWrapper[
             PopupMenu[
                 Dynamic[ displayValue, Function[ If[ displayValue =!= #, displayValue = #; changedValueQ = True ] ] ],
@@ -677,21 +628,17 @@ serviceSelectCallback[
     model = getServiceDefaultModel @ selected;
 
     (* Store the service/model in FE settings: *)
-    CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+    CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
 
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
-        expandScope[
-            Block[ { $scopePlaceholder := $preferencesScope },
-                modelNameSelector = makeModelNameSelector[
-                    Dynamic @ service,
-                    Dynamic @ model,
-                    Dynamic @ modelNameSelector,
-                    Dynamic @ state
-                ]
+            modelNameSelector = makeModelNameSelector[
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelNameSelector,
+                Dynamic @ state
             ];
-            state = "Loaded"
-        ],
+            state = "Loaded",
         modelNameSelector = makeModelNameSelector[
             Dynamic @ service,
             Dynamic @ model,
@@ -752,20 +699,20 @@ makeModelNameSelector[
             ]
         ];
 
-        current  = extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ];
+        current  = extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ];
         default  = ConfirmBy[ getServiceDefaultModel @ service, StringQ, "DefaultName" ];
         fallback = <| "Service" -> service, "Name" -> default |>;
 
         If[ ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
-            CurrentChatSettings[ $preferencesScope, "Model" ] = fallback
+            CurrentChatSettings[ $FrontEnd, "Model" ] = fallback
         ];
 
         DynamicModule[
             {
                 changedValueQ = False,
-                displayValue = expandScope @ Replace[
-                    extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
-                    Except[ _String ] :> (CurrentChatSettings[ $preferencesScope, "Model" ] = fallback)
+                displayValue = Replace[
+                    extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ],
+                    Except[ _String ] :> (CurrentChatSettings[ $FrontEnd, "Model" ] = fallback)
                 ]
             },
             DynamicWrapper[
@@ -797,14 +744,12 @@ modelNameInputField // beginDefinition;
 modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
     prefsInputField[
         None,
-        scopedDynamic[
-            Replace[
-                extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
-                Except[ _String ] :> ""
-            ],
-            { None, modelSelectCallback[ Dynamic @ service, Dynamic @ model ] }
+        Function[
+            CurrentChatSettings[ $FrontEnd, "Model" ] = #;
+            modelSelectCallback[ Dynamic @ service, Dynamic @ model ]
         ],
         String,
+        Hold @ Replace[ extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ], Except[ _String ] :> "" ],
         ImageSize -> { 200, Automatic }
     ];
 
@@ -865,12 +810,12 @@ modelSelectCallback[
     model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
-    CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+    CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
 
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
-    CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Append[
-        CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ],
+    CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
+        CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ],
         service -> model
     ]
     ,
@@ -884,19 +829,17 @@ modelSelectCallback // endDefinition;
 (*makeAssistanceCheckbox*)
 makeAssistanceCheckbox // beginDefinition;
 
-makeAssistanceCheckbox[ ] :=
+makeAssistanceCheckbox[ Dynamic[ globalPrefs_ ] ] :=
     If[ TrueQ @ $cloudNotebooks,
         Nothing,
         highlightControl[
             prefsCheckbox[
-                scopedDynamic[
-                    TrueQ @ CurrentChatSettings[ $preferencesScope, "Assistance" ],
-                    (CurrentChatSettings[ $preferencesScope, "Assistance" ] = #1) &
-                ],
+                Function[ CurrentChatSettings[ $FrontEnd, "Assistance" ] = # ],
                 infoTooltip[
                     tr[ "PreferencesContentEnableAssistanceLabel" ],
                     tr[ "PreferencesContentEnableAssistanceTooltip" ]
-                ]
+                ],
+                Hold @ TrueQ @ Lookup[ globalPrefs, "Assistance" ]
             ],
             "Notebooks",
             "Assistance"
@@ -910,17 +853,12 @@ makeAssistanceCheckbox // endDefinition;
 (*makeTemperatureInput*)
 makeTemperatureInput // beginDefinition;
 
-makeTemperatureInput[ ] := highlightControl[
+makeTemperatureInput[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     prefsInputField[
         tr[ "PreferencesContentTemperatureLabel" ],
-        scopedDynamic[
-            CurrentChatSettings[ $preferencesScope, "Temperature" ],
-            {
-                None,
-                If[ NumberQ @ #, CurrentChatSettings[ $preferencesScope, "Temperature" ] = # ] &
-            }
-        ],
+        Function[ CurrentChatSettings[ $FrontEnd, "Temperature" ] = # ],
         Number,
+        Hold @ Lookup[ globalPrefs, "Temperature" ],
         ImageSize -> { 50, Automatic }
     ],
     "Notebooks",
@@ -934,23 +872,18 @@ makeTemperatureInput // endDefinition;
 (*makeOpenAICompletionURLInput*)
 makeOpenAICompletionURLInput // beginDefinition;
 
-makeOpenAICompletionURLInput[ ] :=
-    makeOpenAICompletionURLInput @ $useLLMServices;
+makeOpenAICompletionURLInput[ Dynamic[ globalPrefs_ ] ] :=
+    makeOpenAICompletionURLInput[ Dynamic @ globalPrefs, $useLLMServices ];
 
-makeOpenAICompletionURLInput[ True ] :=
+makeOpenAICompletionURLInput[ _, True ] :=
     Nothing;
 
-makeOpenAICompletionURLInput[ False ] := highlightControl[
+makeOpenAICompletionURLInput[ Dynamic[ globalPrefs_ ], False ] := highlightControl[
     prefsInputField[
         tr[ "PreferencesContentOpenAICompletionURLLabel" ],
-        scopedDynamic[
-            CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ],
-            {
-                None,
-                If[ StringQ @ #, CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ] = # ] &
-            }
-        ],
+        Function[ CurrentChatSettings[ $FrontEnd, "OpenAIAPICompletionURL" ] = # ],
         String,
+        Hold @ Lookup[ globalPrefs, "OpenAIAPICompletionURL" ],
         ImageSize -> { 200, Automatic }
     ],
     "Notebooks",
@@ -964,17 +897,8 @@ makeOpenAICompletionURLInput // endDefinition;
 (*makeInstructionsContent*)
 makeInstructionsContent // beginDefinition;
 
-makeInstructionsContent[ ] :=
+makeInstructionsContent[ Dynamic[ globalPrefs_ ] ] :=
     DynamicModule[ { initialText, currentText, modified },
-
-        initialText = Replace[
-            CurrentChatSettings[ $preferencesScope, "UserInstructions" ],
-            "" | Except[ _String ] -> Null
-        ];
-
-        currentText = initialText;
-        modified = False;
-
         Column[
             {
                 tr[ "PreferencesContentInstructionsDescription" ],
@@ -982,14 +906,20 @@ makeInstructionsContent[ ] :=
                     Pane[
                         prefsInputField[
                             None,
-                            Dynamic[
-                                currentText,
-                                Function[
-                                    currentText = If[ # === "", Null, # ];
-                                    modified = currentText =!= initialText;
-                                ]
+                            Function[
+                                currentText = If[ # === "", Null, # ];
+                                modified = currentText =!= initialText;
                             ],
                             String,
+                            Hold[
+                                initialText = Replace[
+                                    Lookup[ globalPrefs, "UserInstructions" ],
+                                    "" | Except[ _String ] -> Null
+                                ];
+                                currentText = initialText;
+                                modified = False;
+                                initialText
+                            ],
                             ContinuousAction -> True,
                             FieldHint        -> tr[ "PreferencesContentInstructionsHint" ],
                             ImageSize        -> { Scaled[ 1 ], Automatic },
@@ -1016,7 +946,7 @@ makeInstructionsContent[ ] :=
                                 tr[ "CancelButton" ]
                             },
                             {
-                                CurrentChatSettings[ $preferencesScope, "UserInstructions" ] =
+                                CurrentChatSettings[ $FrontEnd, "UserInstructions" ] =
                                     If[ StringQ @ currentText && StringTrim @ currentText =!= "",
                                         currentText,
                                         Inherited
@@ -1045,13 +975,13 @@ makeInstructionsContent // endDefinition;
 (*makeInterfaceContent*)
 makeInterfaceContent // beginDefinition;
 
-makeInterfaceContent[ ] := Enclose[
+makeInterfaceContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
     Module[ { formatCheckbox, includeHistory, chatHistoryLength, mergeMessages },
 
-        formatCheckbox    = ConfirmMatch[ makeFormatCheckbox[ ]        , _Style, "FormatCheckbox"    ];
-        includeHistory    = ConfirmMatch[ makeIncludeHistoryCheckbox[ ], _Style, "ChatHistory"       ];
-        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ ], _Style, "ChatHistoryLength" ];
-        mergeMessages     = ConfirmMatch[ makeMergeMessagesCheckbox[ ] , _Style, "MergeMessages"     ];
+        formatCheckbox    = ConfirmMatch[ makeFormatCheckbox[ Dynamic @ globalPrefs ]        , _Style, "FormatCheckbox"    ];
+        includeHistory    = ConfirmMatch[ makeIncludeHistoryCheckbox[ Dynamic @ globalPrefs ], _Style, "ChatHistory"       ];
+        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ Dynamic @ globalPrefs ], _Style, "ChatHistoryLength" ];
+        mergeMessages     = ConfirmMatch[ makeMergeMessagesCheckbox[ Dynamic @ globalPrefs ] , _Style, "MergeMessages"     ];
 
         Grid[
             {
@@ -1074,13 +1004,11 @@ makeInterfaceContent // endDefinition;
 (*makeFormatCheckbox*)
 makeFormatCheckbox // beginDefinition;
 
-makeFormatCheckbox[ ] := highlightControl[
+makeFormatCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     prefsCheckbox[
-        scopedDynamic[
-            TrueQ @ CurrentChatSettings[ $preferencesScope, "AutoFormat" ],
-            (CurrentChatSettings[ $preferencesScope, "AutoFormat" ] = #1) &
-        ],
-        tr[ "PreferencesContentFormatOutputLabel" ]
+        Function[ CurrentChatSettings[ $FrontEnd, "AutoFormat" ] = # ],
+        tr[ "PreferencesContentFormatOutputLabel" ],
+        Hold @ TrueQ @ Lookup[ globalPrefs, "AutoFormat" ]
     ],
     "Notebooks",
     "AutoFormat"
@@ -1093,13 +1021,11 @@ makeFormatCheckbox // endDefinition;
 (*makeIncludeHistoryCheckbox*)
 makeIncludeHistoryCheckbox // beginDefinition;
 
-makeIncludeHistoryCheckbox[ ] := highlightControl[
+makeIncludeHistoryCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     prefsCheckbox[
-        scopedDynamic[
-            MatchQ[ CurrentChatSettings[ $preferencesScope, "IncludeHistory" ], True|Automatic ],
-            (CurrentChatSettings[ $preferencesScope, "IncludeHistory" ] = #1) &
-        ],
-        infoTooltip[ tr[ "PreferencesContentIncludeHistoryLabel" ], tr[ "PreferencesContentIncludeHistoryTooltip" ] ]
+        Function[ CurrentChatSettings[ $FrontEnd, "IncludeHistory" ] = # ],
+        infoTooltip[ tr[ "PreferencesContentIncludeHistoryLabel" ], tr[ "PreferencesContentIncludeHistoryTooltip" ] ],
+        Hold @ MatchQ[ Lookup[ globalPrefs, "IncludeHistory" ], True|Automatic ]
     ],
     "Notebooks",
     "IncludeHistory"
@@ -1112,20 +1038,17 @@ makeIncludeHistoryCheckbox // endDefinition;
 (*makeChatHistoryLengthInput*)
 makeChatHistoryLengthInput // beginDefinition;
 
-makeChatHistoryLengthInput[ ] := highlightControl[
+makeChatHistoryLengthInput[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     infoTooltip[
         prefsInputField[
             tr[ "PreferencesContentHistoryLengthLabel" ],
-            scopedDynamic[
-                CurrentChatSettings[ $preferencesScope, "ChatHistoryLength" ],
-                {
-                    None,
-                    If[ NumberQ @ # && NonNegative @ #,
-                        CurrentChatSettings[ $preferencesScope, "ChatHistoryLength" ] = Floor[ # ]
-                    ] &
-                }
+            Function[
+                If[ NumberQ @ # && NonNegative @ #,
+                    CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ]
+                ]
             ],
             Number,
+            Hold @ Lookup[ globalPrefs, "ChatHistoryLength" ], (* initial value *)
             ImageSize -> { 50, Automatic }
         ],
         tr[ "PreferencesContentHistoryLengthTooltip" ]
@@ -1141,13 +1064,11 @@ makeChatHistoryLengthInput // endDefinition;
 (*makeMergeMessagesCheckbox*)
 makeMergeMessagesCheckbox // beginDefinition;
 
-makeMergeMessagesCheckbox[ ] := highlightControl[
+makeMergeMessagesCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     prefsCheckbox[
-        scopedDynamic[
-            MatchQ[ CurrentChatSettings[ $preferencesScope, "MergeMessages" ], True|Automatic ],
-            (CurrentChatSettings[ $preferencesScope, "MergeMessages" ] = #1) &
-        ],
-        infoTooltip[ tr[ "PreferencesContentMergeChatLabel" ], tr[ "PreferencesContentMergeChatTooltip" ] ]
+        Function[ CurrentChatSettings[ $FrontEnd, "MergeMessages" ] = # ],
+        infoTooltip[ tr[ "PreferencesContentMergeChatLabel" ], tr[ "PreferencesContentMergeChatTooltip" ] ],
+        Hold @ MatchQ[ Lookup[ globalPrefs, "MergeMessages" ], True|Automatic ]
     ],
     "Notebooks",
     "MergeMessages"
@@ -1160,12 +1081,12 @@ makeMergeMessagesCheckbox // endDefinition;
 (*makeFeaturesContent*)
 makeFeaturesContent // beginDefinition;
 
-makeFeaturesContent[ ] := Enclose[
+makeFeaturesContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
     Module[ { multimodal, toolsEnabled, toolFrequency },
 
-        multimodal    = ConfirmMatch[ makeMultimodalMenu[ ]           , _Style, "Multimodal"    ];
-        toolsEnabled  = ConfirmMatch[ makeToolsEnabledMenu[ ]         , _Style, "ToolsEnabled"  ];
-        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ ], _Style, "ToolFrequency" ];
+        multimodal    = ConfirmMatch[ makeMultimodalMenu[ Dynamic @ globalPrefs ]           , _Style, "Multimodal"    ];
+        toolsEnabled  = ConfirmMatch[ makeToolsEnabledMenu[ Dynamic @ globalPrefs ]         , _Style, "ToolsEnabled"  ];
+        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ Dynamic @ globalPrefs ], _Style, "ToolFrequency" ];
 
         Grid[
             {
@@ -1187,18 +1108,19 @@ makeFeaturesContent // endDefinition;
 (*makeMultimodalMenu*)
 makeMultimodalMenu // beginDefinition;
 
-makeMultimodalMenu[ ] := highlightControl[
+makeMultimodalMenu[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     Grid[
         {
             {
                 Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
-                PopupMenu[
-                    scopedDynamic @ CurrentChatSettings[ $preferencesScope, "Multimodal" ],
+                prefsPopupMenu[
+                    Function[ CurrentChatSettings[ $FrontEnd, "Multimodal" ] = # ],
                     {
                         Automatic -> tr[ "EnabledByModel" ],
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
+                    Hold @ Replace[ Lookup[ globalPrefs, "Multimodal" ], Except[ Automatic|True|False ] -> Automatic ],
                     MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
@@ -1217,18 +1139,19 @@ makeMultimodalMenu // endDefinition;
 (*makeToolsEnabledMenu*)
 makeToolsEnabledMenu // beginDefinition;
 
-makeToolsEnabledMenu[ ] := highlightControl[
+makeToolsEnabledMenu[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     Grid[
         {
             {
                 Style[ tr[ "PreferencesContentEnableTools" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
-                PopupMenu[
-                    scopedDynamic @ CurrentChatSettings[ $preferencesScope, "ToolsEnabled" ],
+                prefsPopupMenu[
+                    Function[ CurrentChatSettings[ $FrontEnd, "ToolsEnabled" ] = # ],
                     {
                         Automatic -> tr[ "EnabledByModel" ],
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
+                    Hold @ Replace[ Lookup[ globalPrefs, "ToolsEnabled" ], Except[ Automatic|True|False ] -> Automatic ],
                     MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
@@ -1248,23 +1171,23 @@ makeToolsEnabledMenu // endDefinition;
 (*makeToolCallFrequencySelector*)
 makeToolCallFrequencySelector // beginDefinition;
 
-makeToolCallFrequencySelector[ ] := highlightControl[
+makeToolCallFrequencySelector[ Dynamic[ globalPrefs_ ] ] := highlightControl[
     DynamicModule[ { type, frequency },
         Grid[
             {
                 {
                     Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                     PopupMenu[
-                        scopedDynamic[
+                        Dynamic[
                             type,
                             Function[
                                 If[ # === Automatic
                                     ,
                                     type = Automatic;
-                                    CurrentChatSettings[ $preferencesScope, "ToolCallFrequency" ] = Automatic
+                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = Automatic
                                     ,
                                     type = "Custom";
-                                    CurrentChatSettings[ $preferencesScope, "ToolCallFrequency" ] = 0.5
+                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = 0.5
                                 ]
                             ]
                         ],
@@ -1283,12 +1206,12 @@ makeToolCallFrequencySelector[ ] := highlightControl[
                                         Spacer[ 5 ],
                                         Style[ tr[ "Rare" ], "defaultSubtext" ],
                                         Slider[
-                                            scopedDynamic[
+                                            Dynamic[
                                                 frequency,
                                                 {
                                                     Function[ frequency = # ],
                                                     Function[
-                                                        CurrentChatSettings[ $preferencesScope, "ToolCallFrequency" ] = #;
+                                                        CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = #;
                                                         frequency = #
                                                     ]
                                                 }
@@ -1310,8 +1233,8 @@ makeToolCallFrequencySelector[ ] := highlightControl[
             BaselinePosition -> 1,
             Spacings         -> 0.5
         ],
-        Initialization :> scopeInitialization @
-            With[ { val = CurrentChatSettings[ $preferencesScope, "ToolCallFrequency" ] },
+        Initialization :> 
+            With[ { val = Lookup[ globalPrefs, "ToolCallFrequency" ] },
                 type      = If[ NumberQ @ val, "Custom", Automatic ];
                 frequency = If[ NumberQ @ val, val, 0.5 ];
             ]
@@ -1330,7 +1253,7 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := Catch[ Dynamic[ disabledAIOverlay[ servicesSettingsPanel0[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ], $servicesSettingsTag ];
+servicesSettingsPanel[ ] := Catch[ disabledAIOverlay[ servicesSettingsPanel0[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ], $servicesSettingsTag ];
 servicesSettingsPanel // endDefinition;
 
 servicesSettingsPanel0 // beginDefinition;
@@ -1339,10 +1262,10 @@ servicesSettingsPanel0[ ] := Enclose[
     Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsibleSection, serviceGrid, settingsLabel, settings },
 
         llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
-        llmPanel      = makeLLMPanel[ ];
-        serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Framed, "ServiceGrid" ];
+        llmPanel      = LogChatTiming[ makeLLMPanel[ ], "PrefLLMPanel" ];
+        serviceGrid   = LogChatTiming[ makeServiceGrid[ ], "PrefServiceGrid" ];
         settingsLabel = subsectionText @ tr[ "PreferencesContentDefaultService" ];
-        settings      = ConfirmMatch[ makeModelSelector[ "Services" ], _Dynamic, "ServicesSettings" ];
+        settings      = LogChatTiming[ ConfirmMatch[ makeModelSelector[ "Services" ], _DynamicModule, "ServicesSettings" ], "PrefModelSelector" ];
 
         serviceCollapsibleSection =
             DynamicModule[ { Typeset`openQ = False },
@@ -1377,10 +1300,11 @@ servicesSettingsPanel0[ ] := Enclose[
                                     BaselinePosition -> Baseline,
                                     ImageSize -> Automatic ],
                                 "MouseClicked" :> ( Typeset`openQ = !Typeset`openQ ) ] },
-                    Dynamic[ Typeset`openQ ],
+                    Dynamic @ Typeset`openQ,
                     BaselinePosition -> Baseline,
-                    ImageSize -> Automatic ],
-                Initialization :> None, (* needed for Deinitialization to run *)
+                    ImageSize        -> Automatic
+                ],
+                Initialization   :> None, (* needed for Deinitialization to run *)
                 Deinitialization :>
                     If[ TrueQ[ Wolfram`LLMFunctions`Common`Private`$LastLLMKitRequest[ "ConnectionQ" ] ],
                         SessionSubmit @ Wolfram`LLMFunctions`Common`Private`teardownLLMListener[ ]
@@ -1655,25 +1579,34 @@ makeLLMPanel // endDefinition;
 makeServiceGrid // beginDefinition;
 
 makeServiceGrid[ ] :=
+DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
     Framed[
         Pane[
-            Grid[
-                KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
-                Alignment  -> { Left, Baseline },
-                Background -> { { }, { { color @ "PreferencesContentBackground" } } },
-                ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
-                Dividers   -> { { }, { False, { True }, False } },
-                FrameStyle -> color @ "PreferencesContentDirectServiceConnectionsDelimiter",
-                Spacings   -> { Automatic, 0.7 } ],
+            Dynamic @ display,
             AppearanceElements -> { },
             FrameMargins -> 8,
             Scrollbars -> { False, Automatic },
-            ImageSize -> { Scaled[ 1 ], UpTo[ 150 ] } ],
+            ImageSize -> { Scaled[ 1 ], UpTo[ 150 ] }
+        ],
         Background -> color @ "PreferencesContentBackground",
         FrameMargins -> 0,
         FrameStyle -> color @ "PreferencesContentFrame",
         ImageSize -> Scaled[ 1 ],
-        RoundingRadius -> 3 ];
+        RoundingRadius -> 3
+    ],
+    Initialization :> (display =
+        Grid[
+            KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
+            Alignment  -> { Left, Baseline },
+            Background -> { { }, { { color @ "PreferencesContentBackground" } } },
+            ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
+            Dividers   -> { { }, { False, { True }, False } },
+            FrameStyle -> color @ "PreferencesContentDirectServiceConnectionsDelimiter",
+            Spacings   -> { Automatic, 0.7 }
+        ]
+    ),
+    SynchronousInitialization -> False
+]
 
 makeServiceGrid // endDefinition;
 
@@ -1759,7 +1692,7 @@ makeServiceAuthenticationDisplay[ service_String, icon_ ] :=
     DynamicModule[ { display },
         display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         Dynamic[ display, TrackedSymbols :> { display } ],
-        Initialization :> scopeInitialization @ createServiceAuthenticationDisplay[ service, icon, Dynamic[ display ] ],
+        Initialization :> createServiceAuthenticationDisplay[ service, icon, Dynamic[ display ] ],
         SynchronousInitialization -> False
     ];
 
@@ -1841,8 +1774,8 @@ personaSettingsPanel // beginDefinition;
 personaSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
-        Initialization            :> scopeInitialization[ display = CreatePersonaManagerPanel[ ] ],
+        Dynamic @ display,
+        Initialization            :> (display = disabledAIOverlay[ CreatePersonaManagerPanel[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
@@ -1861,8 +1794,8 @@ toolSettingsPanel // beginDefinition;
 toolSettingsPanel[ ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-        Dynamic[ disabledAIOverlay[ display, FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ] ],
-        Initialization            :> scopeInitialization[ display = CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ] ],
+        Dynamic @ display,
+        Initialization            :> (display = disabledAIOverlay[ CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
@@ -1886,11 +1819,11 @@ subsectionText // endDefinition;
 (*prefsInputField*)
 prefsInputField // beginDefinition;
 
-prefsInputField[ None, value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
-    prefsInputField0[ value, type, opts ];
+prefsInputField[ None, update_Function, type_, Hold[ initialValue_ ], opts: OptionsPattern[ ] ] :=
+    prefsInputField0[ update, type, Hold @ initialValue, opts ];
 
-prefsInputField[ label_, value_Dynamic, type_, opts: OptionsPattern[ ] ] := Grid[
-    { { label, prefsInputField0[ value, type, opts ] } },
+prefsInputField[ label_, update_Function, type_, Hold[ initialValue_ ], opts: OptionsPattern[ ] ] := Grid[
+    { { label, prefsInputField0[ update, type, Hold @ initialValue, opts ] } },
     Alignment -> { Automatic, Baseline },
     BaseStyle -> { "leadinText", FontColor -> color @ "PreferencesContentFont_2" },
     Spacings  -> 0.5
@@ -1902,9 +1835,10 @@ prefsInputField // endDefinition;
 prefsInputField0 // beginDefinition;
 
 (* "InputFieldAppearance:RoundedFrame" TemplateBox definition in Core.nb is not flexible enough, so modify it here *)
-prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
+prefsInputField0[ Function[ args___ ], type_, Hold[ initialValue_ ], opts: OptionsPattern[ ] ] :=
+DynamicModule[ { localValue },
     Framed[
-        InputField[ value, type,
+        InputField[ Dynamic[ localValue, Function[ localValue = #; args ] ], type,
             DeleteDuplicatesBy[
                 Flatten @ {
                     opts,
@@ -1927,7 +1861,10 @@ prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
         FrameMargins     -> 0,
         FrameStyle       -> { AbsoluteThickness[ 1. ], color @ "PreferencesContentInputFieldFrame" },
         RoundingRadius   -> 3
-    ];
+    ],
+    Initialization            :> (localValue = initialValue),
+    SynchronousInitialization -> False
+];
 
 prefsInputField0 // endDefinition;
 
@@ -1936,28 +1873,41 @@ prefsInputField0 // endDefinition;
 (*prefsCheckbox*)
 prefsCheckbox // beginDefinition;
 
-prefsCheckbox[ value_Dynamic, label_, rest___ ] :=
+prefsCheckbox[ Function[ args___ ], label_, Hold[ initialValue_ ], rest___ ] :=
+DynamicModule[ { localValue = None },
     Grid[
-        { { Checkbox[ value, rest ], clickableCheckboxLabel[ value, label ] } },
+        { {
+            Checkbox[ Dynamic[ localValue, Function[ localValue = #; args ] ], rest ],
+            Toggler[
+                Dynamic[ localValue, Function[ localValue = #; args ] ],
+                { True -> label, False -> label },
+                BaselinePosition -> Scaled[ 0.2 ],
+                BaseStyle        -> { "checkboxText", FontColor -> color @ "PreferencesContentFont_2" }
+            ]
+        } },
         Alignment -> { Left, Center },
         Spacings  -> 0.2
-    ];
+    ],
+    Initialization :> (localValue = initialValue)
+];
 
 prefsCheckbox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*clickableCheckboxLabel*)
-clickableCheckboxLabel // beginDefinition;
+(* ::Subsection::Closed:: *)
+(*prefsPopupMenu*)
+prefsPopupMenu // beginDefinition;
 
-clickableCheckboxLabel[ value_Dynamic, label_ ] := Toggler[
-    value,
-    { True -> label, False -> label },
-    BaselinePosition -> Scaled[ 0.2 ],
-    BaseStyle        -> { "checkboxText", FontColor -> color @ "PreferencesContentFont_2" }
+prefsPopupMenu[ Function[ args___ ], choices_, Hold[ initialValue_ ], rest___ ] :=
+DynamicModule[ { localValue = None },
+    PopupMenu[
+        Dynamic[ localValue, Function[ localValue = #; args ] ],
+        choices,
+        rest ],
+    Initialization :> (localValue = initialValue)
 ];
 
-clickableCheckboxLabel // endDefinition;
+prefsPopupMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1999,7 +1949,7 @@ ensureServiceName[ symbol_Symbol ] :=
     ];
 
 ensureServiceName[ symbol_Symbol ] :=
-    With[ { service = extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] },
+    With[ { service = extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] },
         (symbol = service) /; StringQ @ service
     ];
 
@@ -2034,7 +1984,7 @@ getServiceDefaultModel[ service_String ] := Enclose[
     Module[ { lastSelected, name },
         (* Get last selected models by service: *)
         lastSelected = Replace[
-            Association @ CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ],
+            Association @ CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ],
             Except[ _? AssociationQ ] :> <| |>
         ];
 
@@ -2049,7 +1999,7 @@ getServiceDefaultModel[ service_String ] := Enclose[
         If[ ! StringQ @ name,
             name = ConfirmMatch[ chooseDefaultModelName @ service, _String|Automatic, "DefaultName" ];
             lastSelected[ service ] = name;
-            CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = lastSelected;
+            CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = lastSelected;
         ];
 
         (* Return the name: *)
@@ -2074,8 +2024,8 @@ disconnectService[ service_String ] :=
         Unset @ SystemCredential @ key;
         SetEnvironment[ key -> None ];
         clearConnectionCache @ service;
-        If[ extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ] === service,
-            CurrentChatSettings[ $preferencesScope, "Model" ] = $DefaultModel
+        If[ extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] === service,
+            CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
         ];
         updateDynamics[ "Services" ]
     ];
@@ -2217,7 +2167,7 @@ resetButton[ Dynamic[ tab_ ] ] :=
             BaseStyle -> { FontColor -> color @ "PreferencesContentFont_2" }
         ];
 
-        expandScope @ Button[
+        Button[
             label,
 
             Needs[ "Wolfram`Chatbook`" -> None ];
@@ -2238,29 +2188,29 @@ resetButton[ Dynamic[ tab_ ] ] :=
 (*resetChatPreferences*)
 resetChatPreferences // beginDefinition;
 
-resetChatPreferences[ "Notebooks" ] := expandScope[
-    CurrentChatSettings[ $preferencesScope ] = Inherited;
+resetChatPreferences[ "Notebooks" ] := (
+    CurrentChatSettings[ $FrontEnd ] = Inherited;
     updateDynamics[ "Preferences" ];
-];
+);
 
 resetChatPreferences[ "Personas" ] := (
     (* TODO: choice dialog to uninstall personas *)
-    CurrentChatSettings[ $preferencesScope, "VisiblePersonas"  ] = $corePersonaNames;
-    CurrentChatSettings[ $preferencesScope, "PersonaFavorites" ] = $corePersonaNames;
+    CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ] = $corePersonaNames;
+    CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = $corePersonaNames;
     updateDynamics[ "Personas" ];
 );
 
-resetChatPreferences[ "Tools" ] := expandScope[
-    CurrentChatSettings[ $preferencesScope, "ToolSelectionType" ] = Inherited;
-    CurrentChatSettings[ $preferencesScope, "ToolSelections"    ] = Inherited;
+resetChatPreferences[ "Tools" ] := (
+    CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ] = Inherited;
+    CurrentChatSettings[ $FrontEnd, "ToolSelections"    ] = Inherited;
     (* TODO: choice dialog to uninstall tools *)
     updateDynamics[ "Tools" ];
-];
+);
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
-    CurrentChatSettings[ $preferencesScope, "Model" ] = Inherited;
-    CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Inherited;
+    CurrentChatSettings[ $FrontEnd, "Model" ] = Inherited;
+    CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Inherited;
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
