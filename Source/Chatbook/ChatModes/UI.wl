@@ -937,14 +937,104 @@ chatbarOptionsButton // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chatbarUserData*)
 
-chatbarUserData[ ] :=
-    <|
-        "credentialsQ" -> cloudCredentialsQ[ ],
-        "daysToReset"  -> 15,
-        "tier"         -> $assistantTier,
-        "usage"        -> $assistantUsage,
-        "username"     -> userName[ ]
-    |>
+$chatbarFakeUserData :=
+	<|
+		"credentialsQ" -> cloudCredentialsQ[ ],
+		"username" -> userName[ ],
+		"tier" -> $assistantTier,
+		"usage" -> $assistantUsage,
+		"daysToReset" -> "\[LongDash]",
+		"upgradeURL" -> "https://www.wolfram.com",
+		"serviceCreditsOptions" -> <||>
+	|>;
+
+Clear[chatbarUserData, getUserValue]
+
+chatbarUserData[ ] := chatbarUserData @ TrueQ @ cloudCredentialsQ[ ]
+
+chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
+
+chatbarUserData[ True ] := chatbarUserData @ ServiceExecute["LLMKit", "RawAccess"]
+
+chatbarUserData[rawAccessData_] := $chatbarFakeUserData /; Or[
+	FailureQ[rawAccessData],
+	!AssociationQ[rawAccessData],
+	!TrueQ[Lookup[rawAccessData, "success"]],
+	!AssociationQ[Lookup[rawAccessData, "data"]]
+]
+
+(*
+	If we've made it this far, credentials are present, and rawAccessData is an
+	Association with "success" -> True, and "data" is set to an Association.
+*)
+chatbarUserData[rawAccessData_] := 
+	With[{assoc = Lookup[rawAccessData, "data"]},
+		AssociationMap[ getUserValue[assoc, #]&, {
+			"credentialsQ",
+			"username",
+			"tier",
+			"usage",
+			"daysToReset",
+			"upgradeURL",
+			"serviceCreditsOptions"
+		}]
+	]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getUserValue*)
+
+getUserValue[assoc_, "credentialsQ"] := True
+
+getUserValue[assoc_, "username"] := userName[ ]
+
+getUserValue[assoc_, "tier"] :=
+	Module[{tier = Lookup[assoc, "accessLevel"]},
+		If[MemberQ[{"Basic", "Pro", "Research"}, tier],
+			tier,
+			"Basic" (* FIXME?? *)
+		]
+	]
+
+getUserValue[assoc_, "usage"] :=
+	Module[{remaining, allotment, used},
+		{remaining, allotment, used} =
+			Replace[
+				Lookup[assoc, {"remainingCredits", "allotment", "allotmentUsed"}],
+				{
+					a_?NumberQ :> a,
+					a_String?DigitQ :> ToExpression[a],
+					else_ :> 0
+				},
+				{1}
+			];
+		If[remaining <= 0, remaining = 0];
+		If[allotment <= 0, allotment = 1]; (* avoid division by zero *)
+		If[used <= 0, used = 0];
+		
+		Clip[(used) / (allotment + remaining), {0, 1}]
+	]
+
+getUserValue[assoc_, "daysToReset"] := 
+	Module[{date, remaining},
+		date = DateObject @ Lookup[assoc, "resetTimestamp"];
+		If[
+			And[
+				DateObjectQ[date],
+				IntegerQ[remaining = Round[QuantityMagnitude[date - Now, "Days"]]];
+				remaining >= 0
+			],
+			remaining,
+			"\[LongDash]"
+		]
+	]
+
+getUserValue[assoc_, "upgradeURL"] := 
+	Lookup[assoc, "upgradeUrl", "https://www.wolfram.com"]
+
+getUserValue[assoc_, "serviceCreditsOptions"] := 
+	Lookup[assoc, "serviceCreditsOptions", <||>]
+
 
 
 (* ::**************************************************************************************************************:: *)
