@@ -1328,12 +1328,13 @@ dialogButtonSection // endDefinition;
 (*cloudToolManager*)
 cloudToolManager // beginDefinition;
 
-cloudToolManager[ tools: { __Association } ] := Grid[
+cloudToolManager[ tools: { __Association } ] := DynamicModule[ { dialogWindow },
+Grid[
     {
         titleSection[ ],
 
         (* ----- Install Tools ----- *)
-        DynamicModule[ { dialogWindow }, installToolsSection[ Dynamic @ dialogWindow ] ],
+        installToolsSection[ Dynamic @ dialogWindow ],
 
         (* ----- Configure and Enable Tools ----- *)
         manageAndEnableToolsSection[ ],
@@ -1358,6 +1359,7 @@ cloudToolManager[ tools: { __Association } ] := Grid[
     },
     ItemSize  -> { Automatic, 0 },
     Spacings  -> { 0, 0 }
+]
 ];
 
 cloudToolManager // endDefinition;
