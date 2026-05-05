@@ -1030,7 +1030,7 @@ getUserValue[assoc_, "daysToReset"] :=
 	]
 
 getUserValue[assoc_, "upgradeURL"] := 
-	Lookup[assoc, "upgradeUrl", "https://www.wolfram.com"]
+	Lookup[assoc, "upgradeUrl", "https://www.wolfram.com/wolfram-ai-services"]
 
 getUserValue[assoc_, "serviceCreditsOptions"] := 
 	Lookup[assoc, "serviceCreditsOptions", <||>]
