@@ -1051,8 +1051,47 @@ $coBodyColor = LightDarkSwitched[ RGBColor[ "#646464" ], RGBColor[ "#E5E5E5" ] ]
 $coBodyColorHover = LightDarkSwitched[RGBColor["#898989"], RGBColor["#BFBFBF"]];
 
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
-    chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ], chatbarUserData[ ] ]
+    DynamicModule[{userdata, initdone},
+    	Dynamic[
+    		If[cloudCredentialsQ[ ],
+    			If[TrueQ[ initdone ],
+	    		 	chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ], userdata ],
+	    		 	chatbarOptionsDisplay[ "Loading" ]
+	    		 ],
+    			chatbarOptionsDisplay[ nbo, Dynamic[ chatbarCell ], <| "credentialsQ" -> False |>]
+    		 ],
+    		TrackedSymbols :> {initdone}
+    	],
+    	Initialization :> (
+    		initdone = False;
+    		userdata = chatbarUserData[];
+    		initdone = True;
+    	),
+    	SynchronousInitialization -> False,
+    	UnsavedVariables :> {initdone}
+    ]
 
+chatbarOptionsDisplay[ "Loading"] :=
+	Framed[
+        Grid[
+        	{{
+				ProgressIndicator[Appearance -> "Necklace", ImageSize -> Small],
+				tr @ "ChatbarOptionsGettingData"
+			}},
+			Alignment -> Left
+        ],
+        Background     -> $coBackground,
+        BaseStyle      -> {
+        	FontColor            -> $coBodyColor,
+            FontFamily           -> "Source Sans Pro",
+            FontSize             -> 15,
+            ShowStringCharacters -> False
+        },
+        FrameMargins   -> {{30, 30}, {10, 10}},
+        FrameStyle     -> $coDividerColor,
+        ImageSize      -> { Automatic, Automatic },
+        RoundingRadius -> 8
+    ]
 
 chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] :=
     Framed[
