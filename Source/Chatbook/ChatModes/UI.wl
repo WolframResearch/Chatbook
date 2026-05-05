@@ -3043,7 +3043,7 @@ userName // beginDefinition;
 
 userName[ ] := FirstCase[
     Unevaluated @ { $CloudAccountName, CurrentValue[ "WolframCloudFullUserName" ], $Username },
-    expr_ :> With[ { user = expr }, user /; StringQ @ user ],
+    expr_ :> With[ { user = expr }, user /; StringQ @ user && user =!= ""],
     "You"
 ];
 
