@@ -45,13 +45,13 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        tabs = ConfirmMatch[
-            createTabViewTabs[ ],
-            { { _String, _Dynamic|_String -> _Pane|_Dynamic|_DynamicModule }.. },
-            "Tabs"
-        ];
-
-        DynamicModule[ { tab },
+        DynamicModule[ { tab, dmPrefCache },
+            
+            tabs = ConfirmMatch[
+                createTabViewTabs[ Dynamic @ dmPrefCache ],
+                { { _String, _Dynamic|_String -> _Pane|_Dynamic|_DynamicModule }.. },
+                "Tabs"
+            ];
 
             (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
             tabView = TabView[
@@ -65,7 +65,7 @@ createPreferencesContent[ ] := Enclose[
             ];
 
             (* Create a reset button that will reset preferences to default settings: *)
-            reset = Pane[ resetButton[ Dynamic @ tab ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> Scaled[ 1 ] ];
+            reset = Pane[ resetButton[ Dynamic @ tab, Dynamic @ dmPrefCache ], ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> Scaled[ 1 ] ];
 
             (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
             makeScrollableInCloud @ Grid[
@@ -84,7 +84,10 @@ createPreferencesContent[ ] := Enclose[
                 Spacings   -> { 0, 0.7 }
             ],
 
-            Initialization :> (tab = Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ]),
+            Initialization   :> (
+                dmPrefCache = CurrentChatSettings[ $FrontEnd ];
+                tab = Lookup[ dmPrefCache, "CurrentPreferencesTab", "Services", Replace[ #, $$unspecified -> "Services" ]& ]
+            ),
             Deinitialization :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
@@ -114,15 +117,15 @@ makeScrollableInCloud // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*createTabViewTabs*)
 createTabViewTabs // beginDefinition;
-createTabViewTabs[ ] := createTabViewTabs @ $displayedPreferencesPages;
-createTabViewTabs[ pages: { __String } ] := createTabViewTab /@ pages;
+createTabViewTabs[ Dynamic[ dmPrefCache_ ] ] := createTabViewTabs[ Dynamic @ dmPrefCache, $displayedPreferencesPages ];
+createTabViewTabs[ Dynamic[ dmPrefCache_ ], pages: { __String } ] := createTabViewTab[ Dynamic @ dmPrefCache, # ]& /@ pages;
 createTabViewTabs // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createTabViewTab*)
 createTabViewTab // beginDefinition;
-createTabViewTab[ name_String ] := { name, tr[ "PreferencesContent" <> name <> "Tab" ] -> preferencesContent @ name };
+createTabViewTab[ Dynamic[ dmPrefCache_ ], name_String ] := { name, tr[ "PreferencesContent" <> name <> "Tab" ] -> preferencesContent[ Dynamic @ dmPrefCache, name ] };
 createTabViewTab // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -132,16 +135,16 @@ createTabViewTab // endDefinition;
 preferencesContent // beginDefinition;
 
 (* Content for the "Notebooks" tab: *)
-preferencesContent[ "Notebooks" ] := notebookSettingsPanel[ ];
+preferencesContent[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := notebookSettingsPanel[ Dynamic @ dmPrefCache ];
 
 (* Content for the "Personas" tab: *)
-preferencesContent[ "Personas" ] := personaSettingsPanel[ ];
+preferencesContent[ Dynamic[ dmPrefCache_ ], "Personas" ] := personaSettingsPanel[ Dynamic @ dmPrefCache ];
 
 (* Content for the "Services" tab: *)
-preferencesContent[ "Services" ] := servicesSettingsPanel[ ];
+preferencesContent[ Dynamic[ dmPrefCache_ ], "Services" ] := servicesSettingsPanel[ Dynamic @ dmPrefCache ];
 
 (* Content for the "Tools" tab: *)
-preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
+preferencesContent[ Dynamic[ dmPrefCache_ ], "Tools" ] := toolSettingsPanel[ Dynamic @ dmPrefCache ];
 
 preferencesContent // endDefinition;
 
@@ -275,13 +278,13 @@ disabledAIOverlay // endDefinition;
 (*notebookSettingsPanel*)
 notebookSettingsPanel // beginDefinition;
 
-notebookSettingsPanel[ ] :=
+notebookSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic @ display,
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
-        Initialization :> (display = disabledAIOverlay[ createNotebookSettingsPanel[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
+        Initialization :> (display = disabledAIOverlay[ createNotebookSettingsPanel[ Dynamic @ dmPrefCache ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
         SynchronousInitialization -> False
     ];
 
@@ -293,8 +296,7 @@ notebookSettingsPanel // endDefinition;
 createNotebookSettingsPanel // beginDefinition;
 
 (* Cache the content in case panel is redrawn: *)
-createNotebookSettingsPanel[ ] := createNotebookSettingsPanel[ ] = Enclose[
-DynamicModule[ { globalPrefs },
+createNotebookSettingsPanel[ Dynamic[ dmPrefCache_ ] ] := createNotebookSettingsPanel[ Dynamic[ _ ] ] = Enclose[
     Module[
         {
             defaultSettingsContent,
@@ -306,7 +308,7 @@ DynamicModule[ { globalPrefs },
 
         (* Retrieve and confirm the content for default settings: *)
         defaultSettingsContent = ConfirmMatch[
-            makeDefaultSettingsContent[ Dynamic @ globalPrefs ],
+            makeDefaultSettingsContent[ Dynamic @ dmPrefCache ],
             Except[ _makeDefaultSettingsContent ],
             "DefaultSettings"
         ];
@@ -316,7 +318,7 @@ DynamicModule[ { globalPrefs },
 
         (* Retrieve and confirm the content for personalization: *)
         instructionsContent = ConfirmMatch[
-            makeInstructionsContent[ Dynamic @ globalPrefs ],
+            makeInstructionsContent[ Dynamic @ dmPrefCache ],
             Except[ _makeInstructionsContent ],
             "Instructions"
         ];
@@ -327,7 +329,7 @@ DynamicModule[ { globalPrefs },
         (* Retrieve and confirm the content for the chat notebook interface,
            ensuring it is not an error from makeInterfaceContent: *)
         interfaceContent = ConfirmMatch[
-            makeInterfaceContent[ Dynamic @ globalPrefs ],
+            makeInterfaceContent[ Dynamic @ dmPrefCache ],
             Except[ _makeInterfaceContent ],
             "Interface"
         ];
@@ -338,7 +340,7 @@ DynamicModule[ { globalPrefs },
         (* Retrieve and confirm the content for the chat notebook features,
            ensuring it is not an error from makeFeaturesContent: *)
         featuresContent = ConfirmMatch[
-            makeFeaturesContent[ Dynamic @ globalPrefs ],
+            makeFeaturesContent[ Dynamic @ dmPrefCache ],
             Except[ _makeFeaturesContent ],
             "Features"
         ];
@@ -372,8 +374,6 @@ DynamicModule[ { globalPrefs },
             Spacings     -> { 0, 1.5 }
         ]
     ],
-    Initialization :> (globalPrefs = CurrentChatSettings[ $FrontEnd ]) (* load values once and pass them into individual controls for initialization *)
-],
     throwInternalFailure
 ];
 
@@ -384,19 +384,19 @@ createNotebookSettingsPanel // endDefinition;
 (*makeDefaultSettingsContent*)
 makeDefaultSettingsContent // beginDefinition;
 
-makeDefaultSettingsContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
+makeDefaultSettingsContent[ Dynamic[ dmPrefCache_ ] ] := Enclose[
     Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ globalPrefs ], _Style|Nothing, "AssistanceCheckbox" ];
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ dmPrefCache ], _Style|Nothing, "AssistanceCheckbox" ];
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
-        personaSelector = makePersonaSelector[ Dynamic @ globalPrefs ];
+        personaSelector = makePersonaSelector[ Dynamic @ dmPrefCache ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
-        modelSelector = makeModelSelector[ "Notebooks" ];
+        modelSelector = makeModelSelector[ Dynamic @ dmPrefCache, "Notebooks" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
-        temperatureInput = ConfirmMatch[ makeTemperatureInput[ Dynamic @ globalPrefs ], _Style, "TemperatureInput" ];
+        temperatureInput = ConfirmMatch[ makeTemperatureInput[ Dynamic @ dmPrefCache ], _Style, "TemperatureInput" ];
         (* The openAICompletionURLInput is an input field for setting URL used for API calls to OpenAI: *)
         openAICompletionURLInput = ConfirmMatch[
-            makeOpenAICompletionURLInput[ Dynamic @ globalPrefs ],
+            makeOpenAICompletionURLInput[ Dynamic @ dmPrefCache ],
             _Style|Nothing, (* Returns Nothing if we're relying on LLMServices for API requests *)
             "OpenAICompletionURLInput"
         ];
@@ -423,31 +423,31 @@ makeDefaultSettingsContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makePersonaSelector*)
 makePersonaSelector // beginDefinition;
-makePersonaSelector[ Dynamic[ globalPrefs_ ] ] := makePersonaSelector0[ Dynamic @ globalPrefs ];
+makePersonaSelector[ Dynamic[ dmPrefCache_ ] ] := makePersonaSelector0[ Dynamic @ dmPrefCache ];
 makePersonaSelector // endDefinition;
 
 makePersonaSelector0 // beginDefinition;
 
 (* Top-level function, calls the version with personas from GetPersonasAssociation *)
-makePersonaSelector0[ Dynamic[ globalPrefs_ ] ] :=
-    makePersonaSelector0[ Dynamic @ globalPrefs, GetPersonasAssociation[ "IncludeHidden" -> False ] ];
+makePersonaSelector0[ Dynamic[ dmPrefCache_ ] ] :=
+    makePersonaSelector0[ Dynamic @ dmPrefCache, GetPersonasAssociation[ "IncludeHidden" -> False ] ];
 
 (* Overload of makePersonaSelector0 that takes an Association of personas,
    converts it to a list of labels for PopupMenu *)
-makePersonaSelector0[ Dynamic[ globalPrefs_ ], personas_Association? AssociationQ ] :=
-    makePersonaSelector0[ Dynamic @ globalPrefs, KeyValueMap[ personaPopupLabel, personas ] ];
+makePersonaSelector0[ Dynamic[ dmPrefCache_ ], personas_Association? AssociationQ ] :=
+    makePersonaSelector0[ Dynamic @ dmPrefCache, KeyValueMap[ personaPopupLabel, personas ] ];
 
 (* Overload of makePersonaSelector0 that takes a list of rules where each rule is a string to an association,
    creates a PopupMenu with this list *)
-makePersonaSelector0[ Dynamic[ globalPrefs_ ], personas: { (_String -> _).. } ] :=
+makePersonaSelector0[ Dynamic[ dmPrefCache_ ], personas: { (_String -> _).. } ] :=
     highlightControl[
         Row @ {
             tr[ "PreferencesContentPersonaLabel" ],
             Spacer[ 3 ],
             prefsPopupMenu[
-                Function[ CurrentChatSettings[ $FrontEnd, "LLMEvaluator" ] = # ],
+                Function[ dmPrefCache[ "LLMEvaluator" ] = CurrentChatSettings[ $FrontEnd, "LLMEvaluator" ] = # ],
                 personas,
-                Hold @ Lookup[ globalPrefs, "LLMEvaluator" ],
+                Hold @ Lookup[ dmPrefCache, "LLMEvaluator" ],
                 MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
             ]
         },
@@ -474,14 +474,15 @@ personaPopupLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeModelSelector*)
 makeModelSelector // beginDefinition;
-makeModelSelector[ type_String ] := makeModelSelector0[ type ];
+makeModelSelector[ Dynamic[ dmPrefCache_ ], type_String ] := makeModelSelector0[ Dynamic @ dmPrefCache, type ];
 makeModelSelector // endDefinition;
 
 
 makeModelSelector0 // beginDefinition;
 
-makeModelSelector0[ type_String ] :=
+makeModelSelector0[ Dynamic[ dmPrefCache_ ], type_String ] :=
     makeModelSelector0[
+        Dynamic @ dmPrefCache,
         type,
         <|
             $availableServices,
@@ -489,32 +490,8 @@ makeModelSelector0[ type_String ] :=
         |>
     ]
 
-makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
-    DynamicModule[ { default, service, model, state, serviceSelector, modelNameSelector, highlight },
-
-        default = CurrentChatSettings[ $FrontEnd, "Model" ];
-        service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
-        model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
-        state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
-
-        modelNameSelector =
-            If[ state === "Loaded",
-                makeModelNameSelector[
-                    Dynamic @ service,
-                    Dynamic @ model,
-                    Dynamic @ modelNameSelector,
-                    Dynamic @ state
-                ],
-                ""
-            ];
-
-        serviceSelector = makeServiceSelector[
-            Dynamic @ service,
-            Dynamic @ model,
-            Dynamic @ modelNameSelector,
-            Dynamic @ state,
-            services
-        ];
+makeModelSelector0[ Dynamic[ dmPrefCache_ ], type_String, services_Association? AssociationQ ] := Enclose[
+    DynamicModule[ { default, service, model, state = "Loading", serviceSelector = $loadingPopupMenu, modelNameSelector, highlight },
 
         highlight = highlightControl[ Row @ { #1, Spacer[ 1 ], #2 }, "Notebooks", #3 ] &;
 
@@ -522,7 +499,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
             Row @
                 If[ MatchQ[ type, "Cloud" | "Notebooks" ],
                     {
-                        highlight[ tr[ "PreferencesContentLLMServiceLabel" ], serviceSelector, "ModelService" ],
+                        highlight[ tr[ "PreferencesContentLLMServiceLabel" ], Dynamic @ serviceSelector, "ModelService" ],
                         Spacer[ 5 ],
                         highlight[
                             Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabel" ] ] ],
@@ -534,7 +511,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                         ]
                     },
                     {
-                        serviceSelector,
+                        Dynamic @ serviceSelector,
                         Spacer[ 24 ],
                         Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabelAlt" ] ] ],
                         Spacer[ 7 ],
@@ -549,12 +526,28 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
         ],
 
         Initialization :> (
+            default = Lookup[ dmPrefCache, "Model" ];
+            service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
+            model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
+            state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
+            
+            serviceSelector = makeServiceSelector[
+                Dynamic @ dmPrefCache,
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelNameSelector,
+                Dynamic @ state,
+                services
+            ];
+
             modelNameSelector = catchAlways @ makeModelNameSelector[
+                Dynamic @ dmPrefCache,
                 Dynamic @ service,
                 Dynamic @ model,
                 Dynamic @ modelNameSelector,
                 Dynamic @ state
             ];
+
             state = "Loaded";
         ),
         SynchronousInitialization -> False,
@@ -575,13 +568,14 @@ makeModelSelector0 // endDefinition;
 makeServiceSelector // beginDefinition;
 
 makeServiceSelector[
+    Dynamic[ dmPrefCache_ ],
     Dynamic[ service_ ],
     Dynamic[ model_ ],
     Dynamic[ modelNameSelector_ ],
     Dynamic[ state_ ],
     services_
 ] :=
-    DynamicModule[ { changedValueQ = False, displayValue = extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] },
+    DynamicModule[ { changedValueQ = False, displayValue = extractServiceName @ Lookup[ dmPrefCache, "Model" ] },
         DynamicWrapper[
             PopupMenu[
                 Dynamic[ displayValue, Function[ If[ displayValue =!= #, displayValue = #; changedValueQ = True ] ] ],
@@ -594,7 +588,7 @@ makeServiceSelector[
                     { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
             ]
             , (* we only want this asynchronous evaluation to fire if we've changed from the initial value of the service *)
-            If[ changedValueQ, changedValueQ = False; serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] @ displayValue ]
+            If[ changedValueQ, changedValueQ = False; serviceSelectCallback[ Dynamic @ dmPrefCache, Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] @ displayValue ]
             ,
             SynchronousUpdating -> False,
             TrackedSymbols      :> { changedValueQ }
@@ -608,11 +602,12 @@ makeServiceSelector // endDefinition;
 (*serviceSelectCallback*)
 serviceSelectCallback // beginDefinition;
 
-serviceSelectCallback[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
-    serviceSelectCallback[ #1, Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] &;
+serviceSelectCallback[ Dynamic[ dmPrefCache_ ], Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
+    serviceSelectCallback[ #1, Dynamic @ dmPrefCache, Dynamic @ service, Dynamic @ model, Dynamic @ modelNameSelector, Dynamic @ state ] &;
 
 serviceSelectCallback[
     selected_String, (* The value chosen via PopupMenu *)
+    Dynamic[ dmPrefCache_ ],
     Dynamic[ service_Symbol ],
     Dynamic[ model_Symbol ],
     Dynamic[ modelNameSelector_Symbol ],
@@ -625,14 +620,15 @@ serviceSelectCallback[
 
     (* Now that a new service has been selected, switch the model name to a previously used value for this service
        if available. If service has not been chosen before, determine the initial model from the registered service. *)
-    model = getServiceDefaultModel @ selected;
+    model = getServiceDefaultModel[ Dynamic @ dmPrefCache, selected ];
 
     (* Store the service/model in FE settings: *)
-    CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+    dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
 
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
             modelNameSelector = makeModelNameSelector[
+                Dynamic @ dmPrefCache,
                 Dynamic @ service,
                 Dynamic @ model,
                 Dynamic @ modelNameSelector,
@@ -640,6 +636,7 @@ serviceSelectCallback[
             ];
             state = "Loaded",
         modelNameSelector = makeModelNameSelector[
+            Dynamic @ dmPrefCache,
             Dynamic @ service,
             Dynamic @ model,
             Dynamic @ modelNameSelector,
@@ -656,6 +653,7 @@ serviceSelectCallback // endDefinition;
 makeModelNameSelector // beginDefinition;
 
 makeModelNameSelector[
+    Dynamic[ dmPrefCache_ ],
     Dynamic[ service_ ],
     Dynamic[ model_ ],
     Dynamic[ modelNameSelector_ ],
@@ -663,7 +661,7 @@ makeModelNameSelector[
 ] := Enclose[
     Catch @ Module[ { models, current, default, fallback },
 
-        ensureServiceName @ service;
+        ensureServiceName[ service, Dynamic @ dmPrefCache ];
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
         If[ service === "LLMKit", Throw @ "" ];
@@ -683,6 +681,7 @@ makeModelNameSelector[
 
         If[ models === Missing[ "NotConnected" ],
             Throw @ serviceConnectButton[
+                Dynamic @ dmPrefCache,
                 Dynamic @ service,
                 Dynamic @ model,
                 Dynamic @ modelNameSelector,
@@ -692,6 +691,7 @@ makeModelNameSelector[
 
         If[ models === Missing[ "NoModelList" ],
             Throw @ modelNameInputField[
+                Dynamic @ dmPrefCache,
                 Dynamic @ service,
                 Dynamic @ model,
                 Dynamic @ modelNameSelector,
@@ -700,11 +700,11 @@ makeModelNameSelector[
         ];
 
         current  = extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ];
-        default  = ConfirmBy[ getServiceDefaultModel @ service, StringQ, "DefaultName" ];
+        default  = ConfirmBy[ getServiceDefaultModel[ Dynamic @ dmPrefCache, service ], StringQ, "DefaultName" ];
         fallback = <| "Service" -> service, "Name" -> default |>;
 
         If[ ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
-            CurrentChatSettings[ $FrontEnd, "Model" ] = fallback
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = fallback
         ];
 
         DynamicModule[
@@ -712,7 +712,7 @@ makeModelNameSelector[
                 changedValueQ = False,
                 displayValue = Replace[
                     extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ],
-                    Except[ _String ] :> (CurrentChatSettings[ $FrontEnd, "Model" ] = fallback)
+                    Except[ _String ] :> (dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = fallback)
                 ]
             },
             DynamicWrapper[
@@ -724,7 +724,7 @@ makeModelNameSelector[
                     ImageSize -> Automatic
                 ]
                 , (* we only want this asynchronous evaluation to fire if we've changed from the initial value of the model name *)
-                If[ changedValueQ, changedValueQ = False; modelSelectCallback[ Dynamic @ service, Dynamic @ model ] @ displayValue ]
+                If[ changedValueQ, changedValueQ = False; modelSelectCallback[ Dynamic @ dmPrefCache, Dynamic @ service, Dynamic @ model ] @ displayValue ]
                 ,
                 SynchronousUpdating -> False,
                 TrackedSymbols      :> { changedValueQ }
@@ -741,15 +741,15 @@ makeModelNameSelector // endDefinition;
 (*modelNameInputField*)
 modelNameInputField // beginDefinition;
 
-modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
+modelNameInputField[ Dynamic[ dmPrefCache_ ], Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelNameSelector_ ], Dynamic[ state_ ] ] :=
     prefsInputField[
         None,
         Function[
-            CurrentChatSettings[ $FrontEnd, "Model" ] = #;
-            modelSelectCallback[ Dynamic @ service, Dynamic @ model ]
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = #;
+            modelSelectCallback[ #, Dynamic @ dmPrefCache, Dynamic @ service, Dynamic @ model ]
         ],
         String,
-        Hold @ Replace[ extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ], Except[ _String ] :> "" ],
+        Hold @ Replace[ extractModelName @ Lookup[ dmPrefCache, "Model" ], Except[ _String ] :> "" ],
         ImageSize -> { 200, Automatic }
     ];
 
@@ -761,6 +761,7 @@ modelNameInputField // endDefinition;
 serviceConnectButton // beginDefinition;
 
 serviceConnectButton[
+    Dynamic[ dmPrefCache_ ],
     Dynamic[ service_ ],
     Dynamic[ model_ ],
     Dynamic[ modelNameSelector_ ],
@@ -777,6 +778,7 @@ serviceConnectButton[
                 If[ ListQ @ getServiceModelList @ service,
                     serviceSelectCallback[
                         service,
+                        Dynamic @ dmPrefCache,
                         Dynamic @ service,
                         Dynamic @ model,
                         Dynamic @ modelNameSelector,
@@ -794,30 +796,31 @@ serviceConnectButton // endDefinition;
 (*modelSelectCallback*)
 modelSelectCallback // beginDefinition;
 
-modelSelectCallback[ Dynamic[ service_ ], Dynamic[ model_ ] ] :=
-    modelSelectCallback[ #1, Dynamic @ service, Dynamic @ model ] &;
+modelSelectCallback[ Dynamic[ dmPrefCache_ ], Dynamic[ service_ ], Dynamic[ model_ ] ] :=
+    modelSelectCallback[ #1, Dynamic @ dmPrefCache, Dynamic @ service, Dynamic @ model ] &;
 
 modelSelectCallback[
     selected_String, (* The value chosen via PopupMenu *)
+    Dynamic[ dmPrefCache_ ],
     Dynamic[ service_Symbol ],
     Dynamic[ model_Symbol ]
 ] := catchAlways @ Enclose[
 
-    ensureServiceName @ service;
+    ensureServiceName[ service, Dynamic @ dmPrefCache ];
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
     (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
     model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
-    CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+    dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
 
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
-    CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
-        CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ],
+    dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
+        Lookup[ dmPrefCache, "ServiceDefaultModel" ],
         service -> model
-    ]
+    ];
     ,
     throwInternalFailure
 ];
@@ -829,17 +832,17 @@ modelSelectCallback // endDefinition;
 (*makeAssistanceCheckbox*)
 makeAssistanceCheckbox // beginDefinition;
 
-makeAssistanceCheckbox[ Dynamic[ globalPrefs_ ] ] :=
+makeAssistanceCheckbox[ Dynamic[ dmPrefCache_ ] ] :=
     If[ TrueQ @ $cloudNotebooks,
         Nothing,
         highlightControl[
             prefsCheckbox[
-                Function[ CurrentChatSettings[ $FrontEnd, "Assistance" ] = # ],
+                Function[ dmPrefCache[ "Assistance" ] = CurrentChatSettings[ $FrontEnd, "Assistance" ] = # ],
                 infoTooltip[
                     tr[ "PreferencesContentEnableAssistanceLabel" ],
                     tr[ "PreferencesContentEnableAssistanceTooltip" ]
                 ],
-                Hold @ TrueQ @ Lookup[ globalPrefs, "Assistance" ]
+                Hold @ TrueQ @ Lookup[ dmPrefCache, "Assistance" ]
             ],
             "Notebooks",
             "Assistance"
@@ -853,12 +856,12 @@ makeAssistanceCheckbox // endDefinition;
 (*makeTemperatureInput*)
 makeTemperatureInput // beginDefinition;
 
-makeTemperatureInput[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeTemperatureInput[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     prefsInputField[
         tr[ "PreferencesContentTemperatureLabel" ],
-        Function[ CurrentChatSettings[ $FrontEnd, "Temperature" ] = # ],
+        Function[ dmPrefCache[ "Temperature" ] = CurrentChatSettings[ $FrontEnd, "Temperature" ] = # ],
         Number,
-        Hold @ Lookup[ globalPrefs, "Temperature" ],
+        Hold @ Lookup[ dmPrefCache, "Temperature" ],
         ImageSize -> { 50, Automatic }
     ],
     "Notebooks",
@@ -872,18 +875,18 @@ makeTemperatureInput // endDefinition;
 (*makeOpenAICompletionURLInput*)
 makeOpenAICompletionURLInput // beginDefinition;
 
-makeOpenAICompletionURLInput[ Dynamic[ globalPrefs_ ] ] :=
-    makeOpenAICompletionURLInput[ Dynamic @ globalPrefs, $useLLMServices ];
+makeOpenAICompletionURLInput[ Dynamic[ dmPrefCache_ ] ] :=
+    makeOpenAICompletionURLInput[ Dynamic @ dmPrefCache, $useLLMServices ];
 
 makeOpenAICompletionURLInput[ _, True ] :=
     Nothing;
 
-makeOpenAICompletionURLInput[ Dynamic[ globalPrefs_ ], False ] := highlightControl[
+makeOpenAICompletionURLInput[ Dynamic[ dmPrefCache_ ], False ] := highlightControl[
     prefsInputField[
         tr[ "PreferencesContentOpenAICompletionURLLabel" ],
-        Function[ CurrentChatSettings[ $FrontEnd, "OpenAIAPICompletionURL" ] = # ],
+        Function[ dmPrefCache[ "OpenAIAPICompletionURL" ] = CurrentChatSettings[ $FrontEnd, "OpenAIAPICompletionURL" ] = # ],
         String,
-        Hold @ Lookup[ globalPrefs, "OpenAIAPICompletionURL" ],
+        Hold @ Lookup[ dmPrefCache, "OpenAIAPICompletionURL" ],
         ImageSize -> { 200, Automatic }
     ],
     "Notebooks",
@@ -897,7 +900,7 @@ makeOpenAICompletionURLInput // endDefinition;
 (*makeInstructionsContent*)
 makeInstructionsContent // beginDefinition;
 
-makeInstructionsContent[ Dynamic[ globalPrefs_ ] ] :=
+makeInstructionsContent[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[ { initialText, currentText, modified },
         Column[
             {
@@ -913,7 +916,7 @@ makeInstructionsContent[ Dynamic[ globalPrefs_ ] ] :=
                             String,
                             Hold[
                                 initialText = Replace[
-                                    Lookup[ globalPrefs, "UserInstructions" ],
+                                    Lookup[ dmPrefCache, "UserInstructions" ],
                                     "" | Except[ _String ] -> Null
                                 ];
                                 currentText = initialText;
@@ -946,7 +949,7 @@ makeInstructionsContent[ Dynamic[ globalPrefs_ ] ] :=
                                 tr[ "CancelButton" ]
                             },
                             {
-                                CurrentChatSettings[ $FrontEnd, "UserInstructions" ] =
+                                dmPrefCache[ "UserInstructions" ] = CurrentChatSettings[ $FrontEnd, "UserInstructions" ] =
                                     If[ StringQ @ currentText && StringTrim @ currentText =!= "",
                                         currentText,
                                         Inherited
@@ -975,13 +978,13 @@ makeInstructionsContent // endDefinition;
 (*makeInterfaceContent*)
 makeInterfaceContent // beginDefinition;
 
-makeInterfaceContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
+makeInterfaceContent[ Dynamic[ dmPrefCache_ ] ] := Enclose[
     Module[ { formatCheckbox, includeHistory, chatHistoryLength, mergeMessages },
 
-        formatCheckbox    = ConfirmMatch[ makeFormatCheckbox[ Dynamic @ globalPrefs ]        , _Style, "FormatCheckbox"    ];
-        includeHistory    = ConfirmMatch[ makeIncludeHistoryCheckbox[ Dynamic @ globalPrefs ], _Style, "ChatHistory"       ];
-        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ Dynamic @ globalPrefs ], _Style, "ChatHistoryLength" ];
-        mergeMessages     = ConfirmMatch[ makeMergeMessagesCheckbox[ Dynamic @ globalPrefs ] , _Style, "MergeMessages"     ];
+        formatCheckbox    = ConfirmMatch[ makeFormatCheckbox[ Dynamic @ dmPrefCache ]        , _Style, "FormatCheckbox"    ];
+        includeHistory    = ConfirmMatch[ makeIncludeHistoryCheckbox[ Dynamic @ dmPrefCache ], _Style, "ChatHistory"       ];
+        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ Dynamic @ dmPrefCache ], _Style, "ChatHistoryLength" ];
+        mergeMessages     = ConfirmMatch[ makeMergeMessagesCheckbox[ Dynamic @ dmPrefCache ] , _Style, "MergeMessages"     ];
 
         Grid[
             {
@@ -1004,11 +1007,11 @@ makeInterfaceContent // endDefinition;
 (*makeFormatCheckbox*)
 makeFormatCheckbox // beginDefinition;
 
-makeFormatCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeFormatCheckbox[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     prefsCheckbox[
-        Function[ CurrentChatSettings[ $FrontEnd, "AutoFormat" ] = # ],
+        Function[ dmPrefCache[ "AutoFormat" ] = CurrentChatSettings[ $FrontEnd, "AutoFormat" ] = # ],
         tr[ "PreferencesContentFormatOutputLabel" ],
-        Hold @ TrueQ @ Lookup[ globalPrefs, "AutoFormat" ]
+        Hold @ TrueQ @ Lookup[ dmPrefCache, "AutoFormat" ]
     ],
     "Notebooks",
     "AutoFormat"
@@ -1021,11 +1024,11 @@ makeFormatCheckbox // endDefinition;
 (*makeIncludeHistoryCheckbox*)
 makeIncludeHistoryCheckbox // beginDefinition;
 
-makeIncludeHistoryCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeIncludeHistoryCheckbox[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     prefsCheckbox[
-        Function[ CurrentChatSettings[ $FrontEnd, "IncludeHistory" ] = # ],
+        Function[ dmPrefCache[ "IncludeHistory" ] = CurrentChatSettings[ $FrontEnd, "IncludeHistory" ] = # ],
         infoTooltip[ tr[ "PreferencesContentIncludeHistoryLabel" ], tr[ "PreferencesContentIncludeHistoryTooltip" ] ],
-        Hold @ MatchQ[ Lookup[ globalPrefs, "IncludeHistory" ], True|Automatic ]
+        Hold @ MatchQ[ Lookup[ dmPrefCache, "IncludeHistory" ], True|Automatic ]
     ],
     "Notebooks",
     "IncludeHistory"
@@ -1038,17 +1041,17 @@ makeIncludeHistoryCheckbox // endDefinition;
 (*makeChatHistoryLengthInput*)
 makeChatHistoryLengthInput // beginDefinition;
 
-makeChatHistoryLengthInput[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeChatHistoryLengthInput[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     infoTooltip[
         prefsInputField[
             tr[ "PreferencesContentHistoryLengthLabel" ],
             Function[
                 If[ NumberQ @ # && NonNegative @ #,
-                    CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ]
+                    dmPrefCache[ "ChatHistoryLength" ] = CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ]
                 ]
             ],
             Number,
-            Hold @ Lookup[ globalPrefs, "ChatHistoryLength" ], (* initial value *)
+            Hold @ Lookup[ dmPrefCache, "ChatHistoryLength" ], (* initial value *)
             ImageSize -> { 50, Automatic }
         ],
         tr[ "PreferencesContentHistoryLengthTooltip" ]
@@ -1064,11 +1067,11 @@ makeChatHistoryLengthInput // endDefinition;
 (*makeMergeMessagesCheckbox*)
 makeMergeMessagesCheckbox // beginDefinition;
 
-makeMergeMessagesCheckbox[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeMergeMessagesCheckbox[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     prefsCheckbox[
-        Function[ CurrentChatSettings[ $FrontEnd, "MergeMessages" ] = # ],
+        Function[ dmPrefCache[ "MergeMessages" ] = CurrentChatSettings[ $FrontEnd, "MergeMessages" ] = # ],
         infoTooltip[ tr[ "PreferencesContentMergeChatLabel" ], tr[ "PreferencesContentMergeChatTooltip" ] ],
-        Hold @ MatchQ[ Lookup[ globalPrefs, "MergeMessages" ], True|Automatic ]
+        Hold @ MatchQ[ Lookup[ dmPrefCache, "MergeMessages" ], True|Automatic ]
     ],
     "Notebooks",
     "MergeMessages"
@@ -1081,12 +1084,12 @@ makeMergeMessagesCheckbox // endDefinition;
 (*makeFeaturesContent*)
 makeFeaturesContent // beginDefinition;
 
-makeFeaturesContent[ Dynamic[ globalPrefs_ ] ] := Enclose[
+makeFeaturesContent[ Dynamic[ dmPrefCache_ ] ] := Enclose[
     Module[ { multimodal, toolsEnabled, toolFrequency },
 
-        multimodal    = ConfirmMatch[ makeMultimodalMenu[ Dynamic @ globalPrefs ]           , _Style, "Multimodal"    ];
-        toolsEnabled  = ConfirmMatch[ makeToolsEnabledMenu[ Dynamic @ globalPrefs ]         , _Style, "ToolsEnabled"  ];
-        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ Dynamic @ globalPrefs ], _Style, "ToolFrequency" ];
+        multimodal    = ConfirmMatch[ makeMultimodalMenu[ Dynamic @ dmPrefCache ]           , _Style, "Multimodal"    ];
+        toolsEnabled  = ConfirmMatch[ makeToolsEnabledMenu[ Dynamic @ dmPrefCache ]         , _Style, "ToolsEnabled"  ];
+        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ Dynamic @ dmPrefCache ], _Style, "ToolFrequency" ];
 
         Grid[
             {
@@ -1108,19 +1111,19 @@ makeFeaturesContent // endDefinition;
 (*makeMultimodalMenu*)
 makeMultimodalMenu // beginDefinition;
 
-makeMultimodalMenu[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeMultimodalMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     Grid[
         {
             {
                 Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                 prefsPopupMenu[
-                    Function[ CurrentChatSettings[ $FrontEnd, "Multimodal" ] = # ],
+                    Function[ dmPrefCache[ "Multimodal" ] = CurrentChatSettings[ $FrontEnd, "Multimodal" ] = # ],
                     {
                         Automatic -> tr[ "EnabledByModel" ],
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
-                    Hold @ Replace[ Lookup[ globalPrefs, "Multimodal" ], Except[ Automatic|True|False ] -> Automatic ],
+                    Hold @ Replace[ Lookup[ dmPrefCache, "Multimodal" ], Except[ Automatic|True|False ] -> Automatic ],
                     MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
@@ -1139,19 +1142,19 @@ makeMultimodalMenu // endDefinition;
 (*makeToolsEnabledMenu*)
 makeToolsEnabledMenu // beginDefinition;
 
-makeToolsEnabledMenu[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeToolsEnabledMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     Grid[
         {
             {
                 Style[ tr[ "PreferencesContentEnableTools" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
                 prefsPopupMenu[
-                    Function[ CurrentChatSettings[ $FrontEnd, "ToolsEnabled" ] = # ],
+                    Function[ dmPrefCache[ "ToolsEnabled" ] = CurrentChatSettings[ $FrontEnd, "ToolsEnabled" ] = # ],
                     {
                         Automatic -> tr[ "EnabledByModel" ],
                         True      -> tr[ "EnabledAlways"  ],
                         False     -> tr[ "EnabledNever"   ]
                     },
-                    Hold @ Replace[ Lookup[ globalPrefs, "ToolsEnabled" ], Except[ Automatic|True|False ] -> Automatic ],
+                    Hold @ Replace[ Lookup[ dmPrefCache, "ToolsEnabled" ], Except[ Automatic|True|False ] -> Automatic ],
                     MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
                 ]
             }
@@ -1171,7 +1174,7 @@ makeToolsEnabledMenu // endDefinition;
 (*makeToolCallFrequencySelector*)
 makeToolCallFrequencySelector // beginDefinition;
 
-makeToolCallFrequencySelector[ Dynamic[ globalPrefs_ ] ] := highlightControl[
+makeToolCallFrequencySelector[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     DynamicModule[ { type, frequency },
         Grid[
             {
@@ -1184,10 +1187,10 @@ makeToolCallFrequencySelector[ Dynamic[ globalPrefs_ ] ] := highlightControl[
                                 If[ # === Automatic
                                     ,
                                     type = Automatic;
-                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = Automatic
+                                    dmPrefCache[ "ToolCallFrequency" ] = CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = Automatic
                                     ,
                                     type = "Custom";
-                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = 0.5
+                                    dmPrefCache[ "ToolCallFrequency" ] = CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = 0.5
                                 ]
                             ]
                         ],
@@ -1211,7 +1214,7 @@ makeToolCallFrequencySelector[ Dynamic[ globalPrefs_ ] ] := highlightControl[
                                                 {
                                                     Function[ frequency = # ],
                                                     Function[
-                                                        CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = #;
+                                                        dmPrefCache[ "ToolCallFrequency" ] = CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = #;
                                                         frequency = #
                                                     ]
                                                 }
@@ -1234,7 +1237,7 @@ makeToolCallFrequencySelector[ Dynamic[ globalPrefs_ ] ] := highlightControl[
             Spacings         -> 0.5
         ],
         Initialization :> 
-            With[ { val = Lookup[ globalPrefs, "ToolCallFrequency" ] },
+            With[ { val = Lookup[ dmPrefCache, "ToolCallFrequency" ] },
                 type      = If[ NumberQ @ val, "Custom", Automatic ];
                 frequency = If[ NumberQ @ val, val, 0.5 ];
             ]
@@ -1253,19 +1256,19 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := Catch[ disabledAIOverlay[ servicesSettingsPanel0[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ], $servicesSettingsTag ];
+servicesSettingsPanel[ Dynamic[ dmPrefCache_ ] ] := Catch[ disabledAIOverlay[ servicesSettingsPanel0[ Dynamic @ dmPrefCache ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ], $servicesSettingsTag ];
 servicesSettingsPanel // endDefinition;
 
 servicesSettingsPanel0 // beginDefinition;
 
-servicesSettingsPanel0[ ] := Enclose[
+servicesSettingsPanel0[ Dynamic[ dmPrefCache_ ] ] := Enclose[
     Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsibleSection, serviceGrid, settingsLabel, settings },
 
         llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
         llmPanel      = LogChatTiming[ makeLLMPanel[ ], "PrefLLMPanel" ];
-        serviceGrid   = LogChatTiming[ makeServiceGrid[ ], "PrefServiceGrid" ];
+        serviceGrid   = LogChatTiming[ makeServiceGrid[ Dynamic @ dmPrefCache ], "PrefServiceGrid" ];
         settingsLabel = subsectionText @ tr[ "PreferencesContentDefaultService" ];
-        settings      = LogChatTiming[ ConfirmMatch[ makeModelSelector[ "Services" ], _DynamicModule, "ServicesSettings" ], "PrefModelSelector" ];
+        settings      = LogChatTiming[ ConfirmMatch[ makeModelSelector[ Dynamic @ dmPrefCache, "Services" ], _DynamicModule, "ServicesSettings" ], "PrefModelSelector" ];
 
         serviceCollapsibleSection =
             DynamicModule[ { Typeset`openQ = False },
@@ -1578,7 +1581,7 @@ makeLLMPanel // endDefinition;
 (*makeServiceGrid*)
 makeServiceGrid // beginDefinition;
 
-makeServiceGrid[ ] :=
+makeServiceGrid[ Dynamic[ dmPrefCache_ ] ] :=
 DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
     Framed[
         Pane[
@@ -1596,7 +1599,7 @@ DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color
     ],
     Initialization :> (display =
         Grid[
-            KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
+            KeyValueMap[ makeServiceGridRow[ Dynamic @ dmPrefCache, #1, #2 ]&, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
             Alignment  -> { Left, Baseline },
             Background -> { { }, { { color @ "PreferencesContentBackground" } } },
             ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
@@ -1612,24 +1615,11 @@ makeServiceGrid // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makeServiceGridRows*)
-makeServiceGridRows // beginDefinition;
-
-makeServiceGridRows[ services_Association ] :=
-    KeyValueMap[ makeServiceGridRow, DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ] ];
-
-makeServiceGridRows[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
-    Throw[ Pane[ failure, ImageSize -> { Scaled[ 0.922 ], Automatic } ], $servicesSettingsTag ];
-
-makeServiceGridRows // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeServiceGridRow*)
 makeServiceGridRow // beginDefinition;
 
-makeServiceGridRow[ name_String, data_Association ] := {
-    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
+makeServiceGridRow[ Dynamic[ dmPrefCache_ ], name_String, data_Association ] := {
+    makeServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
@@ -1639,7 +1629,7 @@ makeServiceGridRow // endDefinition;
 (*deleteServiceButton*)
 deleteServiceButton // beginDefinition;
 
-deleteServiceButton[ "OpenAI" ] := Framed[
+deleteServiceButton[ _, "OpenAI" ] := Framed[
     Button[
         chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconAlt" ],
         Null,
@@ -1649,13 +1639,13 @@ deleteServiceButton[ "OpenAI" ] := Framed[
     $deleteServiceButtonFrameOptions
 ];
 
-deleteServiceButton[ service_String ] := Tooltip[
+deleteServiceButton[ Dynamic[ dmPrefCache_ ], service_String ] := Tooltip[
     Framed[
         Button[
             $trashBin,
             Needs[ "LLMServices`" -> None ];
             LLMServices`UnregisterService @ service;
-            disconnectService @ service;
+            disconnectService[ Dynamic @ dmPrefCache, service ];
             updateDynamics[ { "Services", "Preferences" } ],
             $deleteServiceButtonOptions
         ],
@@ -1688,11 +1678,11 @@ $deleteServiceButtonFrameOptions = Sequence[
 (*makeServiceAuthenticationDisplay*)
 makeServiceAuthenticationDisplay // beginDefinition;
 
-makeServiceAuthenticationDisplay[ service_String, icon_ ] :=
+makeServiceAuthenticationDisplay[ Dynamic[ dmPrefCache_ ], service_String, icon_ ] :=
     DynamicModule[ { display },
         display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
         Dynamic[ display, TrackedSymbols :> { display } ],
-        Initialization :> createServiceAuthenticationDisplay[ service, icon, Dynamic[ display ] ],
+        Initialization :> createServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, service, icon, Dynamic[ display ] ],
         SynchronousInitialization -> False
     ];
 
@@ -1703,7 +1693,7 @@ makeServiceAuthenticationDisplay // endDefinition;
 (*createServiceAuthenticationDisplay*)
 createServiceAuthenticationDisplay // beginDefinition;
 
-createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := Enclose[
+createServiceAuthenticationDisplay[ Dynamic[ dmPrefCache_ ], service_, icon_, Dynamic[ display_ ] ] := Enclose[
     Module[ { type },
         type = ConfirmBy[
             Quiet[
@@ -1722,7 +1712,7 @@ createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := En
                         icon ],
                     Style[ service, FontColor -> color @ "PreferencesContentServicesIconFade_2", FontOpacity -> If[ type === "None", 0.5, 1 ] ],
                     Pane[ "", ImageSize -> Scaled[ 1. ] ],
-                    connectOrDisconnectButton[ service, type, icon, Dynamic @ display ]
+                    connectOrDisconnectButton[ Dynamic @ dmPrefCache, service, type, icon, Dynamic @ display ]
                 }
             },
             Alignment -> { Left, Baseline },
@@ -1739,7 +1729,7 @@ createServiceAuthenticationDisplay // endDefinition;
 (*connectOrDisconnectButton*)
 connectOrDisconnectButton // beginDefinition;
 
-connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] :=
+connectOrDisconnectButton[ Dynamic[ dmPrefCache_ ], service_String, "None", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "ConnectButton" ],
         display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
@@ -1747,16 +1737,16 @@ connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] 
         Quiet[
             Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service
         ];
-        createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
+        createServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, service, icon, Dynamic @ display ],
         Method -> "Queued"
     ];
 
-connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", icon_, Dynamic[ display_ ] ] :=
+connectOrDisconnectButton[ Dynamic[ dmPrefCache_ ], service_String, "SystemCredential"|"Environment"|"ServiceConnect", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "DisconnectButton" ],
         display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
-        disconnectService @ service;
-        createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
+        disconnectService[ Dynamic @ dmPrefCache, service ];
+        createServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, service, icon, Dynamic @ display ],
         Method -> "Queued"
     ];
 
@@ -1771,7 +1761,7 @@ connectOrDisconnectButton // endDefinition;
 (*personaSettingsPanel*)
 personaSettingsPanel // beginDefinition;
 
-personaSettingsPanel[ ] :=
+personaSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic @ display,
@@ -1791,7 +1781,8 @@ personaSettingsPanel // endDefinition;
 (*toolSettingsPanel*)
 toolSettingsPanel // beginDefinition;
 
-toolSettingsPanel[ ] :=
+(* CreateLLMToolManagerPanel manages scope by itself; no need to pass cached global prefs to it *)
+toolSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic @ display,
@@ -1943,13 +1934,13 @@ popupValue // endDefinition;
 ensureServiceName // beginDefinition;
 ensureServiceName // Attributes = { HoldFirst };
 
-ensureServiceName[ symbol_Symbol ] :=
+ensureServiceName[ symbol_Symbol, Dynamic[ dmPrefCache_ ] ] :=
     With[ { service = symbol },
         service /; StringQ @ service
     ];
 
-ensureServiceName[ symbol_Symbol ] :=
-    With[ { service = extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] },
+ensureServiceName[ symbol_Symbol, Dynamic[ dmPrefCache_ ] ] :=
+    With[ { service = extractServiceName @ Lookup[ dmPrefCache, "Model" ] },
         (symbol = service) /; StringQ @ service
     ];
 
@@ -1978,13 +1969,13 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
 
-getServiceDefaultModel[ service_String ] := Enclose[
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
     Module[ { lastSelected, name },
         (* Get last selected models by service: *)
         lastSelected = Replace[
-            Association @ CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ],
+            Association @ Lookup[ dmPrefCache, "ServiceDefaultModel" ],
             Except[ _? AssociationQ ] :> <| |>
         ];
 
@@ -1999,7 +1990,7 @@ getServiceDefaultModel[ service_String ] := Enclose[
         If[ ! StringQ @ name,
             name = ConfirmMatch[ chooseDefaultModelName @ service, _String|Automatic, "DefaultName" ];
             lastSelected[ service ] = name;
-            CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = lastSelected;
+            dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = lastSelected;
         ];
 
         (* Return the name: *)
@@ -2019,13 +2010,13 @@ getServiceDefaultModel // endDefinition;
 (*disconnectService*)
 disconnectService // beginDefinition;
 
-disconnectService[ service_String ] :=
+disconnectService[ Dynamic[ dmPrefCache_ ], service_String ] :=
     With[ { key = credentialKey @ service },
         Unset @ SystemCredential @ key;
         SetEnvironment[ key -> None ];
         clearConnectionCache @ service;
-        If[ extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] === service,
-            CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
+        If[ extractServiceName @ Lookup[ dmPrefCache, "Model" ] === service,
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
         ];
         updateDynamics[ "Services" ]
     ];
@@ -2152,7 +2143,7 @@ $trashBin := Mouseover[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*resetButton*)
-resetButton[ Dynamic[ tab_ ] ] :=
+resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
     Module[ { icon, label },
         icon = Style[
             Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "SyntaxColorResetIcon" ][ # ] ]&[
@@ -2171,7 +2162,7 @@ resetButton[ Dynamic[ tab_ ] ] :=
             label,
 
             Needs[ "Wolfram`Chatbook`" -> None ];
-            resetChatPreferences @ Replace[ tab, $$unspecified -> "Services" ]
+            resetChatPreferences[ Dynamic @ dmPrefCache, Replace[ tab, $$unspecified -> "Services" ] ]
             ,
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
@@ -2188,29 +2179,34 @@ resetButton[ Dynamic[ tab_ ] ] :=
 (*resetChatPreferences*)
 resetChatPreferences // beginDefinition;
 
-resetChatPreferences[ "Notebooks" ] := (
+resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
     CurrentChatSettings[ $FrontEnd ] = Inherited;
+    dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
 );
 
-resetChatPreferences[ "Personas" ] := (
+resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
     (* TODO: choice dialog to uninstall personas *)
-    CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ] = $corePersonaNames;
-    CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = $corePersonaNames;
+    dmPrefCache[ "VisiblePersonas"  ] = CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ] = $corePersonaNames;
+    dmPrefCache[ "PersonaFavorites" ] = CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = $corePersonaNames;
     updateDynamics[ "Personas" ];
 );
 
-resetChatPreferences[ "Tools" ] := (
+resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Tools" ] := (
     CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ] = Inherited;
     CurrentChatSettings[ $FrontEnd, "ToolSelections"    ] = Inherited;
+    dmPrefCache[ "ToolSelectionType" ] = CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ];
+    dmPrefCache[ "ToolSelections"    ] = CurrentChatSettings[ $FrontEnd, "ToolSelections"    ];
     (* TODO: choice dialog to uninstall tools *)
     updateDynamics[ "Tools" ];
 );
 
-resetChatPreferences[ "Services" ] := (
+resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
     CurrentChatSettings[ $FrontEnd, "Model" ] = Inherited;
     CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Inherited;
+    dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ];
+    dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ];
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
