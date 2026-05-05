@@ -1473,63 +1473,92 @@ chatbarUpgradeStripe[ userdata_, tier: "Research", usage_, url_, creditsOptions_
 (*chatbarAddServiceCredits*)
 
 
-chatbarAddServiceCreditsButton[ tier_ ] :=
-    Button[
-        Row[ {
-        	tr @ "ChatbarOptionsExtendUsage",
-        	"  ",
-        	chatbarOptionsArrowDown[]
-		} ],
-        AttachCell[
-            EvaluationBox[ ],
-            chatbarAddServiceCreditsDisplay[ tier ],
-            { Left, Bottom }, 0, { Left, Top },
-            RemovalConditions -> { "MouseClickOutside" }
-        ],
-        Appearance       -> None,
-        BaseStyle        -> { },
-        DefaultBaseStyle -> { },
-        ImageSize        -> Automatic
-    ]
+chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
+	Module[{creditChoices, amounts, widths},
+		(*
+			creditsChoices contains those elements of creditsOptions which 
+			have appropriate settings for "url" and "amount". We also add
+			a "width" key below, for thermometer drawing.
+		*)
+		creditChoices = Select[
+			creditsOptions,
+			AssociationQ[#] && StringQ[Lookup[#, "url"]] && NumericQ[Lookup[#, "amount"]] &
+		];
+		
+		(* log-rescale the amounts to get widths from 50 to 250 *)
+		amounts = Lookup[creditChoices, "amount"] // N;
+		widths = Rescale[Log @ amounts, Log @ MinMax[amounts], If[tier === "Pro", {30, 200}, {50, 250}]];
+		creditChoices = MapThread[Append[#1, "width" -> #2]&, {creditChoices, widths}];
+		
+		If[creditChoices === {},
+			Nothing,
+			With[{creditChoices = creditChoices},
+				Button[
+					Row[ {
+						tr @ "ChatbarOptionsExtendUsage",
+						"  ",
+						chatbarOptionsArrowDown[]
+					} ],
+					AttachCell[
+						EvaluationBox[ ],
+						chatbarAddServiceCreditsDisplay[ userdata, tier, creditChoices ],
+						{ Left, Bottom }, 0, { Left, Top },
+						RemovalConditions -> { "MouseClickOutside" }
+					],
+					Appearance       -> None,
+					BaseStyle        -> { },
+					DefaultBaseStyle -> { },
+					ImageSize        -> Automatic
+				]
+			]
+		]
+	]
 
 
-chatbarAddServiceCreditsThermometer[ "Pro", level : (1|2|3) ] :=
+chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 50, 2, 120, 3, 250 ], 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro" ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
     ]
 
 
-chatbarAddServiceCreditsThermometer[ "Research", level : (1|2|3) ] :=
+chatbarAddServiceCreditsThermometer[ "Research", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 120, 1, "Research" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ Switch[ level, 1, 30, 2, 60, 3, 120 ], 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research" ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
     ]
 
 
-chatbarAddServiceCreditsDisplay[ tier: "Pro" ] :=
+chatbarAddServiceCreditsDisplay[ userdata_, tier: "Pro", creditChoices_ ] :=
     Framed[
         Grid[
-            {
-                { Row[ { "1000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Pro", 1 ] },
-                { Row[ { "2000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Pro", 2 ] },
-                { Row[ { "5000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Pro", 3 ] },
-                { chatbarUpgradeStripe[ "Pro", 0 ], SpanFromLeft }
-            },
+            Append[
+				Table[
+					{ 
+						Hyperlink[
+							Row[ { Round @ assoc["amount"], " ", tr @ "ChatbarOptionsCredits" } ],
+							assoc["url"]
+						],
+						chatbarAddServiceCreditsThermometer[ "Pro", assoc["width"] ]
+					},
+					{ assoc, creditChoices }
+				],
+                { chatbarUpgradeStripe[ userdata, "Pro", 0, Lookup[userdata, "upgradeURL"], { }], SpanFromLeft }
+            ],
             Alignment  -> Left,
-            Dividers   -> { False, { False, False, False, True } },
+            Dividers   -> { False, { False, {-2 -> True} } },
             FrameStyle -> $coDividerColor,
             ItemStyle  -> { { $cutBlue, None }, None },
             ItemSize   -> { { All, Fit } },
-            Spacings   -> { 1, { .7, .7, .7, 2 } }
+            Spacings   -> { 1, { .7, {-2 -> 2}} }
         ],
         Background     -> $coBackground,
         BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro" },
@@ -1540,16 +1569,20 @@ chatbarAddServiceCreditsDisplay[ tier: "Pro" ] :=
     ]
 
 
-chatbarAddServiceCreditsDisplay[ tier: "Research" ] :=
+chatbarAddServiceCreditsDisplay[ userdata_, tier: "Research", creditChoices_ ] :=
     Framed[
         Grid[
-            {
-                { Row[ { "1000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Research", 1 ] },
-                { Row[ { "2000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Research", 2 ] },
-                { Row[ { "5000 ", tr @ "ChatbarOptionsCredits" } ], chatbarAddServiceCreditsThermometer[ "Research", 3 ] }
-            },
+            Table[
+                {
+                	Hyperlink[
+                		Row[ { Round @ assoc["amount"], " ", tr @ "ChatbarOptionsCredits" } ],
+                		assoc[ "url" ]
+                	],
+                	chatbarAddServiceCreditsThermometer[ tier, assoc["width"] ] },
+                { assoc, creditChoices }
+             ],
             Alignment -> Left,
-            Spacings  -> { 1, { .7, .7, .7, 2 } },
+            Spacings  -> { 1, .7 },
             ItemSize  -> { { All, Fit } },
             ItemStyle -> { { $cutBlue, None }, None }
         ],
