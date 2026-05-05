@@ -1255,10 +1255,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
                     ImageSize      -> { width, $cutHeight },
                     RoundingRadius -> 2
                 ],
-                Framed[ Replace[ label, {
-                        tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
-                        else_ :> else
-                    } ],
+                Framed[ label,
                     Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
                     BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
                     ContentPadding -> False,
@@ -1307,10 +1304,7 @@ chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
                 PlotRangePadding -> 1
             ]
             ,
-            Framed[ Replace[ label, {
-                    tier: "Basic" | "Pro" | "Research" :> tr[ "ChatbarOptions" <> tier ],
-                    else_ :> else
-                } ],
+            Framed[ label,
                 Background     -> None,
                 BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
                 ContentPadding -> False,
@@ -1399,8 +1393,8 @@ chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] 
                 Row[ {
                     StringForm[
                         FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate" ],
-                        Style[ tr[ "ChatbarOptionsPro" ], FontColor -> $cutBlue, FontWeight -> "DemiBold" ],
-                        Style[ tr[ "ChatbarOptionsResearch" ], FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+                        Style[ "Pro", FontColor -> $cutBlue, FontWeight -> "DemiBold" ],
+                        Style[ "Research", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                     ],
                     Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                 }, BaseStyle -> { FontColor -> $coBodyColor } ]
@@ -1408,8 +1402,8 @@ chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] 
                 Row[ {
                     StringForm[
                         FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate" ],
-                        Style[ tr[ "ChatbarOptionsPro" ], FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ],
-                        Style[ tr[ "ChatbarOptionsResearch" ], FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+                        Style[ "Pro", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ],
+                        Style[ "Research", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                     ],
                     Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                 }, BaseStyle -> { FontColor -> $coBodyColorHover } ]
@@ -1435,7 +1429,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
                         Row[ {
                             StringForm[
                                 FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTemplate" ],
-                                Style[ tr[ "ChatbarOptionsResearch" ], FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
+                                Style[ "Research", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                             ],
                             Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                         }, BaseStyle -> { FontColor -> $coBodyColor } ]
@@ -1443,7 +1437,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
                         Row[ {
                             StringForm[
                                 FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTemplate" ],
-                                Style[ tr[ "ChatbarOptionsResearch" ], FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
+                                Style[ "Research", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                             ],
                             Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                         }, BaseStyle -> { FontColor -> $coBodyColorHover } ]
