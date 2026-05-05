@@ -945,8 +945,12 @@ $chatbarFakeUserData :=
 		"usage" -> $assistantUsage,
 		"daysToReset" -> "\[LongDash]",
 		"upgradeURL" -> "https://www.wolfram.com",
-		"serviceCreditsOptions" -> <||>
-	|>;
+		"serviceCreditsOptions" -> {
+			<|"level" -> "500 Service Credits", "url" -> "https://www.wolfram.com", "amount" -> 500.|>,
+			<|"level" -> "5,000 Service Credits", "url" -> "https://www.wolfram.com", "amount" -> 5000.|>,
+			<|"level" -> "20,000 Service Credits", "url" -> "https://www.wolfram.com", "amount" -> 20000.|>
+		}
+	|>
 
 Clear[chatbarUserData, getUserValue]
 
@@ -1033,7 +1037,7 @@ getUserValue[assoc_, "upgradeURL"] :=
 	Lookup[assoc, "upgradeUrl", "https://www.wolfram.com/wolfram-ai-services"]
 
 getUserValue[assoc_, "serviceCreditsOptions"] := 
-	Lookup[assoc, "serviceCreditsOptions", <||>]
+	Lookup[assoc, "serviceCreditsOptions", { }]
 
 
 
@@ -1386,9 +1390,9 @@ chatbarWarningStripe[ tier_, usage_, daysToReset_ ] := Nothing
 
 
 chatbarUpgradeStripe[ userdata_ ] :=
-    chatbarUpgradeStripe @@ Lookup[ userdata, { "tier", "usage", "upgradeURL" } ]
+    chatbarUpgradeStripe[ userdata, ##]& @@ Lookup[ userdata, { "tier", "usage", "upgradeURL", "serviceCreditsOptions"} ]
 
-chatbarUpgradeStripe[ tier: "Basic", usage_, url_ ] :=
+chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] :=
     MouseAppearance[
 		Button[
 			Mouseover[
@@ -1422,7 +1426,7 @@ chatbarUpgradeStripe[ tier: "Basic", usage_, url_ ] :=
 		"LinkHand"
 	]
 
-chatbarUpgradeStripe[ tier: "Pro", usage_, url_ ] :=
+chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
     Grid[
         { {
             MouseAppearance[
@@ -1455,13 +1459,13 @@ chatbarUpgradeStripe[ tier: "Pro", usage_, url_ ] :=
 				],
 				"LinkHand"
 			],
-            Sequence @@ If[ usage >= 1, { Spacer[ 20 ], chatbarAddServiceCreditsButton[ tier ] }, { } ]
+            Sequence @@ If[ usage >= 1, { Spacer[ 20 ], chatbarAddServiceCreditsButton[ userdata, tier, creditsOptions ] }, { } ]
         } },
         Alignment -> { Left, Baseline }
     ]
 
-chatbarUpgradeStripe[ tier: "Research", usage_, url_ ] :=
-    If[ usage >= 1, chatbarAddServiceCreditsButton[ tier ], Nothing ]
+chatbarUpgradeStripe[ userdata_, tier: "Research", usage_, url_, creditsOptions_ ] :=
+    If[ usage >= 1, chatbarAddServiceCreditsButton[ userdata, tier, creditsOptions ], Nothing ]
 
 
 (* ::**************************************************************************************************************:: *)
