@@ -1385,9 +1385,9 @@ chatbarWarningStripe[ tier_, usage_, daysToReset_ ] := Nothing
 
 
 chatbarUpgradeStripe[ userdata_ ] :=
-    chatbarUpgradeStripe @@ Lookup[ userdata, { "tier", "usage" } ]
+    chatbarUpgradeStripe @@ Lookup[ userdata, { "tier", "usage", "upgradeURL" } ]
 
-chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
+chatbarUpgradeStripe[ tier: "Basic", usage_, url_ ] :=
     MouseAppearance[
 		Button[
 			Mouseover[
@@ -1410,16 +1410,18 @@ chatbarUpgradeStripe[ tier: "Basic", usage_ ] :=
 				}, BaseStyle -> {FontColor -> $coBodyColorHover}]
 			]
 			,
-			MessageDialog[ "To do" ],
+			SystemOpen[ url ],
 			Appearance       -> None,
 			BaseStyle        -> { },
 			DefaultBaseStyle -> { },
-			ImageSize        -> Automatic
+			ImageSize        -> Automatic,
+			Tooltip          -> ToBoxes[ url ],
+			TooltipDelay     -> Automatic
 		],
 		"LinkHand"
 	]
 
-chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
+chatbarUpgradeStripe[ tier: "Pro", usage_, url_ ] :=
     Grid[
         { {
             MouseAppearance[
@@ -1442,11 +1444,13 @@ chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
 						}, BaseStyle -> {FontColor -> $coBodyColorHover}]
 					
 					],
-					MessageDialog[ "To do" ],
+					SystemOpen[ url ],
 					Appearance       -> None,
 					BaseStyle        -> { },
 					DefaultBaseStyle -> { },
-					ImageSize        -> Automatic
+					ImageSize        -> Automatic,
+					Tooltip          -> ToBoxes[ url ],
+					TooltipDelay     -> Automatic
 				],
 				"LinkHand"
 			],
@@ -1455,7 +1459,7 @@ chatbarUpgradeStripe[ tier: "Pro", usage_ ] :=
         Alignment -> { Left, Baseline }
     ]
 
-chatbarUpgradeStripe[ tier: "Research", usage_ ] :=
+chatbarUpgradeStripe[ tier: "Research", usage_, url_ ] :=
     If[ usage >= 1, chatbarAddServiceCreditsButton[ tier ], Nothing ]
 
 
