@@ -1141,7 +1141,14 @@ chatTimingData // endDefinition;
 (* ::Subsection::Closed:: *)
 (*viewChatTiming*)
 viewChatTiming // beginDefinition;
-viewChatTiming[ ] := Column[ viewChatTiming /@ Internal`BagPart[ $timingLog, All ] ];
+viewChatTiming[ ] :=
+    Column[
+        Map[
+            Column @* Map[ viewChatTiming ],
+            GatherBy[ Internal`BagPart[ $timingLog, All ], Lookup[ "UUID" ] ]
+        ],
+        Dividers -> All
+    ];
 viewChatTiming[ data_Association?AssociationQ ] := With[{children = data @ "ChildTimings", parent = formatChatTimingEntry @ KeyDrop[ data, "ChildTimings" ]},
     If[ {} === children,
         parent,
