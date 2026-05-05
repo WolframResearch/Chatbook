@@ -1062,11 +1062,12 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
     		 ],
     		TrackedSymbols :> {initdone}
     	],
-    	Initialization :> (
-    		initdone = False;
-    		userdata = chatbarUserData[];
-    		initdone = True;
-    	),
+    	Initialization :> WithCleanup[
+    		initdone = False,
+    		userdata = chatbarUserData[],
+    		If[ !AssociationQ[userdata], userdata = <| "credentialsQ" -> False |> ];
+    		initdone = True
+    	],
     	SynchronousInitialization -> False,
     	UnsavedVariables :> {initdone}
     ]
