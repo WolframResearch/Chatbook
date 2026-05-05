@@ -229,9 +229,6 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "\:4eca\:6708\:306e\:4f7f\:7528\:91cf\:ff1a",
-"ChatbarOptionsBasic" -> "Basic",
-"ChatbarOptionsPro" -> "Pro",
-"ChatbarOptionsResearch" -> "Research",
 "ChatbarOptionsLimit" -> "\:4f7f\:7528\:91cf\:306e\:4e0a\:9650\:306b\:9054\:3057\:307e\:3057\:305f",
 "ChatbarOptionsLimitReset" -> "\:ff08`1`\:65e5\:5f8c\:306b\:30ea\:30bb\:30c3\:30c8\:ff09",
 "ChatbarOptionsUpgradeTemplate" -> "`1`\:306b\:30a2\:30c3\:30d7\:30b0\:30ec\:30fc\:30c9",

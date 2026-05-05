@@ -229,9 +229,6 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Usage this month:",
-"ChatbarOptionsBasic" -> "Basic",
-"ChatbarOptionsPro" -> "Pro",
-"ChatbarOptionsResearch" -> "Research",
 "ChatbarOptionsLimit" -> "Usage limit reached",
 "ChatbarOptionsLimitReset" -> "(resets in `1` days)",
 "ChatbarOptionsUpgradeTemplate" -> "Upgrade to `1`",
