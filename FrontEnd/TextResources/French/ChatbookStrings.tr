@@ -135,16 +135,16 @@
 "PreferencesContentAuthentication" -> "Authentification",
 "PreferencesContentUnregisterTooltip" -> "Annuler la connexion au service",
 "PreferencesContentOpenAICompletionURLLabel" -> "URL compl\[EGrave]te du chat\[NonBreakingSpace]:",
-"PreferencesContentLLMKitTitle" -> "Assistant IA de Wolfram",
+"PreferencesContentLLMKitTitle" -> "Wolfram AI Assistant",
 "PreferencesContentLLMKitUpgradePro" -> "Mettre \[AGrave] niveau vers `SubscriptionLevelPro` ou `SubscriptionLevelResearch` \[RightGuillemet]",(* maintain the text in backticks, replaced with text resources above *)
 "PreferencesContentLLMKitUpgradeResearch" -> "Mettre \[AGrave] niveau vers `SubscriptionLevelResearch` \[RightGuillemet]",
 "PreferencesContentLLMKitSubscribeButton" -> "S\[CloseCurlyQuote]abonner",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "En savoir plus\[Ellipsis]",
-"PreferencesContentLLMKitSubscriptionRequired" -> "Wolfram AI Services requires a subscription",
-"PreferencesContentLLMKitNoSubscription" -> "No Wolfram AI Services subscription found",
+"PreferencesContentLLMKitSubscriptionRequired" -> "Wolfram AI Services n\[EAcute]cessite un abonnement",
+"PreferencesContentLLMKitNoSubscription" -> "Aucun abonnement Wolfram AI Services trouv\[EAcute]",
 "PreferencesContentLLMKitSignInOr" -> "ou",
 "PreferencesContentLLMKitSignInButton" -> "Se connecter pour utiliser un abonnement existant \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Assistant IA de Wolfram\[NonBreakingSpace]: `SubscriptionLevel`",
+"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Assistant\[NonBreakingSpace]: `SubscriptionLevel`",
 "PreferencesContentLLMKitEnabledManage" -> "G\[EAcute]rez votre abonnement \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Entrer une URL",
@@ -225,7 +225,7 @@
 "ChatbarFieldHint" -> "Que voulez\[Hyphen]vous faire\[NonBreakingSpace]?",
 "ChatbarWolframDisabledInternet" -> "Acc\[EGrave]s Internet non autoris\[EAcute] \[RightGuillemet]",
 "ChatbarNoInternet" -> "Aucune connexion Internet",
-"ChatbarSignIn" -> "Connectez\[Hyphen]vous pour utiliser l\[CloseCurlyQuote]assistant IA",
+"ChatbarSignIn" -> "Connectez\[Hyphen]vous pour utiliser AI Assistant",
 
 "ChatbarOptionsTitle" -> "Assistant IA\[NonBreakingSpace]:",
 "ChatbarOptionsMonthlyUsage" -> "Utilisation ce mois\[Hyphen]ci\[NonBreakingSpace]:",
@@ -240,7 +240,7 @@
 "ChatbarOptionsMinimized" -> "R\[EAcute]duit",
 "ChatbarOptionsOff" -> "D\[EAcute]sactiv\[EAcute]",
 "ChatbarOptionsSignOut" -> "Se d\[EAcute]connecter",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Obtention des donn\[EAcute]es utilisateur\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
