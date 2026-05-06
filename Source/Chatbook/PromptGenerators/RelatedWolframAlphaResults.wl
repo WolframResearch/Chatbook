@@ -991,7 +991,8 @@ submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Encl
                     "podtimeout"    -> $timeouts[ "AlphaPod"    ],
                     "formattimeout" -> $timeouts[ "AlphaFormat" ],
                     "parsetimeout"  -> $timeouts[ "AlphaParse"  ],
-                    "totaltimeout"  -> $timeouts[ "AlphaTotal"  ]
+                    "totaltimeout"  -> $timeouts[ "AlphaTotal"  ],
+                    getGeoIPRule[ ]
                 |>
             |>
         ];
@@ -1043,6 +1044,29 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
 ];
 
 submitXMLRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getGeoIPRule*)
+getGeoIPRule // beginDefinition;
+getGeoIPRule[ ] :=
+    Which[
+        StringQ[ $RequesterAddress ],
+        "ip" -> $RequesterAddress
+        ,
+        MatchQ[ $GeoLocation, _GeoPosition | {_Integer | _Real, _Integer | _Real} ],
+        "latlong" -> StringJoin @ Riffle[ ToString /@ DecimalForm /@ Replace[$GeoLocation,
+                        p_GeoPosition :> p[ "LatitudeLongitude" ]
+                    ], "," ]
+        ,
+        True,
+        (* I could imagine choosing an external IPv4 address via  
+             "ip" -> SelectFirst[$MachineAddresses, StringFreeQ[#, "::"] && !StringStartsQ[#, "10." | "192.168"]&]
+           but I can also imagine that would always be Missing because the router assigns an internal address.
+           In this case, the Alpha server can use GeoIP based on the remote IPAddress *)
+        "ip" -> Missing[ "NotApplicable" ]
+    ]
+getGeoIPRule // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

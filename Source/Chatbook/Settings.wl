@@ -415,6 +415,10 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
+$modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
+    "MaxContextTokens" -> 400000
+|>;
+
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
