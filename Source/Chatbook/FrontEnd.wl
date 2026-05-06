@@ -1136,20 +1136,20 @@ $openerLabelGridOptions := Sequence[
 
 $openerFrameOptionsDefault := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackground",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrame",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> LightDarkSwitched[ RGBColor[ 0.8980392, 0.9686274, 1., 0.08 ], RGBColor[0.1215686, 0.1490196, 0.1803921, 0.08 ] ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], LightDarkSwitched[ RGBColor[ 0.6117647, 0.7960784, 0.890196, 0.5 ], RGBColor[ 0.172549, 0.2392156, 0.3137254 0.5 ] ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 $openerFrameOptionsActive := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackgroundHover",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrameHover",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> LightDarkSwitched[ RGBColor[ 1., 1., 1., 0.08 ], RGBColor[ 0.1607843, 0.2509803, 0.3529411, 0.08 ] ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], LightDarkSwitched[ RGBColor[ 0.8392156, 0.9294117, 0.9764705, 0.5 ], RGBColor[ 0.2039215, 0.3215686, 0.4588235, 0.5 ] ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 (* ::**************************************************************************************************************:: *)
