@@ -203,10 +203,13 @@ $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
 (*
     * DeepSeek API doc on thinking and reasoning_effort parameter:
     <https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming#reasoning-effort>
+
+    * As of 2026-05-06, the company DeepSeek account has $0.3 balance and returns "Insufficient Balance" error for every
+    input, so I could NOT continue testing.
 *)
 $modelAutoSettings[ "DeepSeek", "DeepSeekFlash" ] = <|
     (*"thinking" -> <| "type" -> "enabled" |>,*) (* TODO: Define the new "thinking" parameter? The default is "enabled". Turn off? *)
-    "Reasoning" -> <| "reasoning_effort" -> "high" |>
+    (*"Reasoning" -> <| "reasoning_effort" -> "high" |>*) (* TODO: Use the service's default ("high"?) might be sufficient. *)
 |>;
 
 (* ::**************************************************************************************************************:: *)
