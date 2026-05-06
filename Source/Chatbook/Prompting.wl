@@ -127,7 +127,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" },
-    "FunctionRepositoryFunctionSyntax"     -> { "FunctionRepositoryFunction" }
+    "FunctionRepositoryFunctionSyntax"     -> { "FunctionRepositoryIntegration" }
 |>;
 
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
