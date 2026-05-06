@@ -26,8 +26,6 @@ $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
-$assistantTier               = "Basic";
-$assistantUsage              = 0.5;
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -941,8 +939,8 @@ $chatbarFakeUserData :=
     <|
         "credentialsQ" -> cloudCredentialsQ[ ],
         "username"     -> userName[ ],
-        "tier"         -> $assistantTier,
-        "usage"        -> $assistantUsage,
+        "tier"         -> "Basic",
+        "usage"        -> 0.5,
         "daysToReset"  -> "\[LongDash]",
         "upgradeURL"   -> "https://www.wolfram.com",
         "serviceCreditsOptions" -> {
@@ -1739,6 +1737,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "Loading"          -> chatbarLoading @ Typeset`activeQ,
                                                 "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
+                                                "LocalAIOnly"      -> chatbarLocalAIOnly @ Typeset`activeQ,
                                                 "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
@@ -1746,10 +1745,36 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             ImageSize -> Automatic
                                         ],
                                         Typeset`state = Which[
-                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ], "InternetDisabled",
-                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ], "NoInternet",
-                                            cloudCredentialsQ[ ], "Enabled",
-                                            True, "SignIn"
+                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ],
+                                                "InternetDisabled",
+
+                                            Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ],
+                                                "NoInternet",
+                                            
+                                            (* be very generous in allowing AI access; only disable chatbar *)
+                                            (* if disabled via license *)
+                                            Lookup[
+                                                First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
+                                                "Features",
+                                                True, (* i.e. there's no active license, in which case I don't know how you got here *)
+                                                !MemberQ[ #, "LLMSupport" ]&
+                                            ],
+                                                "LocalAIOnly",
+                                            
+                                            (* if disabled via ERP *)
+                                            Lookup[
+                                                Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+                                                "LLMFeaturesPermitted",
+                                                False,
+                                                # =!= False&
+                                            ],
+                                                "LocalAIOnly",
+                                            
+                                            cloudCredentialsQ[ ],
+                                                "Enabled",
+                                            
+                                            True,
+                                                "SignIn"
                                         ],
                                         SynchronousUpdating -> False
                                     ]
@@ -1886,66 +1911,11 @@ chatbarSignIn // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*chatbarDisabledInternet*)
+(*chatbarDisabledFrame*)
 
-chatbarDisabledInternet // beginDefinition;
+chatbarDisabledFrame // beginDefinition;
 
-Attributes[ chatbarDisabledInternet ] = { HoldAll };
-
-chatbarDisabledInternet[ activeQ_ ] :=
-Button[
-    Framed[
-        Row[
-            {
-                PaneSelector[
-                    { True -> chatbookIcon[ "ChatUnavailableHover", False ], False -> chatbookIcon[ "ChatUnavailable", False ] },
-                    Dynamic @ activeQ,
-                    BaselinePosition -> Baseline,
-                    ImageSize        -> Automatic
-                ],
-                Style[ tr @ "ChatbarWolframDisabledInternet",
-                    "Text", "TextStyleInputField",
-                    FontColor       -> Dynamic @ If[ activeQ,
-                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
-                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
-                    ],
-                    FontFamily      -> "Roboto",
-                    FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
-                    FontSize        -> 15,
-                    FontSlant       -> "Plain",
-                    LineBreakWithin -> False
-                ]
-            },
-            Spacer @ 0,
-            StripOnInput -> True
-        ],
-        Alignment      -> { Automatic, Center },
-        Background     -> Dynamic @ If[ activeQ,
-            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
-            LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
-        ],
-        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
-        FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 38 },
-        RoundingRadius -> 9
-    ],
-    NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
-    Appearance -> "Suppressed",
-    ImageSize  -> Automatic,
-    Method     -> "Queued"
-];
-
-chatbarDisabledInternet // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*chatbarNoInternet*)
-
-chatbarNoInternet // beginDefinition;
-
-Attributes[ chatbarNoInternet ] = { HoldAll };
-
-chatbarNoInternet[ activeQ_ ] :=
+chatbarDisabledFrame[ Dynamic[ activeQ_ ], textResource_String ] :=
 Framed[
     Row[
         {
@@ -1955,7 +1925,7 @@ Framed[
                 BaselinePosition -> Baseline,
                 ImageSize        -> Automatic
             ],
-            Style[ tr @ "ChatbarNoInternet",
+            Style[ tr @ textResource,
                 "Text", "TextStyleInputField",
                 FontColor       -> Dynamic @ If[ activeQ,
                     LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
@@ -1971,11 +1941,59 @@ Framed[
         Spacer @ 0,
         StripOnInput -> True
     ],
+    Alignment      -> { Automatic, Center },
+    Background     -> Dynamic @ If[ activeQ,
+        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+    ],
     FrameMargins   -> { { 12, 1 }, { 1, 1 } },
     FrameStyle     -> None,
     ImageSize      -> { Scaled[ 1 ], 38 },
     RoundingRadius -> 9
 ];
+
+chatbarDisabledFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarDisabledInternet*)
+
+chatbarDisabledInternet // beginDefinition;
+
+Attributes[ chatbarDisabledInternet ] = { HoldAll };
+
+chatbarDisabledInternet[ activeQ_ ] :=
+Button[
+    chatbarDisabledFrame[ Dynamic @ activeQ, "ChatbarWolframDisabledInternet" ],
+    NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+chatbarDisabledInternet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarLocalAIOnly*)
+
+chatbarLocalAIOnly // beginDefinition;
+
+Attributes[ chatbarLocalAIOnly ] = { HoldAll };
+
+chatbarLocalAIOnly[ activeQ_ ] := chatbarDisabledFrame[ Dynamic @ activeQ, "PreferencesContentAIDisabledByAdmin" ];
+
+chatbarLocalAIOnly // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarNoInternet*)
+
+chatbarNoInternet // beginDefinition;
+
+Attributes[ chatbarNoInternet ] = { HoldAll };
+
+chatbarNoInternet[ activeQ_ ] := chatbarDisabledFrame[ Dynamic @ activeQ, "ChatbarNoInternet" ];
 
 chatbarNoInternet // endDefinition;
 
@@ -2027,7 +2045,7 @@ Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { },
+DynamicModule[ { userdata },
     EventHandler[(* pre-emptive mouse-down event for return key *)
         Framed[
             Grid[
@@ -2067,11 +2085,13 @@ DynamicModule[ { },
     ],
     SynchronousInitialization -> False,
     Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ] === { },
+        userdata = chatbarUserData[ ];
+        If[ !AssociationQ[ userdata ], userdata = <| "credentialsQ" -> False |> ];
         AttachCell[
             EvaluationBox[ ],
             Cell[
                 BoxData @ ToBoxes @ DynamicModule[ { },
-                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
+                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ], Lookup[ userdata, "tier", "Basic" ] ],
                     InheritScope -> True
                 ],
                 "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
@@ -2174,16 +2194,11 @@ chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
 
 chatbarInputFieldEnabledTierIndicator // beginDefinition;
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ] ] :=
-PaneSelector[
-    {
-        "Basic"    -> Graphics[ Background -> None, ImageSize -> { 1, 1 } ],
-        "Pro"      -> chatbarInputFieldEnabledTierIndicatorFrame[ "Pro",      Dynamic @ activeQ ],
-        "Research" -> chatbarInputFieldEnabledTierIndicatorFrame[ "Research", Dynamic @ activeQ ]
-    },
-    Dynamic @ $assistantTier,
-    ImageSize -> Automatic
-]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
+
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Pro" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Pro", Dynamic @ activeQ ]
+
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Research" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Research", Dynamic @ activeQ ]
 
 chatbarInputFieldEnabledTierIndicator // endDefinition;
 

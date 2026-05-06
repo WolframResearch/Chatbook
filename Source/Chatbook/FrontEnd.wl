@@ -1109,8 +1109,8 @@ MouseAppearance[
                     If[ListQ[label], label, {label}],
                     PaneSelector[
                         {
-                            True -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialCloserIcon" ],
-                            False -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ]
+                            True -> RawBoxes @ TemplateBox[ { RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] }, "DiscardedMaterialCloserIcon" ],
+                            False -> RawBoxes @ TemplateBox[ { RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] }, "DiscardedMaterialOpenerIcon" ]
                         },
                         Dynamic[var],
                         ImageSize -> Automatic,
@@ -1136,20 +1136,20 @@ $openerLabelGridOptions := Sequence[
 
 $openerFrameOptionsDefault := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackground",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrame",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> RGBColor[ 0.709527, 0.831759396, 0.897, 0.08 ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.709527, 0.831759396, 0.897, 0.5 ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 $openerFrameOptionsActive := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackgroundHover",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrameHover",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> RGBColor[ 0.8547635, 0.915879698, 0.9485, 0.08 ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.8547635, 0.915879698, 0.9485, 0.5 ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1165,7 +1165,7 @@ fakeOpenerView[ label_, showButton_: False ] := Deploy @ Framed[
             Flatten @ {
                 label,
                 If[ TrueQ @ showButton,
-                    RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ],
+                    RawBoxes @ TemplateBox[ { RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] }, "DiscardedMaterialOpenerIcon" ],
                     Nothing
                 ]
             }
