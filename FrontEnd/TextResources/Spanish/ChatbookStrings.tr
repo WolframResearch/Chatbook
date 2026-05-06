@@ -225,9 +225,9 @@
 "ChatbarFieldHint" -> "\[DownQuestion]Qu\[EAcute] te gustar\[IAcute]a hacer?",
 "ChatbarWolframDisabledInternet" -> "El acceso a internet no est\[AAcute] permitido \[RightGuillemet]",
 "ChatbarNoInternet" -> "No hay conexi\[OAcute]n a internet",
-"ChatbarSignIn" -> "Inicie sesi\[OAcute]n para utilizar el asistente de IA",
+"ChatbarSignIn" -> "Inicie sesi\[OAcute]n para utilizar AI Assistant",
 
-"ChatbarOptionsTitle" -> "Asistente de IA:",
+"ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Uso este mes:",
 "ChatbarOptionsLimit" -> "L\[IAcute]mite de uso alcanzado",
 "ChatbarOptionsLimitReset" -> "(se restablece en `1` d\[IAcute]as)",
