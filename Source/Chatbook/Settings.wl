@@ -200,6 +200,15 @@ $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
     "ToolMethod" -> "Service"
 |>;
 
+(*
+    * DeepSeek API doc on thinking and reasoning_effort parameter:
+    <https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming#reasoning-effort>
+*)
+$modelAutoSettings[ "DeepSeek", "DeepSeekFlash" ] = <|
+    (*"thinking" -> <| "type" -> "enabled" |>,*) (* TODO: Define the new "thinking" parameter? The default is "enabled". Turn off? *)
+    "Reasoning" -> <| "reasoning_effort" -> "high" |>
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*GoogleGemini*)
