@@ -314,24 +314,21 @@ $modelAutoSettings[ "xAI", Automatic ] = <|
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
 (*
-  * <https://openrouter.ai/compare/deepseek/deepseek-v4-flash>
+  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
+    * Reasoning is on by default, only supports effort level "high" and "xhigh".
+    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
+
+  * 2026-05-05: Tried turning reasoning on with
+        "Reasoning" -> <| "effort" -> "high" |>
+    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
+    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
+
+    The easy mitigation seems to be using
+        "Reasoning" -> <| "effort" -> "none" |>
 *)
 $modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
-    "MaxContextTokens"       -> 1048576,
-    "Multimodal"             -> False,
-
-    "Reasoning"              -> <| "effort" -> {"high", "xhigh"}[[1]] |>,
-
-    "ToolMethod"             -> "Simple",
-    (*"ToolMethod"             -> "Service",*)
-    "ToolResponseRole"       -> "User",
-    "HybridToolMethod"       -> False,
-
-    "ToolCallRetryMessage"   -> False,
-
-    (*"EndToken"               -> None*)
-    "EndToken"               -> "<\:ff5cend\:2581of\:2581sentence\:ff5c>"
-
+    "Reasoning" -> <| "effort" -> "none" |>
+    (*"Reasoning" -> <| "effort" -> "high" |>*)
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -476,6 +473,13 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
+    "MaxContextTokens"       -> 1048576,
+    "Multimodal"             -> False,
+    "ToolMethod"             -> "Simple",
+    "ToolResponseRole"       -> "User",
+    "HybridToolMethod"       -> False,
+    "ToolCallRetryMessage"   -> False,
+    "EndToken"               -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)
