@@ -3186,7 +3186,7 @@ assistantMessageLabel // beginDefinition;
 assistantMessageLabel[ ] := Enclose[
     Catch @ Module[ { cell, persona },
         cell = topParentCell @ EvaluationCell[ ];
-        persona = If[ MatchQ[ cell, _CellObject ], CurrentChatSettings[ cell, "LLMEvaluator" ], "NotebookAssistant" ];
+        persona = If[ MatchQ[ cell, _CellObject ], CurrentChatSettings[ cell, "LLMEvaluator" ], "WolframAIAssistant" ];
         ConfirmMatch[ getPersonaMenuIcon @ persona, Except[ _getPersonaMenuIcon | _? FailureQ ], "Icon" ]
     ],
     throwInternalFailure

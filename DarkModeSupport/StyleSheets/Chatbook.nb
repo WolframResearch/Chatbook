@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.100.3985410210"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.124.3986619496"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -269,7 +269,7 @@ Notebook[
           {
            Typeset`dingbatCell$$ = None,
            Typeset`targetCell$$ = None,
-           Typeset`personaCache$$ = "CodeAssistant"
+           Typeset`personaCache$$ = "WolframAIAssistant"
           },
           DynamicWrapperBox[
            ButtonBox[
@@ -438,7 +438,7 @@ Notebook[
                ]
               ];
 
-              If[ Typeset`personaCache$$ =!= "CodeAssistant",
+              If[ Typeset`personaCache$$ =!= "WolframAIAssistant",
                AttachCell[
                 Typeset`dingbatCell$$,
                 Cell[
@@ -453,7 +453,9 @@ Notebook[
                      ImageSize -> {25, 25},
                      ImageSizeAction -> "ShrinkToFit"
                     ],
-                    Wolfram`Chatbook`UI`Private`persona$
+                    Wolfram`Chatbook`Common`personaDisplayName[
+                     Wolfram`Chatbook`UI`Private`persona$
+                    ]
                    ]
                   ]
                  ],
@@ -1337,7 +1339,7 @@ Notebook[
           {
            Typeset`dingbatCell$$ = None,
            Typeset`targetCell$$ = None,
-           Typeset`personaCache$$ = "CodeAssistant"
+           Typeset`personaCache$$ = "WolframAIAssistant"
           },
           DynamicWrapperBox[
            ButtonBox[
@@ -1506,7 +1508,7 @@ Notebook[
                ]
               ];
 
-              If[ Typeset`personaCache$$ =!= "CodeAssistant",
+              If[ Typeset`personaCache$$ =!= "WolframAIAssistant",
                AttachCell[
                 Typeset`dingbatCell$$,
                 Cell[
@@ -1521,7 +1523,9 @@ Notebook[
                      ImageSize -> {25, 25},
                      ImageSizeAction -> "ShrinkToFit"
                     ],
-                    Wolfram`Chatbook`UI`Private`persona$
+                    Wolfram`Chatbook`Common`personaDisplayName[
+                     Wolfram`Chatbook`UI`Private`persona$
+                    ]
                    ]
                   ]
                  ],
