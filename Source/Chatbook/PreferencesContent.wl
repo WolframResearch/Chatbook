@@ -45,7 +45,7 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector },
+        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
             
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -102,7 +102,7 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { state },
-            Deinitialization :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
+            Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
     ],
@@ -1421,7 +1421,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1438,7 +1438,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
