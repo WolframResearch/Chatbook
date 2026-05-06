@@ -1421,7 +1421,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1438,7 +1438,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
