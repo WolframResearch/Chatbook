@@ -4,5 +4,11 @@
     "DisplayName"      -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameCodeAssistant" ],
     "Icon"             -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatOutputCellDingbat" ],
 	"PromptGenerators" -> { "RelatedDocumentation", ParentList },
-    "Tools"            -> { "WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList }
+    "Tools"            -> {
+        "WolframLanguageEvaluator",
+        "DocumentationSearcher",
+        "WolframAlpha",
+        "WebFetcher",
+        ParentList
+    }
 |>
