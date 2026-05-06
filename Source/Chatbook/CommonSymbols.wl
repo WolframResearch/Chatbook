@@ -223,6 +223,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getProcessingFunction;
 `getProcessingFunctions;
 `getServiceModelList;
+`getSidebarPrompt;
 `getSnippets;
 `getTokenizer;
 `getTokenizerName;

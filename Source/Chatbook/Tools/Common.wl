@@ -52,7 +52,7 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
-$defaultWebTextLength    = 12000;
+$defaultWebTextLength    = 2^16;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
