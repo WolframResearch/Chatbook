@@ -57,6 +57,7 @@ PacletObject[ <|
                 "PlainChat",
                 "RawModel",
                 "Wolfie",
+                "WolframAIAssistant",
                 "WolframAlpha"
             }
         },

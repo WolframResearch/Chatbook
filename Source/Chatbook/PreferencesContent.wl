@@ -530,7 +530,7 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <| "Service" -> "Wolfram AI Services", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
@@ -1934,7 +1934,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services" ] := Automatic;
 
 getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
     Module[ { lastSelected, name },

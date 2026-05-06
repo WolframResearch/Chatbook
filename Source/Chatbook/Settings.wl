@@ -48,7 +48,7 @@ $defaultChatSettings = <|
     "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
-    "LLMEvaluator"                   -> "CodeAssistant",
+    "LLMEvaluator"                   -> "WolframAIAssistant",
     "MaxCellStringLength"            -> Automatic,
     "MaxContextTokens"               -> Automatic,
     "MaxOutputCellStringLength"      -> Automatic,
