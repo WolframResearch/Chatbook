@@ -1413,14 +1413,8 @@ makeLLMPanel[ ] :=
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradePro" ],
                         {
-                            "`SubscriptionLevelPro`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelPro" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ],
-                            "`SubscriptionLevelResearch`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ]
+                            "`SubscriptionLevelPro`"      :> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
+                            "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                         }
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
@@ -1438,12 +1432,7 @@ makeLLMPanel[ ] :=
                 Style[
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradeResearch" ],
-                        "`SubscriptionLevelResearch`" :>
-                            StringJoin[
-                                "\!\(\*StyleBox[\"",
-                                FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ],
-                                "\",FontWeight->\"Bold\"]\)"
-                            ]
+                        "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "PreferencesContentFont_1",

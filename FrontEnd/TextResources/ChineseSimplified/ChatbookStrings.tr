@@ -135,7 +135,7 @@
 "PreferencesContentAuthentication" -> "\:8BA4\:8BC1",
 "PreferencesContentUnregisterTooltip" -> "\:53D6\:6D88\:4E0E\:6CE8\:518C\:670D\:52A1\:5546\:7684\:8FDE\:63A5",
 "PreferencesContentOpenAICompletionURLLabel" -> "\:804A\:5929\:8865\:5168 URL\:ff1a",
-"PreferencesContentLLMKitTitle" -> "Wolfram AI \:52A9\:624B",
+"PreferencesContentLLMKitTitle" -> "Wolfram AI Assistant",
 "PreferencesContentLLMKitUpgradePro" -> "\:5347\:7EA7\:5230 `SubscriptionLevelPro` \:6216 `SubscriptionLevelResearch` \[RightGuillemet]",(* maintain the text in backticks, replaced with text resources above *)
 "PreferencesContentLLMKitUpgradeResearch" -> "\:5347\:7EA7\:5230 `SubscriptionLevelResearch` \[RightGuillemet]",
 "PreferencesContentLLMKitSubscribeButton" -> "\:8BA2\:9605",
@@ -144,7 +144,7 @@
 "PreferencesContentLLMKitNoSubscription" -> "\:672A\:627E\:5230 LLM Kit \:8BA2\:9605",
 "PreferencesContentLLMKitSignInOr" -> "\:6216",
 "PreferencesContentLLMKitSignInButton" -> "\:767B\:5F55\:4F7F\:7528\:73B0\:6709\:8BA2\:9605 \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI \:52A9\:624B\:ff1a `SubscriptionLevel`",
+"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Assistant\:ff1a `SubscriptionLevel`",
 "PreferencesContentLLMKitEnabledManage" -> "\:7BA1\:7406\:60A8\:7684\:8BA2\:9605 \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "\:8F93\:5165 URL",
