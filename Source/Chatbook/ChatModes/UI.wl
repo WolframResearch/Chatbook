@@ -2027,7 +2027,7 @@ Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
 chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, activeQ_, selectionWithinQ_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { },
+DynamicModule[ { userdata },
     EventHandler[(* pre-emptive mouse-down event for return key *)
         Framed[
             Grid[
@@ -2067,11 +2067,13 @@ DynamicModule[ { },
     ],
     SynchronousInitialization -> False,
     Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ] === { },
+        userdata = chatbarUserData[ ];
+        If[ !AssociationQ[ userdata ], userdata = <| "credentialsQ" -> False |> ];
         AttachCell[
             EvaluationBox[ ],
             Cell[
                 BoxData @ ToBoxes @ DynamicModule[ { },
-                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ] ],
+                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ], Lookup[ userdata, "tier", "Basic" ] ],
                     InheritScope -> True
                 ],
                 "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
@@ -2174,16 +2176,11 @@ chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
 
 chatbarInputFieldEnabledTierIndicator // beginDefinition;
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ] ] :=
-PaneSelector[
-    {
-        "Basic"    -> Graphics[ Background -> None, ImageSize -> { 1, 1 } ],
-        "Pro"      -> chatbarInputFieldEnabledTierIndicatorFrame[ "Pro",      Dynamic @ activeQ ],
-        "Research" -> chatbarInputFieldEnabledTierIndicatorFrame[ "Research", Dynamic @ activeQ ]
-    },
-    Dynamic @ $assistantTier,
-    ImageSize -> Automatic
-]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
+
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Pro" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Pro", Dynamic @ activeQ ]
+
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Research" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Research", Dynamic @ activeQ ]
 
 chatbarInputFieldEnabledTierIndicator // endDefinition;
 
