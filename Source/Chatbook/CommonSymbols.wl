@@ -368,6 +368,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `toolOptionValue;
 `toolRequestParser;
 `toolSelectedQ;
+`toolShortNameQ;
 `toolsEnabledQ;
 `toolShortName;
 `topParentCell;
