@@ -229,6 +229,7 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "Usage this month:",
+"ChatbarOptionsAccessFailedUsage" -> "Usage details are not currently available. Try again later.",
 "ChatbarOptionsLimit" -> "Usage limit reached",
 "ChatbarOptionsLimitReset" -> "(resets in `1` days)",
 "ChatbarOptionsUpgradeTemplate" -> "Upgrade to `1`",
