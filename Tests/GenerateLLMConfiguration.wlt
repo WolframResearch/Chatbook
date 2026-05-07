@@ -37,7 +37,7 @@ VerificationTest[
 
 VerificationTest[
     SelectFirst[ config[ "Prompts" ], StringQ ],
-    _String? (StringContainsQ[ "Notebook Assistant" ]),
+    _String? (StringContainsQ[ "Wolfram AI Assistant" ]),
     SameTest -> MatchQ,
     TestID   -> "NoArgs-Prompt@@Tests/GenerateLLMConfiguration.wlt:38,1-43,2"
 ]
