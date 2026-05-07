@@ -2106,7 +2106,7 @@ DynamicModule[ { userdata },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -6, 7 }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -6, If[ $OperatingSystem === "MacOSX", 9, 7 ] }, Automatic ], { Left, Top }
         ]
     ]
 ];
