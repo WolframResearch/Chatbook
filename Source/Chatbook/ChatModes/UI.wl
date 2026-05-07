@@ -1238,7 +1238,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
             {
                 Framed[
                     Graphics[ { },
-                        ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
+                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-$cutMargin*2 },
                         Background   -> color,
                         ImageMargins -> 0
                     ],
