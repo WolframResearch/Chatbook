@@ -229,6 +229,7 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant\:ff1a",
 "ChatbarOptionsMonthlyUsage" -> "\:672c\:6708\:7528\:91cf\:ff1a",
+"ChatbarOptionsAccessFailedUsage" -> "Usage details are not currently available. Try again later.",
 "ChatbarOptionsLimit" -> "\:5df2\:9054\:4f7f\:7528\:984d\:5ea6",
 "ChatbarOptionsLimitReset" -> "\:ff08 `1` \:5929\:5f8c\:91cd\:8a2d\:ff09",
 "ChatbarOptionsUpgradeTemplate" -> "\:5347\:7d1a\:81f3 `1`",

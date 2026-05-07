@@ -229,6 +229,7 @@
 
 "ChatbarOptionsTitle" -> "Assistant IA\[NonBreakingSpace]:",
 "ChatbarOptionsMonthlyUsage" -> "Utilisation ce mois\[Hyphen]ci\[NonBreakingSpace]:",
+"ChatbarOptionsAccessFailedUsage" -> "Usage details are not currently available. Try again later.",
 "ChatbarOptionsLimit" -> "Limite d\[CloseCurlyQuote]utilisation atteinte",
 "ChatbarOptionsLimitReset" -> "(se r\[EAcute]initialise dans `1` jours)",
 "ChatbarOptionsUpgradeTemplate" -> "Mettre \[AGrave] niveau vers `1`",

@@ -931,20 +931,16 @@ chatbarOptionsButton // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chatbarUserData*)
 
-$chatbarFakeUserData :=
+$chatbarAccessFailedData :=
     <|
         "credentialsQ" -> cloudCredentialsQ[ ],
         "username"     -> userName[ ],
-        "tier"         -> "Basic",
-        "usage"        -> 0.5,
+        "tier"         -> "",
+        "usage"        -> Missing["Unknown"],
         "daysToReset"  -> "\[LongDash]",
         "upgradeURL"   -> "https://www.wolfram.com",
-        "serviceCreditsOptions" -> {
-            <| "level" -> "500 Service Credits",    "url" -> "https://www.wolfram.com", "amount" -> 500.   |>,
-            <| "level" -> "5,000 Service Credits",  "url" -> "https://www.wolfram.com", "amount" -> 5000.  |>,
-            <| "level" -> "20,000 Service Credits", "url" -> "https://www.wolfram.com", "amount" -> 20000. |>
-        }
-    |>
+        "serviceCreditsOptions" -> { }
+    |>;
 
 Clear[ chatbarUserData, getUserValue ]
 
@@ -954,7 +950,7 @@ chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
 chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess" ]
 
-chatbarUserData[ rawAccessData_ ] := $chatbarFakeUserData /; Or[
+chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     FailureQ[ rawAccessData ],
     !AssociationQ[ rawAccessData ],
     !TrueQ[ Lookup[ rawAccessData, "success" ] ],
@@ -1114,9 +1110,21 @@ chatbarOptionsDisplay[ nbo_NotebookObject, userdata_ ] :=
                     Column[
                         {
                             tr @ "ChatbarOptionsMonthlyUsage",
-                            chatbarUsageThermometer @ userdata,
-                            chatbarWarningStripe @ userdata,
-                            chatbarUpgradeStripe @ userdata
+                            Sequence @@ If[ NumericQ @ userdata["usage"],
+                            	{
+                            		chatbarUsageThermometer @ userdata,
+                            		chatbarWarningStripe @ userdata,
+                            		chatbarUpgradeStripe @ userdata
+                            	},
+                            	{
+									Pane[
+										tr @ "ChatbarOptionsAccessFailedUsage",
+										BaselinePosition -> Baseline,
+										BaseStyle        -> { FontSlant -> "Italic" },
+										ImageMargins     -> 20
+                            		]
+                            	}
+                            ]
                         },
                         Spacings -> { Automatic, { 0.9, { 2 -> 0.6 } } }
                     ],
