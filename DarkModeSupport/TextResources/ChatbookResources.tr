@@ -9672,7 +9672,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"d92897f0-06f6-b343-8192-9db930db29bb"], Cell[BoxData[
+    ExpressionUUID->"1348d565-5df4-294b-aed7-b9252157b8bc"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10599,13 +10599,11 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "549a6ce8-2b44-dc47-8c03-6befd4721709"], Cell[BoxData[
+    "586fb9ac-c894-8248-b517-0c897efb8c46"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
-     Typeset`input$$, Typeset`kernelWasQuitQ$$ = False, 
-     Typeset`cachedSessionID$$ = 33722005708993666558, Typeset`focusArea$$ = 
-     ""}, 
+     Typeset`input$$, Typeset`focusArea$$ = ""}, 
      TagBox[
       PaneBox[
        TagBox[GridBox[{
@@ -10691,7 +10689,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RoundingRadius->4,
                     StripOnInput->False], "Down"->
                     FrameBox[
-                    
                     DynamicBox[FEPrivate`FrontEndResource[
                     "ChatbookExpressions", "SendChatArrow"][
                     LightDarkSwitched[
@@ -10837,16 +10834,14 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                  FEPrivate`GetCurrentSelections[Typeset`nbo$$]]; 
               Wolfram`Chatbook`ChatModes`UI`Private`clearOverlayMenus[
                Typeset`nbo$$]; Typeset`returnKeyDownQ$$ = False; 
-              Needs["Wolfram`Chatbook`" -> None]; 
-              If[Typeset`kernelWasQuitQ$$, If[
-                  Not[
-                   TrueQ[
-                   Wolfram`Chatbook`ChatModes`UI`Private`$\
+              Needs["Wolfram`Chatbook`" -> None]; If[
+                Not[
+                 TrueQ[
+                 Wolfram`Chatbook`ChatModes`UI`Private`$\
 workspaceChatInitialized]], 
-                  
-                  Wolfram`Chatbook`ChatModes`UI`Private`\
-initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False]; 
-              Wolfram`Chatbook`Common`evaluateSidebarChat[
+                
+                Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChat[\
+]]; Wolfram`Chatbook`Common`evaluateSidebarChat[
                Typeset`nbo$$, Typeset`sidebarCell$$, Typeset`input$$, 
                 Dynamic[Typeset`chatEvalCell$$]]]; If[
               Wolfram`Chatbook`Common`cellTaggedQ[
@@ -10900,8 +10895,6 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
      Initialization:>(Typeset`nbo$$ = EvaluationNotebook[]; 
       Typeset`chatInputFieldCell$$ = EvaluationCell[]; 
       Typeset`sidebarCell$$ = ParentCell[Typeset`chatInputFieldCell$$]; 
-      Typeset`kernelWasQuitQ$$ = Typeset`cachedSessionID$$ =!= $SessionID; 
-      Typeset`cachedSessionID$$ = $SessionID; 
       Typeset`focusArea$$ = 
        Wolfram`Chatbook`ChatModes`Common`focusedNotebookDisplay[
         Typeset`nbo$$, Typeset`sidebarCell$$]; Null)]], "ChatInputField",
@@ -10915,7 +10908,7 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "53cb1508-b970-cb4c-97c9-b4f4aef4b64c"]}],
+    "c50bc07a-92f1-7844-a41e-70967bf809c2"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10931,8 +10924,8 @@ initializeWorkspaceChat[]]; Typeset`kernelWasQuitQ$$ = False];
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"4282b313-14dc-514a-964d-\
-c300a93605c8"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"7a2a2bf4-5f4e-4a45-b7f2-\
+aa44de433f61"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11051,8 +11044,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"6c549095-73ea-6941-8595-\
-b5574fbf27f1"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"be89630e-ffec-5f4c-8d02-\
+1e3f75923ef3"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
