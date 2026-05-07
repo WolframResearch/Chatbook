@@ -1322,7 +1322,7 @@ chatbarUsageThermometer[ userdata_ ] :=
 
 chatbarUsageThermometer[ tier: "Basic", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ $cutShortWidth, usage, "Basic" ],
+        chatbarUsageThermometerBase[ $cutShortWidth, usage, "Basic" ] // usageTooltip[usage],
         chatbarUsageThermometerCap[ $cutShortWidth, "Pro" ],
         chatbarUsageThermometerCap[ $cutLongWidth, "Research", True ]
         } },
@@ -1332,7 +1332,7 @@ chatbarUsageThermometer[ tier: "Basic", usage_ ] :=
 
 chatbarUsageThermometer[ tier: "Pro", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ 2*$cutShortWidth, usage, "Pro" ],
+    	chatbarUsageThermometerBase[ 2*$cutShortWidth, usage, "Pro" ] // usageTooltip[usage],
         chatbarUsageThermometerCap[ $cutLongWidth, "Research", True ]
         } },
         Alignment -> { Left, Center },
@@ -1341,11 +1341,14 @@ chatbarUsageThermometer[ tier: "Pro", usage_ ] :=
 
 chatbarUsageThermometer[ tier: "Research", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ $cutTotalWidth, usage, "Research" ]
+        chatbarUsageThermometerBase[ $cutTotalWidth, usage, "Research" ] // usageTooltip[usage]
         } },
         Alignment -> { Left, Center },
         Spacings  -> { 0, 0 }
     ]
+
+usageTooltip[usage_][expr_] :=
+	Tooltip[ expr, PercentForm @ usage, TooltipDelay -> Automatic]
 
 
 (* ::**************************************************************************************************************:: *)
