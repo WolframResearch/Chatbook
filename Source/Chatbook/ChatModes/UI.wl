@@ -544,7 +544,6 @@ makeSidebarChatInputCell[ ] := Cell[
         {
             Typeset`chatInputFieldCell, Typeset`chatEvalCell = { }(* don't use None *), Typeset`nbo, Typeset`sidebarCell,
             Typeset`fieldContent = "", Typeset`returnKeyDownQ = False, Typeset`input,
-            Typeset`kernelWasQuitQ = False, Typeset`cachedSessionID = $SessionID,
             Typeset`focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
         },
         EventHandler[
@@ -573,9 +572,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                     clearOverlayMenus @ Typeset`nbo;
                                     Typeset`returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
-                                    If[ Typeset`kernelWasQuitQ,
-                                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                        Typeset`kernelWasQuitQ = False ];
+                                    If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
                                     evaluateSidebarChat[ Typeset`nbo, Typeset`sidebarCell, Typeset`input, Dynamic @ Typeset`chatEvalCell ]
                                 ];
                                 (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
@@ -619,8 +616,6 @@ makeSidebarChatInputCell[ ] := Cell[
             Typeset`nbo                = EvaluationNotebook[ ];
             Typeset`chatInputFieldCell = EvaluationCell[ ];
             Typeset`sidebarCell        = ParentCell @ Typeset`chatInputFieldCell;
-            Typeset`kernelWasQuitQ     = Typeset`cachedSessionID =!= $SessionID;
-            Typeset`cachedSessionID    = $SessionID;
             Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ];
         )
     ],
