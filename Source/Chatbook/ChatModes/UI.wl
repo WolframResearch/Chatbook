@@ -1769,7 +1769,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
                                                 "LLMFeaturesPermitted",
                                                 False,
-                                                # =!= False&
+                                                # === False&
                                             ],
                                                 "LocalAIOnly",
                                             
