@@ -2204,7 +2204,7 @@ chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
 
 chatbarInputFieldEnabledTierIndicator // beginDefinition;
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" | "" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
 
 chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Pro" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Pro", Dynamic @ activeQ ]
 
