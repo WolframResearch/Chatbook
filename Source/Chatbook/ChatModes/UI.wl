@@ -903,7 +903,7 @@ Button[
         AttachCell[
            nbo,
             Cell[
-                BoxData @ ToBoxes @ DynamicModule[ { }, chatbarOptionsDisplay[ nbo, Dynamic @ chatbarCell ], InheritScope -> True ],
+                BoxData @ ToBoxes @ chatbarOptionsDisplay @ nbo,
                 "NotebookAssistant`Chatbar`Menu",
                 Evaluator     -> CurrentValue[ chatbarCell, Evaluator ], (* menu evaluator matches the chatbar's evaluator *)
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
@@ -1053,15 +1053,15 @@ $coTitleAccentColor = LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7
 $coBodyColor = LightDarkSwitched[ RGBColor[ "#646464" ], RGBColor[ "#E5E5E5" ] ];
 $coBodyColorHover = LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#BFBFBF" ] ];
 
-chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ] ] :=
+chatbarOptionsDisplay[ nbo_NotebookObject ] :=
     DynamicModule[ { userdata, initdone },
         Dynamic[
             If[ cloudCredentialsQ[ ],
                 If[ TrueQ @ initdone,
-                    chatbarOptionsDisplay[ nbo, Dynamic @ chatbarCell, userdata ],
+                    chatbarOptionsDisplay[ nbo, userdata ],
                     chatbarOptionsDisplay[ "Loading" ]
                 ],
-                chatbarOptionsDisplay[ nbo, Dynamic @ chatbarCell, <| "credentialsQ" -> False |> ]
+                chatbarOptionsDisplay[ nbo, <| "credentialsQ" -> False |> ]
             ],
             TrackedSymbols :> { initdone }
         ],
@@ -1097,7 +1097,7 @@ chatbarOptionsDisplay[ "Loading" ] :=
         RoundingRadius -> 8
     ]
 
-chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] :=
+chatbarOptionsDisplay[ nbo_NotebookObject, userdata_ ] :=
     Framed[
         Column[
             {
@@ -1130,7 +1130,7 @@ chatbarOptionsDisplay[ nbo_NotebookObject, Dynamic[ chatbarCell_ ], userdata_ ] 
                 Column[
                     {
                         tr @ "ChatbarOptionsStateTitle",
-                        chatbarStateSetterBar[ nbo, Dynamic @ chatbarCell ]
+                        chatbarStateSetterBar @ nbo
                     }
                 ]
             },
@@ -1593,14 +1593,14 @@ chatbarAddServiceCreditsDisplay[ userdata_, tier: "Research", creditChoices_ ] :
 (*chatbarStateSetterBar*)
 
 
-chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
+chatbarStateSetterBar[ nbo_NotebookObject ] :=
     DynamicModule[ { localSetting },
         DynamicWrapper[
             Pane[
                 Grid[
                     {
                         Table[
-                            chatbarStateSetter[ nbo, Dynamic @ chatbarCell, Dynamic @ localSetting, state ],
+                            chatbarStateSetter[ nbo, Dynamic @ localSetting, state ],
                             { state, { "Full", "Minimized", "Off" } }
                         ]
                     }
@@ -1608,7 +1608,7 @@ chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
                 ImageMargins -> 0
             ]
             ,
-            setChatbarState[ nbo, chatbarCell, localSetting ]
+            setChatbarState[ nbo, localSetting ]
             ,
             Method         -> "Queued",
             TrackedSymbols :> { localSetting }
@@ -1616,7 +1616,7 @@ chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
         Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
 
-chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ], Dynamic[ localSetting_ ], state_ ] :=
+chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
     Button[
         Pane[
             Column[
@@ -1657,7 +1657,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ], Dynamic[ localSetting_ ], sta
     ]
 
 
-setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
+setChatbarState[ nbo_NotebookObject, newValue_ ] := With[ { chatbarCell = First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ] },
     Switch[ newValue,
         "Full",
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
@@ -1672,8 +1672,8 @@ setChatbarState[ nbo_, chatbarCell_, newValue_ ] := (
         "Off",
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = False
-    ];
-)
+    ]
+];
 
 
 
