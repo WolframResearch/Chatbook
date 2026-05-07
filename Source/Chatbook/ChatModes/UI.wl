@@ -1736,7 +1736,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
             Typeset`initializedQ = False, Typeset`thisCell, Typeset`activeQ = False, Typeset`selectionWithinQ = False,
-            Typeset`fieldContent = initialText, Typeset`state = "Loading"
+            Typeset`fieldContent = initialText, Typeset`state = "Loading", Typeset`WolframAccountInfo = <||>
         },
         DynamicWrapper[
             PaneSelector[
@@ -1753,6 +1753,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
                                                 "LocalAIOnly"      -> chatbarLocalAIOnly @ Typeset`activeQ,
                                                 "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "SignInPending"    -> chatbarSignInPending @ Typeset`activeQ,
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
                                             Dynamic @ Typeset`state,
@@ -1764,7 +1765,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
 
                                             Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ],
                                                 "NoInternet",
-                                            
+
                                             (* be very generous in allowing AI access; only disable chatbar *)
                                             (* if disabled via license *)
                                             Lookup[
@@ -1775,20 +1776,32 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             ],
                                                 "LocalAIOnly",
                                             
-                                            (* if disabled via ERP *)
+                                            MatchQ[ CurrentValue[ "WolframCloudConnected" ], False | "Pending" ],
+                                                "SignIn",
+                                            
+                                            (* ======= Check ERP for AI access ======= *)
+                                            Typeset`WolframAccountInfo = CurrentValue[ "WolframAccountInformation" ];
+
+                                            (* You must be signed in to get account info; given the ordering of this Which we should technically never hit this case *)
+                                            Typeset`WolframAccountInfo === <| |>,
+                                                "SignIn",
+
+                                            (* if key "ServerMetadata" has missing data then the front end is signed in but hasn't really talked to EPR yet *)
+                                            KeyExistsQ[ Typeset`WolframAccountInfo, "ServerMetadata" ] && MissingQ @ Lookup[ Typeset`WolframAccountInfo, "ServerMetadata" ],
+                                                "SignInPending",
+
+                                            (* fall-through to allowing AI unless ERP is explicitly set as "LLMFeaturesPermitted" -> False *)
                                             Lookup[
-                                                Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+                                                Lookup[ Typeset`WolframAccountInfo, "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
                                                 "LLMFeaturesPermitted",
                                                 False,
                                                 # === False&
                                             ],
                                                 "LocalAIOnly",
                                             
-                                            cloudCredentialsQ[ ],
-                                                "Enabled",
-                                            
+                                            (* ======= success ======= *)
                                             True,
-                                                "SignIn"
+                                                "Enabled"
                                         ],
                                         SynchronousUpdating -> False
                                     ]
@@ -1862,6 +1875,52 @@ makeChatbarChatInputCellContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*chatbarSignInMessage*)
+
+chatbarSignInMessage // beginDefinition;
+
+Attributes[ chatbarSignInMessage ] = { HoldAll };
+
+chatbarSignInMessage[ activeQ_ ] :=
+Row[
+    {
+        PaneSelector[
+            {
+                True  -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
+                    LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#344858" ] ],
+                    LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
+                ],
+                False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
+                    LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
+                    LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
+                ]
+            },
+            Dynamic @ activeQ,
+            BaselinePosition -> Baseline,
+            ImageSize        -> All
+        ],
+        Style[
+            tr @ "ChatbarSignIn",
+            "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+            FontColor -> Dynamic @ If[ activeQ,
+                LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+            ],
+            FontFamily      -> "Roboto",
+            FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+            FontSize        -> 15,
+            FontSlant       -> "Plain",
+            LineBreakWithin -> False
+        ]
+    },
+    Spacer @ 0,
+    StripOnInput -> True
+];
+
+chatbarSignInMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatbarSignIn*)
 
 chatbarSignIn // beginDefinition;
@@ -1870,58 +1929,68 @@ Attributes[ chatbarSignIn ] = { HoldAll };
 
 chatbarSignIn[ activeQ_ ] :=
 Button[
-    Framed[
-        Row[
-            {
-                PaneSelector[
-                    {
-                        True  -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#344858" ] ],
-                            LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
-                        ],
-                        False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
-                            LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
-                        ]
-                    },
-                    Dynamic @ activeQ,
-                    BaselinePosition -> Baseline,
-                    ImageSize        -> All
-                ],
-                Style[
-                    tr @ "ChatbarSignIn",
-                    "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                    FontColor -> Dynamic @ If[ activeQ,
-                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
-                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+    PaneSelector[
+        {
+            True -> chatbarSignInPending @ activeQ,
+            False ->
+                Framed[
+                    chatbarSignInMessage @ activeQ,
+                    Alignment      -> { Automatic, Center },
+                    Background     -> Dynamic @ If[ activeQ,
+                        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+                        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
                     ],
-                    FontFamily      -> "Roboto",
-                    FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
-                    FontSize        -> 15,
-                    FontSlant       -> "Plain",
-                    LineBreakWithin -> False
+                    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                    FrameStyle     -> None,
+                    ImageSize      -> { Scaled[ 1 ], 38 },
+                    RoundingRadius -> 9
                 ]
-            },
-            Spacer @ 0,
-            StripOnInput -> True
-        ],
-        Alignment      -> { Automatic, Center },
-        Background     -> Dynamic @ If[ activeQ,
-            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
-            LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
-        ],
-        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
-        FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 38 },
-        RoundingRadius -> 9
+        },
+        Dynamic[ CurrentValue[ "WolframCloudConnected" ] === "Pending" ],
+        ImageSize -> Automatic
     ],
-    CloudConnect[ ],
+    If[ CurrentValue[ "WolframCloudConnected" ] === "Pending", Null, CloudConnect[ ] ],
     Appearance -> "Suppressed",
     ImageSize  -> Automatic,
     Method     -> "Queued"
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarSignInPending*)
+
+chatbarSignInPending // beginDefinition;
+
+Attributes[ chatbarSignInPending ] = { HoldAll };
+
+chatbarSignInPending[ activeQ_ ] :=
+Framed[
+    Overlay[ {
+        chatbarSignInMessage @ activeQ,
+        PaneSelector[
+            {
+                True  -> ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ GrayLevel[ 0.537255 ], GrayLevel[ 0.650980 ] ] } ],
+                False -> ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ] } ]
+            },
+            Dynamic @ activeQ,
+            BaselinePosition -> Baseline,
+            ImageSize        -> Automatic
+        ]
+    } ],
+    Alignment      -> { Automatic, Center },
+    Background     -> Dynamic @ If[ activeQ,
+        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+    ],
+    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+    FrameStyle     -> None,
+    ImageSize      -> { Scaled[ 1 ], 38 },
+    RoundingRadius -> 9
+];
+
+chatbarSignInPending // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
