@@ -1595,16 +1595,23 @@ chatbarAddServiceCreditsDisplay[ userdata_, tier: "Research", creditChoices_ ] :
 
 chatbarStateSetterBar[ nbo_, Dynamic[ chatbarCell_ ] ] :=
     DynamicModule[ { localSetting },
-        Pane[
-            Grid[
-                { 
-                    Table[
-                        chatbarStateSetter[ nbo, Dynamic @ chatbarCell, Dynamic @ localSetting, state ],
-                        { state, { "Full", "Minimized", "Off" } }
-                    ]
-                }
-            ],
-            ImageMargins -> 0
+        DynamicWrapper[
+            Pane[
+                Grid[
+                    {
+                        Table[
+                            chatbarStateSetter[ nbo, Dynamic @ chatbarCell, Dynamic @ localSetting, state ],
+                            { state, { "Full", "Minimized", "Off" } }
+                        ]
+                    }
+                ],
+                ImageMargins -> 0
+            ]
+            ,
+            setChatbarState[ nbo, chatbarCell, localSetting ]
+            ,
+            Method         -> "Queued",
+            TrackedSymbols :> { localSetting }
         ],
         Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
     ];
@@ -1642,7 +1649,7 @@ chatbarStateSetter[ nbo_, Dynamic[ chatbarCell_ ], Dynamic[ localSetting_ ], sta
             BaselinePosition -> Baseline,
             ImageMargins     -> 10            
         ],
-        setChatbarState[ nbo, chatbarCell, localSetting = state ],
+        localSetting = state,
         Appearance       -> "Suppressed",
         BaselinePosition -> Baseline,
         BaseStyle        -> { FontSize -> Inherited-1 },
