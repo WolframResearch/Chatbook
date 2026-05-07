@@ -2135,15 +2135,11 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
             NotebookWrite[ nbo, cellExpr ]
             ,
             With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ];
-            newCellPosition = NextCell @ NotebookSelection @ nbo;
-            While[ newCellPosition =!= None && MemberQ[ AbsoluteCurrentValue[ newCellPosition, CellStyle ], "Output" | "ChatOutput" ],
-                newCellPosition = NextCell @ newCellPosition
-            ];
-            If[ newCellPosition === None,
-                SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+            newCellPosition = PreviousCell @ NotebookSelection @ nbo;
+            If[ newCellPosition === None, (* at top of notebook *)
                 NotebookWrite[ nbo, cellExpr ]
                 ,
-                NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "Before" ], cellExpr ]
+                NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "AfterEvaluationGroup" ], cellExpr ]
             ]
         ];
         With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
