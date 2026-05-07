@@ -1408,8 +1408,8 @@ rasterHash // endDefinition;
 (*checkedRasterize*)
 checkedRasterize // beginDefinition;
 
-checkedRasterize[ expr_ ] := Quiet[
-    Check[ Rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+checkedRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] := Quiet[
+    Check[ Rasterize[ expr, opts ], Missing[ "OutOfMemory" ], Rasterize::bigraster ],
     Rasterize::bigraster
 ];
 
