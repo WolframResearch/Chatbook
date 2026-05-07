@@ -905,6 +905,7 @@ Button[
             Cell[
                 BoxData @ ToBoxes @ DynamicModule[ { }, chatbarOptionsDisplay[ nbo, Dynamic @ chatbarCell ], InheritScope -> True ],
                 "NotebookAssistant`Chatbar`Menu",
+                Evaluator     -> CurrentValue[ chatbarCell, Evaluator ], (* menu evaluator matches the chatbar's evaluator *)
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
             Sequence @@ $chatbarOptionsAttachment[ ],
