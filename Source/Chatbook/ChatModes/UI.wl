@@ -931,20 +931,16 @@ chatbarOptionsButton // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chatbarUserData*)
 
-$chatbarFakeUserData :=
+$chatbarAccessFailedData :=
     <|
         "credentialsQ" -> cloudCredentialsQ[ ],
         "username"     -> userName[ ],
-        "tier"         -> "Basic",
-        "usage"        -> 0.5,
+        "tier"         -> "",
+        "usage"        -> Missing["Unknown"],
         "daysToReset"  -> "\[LongDash]",
         "upgradeURL"   -> "https://www.wolfram.com",
-        "serviceCreditsOptions" -> {
-            <| "level" -> "500 Service Credits",    "url" -> "https://www.wolfram.com", "amount" -> 500.   |>,
-            <| "level" -> "5,000 Service Credits",  "url" -> "https://www.wolfram.com", "amount" -> 5000.  |>,
-            <| "level" -> "20,000 Service Credits", "url" -> "https://www.wolfram.com", "amount" -> 20000. |>
-        }
-    |>
+        "serviceCreditsOptions" -> { }
+    |>;
 
 Clear[ chatbarUserData, getUserValue ]
 
@@ -954,7 +950,7 @@ chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
 chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess" ]
 
-chatbarUserData[ rawAccessData_ ] := $chatbarFakeUserData /; Or[
+chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     FailureQ[ rawAccessData ],
     !AssociationQ[ rawAccessData ],
     !TrueQ[ Lookup[ rawAccessData, "success" ] ],
@@ -1114,9 +1110,21 @@ chatbarOptionsDisplay[ nbo_NotebookObject, userdata_ ] :=
                     Column[
                         {
                             tr @ "ChatbarOptionsMonthlyUsage",
-                            chatbarUsageThermometer @ userdata,
-                            chatbarWarningStripe @ userdata,
-                            chatbarUpgradeStripe @ userdata
+                            Sequence @@ If[ NumericQ @ userdata["usage"],
+                            	{
+                            		chatbarUsageThermometer @ userdata,
+                            		chatbarWarningStripe @ userdata,
+                            		chatbarUpgradeStripe @ userdata
+                            	},
+                            	{
+									Pane[
+										tr @ "ChatbarOptionsAccessFailedUsage",
+										BaselinePosition -> Baseline,
+										BaseStyle        -> { FontSlant -> "Italic" },
+										ImageMargins     -> 20
+                            		]
+                            	}
+                            ]
                         },
                         Spacings -> { Automatic, { 0.9, { 2 -> 0.6 } } }
                     ],
@@ -1238,7 +1246,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
             {
                 Framed[
                     Graphics[ { },
-                        ImageSize    -> { (width - 2*$cutMargin) * usage, $cutHeight-$cutMargin*2 },
+                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-$cutMargin*2 },
                         Background   -> color,
                         ImageMargins -> 0
                     ],
@@ -1322,7 +1330,7 @@ chatbarUsageThermometer[ userdata_ ] :=
 
 chatbarUsageThermometer[ tier: "Basic", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ $cutShortWidth, usage, "Basic" ],
+        chatbarUsageThermometerBase[ $cutShortWidth, usage, "Basic" ] // usageTooltip[usage],
         chatbarUsageThermometerCap[ $cutShortWidth, "Pro" ],
         chatbarUsageThermometerCap[ $cutLongWidth, "Research", True ]
         } },
@@ -1332,7 +1340,7 @@ chatbarUsageThermometer[ tier: "Basic", usage_ ] :=
 
 chatbarUsageThermometer[ tier: "Pro", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ 2*$cutShortWidth, usage, "Pro" ],
+    	chatbarUsageThermometerBase[ 2*$cutShortWidth, usage, "Pro" ] // usageTooltip[usage],
         chatbarUsageThermometerCap[ $cutLongWidth, "Research", True ]
         } },
         Alignment -> { Left, Center },
@@ -1341,11 +1349,14 @@ chatbarUsageThermometer[ tier: "Pro", usage_ ] :=
 
 chatbarUsageThermometer[ tier: "Research", usage_ ] :=
     Grid[ { {
-        chatbarUsageThermometerBase[ $cutTotalWidth, usage, "Research" ]
+        chatbarUsageThermometerBase[ $cutTotalWidth, usage, "Research" ] // usageTooltip[usage]
         } },
         Alignment -> { Left, Center },
         Spacings  -> { 0, 0 }
     ]
+
+usageTooltip[usage_][expr_] :=
+	Tooltip[ expr, PercentForm @ usage, TooltipDelay -> Automatic]
 
 
 (* ::**************************************************************************************************************:: *)
@@ -2193,7 +2204,7 @@ chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
 
 chatbarInputFieldEnabledTierIndicator // beginDefinition;
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" | "" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
 
 chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Pro" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Pro", Dynamic @ activeQ ]
 
