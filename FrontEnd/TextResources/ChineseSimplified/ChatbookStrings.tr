@@ -229,7 +229,7 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant\:ff1a",
 "ChatbarOptionsMonthlyUsage" -> "\:672C\:6708\:4F7F\:7528\:60C5\:51B5\:ff1a",
-"ChatbarOptionsAccessFailedUsage" -> "Usage details are not currently available. Try again later.",
+"ChatbarOptionsAccessFailedUsage" -> "\:76EE\:524D\:65E0\:6CD5\:67E5\:770B\:4F7F\:7528\:8BE6\:60C5\:ff0c\:8BF7\:7A0D\:540E\:518D\:8BD5\:3002",
 "ChatbarOptionsLimit" -> "\:5DF2\:7528\:5B8C\:9650\:989D",
 "ChatbarOptionsLimitReset" -> "\:ff08\:5C06\:5728 `1` \:5929\:540E\:91CD\:7F6E\:ff09",
 "ChatbarOptionsUpgradeTemplate" -> "\:5347\:7EA7\:5230 `1`",
@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "\:6700\:5C0F\:5316",
 "ChatbarOptionsOff" -> "\:5173\:95ED",
 "ChatbarOptionsSignOut" -> "\:9000\:51FA",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "\:6B63\:5728\:83B7\:53D6\:7528\:6237\:6570\:636E\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:4E0E\:7B14\:8BB0\:672C\:52A9\:624B\:804A\:5929\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:4E3A\:6240\:9009\:5185\:5BB9\:5BFB\:6C42\:7B14\:8BB0\:672C\:52A9\:624B\:7684\:5E2E\:52A9",
