@@ -1232,7 +1232,7 @@ $cutBlueHover = LightDarkSwitched[ RGBColor[ "#75C2EB" ], RGBColor[ "#669CBD" ] 
 $cutGray      = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite     = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
-chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
+chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
     With[
         {
             color = Which[
@@ -1242,81 +1242,114 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
                 True, $cutBlue
             ]
         },
-        Overlay[
-            {
-                Framed[
-                    Graphics[ { },
-                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-$cutMargin*2 },
-                        Background   -> color,
-                        ImageMargins -> 0
-                    ],
-                    Background     -> $cutWhite,
-                    ContentPadding -> False,
-                    FrameMargins   -> $cutMargin,
-                    FrameStyle     -> color,
-                    ImageSize      -> { width, $cutHeight },
-                    RoundingRadius -> 2
-                ],
-                Framed[ label,
-                    Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-                    BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
-                    ContentPadding -> False,
-                    FrameMargins   -> 2,
-                    FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                    ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-                ]
-            },
-            Alignment -> { Right, Center }
-        ]
+        Framed[
+			Overlay[
+				{
+					Framed[
+						Graphics[ { },
+							ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
+							Background   -> color,
+							ImageMargins -> 0
+						],
+						Background     -> $cutWhite,
+						BaselinePosition -> Center -> Center,
+						ContentPadding -> False,
+						FrameMargins   -> $cutMargin,
+						FrameStyle     -> color,
+						ImageSize      -> { width, $cutHeight },
+						RoundingRadius -> If[size === Small, 2, 1]
+					],
+					If[
+						label === "+",
+						Pane[
+							Style["+",
+								FontColor -> LightDarkSwitched[White, White],
+								FontSize -> $cutHeight - 8,
+								FontWeight -> "Bold",
+								PrivateFontOptions -> {"OperatorSubstitution" -> False}
+							],
+							Alignment -> {Right, Center},
+							ContentPadding -> False,
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 } + {-4,4}, { $cutMargin, $cutMargin } + {-1,1} },
+							ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
+						],
+							
+						Framed[ label,
+							Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+							BaselinePosition -> Center -> Center,
+							BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+							ContentPadding -> False,
+							FrameMargins   -> {{2,2},{3,2}},
+							FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+							RoundingRadius -> If[size === Small, 2, 1]
+						]
+					]
+				},
+				Alignment -> { Right, Center }
+			],
+			Background -> None,
+			BaselinePosition -> Center -> Center,
+			FrameMargins -> {{0, 0}, {0, 0}},
+			FrameStyle -> None
+		]
     ]
 
 
 chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
-    Overlay[
-        {
-            Graphics[
-                {
-                    $cutGray,
-                    JoinForm[ "Round" ],
-                    Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
-                    AbsoluteThickness[ 1.5 ],
-                    Dashed,
-                    If[ TrueQ @ ellipsisQ,
-                        With[ {
-                            xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
-                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
-                            },
-                            {
-                                Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
-                                Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
-                                Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
-                                    BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
-                            }
-                        ],
-                        Line[ {
-                            { { 0, 0 }, { width, 0 } },
-                            { { width, $cutHeight }, { 0, $cutHeight } }
-                        } ]
-
-                    ]
-                },
-                AspectRatio      -> Full,
-                ImageSize        -> { width, $cutHeight },
-                PlotRange        -> { { 0, width }, { 0, $cutHeight } },
-                PlotRangePadding -> 1
-            ]
-            ,
-            Framed[ label,
-                Background     -> None,
-                BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
-                ContentPadding -> False,
-                FrameMargins   -> 2,
-                FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-            ]
-        },
-        Alignment -> { Right, Center }
-    ]
+    Framed[
+		Overlay[
+			{
+				Graphics[
+					{
+						$cutGray,
+						JoinForm[ "Round" ],
+						Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
+						AbsoluteThickness[ 1.5 ],
+						Dashed,
+						If[ TrueQ @ ellipsisQ,
+							With[ {
+								xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
+								colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
+								},
+								{
+									Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
+									Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
+									Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
+										BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
+								}
+							],
+							Line[ {
+								{ { 0, 0 }, { width, 0 } },
+								{ { width, $cutHeight }, { 0, $cutHeight } }
+							} ]
+	
+						]
+					},
+					AspectRatio      -> Full,
+					ImageSize        -> { width, $cutHeight },
+					PlotRange        -> { { 0, width }, { 0, $cutHeight } },
+					PlotRangePadding -> {{3,1},{0.5,1}}
+				]
+				,
+				Framed[ label,
+					Background     -> None,
+					BaselinePosition -> Center -> Center,
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
+					ContentPadding -> False,
+					FrameMargins   -> 2,
+					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+					ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+					RoundingRadius -> 1
+				]
+			},
+			Alignment -> { Right, Center }
+		],
+		Background -> None,
+		BaselinePosition -> Center -> Center,
+		FrameMargins -> 0,
+		FrameStyle -> None
+	]
 
 
 $cutTotalWidth = $coWidth - 60;
@@ -1486,7 +1519,7 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
         
         (* log-rescale the amounts to get widths from 50 to 250 *)
         amounts = Lookup[ creditChoices, "amount" ] // N;
-        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 30, 200 }, { 50, 250 } ] ];
+        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 50, 200 }, { 50, 260 } ] ];
         creditChoices = MapThread[ Append[ #1, "width" -> #2 ]&, { creditChoices, widths } ];
         
         If[ creditChoices === { },
@@ -1517,8 +1550,8 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
 chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1528,8 +1561,8 @@ chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
 chatbarAddServiceCreditsThermometer[ "Research", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
