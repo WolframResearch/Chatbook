@@ -1257,7 +1257,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
 						FrameMargins   -> $cutMargin,
 						FrameStyle     -> color,
 						ImageSize      -> { width, $cutHeight },
-						RoundingRadius -> 1
+						RoundingRadius -> If[size === Small, 2, 1]
 					],
 					If[
 						label === "+",
