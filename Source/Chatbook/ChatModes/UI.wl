@@ -1242,97 +1242,114 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
                 True, $cutBlue
             ]
         },
-        Overlay[
-            {
-                Framed[
-                    Graphics[ { },
-                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
-                        Background   -> color,
-                        ImageMargins -> 0
-                    ],
-                    Background     -> $cutWhite,
-                    ContentPadding -> False,
-                    FrameMargins   -> $cutMargin,
-                    FrameStyle     -> color,
-                    ImageSize      -> { width, $cutHeight },
-                    RoundingRadius -> 2
-                ],
-                If[
-                	label === "+",
-                	Pane[
-                		Style["+",
-                			FontColor -> LightDarkSwitched[White, White],
-                			FontSize -> $cutHeight - 8,
-                			FontWeight -> "Bold",
-                			PrivateFontOptions -> {"OperatorSubstitution" -> False}
-                		],
-                		Alignment -> {Right, Center},
-                		ContentPadding -> False,
-						ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
-                		ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
-					],
-                		
-					Framed[ label,
-						Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-						BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+        Framed[
+			Overlay[
+				{
+					Framed[
+						Graphics[ { },
+							ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
+							Background   -> color,
+							ImageMargins -> 0
+						],
+						Background     -> $cutWhite,
+						BaselinePosition -> Center -> Center,
 						ContentPadding -> False,
-						FrameMargins   -> 2,
-						FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-						ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
+						FrameMargins   -> $cutMargin,
+						FrameStyle     -> color,
+						ImageSize      -> { width, $cutHeight },
+						RoundingRadius -> 1
+					],
+					If[
+						label === "+",
+						Pane[
+							Style["+",
+								FontColor -> LightDarkSwitched[White, White],
+								FontSize -> $cutHeight - 8,
+								FontWeight -> "Bold",
+								PrivateFontOptions -> {"OperatorSubstitution" -> False}
+							],
+							Alignment -> {Right, Center},
+							ContentPadding -> False,
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+							ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
+						],
+							
+						Framed[ label,
+							Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+							BaselinePosition -> Center -> Center,
+							BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+							ContentPadding -> False,
+							FrameMargins   -> {{2,2},{3,2}},
+							FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+							RoundingRadius -> 1
+						]
 					]
-				]
-            },
-            Alignment -> { Right, Center }
-        ]
+				},
+				Alignment -> { Right, Center }
+			],
+			Background -> None,
+			BaselinePosition -> Center -> Center,
+			FrameMargins -> {{0, 0}, {0, 0}},
+			FrameStyle -> None
+		]
     ]
 
 
 chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
-    Overlay[
-        {
-            Graphics[
-                {
-                    $cutGray,
-                    JoinForm[ "Round" ],
-                    Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
-                    AbsoluteThickness[ 1.5 ],
-                    Dashed,
-                    If[ TrueQ @ ellipsisQ,
-                        With[ {
-                            xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
-                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
-                            },
-                            {
-                                Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
-                                Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
-                                Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
-                                    BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
-                            }
-                        ],
-                        Line[ {
-                            { { 0, 0 }, { width, 0 } },
-                            { { width, $cutHeight }, { 0, $cutHeight } }
-                        } ]
-
-                    ]
-                },
-                AspectRatio      -> Full,
-                ImageSize        -> { width, $cutHeight },
-                PlotRange        -> { { 0, width }, { 0, $cutHeight } },
-                PlotRangePadding -> 1
-            ]
-            ,
-            Framed[ label,
-                Background     -> None,
-                BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
-                ContentPadding -> False,
-                FrameMargins   -> 2,
-                FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-            ]
-        },
-        Alignment -> { Right, Center }
-    ]
+    Framed[
+		Overlay[
+			{
+				Graphics[
+					{
+						$cutGray,
+						JoinForm[ "Round" ],
+						Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
+						AbsoluteThickness[ 1.5 ],
+						Dashed,
+						If[ TrueQ @ ellipsisQ,
+							With[ {
+								xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
+								colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
+								},
+								{
+									Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
+									Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
+									Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
+										BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
+								}
+							],
+							Line[ {
+								{ { 0, 0 }, { width, 0 } },
+								{ { width, $cutHeight }, { 0, $cutHeight } }
+							} ]
+	
+						]
+					},
+					AspectRatio      -> Full,
+					ImageSize        -> { width, $cutHeight },
+					PlotRange        -> { { 0, width }, { 0, $cutHeight } },
+					PlotRangePadding -> {{3,1},{0.5,1}}
+				]
+				,
+				Framed[ label,
+					Background     -> None,
+					BaselinePosition -> Center -> Center,
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
+					ContentPadding -> False,
+					FrameMargins   -> 2,
+					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+					ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+					RoundingRadius -> 1
+				]
+			},
+			Alignment -> { Right, Center }
+		],
+		Background -> None,
+		BaselinePosition -> Center -> Center,
+		FrameMargins -> 0,
+		FrameStyle -> None
+	]
 
 
 $cutTotalWidth = $coWidth - 60;
