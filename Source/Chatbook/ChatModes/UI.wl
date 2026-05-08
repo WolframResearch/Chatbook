@@ -1232,7 +1232,7 @@ $cutBlueHover = LightDarkSwitched[ RGBColor[ "#75C2EB" ], RGBColor[ "#669CBD" ] 
 $cutGray      = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite     = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
-chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
+chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
     With[
         {
             color = Which[
@@ -1270,7 +1270,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
 							],
 							Alignment -> {Right, Center},
 							ContentPadding -> False,
-							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 } + {-4,4}, { $cutMargin, $cutMargin } + {-1,1} },
 							ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
 						],
 							
@@ -1282,7 +1282,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
 							FrameMargins   -> {{2,2},{3,2}},
 							FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
 							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
-							RoundingRadius -> 1
+							RoundingRadius -> If[size === Small, 2, 1]
 						]
 					]
 				},
@@ -1550,8 +1550,8 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
 chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1561,8 +1561,8 @@ chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
 chatbarAddServiceCreditsThermometer[ "Research", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
