@@ -1246,7 +1246,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
             {
                 Framed[
                     Graphics[ { },
-                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-$cutMargin*2 },
+                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
                         Background   -> color,
                         ImageMargins -> 0
                     ],
@@ -1257,14 +1257,30 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
                     ImageSize      -> { width, $cutHeight },
                     RoundingRadius -> 2
                 ],
-                Framed[ label,
-                    Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-                    BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
-                    ContentPadding -> False,
-                    FrameMargins   -> 2,
-                    FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                    ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-                ]
+                If[
+                	label === "+",
+                	Pane[
+                		Style["+",
+                			FontColor -> LightDarkSwitched[White, White],
+                			FontSize -> $cutHeight - 8,
+                			FontWeight -> "Bold",
+                			PrivateFontOptions -> {"OperatorSubstitution" -> False}
+                		],
+                		Alignment -> {Right, Center},
+                		ContentPadding -> False,
+						ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+                		ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
+					],
+                		
+					Framed[ label,
+						Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+						BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+						ContentPadding -> False,
+						FrameMargins   -> 2,
+						FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+						ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
+					]
+				]
             },
             Alignment -> { Right, Center }
         ]
