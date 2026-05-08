@@ -45,7 +45,7 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector },
+        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
             
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -102,7 +102,7 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { state },
-            Deinitialization :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
+            Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
     ],
@@ -530,7 +530,7 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <| "Service" -> "Wolfram AI Services", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
@@ -1413,21 +1413,15 @@ makeLLMPanel[ ] :=
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradePro" ],
                         {
-                            "`SubscriptionLevelPro`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelPro" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ],
-                            "`SubscriptionLevelResearch`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ]
+                            "`SubscriptionLevelPro`"      :> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
+                            "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                         }
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1438,18 +1432,13 @@ makeLLMPanel[ ] :=
                 Style[
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradeResearch" ],
-                        "`SubscriptionLevelResearch`" :>
-                            StringJoin[
-                                "\!\(\*StyleBox[\"",
-                                FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ],
-                                "\",FontWeight->\"Bold\"]\)"
-                            ]
+                        "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1945,7 +1934,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services" ] := Automatic;
 
 getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
     Module[ { lastSelected, name },
