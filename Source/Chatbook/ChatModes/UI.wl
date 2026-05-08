@@ -1519,7 +1519,7 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
         
         (* log-rescale the amounts to get widths from 50 to 250 *)
         amounts = Lookup[ creditChoices, "amount" ] // N;
-        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 30, 200 }, { 50, 250 } ] ];
+        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 50, 200 }, { 50, 260 } ] ];
         creditChoices = MapThread[ Append[ #1, "width" -> #2 ]&, { creditChoices, widths } ];
         
         If[ creditChoices === { },
