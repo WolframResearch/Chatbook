@@ -516,7 +516,7 @@ basicProgressTextRow // endDefinition;
 
 basicProgressTextRow0 // beginDefinition;
 basicProgressTextRow0[ Verbatim[ Verbatim ][ expr_ ], p_ ] := basicProgressTextRow1[ expr, p ];
-basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ trRaw[ "ProgressText"<>name ], p ];
+basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ "ProgressText"<>name, p ];
 basicProgressTextRow0[ expr_, p_ ] := basicProgressTextRow1[ expr, p ];
 basicProgressTextRow0 // endDefinition;
 
@@ -526,7 +526,22 @@ basicProgressTextRow1 // beginDefinition;
 basicProgressTextRow1[ expr_, p_ ] := {
     Style[
         If[ StringQ @ expr,
-            Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
+            Row @ {
+                If[ StringStartsQ[ expr, "ProgressText" ],
+                    FrontEndResource[
+                        "ChatbookStrings",
+                        expr <> ToString @ RandomInteger[ { 1,
+                            Replace[
+                                ToExpression @ StringReplace[ trRaw @ expr, RegularExpression[ "`([0-9]+)`" ] :> "$1" ],
+                                Except[ _?IntegerQ ] -> 1
+                            ]
+                        } ]
+                    ]
+                    ,
+                    expr
+                ],
+                ProgressIndicator[ Appearance -> "Ellipsis" ]
+            },
             expr
         ],
         "ProgressTitle"
