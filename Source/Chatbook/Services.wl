@@ -89,34 +89,8 @@ llmKitCheck0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getLLMKitService*)
 getLLMKitService // beginDefinition;
-getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
-getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := $llmKitPrefix <> service;
-getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
-getLLMKitService[ _ ] := $fallbackLLMKitService;
+getLLMKitService[ ] := (LLMSynthesize; $fallbackLLMKitService);
 getLLMKitService // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getUpdatedLLMKitService*)
-getUpdatedLLMKitService // beginDefinition;
-
-getUpdatedLLMKitService[ ] := Enclose[
-    Catch @ Module[ { provider, info, service },
-        LLMSynthesize;
-        Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-        info = ConfirmMatch[ Wolfram`LLMFunctions`Common`$LLMKitInfo, _Association|None, "Info" ];
-        If[ info === None, Throw @ $fallbackLLMKitService ];
-        provider = ConfirmBy[ info[ "currentProvider" ], StringQ, "Provider" ];
-        service = ConfirmBy[ $llmKitPrefix <> provider, StringQ, "Service" ];
-        If[ TrueQ @ $mxFlag,
-            service, (* Never cache result if building MX file *)
-            getUpdatedLLMKitService[ ] = service
-        ]
-    ],
-    throwInternalFailure
-];
-
-getUpdatedLLMKitService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
