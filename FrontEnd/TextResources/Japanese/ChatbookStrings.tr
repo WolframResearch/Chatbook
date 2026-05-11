@@ -140,8 +140,8 @@
 "PreferencesContentLLMKitUpgradeResearch" -> "`SubscriptionLevelResearch`\:306b\:30a2\:30c3\:30d7\:30b0\:30ec\:30fc\:30c9 \[RightGuillemet]",
 "PreferencesContentLLMKitSubscribeButton" -> "\:30B5\:30D6\:30B9\:30AF\:30E9\:30A4\:30D6",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "\:8A73\:7D30\[Ellipsis]",
-"PreferencesContentLLMKitSubscriptionRequired" -> "Wolfram AI Services requires a subscription",
-"PreferencesContentLLMKitNoSubscription" -> "No Wolfram AI Services subscription found",
+"PreferencesContentLLMKitSubscriptionRequired" -> "Wolfram AI Services\:306b\:306f\:30b5\:30d6\:30b9\:30af\:30ea\:30d7\:30b7\:30e7\:30f3\:304c\:5fc5\:8981\:3067\:3059",
+"PreferencesContentLLMKitNoSubscription" -> "Wolfram AI Services\:306e\:30b5\:30d6\:30b9\:30af\:30ea\:30d7\:30b7\:30e7\:30f3\:304c\:898b\:4ed8\:304b\:308a\:307e\:305b\:3093",
 "PreferencesContentLLMKitSignInOr" -> "\:307E\:305F\:306F",
 "PreferencesContentLLMKitSignInButton" -> "\:30B5\:30A4\:30F3\:30A4\:30F3\:3057\:3066\:65E2\:5B58\:306E\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:3092\:4F7F\:3046\[RightGuillemet]",
 "PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Assistant: `SubscriptionLevel`",
@@ -229,7 +229,7 @@
 
 "ChatbarOptionsTitle" -> "AI Assistant:",
 "ChatbarOptionsMonthlyUsage" -> "\:4eca\:6708\:306e\:4f7f\:7528\:91cf\:ff1a",
-"ChatbarOptionsAccessFailedUsage" -> "Usage details are not currently available. Try again later.",
+"ChatbarOptionsAccessFailedUsage" -> "\:4f7f\:7528\:91cf\:306e\:8a73\:7d30\:306f\:73fe\:5728\:3054\:89a7\:306b\:306a\:308c\:307e\:305b\:3093\:ff0e\:5f8c\:307b\:3069\:518d\:5ea6\:304a\:8a66\:3057\:304f\:3060\:3055\:3044\:ff0e",
 "ChatbarOptionsLimit" -> "\:4f7f\:7528\:91cf\:306e\:4e0a\:9650\:306b\:9054\:3057\:307e\:3057\:305f",
 "ChatbarOptionsLimitReset" -> "\:ff08`1`\:65e5\:5f8c\:306b\:30ea\:30bb\:30c3\:30c8\:ff09",
 "ChatbarOptionsUpgradeTemplate" -> "`1`\:306b\:30a2\:30c3\:30d7\:30b0\:30ec\:30fc\:30c9",
@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "\:6700\:5c0f\:5316",
 "ChatbarOptionsOff" -> "\:30aa\:30d5",
 "ChatbarOptionsSignOut" -> "\:30b5\:30a4\:30f3\:30a2\:30a6\:30c8",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "\:30e6\:30fc\:30b6\:30c7\:30fc\:30bf\:3092\:53d6\:5f97\:3057\:3066\:3044\:307e\:3059\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant\:30c1\:30e3\:30c3\:30c8\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306eNotebook Assistant",

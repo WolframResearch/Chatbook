@@ -1232,7 +1232,7 @@ $cutBlueHover = LightDarkSwitched[ RGBColor[ "#75C2EB" ], RGBColor[ "#669CBD" ] 
 $cutGray      = LightDarkSwitched[ GrayLevel[ 0.75 ] ];
 $cutWhite     = LightDarkSwitched[ GrayLevel[ 1 ] ];
 
-chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
+chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
     With[
         {
             color = Which[
@@ -1242,81 +1242,114 @@ chatbarUsageThermometerBase[ width_, usage_, label_ ] :=
                 True, $cutBlue
             ]
         },
-        Overlay[
-            {
-                Framed[
-                    Graphics[ { },
-                        ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-$cutMargin*2 },
-                        Background   -> color,
-                        ImageMargins -> 0
-                    ],
-                    Background     -> $cutWhite,
-                    ContentPadding -> False,
-                    FrameMargins   -> $cutMargin,
-                    FrameStyle     -> color,
-                    ImageSize      -> { width, $cutHeight },
-                    RoundingRadius -> 2
-                ],
-                Framed[ label,
-                    Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
-                    BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
-                    ContentPadding -> False,
-                    FrameMargins   -> 2,
-                    FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                    ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-                ]
-            },
-            Alignment -> { Right, Center }
-        ]
+        Framed[
+			Overlay[
+				{
+					Framed[
+						Graphics[ { },
+							ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
+							Background   -> color,
+							ImageMargins -> 0
+						],
+						Background     -> $cutWhite,
+						BaselinePosition -> Center -> Center,
+						ContentPadding -> False,
+						FrameMargins   -> $cutMargin,
+						FrameStyle     -> color,
+						ImageSize      -> { width, $cutHeight },
+						RoundingRadius -> If[size === Small, 2, 1]
+					],
+					If[
+						label === "+",
+						Pane[
+							Style["+",
+								FontColor -> LightDarkSwitched[White, White],
+								FontSize -> $cutHeight - 8,
+								FontWeight -> "Bold",
+								PrivateFontOptions -> {"OperatorSubstitution" -> False}
+							],
+							Alignment -> {Right, Center},
+							ContentPadding -> False,
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 } + {-4,4}, { $cutMargin, $cutMargin } + {-1,1} },
+							ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
+						],
+							
+						Framed[ label,
+							Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
+							BaselinePosition -> Center -> Center,
+							BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.2 ] ] },
+							ContentPadding -> False,
+							FrameMargins   -> {{2,2},{3,2}},
+							FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+							ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+							RoundingRadius -> If[size === Small, 2, 1]
+						]
+					]
+				},
+				Alignment -> { Right, Center }
+			],
+			Background -> None,
+			BaselinePosition -> Center -> Center,
+			FrameMargins -> {{0, 0}, {0, 0}},
+			FrameStyle -> None
+		]
     ]
 
 
 chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
-    Overlay[
-        {
-            Graphics[
-                {
-                    $cutGray,
-                    JoinForm[ "Round" ],
-                    Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
-                    AbsoluteThickness[ 1.5 ],
-                    Dashed,
-                    If[ TrueQ @ ellipsisQ,
-                        With[ {
-                            xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
-                            colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
-                            },
-                            {
-                                Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
-                                Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
-                                Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
-                                    BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
-                            }
-                        ],
-                        Line[ {
-                            { { 0, 0 }, { width, 0 } },
-                            { { width, $cutHeight }, { 0, $cutHeight } }
-                        } ]
-
-                    ]
-                },
-                AspectRatio      -> Full,
-                ImageSize        -> { width, $cutHeight },
-                PlotRange        -> { { 0, width }, { 0, $cutHeight } },
-                PlotRangePadding -> 1
-            ]
-            ,
-            Framed[ label,
-                Background     -> None,
-                BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
-                ContentPadding -> False,
-                FrameMargins   -> 2,
-                FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
-                ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } }
-            ]
-        },
-        Alignment -> { Right, Center }
-    ]
+    Framed[
+		Overlay[
+			{
+				Graphics[
+					{
+						$cutGray,
+						JoinForm[ "Round" ],
+						Line[ { { width-2, 0 }, { width, 0 }, { width, $cutHeight }, { width-2, $cutHeight } } ],
+						AbsoluteThickness[ 1.5 ],
+						Dashed,
+						If[ TrueQ @ ellipsisQ,
+							With[ {
+								xvals = width * { 0, 3/10, 7/15, 8/15, 7/10, 1 },
+								colors = { #, #, #2, #2, #, # }&[ $cutGray, $coBackground ]
+								},
+								{
+									Line[ Table[ { x, 0 }, { x, xvals } ], VertexColors -> colors ],
+									Line[ Table[ { x, $cutHeight }, { x, xvals } ], VertexColors -> colors ],
+									Text[ "\[CenterEllipsis]" , { width, $cutHeight } / 2,
+										BaseStyle -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] } ]
+								}
+							],
+							Line[ {
+								{ { 0, 0 }, { width, 0 } },
+								{ { width, $cutHeight }, { 0, $cutHeight } }
+							} ]
+	
+						]
+					},
+					AspectRatio      -> Full,
+					ImageSize        -> { width, $cutHeight },
+					PlotRange        -> { { 0, width }, { 0, $cutHeight } },
+					PlotRangePadding -> {{3,1},{0.5,1}}
+				]
+				,
+				Framed[ label,
+					Background     -> None,
+					BaselinePosition -> Center -> Center,
+					BaseStyle      -> { FontSize -> 14, FontFamily -> "Source Sans Pro", FontColor -> LightDarkSwitched[ GrayLevel[ 0.4 ] ] },
+					ContentPadding -> False,
+					FrameMargins   -> 2,
+					FrameStyle     -> LightDarkSwitched @ GrayLevel[ 1, 0 ],
+					ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 }, { $cutMargin, $cutMargin } },
+					RoundingRadius -> 1
+				]
+			},
+			Alignment -> { Right, Center }
+		],
+		Background -> None,
+		BaselinePosition -> Center -> Center,
+		FrameMargins -> 0,
+		FrameStyle -> None
+	]
 
 
 $cutTotalWidth = $coWidth - 60;
@@ -1486,7 +1519,7 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
         
         (* log-rescale the amounts to get widths from 50 to 250 *)
         amounts = Lookup[ creditChoices, "amount" ] // N;
-        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 30, 200 }, { 50, 250 } ] ];
+        widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 50, 200 }, { 50, 260 } ] ];
         creditChoices = MapThread[ Append[ #1, "width" -> #2 ]&, { creditChoices, widths } ];
         
         If[ creditChoices === { },
@@ -1517,8 +1550,8 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
 chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 80, 1, "Pro", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1528,8 +1561,8 @@ chatbarAddServiceCreditsThermometer[ "Pro", width_ ] :=
 chatbarAddServiceCreditsThermometer[ "Research", width_ ] :=
     Grid[
         { {
-            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research" ] ],
-            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+" ] ]
+            Block[ { $cutRed = LightDarkSwitched[ GrayLevel[ 0.75 ] ] }, chatbarUsageThermometerBase[ 100, 1, "Research", Small ] ],
+            Block[ { $cutRed = $cutGreen }, chatbarUsageThermometerBase[ width, 1, "+", Small ] ]
         } },
         BaseStyle -> { Magnification -> 0.8 },
         Spacings  -> { 0, 0 }
@@ -1736,7 +1769,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
             Typeset`initializedQ = False, Typeset`thisCell, Typeset`activeQ = False, Typeset`selectionWithinQ = False,
-            Typeset`fieldContent = initialText, Typeset`state = "Loading"
+            Typeset`fieldContent = initialText, Typeset`state = "Loading", Typeset`WolframAccountInfo = <||>
         },
         DynamicWrapper[
             PaneSelector[
@@ -1753,6 +1786,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
                                                 "LocalAIOnly"      -> chatbarLocalAIOnly @ Typeset`activeQ,
                                                 "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "SignInPending"    -> chatbarSignInPending @ Typeset`activeQ,
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
                                             Dynamic @ Typeset`state,
@@ -1764,7 +1798,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
 
                                             Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ],
                                                 "NoInternet",
-                                            
+
                                             (* be very generous in allowing AI access; only disable chatbar *)
                                             (* if disabled via license *)
                                             Lookup[
@@ -1775,20 +1809,32 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             ],
                                                 "LocalAIOnly",
                                             
-                                            (* if disabled via ERP *)
+                                            MatchQ[ CurrentValue[ "WolframCloudConnected" ], False | "Pending" ],
+                                                "SignIn",
+                                            
+                                            (* ======= Check ERP for AI access ======= *)
+                                            Typeset`WolframAccountInfo = CurrentValue[ "WolframAccountInformation" ];
+
+                                            (* You must be signed in to get account info; given the ordering of this Which we should technically never hit this case *)
+                                            Typeset`WolframAccountInfo === <| |>,
+                                                "SignIn",
+
+                                            (* if key "ServerMetadata" has missing data then the front end is signed in but hasn't really talked to EPR yet *)
+                                            KeyExistsQ[ Typeset`WolframAccountInfo, "ServerMetadata" ] && MissingQ @ Lookup[ Typeset`WolframAccountInfo, "ServerMetadata" ],
+                                                "SignInPending",
+
+                                            (* fall-through to allowing AI unless ERP is explicitly set as "LLMFeaturesPermitted" -> False *)
                                             Lookup[
-                                                Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+                                                Lookup[ Typeset`WolframAccountInfo, "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
                                                 "LLMFeaturesPermitted",
                                                 False,
                                                 # === False&
                                             ],
                                                 "LocalAIOnly",
                                             
-                                            cloudCredentialsQ[ ],
-                                                "Enabled",
-                                            
+                                            (* ======= success ======= *)
                                             True,
-                                                "SignIn"
+                                                "Enabled"
                                         ],
                                         SynchronousUpdating -> False
                                     ]
@@ -1862,6 +1908,52 @@ makeChatbarChatInputCellContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*chatbarSignInMessage*)
+
+chatbarSignInMessage // beginDefinition;
+
+Attributes[ chatbarSignInMessage ] = { HoldAll };
+
+chatbarSignInMessage[ activeQ_ ] :=
+Row[
+    {
+        PaneSelector[
+            {
+                True  -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
+                    LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#344858" ] ],
+                    LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
+                ],
+                False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
+                    LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
+                    LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
+                ]
+            },
+            Dynamic @ activeQ,
+            BaselinePosition -> Baseline,
+            ImageSize        -> All
+        ],
+        Style[
+            tr @ "ChatbarSignIn",
+            "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
+            FontColor -> Dynamic @ If[ activeQ,
+                LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
+                LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+            ],
+            FontFamily      -> "Roboto",
+            FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
+            FontSize        -> 15,
+            FontSlant       -> "Plain",
+            LineBreakWithin -> False
+        ]
+    },
+    Spacer @ 0,
+    StripOnInput -> True
+];
+
+chatbarSignInMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatbarSignIn*)
 
 chatbarSignIn // beginDefinition;
@@ -1870,58 +1962,68 @@ Attributes[ chatbarSignIn ] = { HoldAll };
 
 chatbarSignIn[ activeQ_ ] :=
 Button[
-    Framed[
-        Row[
-            {
-                PaneSelector[
-                    {
-                        True  -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#344858" ] ],
-                            LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
-                        ],
-                        False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                            LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
-                            LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
-                        ]
-                    },
-                    Dynamic @ activeQ,
-                    BaselinePosition -> Baseline,
-                    ImageSize        -> All
-                ],
-                Style[
-                    tr @ "ChatbarSignIn",
-                    "Text", "TextStyleInputField", (* second style makes contractions, line wrapping, etc. more text like *)
-                    FontColor -> Dynamic @ If[ activeQ,
-                        LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ],
-                        LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
+    PaneSelector[
+        {
+            True -> chatbarSignInPending @ activeQ,
+            False ->
+                Framed[
+                    chatbarSignInMessage @ activeQ,
+                    Alignment      -> { Automatic, Center },
+                    Background     -> Dynamic @ If[ activeQ,
+                        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+                        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
                     ],
-                    FontFamily      -> "Roboto",
-                    FontOpacity     -> Dynamic @ If[ activeQ, 1., 0.5 ],
-                    FontSize        -> 15,
-                    FontSlant       -> "Plain",
-                    LineBreakWithin -> False
+                    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+                    FrameStyle     -> None,
+                    ImageSize      -> { Scaled[ 1 ], 38 },
+                    RoundingRadius -> 9
                 ]
-            },
-            Spacer @ 0,
-            StripOnInput -> True
-        ],
-        Alignment      -> { Automatic, Center },
-        Background     -> Dynamic @ If[ activeQ,
-            LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
-            LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
-        ],
-        FrameMargins   -> { { 12, 1 }, { 1, 1 } },
-        FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 38 },
-        RoundingRadius -> 9
+        },
+        Dynamic[ CurrentValue[ "WolframCloudConnected" ] === "Pending" ],
+        ImageSize -> Automatic
     ],
-    CloudConnect[ ],
+    If[ CurrentValue[ "WolframCloudConnected" ] === "Pending", Null, CloudConnect[ ] ],
     Appearance -> "Suppressed",
     ImageSize  -> Automatic,
     Method     -> "Queued"
 ];
 
 chatbarSignIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarSignInPending*)
+
+chatbarSignInPending // beginDefinition;
+
+Attributes[ chatbarSignInPending ] = { HoldAll };
+
+chatbarSignInPending[ activeQ_ ] :=
+Framed[
+    Overlay[ {
+        chatbarSignInMessage @ activeQ,
+        PaneSelector[
+            {
+                True  -> ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ GrayLevel[ 0.537255 ], GrayLevel[ 0.650980 ] ] } ],
+                False -> ProgressIndicator[ Appearance -> { "Percolate", LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ] } ]
+            },
+            Dynamic @ activeQ,
+            BaselinePosition -> Baseline,
+            ImageSize        -> Automatic
+        ]
+    } ],
+    Alignment      -> { Automatic, Center },
+    Background     -> Dynamic @ If[ activeQ,
+        LightDarkSwitched[ RGBColor[ 0.831373, 0.941176, 1. ], RGBColor[ 0.219608, 0.313725, 0.380392 ] ],
+        LightDarkSwitched[ GrayLevel[ 0.898039, 0.5  ], GrayLevel[ 0.286275, 0.5 ] ]
+    ],
+    FrameMargins   -> { { 12, 1 }, { 1, 1 } },
+    FrameStyle     -> None,
+    ImageSize      -> { Scaled[ 1 ], 38 },
+    RoundingRadius -> 9
+];
+
+chatbarSignInPending // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
