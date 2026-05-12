@@ -948,7 +948,7 @@ chatbarUserData[ ] := chatbarUserData @ TrueQ @ cloudCredentialsQ[ ]
 
 chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
-chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess" ]
+chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ]
 
 chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     FailureQ[ rawAccessData ],
@@ -2279,7 +2279,7 @@ Framed[
     Style[
         text,
         FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
-        FontOpacity    -> Dynamic @ If[ activeQ, 1., 0.5 ],
+        FontOpacity    -> 1,
         FontSize       -> 11,
         FontTracking   -> "SemiCondensed",
         FontVariations -> { "CapsType" -> "AllCaps" },
@@ -2287,7 +2287,7 @@ Framed[
     ],
     Background     -> Dynamic @ If[ activeQ,
         LightDarkSwitched[ RGBColor[ 0., 0.572549, 0.819608 ], RGBColor[ 0.467133, 0.780131, 0.980079 ] ],
-        LightDarkSwitched[ RGBColor[ 0., 0.572549, 0.819608, 0.5 ], RGBColor[ 0.467133, 0.780131, 0.980079, 0.5 ] ]
+        LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ]
     ],
     ContentPadding -> False,
     FrameMargins   -> { { 6, 6 }, { 3, 3 } },

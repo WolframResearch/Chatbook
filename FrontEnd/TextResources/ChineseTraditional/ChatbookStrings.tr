@@ -241,10 +241,10 @@
 "ChatbarOptionsMinimized" -> "\:6700\:5c0f\:5316",
 "ChatbarOptionsOff" -> "\:95dc\:9589",
 "ChatbarOptionsSignOut" -> "\:767b\:51fa",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "\:91DD\:5C0D\:9078\:53D6\:90E8\:5206\:7684\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "\:96B1\:85CF\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
@@ -252,7 +252,7 @@
 "SidebarFocusIndicator" -> "\:7565\:904E\:7B46\:8A18\:672C\:5167\:5BB9",
 "SidebarOverlayAskAnything" -> "\:6709\:4EC0\:9EBC\:9700\:8981\:5E6B\:5FD9\:7684\:FF1F",
 
-"WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
+"WorkspaceWindowTitle" -> "Wolfram AI Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "\:5148\:524D\:804A\:5929\:7CFB\:7D71\:5DF2\:79FB\:81F3 `1` \:7684\:6B77\:53F2\:7D00\:9304\:4E2D\:3002",
