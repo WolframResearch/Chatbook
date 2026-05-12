@@ -107,7 +107,7 @@ getUpdatedLLMKitService[ ] := Enclose[
         Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
         info = ConfirmMatch[ Wolfram`LLMFunctions`Common`$LLMKitInfo, _Association|None, "Info" ];
         If[ info === None, Throw @ $fallbackLLMKitService ];
-        If[ ! KeyExistsQ[ info, "currentProvider" ] && info[ "service" ] === "llmkit", Throw[ "LLMKit" ] ];
+        If[ ! KeyExistsQ[ info, "currentProvider" ] && info[ "service" ] === "llmkit", Throw @ $fallbackLLMKitService ];
         provider = ConfirmBy[ info[ "currentProvider" ], StringQ, "Provider" ];
         service = ConfirmBy[ $llmKitPrefix <> provider, StringQ, "Service" ];
         If[ TrueQ @ $mxFlag,
