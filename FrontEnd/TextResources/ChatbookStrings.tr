@@ -195,8 +195,8 @@
 "UITryEnableChatDialogConfirm" -> "Are you sure you wish to continue?",
 "UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
 "UIMessageContactUs" -> "Contact us \[RightGuillemet]",
-"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
-"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram AI Assistant allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram AI Assistant allowance for this month.",
 "UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
 "UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
@@ -243,8 +243,8 @@
 "ChatbarOptionsSignOut" -> "Sign Out",
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
@@ -252,7 +252,7 @@
 "SidebarFocusIndicator" -> "Ignore notebook content",
 "SidebarOverlayAskAnything" -> "How can I help?",
 
-"WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceWindowTitle" -> "Wolfram AI Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",

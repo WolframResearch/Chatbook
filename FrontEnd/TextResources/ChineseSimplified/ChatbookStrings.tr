@@ -195,8 +195,8 @@
 "UITryEnableChatDialogConfirm" -> "\:60A8\:786E\:5B9A\:8981\:7EE7\:7EED\:5417\:ff1f",
 "UIMessageManageSubscription" -> "\:7BA1\:7406\:8BA2\:9605 \[RightGuillemet]",
 "UIMessageContactUs" -> "\:8054\:7CFB\:6211\:4EEC \[RightGuillemet]",
-"UIMessageUsed80" -> "\:60A8\:5DF2\:4F7F\:7528\:4E86\:672C\:6708 Wolfram Notebook Assistant + LLM Kit \:9650\:989D\:7684 80%\:3002",
-"UIMessageUsedAll" -> "\:60A8\:5DF2\:7528\:5B8C\:672C\:6708 Wolfram Notebook Assistant + LLM Kit \:7684\:6240\:6709\:9650\:989D\:3002",
+"UIMessageUsed80" -> "\:60A8\:5DF2\:4F7F\:7528\:4E86\:672C\:6708 Wolfram AI Assistant \:9650\:989D\:7684 80%\:3002",
+"UIMessageUsedAll" -> "\:60A8\:5DF2\:7528\:5B8C\:672C\:6708 Wolfram AI Assistant \:7684\:6240\:6709\:9650\:989D\:3002",
 "UIMessageHighUsageRate" -> "\:6211\:4EEC\:53D1\:73B0\:60A8\:7684\:8D26\:6237\:8BF7\:6C42\:7387\:975E\:5E38\:9AD8\:3002\:4E3A\:4E86\:9632\:6B62\:5176\:4ED6\:7528\:6237\:7684\:670D\:52A1\:4E2D\:65AD\:ff0c\:6211\:4EEC\:4E0D\:5F97\:4E0D\:6682\:65F6\:963B\:6B62\:60A8\:7684\:8BF7\:6C42\:3002",
 "UIMessageUnblockRequest" -> "\:8BF7\:6C42\:89E3\:5C01 \[RightGuillemet]",
 
@@ -243,8 +243,8 @@
 "ChatbarOptionsSignOut" -> "\:9000\:51FA",
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "\:4E0E\:7B14\:8BB0\:672C\:52A9\:624B\:804A\:5929\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "\:4E3A\:6240\:9009\:5185\:5BB9\:5BFB\:6C42\:7B14\:8BB0\:672C\:52A9\:624B\:7684\:5E2E\:52A9",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI \:5185\:5BB9\:5EFA\:8BAE",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "\:9690\:85CF\:7B14\:8BB0\:672C\:52A9\:624B",
@@ -252,7 +252,7 @@
 "SidebarFocusIndicator" -> "\:5FFD\:7565\:7B14\:8BB0\:672C\:7684\:5185\:5BB9",
 "SidebarOverlayAskAnything" -> "\:9700\:8981\:5E2E\:52A9\:5417\:ff1f",
 
-"WorkspaceWindowTitle" -> "\:7B14\:8BB0\:672C\:52A9\:624B",
+"WorkspaceWindowTitle" -> "Wolfram AI Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "\:5386\:53F2\:8BB0\:5F55",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "\:4E0A\:4E00\:4E2A\:804A\:5929\:5DF2\:79FB\:81F3 `1` \:5386\:53F2\:8BB0\:5F55\:3002",

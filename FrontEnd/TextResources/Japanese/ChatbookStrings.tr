@@ -195,8 +195,8 @@
 "UITryEnableChatDialogConfirm" -> "\:7d9a\:884c\:3057\:307e\:3059\:304b\:ff1f",
 "UIMessageManageSubscription" -> "\:30b5\:30d6\:30b9\:30af\:30ea\:30d7\:30b7\:30e7\:30f3\:306e\:7ba1\:7406 \[RightGuillemet]",
 "UIMessageContactUs" -> "\:304a\:554f\:5408\:305b \[RightGuillemet]",
-"UIMessageUsed80" -> "\:4eca\:6708\:306e\:304a\:5ba2\:69d8\:306eWolfram Notebook Assistant + LLM Kit\:306e\:4f7f\:7528\:8a31\:5bb9\:91cf\:306f\:6b8b\:308a20%\:3067\:3059\:ff0e",
-"UIMessageUsedAll" -> "\:4eca\:6708\:306e\:304a\:5ba2\:69d8\:306eWolfram Notebook Assistant + LLM Kit\:306e\:4f7f\:7528\:8a31\:5bb9\:91cf\:306e\:4e0a\:9650\:306b\:9054\:3057\:307e\:3057\:305f\:ff0e",
+"UIMessageUsed80" -> "\:4eca\:6708\:306e\:304a\:5ba2\:69d8\:306eWolfram AI Assistant\:306e\:4f7f\:7528\:8a31\:5bb9\:91cf\:306f\:6b8b\:308a20%\:3067\:3059\:ff0e",
+"UIMessageUsedAll" -> "\:4eca\:6708\:306e\:304a\:5ba2\:69d8\:306eWolfram AI Assistant\:306e\:4f7f\:7528\:8a31\:5bb9\:91cf\:306e\:4e0a\:9650\:306b\:9054\:3057\:307e\:3057\:305f\:ff0e",
 "UIMessageHighUsageRate" -> "\:304a\:5ba2\:69d8\:306e\:30a2\:30ab\:30a6\:30f3\:30c8\:304b\:3089\:975e\:5e38\:306b\:9ad8\:3044\:983b\:5ea6\:3067\:30ea\:30af\:30a8\:30b9\:30c8\:304c\:767a\:305b\:3089\:308c\:3066\:3044\:307e\:3059\:ff0e\:4ed6\:306e\:30e6\:30fc\:30b6\:306e\:30b5\:30fc\:30d3\:30b9\:304c\:4e2d\:65ad\:3055\:308c\:308b\:3053\:3068\:3092\:907f\:3051\:308b\:305f\:3081\:306b\:ff0c\:304a\:5ba2\:69d8\:306e\:30ea\:30af\:30a8\:30b9\:30c8\:3092\:4e00\:6642\:7684\:306b\:906e\:65ad\:3057\:306a\:3051\:308c\:3070\:306a\:308a\:307e\:305b\:3093\:3067\:3057\:305f\:ff0e",
 "UIMessageUnblockRequest" -> "\:906e\:65ad\:306e\:89e3\:9664\:3092\:30ea\:30af\:30a8\:30b9\:30c8 \[RightGuillemet]",
 
@@ -243,8 +243,8 @@
 "ChatbarOptionsSignOut" -> "\:30b5\:30a4\:30f3\:30a2\:30a6\:30c8",
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant\:30c1\:30e3\:30c3\:30c8\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306eNotebook Assistant",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Notebook Assistant\:3092\:96a0\:3059",
@@ -252,7 +252,7 @@
 "SidebarFocusIndicator" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:306e\:30b3\:30f3\:30c6\:30f3\:30c4\:3092\:7121\:8996",
 "SidebarOverlayAskAnything" -> "\:4f55\:304b\:304a\:624b\:4f1d\:3044\:3067\:304d\:308b\:3053\:3068\:306f\:3042\:308a\:307e\:3059\:304b\:ff1f",
 
-"WorkspaceWindowTitle" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8",
+"WorkspaceWindowTitle" -> "Wolfram AI Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "\:5c65\:6b74",
 "WorkspaceToolbarButtonLabelSources" -> "\:30BD\:30FC\:30B9",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "\:524d\:56de\:306e\:30c1\:30e3\:30c3\:30c8\:306f`1`\:306e\:5c65\:6b74\:306b\:79fb\:3055\:308c\:307e\:3057\:305f\:ff0e",
