@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "Minimized",
 "ChatbarOptionsOff" -> "Off",
 "ChatbarOptionsSignOut" -> "Sign Out",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
