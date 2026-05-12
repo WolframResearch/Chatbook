@@ -948,7 +948,7 @@ chatbarUserData[ ] := chatbarUserData @ TrueQ @ cloudCredentialsQ[ ]
 
 chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
-chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess" ]
+chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ]
 
 chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     FailureQ[ rawAccessData ],
