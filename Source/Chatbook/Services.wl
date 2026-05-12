@@ -91,7 +91,6 @@ llmKitCheck0 // endDefinition;
 getLLMKitService // beginDefinition;
 getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
 getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := $llmKitPrefix <> service;
-getLLMKitService[ KeyValuePattern[ "service" -> "llmkit" ] ] := "LLMKit";
 getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
 getLLMKitService[ _ ] := $fallbackLLMKitService;
 getLLMKitService // endDefinition;
