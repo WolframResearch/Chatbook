@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "\:6700\:5c0f\:5316",
 "ChatbarOptionsOff" -> "\:95dc\:9589",
 "ChatbarOptionsSignOut" -> "\:767b\:51fa",
-"ChatbarOptionsGettingData" -> "Getting user data\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "\:91DD\:5C0D\:9078\:53D6\:90E8\:5206\:7684\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",

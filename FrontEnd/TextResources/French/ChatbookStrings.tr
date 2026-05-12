@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "R\[EAcute]duit",
 "ChatbarOptionsOff" -> "D\[EAcute]sactiv\[EAcute]",
 "ChatbarOptionsSignOut" -> "Se d\[EAcute]connecter",
-"ChatbarOptionsGettingData" -> "Obtention des donn\[EAcute]es utilisateur\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de l\[CloseCurlyQuote]assistant du notebook\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "Assistant du notebook pour la s\[EAcute]lection",
