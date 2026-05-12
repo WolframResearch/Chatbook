@@ -195,8 +195,8 @@
 "UITryEnableChatDialogConfirm" -> "\[DownQuestion]Est\[AAcute] seguro que desea continuar?",
 "UIMessageManageSubscription" -> "Administrar suscripci\[OAcute]n \[RightGuillemet]",
 "UIMessageContactUs" -> "Cont\[AAcute]ctenos \[RightGuillemet]",
-"UIMessageUsed80" -> "Ha utilizado 80% de su asignaci\[OAcute]m de Wolfram Notebook Assistant + LLM Kit para este mes.",
-"UIMessageUsedAll" -> "Ha utilizado toda su asignaci\[OAcute]m de Wolfram Notebook Assistant + LLM Kit para este mes.",
+"UIMessageUsed80" -> "Ha utilizado 80% de su asignaci\[OAcute]m de Wolfram AI Assistant para este mes.",
+"UIMessageUsedAll" -> "Ha utilizado toda su asignaci\[OAcute]m de Wolfram AI Assistant para este mes.",
 "UIMessageHighUsageRate" -> "Hemos detectado una tasa muy alta de solicitudes desde su cuenta. Para prevenir interrupciones en el servicio de otros usuarios, hemos tenido que bloquear sus solicitudes temporalmente.",
 "UIMessageUnblockRequest" -> "Solicitar el desbloqueo \[RightGuillemet]",
 
@@ -240,10 +240,10 @@
 "ChatbarOptionsMinimized" -> "Minimizada",
 "ChatbarOptionsOff" -> "Desactivada",
 "ChatbarOptionsSignOut" -> "Cerrar sesi\[OAcute]n",
-"ChatbarOptionsGettingData" -> "Obteniendo datos de usuario\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "Chat de Notebook Assistant\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant para la selecci\[OAcute]n",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Ocultar asistente de cuaderno",
@@ -251,7 +251,7 @@
 "SidebarFocusIndicator" -> "Ignorar contenido del cuaderno",
 "SidebarOverlayAskAnything" -> "\[DownQuestion]C\[OAcute]mo puedo ayudar?",
 
-"WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceWindowTitle" -> "Wolfram AI Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "Historial",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "El chat anterior fue movido al historial `1`.",
