@@ -297,13 +297,13 @@
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?",
 
-"ProgressTextDownloadingDocumentation" -> "Downloading||Fetching||Loading||Retrieving||Gathering||Collecting",
-"ProgressTextCheckingDocumentation" -> "Checking||Reviewing||Scanning||Verifying||Reading||Inspecting||Searching||Surfacing",
-"ProgressTextChoosingDocumentation" -> "Choosing||Selecting||Filtering||Matching||Picking||Sorting||Ranking||Narrowing||Analyzing",
-"ProgressTextCreatingMessages" -> "Creating||Building||Composing||Preparing||Writing||Assembling||Structuring",
-"ProgressTextSendingChat" -> "Sending||Submitting||Delivering||Forwarding||Transmitting||Relaying||Dispatching",
-"ProgressTextWaitingForResponse" -> "Waiting||Receiving||Listening||Holding||Processing||Checking",
-"ProgressTextGeneratingSuggestions" -> "Cr\[EAcute]ation de suggestions",
+"ProgressTextDownloadingDocumentation" -> "T\[EAcute]l\[EAcute]chargement||Extraction||Chargement||R\[EAcute]cup\[EAcute]ration||Rassemblement||Collecte",
+"ProgressTextCheckingDocumentation" -> "V\[EAcute]rification||R\[EAcute]vision||Balayage||V\[EAcute]rification||Lecture||Inspection||Recherche||Apparition",
+"ProgressTextChoosingDocumentation" -> "Choix||S\[EAcute]lection||Filtrage||Correspondance||Pr\[EAcute]l\[EGrave]vement||Tri||Classement||R\[EAcute]duction||Analyse",
+"ProgressTextCreatingMessages" -> "Cr\[EAcute]ation||Construction||Composition||Pr\[EAcute]paration||\[CapitalEAcute]criture||Assemblage||Structuration",
+"ProgressTextSendingChat" -> "Envoi||Soumission||Livraison||Redirection||Transmission||Relais||R\[EAcute]partition",
+"ProgressTextWaitingForResponse" -> "Attente||R\[EAcute]ception||\[CapitalEAcute]coute||Maintien||Traitement||V\[EAcute]rification",
+"ProgressTextGeneratingSuggestions" -> "G\[EAcute]n\[EAcute]ration de suggestions",
 "ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
 "ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`"
 }
