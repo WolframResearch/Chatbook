@@ -297,12 +297,12 @@
 "NotebookAssistanceInputGettingStarted" -> "\:C2DC\:C791\:C5D0 \:B3C4\:C6C0 \:BC1B\:AE30",
 "NotebookAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?",
 
-"ProgressTextDownloadingDocumentation" -> "Downloading||Fetching||Loading||Retrieving||Gathering||Collecting",
-"ProgressTextCheckingDocumentation" -> "Checking||Reviewing||Scanning||Verifying||Reading||Inspecting||Searching||Surfacing",
-"ProgressTextChoosingDocumentation" -> "Choosing||Selecting||Filtering||Matching||Picking||Sorting||Ranking||Narrowing||Analyzing",
-"ProgressTextCreatingMessages" -> "Creating||Building||Composing||Preparing||Writing||Assembling||Structuring",
-"ProgressTextSendingChat" -> "Sending||Submitting||Delivering||Forwarding||Transmitting||Relaying||Dispatching",
-"ProgressTextWaitingForResponse" -> "Waiting||Receiving||Listening||Holding||Processing||Checking",
+"ProgressTextDownloadingDocumentation" -> "\:B2E4\:C6B4\:B85C\:B4DC \:C911||\:AC00\:C838\:C624\:B294 \:C911||\:B85C\:B529 \:C911||\:AC80\:C0C9 \:C911||\:C900\:BE44 \:C911||\:C218\:C9D1 \:C911",
+"ProgressTextCheckingDocumentation" -> "\:D655\:C778 \:C911||\:AC80\:D1A0 \:C911||\:C2A4\:CE94 \:C911||\:AC80\:C99D \:C911||\:C77D\:B294 \:C911||\:C810\:AC80 \:C911||\:AC80\:C0C9 \:C911||\:B098\:C5F4 \:C911",
+"ProgressTextChoosingDocumentation" -> "\:C120\:D0DD \:C911||\:C120\:BCC4 \:C911||\:D544\:D130\:B9C1 \:C911||\:B9E4\:CE6D \:C911||\:ACE8\:B77C\:B0B4\:B294 \:C911||\:C815\:B82C \:C911||\:C21C\:C704 \:C0B0\:C815 \:C911||\:BC94\:C704 \:CD95\:C18C \:C911||\:BD84\:C11D \:C911",
+"ProgressTextCreatingMessages" -> "\:C0DD\:C131 \:C911||\:AD6C\:CD95 \:C911||\:C791\:C131 \:C911||\:C900\:BE44 \:C911||\:C4F0\:B294 \:C911||\:C870\:B9BD \:C911||\:AD6C\:C870\:D654 \:C911",
+"ProgressTextSendingChat" -> "\:C804\:C1A1 \:C911||\:C81C\:CD9C \:C911||\:C804\:B2EC \:C911||\:D3EC\:C6CC\:B529 \:C911||\:C1A1\:C2E0 \:C911||\:C911\:ACC4 \:C911||\:BC1C\:C1A1 \:C911",
+"ProgressTextWaitingForResponse" -> "\:B300\:AE30 \:C911||\:C218\:C2E0 \:C911||\:C751\:B2F5 \:B300\:AE30 \:C911||\:C720\:C9C0 \:C911||\:CC98\:B9AC \:C911||\:D655\:C778 \:C911",
 "ProgressTextGeneratingSuggestions" -> "\:C81C\:C548 \:C0DD\:C131",
 "ProgressTextDownloadingSnippet" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC",
 "ProgressTextDownloadingSnippets" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC"
