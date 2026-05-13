@@ -146,13 +146,13 @@ makeSidebarMenuContent[ sidebarCell_CellObject, nbObj_NotebookObject ] := Enclos
 
 		items = ConfirmBy[ makeChatActionMenu[ "Sidebar", nbObj ], ListQ, "Items" ];
 
-		new = Join[ 
-			{ <|
+		new = Join[ (* don't include auto-analysis in 15.0 *)
+			{ (*<|
 				 "Type"           -> "Custom",
 				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSidebar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
 				 "ResetAction"    :> (setCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" }, Inherited ]),
 				 "ResetCondition" :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
-			|> },
+			|>*) },
 			items ];
 
 		MakeSidebarMenu[ sidebarCell, new ]
