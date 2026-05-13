@@ -468,7 +468,7 @@ filterSnippets[
     Catch @ Module[ { snippets, inserted, transcript, instructions, resp, respResults, idx, ranked },
 
         snippets = ConfirmMatch[ makeDocSnippets @ results, { ___String }, "Snippets" ];
-        setProgressDisplay[ "ProgressTextChoosingDocumentation" ];
+        setProgressDisplay[ "ChoosingDocumentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
