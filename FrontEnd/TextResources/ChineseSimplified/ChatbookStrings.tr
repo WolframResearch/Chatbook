@@ -297,12 +297,12 @@
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
 "NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f",
 
-"ProgressTextDownloadingDocumentation" -> "Downloading||Fetching||Loading||Retrieving||Gathering||Collecting",
-"ProgressTextCheckingDocumentation" -> "Checking||Reviewing||Scanning||Verifying||Reading||Inspecting||Searching||Surfacing",
-"ProgressTextChoosingDocumentation" -> "Choosing||Selecting||Filtering||Matching||Picking||Sorting||Ranking||Narrowing||Analyzing",
-"ProgressTextCreatingMessages" -> "Creating||Building||Composing||Preparing||Writing||Assembling||Structuring",
-"ProgressTextSendingChat" -> "Sending||Submitting||Delivering||Forwarding||Transmitting||Relaying||Dispatching",
-"ProgressTextWaitingForResponse" -> "Waiting||Receiving||Listening||Holding||Processing||Checking",
+"ProgressTextDownloadingDocumentation" -> "\:6B63\:5728\:4E0B\:8F7D||\:6B63\:5728\:6293\:53D6||\:6B63\:5728\:52A0\:8F7D||\:6B63\:5728\:68C0\:7D22||\:6B63\:5728\:91C7\:96C6||\:6B63\:5728\:6536\:96C6",
+"ProgressTextCheckingDocumentation" -> "\:6B63\:5728\:68C0\:67E5||\:6B63\:5728\:5BA1\:9605||\:6B63\:5728\:626B\:63CF||\:6B63\:5728\:9A8C\:8BC1||\:6B63\:5728\:8BFB\:53D6||\:6B63\:5728\:5BA1\:67E5||\:6B63\:5728\:641C\:7D22||\:6B63\:5728\:5448\:73B0",
+"ProgressTextChoosingDocumentation" -> "\:6B63\:5728\:9009\:62E9||\:6B63\:5728\:7B5B\:9009||\:6B63\:5728\:8FC7\:6EE4||\:6B63\:5728\:5339\:914D||\:6B63\:5728\:9009\:53D6||\:6B63\:5728\:5206\:7C7B||\:6B63\:5728\:6392\:5E8F||\:6B63\:5728\:7F29\:5C0F\:8303\:56F4||\:6B63\:5728\:5206\:6790",
+"ProgressTextCreatingMessages" -> "\:6B63\:5728\:521B\:5EFA||\:6B63\:5728\:6784\:5EFA||\:6B63\:5728\:521B\:4F5C||\:6B63\:5728\:51C6\:5907||\:6B63\:5728\:7F16\:5199||\:6B63\:5728\:6574\:7406||\:6B63\:5728\:7ED3\:6784\:5316",
+"ProgressTextSendingChat" -> "\:6B63\:5728\:53D1\:9001||\:6B63\:5728\:63D0\:4EA4||\:6B63\:5728\:53D1\:5E03||\:6B63\:5728\:8F6C\:53D1||\:6B63\:5728\:4F20\:9001||\:6B63\:5728\:4E2D\:7EE7||\:6B63\:5728\:5206\:53D1",
+"ProgressTextWaitingForResponse" -> "\:6B63\:5728\:7B49\:5F85||\:6B63\:5728\:63A5\:6536||\:6B63\:5728\:542C\:53D6||\:6301\:7EED\:6301\:6709||\:6B63\:5728\:5904\:7406||\:6B63\:5728\:68C0\:67E5"
 "ProgressTextGeneratingSuggestions" -> "\:6B63\:5728\:751F\:6210\:5EFA\:8BAE",
 "ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
 "ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5"
