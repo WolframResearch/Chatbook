@@ -480,7 +480,7 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*Kimi K2.5*)
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
-    "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration" },
+    "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
     "EndToken"             -> None,
     "HybridToolMethod"     -> False,
     "MaxContextTokens"     -> 262144,
