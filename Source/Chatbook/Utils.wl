@@ -528,15 +528,7 @@ basicProgressTextRow1[ expr_, p_ ] := {
         If[ StringQ @ expr,
             Row @ {
                 If[ StringStartsQ[ expr, "ProgressText" ],
-                    FrontEndResource[
-                        "ChatbookStrings",
-                        expr <> ToString @ RandomInteger[ { 1,
-                            Replace[
-                                ToExpression @ StringReplace[ trRaw @ expr, RegularExpression[ "`([0-9]+)`" ] :> "$1" ],
-                                Except[ _?IntegerQ ] -> 1
-                            ]
-                        } ]
-                    ]
+                    RandomChoice @ StringSplit[ Replace[ trRaw @ expr, Except[ _String ] -> " " ], "||" ]
                     ,
                     expr
                 ],
