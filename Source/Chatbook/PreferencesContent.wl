@@ -92,7 +92,7 @@ createPreferencesContent[ ] := Enclose[
                 serviceSelector = makeServiceSelector[
                     <|
                         $availableServices,
-                        "LLMKit" -> <| "Service" -> "Wolfram AI Services", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                        "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
                     |>,
                     dmPrefCache, service, model, modelNameSelector, state ];
 
@@ -554,7 +554,7 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram AI Services", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
@@ -790,7 +790,7 @@ modelSelectCallback[ selected_String(* The value chosen via PopupMenu *), dmPref
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
     (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
-    model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services" ], Automatic, selected ];
+    model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services"|"Wolfram AI Access" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1961,7 +1961,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services" ] := Automatic;
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services"|"Wolfram AI Access" ] := Automatic;
 
 getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
     Module[ { lastSelected, name },

@@ -144,7 +144,7 @@
 "PreferencesContentLLMKitNoSubscription" -> "Wolfram AI Access \:C11C\:BE44\:C2A4 \:AD6C\:B3C5 \:C815\:BCF4\:AC00 \:C5C6\:C2B5\:B2C8\:B2E4",
 "PreferencesContentLLMKitSignInOr" -> "\:B610\:B294",
 "PreferencesContentLLMKitSignInButton" -> "\:AE30\:C874 \:AD6C\:B3C5\:C744 \:C0AC\:C6A9\:D558\:B824\:BA74 \:B85C\:ADF8\:C778\:D558\:AE30 \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Assistant: `SubscriptionLevel`",
+"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Access: `SubscriptionLevel`",
 "PreferencesContentLLMKitEnabledManage" -> "\:AD6C\:B3C5 \:AD00\:B9AC \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "URL\:C744 \:C785\:B825",
