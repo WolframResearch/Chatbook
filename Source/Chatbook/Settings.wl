@@ -206,7 +206,7 @@ $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
     <https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming#reasoning-effort>
 
     * As of 2026-05-06, to test the "DeepSeek" service for "DeepSeekFlash", a paid DeepSeek account seems required,
-    otherwise it returns an "Insufficient Balance" error appears for every input and no real output is returned, so I
+    otherwise it returns an "Insufficient Balance" error for every input and no real output is returned, so I
     did NOT continue testing. See
     <https://jira.wolfram.com/jira/browse/LLM-914?focusedId=4300822&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-4300822>).
 *)
@@ -519,13 +519,13 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
+    "EndToken"               -> None
+    "HybridToolMethod"       -> False,
     "MaxContextTokens"       -> 1048576,
     "Multimodal"             -> False,
+    "ToolCallRetryMessage"   -> False,
     "ToolMethod"             -> "Simple",
     "ToolResponseRole"       -> "User",
-    "HybridToolMethod"       -> False,
-    "ToolCallRetryMessage"   -> False,
-    "EndToken"               -> None
 |>
 
 (* Kimi *)
