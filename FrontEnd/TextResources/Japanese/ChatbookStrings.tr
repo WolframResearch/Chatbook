@@ -243,8 +243,8 @@
 "ChatbarOptionsSignOut" -> "\:30b5\:30a4\:30f3\:30a2\:30a6\:30c8",
 "ChatbarOptionsGettingData" -> "\:30E6\:30FC\:30B6\:30D7\:30ED\:30D5\:30A1\:30A4\:30EB\:3092\:53D6\:5F97\:4E2D\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant\:30C1\:30E3\:30C3\:30C8\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "\:9078\:629E\:7BC4\:56F2\:306EAI Assistant",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Notebook Assistant\:3092\:96a0\:3059",
