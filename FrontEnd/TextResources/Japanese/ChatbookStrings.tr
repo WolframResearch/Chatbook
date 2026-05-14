@@ -227,7 +227,7 @@
 "ChatbarNoInternet" -> "\:30a4\:30f3\:30bf\:30fc\:30cd\:30c3\:30c8\:63a5\:7d9a\:304c\:3042\:308a\:307e\:305b\:3093",
 "ChatbarSignIn" -> "\:30b5\:30a4\:30f3\:30a4\:30f3\:3057\:3066AI Assistant\:3092\:4f7f\:3046",
 
-"ChatbarOptionsTitle" -> "AI Access:",
+"ChatbarOptionsTitle" -> "AI\:30A2\:30AF\:30BB\:30B9\:FF1A",
 "ChatbarOptionsMonthlyUsage" -> "\:4eca\:6708\:306e\:4f7f\:7528\:91cf\:ff1a",
 "ChatbarOptionsAccessFailedUsage" -> "\:4f7f\:7528\:91cf\:306e\:8a73\:7d30\:306f\:73fe\:5728\:3054\:89a7\:306b\:306a\:308c\:307e\:305b\:3093\:ff0e\:5f8c\:307b\:3069\:518d\:5ea6\:304a\:8a66\:3057\:304f\:3060\:3055\:3044\:ff0e",
 "ChatbarOptionsLimit" -> "\:4f7f\:7528\:91cf\:306e\:4e0a\:9650\:306b\:9054\:3057\:307e\:3057\:305f",
@@ -241,7 +241,7 @@
 "ChatbarOptionsMinimized" -> "\:6700\:5c0f\:5316",
 "ChatbarOptionsOff" -> "\:30aa\:30d5",
 "ChatbarOptionsSignOut" -> "\:30b5\:30a4\:30f3\:30a2\:30a6\:30c8",
-"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "\:30E6\:30FC\:30B6\:30D7\:30ED\:30D5\:30A1\:30A4\:30EB\:3092\:53D6\:5F97\:4E2D\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
 "MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
