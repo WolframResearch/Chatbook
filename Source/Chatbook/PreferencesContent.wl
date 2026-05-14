@@ -449,7 +449,7 @@ Attributes[ makeDefaultSettingsContent ] = { HoldAll };
 makeDefaultSettingsContent[ dmPrefCache_, default_, service_, model_, state_, serviceSelector_, modelNameSelector_ ] := Enclose[
     Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ dmPrefCache ], _Style|Nothing, "AssistanceCheckbox" ];
+        (* assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ dmPrefCache ], _Style|Nothing, "AssistanceCheckbox" ]; *)
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = makePersonaSelector[ Dynamic @ dmPrefCache ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
@@ -466,7 +466,7 @@ makeDefaultSettingsContent[ dmPrefCache_, default_, service_, model_, state_, se
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             List /@ {
-                assistanceCheckbox,
+                (* assistanceCheckbox, *) (* hide this feature until it is fixed *)
                 personaSelector,
                 modelSelector,
                 temperatureInput,
