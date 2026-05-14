@@ -144,7 +144,7 @@
 "PreferencesContentLLMKitNoSubscription" -> "No Wolfram AI Access subscription found",
 "PreferencesContentLLMKitSignInOr" -> "or",
 "PreferencesContentLLMKitSignInButton" -> "Sign In to use an existing subscription \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Assistant: `SubscriptionLevel`",
+"PreferencesContentLLMKitEnabledTitle" -> "Wolfram AI Access: `SubscriptionLevel`",
 "PreferencesContentLLMKitEnabledManage" -> "Manage your subscription \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Enter a URL",
