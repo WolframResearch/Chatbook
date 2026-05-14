@@ -2287,14 +2287,11 @@ Framed[
     ],
     Background     -> Dynamic @ If[ activeQ,
         LightDarkSwitched[ RGBColor[ 0., 0.572549, 0.819608 ], RGBColor[ 0.467133, 0.780131, 0.980079 ] ],
-        LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ]
+        LightDarkSwitched[ GrayLevel[ 0.768627 ], GrayLevel[ 0.372549 ] ]
     ],
     ContentPadding -> False,
     FrameMargins   -> { { 6, 6 }, { 3, 3 } },
-    FrameStyle     -> Dynamic @ If[ activeQ,
-        LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
-        LightDarkSwitched[ GrayLevel[ 1, 0.5 ], GrayLevel[ 0.099919, 0.5 ] ]
-    ],
+    FrameStyle     -> ThemeColor[ "Background" ],
     RoundingRadius -> 7
 ]
 
