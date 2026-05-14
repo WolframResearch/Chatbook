@@ -516,7 +516,7 @@ basicProgressTextRow // endDefinition;
 
 basicProgressTextRow0 // beginDefinition;
 basicProgressTextRow0[ Verbatim[ Verbatim ][ expr_ ], p_ ] := basicProgressTextRow1[ expr, p ];
-basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ trRaw[ "ProgressText"<>name ], p ];
+basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ "ProgressText"<>name, p ];
 basicProgressTextRow0[ expr_, p_ ] := basicProgressTextRow1[ expr, p ];
 basicProgressTextRow0 // endDefinition;
 
@@ -526,7 +526,14 @@ basicProgressTextRow1 // beginDefinition;
 basicProgressTextRow1[ expr_, p_ ] := {
     Style[
         If[ StringQ @ expr,
-            Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
+            Row @ {
+                If[ StringStartsQ[ expr, "ProgressText" ],
+                    RandomChoice @ StringSplit[ Replace[ trRaw @ expr, Except[ _String ] -> " " ], "||" ]
+                    ,
+                    expr
+                ],
+                ProgressIndicator[ Appearance -> "Ellipsis" ]
+            },
             expr
         ],
         "ProgressTitle"

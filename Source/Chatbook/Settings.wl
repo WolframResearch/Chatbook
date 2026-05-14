@@ -48,7 +48,7 @@ $defaultChatSettings = <|
     "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
-    "LLMEvaluator"                   -> "CodeAssistant",
+    "LLMEvaluator"                   -> "WolframAIAssistant",
     "MaxCellStringLength"            -> Automatic,
     "MaxContextTokens"               -> Automatic,
     "MaxOutputCellStringLength"      -> Automatic,
@@ -69,6 +69,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -279,6 +280,36 @@ $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
 |>;
 
+$modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
+    (* "Reasoning" -> <| "enabled" -> False |> *) (* Waiting on bug 474121 *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenRouter*)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "ProviderPreferences" -> <|
+        (* Some providers seem to have misconfigured inference stacks for this model,
+           so we specify that OpenRouter should avoid selecting them. *)
+        "ignore" -> {
+            (* no response after tool call *)
+            "deepinfra",
+            "venice",
+
+            (* stop tokens don't work *)
+            "cloudflare",
+            "siliconflow",
+            "atlas-cloud",
+
+            (* repeated punctuation issue across line breaks *)
+            "novita"
+        }
+    |>,
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*xAI*)
@@ -485,6 +516,7 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
     "MaxContextTokens"       -> 1048576,
@@ -494,6 +526,17 @@ $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
     "HybridToolMethod"       -> False,
     "ToolCallRetryMessage"   -> False,
     "EndToken"               -> None
+|>
+
+(* Kimi *)
+$modelAutoSettings[ Automatic, "KimiK25" ] = <|
+    "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
+    "EndToken"             -> None,
+    "HybridToolMethod"     -> False,
+    "MaxContextTokens"     -> 262144,
+    "Multimodal"           -> True,
+    "ToolCallRetryMessage" -> False,
+    "ToolMethod"           -> "Simple"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -521,6 +564,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
@@ -1164,7 +1208,7 @@ autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
 
 autoStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
-        methodStopTokens @ as[ "ToolMethod" ],
+        methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
         If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
     },
@@ -1177,10 +1221,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
-methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
-methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
-methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Simple"        , end_ ] := Select[ { "\n/exec", end }, StringQ ];
+methodStopTokens[ "Service"       , end_ ] := Select[ { end }, StringQ ];
+methodStopTokens[ "Textual"|"JSON", end_ ] := Select[ { "ENDTOOLCALL", end }, StringQ ];
+methodStopTokens[ _               , end_ ] := Select[ { "ENDTOOLCALL", "\n/exec", end }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
