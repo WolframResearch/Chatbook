@@ -2709,7 +2709,7 @@ addInlineMarkdownHint[ md_String ] := Enclose[
             StringFreeQ @ { "!", "[", "]", "(", ")" },
             "URI"
         ];
-
+        needsBasePrompt[ "ExpressionURIResults" ];
         addEvaluatorHint[ "InlineMarkdownExpression", uri ]
     ],
     throwInternalFailure

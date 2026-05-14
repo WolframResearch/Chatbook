@@ -18,7 +18,7 @@ $defaultLLMSynthesizeEvaluator :=
         <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |>
     ];
 
-$defaultConfigPersona = "NotebookAssistant";
+$defaultConfigPersona = "WolframAIAssistant";
 
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
