@@ -217,6 +217,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getEmbeddings;
 `getHandlerFunctions;
 `getInlineChatPrompt;
+`getLLMKitInfo;
 `getModelList;
 `getPersonaIcon;
 `getPersonaMenuIcon;
