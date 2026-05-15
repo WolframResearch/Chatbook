@@ -62,7 +62,8 @@ getLLMKitInfo[ ] := LogChatTiming @ getLLMKitInfo[ $CloudUserID, $CloudBase ];
 
 getLLMKitInfo[ _, cloud_String ] := Enclose[
     Catch @ Module[ { info, user },
-        info = ConfirmMatch[ getLLMKitInfo0[ ], _Association|None, "Info" ];
+        info = ConfirmMatch[ getLLMKitInfo0[ ], _Association|_Failure|None, "Info" ];
+        If[ FailureQ @ info, throwFailureToChatOutput @ info ];
         If[ info === None, Throw @ None ];
         user = ConfirmBy[ $CloudUserID, StringQ, "CloudUserID" ];
         getLLMKitInfo[ user, cloud ] = info
@@ -91,8 +92,11 @@ llmKitCheck // beginDefinition;
 llmKitCheck[ ] := LogChatTiming[
     getLLMKitInfo[ ];
     Replace[
-        Wolfram`LLMFunctions`Common`LLMKitCheck[ ],
-        Null :> Wolfram`LLMFunctions`Common`LLMKitCheck[ ]
+        Replace[
+            Wolfram`LLMFunctions`Common`LLMKitCheck[ ],
+            Null :> Wolfram`LLMFunctions`Common`LLMKitCheck[ ]
+        ],
+        fail_Failure :> throwFailureToChatOutput @ fail
     ],
     "LLMKitCheck"
 ];
