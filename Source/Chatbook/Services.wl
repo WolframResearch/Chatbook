@@ -55,41 +55,55 @@ InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*llmKitCheck*)
-llmKitCheck // beginDefinition;
+(*getLLMKitInfo*)
+getLLMKitInfo // beginDefinition;
 
-llmKitCheck[ ] :=
-    LogChatTiming @ llmKitCheck[ $CloudUserID, $CloudBase ];
+getLLMKitInfo[ ] := LogChatTiming @ getLLMKitInfo[ $CloudUserID, $CloudBase ];
 
-llmKitCheck[ _, cloud_String ] := Enclose[
-    Module[ { check, user },
-        check = ConfirmMatch[ llmKitCheck0[ ], _Success|_Failure, "Check" ];
-        If[ FailureQ @ check, throwFailureToChatOutput @ check ];
+getLLMKitInfo[ _, cloud_String ] := Enclose[
+    Catch @ Module[ { info, user },
+        info = ConfirmMatch[ getLLMKitInfo0[ ], _Association|None, "Info" ];
+        If[ info === None, Throw @ None ];
         user = ConfirmBy[ $CloudUserID, StringQ, "CloudUserID" ];
-        llmKitCheck[ user, cloud ] = check
+        getLLMKitInfo[ user, cloud ] = info
     ],
     throwInternalFailure
 ];
 
-llmKitCheck // endDefinition;
+getLLMKitInfo // endDefinition;
 
 
-llmKitCheck0 // beginDefinition;
+getLLMKitInfo0 // beginDefinition;
 
-llmKitCheck0[ ] := Replace[
+getLLMKitInfo0[ ] := (
     LLMSynthesize;
     Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-    Wolfram`LLMFunctions`Common`LLMKitCheck[ ],
-    Null :> Wolfram`LLMFunctions`Common`LLMKitCheck[ ]
+    Wolfram`LLMFunctions`Common`$LLMKitInfo
+);
+
+getLLMKitInfo0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmKitCheck*)
+llmKitCheck // beginDefinition;
+
+llmKitCheck[ ] := LogChatTiming[
+    getLLMKitInfo[ ];
+    Replace[
+        Wolfram`LLMFunctions`Common`LLMKitCheck[ ],
+        Null :> Wolfram`LLMFunctions`Common`LLMKitCheck[ ]
+    ],
+    "LLMKitCheck"
 ];
 
-llmKitCheck0 // endDefinition;
+llmKitCheck // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*getLLMKitService*)
 getLLMKitService // beginDefinition;
-getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
+getLLMKitService[ ] := getLLMKitService @ getLLMKitInfo[ ];
 getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := $llmKitPrefix <> service;
 getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
 getLLMKitService[ _ ] := $fallbackLLMKitService;
@@ -102,9 +116,7 @@ getUpdatedLLMKitService // beginDefinition;
 
 getUpdatedLLMKitService[ ] := Enclose[
     Catch @ Module[ { provider, info, service },
-        LLMSynthesize;
-        Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
-        info = ConfirmMatch[ Wolfram`LLMFunctions`Common`$LLMKitInfo, _Association|None, "Info" ];
+        info = ConfirmMatch[ getLLMKitInfo[ ], _Association|None, "Info" ];
         If[ info === None, Throw @ $fallbackLLMKitService ];
         If[ ! KeyExistsQ[ info, "currentProvider" ] && info[ "service" ] === "llmkit", Throw @ $fallbackLLMKitService ];
         provider = ConfirmBy[ info[ "currentProvider" ], StringQ, "Provider" ];
