@@ -2709,7 +2709,7 @@ addInlineMarkdownHint[ md_String ] := Enclose[
             StringFreeQ @ { "!", "[", "]", "(", ")" },
             "URI"
         ];
-
+        needsBasePrompt[ "ExpressionURIResults" ];
         addEvaluatorHint[ "InlineMarkdownExpression", uri ]
     ],
     throwInternalFailure
@@ -2894,7 +2894,7 @@ simpleFormattingQ // Attributes = { HoldAllComplete };
 simpleFormattingQ[ _String ] := True;
 
 simpleFormattingQ[ e_ ] := simpleFormattingQ[ HoldPattern @ Verbatim[ e ] ] =
-    simpleFormattingQ0[ Unevaluated @ MakeBoxes @ e /. markdownExpression[ str_String ] :> str ];
+    simpleFormattingQ0[ Unevaluated @ Quiet @ MakeBoxes @ e /. markdownExpression[ str_String ] :> str ];
 
 simpleFormattingQ // endDefinition;
 
@@ -2975,7 +2975,7 @@ sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
     sandboxFormatter[ result, "Result" ];
 
 sandboxFormatter[ result_, "Result" ] :=
-    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", Cell[ BoxData @ MakeBoxes @ result, "Input" ] ];
+    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", Cell[ BoxData @ Quiet @ MakeBoxes @ result, "Input" ] ];
 
 sandboxFormatter[ result_, ___ ] := result;
 
@@ -3038,7 +3038,7 @@ makeCachedBoxesQ // endDefinition;
 (*makeCachedBoxes*)
 makeCachedBoxes // beginDefinition;
 makeCachedBoxes // Attributes = { HoldAllComplete };
-makeCachedBoxes[ expr_ ] := Verbatim[ makeCachedBoxes @ expr ] = MakeBoxes @ expr;
+makeCachedBoxes[ expr_ ] := Verbatim[ makeCachedBoxes @ expr ] = Quiet @ MakeBoxes @ expr;
 makeCachedBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

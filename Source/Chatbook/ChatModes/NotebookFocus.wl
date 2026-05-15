@@ -91,12 +91,12 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                                             "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
                                             "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
                                         },
-                                        Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
+                                        Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ], If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ] ],
                                         BaselinePosition -> Baseline,
                                         ImageMargins     -> { { 0, 0 }, { 0, 0 } },
                                         ImageSize        -> Automatic
                                     ],
-                                    Dynamic[ If[ Typeset`val, tr[ "WorkspaceFocusIndicatorEnableTooltip" ], tr[ "WorkspaceFocusIndicatorDisableTooltip" ] ] ]
+                                    Dynamic[ If[ Typeset`val, tr[ "WorkspaceFocusIndicatorDisableTooltip" ], tr[ "WorkspaceFocusIndicatorEnableTooltip" ] ] ]
                                 ],
                                 {
                                     "MouseEntered" :> (Typeset`mouseOver = True),

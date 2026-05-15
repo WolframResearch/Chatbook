@@ -1,7 +1,7 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "2.5.110",
+    "Version"        -> "2.5.144",
     "WolframVersion" -> "14.3+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
@@ -57,6 +57,7 @@ PacletObject[ <|
                 "PlainChat",
                 "RawModel",
                 "Wolfie",
+                "WolframAIAssistant",
                 "WolframAlpha"
             }
         },

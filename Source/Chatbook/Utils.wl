@@ -516,7 +516,7 @@ basicProgressTextRow // endDefinition;
 
 basicProgressTextRow0 // beginDefinition;
 basicProgressTextRow0[ Verbatim[ Verbatim ][ expr_ ], p_ ] := basicProgressTextRow1[ expr, p ];
-basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ trRaw[ "ProgressText"<>name ], p ];
+basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ "ProgressText"<>name, p ];
 basicProgressTextRow0[ expr_, p_ ] := basicProgressTextRow1[ expr, p ];
 basicProgressTextRow0 // endDefinition;
 
@@ -526,7 +526,14 @@ basicProgressTextRow1 // beginDefinition;
 basicProgressTextRow1[ expr_, p_ ] := {
     Style[
         If[ StringQ @ expr,
-            Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
+            Row @ {
+                If[ StringStartsQ[ expr, "ProgressText" ],
+                    RandomChoice @ StringSplit[ Replace[ trRaw @ expr, Except[ _String ] -> " " ], "||" ]
+                    ,
+                    expr
+                ],
+                ProgressIndicator[ Appearance -> "Ellipsis" ]
+            },
             expr
         ],
         "ProgressTitle"
@@ -1131,8 +1138,43 @@ $ChatTimingData /: Unset @ $ChatTimingData := ($timingLog = Internal`Bag[ ]; Nul
 (* ::Subsection::Closed:: *)
 (*chatTimingData*)
 chatTimingData // beginDefinition;
-chatTimingData[ ] := SortBy[ Internal`BagPart[ $timingLog, All ], Lookup[ "AbsoluteTime" ] ]; (* TODO: format this data *)
+chatTimingData[ ] := Flatten[ ReplaceRepeated[
+    Internal`BagPart[ $timingLog, All ],
+    a : KeyValuePattern["ChildTimings" -> c_ ] :> { KeyDrop[ a, "ChildTimings" ], c }
+] ];
 chatTimingData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*viewChatTiming*)
+viewChatTiming // beginDefinition;
+viewChatTiming[ ] :=
+    Column[
+        Map[
+            Column @* Map[ viewChatTiming ],
+            GatherBy[ Internal`BagPart[ $timingLog, All ], Lookup[ "UUID" ] ]
+        ],
+        Dividers -> All
+    ];
+viewChatTiming[ data_Association?AssociationQ ] := With[{children = data @ "ChildTimings", parent = formatChatTimingEntry @ KeyDrop[ data, "ChildTimings" ]},
+    If[ {} === children,
+        parent,
+        OpenerView[ { parent, Column[ viewChatTiming /@ children ] } ]
+    ]
+]
+viewChatTiming // endDefinition;
+
+(* ::Subsection::Closed:: *)
+(*formatChatTimingEntry*)
+formatChatTimingEntry // beginDefinition;
+formatChatTimingEntry[ entry_Association ] := Row[{
+    Style[ entry @ "Tag", Bold ],
+    ": ",
+    Quantity[ entry @ "FullTiming", "Seconds" ],
+    " ",
+    Style[ Row[ { "(", Quantity[ entry @ "UsedTiming", "Seconds" ], " self)" } ], Opacity[.5] ]
+}]
+formatChatTimingEntry // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1149,17 +1191,12 @@ LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
 LogChatTiming[ eval_, tag_String ] := (
     If[ ! NumberQ @ $chatStartTime, $chatStartTime = AbsoluteTime[ ] ];
     If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = CreateUUID[ ] ];
-    If[ MatchQ[ $timings, _Internal`Bag ],
-        logChatTiming[ eval, tag ],
-        Block[ { $timings = Internal`Bag[ ] },
-            logChatTiming[ eval, tag ]
-        ]
-    ]
+    If[ ! MatchQ[ $timingLog, _Internal`Bag ], $timingLog = Internal`Bag[ ] ];
+    logChatTiming[ eval, tag ]
 );
 
 LogChatTiming // endExportedDefinition;
 
-$timings   = Internal`Bag[ ];
 $timingLog = Internal`Bag[ ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1183,28 +1220,24 @@ logChatTiming[ eval_, tag_String ] :=
         now    = chatTime[ ];
         absNow = AbsoluteTime[ ];
 
-        Block[ { $timings = Internal`Bag[ ] },
+        Block[ { $timingLog = Internal`Bag[ ] },
             fullTime = First @ AbsoluteTiming[ result = eval ];
-            innerTimings = Internal`BagPart[ $timings, All ];
+            innerTimings = Internal`BagPart[ $timingLog, All ];
         ];
 
-        usedTime = fullTime - Total @ innerTimings;
-        Internal`StuffBag[ $timings, fullTime ];
-
-        Internal`StuffBag[
-            $timingLog,
-            <|
+        usedTime = fullTime - Total @ innerTimings[[All, "FullTiming"]];
+        
+        Internal`StuffBag[ $timingLog, <|
                 "ChatEvaluationCell" -> $ChatEvaluationCell,
                 "Tag"                -> tag,
                 "UsedTiming"         -> usedTime,
                 "FullTiming"         -> fullTime,
                 "ChatTime"           -> now,
                 "AbsoluteTime"       -> absNow,
-                "UUID"               -> $chatEvaluationID
-            |>
-        ];
+                "UUID"               -> $chatEvaluationID,
+                "ChildTimings"       -> innerTimings
+            |> ];
 
-        result;
         result
     ];
 

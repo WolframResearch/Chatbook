@@ -376,25 +376,25 @@ makeBaseID // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*capitalize*)
 capitalize // beginDefinition;
-
 capitalize[ { } ] := { };
-
-capitalize[ str: _String | { __String } ] := StringReplace[
-    Capitalize @ str,
-    {
-        WordBoundary~~"ai"~~WordBoundary -> "AI",
-        WordBoundary~~"dbrx"~~WordBoundary -> "Databricks",
-        WordBoundary~~"dpo"~~WordBoundary -> "DPO",
-        WordBoundary~~"hf"~~WordBoundary -> "HF",
-        WordBoundary~~"llm"~~WordBoundary -> "LLM",
-        WordBoundary~~"lm"~~WordBoundary -> "LM",
-        WordBoundary~~"vl"~~WordBoundary -> "VL",
-        WordBoundary~~"llama"~~WordBoundary -> "Llama"
-    },
-    IgnoreCase -> True
-];
-
+capitalize[ str: _String | { __String } ] := StringReplace[ Capitalize @ str, $capitalizeRules, IgnoreCase -> True ];
 capitalize // endDefinition;
+
+$capitalizeRules = MapAt[
+    WordBoundary ~~ # ~~ WordBoundary &,
+    {
+        "ai"         -> "AI",
+        "dbrx"       -> "Databricks",
+        "dpo"        -> "DPO",
+        "hf"         -> "HF",
+        "llama"      -> "Llama",
+        "llm"        -> "LLM",
+        "lm"         -> "LM",
+        "moonshotAI" -> "MoonshotAI",
+        "vl"         -> "VL"
+    },
+    { All, 1 }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -472,6 +472,8 @@ chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemot
 
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
+
+chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.5", ___ } ] ] := "KimiK25";
 
 chooseModelFamily0[ _String ] := None;
 

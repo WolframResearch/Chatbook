@@ -8,41 +8,20 @@ Function[ Evaluate @ ToBoxes @
 	With[
 		{
 			baseColor      = color @ "StopChatButtonSpinnerBase",
-			highlightColor = color @ "StopChatButtonSpinnerHighlight"
+			highlightColor = color @ "StopChatButtonSpinnerHighlight",
+			bgHover        = color @ "NA_BlueHueButtonBackgroundHover",
+			frameHover     = color @ "NA_BlueHueButtonFrameHover"
 		},
 		MouseAppearance[
-			NotebookTools`Mousedown[
-				Framed[
-					Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
-					Alignment        -> { Center, Center },
-					Background       -> None,
-					BaselinePosition -> Baseline,
-					FrameMargins     -> 0,
-					FrameStyle       -> None,
-					ImageSize        -> #2,
-					RoundingRadius   -> 4
-				],
-				Framed[
-					Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
-					Alignment        -> { Center, Center },
-					Background       -> color @ "NA_BlueHueButtonBackgroundHover",
-					BaselinePosition -> Baseline,
-					FrameMargins     -> 0,
-					FrameStyle       -> color @ "NA_BlueHueButtonFrameHover",
-					ImageSize        -> #2,
-					RoundingRadius   -> 4
-				],
-				Framed[
-					Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
-					Alignment        -> { Center, Center },
-					Background       -> color @ "NA_BlueHueButtonBackgroundPressed",
-					BaselinePosition -> Baseline,
-					FrameMargins     -> 0,
-					FrameStyle       -> color @ "NA_BlueHueButtonFramePressed",
-					ImageSize        -> #2,
-					RoundingRadius   -> 4
-				],
-				BaselinePosition -> Baseline
+			Framed[
+				Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
+				Alignment        -> { Center, Center },
+				Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], bgHover, None ],
+				BaselinePosition -> Baseline,
+				FrameMargins     -> 0,
+				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, None ],
+				ImageSize        -> #2,
+				RoundingRadius   -> 4
 			],
 			"LinkHand"
 		]

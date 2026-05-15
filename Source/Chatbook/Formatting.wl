@@ -590,7 +590,7 @@ delimiterAlignment[ s_String ] := delimiterAlignment @ StringSplit[ StringDelete
 delimiterAlignment[ { ":", " "      } ] := Left;
 delimiterAlignment[ { ":", " ", ":" } ] := Center;
 delimiterAlignment[ {      " ", ":" } ] := Right;
-delimiterAlignment[ ___               ] := Center;
+delimiterAlignment[ ___               ] := Left;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1932,7 +1932,7 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
-With[ { col = color @ "NA_ChatOutputToolCallLabelFont" },
+With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
@@ -1943,8 +1943,8 @@ With[ { col = color @ "NA_ChatOutputToolCallLabelFont" },
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ]
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
@@ -2220,17 +2220,19 @@ makeInteractiveCodeCell // endDefinition;
 parseCellGroupBlock // beginDefinition;
 
 parseCellGroupBlock[ code_String ] := Enclose[
-    Catch @ Module[ { split, trimmed, rows },
+    Catch @ Module[ { sl, split, trimmed, rows },
+
+        sl = StartOfLine ~~ # &;
 
         split = StringSplit[
             code,
             {
-                l: $$inLabel         :> label[ "Input"     , StringTrim @ l ],
-                l: $$outLabel        :> label[ "Output"    , StringTrim @ l ],
-                l: $$echoLabel       :> label[ "Echo"      , StringTrim @ l ],
-                l: $$echoTimingLabel :> label[ "EchoTiming", StringTrim @ l ],
-                l: $$messageLabel    :> label[ "Message"   , StringTrim @ l ],
-                l: $$printLabel      :> label[ "Print"     , StringTrim @ l ]
+                l: sl @ $$inLabel         :> label[ "Input"     , StringTrim @ l ],
+                l: sl @ $$outLabel        :> label[ "Output"    , StringTrim @ l ],
+                l: sl @ $$echoLabel       :> label[ "Echo"      , StringTrim @ l ],
+                l: sl @ $$echoTimingLabel :> label[ "EchoTiming", StringTrim @ l ],
+                l: sl @ $$messageLabel    :> label[ "Message"   , StringTrim @ l ],
+                l: sl @ $$printLabel      :> label[ "Print"     , StringTrim @ l ]
             }
         ];
 
@@ -2275,7 +2277,7 @@ parseCellGroupBlock // endDefinition;
 $$equals          = ":=" | "=";
 $$inLabel         = "In" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
 $$outLabel        = "Out" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
-$$echoLabel       = Longest[ ">>".. | "<<".. ];
+$$echoLabel       = ">>";
 $$echoTimingLabel = "\[WatchIcon]";
 $$messageLabel    = Except[ WhitespaceCharacter ].. ~~ "::" ~~ (LetterCharacter|DigitCharacter) .. ~~ ":";
 $$printLabel      = "During evaluation of " ~~ $$inLabel;

@@ -37,7 +37,7 @@ VerificationTest[
 
 VerificationTest[
     SelectFirst[ config[ "Prompts" ], StringQ ],
-    _String? (StringContainsQ[ "Notebook Assistant" ]),
+    _String? (StringContainsQ[ "Wolfram AI Assistant" ]),
     SameTest -> MatchQ,
     TestID   -> "NoArgs-Prompt@@Tests/GenerateLLMConfiguration.wlt:38,1-43,2"
 ]
@@ -61,7 +61,7 @@ VerificationTest[
 (*Tools*)
 VerificationTest[
     Sort[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ] ],
-    { "CreateNotebook", "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" },
+    { "CreateNotebook", "DocumentationSearcher", "WebFetcher", "WolframAlpha", "WolframLanguageEvaluator" },
     SameTest -> MatchQ,
     TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:62,1-67,2"
 ]

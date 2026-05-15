@@ -19,7 +19,7 @@ $sidebarChatWidth[ nbo_NotebookObject ] := Switch[ $OperatingSystem,
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
     "AppName"                   -> "NotebookAssistance",
-    "LLMEvaluator"              -> "NotebookAssistant",
+    "LLMEvaluator"              -> "WolframAIAssistant",
     "MaxContextTokens"          -> 2^15,
     "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
@@ -605,7 +605,7 @@ sidebarCellObject// endDefinition;
 showNotebookAssistanceSidebar // beginDefinition;
 
 showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, settings0_Association ] := Enclose[
-    Module[ { sidebarCell },
+    Module[ { sidebarCell, chatInputCell },
         If[ TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ], Return @ Null ]; (* prevent sidebar from opening in dialogs and palettes *)
         If[ nbo === MessagesNotebook[ ], Return @ Null ]; (* prevent sidebar from opening in messages window *)
 
@@ -615,19 +615,26 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
             FailureQ @ sidebarCell,
                  (* don't do anything else because this is the first time we've opened the sidebar in this notebook *)
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
-                setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ], 
+                setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ];
+                sidebarCell = sidebarCellObject @ nbo;
+                chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ],
             
             TrueQ @ toggle,
                 If[ TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ],
                     FrontEndTokenExecute[ nbo, "HideSidebar" ]
                     ,
                     FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
-                    setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ]
+                    setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ];
+                    chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                    If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ]
                 ],
             
             (* The sidebar assistant is persistant to a given notebook. *)
             True,
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ];
                 
                 (* will we ever need to do this with the sidebar chat...? *)
                 If[ TrueQ @ evaluate,
