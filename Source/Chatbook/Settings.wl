@@ -519,14 +519,14 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
-    "EndToken"               -> None
+    "EndToken"               -> None,
     "HybridToolMethod"       -> False,
     "MaxContextTokens"       -> 1048576,
     "Multimodal"             -> False,
     "ToolCallRetryMessage"   -> False,
     "ToolMethod"             -> "Simple",
-    "ToolResponseRole"       -> "User",
-|>
+    "ToolResponseRole"       -> "User"
+|>;
 
 (* Kimi *)
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
