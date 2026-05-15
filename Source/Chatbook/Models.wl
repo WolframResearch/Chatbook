@@ -13,12 +13,79 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$defaultLLMKitService  := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
-$defaultLLMKitModelName = "gpt-5.4-2026-03-05";
+(* Add additional supported models here as needed: *)
+$llmKitPreferredModels = <|
+    "Pro"      -> { "gpt-5.4" },
+    "Research" -> { "gpt-5.4" },
+    "Basic"    -> { "gpt-5.4-mini" }
+|>;
+
+$$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
+
+$defaultLLMKitService   := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
+$defaultLLMKitModelName := defaultLLMKitModelName[ ];
+$fallbackLLMKitModelName = "gpt-5.4-2026-03-05";
 
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
 $defaultModelIcon = "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LLMKit*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*defaultLLMKitModelName*)
+defaultLLMKitModelName // beginDefinition;
+
+defaultLLMKitModelName[ ] :=
+    defaultLLMKitModelName @ getLLMKitInfo[ ];
+
+defaultLLMKitModelName[ None ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName[ as_Association ] :=
+    defaultLLMKitModelName[ as[ "accessLevel" ], as[ "availableModels" ] ];
+
+defaultLLMKitModelName[ level: $$llmKitAccessLevel, models_ ] := Enclose[
+    ConfirmBy[ chooseFirstAvailableModel[ level, models ], StringQ, "ModelName" ],
+    throwInternalFailure
+];
+
+defaultLLMKitModelName[ _, _ ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseFirstAvailableModel*)
+chooseFirstAvailableModel // beginDefinition;
+
+chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
+    Module[ { preferred, available },
+        preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
+        available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
+        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+    ],
+    throwInternalFailure
+];
+
+chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractModelNames*)
+extractModelNames // beginDefinition;
+extractModelNames[ _Missing ] := { };
+extractModelNames[ models_List ] := Flatten[ extractModelNames /@ models ];
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_List ] ] := extractModelNames @ models;
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_Association ] ] := extractModelNames @ Values @ models;
+extractModelNames[ KeyValuePattern @ { "model" -> name_String, "type" -> "ChatCompletion" } ] := name;
+extractModelNames[ KeyValuePattern[ "type" -> _ ] ] := Nothing;
+extractModelNames[ name_String ] := name;
+extractModelNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
