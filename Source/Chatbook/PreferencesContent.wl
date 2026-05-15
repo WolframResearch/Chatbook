@@ -45,7 +45,7 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector },
+        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
             
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -92,7 +92,7 @@ createPreferencesContent[ ] := Enclose[
                 serviceSelector = makeServiceSelector[
                     <|
                         $availableServices,
-                        "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                        "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
                     |>,
                     dmPrefCache, service, model, modelNameSelector, state ];
 
@@ -102,7 +102,7 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { state },
-            Deinitialization :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
+            Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
     ],
@@ -270,6 +270,30 @@ If[ $preferencesContentEnabledQ,
     Pros: easier to implement; does not push down reset button
     Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
 
+localAIOnly[ ] := Which[
+    (* if disabled via license *)
+    Lookup[
+        First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
+        "Features",
+        True, (* i.e. there's no active license, in which case I don't know how you got here *)
+        !MemberQ[ #, "LLMSupport" ]&
+    ],
+        True,
+    
+    (* if disabled via ERP *)
+    Lookup[
+        Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+        "LLMFeaturesPermitted",
+        False,
+        # === False&
+    ],
+        True,
+
+    True,
+        False
+];
+
+
 disabledAIOverlay[ content_, localAIOnlyQ_ ] :=
 If[ TrueQ @ localAIOnlyQ, (* Cloud may not be aware of new licence bit *)
     Grid[
@@ -317,7 +341,7 @@ notebookSettingsPanel[ dmPrefCache_, default_, service_, model_, state_, service
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> (display = disabledAIOverlay[
             createNotebookSettingsPanel[ dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ],
-            FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ]
+            localAIOnly[ ]
         ]),
         SynchronousInitialization -> False
     ];
@@ -425,7 +449,7 @@ Attributes[ makeDefaultSettingsContent ] = { HoldAll };
 makeDefaultSettingsContent[ dmPrefCache_, default_, service_, model_, state_, serviceSelector_, modelNameSelector_ ] := Enclose[
     Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ dmPrefCache ], _Style|Nothing, "AssistanceCheckbox" ];
+        (* assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ Dynamic @ dmPrefCache ], _Style|Nothing, "AssistanceCheckbox" ]; *)
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = makePersonaSelector[ Dynamic @ dmPrefCache ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
@@ -442,7 +466,7 @@ makeDefaultSettingsContent[ dmPrefCache_, default_, service_, model_, state_, se
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             List /@ {
-                assistanceCheckbox,
+                (* assistanceCheckbox, *) (* hide this feature until it is fixed *)
                 personaSelector,
                 modelSelector,
                 temperatureInput,
@@ -530,7 +554,7 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram LLM Kit", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
@@ -766,7 +790,7 @@ modelSelectCallback[ selected_String(* The value chosen via PopupMenu *), dmPref
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
     (* LLMKit does not have a model selector, so we always use Automatic for this service: *)
-    model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ], Automatic, selected ];
+    model = If[ MatchQ[ service, "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services"|"Wolfram AI Access" ], Automatic, selected ];
 
     (* Store the service/model in FE settings: *)
     dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> service, "Name" -> model |>;
@@ -1218,7 +1242,7 @@ Attributes[ servicesSettingsPanel ] = { HoldAll };
 servicesSettingsPanel[ dmPrefCache_, default_, service_, model_, state_, serviceSelector_, modelNameSelector_ ] := Catch[
     disabledAIOverlay[
         servicesSettingsPanel0[ dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ],
-        FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ]
+        localAIOnly[ ]
     ]
     ,
     $servicesSettingsTag
@@ -1346,7 +1370,7 @@ makeLLMPanel // beginDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 makeLLMPanel[ ] :=
-    Module[ { subscribeButton, username, signInButton, manageButton },
+    Module[ { subscribeButton, username, signInButton, manageButton, upgradeToProOrResearchButton, upgradeToResearchButton },
         subscribeButton =
             Button[
                 redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
@@ -1413,21 +1437,15 @@ makeLLMPanel[ ] :=
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradePro" ],
                         {
-                            "`SubscriptionLevelPro`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelPro" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ],
-                            "`SubscriptionLevelResearch`" :> ToString[
-                                Style[ FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ], FontWeight -> "Bold" ],
-                                StandardForm
-                            ]
+                            "`SubscriptionLevelPro`"      :> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
+                            "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                         }
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1438,18 +1456,13 @@ makeLLMPanel[ ] :=
                 Style[
                     StringReplace[
                         FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradeResearch" ],
-                        "`SubscriptionLevelResearch`" :>
-                            StringJoin[
-                                "\!\(\*StyleBox[\"",
-                                FrontEndResource[ "ChatbookStrings", "SubscriptionLevelResearch" ],
-                                "\",FontWeight->\"Bold\"]\)"
-                            ]
+                        "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1490,42 +1503,45 @@ makeLLMPanel[ ] :=
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedAndSubscribed" ->
-                                    Grid[
-                                        {
+                                    DynamicModule[ { Typeset`subscriptionLevel = "Loading" },
+                                        Grid[
                                             {
-                                                chatbookExpression[ "CheckmarkGreen" ],
-                                                Style[
-                                                    Dynamic @ StringReplace[
-                                                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ],
-                                                        "`SubscriptionLevel`" :>
-                                                            FrontEndResource[
-                                                                "ChatbookStrings",
-                                                                Switch[ Wolfram`Chatbook`ChatModes`UI`Private`$assistantTier,
-                                                                    "Basic",    "SubscriptionLevelBasic",
-                                                                    "Pro",      "SubscriptionLevelPro",
-                                                                    "Research", "SubscriptionLevelResearch"
-                                                                ]
-                                                            ]
-                                                    ],
-                                                    FontColor -> color @ "PreferencesContentFont_1" ] },
-                                            {
-                                                "",
-                                                PaneSelector[
-                                                    {
-                                                        "Basic"    -> upgradeToProOrResearchButton,
-                                                        "Pro"      -> upgradeToResearchButton,
-                                                        "Research" -> manageButton
-                                                    },
-                                                    Dynamic @ Wolfram`Chatbook`ChatModes`UI`Private`$assistantTier,
-                                                    ImageSize -> Automatic
-                                                ]
-                                            }
-                                        },
-                                        Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
-                                        BaselinePosition -> { 1, 2 },
-                                        Spacings         -> { 0.25, 0.5 }
-                                    ]
+                                                {
+                                                    chatbookExpression[ "CheckmarkGreen" ],
+                                                    Style[
+                                                        PaneSelector[
+                                                            {
+                                                                "Loading"  -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
+                                                                "Basic"    -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Basic" ],
+                                                                "Pro"      -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Pro" ],
+                                                                "Research" -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Research" ]
+                                                            },
+                                                            Dynamic @ Typeset`subscriptionLevel,
+                                                            ImageSize -> Automatic
+                                                        ],
+                                                        FontColor -> color @ "PreferencesContentFont_1" ] },
+                                                {
+                                                    "",
+                                                    PaneSelector[
+                                                        {
+                                                            "Loading"  -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
+                                                            "Basic"    -> upgradeToProOrResearchButton,
+                                                            "Pro"      -> upgradeToResearchButton,
+                                                            "Research" -> manageButton
+                                                        },
+                                                        Dynamic @ Typeset`subscriptionLevel,
+                                                        ImageSize -> Automatic
+                                                    ]
+                                                }
+                                            },
+                                            Alignment        -> { Left, Baseline },
+                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
+                                            BaselinePosition -> { 1, 2 },
+                                            Spacings         -> { 0.25, 0.5 }
+                                        ],
+                                    Initialization :> (Typeset`subscriptionLevel = Lookup[ chatbarUserData[ ], "tier", "Basic" ]),
+                                    SynchronousInitialization -> False
+                                ]
                             },
                             Dynamic[
                                 Which[
@@ -1741,7 +1757,7 @@ personaSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic @ display,
-        Initialization            :> (display = disabledAIOverlay[ CreatePersonaManagerPanel[ ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
+        Initialization            :> (display = disabledAIOverlay[ CreatePersonaManagerPanel[ ], localAIOnly[ ] ]),
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
@@ -1762,7 +1778,7 @@ toolSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
         { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
         Dynamic @ display,
-        Initialization            :> (display = disabledAIOverlay[ CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ], FE`Evaluate @ FEPrivate`LocalAIOnlyQ[ ] ]),
+        Initialization            :> (display = disabledAIOverlay[ CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ], localAIOnly[ ] ]),
         SynchronousInitialization -> False,
         UnsavedVariables          :> { display }
     ];
@@ -1945,7 +1961,7 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit" ] := Automatic;
+getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], "LLMKit"|"Wolfram"|"Wolfram LLM Kit"|"Wolfram AI Services"|"Wolfram AI Access" ] := Automatic;
 
 getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
     Module[ { lastSelected, name },

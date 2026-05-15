@@ -1070,11 +1070,11 @@ DynamicModule[{Typeset`var = initialState},
                 False ->
                     Mouseover[
                         Framed[
-                            clickableOpenerRow[Dynamic[Typeset`var], label],
+                            clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.55893535, 0.7525889017999999, 0.85595 ]],
                             $openerFrameOptionsDefault
                         ],
                         Framed[
-                            clickableOpenerRow[Dynamic[Typeset`var], label],
+                            clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ]],
                             $openerFrameOptionsActive
                         ]
                     ],
@@ -1082,25 +1082,33 @@ DynamicModule[{Typeset`var = initialState},
                     Framed[
                         Grid[
                             {
-                                {clickableOpenerRow[Dynamic[Typeset`var], label]},
+                                {
+                                    Mouseover[
+                                        clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.55893535, 0.7525889017999999, 0.85595 ]],
+                                        clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ]]
+                                    ]
+                                },
                                 {content}},
-                            $openerLabelGridOptions
+                            Alignment        -> { Left, Baseline },
+                            BaselinePosition -> { 1, 1 },
+                            BaseStyle        -> { ShowStringCharacters -> False },
+                            Spacings         -> 0.25
                         ],
                         $openerFrameOptionsDefault
                     ]
             },
             Dynamic[TrueQ[Typeset`var]],
-            ImageSize -> Automatic,
+            ImageSize        -> Automatic,
             BaselinePosition -> Baseline,
             DefaultBaseStyle -> "OpenerView",
-            ImageMargins -> 0
+            ImageMargins     -> 0
         ],
         Deployed -> False,
         StripOnInput -> False
     ]
 ]
 
-clickableOpenerRow[Dynamic[var_], label_] :=
+clickableOpenerRow[ Dynamic[var_], label_, color_ ] :=
 MouseAppearance[
     EventHandler[
         Grid[
@@ -1109,8 +1117,8 @@ MouseAppearance[
                     If[ListQ[label], label, {label}],
                     PaneSelector[
                         {
-                            True -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialCloserIcon" ],
-                            False -> RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ]
+                            True -> RawBoxes @ TemplateBox[ { color }, "DiscardedMaterialCloserIcon" ],
+                            False -> RawBoxes @ TemplateBox[ { color }, "DiscardedMaterialOpenerIcon" ]
                         },
                         Dynamic[var],
                         ImageSize -> Automatic,
@@ -1118,16 +1126,19 @@ MouseAppearance[
                     ]
                 ]
             },
-            $openerLabelGridOptions
+            Alignment        -> { Left, Baseline },
+            BaselinePosition -> { 1, 1 },
+            BaseStyle        -> { FontColor -> color, ShowStringCharacters -> False },
+            Spacings         -> 0.25
         ],
-        "MouseDown" :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
-        Method -> "Preemptive",
+        "MouseDown"    :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
+        Method         -> "Preemptive",
         PassEventsDown -> Automatic,
-        PassEventsUp -> True],
+        PassEventsUp   -> True],
     "Arrow"]
 
 
-$openerLabelGridOptions := Sequence[
+$openerLabelGridOptions[ ] := Sequence[
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
     BaseStyle        -> { ShowStringCharacters -> False },
@@ -1136,20 +1147,20 @@ $openerLabelGridOptions := Sequence[
 
 $openerFrameOptionsDefault := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackground",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrame",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> RGBColor[ 0.709527, 0.831759396, 0.897, 0.08 ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.709527, 0.831759396, 0.897, 0.5 ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 $openerFrameOptionsActive := Sequence[
     BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> color @ "NA_ChatOutputToolCallOpenerBackgroundHover",
-    FrameStyle     -> color @ "NA_ChatOutputToolCallOpenerFrameHover",
-    FrameMargins   -> { { 4, 2 }, { 2, 2 } },
+    Background     -> RGBColor[ 0.588353, 0.792198844, 0.901, 0.08 ],
+    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.588353, 0.792198844, 0.901, 0.5 ] ],
+    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
     ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 5
+    RoundingRadius -> 6
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1165,12 +1176,15 @@ fakeOpenerView[ label_, showButton_: False ] := Deploy @ Framed[
             Flatten @ {
                 label,
                 If[ TrueQ @ showButton,
-                    RawBoxes @ TemplateBox[ { color @ "NA_ChatOutputToolCallLabelFont" }, "DiscardedMaterialOpenerIcon" ],
+                    RawBoxes @ TemplateBox[ { RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] }, "DiscardedMaterialOpenerIcon" ],
                     Nothing
                 ]
             }
         },
-        $openerLabelGridOptions
+        Alignment        -> { Left, Baseline },
+        BaselinePosition -> { 1, 1 },
+        BaseStyle        -> { FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ], ShowStringCharacters -> False },
+        Spacings         -> 0.25
     ],
     $openerFrameOptionsDefault
 ];
@@ -1408,8 +1422,8 @@ rasterHash // endDefinition;
 (*checkedRasterize*)
 checkedRasterize // beginDefinition;
 
-checkedRasterize[ expr_ ] := Quiet[
-    Check[ Rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+checkedRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] := Quiet[
+    Check[ Rasterize[ expr, opts ], Missing[ "OutOfMemory" ], Rasterize::bigraster ],
     Rasterize::bigraster
 ];
 
