@@ -26,10 +26,10 @@
 "Rare" -> "Poco com\[UAcute]n",
 "Often" -> "Frecuentemente",
 
-"ActionsAPIKeyDialogTitle" -> "Por favor ingrese su clave de API de OpenAI",
-"ActionsAPIKeyDialogAPIKey" -> "Clave de API",
+"ActionsAPIKeyDialogTitle" -> "Por favor ingrese su clave API de OpenAI",
+"ActionsAPIKeyDialogAPIKey" -> "Clave API",
 "ActionsAPIKeyDialogSave" -> "Guardar",
-"APIKeyDialogCreateKeyTemplate" -> "Si aun no cuenta con una clave de API, puede crear una `1`.",
+"APIKeyDialogCreateKeyTemplate" -> "Si aun no cuenta con una clave API, puede crear una `1`.",
 "APIKeyDialogSaveKeyTemplate" -> "Para evitar ver esta ventana en el futuro, seleccione \"Guardar\" para guardar la clave en `1`.",
 
 "ChatContextDialogSystemPromptText" -> "Texto del prompt del sistema",
@@ -240,10 +240,10 @@
 "ChatbarOptionsMinimized" -> "Minimizada",
 "ChatbarOptionsOff" -> "Desactivada",
 "ChatbarOptionsSignOut" -> "Cerrar sesi\[OAcute]n",
-"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "Recuperando perfil de usuario\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "Chat de AI Assistant\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant para la selecci\[OAcute]n",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Ocultar asistente de cuaderno",
