@@ -1737,7 +1737,7 @@ wolframServiceMenuItem // beginDefinition;
 wolframServiceMenuItem[ targetObj_, model_ ] :=
 <|
 	"Type"   -> "Setter",
-	"Label"  -> "Wolfram AI Services",
+	"Label"  -> "Wolfram AI Access",
 	"Icon"   -> serviceIcon[ model, "Wolfram" ],
 	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
 	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ]),
