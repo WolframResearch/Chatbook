@@ -2244,8 +2244,14 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
             ,
             With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ];
             newCellPosition = PreviousCell @ NotebookSelection @ nbo;
-            If[ newCellPosition === None, (* at top of notebook *)
-                NotebookWrite[ nbo, cellExpr ]
+            If[ newCellPosition === None, (* at top of notebook, but may be within the first cell *)
+                With[ { cellWithin = First[ SelectedCells[ nbo ], None ] },
+                    If[ cellWithin === None,
+                        NotebookWrite[ nbo, cellExpr ]
+                        ,
+                        NotebookWrite[ NotebookLocationSpecifier[ cellWithin, "AfterEvaluationGroup" ], cellExpr ]
+                    ]
+                ]
                 ,
                 NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "AfterEvaluationGroup" ], cellExpr ]
             ]
