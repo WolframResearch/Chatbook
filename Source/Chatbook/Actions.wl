@@ -815,7 +815,7 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    With[ { chat = Quiet[ chatObject @ checkMultimodal @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
+    With[ { chat = Quiet[ chatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -825,16 +825,6 @@ constructChatObject[ messages_List ] :=
 constructChatObject // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*checkMultimodal*)
-(* TODO: this is temporary until ChatObject supports multimodal content: *)
-checkMultimodal // beginDefinition;
-checkMultimodal[ messages_ ] := checkMultimodal[ messages, multimodalPacletsAvailable[ ] ];
-checkMultimodal[ messages_, False ] := revertMultimodalContent @ messages;
-checkMultimodal[ messages_, True  ] := messages;
-checkMultimodal // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
