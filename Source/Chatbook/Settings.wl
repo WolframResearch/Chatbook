@@ -1282,58 +1282,8 @@ $maxTokensTable = <|
 (* ::Subsubsection::Closed:: *)
 (*multimodalQ*)
 multimodalQ // beginDefinition;
-multimodalQ[ as_Association ] := multimodalQ[ as, multimodalModelQ @ as[ "Model" ], as[ "EnableLLMServices" ] ];
-multimodalQ[ as_, True , False ] := True;
-multimodalQ[ as_, True , True  ] := multimodalPacletsAvailable[ ];
-multimodalQ[ as_, False, _     ] := False;
+multimodalQ[ as_Association ] := multimodalModelQ @ Lookup[ as, "Model", "UnknownModel" ];
 multimodalQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*$multimodalPacletsAvailable*)
-multimodalPacletsAvailable // beginDefinition;
-
-multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
-    initTools[ ];
-    multimodalPacletsAvailable[
-        PacletObject[ "Wolfram/LLMFunctions"     ],
-        PacletObject[ "ServiceConnection_OpenAI" ]
-    ]
-);
-
-multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[
-        PacletNewerQ[ llmFunctions, "1.2.4" ],
-        Or[ PacletNewerQ[ openAI, "13.3.18" ],
-            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
-        ]
-    ];
-
-multimodalPacletsAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*multimodalOpenAIQ*)
-multimodalOpenAIQ // beginDefinition;
-
-multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
-    Catch @ Module[ { dir, file, multimodal },
-
-        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
-
-        multimodal = WithCleanup[
-            Quiet @ Close @ file,
-            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
-            Quiet @ Close @ file
-        ];
-
-        StringQ @ multimodal
-    ],
-    throwInternalFailure
-];
-
-multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
