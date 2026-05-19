@@ -1306,7 +1306,7 @@ button // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*buttonMouseover*)
 buttonMouseover[ a_, b_ ] := Mouseover[ a, b, BaselinePosition -> Baseline ];
-buttonMouseover[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ]
+buttonMouseover[ a_, b_, c_ ] := If[ $cloudNotebooks, buttonMouseover[ a, b ], NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ] ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
