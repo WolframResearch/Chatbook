@@ -294,7 +294,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `mouseDown;
 `moveToChatInputField;
 `multimodalModelQ;
-`multimodalPacletsAvailable;
 `needsBasePrompt;
 `nextCell;
 `notebookInformation;
