@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.149.3988282941"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.149.3988798758"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1604,7 +1604,7 @@ Notebook[
          FrameBox[
           #1,
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -1655,7 +1655,7 @@ Notebook[
          FrameBox[
           #1,
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
