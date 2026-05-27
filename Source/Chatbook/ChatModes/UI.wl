@@ -2214,7 +2214,7 @@ DynamicModule[ { userdata },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -6, If[ $OperatingSystem === "MacOSX", 9, 7 ] }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 12, 9 ] }, Automatic ], { Left, Top }
         ]
     ]
 ];
@@ -2284,21 +2284,21 @@ chatbarInputFieldEnabledTierIndicatorFrame[ text_, Dynamic[ activeQ_ ] ] :=
 Framed[
     Style[
         text,
-        FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
-        FontOpacity    -> 1,
-        FontSize       -> 11,
-        FontTracking   -> "SemiCondensed",
-        FontVariations -> { "CapsType" -> "AllCaps" },
-        FontWeight     -> "SemiBold"
+        FontColor      -> Dynamic @ If[ activeQ,
+            LightDarkSwitched[ RGBColor[ 0.07058823529411765, 0.5568627450980392, 0.8196078431372549], RGBColor[ 0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
+            LightDarkSwitched[GrayLevel[ 0.39215686274509803 ], GrayLevel[ 0.7490196078431373 ] ]
+        ],
+        FontFamily     -> "Roboto Condensed",
+        FontOpacity    -> Dynamic @ If[ activeQ, 1, 0.5 ],
+        FontSize       -> 8,
+        FontTracking   -> 0.3,
+        FontVariations -> { "CapsType" -> "AllCaps" }
     ],
-    Background     -> Dynamic @ If[ activeQ,
-        LightDarkSwitched[ RGBColor[ 0., 0.572549, 0.819608 ], RGBColor[ 0.467133, 0.780131, 0.980079 ] ],
-        LightDarkSwitched[ GrayLevel[ 0.768627 ], GrayLevel[ 0.372549 ] ]
-    ],
-    ContentPadding -> False,
-    FrameMargins   -> { { 6, 6 }, { 3, 3 } },
+    Background     -> ThemeColor[ "Background" ],
+    ContentPadding -> True,
+    FrameMargins   -> { { 2.5, 2.5 }, { 0.33, 0.33 } },
     FrameStyle     -> ThemeColor[ "Background" ],
-    RoundingRadius -> 7
+    RoundingRadius -> 3.3
 ]
 
 chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
