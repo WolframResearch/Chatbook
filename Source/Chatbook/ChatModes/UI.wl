@@ -2148,7 +2148,7 @@ Button[
         ],
         FrameMargins   -> { { 12, 1 }, { 1, 1 } },
         FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 32 },
+        ImageSize      -> { Scaled[ 1 ], 38 },
         RoundingRadius -> 9
     ],
     Null,
@@ -2222,7 +2222,7 @@ DynamicModule[ { userdata },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 12, 9 ] }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
         ]
     ]
 ];
