@@ -2929,14 +2929,8 @@ qvmGcPth+lHdh3A/ADVIfz0=
    DynamicBox[
     FEPrivate`FrontEndResource[
     "ChatbookExpressions", "SendChatArrow"][#, #3]], 
-   Alignment -> {Center, Center}, Background -> Dynamic[
-     If[
-      CurrentValue["MouseOver"], 
-      LightDarkSwitched[
-       GrayLevel[1.], 
-       GrayLevel[0.0980392]], 
-      ThemeColor["Background"]]], BaselinePosition -> Baseline, FrameMargins -> 
-   0, FrameStyle -> Dynamic[
+   Alignment -> {Center, Center}, Background -> ThemeColor["Background"], 
+   BaselinePosition -> Baseline, FrameMargins -> 0, FrameStyle -> Dynamic[
      If[
       CurrentValue["MouseOver"], 
       LightDarkSwitched[
@@ -2968,13 +2962,7 @@ qvmGcPth+lHdh3A/ADVIfz0=
            ImageSize -> {Automatic, #3}, 
            PlotRange -> {{-0.5, 14.314499855041504`}, {-0.5, 
             13.058600425720215`}}], Alignment -> {Center, Center}, Background -> 
-          Dynamic[
-            If[
-             CurrentValue["MouseOver"], 
-             LightDarkSwitched[
-              GrayLevel[1.], 
-              GrayLevel[0.0980392]], 
-             ThemeColor["Background"]]], BaselinePosition -> Baseline, 
+          ThemeColor["Background"], BaselinePosition -> Baseline, 
           FrameMargins -> 0, FrameStyle -> Dynamic[
             If[
              CurrentValue["MouseOver"], 
@@ -3002,13 +2990,7 @@ qvmGcPth+lHdh3A/ADVIfz0=
             CircleBox[{0, 0}, 1], #, 
             RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #4, 
            PlotRange -> 1.1], Alignment -> {Center, Center}, Background -> 
-          Dynamic[
-            If[
-             CurrentValue["MouseOver"], 
-             LightDarkSwitched[
-              GrayLevel[1.], 
-              GrayLevel[0.0980392]], 
-             ThemeColor["Background"]]], BaselinePosition -> Baseline, 
+          ThemeColor["Background"], BaselinePosition -> Baseline, 
           FrameMargins -> 0, FrameStyle -> Dynamic[
             If[
              CurrentValue["MouseOver"], 
@@ -3079,14 +3061,8 @@ qvmGcPth+lHdh3A/ADVIfz0=
      GraphicsBox[{#, 
        RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
       1.1]}, Alignment -> {Center, Center}, BaselinePosition -> Baseline], 
-   Alignment -> {Center, Center}, Background -> Dynamic[
-     If[
-      CurrentValue["MouseOver"], 
-      LightDarkSwitched[
-       GrayLevel[1.], 
-       GrayLevel[0.0980392]], 
-      ThemeColor["Background"]]], BaselinePosition -> Baseline, FrameMargins -> 
-   0, FrameStyle -> Dynamic[
+   Alignment -> {Center, Center}, Background -> ThemeColor["Background"], 
+   BaselinePosition -> Baseline, FrameMargins -> 0, FrameStyle -> Dynamic[
      If[
       CurrentValue["MouseOver"], 
       LightDarkSwitched[
@@ -9695,7 +9671,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"5667af11-a3ef-6a46-bcc1-be1703098fd8"], Cell[BoxData[
+    ExpressionUUID->"a30bb54c-61f3-0b4b-8719-c35b6d4b0413"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10622,7 +10598,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "0364de5a-3720-224d-b63f-da521a9dfa5b"], Cell[BoxData[
+    "05298306-a015-8b48-a6a6-7b4862412f9f"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10931,7 +10907,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "f73459c2-699a-cd47-b12c-7f37ab90ef0d"]}],
+    "7fbeacd9-5562-b14b-a8d3-6432f59e0ae1"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10947,8 +10923,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"2047e04d-ef50-fe4f-92d2-\
-5deb6b165c1f"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"2fe3e39d-7420-6344-8b01-\
+bdbb7b0ab752"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11067,8 +11043,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"6cbacba3-db0f-784d-a9ec-\
-3a8e89f3e0c0"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"7a8076b2-315a-1846-952d-\
+c88f1bb1d489"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -11228,9 +11204,7 @@ pJiv9ujhBQBkOk3/
 
 "ChatInputCellDingbat" -> GraphicsBox[
   {Thickness[0.05714285714285714], 
-   {FaceForm[LightDarkSwitched[
-     GrayLevel[1], 
-     GrayLevel[0.0980392]]], 
+   {FaceForm[ThemeColor["Background"]], 
     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["

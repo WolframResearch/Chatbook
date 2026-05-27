@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.149.3988282941"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.5.149.3988871106"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -199,8 +199,7 @@ Notebook[
                    ]
                   ],
                   Alignment -> {Center, Center},
-                  Background ->
-                   LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+                  Background -> GrayLevel[0, 0],
                   FrameMargins -> 0,
                   FrameStyle ->
                    LightDarkSwitched[
@@ -1266,8 +1265,7 @@ Notebook[
                    ]
                   ],
                   Alignment -> {Center, Center},
-                  Background ->
-                   LightDarkSwitched[GrayLevel[1.0], GrayLevel[0.0980392]],
+                  Background -> GrayLevel[0, 0],
                   FrameMargins -> 0,
                   FrameStyle ->
                    LightDarkSwitched[
@@ -1500,7 +1498,7 @@ Notebook[
          FrameBox[
           #1,
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -1551,7 +1549,7 @@ Notebook[
          FrameBox[
           #1,
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.257049]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -4710,7 +4708,7 @@ Notebook[
            Scrollbars -> Automatic
           ],
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -4773,7 +4771,7 @@ Notebook[
           #1,
           Alignment -> {Left, Top},
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -5045,7 +5043,7 @@ Notebook[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
    TaggingRules -> <|
-    "WorkspaceChatStyleSheetVersion" -> "2.5.124.3986619496"
+    "WorkspaceChatStyleSheetVersion" -> "2.5.149.3988870682"
    |>
   ],
   Cell[

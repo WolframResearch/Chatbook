@@ -1095,7 +1095,7 @@ DynamicModule[
 	},
 	DynamicWrapper[
 		Button[
-			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 } ],
+			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 }, 0, True ],
 			With[ { attachedMenuCells = Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] },
 				If[ attachedMenuCells === {},
 					MakeMenu[
@@ -1318,7 +1318,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
 				Appearance -> "Suppressed",
@@ -1333,7 +1335,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
 				Appearance -> "Suppressed",

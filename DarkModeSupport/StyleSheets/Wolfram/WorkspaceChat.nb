@@ -169,7 +169,7 @@ Notebook[
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
    TaggingRules -> <|
-    "WorkspaceChatStyleSheetVersion" -> "2.5.149.3988282941"
+    "WorkspaceChatStyleSheetVersion" -> "2.5.149.3988871106"
    |>
   ],
   Cell[
@@ -444,7 +444,7 @@ Notebook[
            Scrollbars -> Automatic
           ],
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
@@ -503,7 +503,7 @@ Notebook[
           #1,
           Alignment -> {Left, Top},
           Background ->
-           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0980392]],
+           LightDarkSwitched[GrayLevel[1], GrayLevel[0.0999191]],
           FrameMargins -> {{10, 10}, {6, 6}},
           FrameStyle ->
            Directive[
