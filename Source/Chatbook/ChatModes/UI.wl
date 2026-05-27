@@ -1192,8 +1192,8 @@ chatbarOptionsUser[ userdata_ ] :=
         {
             tr[ "ChatbarOptionsSignOut" ] :> (
                 (* Sign out and close the attached cell *)
-                FE`Evaluate[ FEPrivate`WolframCloudSignOut[ ] ];
-                NotebookDelete[ EvaluationCell[ ] ]
+                NotebookDelete[ EvaluationCell[ ] ];
+                CloudDisconnect[ ];
             )
         },
         Appearance       -> None,
