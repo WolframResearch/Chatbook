@@ -236,7 +236,7 @@ Dispatch[{
 	|>,
 	"ChatCodeBlockTemplateBackgroundTop" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.2570494],
+		 "Dark"   -> GrayLevel[0.0999191],
 		 "Method" -> "Background",
 		 "DC"     -> "ChatOutput",
 		 "Notes"  -> "In ChatOutput UI, code block background for known programming languages. Matches notebook default background."
@@ -1503,7 +1503,7 @@ Dispatch[{
 	|>,
 	"NA_ChatCodeBlockTemplateBackgroundTop" -> <|
 		 "Light"  -> GrayLevel[1],
-		 "Dark"   -> GrayLevel[0.0980392],
+		 "Dark"   -> GrayLevel[0.0999191],
 		 "Method" -> "Design",
 		 "DC"     -> "NA_ChatOutput",
 		 "Notes"  -> "Different DC from non-NA version"
