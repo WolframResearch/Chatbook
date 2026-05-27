@@ -92,9 +92,9 @@ mouseDown[
     ]
 ]
 
-blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0 ] := blueHueButtonAppearance[ { icon, icon, icon }, imageSize, frameMargins ]
+blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0, hoverTransparentBG_:False ] := blueHueButtonAppearance[ { icon, icon, icon }, imageSize, frameMargins, hoverTransparentBG ]
 
-blueHueButtonAppearance[ { default_, hover_, pressed_ }, imageSize_, frameMargins_:0 ] :=
+blueHueButtonAppearance[ { default_, hover_, pressed_ }, imageSize_, frameMargins_:0, hoverTransparentBG_:False ] :=
 mouseDown[
     Framed[
         default,
@@ -108,7 +108,7 @@ mouseDown[
     Framed[
         hover,
         Alignment      -> { Center, Center },
-        Background     -> color @ "NA_BlueHueButtonBackgroundHover",
+        Background     -> If[ hoverTransparentBG, Transparent, color @ "NA_BlueHueButtonBackgroundHover" ],
         FrameMargins   -> frameMargins,
         FrameStyle     -> color @ "NA_BlueHueButtonFrameHover",
         ImageSize      -> imageSize,
@@ -712,7 +712,7 @@ Overlay[
                                 LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ]
                             ],
                             False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                                LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.2, 0.5 ] ],
+                                Transparent,
                                 LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ]
                             ]
                         },
@@ -758,12 +758,16 @@ Button[
             True  ->
                 blueHueButtonAppearance[
                     chatbookIcon[ "ChatbarSendIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ],
-                    { 24, 24 }
+                    { 24, 24 },
+                    0,
+                    True
                 ],
             False ->
                 blueHueButtonAppearance[
                     chatbookIcon[ "ChatbarSendIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803, 0.5 ], GrayLevel[ 0.6509803, 0.5 ] ] ],
-                    { 24, 24 }
+                    { 24, 24 },
+                    0,
+                    True
                 ]
         },
         Dynamic @ activeQ,
@@ -800,7 +804,9 @@ Button[
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ],
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ]
                     },
-                    { 15, 15 }
+                    { 15, 15 },
+                    0,
+                    True
                 ],
             False ->
                 Framed[
@@ -878,7 +884,9 @@ Button[
                         chatbookIcon[ "ChatbarSettingsIcon", False, color @ "NA_BlueHueButtonIcon" ],
                         chatbookIcon[ "ChatbarSettingsIcon", False, color @ "NA_BlueHueButtonIcon" ]
                     },
-                    { 15, 15 }
+                    { 15, 15 },
+                    0,
+                    True
                 ],
             False ->
                 Framed[
@@ -1924,7 +1932,7 @@ Row[
                     LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
                 ],
                 False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                    LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
+                    Transparent,
                     LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
                 ]
             },

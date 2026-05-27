@@ -16,7 +16,7 @@ Function[ Evaluate @ ToBoxes @
 			Framed[
 				Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
 				Alignment        -> { Center, Center },
-				Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], bgHover, ThemeColor[ "Background" ] ],
+				Background       -> ThemeColor[ "Background" ],
 				BaselinePosition -> Baseline,
 				FrameMargins     -> 0,
 				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, ThemeColor[ "Background" ] ],
