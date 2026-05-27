@@ -952,7 +952,7 @@ $chatbarAccessFailedData :=
 
 Clear[ chatbarUserData, getUserValue ]
 
-chatbarUserData[ ] := chatbarUserData @ TrueQ @ cloudCredentialsQ[ ]
+chatbarUserData[ ] := chatbarUserData @ cloudCredentialsQ[ ]
 
 chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
@@ -1759,7 +1759,7 @@ cloudAuthenticatedQ[ ] := ($CloudUserID =!= None)
 
 (* on desktop FE, check if they have credentials stored (what you see in the splash screen)
    note: $Notebooks is True in a cloud kernel! *)
-cloudCredentialsQ[ ] /; $Notebooks && !$CloudEvaluation := CurrentValue[ "WolframCloudConnected" ]
+cloudCredentialsQ[ ] /; $Notebooks && !$CloudEvaluation := TrueQ @ CurrentValue[ "WolframCloudConnected" ]
 (* in a cloud session, check if there is a user ID set *)
 cloudCredentialsQ[ ] /; $CloudEvaluation := cloudAuthenticatedQ[ ]
 (* we can still check this in a standalone kernel because it will get set by LLMKitDialog *)
