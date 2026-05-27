@@ -27,7 +27,7 @@ Function[ Evaluate @ ToBoxes @
 					BaselinePosition -> Baseline
 				],
 				Alignment        -> { Center, Center },
-				Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], bgHover, ThemeColor[ "Background" ] ],
+				Background       -> ThemeColor[ "Background" ],
 				BaselinePosition -> Baseline,
 				FrameMargins     -> 0,
 				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, ThemeColor[ "Background" ] ],

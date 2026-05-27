@@ -17,7 +17,7 @@ Function[ Evaluate @ ToBoxes @
 									Framed[
 										RawBoxes @ FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ],
 										Alignment        -> { Center, Center },
-										Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ GrayLevel[ 1. ], GrayLevel[ 0.0980392 ] ], ThemeColor[ "Background" ] ],
+										Background       -> ThemeColor[ "Background" ],
 										BaselinePosition -> Baseline,
 										FrameMargins     -> 0,
 										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ RGBColor[ 0.6941176, 0.8352941, 0.9098039 ], RGBColor[ 0.3764705, 0.490196, 0.5607843 ] ], ThemeColor[ "Background" ] ],
@@ -48,7 +48,7 @@ Function[ Evaluate @ ToBoxes @
 											PlotRange -> 1.1
 										],
 										Alignment        -> { Center, Center },
-										Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ GrayLevel[ 1. ], GrayLevel[ 0.0980392 ] ], ThemeColor[ "Background" ] ],
+										Background       -> ThemeColor[ "Background" ],
 										BaselinePosition -> Baseline,
 										FrameMargins     -> 0,
 										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ RGBColor[ 0.6941176, 0.8352941, 0.9098039 ], RGBColor[ 0.3764705, 0.490196, 0.5607843 ] ], ThemeColor[ "Background" ] ],
