@@ -3845,11 +3845,11 @@ toggleOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
                                     makeWorkspaceChatSubDockedCellExpression[
                                         Style[
                                             tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                            FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#898989" ] ],
+                                            FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#E5E5E5" ] ],
                                             FontFamily -> "Source Sans Pro",
                                             FontSlant  -> Italic
                                         ],
-                                        LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                                        LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                                         "SidebarSourcesDockedCell"
                                     ],
                                     _[ Magnification, _ ]
@@ -3904,14 +3904,14 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
                         Framed[
                             Style[
                                 tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#898989" ] ],
+                                FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#E5E5E5" ] ],
                                 FontFamily -> "Source Sans Pro",
                                 FontSlant  -> Italic
                             ],
                             Alignment    -> { Center, Center },
-                            Background   -> LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                            Background   -> LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                             FrameMargins -> { { 7, 7 }, { 4, 4 } },
-                            FrameStyle   -> LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                            FrameStyle   -> LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                             ImageMargins -> 0,
                             ImageSize    -> Scaled[ 1. ]
                         ],
