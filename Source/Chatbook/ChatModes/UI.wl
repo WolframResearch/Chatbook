@@ -4478,7 +4478,12 @@ makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dy
                     With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
                         totalPages = Length @ pages;
                         If[ totalPages == 0,
-                            { { "No history" } } (* FIXME: add text resource *)
+                            { {
+                                Item[
+                                    Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
+                                    Alignment          -> { Center, Center },
+                                    System`ItemMargins -> 10
+                                ] } }
                             ,
                             If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
                             makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
