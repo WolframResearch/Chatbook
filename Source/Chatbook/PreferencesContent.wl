@@ -203,7 +203,7 @@ Framed[
                                 FontSize  -> 13,
                                 FontSlant -> Italic
                             ],
-                            Beep[ ], (* FIXME *)
+                            SystemOpen @ "https://wolfr.am/AIAccessDisabled",
                             Appearance -> "Suppressed",
                             ImageSize  -> Automatic
                         ]
