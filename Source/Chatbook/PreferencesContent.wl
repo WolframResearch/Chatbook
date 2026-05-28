@@ -1395,7 +1395,7 @@ makeLLMPanel[ ] :=
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> color @ "PreferencesContentFont_1", FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
-                Dynamic[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ] ],
+                Dynamic[ $CloudUserID =!= None ],
                 BaselinePosition -> Baseline,
                 ImageSize        -> Automatic ];
 
@@ -1410,7 +1410,7 @@ makeLLMPanel[ ] :=
                         ]
                 ],
                 CloudConnect[ ];
-                If[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
+                If[ $CloudUserID =!= None, Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
                 Appearance       -> "Suppressed",
                 BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1445,7 +1445,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1462,7 +1462,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
+                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.wolfram.com/manage/plan" ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1545,7 +1545,7 @@ makeLLMPanel[ ] :=
                             },
                             Dynamic[
                                 Which[
-                                    !Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], "NotCloudConnected",
+                                    $CloudUserID === None, "NotCloudConnected",
                                     TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "userHasSubscription" ] ], "CloudConnectedAndSubscribed",
                                     !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], "Loading",
                                     True, "CloudConnectedButNotSubscribed" ] ],
