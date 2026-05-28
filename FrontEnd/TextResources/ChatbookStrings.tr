@@ -5,6 +5,7 @@
 "OKButton" -> "OK",
 "CancelButton" -> "Cancel",
 "DeleteButton" -> "Delete",
+"Retry" -> "Retry",
 "SaveChangesButton" -> "Save Changes",
 "SendButton" -> "Send",
 "URLButton" -> "URL",

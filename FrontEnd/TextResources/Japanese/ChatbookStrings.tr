@@ -5,6 +5,7 @@
 "OKButton" -> "OK",
 "CancelButton" -> "\:30ad\:30e3\:30f3\:30bb\:30eb",
 "DeleteButton" -> "\:524a\:9664",
+"Retry" -> "Retry",
 "SaveChangesButton" -> "\:5909\:66f4\:3092\:4fdd\:5b58",
 "SendButton" -> "\:9001\:4fe1",
 "URLButton" -> "URL",
