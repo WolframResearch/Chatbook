@@ -264,6 +264,7 @@
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:6253\:5F00\:4E3A\:804A\:5929\:7B14\:8BB0\:672C",
 "WorkspaceSourcesOpenNotebooks" -> "\:6253\:5F00\:7B14\:8BB0\:672C",
 "WorkspaceSourcesNoOpenNotebooks" -> "\:76EE\:524D\:6CA1\:6709\:5176\:4ED6\:7B14\:8BB0\:672C\:5904\:4E8E\:6253\:5F00\:72B6\:6001\:3002",
+"WorkspaceHistoryNone" -> "No chat history",
 "WorkspaceHistoryPageTemplate" -> "\:7B2C `1` \:9875\:ff0c\:5171 `2` \:9875",
 "WorkspaceHistoryFirstPage" -> "\:7B2C\:4E00\:9875",
 "WorkspaceHistoryPreviousPage" -> "\:4E0A\:4E00\:9875",
