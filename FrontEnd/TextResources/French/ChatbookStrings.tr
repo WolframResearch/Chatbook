@@ -5,6 +5,7 @@
 "OKButton" -> "Ok",
 "CancelButton" -> "Annuler",
 "DeleteButton" -> "Supprimer",
+"Retry" -> "R\[EAcute]essayer",
 "SaveChangesButton" -> "Enregistrer les modifications",
 "SendButton" -> "Envoyer",
 "URLButton" -> "URL",
