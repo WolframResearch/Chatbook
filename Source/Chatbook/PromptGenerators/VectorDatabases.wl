@@ -32,7 +32,7 @@ $vectorDatabases = <| |>;
 (* ::Subsubsection::Closed:: *)
 (*DataRepositoryURIs*)
 $vectorDatabases[ "DataRepositoryURIs" ] = <|
-    "Version"         -> "1.1.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
@@ -42,7 +42,7 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*DocumentationURIs*)
 $vectorDatabases[ "DocumentationURIs" ] = <|
-    "Version"         :> If[ $VersionNumber >= 14.3, "1.5.0", "1.4.0" ],
+    "Version"         :> If[ $VersionNumber >= 15.0, "1.6.0", "1.5.0" ],
     "Bias"            -> 0.0,
     "SnippetFunction" -> getStreamSnippets[ "Documentation" ],
     "Instructions"    -> None
@@ -62,7 +62,7 @@ $vectorDatabases[ "EntityValues" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*FunctionRepositoryURIs*)
 $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
-    "Version"         -> "1.2.0",
+    "Version"         -> "1.3.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
@@ -72,7 +72,7 @@ $vectorDatabases[ "FunctionRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*NeuralNetRepositoryURIs*)
 $vectorDatabases[ "NeuralNetRepositoryURIs" ] = <|
-    "Version"         -> "1.1.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 1.0,
     "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> None
@@ -86,7 +86,7 @@ IMPORTANT: Always use PacletSymbol to reference symbols from paclets in the pacl
 (anything from https://paclets.com).";
 
 $vectorDatabases[ "PacletRepositoryURIs" ] = <|
-    "Version"         -> "1.1.0",
+    "Version"         -> "1.2.0",
     "Bias"            -> 2.0,
     "SnippetFunction" -> getStreamSnippets[ "ResourceSystem" ],
     "Instructions"    -> { URL[ "paclet:ref/PacletSymbol#1" ], $pacletRepositoryInstructions }
@@ -96,7 +96,7 @@ $vectorDatabases[ "PacletRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*SourceSelector*)
 $vectorDatabases[ "SourceSelector" ] = <|
-    "Version"         -> "1.4.0",
+    "Version"         -> "1.5.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> Identity,
     "Instructions"    -> None
@@ -150,10 +150,16 @@ $vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
     $vectorDBNames
 ];
 
-$vectorDBDownloadSizes := Enclose[
-    $vectorDBDownloadSizes = ConfirmMatch[ getDownloadSize @ #, _Integer? Positive, "Size" ] & /@ $vectorDBDownloadURLs,
-    throwInternalFailure
-];
+$vectorDBDownloadSizes = <|
+    "DataRepositoryURIs"      ->   5812001,
+    "DocumentationURIs"       -> 369969648,
+    "EntityValues"            ->  63998991,
+    "FunctionRepositoryURIs"  ->  61661803,
+    "NeuralNetRepositoryURIs" ->   2512274,
+    "PacletRepositoryURIs"    ->  14170624,
+    "SourceSelector"          -> 115700803,
+    "WolframAlphaQueries"     ->  19410556
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -593,29 +599,6 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 ];
 
 downloadVectorDatabases // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getDownloadSize*)
-getDownloadSize // beginDefinition;
-
-getDownloadSize[ KeyValuePattern[ "Cloud" -> url_String ] ] := getDownloadSize @ url;
-getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
-getDownloadSize[ obj: $$cloudObject ] := getDownloadSize[ obj, FileByteCount @ obj ];
-getDownloadSize[ obj_, size_Integer ] := size;
-
-getDownloadSize[ obj_, $Failed ] := throwFailureToChatOutput @ Failure[
-    "CloudDownloadError",
-    <|
-        "MessageTemplate"   :> Chatbook::CloudDownloadError,
-        "MessageParameters" -> { },
-        "CloudObject"       -> obj,
-        "Evaluation"        -> HoldForm @ FileByteCount @ obj,
-        "Results"           -> $Failed
-    |>
-];
-
-getDownloadSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
