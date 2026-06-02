@@ -50,9 +50,9 @@ $sourceAliases = <|
 
 $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 50;
+$unfilteredItemsPerSource = 25;
 
-$filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+$filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
@@ -60,11 +60,11 @@ $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 15.0, "15-0-0-13528852", "14-3-0-11967661" ];
 
 $streamableSnippetVersions := $streamableSnippetVersions = <|
     "Documentation"  -> $snippetVersion,
-    "ResourceSystem" -> "1.0.0"
+    "ResourceSystem" -> "1.1.0"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -277,7 +277,7 @@ RelatedDocumentation // endDefinition;
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 250;
+getMaxItems[ Infinity, _ ] := 125;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
@@ -521,7 +521,7 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
-        ids = ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
+        ids = DeleteDuplicates @ ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
@@ -550,6 +550,8 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             StringQ,
             "Response"
         ];
+
+        If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
         uriToSnippet = GroupBy[ results, Lookup[ "Value" ] -> Lookup[ "Snippet" ] ];
         uris = ConfirmMatch[ Keys @ uriToSnippet, { ___String }, "URIs" ];
