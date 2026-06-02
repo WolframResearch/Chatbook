@@ -60,11 +60,11 @@ $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 15.0, "15-0-0-13528852", "14-3-0-11967661" ];
 
 $streamableSnippetVersions := $streamableSnippetVersions = <|
     "Documentation"  -> $snippetVersion,
-    "ResourceSystem" -> "1.0.0"
+    "ResourceSystem" -> "1.1.0"
 |>;
 
 (* ::**************************************************************************************************************:: *)
