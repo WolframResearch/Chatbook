@@ -217,7 +217,9 @@ cloudModelSelector // endDefinition;
 (*makeChatCloudDockedCellContents*)
 makeChatCloudDockedCellContents // beginDefinition;
 
-makeChatCloudDockedCellContents[ ] := Grid[
+makeChatCloudDockedCellContents[ ] :=
+Pane[#, FrameMargins->{ { 0, 5 }, { 0, 5 } } ]& @
+Grid[
     {
         {
             Item[ $cloudChatBanner, Alignment -> Left ],
@@ -228,7 +230,7 @@ makeChatCloudDockedCellContents[ ] := Grid[
     },
     Alignment  -> { Left, Center },
     Spacings   -> { 0.7, 0 },
-    BaseStyle  -> { "Text", FontSize -> 14 }(*,
+    BaseStyle  -> {  FontSize -> 14 }(*,
     FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ] *)(* FIXME: no-op, grid has no dividers *)
 ];
 
@@ -253,7 +255,7 @@ cloudCellInsertMenu[ ] := ActionMenu[
         insertStyleMenuItem[ None, "ChatDelimiter", "~" ],
         insertStyleMenuItem[ None, "ChatBlockDivider", "~ ~" ]
     },
-    FrameMargins -> { { 0, 0 }, { 0, 0 } }
+    FrameMargins -> { 4, 2.5 }
 ];
 
 cloudCellInsertMenu // endDefinition;
