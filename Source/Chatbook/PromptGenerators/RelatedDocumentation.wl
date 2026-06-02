@@ -50,7 +50,7 @@ $sourceAliases = <|
 
 $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 50;
+$unfilteredItemsPerSource = 25;
 
 $filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
@@ -277,7 +277,7 @@ RelatedDocumentation // endDefinition;
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 250;
+getMaxItems[ Infinity, _ ] := 125;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
