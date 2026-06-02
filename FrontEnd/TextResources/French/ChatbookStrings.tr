@@ -242,10 +242,10 @@
 "ChatbarOptionsMinimized" -> "R\[EAcute]duit",
 "ChatbarOptionsOff" -> "D\[EAcute]sactiv\[EAcute]",
 "ChatbarOptionsSignOut" -> "Se d\[EAcute]connecter",
-"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "R\[EAcute]cup\[EAcute]ration du profil utilisateur\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "Chat AI Assistant\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "AI Assistant pour la s\[EAcute]lection",
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Masquer l\[CloseCurlyQuote]assistant du notebook",
@@ -265,7 +265,7 @@
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Ouvrir en tant que notebook de Chat",
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
 "WorkspaceSourcesNoOpenNotebooks" -> "Aucun autre notebook n\[CloseCurlyQuote]est actuellement ouvert.",
-"WorkspaceHistoryNone" -> "No chat history",
+"WorkspaceHistoryNone" -> "Aucun historique de Chat",
 "WorkspaceHistoryPageTemplate" -> "Page `1` de `2`",
 "WorkspaceHistoryFirstPage" -> "Premi\[EGrave]re page",
 "WorkspaceHistoryPreviousPage" -> "Page pr\[EAcute]c\[EAcute]dente",
