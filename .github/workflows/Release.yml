@@ -91,7 +91,8 @@ jobs:
         unzip -o /tmp/ResourceSystem.zip -d Assets/Snippets/Streamable/ResourceSystem
 
     - name: Build
-      run: wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false
+      run: wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false --wolfram-version=15.0+
+      # TODO: Remove this wolfram-version override once 15.0 docker images are available
 
     - name: CreateRelease
       env:

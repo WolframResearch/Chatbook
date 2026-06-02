@@ -17,6 +17,8 @@ $mx       = getBooleanArgument[ { "m", "mx"       }, True  ];
 $unformat = getBooleanArgument[ { "u", "unformat" }, True  ];
 $download = getBooleanArgument[ { "s", "snippets" }, True  ];
 
+$wolframVersionOverride = getNamedArgument[ "wolfram-version", None ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Optional Dependencies*)
@@ -42,7 +44,7 @@ If[ $download,
         snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
         targetDir = FileNameJoin @ { $pacletDir, "Assets/Snippets/Streamable" };
         If[ DirectoryQ @ targetDir, DeleteDirectory[ targetDir, DeleteContents -> True ] ];
-        GeneralUtilities`EnsureDirectory @ ParentDirectory @ targetDir;
+        GeneralUtilities`EnsureDirectory @ DirectoryName @ targetDir;
         copied = cDir @ CopyDirectory[ snippetDir, targetDir ];
         cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets to: ", copied ];
         If[ StringQ @ Environment[ "GITHUB_ACTIONS" ], DeleteDirectory[ snippetDir, DeleteContents -> True ] ];
@@ -60,6 +62,42 @@ result = checkResult @ cicd`BuildPaclet[
 ];
 
 cicd`ConsoleLog @ SequenceForm[ "Built paclet: ", cFile @ result[ "PacletArchive" ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Override Wolfram version in built paclet*)
+If[ StringQ @ $wolframVersionOverride,
+    newVersion = StringTrim[ $wolframVersionOverride, "\"" ];
+    cicd`ConsoleNotice @ SequenceForm[ "Overriding Wolfram version in built paclet" ];
+    archive = cFile @ result[ "PacletArchive" ];
+    tmp = cDir @ CreateDirectory[ ];
+    extracted = cicd`ScriptConfirmMatch[ ExtractArchive[ archive, tmp ], { __String } ];
+    pacInfoFile = First @ FileNames[ "PacletInfo.wl", tmp, { 2 } ];
+    string = cStr @ ReadString @ pacInfoFile;
+
+    new = StringReplace[
+        string,
+        StringExpression[
+            a: ("\"WolframVersion\"" ~~ WhitespaceCharacter... ~~ "->" ~~ WhitespaceCharacter... ~~ "\""),
+            old: Except[ "\"" ]..,
+            b: "\""
+        ] :> (
+            oldVersion = old;
+            a<>newVersion<>b
+        )
+    ];
+
+    cicd`ScriptConfirmAssert[ oldVersion =!= newVersion, "UnchangedWolframVersion" ];
+
+    cicd`ConsoleNotice @ SequenceForm[ "Replacing Wolfram version ", oldVersion, " with ", newVersion ];
+
+    cFile @ Export[ pacInfoFile, new, "String" ];
+    dir = cStr @ DirectoryName @ pacInfoFile;
+    newArchive = cFile @ CreatePacletArchive @ dir;
+    copied = cFile @ CopyFile[ newArchive, archive, OverwriteTarget -> True ];
+    cicd`ConsoleNotice @ SequenceForm[ "Replaced Wolfram version in paclet archive: ", copied ];
+    DeleteDirectory[ tmp, DeleteContents -> True ];
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
