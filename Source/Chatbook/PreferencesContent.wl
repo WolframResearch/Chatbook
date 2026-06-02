@@ -203,7 +203,7 @@ Framed[
                                 FontSize  -> 13,
                                 FontSlant -> Italic
                             ],
-                            Beep[ ], (* FIXME *)
+                            SystemOpen @ "https://wolfr.am/AIAccessDisabled",
                             Appearance -> "Suppressed",
                             ImageSize  -> Automatic
                         ]
@@ -1364,17 +1364,33 @@ servicesSettingsPanel0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*getServiceData*)
+getServiceData // beginDefinition;
+
+getServiceData[ ] := With[ { rawData = ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ] },
+    If[ AssociationQ @ rawData && Lookup[ rawData, "data", False, AssociationQ ],
+        rawData[ "data" ]
+        ,
+        $Failed
+    ]
+]
+
+getServiceData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*makeLLMPanel*)
 makeLLMPanel // beginDefinition;
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 makeLLMPanel[ ] :=
-    Module[ { subscribeButton, username, signInButton, manageButton, upgradeToProOrResearchButton, upgradeToResearchButton },
+Module[ { retryButton, subscribeButton, username, signInButton, manageButton, upgradeToProOrResearchButton, upgradeToResearchButton },
+    DynamicModule[ { Typeset`cachedUserData = None },
         subscribeButton =
             Button[
                 redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
+                If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "buyNowUrl", "https://www.wolfram.com/notebook-assistant-llm-kit#pricing" ], Beep[ ] ],
                 Appearance       -> "Suppressed",
                 BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1395,7 +1411,7 @@ makeLLMPanel[ ] :=
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> color @ "PreferencesContentFont_1", FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
-                Dynamic[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ] ],
+                Dynamic[ $CloudUserID =!= None ],
                 BaselinePosition -> Baseline,
                 ImageSize        -> Automatic ];
 
@@ -1410,7 +1426,34 @@ makeLLMPanel[ ] :=
                         ]
                 ],
                 CloudConnect[ ];
-                If[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
+                If[ $CloudUserID =!= None && Not @ AssociationQ @ Typeset`cachedUserData,
+                    Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
+                        Wolfram`LLMFunctions`Common`$LLMKitInfo
+                        ,
+                        getServiceData[ ]
+                    ];
+                ],
+                Appearance       -> "Suppressed",
+                BaseStyle        -> "DialogTextCommon",
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic,
+                Method           -> "Queued" ];
+
+        retryButton =
+            Button[
+                Style[
+                    tr[ "Retry" ],
+                    FontColor ->
+                        Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
+                            color @ "PreferencesContentLLMSignInButtonFontHover",
+                            color @ "PreferencesContentLLMSignInButtonFont"
+                        ]
+                ],
+                Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
+                    Wolfram`LLMFunctions`Common`$LLMKitInfo
+                    ,
+                    getServiceData[ ]
+                ],
                 Appearance       -> "Suppressed",
                 BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1425,7 +1468,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+                If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "manageSubscriptionUrl", "https://account.wolfram.com/products" ], Beep[ ] ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1445,7 +1488,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
+                If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "upgradeUrl", "https://account.wolfram.com/manage/plan" ], Beep[ ] ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1462,7 +1505,7 @@ makeLLMPanel[ ] :=
                         color @ "PreferencesContentFont_1",
                         color @ "PreferencesContentFont_3" ])
                 ],
-                Lookup[ chatbarUserData[ ], "upgradeURL", "https://account.test.wolfram.com/manage/plan" ],
+                If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "upgradeUrl", "https://account.wolfram.com/manage/plan" ], Beep[ ] ],
                 Appearance -> "Suppressed",
                 BaseStyle  -> "DialogTextCommon",
                 Method     -> "Queued",
@@ -1477,10 +1520,26 @@ makeLLMPanel[ ] :=
                                 (* We need to quickly check whether we have a subscription without the need for setting up a channel listener. *)
                                 "Loading" ->
                                     DynamicModule[ { },
-                                        (* Display a progress indicator until $LLMKitInfo is set via initialization *)
+                                        (* Display a progress indicator until LLMKit user data is set via initialization *)
                                         ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
-                                        Initialization :> ( Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ),
+                                        Initialization :> If[ Typeset`cachedUserData === None || FailureQ @ Typeset`cachedUserData,
+                                            Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
+                                                Wolfram`LLMFunctions`Common`$LLMKitInfo
+                                                ,
+                                                getServiceData[ ]
+                                            ]
+                                        ],
                                         SynchronousInitialization -> False
+                                    ],
+                                "Retry" ->
+                                    Grid[
+                                        {
+                                            { tr[ "PreferencesContentLLMKitNoSubscription" ] },
+                                            { retryButton }
+                                        },
+                                        Alignment        -> { Left, Baseline },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaselinePosition -> { 1, 1 }
                                     ],
                                 "NotCloudConnected" ->
                                     Grid[
@@ -1539,16 +1598,19 @@ makeLLMPanel[ ] :=
                                             BaselinePosition -> { 1, 2 },
                                             Spacings         -> { 0.25, 0.5 }
                                         ],
-                                    Initialization :> (Typeset`subscriptionLevel = Lookup[ chatbarUserData[ ], "tier", "Basic" ]),
+                                    Initialization :> (Typeset`subscriptionLevel = Lookup[ Typeset`cachedUserData, "accessLevel", "Basic" ]),
                                     SynchronousInitialization -> False
                                 ]
                             },
                             Dynamic[
                                 Which[
-                                    !Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], "NotCloudConnected",
-                                    TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "userHasSubscription" ] ], "CloudConnectedAndSubscribed",
-                                    !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], "Loading",
-                                    True, "CloudConnectedButNotSubscribed" ] ],
+                                    $CloudUserID === None, "NotCloudConnected",
+                                    FailureQ @ Typeset`cachedUserData, "Retry",
+                                    !AssociationQ[ Typeset`cachedUserData ], "Loading",
+                                    Lookup[ Typeset`cachedUserData, "userHasSubscription", False, TrueQ ], "CloudConnectedAndSubscribed",
+                                    True, "CloudConnectedButNotSubscribed"
+                                ]
+                            ],
                             BaselinePosition -> Baseline,
                             ImageSize -> Automatic ],
                         "",
@@ -1563,7 +1625,8 @@ makeLLMPanel[ ] :=
             FrameStyle -> color @ "PreferencesContentServicesLLMKitFrame",
             ImageSize -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
-    ];
+    ]
+];
 (* :!CodeAnalysis::EndBlock:: *)
 
 makeLLMPanel // endDefinition;

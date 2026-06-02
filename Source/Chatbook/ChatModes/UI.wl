@@ -92,9 +92,9 @@ mouseDown[
     ]
 ]
 
-blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0 ] := blueHueButtonAppearance[ { icon, icon, icon }, imageSize, frameMargins ]
+blueHueButtonAppearance[ icon_, imageSize_, frameMargins_:0, hoverTransparentBG_:False ] := blueHueButtonAppearance[ { icon, icon, icon }, imageSize, frameMargins, hoverTransparentBG ]
 
-blueHueButtonAppearance[ { default_, hover_, pressed_ }, imageSize_, frameMargins_:0 ] :=
+blueHueButtonAppearance[ { default_, hover_, pressed_ }, imageSize_, frameMargins_:0, hoverTransparentBG_:False ] :=
 mouseDown[
     Framed[
         default,
@@ -108,7 +108,7 @@ mouseDown[
     Framed[
         hover,
         Alignment      -> { Center, Center },
-        Background     -> color @ "NA_BlueHueButtonBackgroundHover",
+        Background     -> If[ hoverTransparentBG, Transparent, color @ "NA_BlueHueButtonBackgroundHover" ],
         FrameMargins   -> frameMargins,
         FrameStyle     -> color @ "NA_BlueHueButtonFrameHover",
         ImageSize      -> imageSize,
@@ -712,7 +712,7 @@ Overlay[
                                 LightDarkSwitched[ RGBColor[ 0.070588, 0.556863, 0.819608 ], RGBColor[ 0.498039, 0.780392, 0.984314 ] ]
                             ],
                             False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                                LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.2, 0.5 ] ],
+                                Transparent,
                                 LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.650980, 0.5 ] ]
                             ]
                         },
@@ -758,12 +758,16 @@ Button[
             True  ->
                 blueHueButtonAppearance[
                     chatbookIcon[ "ChatbarSendIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ],
-                    { 24, 24 }
+                    { 24, 24 },
+                    0,
+                    True
                 ],
             False ->
                 blueHueButtonAppearance[
                     chatbookIcon[ "ChatbarSendIcon", False, LightDarkSwitched[ GrayLevel[ 0.6509803, 0.5 ], GrayLevel[ 0.6509803, 0.5 ] ] ],
-                    { 24, 24 }
+                    { 24, 24 },
+                    0,
+                    True
                 ]
         },
         Dynamic @ activeQ,
@@ -800,7 +804,9 @@ Button[
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ],
                         chatbookIcon[ "HideChatbarIcon", False, LightDarkSwitched[ RGBColor[ 0.0705882, 0.5568627, 0.8196078 ], RGBColor[ 0.4980392, 0.7803921, 0.9843137 ] ] ]
                     },
-                    { 15, 15 }
+                    { 15, 15 },
+                    0,
+                    True
                 ],
             False ->
                 Framed[
@@ -878,7 +884,9 @@ Button[
                         chatbookIcon[ "ChatbarSettingsIcon", False, color @ "NA_BlueHueButtonIcon" ],
                         chatbookIcon[ "ChatbarSettingsIcon", False, color @ "NA_BlueHueButtonIcon" ]
                     },
-                    { 15, 15 }
+                    { 15, 15 },
+                    0,
+                    True
                 ],
             False ->
                 Framed[
@@ -944,7 +952,7 @@ $chatbarAccessFailedData :=
 
 Clear[ chatbarUserData, getUserValue ]
 
-chatbarUserData[ ] := chatbarUserData @ TrueQ @ cloudCredentialsQ[ ]
+chatbarUserData[ ] := chatbarUserData @ cloudCredentialsQ[ ]
 
 chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
@@ -1192,8 +1200,8 @@ chatbarOptionsUser[ userdata_ ] :=
         {
             tr[ "ChatbarOptionsSignOut" ] :> (
                 (* Sign out and close the attached cell *)
-                FE`Evaluate[ FEPrivate`WolframCloudSignOut[ ] ];
-                NotebookDelete[ EvaluationCell[ ] ]
+                NotebookDelete[ EvaluationCell[ ] ];
+                CloudDisconnect[ ];
             )
         },
         Appearance       -> None,
@@ -1751,7 +1759,7 @@ cloudAuthenticatedQ[ ] := ($CloudUserID =!= None)
 
 (* on desktop FE, check if they have credentials stored (what you see in the splash screen)
    note: $Notebooks is True in a cloud kernel! *)
-cloudCredentialsQ[ ] /; $Notebooks && !$CloudEvaluation := CurrentValue[ "WolframCloudConnected" ]
+cloudCredentialsQ[ ] /; $Notebooks && !$CloudEvaluation := TrueQ @ CurrentValue[ "WolframCloudConnected" ]
 (* in a cloud session, check if there is a user ID set *)
 cloudCredentialsQ[ ] /; $CloudEvaluation := cloudAuthenticatedQ[ ]
 (* we can still check this in a standalone kernel because it will get set by LLMKitDialog *)
@@ -1924,7 +1932,7 @@ Row[
                     LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ]
                 ],
                 False -> chatbookIcon[ "ChatbarChatBubbleIcon", False,
-                    LightDarkSwitched[ GrayLevel[ 0.976471, 0.5 ], GrayLevel[ 0.180392, 0.5 ] ],
+                    Transparent,
                     LightDarkSwitched[ GrayLevel[ 0.537255, 0.5 ], GrayLevel[ 0.756863, 0.5 ] ]
                 ]
             },
@@ -2140,7 +2148,7 @@ Button[
         ],
         FrameMargins   -> { { 12, 1 }, { 1, 1 } },
         FrameStyle     -> None,
-        ImageSize      -> { Scaled[ 1 ], 32 },
+        ImageSize      -> { Scaled[ 1 ], 38 },
         RoundingRadius -> 9
     ],
     Null,
@@ -2214,7 +2222,7 @@ DynamicModule[ { userdata },
                 Evaluator     -> "System",
                 Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
             ],
-            { Left, Top }, Offset[ { -6, If[ $OperatingSystem === "MacOSX", 9, 7 ] }, Automatic ], { Left, Top }
+            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
         ]
     ]
 ];
@@ -2284,21 +2292,21 @@ chatbarInputFieldEnabledTierIndicatorFrame[ text_, Dynamic[ activeQ_ ] ] :=
 Framed[
     Style[
         text,
-        FontColor      -> LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.099919 ] ],
-        FontOpacity    -> 1,
-        FontSize       -> 11,
-        FontTracking   -> "SemiCondensed",
-        FontVariations -> { "CapsType" -> "AllCaps" },
-        FontWeight     -> "SemiBold"
+        FontColor      -> Dynamic @ If[ activeQ,
+            LightDarkSwitched[ RGBColor[ 0.07058823529411765, 0.5568627450980392, 0.8196078431372549], RGBColor[ 0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
+            LightDarkSwitched[GrayLevel[ 0.39215686274509803 ], GrayLevel[ 0.7490196078431373 ] ]
+        ],
+        FontFamily     -> "Roboto Condensed",
+        FontOpacity    -> Dynamic @ If[ activeQ, 1, 0.5 ],
+        FontSize       -> 8,
+        FontTracking   -> 0.3,
+        FontVariations -> { "CapsType" -> "AllCaps" }
     ],
-    Background     -> Dynamic @ If[ activeQ,
-        LightDarkSwitched[ RGBColor[ 0., 0.572549, 0.819608 ], RGBColor[ 0.467133, 0.780131, 0.980079 ] ],
-        LightDarkSwitched[ GrayLevel[ 0.768627 ], GrayLevel[ 0.372549 ] ]
-    ],
-    ContentPadding -> False,
-    FrameMargins   -> { { 6, 6 }, { 3, 3 } },
+    Background     -> ThemeColor[ "Background" ],
+    ContentPadding -> True,
+    FrameMargins   -> { { 2.5, 2.5 }, { 0.33, 0.33 } },
     FrameStyle     -> ThemeColor[ "Background" ],
-    RoundingRadius -> 7
+    RoundingRadius -> 3.3
 ]
 
 chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
@@ -3845,11 +3853,11 @@ toggleOverlayMenu[ nbo_NotebookObject, sidebarCell_CellObject, name_String ] := 
                                     makeWorkspaceChatSubDockedCellExpression[
                                         Style[
                                             tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                            FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#898989" ] ],
+                                            FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#E5E5E5" ] ],
                                             FontFamily -> "Source Sans Pro",
                                             FontSlant  -> Italic
                                         ],
-                                        LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                                        LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                                         "SidebarSourcesDockedCell"
                                     ],
                                     _[ Magnification, _ ]
@@ -3904,14 +3912,14 @@ attachOverlayMenu[ nbo_NotebookObject, appContainer:None, name_String ] := Enclo
                         Framed[
                             Style[
                                 tr[ "WorkspaceToolbarSourcesSubTitle" ],
-                                FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#898989" ] ],
+                                FontColor  -> LightDarkSwitched[ RGBColor[ "#898989" ], RGBColor[ "#E5E5E5" ] ],
                                 FontFamily -> "Source Sans Pro",
                                 FontSlant  -> Italic
                             ],
                             Alignment    -> { Center, Center },
-                            Background   -> LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                            Background   -> LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                             FrameMargins -> { { 7, 7 }, { 4, 4 } },
-                            FrameStyle   -> LightDarkSwitched[ RGBColor[ "#E5E5E5" ], RGBColor[ "#2C2C2C" ] ],
+                            FrameStyle   -> LightDarkSwitched[ RGBColor[ "#F9F9F9" ], RGBColor[ "#2C2C2C" ] ],
                             ImageMargins -> 0,
                             ImageSize    -> Scaled[ 1. ]
                         ],
@@ -4470,7 +4478,12 @@ makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dy
                     With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
                         totalPages = Length @ pages;
                         If[ totalPages == 0,
-                            { { "No history" } } (* FIXME: add text resource *)
+                            { {
+                                Item[
+                                    Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
+                                    Alignment          -> { Center, Center },
+                                    System`ItemMargins -> 10
+                                ] } }
                             ,
                             If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
                             makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]

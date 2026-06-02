@@ -27,10 +27,10 @@ Function[ Evaluate @ ToBoxes @
 					BaselinePosition -> Baseline
 				],
 				Alignment        -> { Center, Center },
-				Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], bgHover, None ],
+				Background       -> ThemeColor[ "Background" ],
 				BaselinePosition -> Baseline,
 				FrameMargins     -> 0,
-				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, None ],
+				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, ThemeColor[ "Background" ] ],
 				ImageSize        -> #2,
 				RoundingRadius   -> 4
 			],

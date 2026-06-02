@@ -2531,10 +2531,12 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         encoded = ConfirmBy[
             makeMinimalPageData[
                 prevPage,
-                FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] :>
-                    BinaryDeserialize @ BaseDecode @ cd,
+                (* Cloud: this formulation works on Cloud and Desktop,  Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] does not *)
+                Lookup[
+                    FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> tr_, ___ ] :> tr, <| |>, { 0, Infinity } ],
+                    "ChatData",
                     <| |>,
-                    { 0, Infinity }
+                    BinaryDeserialize @ BaseDecode @ # &
                 ]
             ],
             StringQ,
@@ -2600,7 +2602,7 @@ activeAIAssistantCell[ container_, settings_Association? AssociationQ, cellTags_
 
 activeAIAssistantCell[
     container_,
-    settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    settings: KeyValuePattern[ "CellObject" :> cellObject_ ], (* Cloud: cellObject is unused *)
     cellTags0_,
     minimized_
 ] /; $cloudNotebooks :=
@@ -2610,59 +2612,46 @@ activeAIAssistantCell[
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = Which[
-                TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
-                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
-                TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
-                True,                   # & ]
+            (* Cloud: CurrentValue[_CellObject, CellTags] returns $Failed if none exist *)
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
         },
-        Module[ { x = 0 },
-            ClearAttributes[ { x, cellObject }, Temporary ];
-            Cell[
-                BoxData @ outer @ ToBoxes @ deleteFEObjectIfKernelQuit[ #, Hold[ ParentCell @ EvaluationCell[ ] ] ]& @
-                    If[ TrueQ @ reformat,
-                        Dynamic[
-                            Refresh[
-                                x++;
-                                If[ MatchQ[ $reformattedCell, _Cell ],
-                                    Pause[ 1 ];
-                                    NotebookWrite[ cellObject, $reformattedCell ];
-                                    Remove[ x, cellObject ];
-                                    ,
-                                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
-                                ],
-                                TrackedSymbols :> { x },
-                                UpdateInterval -> 0.4
-                            ],
-                            Deinitialization :> Quiet @ TaskRemove @ task
+        Cell[
+            BoxData @ ToBoxes @
+                DynamicModule[ { x = 0 },
+                    Function[
+                        disp,
+                        If[ TrueQ @ reformat,
+                            Dynamic[ Refresh[ disp, TrackedSymbols :> { x }, UpdateInterval -> 0.4 ], Deinitialization :> Quiet @ TaskRemove @ task ]
+                            ,
+                            Dynamic[ disp, Deinitialization :> Quiet @ TaskRemove @ task ]
                         ],
-                        Dynamic[
-                            x++;
-                            If[ MatchQ[ $reformattedCell, _Cell ],
-                                Pause[ 1 ];
-                                NotebookWrite[ cellObject, $reformattedCell ];
-                                Remove[ x, cellObject ];
-                                ,
-                                catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
-                            ],
-                            Deinitialization :> Quiet @ TaskRemove @ task
+                        HoldAll
+                    ][
+                        x++;
+                        If[ MatchQ[ $reformattedCell, _Cell ],
+                            Pause[ 1 ];
+                            NotebookWrite[ EvaluationCell[ ], $reformattedCell ]; (* rewriting itself in a dynamic is OK on Cloud, not OK on Desktop *)
+                            ,
+                            catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                         ]
                     ],
-                "Output",
-                "ChatOutput",
-                Sequence @@ Flatten[ { $closedChatCellOptions } ],
-                Selectable      -> False,
-                Editable        -> False,
-                If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                    Sequence @@ { }
+                    BoxID -> "DynamicTextDisplay"
                 ],
-                CellTags           -> cellTags,
-                CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-                TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
-            ]
+            "Output",
+            "ChatOutput",
+            Sequence @@ Flatten[ { $closedChatCellOptions } ],
+            Selectable      -> False,
+            Editable        -> False,
+            (* Cloud: bug? the send button does not turn into a stop button, so the dingbat is the only "stop" button *)
+            If[ TrueQ @ settings[ "SetCellDingbat" ],
+                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                Sequence @@ { }
+            ],
+            (* Cloud: neither an empty list not Inherited auto-removes the CellTags option *)
+            If[ MatchQ[ cellTags, { } | Inherited ], Sequence @@ { }, CellTags -> cellTags ],
+            CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            PrivateCellOptions -> { "ContentsOpacity" -> 1 },
+            TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
         ]
     ];
 
@@ -2989,6 +2978,8 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput = None;
 
+            If[ $cloudNotebooks, Return[ ] ]; (* Cloud: $reformattedCell becoming a CellObject causes the output to rewrite; does not work on desktop *)
+
             info = addProcessingArguments[
                 "WriteChatOutputCell",
                 <|
@@ -3136,7 +3127,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
-            CellTags          -> Flatten @ { uuid, cellTags },
+            If[ $cloudNotebooks, Sequence @@ { }, CellTags -> Flatten @ { uuid, cellTags } ],
             TaggingRules      -> rules,
             If[ TrueQ @ open,
                 Sequence @@ { },
@@ -3260,7 +3251,7 @@ makeReformattedCellTaggingRules // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
-makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited;
+(* makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited; *)
 
 makeCompactChatData[
     message_,
@@ -3292,7 +3283,7 @@ makeCompactChatData // endDefinition;
 (*makeMinimalPageData*)
 makeMinimalPageData // beginDefinition;
 
-makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
+(* makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited; *)
 
 makeMinimalPageData[ content_, settings_Association ] :=
 BaseEncode @ BinarySerialize[

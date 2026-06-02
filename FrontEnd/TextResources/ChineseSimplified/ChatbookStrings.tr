@@ -5,6 +5,7 @@
 "OKButton" -> "\:786E\:8BA4",
 "CancelButton" -> "\:53D6\:6D88",
 "DeleteButton" -> "\:5220\:9664",
+"Retry" -> "Retry",
 "SaveChangesButton" -> "\:4FDD\:5B58\:4FEE\:6539",
 "SendButton" -> "\:53D1\:9001",
 "URLButton" -> "URL",
@@ -264,6 +265,7 @@
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:6253\:5F00\:4E3A\:804A\:5929\:7B14\:8BB0\:672C",
 "WorkspaceSourcesOpenNotebooks" -> "\:6253\:5F00\:7B14\:8BB0\:672C",
 "WorkspaceSourcesNoOpenNotebooks" -> "\:76EE\:524D\:6CA1\:6709\:5176\:4ED6\:7B14\:8BB0\:672C\:5904\:4E8E\:6253\:5F00\:72B6\:6001\:3002",
+"WorkspaceHistoryNone" -> "No chat history",
 "WorkspaceHistoryPageTemplate" -> "\:7B2C `1` \:9875\:ff0c\:5171 `2` \:9875",
 "WorkspaceHistoryFirstPage" -> "\:7B2C\:4E00\:9875",
 "WorkspaceHistoryPreviousPage" -> "\:4E0A\:4E00\:9875",
@@ -302,7 +304,7 @@
 "ProgressTextChoosingDocumentation" -> "\:6B63\:5728\:9009\:62E9||\:6B63\:5728\:7B5B\:9009||\:6B63\:5728\:8FC7\:6EE4||\:6B63\:5728\:5339\:914D||\:6B63\:5728\:9009\:53D6||\:6B63\:5728\:5206\:7C7B||\:6B63\:5728\:6392\:5E8F||\:6B63\:5728\:7F29\:5C0F\:8303\:56F4||\:6B63\:5728\:5206\:6790",
 "ProgressTextCreatingMessages" -> "\:6B63\:5728\:521B\:5EFA||\:6B63\:5728\:6784\:5EFA||\:6B63\:5728\:521B\:4F5C||\:6B63\:5728\:51C6\:5907||\:6B63\:5728\:7F16\:5199||\:6B63\:5728\:6574\:7406||\:6B63\:5728\:7ED3\:6784\:5316",
 "ProgressTextSendingChat" -> "\:6B63\:5728\:53D1\:9001||\:6B63\:5728\:63D0\:4EA4||\:6B63\:5728\:53D1\:5E03||\:6B63\:5728\:8F6C\:53D1||\:6B63\:5728\:4F20\:9001||\:6B63\:5728\:4E2D\:7EE7||\:6B63\:5728\:5206\:53D1",
-"ProgressTextWaitingForResponse" -> "\:6B63\:5728\:7B49\:5F85||\:6B63\:5728\:63A5\:6536||\:6B63\:5728\:542C\:53D6||\:6301\:7EED\:6301\:6709||\:6B63\:5728\:5904\:7406||\:6B63\:5728\:68C0\:67E5"
+"ProgressTextWaitingForResponse" -> "\:6B63\:5728\:7B49\:5F85||\:6B63\:5728\:63A5\:6536||\:6B63\:5728\:542C\:53D6||\:6301\:7EED\:6301\:6709||\:6B63\:5728\:5904\:7406||\:6B63\:5728\:68C0\:67E5",
 "ProgressTextGeneratingSuggestions" -> "\:6B63\:5728\:751F\:6210\:5EFA\:8BAE",
 "ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
 "ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5"
