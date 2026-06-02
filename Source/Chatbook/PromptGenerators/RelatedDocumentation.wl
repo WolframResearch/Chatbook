@@ -52,7 +52,7 @@ $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 50;
 
-$filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+$filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
@@ -550,6 +550,8 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             StringQ,
             "Response"
         ];
+
+        If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
         uriToSnippet = GroupBy[ results, Lookup[ "Value" ] -> Lookup[ "Snippet" ] ];
         uris = ConfirmMatch[ Keys @ uriToSnippet, { ___String }, "URIs" ];
