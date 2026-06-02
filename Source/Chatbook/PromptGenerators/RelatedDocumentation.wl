@@ -521,7 +521,7 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
-        ids = ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
+        ids = DeleteDuplicates @ ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
