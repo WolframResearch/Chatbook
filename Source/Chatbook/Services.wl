@@ -369,6 +369,9 @@ getAvailableServices0[ services0_Association? AssociationQ ] := Enclose[
             _Association? (AllTrue[ AssociationQ ]),
             "Services"
         ];
+        If[ TrueQ @ $CloudEvaluation,
+            services = KeyDrop[services, "Ollama"]
+        ];
 
         withServiceName = Association @ KeyValueMap[ #1 -> <| "Service" -> #1, #2 |> &, services ];
         withIcon = Association[ #, "Icon" -> serviceIcon @ # ] & /@ withServiceName;
