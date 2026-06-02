@@ -1095,7 +1095,7 @@ DynamicModule[
 	},
 	DynamicWrapper[
 		Button[
-			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 } ],
+			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 }, 0, True ],
 			With[ { attachedMenuCells = Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] },
 				If[ attachedMenuCells === {},
 					MakeMenu[
@@ -1166,6 +1166,7 @@ makeChatInputActiveCellDingbat // endDefinition;
 
 makeChatOutputActiveCellDingbat // beginDefinition;
 
+(* Cloud version: does not have access to CellObject of CellDingbat *)
 (*
 	The dingbat loads using the System kernel, but the DynamicWrapper must use the ambient kernel in order to "hear" any trigger signals.
 	The CellObject may change when we cut+paste the cell.
@@ -1203,8 +1204,12 @@ DynamicModule[
 		TrackedSymbols      :> { }
 	],
 	Initialization   :> (
-		Typeset`dingbatCell = EvaluationCell[ ];
-		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
+		If[ $cloudNotebooks,
+			Typeset`targetCell = EvaluationCell[ ]
+			,
+			Typeset`dingbatCell = EvaluationCell[ ];
+			Typeset`targetCell  = ParentCell @ Typeset`dingbatCell
+		];
 		Needs[ "Wolfram`Chatbook`" -> None ];
 	),
 	UnsavedVariables :> { Typeset`dingbatCell, Typeset`targetCell }
@@ -1217,7 +1222,8 @@ makeChatOutputActiveCellDingbat // endDefinition;
 (*makeChatOutputPagedDingbat*)
 makeChatOutputPagedDingbat // beginDefinition;
 
-makeChatOutputPagedDingbat[ targetCell_CellObject, dingbatCell_CellObject, allPageData_Association ] :=
+(* Cloud: has no CellObject for the CellDingbat *)
+makeChatOutputPagedDingbat[ targetCell_CellObject, dingbatCell:None|_CellObject, allPageData_Association ] :=
 Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 	currentPage = Lookup[ allPageData, "CurrentPage", 1 ];
 	currentPageData = Lookup[ allPageData, "Pages", <| |>, Lookup[ #, currentPage, Missing[ "NoPageData" ], BinaryDeserialize[ BaseDecode[ # ] ]& ]& ];
@@ -1241,37 +1247,53 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		]
 	];
 
-	DynamicModule[ { },
-		If[ displayName === None, icon, Tooltip[ icon, displayName ] ],
-		SynchronousInitialization -> False,
-		Initialization            :> (
-			If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatOutput`PagedNavigation" ] === { },
-				AttachCell[
-					dingbatCell,
-					Cell[ BoxData @ ToBoxes @
-						Grid[
-							{
-								{
-									makeChatOutputPagedDingbatNavButtons @ targetCell
-								},
-								{
-									RawBoxes @ StyleBox[
-										RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
-										FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
-										FontFamily -> "Roboto",
-										FontSize   -> 8
-									]
-								}
-							},
-							BaseStyle -> { FontSize -> 0.5 },
-							Spacings -> { 0, 0 }
-						],
-						"NotebookAssistant`ChatOutput`PagedNavigation"
-					],
-					{ Center, Bottom }, 0, { Center, Top }
-				]
+	With[
+		{ rows =
+			{
+				{
+					makeChatOutputPagedDingbatNavButtons @ targetCell
+				},
+				{
+					RawBoxes @ StyleBox[
+						RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
+						FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+						FontFamily -> "Roboto",
+						FontSize   -> 8
+					]
+				}
+			}
+		},
+
+		If[ $cloudNotebooks || dingbatCell === None,
+			Grid[
+				Prepend[ rows, { If[ displayName === None, icon, Tooltip[ icon, displayName ] ] } ],
+				Alignment        -> { Center, Baseline },
+				BaselinePosition -> { 1, 1 },
+				BaseStyle        -> { FontSize -> 0.5 },
+				Spacings         -> { 0, 0 }
 			]
-		)
+			, (* Desktop: use an attached cell so there's less wiggling when the paged UI appears *)
+			DynamicModule[ { },
+				If[ displayName === None, icon, Tooltip[ icon, displayName ] ],
+				SynchronousInitialization -> False,
+				Initialization            :> (
+					If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatOutput`PagedNavigation" ] === { },
+						AttachCell[
+							dingbatCell,
+							Cell[ BoxData @ ToBoxes @
+								Grid[
+									rows,
+									BaseStyle -> { FontSize -> 0.5 },
+									Spacings  -> { 0, 0 }
+								],
+								"NotebookAssistant`ChatOutput`PagedNavigation"
+							],
+							{ Center, Bottom }, 0, { Center, Top }
+						]
+					]
+				)
+			]
+		]
 	]
 ];
 
@@ -1296,7 +1318,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
 				Appearance -> "Suppressed",
@@ -1311,7 +1335,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
 				Appearance -> "Suppressed",
@@ -1385,15 +1411,7 @@ MakeChatDelimiterCellDingbat[ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatOutputCellDingbat*)
-MakeChatOutputCellDingbat[ ] :=
-	PaneSelector[
-		{
-			True  -> "",
-			False -> makeChatOutputActiveCellDingbat[ ]
-		},
-		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
-		ImageSize -> Automatic
-	];
+MakeChatOutputCellDingbat[ ] := makeChatOutputActiveCellDingbat[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
