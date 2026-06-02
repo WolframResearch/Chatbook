@@ -51,7 +51,8 @@ jobs:
         unzip -o /tmp/ResourceSystem.zip -d Assets/Snippets/Streamable/ResourceSystem
 
     - name: Build Paclet
-      run: wolframscript -f Scripts/BuildPaclet.wls --snippets=false
+      run: wolframscript -f Scripts/BuildPaclet.wls --snippets=false --wolfram-version=15.0+
+      # TODO: Remove this wolfram-version override once 15.0 docker images are available
 
     - name: Rename Paclet File
       run: mv "${{ env.PACLET_PATH }}" "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet"
