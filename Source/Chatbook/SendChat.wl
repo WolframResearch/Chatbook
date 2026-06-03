@@ -1405,12 +1405,32 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\:ff1d" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
-    (* specific case seen in the wild *)
-    RegularExpression["ð\" »\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-    (* catch-all: any head in head["...", Entity] *)
-    RegularExpression["\\S*\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-    (* catch-all: any head in EntityValue[head["..."], Entity] *)
-    RegularExpression["EntityValue\\[\\s*[^\\[]*\\[\\s*(\"[^\"]*\")\\s*\\]\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (* catch-alls for any head in decreasing specificity
+        + non-greedy capturing of head where possible
+        + generous white space allowance
+        + captured quoted text can have escaped characters *)
+    (* These are concretely fixable since 'Entity' is easily identifiable in the string pattern for replacement
+        A) EntityValue[head["...", Entity]
+        B) EntityValue[head["..."],         << stop after comma, idempotent with correct head of \[FreeformPrompt] >>
+        C) \:XXXX["...", Entity]            << hexadecimal, any case, also covered by (F) but let's catch these early >>
+        D) \\uXXXX["...", Entity]           << hexadecimal, any case, also covered by (F) but let's catch these early >>
+        E) ð\" »["...", Entity]       << specific case seen in the wild that has a space in it, most likely low applicability  >>
+
+        Entering dangerous territory with greedy head capture, but the weirdness of a standalone Entity symbol is odd enough
+        F) head["...", Entity]              << can't go above (E) because (E) has a space in it >>
+
+        Further dangerous territory, but the \:XXXX format is specific to WL, and normal function heads should be alphanumeric
+        G) \:XXXX["..."]                    << no Entity to mark it as a telltale hallucination, but uses WL hexadecimal so it is odd enough >>
+    *)
+    (*A*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "EntityValue[\[FreeformPrompt][$1]",
+    (*B*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]\\s*,"          ] :> "EntityValue[\[FreeformPrompt][$1],",
+    (*C*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (*D*)RegularExpression[    "\\\\u[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (*E*)RegularExpression[            "ð\" »\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+
+    (*F*)RegularExpression[                   "\\S*\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+
+    (*G*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]"               ] :> "\[FreeformPrompt][$1]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
