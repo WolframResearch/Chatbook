@@ -1404,6 +1404,8 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\:ff1d" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
+    RegularExpression["ð\" »\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*]"] :> "\[FreeformPrompt][$1]", (* specific case seen in the wild *)
+    RegularExpression["\\S*\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*]"] :> "\[FreeformPrompt][$1]",        (* catch-all: any head in head["...", Entity] is converted *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
