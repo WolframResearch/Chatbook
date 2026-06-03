@@ -1399,13 +1399,19 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\"\\\\!\\\\("~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "<" ~~ uri: $$attachmentURI ~~ ">" :> "<!" <> uri <> "!>",
     "!<" ~~ uri: $$attachmentURI ~~ "!>" :> "<!" <> uri <> "!>",
-    "\\uf351" -> "\[FreeformPrompt]",
-    "\\uF351" -> "\[FreeformPrompt]",
+    (* ============ Entity hallucinations or mojibake ============ *)
+    RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
+    RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
     "\:ff1d" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
-    RegularExpression["ð\" »\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*]"] :> "\[FreeformPrompt][$1]", (* specific case seen in the wild *)
-    RegularExpression["\\S*\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*]"] :> "\[FreeformPrompt][$1]",        (* catch-all: any head in head["...", Entity] is converted *)
+    (* specific case seen in the wild *)
+    RegularExpression["ð\" »\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (* catch-all: any head in head["...", Entity] *)
+    RegularExpression["\\S*\\[\\s*(\"[^\"]*\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (* catch-all: any head in EntityValue[head["..."], Entity] *)
+    RegularExpression["EntityValue\\[\\s*[^\\[]*\\[\\s*(\"[^\"]*\")\\s*\\]\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
