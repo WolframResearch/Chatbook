@@ -201,6 +201,20 @@ $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
     "ToolMethod" -> "Service"
 |>;
 
+(*
+    * DeepSeek API doc on thinking and reasoning_effort parameter:
+    <https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming#reasoning-effort>
+
+    * As of 2026-05-06, to test the "DeepSeek" service for "DeepSeekFlash", a paid DeepSeek account seems required,
+    otherwise it returns an "Insufficient Balance" error for every input and no real output is returned, so I
+    did NOT continue testing. See
+    <https://jira.wolfram.com/jira/browse/LLM-914?focusedId=4300822&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-4300822>).
+*)
+$modelAutoSettings[ "DeepSeek", "DeepSeekFlash" ] = <|
+    (*"thinking" -> <| "type" -> "enabled" |>,*) (* TODO: Define the new "thinking" parameter? The default is "enabled" so not defining this explicitly might be OK. Or turn off? *)
+    (*"Reasoning" -> <| "reasoning_effort" -> "high" |>*) (* TODO: Not defining it explicitly but using the service's default ("high"?) might be sufficient. *)
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*GoogleGemini*)
@@ -336,6 +350,30 @@ $modelAutoSettings[ "xAI", Automatic ] = <|
     "EndToken"         -> None,
     "ForceSynchronous" -> True,
     "ToolMethod"       -> "Service"
+|>;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(* OpenRouter *)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+(*
+  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
+    * Reasoning is on by default, only supports effort level "high" and "xhigh".
+    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
+
+  * 2026-05-05: Tried turning reasoning on with
+        "Reasoning" -> <| "effort" -> "high" |>
+    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
+    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
+
+    The easy mitigation seems to be using
+        "Reasoning" -> <| "effort" -> "none" |>
+*)
+$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+    (*"Reasoning" -> <| "effort" -> "high" |>*)
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -478,7 +516,19 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*Kimi K2.5*)
+
+(* DeepSeek *)
+$modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
+    "EndToken"               -> None,
+    "HybridToolMethod"       -> False,
+    "MaxContextTokens"       -> 1048576,
+    "Multimodal"             -> False,
+    "ToolCallRetryMessage"   -> False,
+    "ToolMethod"             -> "Simple",
+    "ToolResponseRole"       -> "User"
+|>;
+
+(* Kimi *)
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
     "EndToken"             -> None,
