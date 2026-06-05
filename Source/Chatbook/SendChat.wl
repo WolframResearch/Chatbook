@@ -200,7 +200,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ] // LogChatTiming[ "CreateChatOutput" ];
 
         If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
-            SelectionMove[ cellObj, After, Cell ]
+            SelectionMove[ cellObj, After, Cell ] (* mimic the selection behavior of standard cell evaluations *)
         ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
@@ -231,7 +231,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        (* If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -239,7 +239,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
                     TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
                 ]
             ] // LogChatTiming[ "SetCellDingbat" ]
-        ];
+        ]; *)
 
         applyHandlerFunction[
             settings,
@@ -492,7 +492,7 @@ prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
             messages,
             s_String :> RuleCondition @ StringTrim @ StringReplace[
                 s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                "\nENDRESULT(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")\n" :>
                     "\nENDRESULT\n"
             ]
         ]
@@ -692,7 +692,7 @@ toolStringSplit[ req_String, result_String ] :=
     toolStringSplit[ toolRequestParser @ req, result ];
 
 toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash @ req },
+    With[ { id = tinyHash[ req, 9 ] },
         toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
     ];
 
@@ -1030,11 +1030,16 @@ chatSubmit0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
+makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
+makeLLMConfiguration // endDefinition;
 
-makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
-    makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
-makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
+makeLLMConfiguration0 // beginDefinition;
+
+makeLLMConfiguration0[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
+    makeLLMConfiguration0 @ Append[ as, "Model" -> { "OpenAI", model } ];
+
+makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as[ "HybridToolMethod" ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1045,7 +1050,7 @@ makeLLMConfiguration[ as_Association ] /; as[ "ToolMethod" ] === "Service" || as
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration[ as_Association ] :=
+makeLLMConfiguration0[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ replaceUnicodeCharacters[
         as,
         DeleteMissing @ Association[
@@ -1054,16 +1059,68 @@ makeLLMConfiguration[ as_Association ] :=
         ] // dropModelUnsupportedParameters[ as ]
     ];
 
-makeLLMConfiguration // endDefinition;
+makeLLMConfiguration0 // endDefinition;
 
 
 $llmConfigPassedKeys = {
     "MaxTokens",
     "Model",
     "PresencePenalty",
+    "ProviderPreferences",
     "Reasoning",
     "Temperature"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchServices*)
+patchServices // beginDefinition;
+patchServices[ as_Association ] := patchServices[ as, as[ "Model", "Service" ] ];
+patchServices[ as_Association, "OpenRouter" ] := patchOpenRouter @ as;
+patchServices[ as_Association, _ ] := Null;
+patchServices // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*patchOpenRouter*)
+(* FIXME: Verify this works in 14.3 *)
+patchOpenRouter // beginDefinition;
+patchOpenRouter[ as_Association ] := patchOpenRouter[ as, as[ "ProviderPreferences" ] ];
+patchOpenRouter[ as_, <| |> | None | $$unspecified ] := Null;
+patchOpenRouter[ as_, prefs_Association ] := registerParameter[ "OpenRouter", "ProviderPreferences" ];
+patchOpenRouter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*registerParameter*)
+registerParameter // beginDefinition;
+
+registerParameter[ service_String, param_String ] := (
+    registerParameter[ service, param, LLMServices`Chat       ];
+    registerParameter[ service, param, LLMServices`ChatSubmit ];
+);
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+registerParameter[ service_String, param_String, f_Symbol ] := Enclose[
+    If[ FreeQ[ LLMServices`LLMServiceInformation[ f ][ service, "SupportedParameters" ], param ],
+        LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]] =
+            DeleteDuplicates @ Append[
+                ConfirmMatch[
+                    LLMServices`Registration`Private`$LLMServices[[ 1, Key @ f, service, "SupportedParameters" ]],
+                    { (_String|_Symbol)... },
+                    "SupportedParameters"
+                ],
+                param
+            ]
+    ];
+    registerParameter[ service, param, f ] = Null
+    ,
+    throwInternalFailure
+];
+(* :!CodeAnalysis::EndBlock:: *)
+
+registerParameter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1331,6 +1388,9 @@ $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
+    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /; 
+        toolShortNameQ @ name :> 
+            "\n/"<>name<>"\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -1339,48 +1399,110 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "\"\\\\!\\\\("~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "<" ~~ uri: $$attachmentURI ~~ ">" :> "<!" <> uri <> "!>",
     "!<" ~~ uri: $$attachmentURI ~~ "!>" :> "<!" <> uri <> "!>",
-    "\\uf351" -> "\[FreeformPrompt]",
-    "\\uF351" -> "\[FreeformPrompt]",
+    (* ============ Entity hallucinations or mojibake ============ *)
+    RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
+    RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
     "\:ff1d" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
+    (* catch-alls for any head in decreasing specificity
+        + non-greedy capturing of head where possible
+        + generous white space allowance
+        + captured quoted text can have escaped characters *)
+    (* These are concretely fixable since 'Entity' is easily identifiable in the string pattern for replacement
+        A) EntityValue[head["...", Entity]
+        B) EntityValue[head["..."],         << stop after comma, idempotent with correct head of \[FreeformPrompt] >>
+        C) \:XXXX["...", Entity]            << hexadecimal, any case, also covered by (F) but let's catch these early >>
+        D) \\uXXXX["...", Entity]           << hexadecimal, any case, also covered by (F) but let's catch these early >>
+
+        Entering dangerous territory with greedy head capture, but the weirdness of a standalone Entity symbol is odd enough
+        E) head["...", Entity]              << can't go above (E) because (E) has a space in it >>
+
+        Further dangerous territory, but the \:XXXX format is specific to WL, and normal function heads should be alphanumeric
+        F) \:XXXX["..."]                    << no Entity to mark it as a telltale hallucination, but uses WL hexadecimal so it is odd enough >>
+    *)
+    (*A*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "EntityValue[\[FreeformPrompt][$1]",
+    (*B*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]\\s*,"          ] :> "EntityValue[\[FreeformPrompt][$1],",
+    (*C*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+    (*D*)RegularExpression[    "\\\\u[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+
+    (*E*)RegularExpression[                   "\\S*\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
+
+    (*F*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]"               ] :> "\[FreeformPrompt][$1]",
+    (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters
+    $longNameCharacters,
+    toolCalls: StringExpression[
+        WhitespaceCharacter...,
+        "<|tool_calls_section_begin|>",
+        __,
+        "<|tool_calls_section_end|>",
+        WhitespaceCharacter...
+    ] :> rewriteMoonshotToolText @ toolCalls
 };
 
-(* TODO:
-Automatically rewrite these as WL tool calls:
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMoonshotToolText*)
+rewriteMoonshotToolText // beginDefinition;
+
+rewriteMoonshotToolText[ string_String ] :=
+    rewriteMoonshotToolText[ string, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+rewriteMoonshotToolText[ string_String, method_ ] := Enclose[
+    Catch @ Module[ { calls, call, new },
+        calls = ConfirmMatch[ StringCases[ string, $moonShotTools, 1 ], { { _String, _String }... }, "Calls" ];
+        call = First[ calls, None ];
+        new = ConfirmMatch[ rewriteMoonshotToolText[ call, method ], _String | $Failed, "New" ];
+        rewriteMoonshotToolText[ string, method ] = If[ FailureQ @ new, string, new ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ { name0_String, params0_String }, method_ ] := Enclose[
+    Catch @ Module[ { name, params, toolCall },
+
+        name = ConfirmBy[ StringTrim @ name0, StringQ, "Name" ];
+        params = Quiet @ Developer`ReadRawJSONString @ StringTrim @ params0;
+        If[ ! AssociationQ @ params, Throw @ $Failed ];
+
+        toolCall = ConfirmBy[ formatToolCallExample[ name, params, method ], StringQ, "Result" ];
+
+        "\n" <> StringDelete[
+            StringTrim @ toolCall,
+            {
+                "\n/exec"~~EndOfString,
+                "\nENDTOOLCALL"~~EndOfString
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+rewriteMoonshotToolText[ None, _ ] := $Failed;
+
+rewriteMoonshotToolText // endDefinition;
 
 
-    Sure! I will use `EmbeddedService` to show a map of Tokyo by utilizing the OpenStreetMap service.
-
-    ```wl
-    EmbeddedService[{\"OpenStreetMap\", GeoPosition[\[FreeformPrompt][\"Tokyo\"]]}]
-    ``` /exec
-
-=====
-
-    To show a map of the United States with all its state capitals, we can use the [GeoGraphics](paclet:ref/GeoGraphics) function along with [Entity](paclet:ref/Entity) to get the positions of the capitals. Here's how you can do it:
-
-    ```wl
-    GeoGraphics[
-        {Red, PointSize[Large],
-        Point[GeoPosition /@ EntityValue[
-            EntityClass["AdministrativeDivision", "USStates"],
-            "CapitalLocation"
-        ]]
+$moonShotTools = Apply[
+    StringExpression,
+    Riffle[
+        {
+            "<|tool_call_begin|>",
+            "functions." ~~ name__ ~~ ":" ~~ DigitCharacter..,
+            "<|tool_call_argument_begin|>",
+            params__,
+            "<|tool_call_end|>"
         },
-        GeoRange -> Entity["Country", "UnitedStates"]
+        WhitespaceCharacter...,
+        { 1, -1, 2 }
     ]
-    ```
-
-    Let me create this map for you. /wl
-*)
+] :> { name, params };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1391,7 +1513,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write },
 
         boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
-        
+
         If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
@@ -1420,9 +1542,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             $$textDataList,
             "ReformatTextData"
         ];
-        
+
         write = Cell[ TextData @ reformatted, If[ TrueQ @ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ], Background -> None, CellFrame -> 0 ];
-        
+
         NotebookWrite[ NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
 
     ],
@@ -1681,7 +1803,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "GenerateLLMToolResponse"
         ];
 
-        toolID = tinyHash @ toolResponse;
+        toolID = tinyHash[ toolResponse, 9 ];
         toolCall = insertToolID[ toolCall, toolID ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
@@ -2358,6 +2480,26 @@ WriteChatOutputCell[
                 scrollOutput[ True, output ]
             ]
         ];
+
+        (*
+            At this point, the selection behavior mimics standard cell evaluations.
+            But if the ChatInput/Output came from the chatbar, then move back to the chatbar.
+        *)
+        With[
+            { nbo = EvaluationNotebook[ ] },
+            { chatbarCell = First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], None ] },
+            If[
+                And[
+                    ! sidebarQ,
+                    chatbarCell =!= None,
+                    Not @ TrueQ @ AbsoluteCurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ],
+                    TrueQ @ AbsoluteCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" } ]
+                ]
+                ,
+                setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, Inherited ];
+                FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatbarCell, chatbarCell ]
+            ]
+        ];
     ],
     throwInternalFailure
 ];
@@ -2415,10 +2557,12 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         encoded = ConfirmBy[
             makeMinimalPageData[
                 prevPage,
-                FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] :>
-                    BinaryDeserialize @ BaseDecode @ cd,
+                (* Cloud: this formulation works on Cloud and Desktop,  Cell[ ___, TaggingRules -> KeyValuePattern[ { "ChatData" -> cd_ } ], ___ ] does not *)
+                Lookup[
+                    FirstCase[ prevCellExpr, Cell[ ___, TaggingRules -> tr_, ___ ] :> tr, <| |>, { 0, Infinity } ],
+                    "ChatData",
                     <| |>,
-                    { 0, Infinity }
+                    BinaryDeserialize @ BaseDecode @ # &
                 ]
             ],
             StringQ,
@@ -2484,7 +2628,7 @@ activeAIAssistantCell[ container_, settings_Association? AssociationQ, cellTags_
 
 activeAIAssistantCell[
     container_,
-    settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    settings: KeyValuePattern[ "CellObject" :> cellObject_ ], (* Cloud: cellObject is unused *)
     cellTags0_,
     minimized_
 ] /; $cloudNotebooks :=
@@ -2494,59 +2638,46 @@ activeAIAssistantCell[
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = Which[
-                TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
-                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
-                TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
-                True,                   # & ]
+            (* Cloud: CurrentValue[_CellObject, CellTags] returns $Failed if none exist *)
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
         },
-        Module[ { x = 0 },
-            ClearAttributes[ { x, cellObject }, Temporary ];
-            Cell[
-                BoxData @ outer @ ToBoxes @ deleteFEObjectIfKernelQuit[ #, Hold[ ParentCell @ EvaluationCell[ ] ] ]& @
-                    If[ TrueQ @ reformat,
-                        Dynamic[
-                            Refresh[
-                                x++;
-                                If[ MatchQ[ $reformattedCell, _Cell ],
-                                    Pause[ 1 ];
-                                    NotebookWrite[ cellObject, $reformattedCell ];
-                                    Remove[ x, cellObject ];
-                                    ,
-                                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
-                                ],
-                                TrackedSymbols :> { x },
-                                UpdateInterval -> 0.4
-                            ],
-                            Deinitialization :> Quiet @ TaskRemove @ task
+        Cell[
+            BoxData @ ToBoxes @
+                DynamicModule[ { x = 0 },
+                    Function[
+                        disp,
+                        If[ TrueQ @ reformat,
+                            Dynamic[ Refresh[ disp, TrackedSymbols :> { x }, UpdateInterval -> 0.4 ], Deinitialization :> Quiet @ TaskRemove @ task ]
+                            ,
+                            Dynamic[ disp, Deinitialization :> Quiet @ TaskRemove @ task ]
                         ],
-                        Dynamic[
-                            x++;
-                            If[ MatchQ[ $reformattedCell, _Cell ],
-                                Pause[ 1 ];
-                                NotebookWrite[ cellObject, $reformattedCell ];
-                                Remove[ x, cellObject ];
-                                ,
-                                catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
-                            ],
-                            Deinitialization :> Quiet @ TaskRemove @ task
+                        HoldAll
+                    ][
+                        x++;
+                        If[ MatchQ[ $reformattedCell, _Cell ],
+                            Pause[ 1 ];
+                            NotebookWrite[ EvaluationCell[ ], $reformattedCell ]; (* rewriting itself in a dynamic is OK on Cloud, not OK on Desktop *)
+                            ,
+                            catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                         ]
                     ],
-                "Output",
-                "ChatOutput",
-                Sequence @@ Flatten[ { $closedChatCellOptions } ],
-                Selectable      -> False,
-                Editable        -> False,
-                If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                    Sequence @@ { }
+                    BoxID -> "DynamicTextDisplay"
                 ],
-                CellTags           -> cellTags,
-                CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-                TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
-            ]
+            "Output",
+            "ChatOutput",
+            Sequence @@ Flatten[ { $closedChatCellOptions } ],
+            Selectable      -> False,
+            Editable        -> False,
+            (* Cloud: bug? the send button does not turn into a stop button, so the dingbat is the only "stop" button *)
+            If[ TrueQ @ settings[ "SetCellDingbat" ],
+                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                Sequence @@ { }
+            ],
+            (* Cloud: neither an empty list not Inherited auto-removes the CellTags option *)
+            If[ MatchQ[ cellTags, { } | Inherited ], Sequence @@ { }, CellTags -> cellTags ],
+            CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            PrivateCellOptions -> { "ContentsOpacity" -> 1 },
+            TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
         ]
     ];
 
@@ -2571,62 +2702,7 @@ activeAIAssistantCell[
                 True,                   # & ]
         },
         Cell[
-            BoxData @ outer @ ToBoxes @
-                DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
-                    
-                    DynamicWrapper[
-                        PaneSelector[
-                            {
-                                "Active" -> Dynamic[
-                                    finishedSignal = KeyExistsQ[ container, "FinishedCell" ];
-                                    scrollToEnd[ ];
-                                    cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
-                                    TrackedSymbols :> { },
-                                    UpdateInterval -> 0.5
-                                ],
-                                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
-                                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
-                            },
-                            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
-                            ImageSize -> Automatic
-                        ],
-
-                        If[ kernelWasQuitQ, NotebookDelete @ topCell ];
-                        If[ TrueQ @ finishedSignal,
-                            setCurrentValue[ topCell, Editable, True ];
-                            WriteChatOutputCell[ topCell, Lookup[ container, "FinishedCell", Cell["$Failed"] ], Lookup[ container, "FinishedCellInfo", <||> ] ];
-                        ],
-                        
-                        SynchronousUpdating -> False,
-                        TrackedSymbols      :> { kernelWasQuitQ, finishedSignal }
-                    ],
-
-                    BoxID            -> "DynamicTextDisplay",
-                    Deinitialization :> Quiet @ TaskRemove @ task,
-                    Initialization   :> (
-                        dmBox = EvaluationBox[ ];
-                        If[ TrueQ @ $WorkspaceChat || TrueQ @ $SidebarChat,
-                            topCell = ParentCell @ EvaluationCell[ ];
-                            If[ scrollOutputQ @ settings,
-                                If[ TrueQ @ $SidebarChat,
-                                    scrollToEnd = Lookup[
-                                        CurrentValue[ ParentCell @ topCell, TaggingRules ],
-                                        "ScrollPositionSymbol",
-                                        Function[ Null ],
-                                        Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
-                                    ]
-                                    ,
-                                    scrollToEnd = Function[ scrollOutput[ True, topCell ] ]
-                                ]
-                            ];
-                            ,
-                            topCell = EvaluationCell[ ];
-                            (* do not scroll main notebook chat evaluations *)
-                            (* If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ] *)
-                        ];
-                        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
-                        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
-                ],
+            BoxData @ outer @ ToBoxes @ activeAIAssistantDynamicModule[ container, settings, task, formatter, reformat ],
             "Output",
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
@@ -2636,10 +2712,10 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            If[ TrueQ @ settings[ "SetCellDingbat" ],
+            (* If[ TrueQ @ settings[ "SetCellDingbat" ],
                 CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                 Sequence @@ { }
-            ],
+            ], *)
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -2660,6 +2736,80 @@ activeAIAssistantCell[
     ];
 
 activeAIAssistantCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*activeAIAssistantDynamicModule*)
+activeAIAssistantDynamicModule // beginDefinition;
+
+activeAIAssistantDynamicModule // Attributes = { HoldFirst };
+
+(* Let the writeResult function do the final rewrite of the cell; it also ensures the cell is editable before rewrite *)
+activeAIAssistantDynamicModule[
+    container_,
+    settings_,
+    task_,
+    formatter_,
+    reformat_
+] :=
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
+    DynamicWrapper[
+        PaneSelector[
+            {
+                "Active" -> Dynamic[
+                    If[ KeyExistsQ[ container, "FinishedCell" ],
+                        finishedSignal = True;
+                        cachedDynamicOutput
+                        ,
+                        scrollToEnd[ ];
+                        cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
+                    ],
+                    TrackedSymbols :> { },
+                    UpdateInterval -> 0.5
+                ],
+                "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
+                "FinalWrite" -> Dynamic @ cachedDynamicOutput (* show the last calculated display while we wait for the full rewrite *)
+            },
+            Dynamic @ Which[ kernelWasQuitQ, "DeleteMe", finishedSignal, "FinalWrite", True, "Active" ],
+            ImageSize -> Automatic
+        ],
+
+        If[ kernelWasQuitQ, NotebookDelete @ topCell ],
+
+        SynchronousUpdating -> False,
+        TrackedSymbols      :> { kernelWasQuitQ }
+    ],
+
+    BoxID            -> "DynamicTextDisplay",
+    Deinitialization :> Quiet @ TaskRemove @ task,
+    Initialization   :> (
+        dmBox = EvaluationBox[ ];
+        Which[
+            TrueQ @ $SidebarChat,
+                topCell = ParentCell @ EvaluationCell[ ];
+                If[ scrollOutputQ @ settings,
+                    scrollToEnd = Lookup[
+                        CurrentValue[ ParentCell @ topCell, TaggingRules ],
+                        "ScrollPositionSymbol",
+                        Function[ Null ],
+                        Function[ x, Function[ x = { 0, Scaled[ 1. ] } ], HoldFirst ]
+                    ]
+                ],
+            TrueQ @ $WorkspaceChat,
+                topCell = ParentCell @ EvaluationCell[ ];
+                If[ scrollOutputQ @ settings,
+                    scrollToEnd = Function[ scrollOutput[ True, topCell ] ]
+                ],
+            True,
+                topCell = EvaluationCell[ ];
+                (* do not scroll main notebook chat evaluations *)
+                (* If[ scrollOutputQ @ settings, scrollToEnd = Function[ scrollOutput[ True, topCell ] ] ] *)
+        ];
+        If[ AssociationQ @ container, container[ "DynamicBoxObject" ] = dmBox ];
+        kernelWasQuitQ = (originalSessionID =!= $SessionID))  (* whenever the cell re-draws, check the $SessionID *)
+];
+
+activeAIAssistantDynamicModule // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2794,7 +2944,7 @@ resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
     icon,
     ContentPadding  -> False,
     FrameMargins    -> 0,
-    ImageSize       -> { 35, 35 },
+    ImageSize       -> { Automatic, 19 },
     ImageSizeAction -> "ShrinkToFit",
     Alignment       -> { Center, Center }
 ];
@@ -2854,6 +3004,8 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput = None;
 
+            If[ $cloudNotebooks, Return[ ] ]; (* Cloud: $reformattedCell becoming a CellObject causes the output to rewrite; does not work on desktop *)
+
             info = addProcessingArguments[
                 "WriteChatOutputCell",
                 <|
@@ -2872,13 +3024,14 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
                             "FinishedCell"     -> $reformattedCell,
                             "FinishedCellInfo" -> KeyTake[ info, { "ExpressionUUID", "ScrollOutput" } ] } ],
                         HoldFirst ] ]
-                , (* ELSE create a task to write the completed cell *)
-                With[ { new = new, info = info },
-                    applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
-                ];
+            ];
 
-                waitForLastChatOutput @ settings
-            ]
+            setCurrentValue[ cell, Editable, True ];
+            With[ { new = new, info = info },
+                applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
+            ];
+
+            waitForLastChatOutput @ settings
         ]
     ],
     throwInternalFailure
@@ -2951,7 +3104,7 @@ reformatCell // beginDefinition;
 
 (* FIXME: why does this actually need UsingFrontEnd here? *)
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
-    Module[ { formatter, toolFormatter, content, rules, dingbat, outer },
+    Module[ { formatter, toolFormatter, content, rules, outer },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
@@ -2972,8 +3125,6 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             AssociationQ,
             "TaggingRules"
         ];
-
-        dingbat = makeOutputDingbat @ settings;
 
         outer = Which[
             TrueQ @ $WorkspaceChat,
@@ -3002,15 +3153,8 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
-            CellTags          -> Flatten @ { uuid, cellTags },
+            If[ $cloudNotebooks, Sequence @@ { }, CellTags -> Flatten @ { uuid, cellTags } ],
             TaggingRules      -> rules,
-            (* If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
-                If[ TrueQ @ settings[ "SetCellDingbat" ],
-                    CellDingbat -> dingbat,
-                    Sequence @@ { }
-                ]
-            ], *)
             If[ TrueQ @ open,
                 Sequence @@ { },
                 Sequence @@ Flatten @ {
@@ -3133,7 +3277,7 @@ makeReformattedCellTaggingRules // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
-makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited;
+(* makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited; *)
 
 makeCompactChatData[
     message_,
@@ -3165,7 +3309,7 @@ makeCompactChatData // endDefinition;
 (*makeMinimalPageData*)
 makeMinimalPageData // beginDefinition;
 
-makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
+(* makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited; *)
 
 makeMinimalPageData[ content_, settings_Association ] :=
 BaseEncode @ BinarySerialize[
@@ -3230,26 +3374,21 @@ $exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 restoreLastPage // beginDefinition;
 
 restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclose[
-    Module[ { pageData, b64, bytes, content, dingbat, uuid, cell },
+    Module[ { pageData, b64, bytes, content, uuid, cell },
 
         pageData = ConfirmBy[ rules[ "PageData" ], AssociationQ, "PageData" ];
         b64      = ConfirmBy[ pageData[ "Pages", pageData[ "CurrentPage" ] ], StringQ, "Base64" ];
         bytes    = ConfirmBy[ ByteArray @ b64, ByteArrayQ, "ByteArray" ];
-        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData, "TextData" ];
-        dingbat  = makeOutputDingbat @ settings;
+        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData | _Association, "TextData" ];
         uuid     = CreateUUID[ ];
 
         cell = Cell[
-            content,
+            If[ AssociationQ @ content, Lookup[ content, "Response" ], content ],
             If[ $SidebarChat, "NotebookAssistant`Sidebar`ChatOutput", "ChatOutput" ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
-            ExpressionUUID    -> uuid,  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
-            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> TemplateBox[ { dingbat }, "AssistantIconTabbed" ],
-                CellDingbat -> dingbat
-            ]
+            ExpressionUUID    -> uuid  (* FIXME: this doesn't guarantee a CellObject with the intended UUID!!! *)
         ];
 
         WithCleanup[
@@ -3382,7 +3521,7 @@ toErrorBoxes[ text_String ] := Enclose[
     throwInternalFailure
 ];
 
-toErrorBoxes[ text: $$testDataList ] := Enclose[
+toErrorBoxes[ text: $$textDataList ] := Enclose[
     Module[ { label, box },
         label = RawBoxes @ Cell[
             TextData @ Flatten @ { $errorIconBox, text },

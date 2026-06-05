@@ -13,12 +13,79 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$defaultLLMKitService  := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
-$defaultLLMKitModelName = "gpt-4.1-2025-04-14";
+(* Add additional supported models here as needed: *)
+$llmKitPreferredModels = <|
+    "Pro"      -> { "gpt-5.4" },
+    "Research" -> { "gpt-5.4" },
+    "Basic"    -> { "gpt-5.4-mini" }
+|>;
+
+$$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
+
+$defaultLLMKitService   := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
+$defaultLLMKitModelName := defaultLLMKitModelName[ ];
+$fallbackLLMKitModelName = "gpt-5.4-2026-03-05";
 
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
 $defaultModelIcon = "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LLMKit*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*defaultLLMKitModelName*)
+defaultLLMKitModelName // beginDefinition;
+
+defaultLLMKitModelName[ ] :=
+    defaultLLMKitModelName @ getLLMKitInfo[ ];
+
+defaultLLMKitModelName[ None ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName[ as_Association ] :=
+    defaultLLMKitModelName[ as[ "accessLevel" ], as[ "availableModels" ] ];
+
+defaultLLMKitModelName[ level: $$llmKitAccessLevel, models_ ] := Enclose[
+    ConfirmBy[ chooseFirstAvailableModel[ level, models ], StringQ, "ModelName" ],
+    throwInternalFailure
+];
+
+defaultLLMKitModelName[ _, _ ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseFirstAvailableModel*)
+chooseFirstAvailableModel // beginDefinition;
+
+chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
+    Module[ { preferred, available },
+        preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
+        available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
+        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+    ],
+    throwInternalFailure
+];
+
+chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractModelNames*)
+extractModelNames // beginDefinition;
+extractModelNames[ _Missing ] := { };
+extractModelNames[ models_List ] := Flatten[ extractModelNames /@ models ];
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_List ] ] := extractModelNames @ models;
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_Association ] ] := extractModelNames @ Values @ models;
+extractModelNames[ KeyValuePattern @ { "model" -> name_String, "type" -> "ChatCompletion" } ] := name;
+extractModelNames[ KeyValuePattern[ "type" -> _ ] ] := Nothing;
+extractModelNames[ name_String ] := name;
+extractModelNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -376,25 +443,25 @@ makeBaseID // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*capitalize*)
 capitalize // beginDefinition;
-
 capitalize[ { } ] := { };
-
-capitalize[ str: _String | { __String } ] := StringReplace[
-    Capitalize @ str,
-    {
-        WordBoundary~~"ai"~~WordBoundary -> "AI",
-        WordBoundary~~"dbrx"~~WordBoundary -> "Databricks",
-        WordBoundary~~"dpo"~~WordBoundary -> "DPO",
-        WordBoundary~~"hf"~~WordBoundary -> "HF",
-        WordBoundary~~"llm"~~WordBoundary -> "LLM",
-        WordBoundary~~"lm"~~WordBoundary -> "LM",
-        WordBoundary~~"vl"~~WordBoundary -> "VL",
-        WordBoundary~~"llama"~~WordBoundary -> "Llama"
-    },
-    IgnoreCase -> True
-];
-
+capitalize[ str: _String | { __String } ] := StringReplace[ Capitalize @ str, $capitalizeRules, IgnoreCase -> True ];
 capitalize // endDefinition;
+
+$capitalizeRules = MapAt[
+    WordBoundary ~~ # ~~ WordBoundary &,
+    {
+        "ai"         -> "AI",
+        "dbrx"       -> "Databricks",
+        "dpo"        -> "DPO",
+        "hf"         -> "HF",
+        "llama"      -> "Llama",
+        "llm"        -> "LLM",
+        "lm"         -> "LM",
+        "moonshotAI" -> "MoonshotAI",
+        "vl"         -> "VL"
+    },
+    { All, 1 }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -458,6 +525,10 @@ chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrPara
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
 
+chooseModelFamily0[ wordsPattern[ { "Grok", "3", ___ } ] ] := "Grok3";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4.2" | "4.20", ___ } ] ] := "Grok42";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4", ___ } ] ] := "Grok4";
+
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
 chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";
 chooseModelFamily0[ wordsPattern[ "CodeGemma" ~~ $$versionOrParams ] ] := "Gemma";
@@ -465,6 +536,8 @@ chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen"
 chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
+
+chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.5", ___ } ] ] := "KimiK25";
 
 chooseModelFamily0[ _String ] := None;
 
