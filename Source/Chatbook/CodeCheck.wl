@@ -267,7 +267,7 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 		, "LikelyFalsePositive" -> False
 		, "SafeToEvaluate" -> If[success, True, False]
 		, "Pattern" -> pat
-		, "FixedCode" -> If[success, fix["Code"], Missing["No brackets fix found"]]
+		, "FixedCode" -> If[success, fix["Code"], If[MissingQ@fix, fix, Missing["No brackets fix found"]]]
 		} // Association
 
 
@@ -304,7 +304,7 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
 		]
-		, $MaxIterateTimeBracketsFix , Throw[Missing["No fix found"]] (*TimeConstrained*)
+		, $MaxIterateTimeBracketsFix , Throw[Missing["Time limit exceeded"]] (*TimeConstrained*)
 	]
  ]
 
