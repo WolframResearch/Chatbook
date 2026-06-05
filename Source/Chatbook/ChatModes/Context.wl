@@ -201,6 +201,21 @@ getInlineChatPrompt0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*getSidebarPrompt*)
+getSidebarPrompt // beginDefinition;
+
+getSidebarPrompt[ settings_Association ] :=
+    If[ TrueQ @ $SidebarChat && TrueQ @ settings[ "AllowSelectionContext" ],
+        Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
+            getContextFromSelection[ $evaluationNotebook, settings ]
+        ] // LogChatTiming[ "GetWorkspacePrompt" ],
+        None
+    ];
+
+getSidebarPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*getWorkspacePrompt*)
 getWorkspacePrompt // beginDefinition;
 
@@ -226,8 +241,12 @@ getContextFromSelection // Options = {
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
     Module[ { focused, userNotebook },
-        focused = settings[ "FocusedNotebook" ];
-        userNotebook = If[ notebookObjectQ @ focused, focused, getUserNotebook[ ] ];
+        If[ TrueQ @ $WorkspaceChat,
+            focused = settings[ "FocusedNotebook" ];
+            userNotebook = If[ notebookObjectQ @ focused, focused, getUserNotebook[ ] ];
+            ,
+            userNotebook = $evaluationNotebook;
+        ];
         getContextFromSelection[ chatNB, userNotebook, settings, opts ]
     ];
 
@@ -528,6 +547,48 @@ insertSelectionIndicator // endDefinition;
 (* ::Subsection::Closed:: *)
 (*selectContextCells*)
 selectContextCells // beginDefinition;
+
+selectContextCells[ nbo_NotebookObject ] /; TrueQ @ $SidebarChat :=
+Module[ { sidebarCell, selectionAtTimeOfInputConfirmation, allCells, firstBeforeCell, selectedCells, firstAfterCell, currentSelections },
+    (* The TaggingRules of the sidebar cell contains the selection objects at the time the sidebar input field content was confirmed *)
+    sidebarCell = sidebarCellObject @ nbo;
+    selectionAtTimeOfInputConfirmation = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ];
+    currentSelections = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
+
+    allCells = Cells @ nbo;
+    If[ Not @ AssociationQ @ selectionAtTimeOfInputConfirmation,
+        Return @ <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>
+    ];
+
+    WithCleanup[
+        With[ { s = selectionAtTimeOfInputConfirmation[[2]] }, (* FIXME use Lookup instead of part to get remnant selection *)
+            FE`Evaluate @ FEPrivate`SetCurrentSelections @ Association[ "ActiveSelection" -> s ]
+        ];
+        selectedCells   = SelectedCells @ nbo;
+        firstBeforeCell = PreviousCell @ NotebookSelection @ nbo;
+        firstAfterCell  = NextCell @ NotebookSelection @ nbo;
+        ,
+        With[ { s1 = currentSelections, s2 = selectionAtTimeOfInputConfirmation },
+            FE`Evaluate @ FEPrivate`SetCurrentSelections @ s1;
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s1;
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s2;
+            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
+        ]
+    ];
+
+    (* It is possible that there is no main notebook selection: default to all cells as "Before" *)
+    If[ firstBeforeCell === None && firstAfterCell === None && selectedCells === { },
+        <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>
+        ,
+        <|
+            "Before" -> With[ { p = FirstPosition[ allCells, firstBeforeCell, None ] },
+                If[ p =!= None, Reverse @ Take[ Reverse @ Extract[ allCells, { ;; p[[1]] } ], UpTo[ $maxCellsBeforeSelection ] ], { } ] ],
+            "Selected" -> selectedCells,
+            "After" -> With[ { p = FirstPosition[ allCells, firstAfterCell, None ] },
+                If[ p =!= None, Take[ Extract[ allCells, { p[[1]] ;; } ], UpTo[ $maxCellsAfterSelection ] ], { } ] ]
+        |>
+    ]
+]
 
 selectContextCells[ nbo_NotebookObject ] :=
     selectContextCells @ Cells @ nbo;

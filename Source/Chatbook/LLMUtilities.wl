@@ -14,11 +14,11 @@ $llmSynthesizeAuthentication := If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
 
 $defaultLLMSynthesizeEvaluator :=
     If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
-        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4o-mini" |> |>,
-        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |>
+        <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-5.4-nano" |> |>,
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4-nano" |> |>
     ];
 
-$defaultConfigPersona = "NotebookAssistant";
+$defaultConfigPersona = "WolframAIAssistant";
 
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,

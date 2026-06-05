@@ -48,7 +48,7 @@ $defaultChatSettings = <|
     "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
-    "LLMEvaluator"                   -> "CodeAssistant",
+    "LLMEvaluator"                   -> "WolframAIAssistant",
     "MaxCellStringLength"            -> Automatic,
     "MaxContextTokens"               -> Automatic,
     "MaxOutputCellStringLength"      -> Automatic,
@@ -69,6 +69,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -237,8 +238,9 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "EndToken"          -> None,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -262,6 +264,78 @@ $modelAutoSettings[ "TogetherAI" ] = <| |>;
 
 $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
+|>;
+
+$modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
+    (* "Reasoning" -> <| "enabled" -> False |> *) (* Waiting on bug 474121 *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenRouter*)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "ProviderPreferences" -> <|
+        (* Some providers seem to have misconfigured inference stacks for this model,
+           so we specify that OpenRouter should avoid selecting them. *)
+        "ignore" -> {
+            (* no response after tool call *)
+            "deepinfra",
+            "venice",
+
+            (* stop tokens don't work *)
+            "cloudflare",
+            "siliconflow",
+            "atlas-cloud",
+
+            (* repeated punctuation issue across line breaks *)
+            "novita"
+        }
+    |>,
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xAI*)
+(*
+  * Grok model doc:
+    * Grok-4.2: https://docs.x.ai/developers/models/grok-4.2
+    * Grok-4: https://docs.x.ai/developers/models/grok-4
+      * changes compared to Grok-3: https://web.archive.org/web/20260402072522/https://docs.x.ai/developers/models
+    * Grok-3: https://docs.x.ai/developers/models/grok-3
+    * streaming: https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming
+*)
+
+$modelAutoSettings[ "xAI" ] = <| |>;
+
+$modelAutoSettings[ "xAI", "Grok3" ] = <|
+    "MaxContextTokens" -> 131072,
+    "Multimodal"       -> False,
+    "Reasoning"        -> False,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok4" ] = <|
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "Reasoning"        -> Missing[ "NotSupported" ], (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately? *)
+    "StopTokens"       -> Missing[ "NotSupported" ],
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok42" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "MaxContextTokens" -> 2000000
+|>;
+
+$modelAutoSettings[ "xAI", Automatic ] = <|
+    "EndToken"         -> None,
+    "ForceSynchronous" -> True,
+    "ToolMethod"       -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -341,6 +415,10 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
+$modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
+    "MaxContextTokens" -> 400000
+|>;
+
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -400,6 +478,19 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Kimi K2.5*)
+$modelAutoSettings[ Automatic, "KimiK25" ] = <|
+    "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
+    "EndToken"             -> None,
+    "HybridToolMethod"     -> False,
+    "MaxContextTokens"     -> 262144,
+    "Multimodal"           -> True,
+    "ToolCallRetryMessage" -> False,
+    "ToolMethod"           -> "Simple"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
@@ -423,6 +514,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
@@ -528,12 +620,7 @@ modelUnsupportedParameters // endDefinition;
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-
-$DefaultModel :=
-    If[ $VersionNumber >= 14.1,
-        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
-    ];
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1071,7 +1158,7 @@ autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
 
 autoStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
-        methodStopTokens @ as[ "ToolMethod" ],
+        methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
         If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
     },
@@ -1084,10 +1171,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
-methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
-methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
-methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Simple"        , end_ ] := Select[ { "\n/exec", end }, StringQ ];
+methodStopTokens[ "Service"       , end_ ] := Select[ { end }, StringQ ];
+methodStopTokens[ "Textual"|"JSON", end_ ] := Select[ { "ENDTOOLCALL", end }, StringQ ];
+methodStopTokens[ _               , end_ ] := Select[ { "ENDTOOLCALL", "\n/exec", end }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1195,58 +1282,8 @@ $maxTokensTable = <|
 (* ::Subsubsection::Closed:: *)
 (*multimodalQ*)
 multimodalQ // beginDefinition;
-multimodalQ[ as_Association ] := multimodalQ[ as, multimodalModelQ @ as[ "Model" ], as[ "EnableLLMServices" ] ];
-multimodalQ[ as_, True , False ] := True;
-multimodalQ[ as_, True , True  ] := multimodalPacletsAvailable[ ];
-multimodalQ[ as_, False, _     ] := False;
+multimodalQ[ as_Association ] := multimodalModelQ @ Lookup[ as, "Model", "UnknownModel" ];
 multimodalQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*$multimodalPacletsAvailable*)
-multimodalPacletsAvailable // beginDefinition;
-
-multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
-    initTools[ ];
-    multimodalPacletsAvailable[
-        PacletObject[ "Wolfram/LLMFunctions"     ],
-        PacletObject[ "ServiceConnection_OpenAI" ]
-    ]
-);
-
-multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[
-        PacletNewerQ[ llmFunctions, "1.2.4" ],
-        Or[ PacletNewerQ[ openAI, "13.3.18" ],
-            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
-        ]
-    ];
-
-multimodalPacletsAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*multimodalOpenAIQ*)
-multimodalOpenAIQ // beginDefinition;
-
-multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
-    Catch @ Module[ { dir, file, multimodal },
-
-        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
-
-        multimodal = WithCleanup[
-            Quiet @ Close @ file,
-            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
-            Quiet @ Close @ file
-        ];
-
-        StringQ @ multimodal
-    ],
-    throwInternalFailure
-];
-
-multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -38,7 +38,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 $CachedPersonaData = None;
-$corePersonaNames  = { "CodeAssistant", "CodeWriter", "PlainChat", "RawModel" };
+$corePersonaNames  = { "WolframAIAssistant", "PlainChat", "RawModel" };
 
 $promptFileBaseNames  = { "Pre", "Post", "ToolExamplePrompt", "ToolPostPrompt", "ToolPrePrompt" };
 $$promptFileBaseName  = Alternatives @@ $promptFileBaseNames;

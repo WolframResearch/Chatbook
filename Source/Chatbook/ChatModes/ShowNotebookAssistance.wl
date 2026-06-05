@@ -19,7 +19,7 @@ $sidebarChatWidth[ nbo_NotebookObject ] := Switch[ $OperatingSystem,
 $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
     "AppName"                   -> "NotebookAssistance",
-    "LLMEvaluator"              -> "NotebookAssistant",
+    "LLMEvaluator"              -> "WolframAIAssistant",
     "MaxContextTokens"          -> 2^15,
     "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
@@ -451,12 +451,11 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
                 
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
                 NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+                NotebookDelete /@ Cells[ sidebarCell, CellTags -> "SidebarSourcesDockedCell" | "SidebarChatTitleCell" ];
                 With[
                     {
-                        subDockedCell      = First[ Cells[ sidebarCell, CellTags -> "SidebarSubDockedCell" ],        Missing @ "NoSidebarSubDockedCell" ],
                         scrollablePaneCell = First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], Missing @ "NoScrollingSidebarCell" ]
                     },
-                    If[ ! MissingQ @ subDockedCell,      NotebookDelete @ subDockedCell ];
                     If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ];
                 ];
                 CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
@@ -606,7 +605,7 @@ sidebarCellObject// endDefinition;
 showNotebookAssistanceSidebar // beginDefinition;
 
 showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, settings0_Association ] := Enclose[
-    Module[ { sidebarCell },
+    Module[ { sidebarCell, chatInputCell },
         If[ TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ], Return @ Null ]; (* prevent sidebar from opening in dialogs and palettes *)
         If[ nbo === MessagesNotebook[ ], Return @ Null ]; (* prevent sidebar from opening in messages window *)
 
@@ -615,18 +614,27 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
         Which[
             FailureQ @ sidebarCell,
                  (* don't do anything else because this is the first time we've opened the sidebar in this notebook *)
-                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ], 
+                FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ];
+                sidebarCell = sidebarCellObject @ nbo;
+                chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ],
             
             TrueQ @ toggle,
                 If[ TrueQ @ FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nbo, { "NotebookAssistant", "Active" } ],
                     FrontEndTokenExecute[ nbo, "HideSidebar" ]
                     ,
-                    FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ]
+                    FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                    setCurrentValue[ First[ Cells[ nbo, AttachedCell -> True, CellTags -> "NotebookAssistantChatbarCell" ], { } ], { TaggingRules, "MinimizedQ" }, True ];
+                    chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                    If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ]
                 ],
             
             (* The sidebar assistant is persistant to a given notebook. *)
             True,
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
+                chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];
+                If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ];
                 
                 (* will we ever need to do this with the sidebar chat...? *)
                 If[ TrueQ @ evaluate,
@@ -674,20 +682,38 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                   ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
-        If[ movedLastChatToSourcesIndicatorQ,
-            writeWorkspaceChatSubDockedCell[
-                nbo,
-                With[ { nbo = nbo },
-                    Button[
-                        MouseAppearance[
-                            Style[
-                                Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
-                                "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
+        If[ movedLastChatToSourcesIndicatorQ && TrueQ @ new,
+            With[ { nbo = nbo },
+                AttachCell[
+                    nbo,
+                    Cell[ BoxData @ ToBoxes @
+                        Framed[
+                            Button[
+                                MouseAppearance[
+                                    Style[
+                                        Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
+                                        "WorkspaceChatToolbarTitle",
+                                        FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
+                                        FontFamily -> "Source Sans Pro",
+                                        FontSlant  -> Italic,
+                                        FontWeight -> Plain
+                                    ],
+                                    "LinkHand"
+                                ], (* using LinkHand to indicate the sub-docked cell is clickable *)
+                                toggleOverlayMenu[ nbo, None, "History" ],
+                                Appearance -> "Suppressed"
                             ],
-                            "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                        toggleOverlayMenu[ nbo, "History" ],
-                        Appearance -> "Suppressed"
-                    ]
+                            Alignment    -> { Center, Center },
+                            Background   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
+                            FrameMargins -> { { 7, 7 }, { 4, 4 } },
+                            FrameStyle   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
+                            ImageMargins -> 0,
+                            ImageSize    -> Scaled[ 1. ]
+                        ],
+                        "AttachedOverlayMenu",
+                        CellTags -> "MovedLastChatToSourcesIndicator"
+                    ],
+                    { Left, Top }, 0, { Left, Top }
                 ]
             ]
         ];

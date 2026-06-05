@@ -276,6 +276,7 @@ $graphicsHeads = Alternatives[
 
 $$ignoredImportImage = Alternatives[
     FrontEnd`FileName[ { "Documentation", "FooterIcons" }, _ ],
+    FrontEnd`FileName[ { "Documentation", "Miscellaneous" }, _ ],
     FrontEnd`FileName[ { "Documentation", "SymbolIcons", _ }, _ ]
 ];
 
@@ -845,6 +846,8 @@ cellsToString[ cells_List ] :=
 rasterWholeCellQ // beginDefinition;
 
 rasterWholeCellQ[ $$ignoredBox ] := False;
+
+rasterWholeCellQ[ Cell[ _, "GuideTitle", ___ ] ] := False;
 
 rasterWholeCellQ[ cell_Cell ] := Enclose[
     Module[ { maxBoxCount, boxes, count },
@@ -2530,6 +2533,12 @@ boxToString[ Cell[ boxes_, "FunctionEssay", ___ ] ] :=
 (*Guide Pages*)
 boxToString[ GridBox[ { { cell: Cell[ _, "GuideTitle", ___ ], TagBox[ _ButtonBox, __ ] } }, ___ ] ] :=
     boxToString @ cell;
+
+boxToString[ Cell[
+    BoxData[ GridBox[ { { cell: Cell[ _, "GuideTitle", ___ ], TagBox[ _ButtonBox, ___ ] } }, ___ ], ___ ],
+    "GuideTitle",
+    ___
+] ] := boxToString @ cell;
 
 (* ctrl+= hints on entity-related guide pages: *)
 boxToString[ Cell[
