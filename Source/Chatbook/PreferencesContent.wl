@@ -92,7 +92,11 @@ createPreferencesContent[ ] := Enclose[
                 serviceSelector = makeServiceSelector[
                     <|
                         $availableServices,
-                        "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                        "LLMKit" -> <|
+                            "Service" -> "Wolfram AI Access",
+                            (* CLOUD-27832: ImageSizeAction doesn't work, so resize Graphics before displaying it. This change does not affect Desktop. *)
+                            "Icon" -> Replace[ chatbookExpression[ "llmkit-dialog-sm" ], RawBoxes[ a_[ b___, ImageSize -> _, c___ ] ] :> RawBoxes[ a[ b, ImageSize -> { 21, 21 }, c ] ] ]
+                        |>
                     |>,
                     dmPrefCache, service, model, modelNameSelector, state ];
 
@@ -554,7 +558,11 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <|
+                    "Service" -> "Wolfram AI Access",
+                    (* CLOUD-27832: ImageSizeAction doesn't work, so resize Graphics before displaying it. This change does not affect Desktop. *)
+                    "Icon" -> Replace[ chatbookExpression[ "llmkit-dialog-sm" ], RawBoxes[ a_[ b___, ImageSize -> _, c___ ] ] :> RawBoxes[ a[ b, ImageSize -> { 21, 21 }, c ] ] ]
+                |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
