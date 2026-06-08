@@ -947,7 +947,8 @@ makeInstructionsContent[ Dynamic[ dmPrefCache_ ] ] :=
                     Dynamic @ modified,
                     ImageSize -> Automatic
                 ]
-            }
+            },
+            BaseStyle -> { LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } }
         ]
     ];
 
@@ -1538,7 +1539,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { retryButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "NotCloudConnected" ->
@@ -1548,7 +1549,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton, tr[ "PreferencesContentLLMKitSignInOr" ], signInButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedButNotSubscribed" ->
@@ -1558,7 +1559,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedAndSubscribed" ->
@@ -1594,7 +1595,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                                 }
                                             },
                                             Alignment        -> { Left, Baseline },
-                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
+                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                             BaselinePosition -> { 1, 2 },
                                             Spacings         -> { 0.25, 0.5 }
                                         ],
@@ -1612,18 +1613,20 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                 ]
                             ],
                             BaselinePosition -> Baseline,
-                            ImageSize -> Automatic ],
+                            ImageSize        -> Automatic ],
                         "",
                         username
                     }
                 },
                 Alignment -> { Left, Baseline },
-                ItemSize -> { { Automatic, Fit, Automatic } },
-                Spacings -> { Automatic, 0.7 } ],
-            Background -> color @ "PreferencesContentBackground",
-            FrameMargins -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle -> color @ "PreferencesContentServicesLLMKitFrame",
-            ImageSize -> Scaled[ 1 ],
+                BaseStyle -> { LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                ItemSize  -> { { Automatic, Fit, Automatic } },
+                Spacings  -> { Automatic, 0.7 }
+            ],
+            Background     -> color @ "PreferencesContentBackground",
+            FrameMargins   -> { { 15, 15 }, { 15, 10 } },
+            FrameStyle     -> color @ "PreferencesContentServicesLLMKitFrame",
+            ImageSize      -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ]
 ];
