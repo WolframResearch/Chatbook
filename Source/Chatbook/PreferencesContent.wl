@@ -92,7 +92,11 @@ createPreferencesContent[ ] := Enclose[
                 serviceSelector = makeServiceSelector[
                     <|
                         $availableServices,
-                        "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                        "LLMKit" -> <|
+                            "Service" -> "Wolfram AI Access",
+                            (* CLOUD-27832: ImageSizeAction doesn't work, so resize Graphics before displaying it. This change does not affect Desktop. *)
+                            "Icon" -> Replace[ chatbookExpression[ "llmkit-dialog-sm" ], RawBoxes[ a_[ b___, ImageSize -> _, c___ ] ] :> RawBoxes[ a[ b, ImageSize -> { 21, 21 }, c ] ] ]
+                        |>
                     |>,
                     dmPrefCache, service, model, modelNameSelector, state ];
 
@@ -554,7 +558,11 @@ makeModelSelector0[ type_String, dmPrefCache_, default_, service_, model_, state
             type,
             <|
                 $availableServices,
-                "LLMKit" -> <| "Service" -> "Wolfram AI Access", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>
+                "LLMKit" -> <|
+                    "Service" -> "Wolfram AI Access",
+                    (* CLOUD-27832: ImageSizeAction doesn't work, so resize Graphics before displaying it. This change does not affect Desktop. *)
+                    "Icon" -> Replace[ chatbookExpression[ "llmkit-dialog-sm" ], RawBoxes[ a_[ b___, ImageSize -> _, c___ ] ] :> RawBoxes[ a[ b, ImageSize -> { 21, 21 }, c ] ] ]
+                |>
             |>
         },
         dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector
@@ -947,7 +955,8 @@ makeInstructionsContent[ Dynamic[ dmPrefCache_ ] ] :=
                     Dynamic @ modified,
                     ImageSize -> Automatic
                 ]
-            }
+            },
+            BaseStyle -> { LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } }
         ]
     ];
 
@@ -1386,7 +1395,7 @@ makeLLMPanel // beginDefinition;
 (* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 makeLLMPanel[ ] :=
 Module[ { retryButton, subscribeButton, username, signInButton, manageButton, upgradeToProOrResearchButton, upgradeToResearchButton },
-    DynamicModule[ { Typeset`cachedUserData = None },
+    DynamicModule[ { Typeset`cachedUserData = None, Typeset`subscriptionLevel = None },
         subscribeButton =
             Button[
                 redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
@@ -1426,13 +1435,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                         ]
                 ],
                 CloudConnect[ ];
-                If[ $CloudUserID =!= None && Not @ AssociationQ @ Typeset`cachedUserData,
-                    Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
-                        Wolfram`LLMFunctions`Common`$LLMKitInfo
-                        ,
-                        getServiceData[ ]
-                    ];
-                ],
+                If[ $CloudUserID =!= None && Not @ AssociationQ @ Typeset`cachedUserData, Typeset`cachedUserData = getServiceData[ ] ],
                 Appearance       -> "Suppressed",
                 BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1449,11 +1452,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                             color @ "PreferencesContentLLMSignInButtonFont"
                         ]
                 ],
-                Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
-                    Wolfram`LLMFunctions`Common`$LLMKitInfo
-                    ,
-                    getServiceData[ ]
-                ],
+                Typeset`cachedUserData = getServiceData[ ],
                 Appearance       -> "Suppressed",
                 BaseStyle        -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1519,17 +1518,13 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                             {
                                 (* We need to quickly check whether we have a subscription without the need for setting up a channel listener. *)
                                 "Loading" ->
-                                    DynamicModule[ { },
+                                    DynamicWrapper[
                                         (* Display a progress indicator until LLMKit user data is set via initialization *)
-                                        ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
-                                        Initialization :> If[ Typeset`cachedUserData === None || FailureQ @ Typeset`cachedUserData,
-                                            Typeset`cachedUserData = If[ AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo,
-                                                Wolfram`LLMFunctions`Common`$LLMKitInfo
-                                                ,
-                                                getServiceData[ ]
-                                            ]
-                                        ],
-                                        SynchronousInitialization -> False
+                                        ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ]
+                                        ,
+                                        If[ Typeset`cachedUserData === None || FailureQ @ Typeset`cachedUserData, Typeset`cachedUserData = getServiceData[ ] ]
+                                        ,
+                                        SynchronousUpdating -> False
                                     ],
                                 "Retry" ->
                                     Grid[
@@ -1538,7 +1533,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { retryButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "NotCloudConnected" ->
@@ -1548,7 +1543,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton, tr[ "PreferencesContentLLMKitSignInOr" ], signInButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedButNotSubscribed" ->
@@ -1558,53 +1553,51 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3" },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedAndSubscribed" ->
-                                    DynamicModule[ { Typeset`subscriptionLevel = "Loading" },
-                                        Grid[
-                                            {
-                                                {
-                                                    chatbookExpression[ "CheckmarkGreen" ],
-                                                    Style[
-                                                        PaneSelector[
+                                    DynamicModule[ { Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
+                                        With[ { mb = manageButton, urb = upgradeToResearchButton, uprb = upgradeToProOrResearchButton },
+                                            DynamicWrapper[
+                                                Dynamic @ Typeset`display
+                                                ,
+                                                If[ Typeset`subscriptionLevel === None,
+                                                    Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
+                                                    Typeset`subscriptionLevel = Lookup[ Typeset`cachedUserData, "accessLevel", "Basic" ];
+                                                    Typeset`display =
+                                                        Grid[
                                                             {
-                                                                "Loading"  -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
-                                                                "Basic"    -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Basic" ],
-                                                                "Pro"      -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Pro" ],
-                                                                "Research" -> StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> "Research" ]
+                                                                {
+                                                                    chatbookExpression[ "CheckmarkGreen" ],
+                                                                    Style[
+                                                                        StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> Typeset`subscriptionLevel ],
+                                                                        FontColor -> color @ "PreferencesContentFont_1" ] },
+                                                                {
+                                                                    "",
+                                                                    Switch[ Sort @ Flatten @ Lookup[ Typeset`cachedUserData, "upgradeOptions", { }, Lookup[ #, "level", { } ]& ],
+                                                                        { "Pro", "Research" }, uprb,
+                                                                        { "Research" },        urb,
+                                                                        { },                   mb,
+                                                                        _,                     mb
+                                                                    ]
+                                                                }
                                                             },
-                                                            Dynamic @ Typeset`subscriptionLevel,
-                                                            ImageSize -> Automatic
-                                                        ],
-                                                        FontColor -> color @ "PreferencesContentFont_1" ] },
-                                                {
-                                                    "",
-                                                    PaneSelector[
-                                                        {
-                                                            "Loading"  -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ],
-                                                            "Basic"    -> upgradeToProOrResearchButton,
-                                                            "Pro"      -> upgradeToResearchButton,
-                                                            "Research" -> manageButton
-                                                        },
-                                                        Dynamic @ Typeset`subscriptionLevel,
-                                                        ImageSize -> Automatic
-                                                    ]
-                                                }
-                                            },
-                                            Alignment        -> { Left, Baseline },
-                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3" },
-                                            BaselinePosition -> { 1, 2 },
-                                            Spacings         -> { 0.25, 0.5 }
-                                        ],
-                                    Initialization :> (Typeset`subscriptionLevel = Lookup[ Typeset`cachedUserData, "accessLevel", "Basic" ]),
-                                    SynchronousInitialization -> False
-                                ]
+                                                            Alignment        -> { Left, Baseline },
+                                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                                                            BaselinePosition -> { 1, 2 },
+                                                            Spacings         -> { 0.25, 0.5 }
+                                                        ];
+                                                ]
+                                                ,
+                                                SynchronousUpdating -> False
+                                            ]
+                                        ]
+                                    ]
                             },
                             Dynamic[
                                 Which[
-                                    $CloudUserID === None, "NotCloudConnected",
+                                    $CloudUserID === None, Typeset`cachedUserData = None; Typeset`subscriptionLevel = None; "NotCloudConnected",
                                     FailureQ @ Typeset`cachedUserData, "Retry",
                                     !AssociationQ[ Typeset`cachedUserData ], "Loading",
                                     Lookup[ Typeset`cachedUserData, "userHasSubscription", False, TrueQ ], "CloudConnectedAndSubscribed",
@@ -1612,18 +1605,20 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                 ]
                             ],
                             BaselinePosition -> Baseline,
-                            ImageSize -> Automatic ],
+                            ImageSize        -> Automatic ],
                         "",
                         username
                     }
                 },
                 Alignment -> { Left, Baseline },
-                ItemSize -> { { Automatic, Fit, Automatic } },
-                Spacings -> { Automatic, 0.7 } ],
-            Background -> color @ "PreferencesContentBackground",
-            FrameMargins -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle -> color @ "PreferencesContentServicesLLMKitFrame",
-            ImageSize -> Scaled[ 1 ],
+                BaseStyle -> { LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                ItemSize  -> { { Automatic, Fit, Automatic } },
+                Spacings  -> { Automatic, 0.7 }
+            ],
+            Background     -> color @ "PreferencesContentBackground",
+            FrameMargins   -> { { 15, 15 }, { 15, 10 } },
+            FrameStyle     -> color @ "PreferencesContentServicesLLMKitFrame",
+            ImageSize      -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ]
 ];
