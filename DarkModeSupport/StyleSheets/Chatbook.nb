@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.5.149.3988871106"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990071603"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -823,49 +823,51 @@ Notebook[
        DynamicWrapperBox[
         DynamicBox[ToBoxes[Typeset`display$$, StandardForm]],
         Catch[
-         With[
-          {
-           Wolfram`Chatbook`UI`Private`tagRules$ = 
-            CurrentValue[Typeset`targetCell$$, TaggingRules]
-          },
-          Typeset`display$$ = 
-           Which[
-            FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
-            Wolfram`Chatbook`Common`chatbookIcon[
-             "ChatOutputCellDingbat",
-             False
-            ],
-            KeyExistsQ[
-             Wolfram`Chatbook`UI`Private`tagRules$,
-             "PageData"
-            ],
-            Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
-             Typeset`targetCell$$,
-             Typeset`dingbatCell$$,
-             Lookup[
+         If[ Not[Wolfram`Chatbook`Common`$cloudNotebooks],
+          With[
+           {
+            Wolfram`Chatbook`UI`Private`tagRules$ = 
+             CurrentValue[Typeset`targetCell$$, TaggingRules]
+           },
+           Typeset`display$$ = 
+            Which[
+             FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+             Wolfram`Chatbook`Common`chatbookIcon[
+              "ChatOutputCellDingbat",
+              False
+             ],
+             KeyExistsQ[
               Wolfram`Chatbook`UI`Private`tagRules$,
-              "PageData",
-              <| |>
-             ]
-            ],
-            KeyExistsQ[
-             Wolfram`Chatbook`UI`Private`tagRules$,
-             "ChatData"
-            ],
-            Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
-             Lookup[
+              "PageData"
+             ],
+             Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
+              Typeset`targetCell$$,
+              Typeset`dingbatCell$$,
+              Lookup[
+               Wolfram`Chatbook`UI`Private`tagRules$,
+               "PageData",
+               <| |>
+              ]
+             ],
+             KeyExistsQ[
               Wolfram`Chatbook`UI`Private`tagRules$,
-              "ChatData",
-              <| |>,
-              BinaryDeserialize[BaseDecode[#1]] &
+              "ChatData"
+             ],
+             Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
+              Lookup[
+               Wolfram`Chatbook`UI`Private`tagRules$,
+               "ChatData",
+               <| |>,
+               BinaryDeserialize[BaseDecode[#1]] &
+              ]
+             ],
+             True,
+             Wolfram`Chatbook`Common`chatbookIcon[
+              "ChatOutputCellDingbat",
+              False
              ]
-            ],
-            True,
-            Wolfram`Chatbook`Common`chatbookIcon[
-             "ChatOutputCellDingbat",
-             False
             ]
-           ]
+          ]
          ],
          Blank[]
         ],
@@ -3226,49 +3228,51 @@ Notebook[
        DynamicWrapperBox[
         DynamicBox[ToBoxes[Typeset`display$$, StandardForm]],
         Catch[
-         With[
-          {
-           Wolfram`Chatbook`UI`Private`tagRules$ = 
-            CurrentValue[Typeset`targetCell$$, TaggingRules]
-          },
-          Typeset`display$$ = 
-           Which[
-            FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
-            Wolfram`Chatbook`Common`chatbookIcon[
-             "ChatOutputCellDingbat",
-             False
-            ],
-            KeyExistsQ[
-             Wolfram`Chatbook`UI`Private`tagRules$,
-             "PageData"
-            ],
-            Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
-             Typeset`targetCell$$,
-             Typeset`dingbatCell$$,
-             Lookup[
+         If[ Not[Wolfram`Chatbook`Common`$cloudNotebooks],
+          With[
+           {
+            Wolfram`Chatbook`UI`Private`tagRules$ = 
+             CurrentValue[Typeset`targetCell$$, TaggingRules]
+           },
+           Typeset`display$$ = 
+            Which[
+             FailureQ[Wolfram`Chatbook`UI`Private`tagRules$],
+             Wolfram`Chatbook`Common`chatbookIcon[
+              "ChatOutputCellDingbat",
+              False
+             ],
+             KeyExistsQ[
               Wolfram`Chatbook`UI`Private`tagRules$,
-              "PageData",
-              <| |>
-             ]
-            ],
-            KeyExistsQ[
-             Wolfram`Chatbook`UI`Private`tagRules$,
-             "ChatData"
-            ],
-            Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
-             Lookup[
+              "PageData"
+             ],
+             Wolfram`Chatbook`UI`Private`makeChatOutputPagedDingbat[
+              Typeset`targetCell$$,
+              Typeset`dingbatCell$$,
+              Lookup[
+               Wolfram`Chatbook`UI`Private`tagRules$,
+               "PageData",
+               <| |>
+              ]
+             ],
+             KeyExistsQ[
               Wolfram`Chatbook`UI`Private`tagRules$,
-              "ChatData",
-              <| |>,
-              BinaryDeserialize[BaseDecode[#1]] &
+              "ChatData"
+             ],
+             Wolfram`Chatbook`UI`Private`makeChatOutputDingbat[
+              Lookup[
+               Wolfram`Chatbook`UI`Private`tagRules$,
+               "ChatData",
+               <| |>,
+               BinaryDeserialize[BaseDecode[#1]] &
+              ]
+             ],
+             True,
+             Wolfram`Chatbook`Common`chatbookIcon[
+              "ChatOutputCellDingbat",
+              False
              ]
-            ],
-            True,
-            Wolfram`Chatbook`Common`chatbookIcon[
-             "ChatOutputCellDingbat",
-             False
             ]
-           ]
+          ]
          ],
          Blank[]
         ],
