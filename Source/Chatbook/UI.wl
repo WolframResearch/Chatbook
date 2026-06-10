@@ -1184,16 +1184,22 @@ DynamicModule[
 		,
 		(* this updates whenever TaggingRules changes here, or at a more global scope *)
 		Catch[
-			With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
-				Typeset`display = Which[
-					FailureQ @ tagRules,
-						chatbookIcon[ "ChatOutputCellDingbat", False ],
-					KeyExistsQ[ tagRules, "PageData" ],
-						makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
-					KeyExistsQ[ tagRules, "ChatData" ],
-						makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
-					True,
-						chatbookIcon[ "ChatOutputCellDingbat", False ]
+			(* CLOUD-28257: never look inside potentially large data stored in TaggingRules
+				Consequences:
+					1. Cloud only gets a static CellDingbat of the generic chat icon for ChatOutput cells.
+					2. No PageData interface. *)
+			If[ ! $cloudNotebooks,
+				With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
+					Typeset`display = Which[
+						FailureQ @ tagRules,
+							chatbookIcon[ "ChatOutputCellDingbat", False ],
+						KeyExistsQ[ tagRules, "PageData" ],
+							makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
+						KeyExistsQ[ tagRules, "ChatData" ],
+							makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
+						True,
+							chatbookIcon[ "ChatOutputCellDingbat", False ]
+					]
 				]
 			]
 			,
