@@ -2275,7 +2275,13 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
 
-        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
+        cellExpr = Cell[ text, "ChatInput",
+            CellTags -> uuid,
+            (* 476251: chatbar only uses Wolfram services and assistant *)
+            TaggingRules -> <|
+                "ChatNotebookSettings" -> <|
+                    "Model"        -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+                    "LLMEvaluator" -> "WolframAIAssistant" |> |> ];
 
         currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo, Except[ _Association ] -> <| |> ];
         activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
@@ -2303,7 +2309,7 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
-        setCurrentValue[ cellObject, CellTags, Inherited ];
+        setCurrentValue[ cellObject, CellTags, { } ];
 
         (* mark chatbar as the source of the chat input/output *)
         setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, True ];
