@@ -3250,11 +3250,11 @@ makeReformattedCellTaggingRules[
             "CellToStringData" -> string,
             "MessageTag"       -> tag,
             "ChatData"         -> makeCompactChatData[ string, tag, settings ],
-            "PageData"         -> <|
+            "PageData"         -> If[ $cloudNotebooks, Inherited, <|
                 "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
                 "CurrentPage"-> p
-            |>
+            |> ]
         |>,
         Inherited
     ]
@@ -3277,7 +3277,7 @@ makeReformattedCellTaggingRules // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
-(* makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited; *)
+makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited;
 
 makeCompactChatData[
     message_,
@@ -3309,7 +3309,7 @@ makeCompactChatData // endDefinition;
 (*makeMinimalPageData*)
 makeMinimalPageData // beginDefinition;
 
-(* makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited; *)
+makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
 
 makeMinimalPageData[ content_, settings_Association ] :=
 BaseEncode @ BinarySerialize[
