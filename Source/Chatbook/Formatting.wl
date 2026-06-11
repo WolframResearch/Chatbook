@@ -1124,7 +1124,6 @@ copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
 copyCodeBlock[ code_String ] := (CopyToClipboard @ code; attachCopiedTooltip[ ]);
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
-copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
 copyCodeBlock[ cell_Cell ] := (CopyToClipboard @ cell; attachCopiedTooltip[ ]);
 copyCodeBlock // endDefinition;
 
@@ -1257,17 +1256,16 @@ stripMarkdownBoxes // endDefinition;
 (*getCodeBlockContent*)
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+
+getCodeBlockContent[   Cell[    cData_, "ChatCode", cs:"Input", ___ ] ] := reparseCodeBoxes @ Cell[ cData, cs ];
+getCodeBlockContent[   Cell[    cData_, cs:"ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] := Cell[ cData, cs, CellEvaluationLanguage -> lang ];
+getCodeBlockContent[   Cell[ b_BoxData, "ChatCodeBlock",        ___ ] ] := getCodeBlockContent @ First @ b; (* recurse into BoxData content if a ChatCodeBlock cell *)
+getCodeBlockContent[   Cell[   BoxData[ c_Cell ],               ___ ] ] := getCodeBlockContent @ c;         (* recurse into any BoxData inline cells *)
+getCodeBlockContent[ c:Cell[    cData_, cs_String,              ___ ] ] := c;                               (* stop recursion at unexpected cell structures *)
+
 getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := reparseCodeBoxes @ Cell[ boxes, "Input" ];
-
-getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] :=
-    Cell[ boxes, "ExternalLanguage", CellEvaluationLanguage -> lang ];
-
-getCodeBlockContent[ cell: Cell[ _, _String, ___ ] ] := cell;
 
 getCodeBlockContent // endDefinition;
 
