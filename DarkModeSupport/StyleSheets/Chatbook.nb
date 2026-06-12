@@ -11,27 +11,9 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Default.nb"]],
   Cell[
    StyleData["Notebook"],
-   PrivateCellOptions -> {
-    "AccentStyle" -> {
-     CellTrayWidgets -> <|"ChatIncluded" -> <|"Condition" -> True|>|>
-    }
-   },
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
     "GearMenu" -> <|"Condition" -> False|>,
-    "ChatIncluded" -> <|
-     "Condition" -> False,
-     "Content" ->
-      Cell[
-       BoxData[
-        DynamicBox[
-         ToBoxes[Wolfram`Chatbook`$IncludedCellWidget, StandardForm],
-         SingleEvaluation -> True
-        ]
-       ],
-       "ChatIncluded"
-      ]
-    |>,
     "ChatWidget" -> <|
      "Type" -> "Focus",
      "Content" ->
@@ -73,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990071603"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990249013"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -117,6 +99,7 @@ Notebook[
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
    CellFrame -> 1.75,
+   ShowGroupOpener -> { },
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
@@ -190,22 +173,6 @@ Notebook[
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "WLTemplate",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseEntered" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "AccentIncludedCells",
-       Wolfram`ChatNB`cell
-      ]
-     ],
-    "MouseExited" :>
-     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-      Quiet[Needs["Wolfram`Chatbook`" -> None]];
-      Symbol["Wolfram`Chatbook`ChatbookAction"][
-       "RemoveCellAccents",
        Wolfram`ChatNB`cell
       ]
      ],
