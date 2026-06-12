@@ -516,6 +516,8 @@ chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Opus", "4", "7"|"8", ___ } ] ] := "ClaudeOpus47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Fable" , "5", ___ } ] ] := "ClaudeFable5";
+(*chooseModelFamily0[ wordsPattern[ { "Claude", "Mythos", "5", ___ } ] ] := "ClaudeMythos5";*) (* TODO *)
 
 chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";
 chooseModelFamily0[ wordsPattern[ { "Gemini", "3", ___ } ] ] := "Gemini3";
