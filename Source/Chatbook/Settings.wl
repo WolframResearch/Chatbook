@@ -152,6 +152,7 @@ $modelAutoSettings = <| |>;
 $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
+    "PresencePenalty"           -> Missing[ "NotSupported" ],
     "ReplaceUnicodeCharacters"  -> True,
     "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
     "ToolMethod"                -> "Service"
@@ -175,6 +176,11 @@ $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
 $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "MaxContextTokens" -> 200000,
     "Multimodal"       -> True
+|>;
+
+$modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
