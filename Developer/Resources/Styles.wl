@@ -126,6 +126,7 @@ Cell[
     CellFrameRoundingRadius  -> 8,
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
+    ShowGroupOpener          -> { },
     TaggingRules             -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
