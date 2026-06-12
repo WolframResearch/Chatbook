@@ -183,6 +183,17 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
+$modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
+    "MaxContextTokens" -> 1000000,
+    "Multimodal"       -> True,
+    "Reasoning"        -> "adaptive",
+    "Temperature"      -> 1
+|>;
+
+(* TODO *)
+(*$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] =
+    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ];*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*AzureOpenAI*)
