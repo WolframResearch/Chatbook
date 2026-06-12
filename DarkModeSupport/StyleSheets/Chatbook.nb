@@ -55,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990247606"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990249013"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -99,6 +99,7 @@ Notebook[
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
    CellFrame -> 1.75,
+   ShowGroupOpener -> { },
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
