@@ -302,7 +302,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
