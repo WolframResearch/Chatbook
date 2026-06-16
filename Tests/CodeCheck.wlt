@@ -503,11 +503,11 @@ VerificationTest[
     TestID -> "11_brackets"
 ]
 
-(* VerificationTest[
+VerificationTest[
     CodeCheckFix[ "f[{{3}}]]" ][ "FixedCode" ],
-    Missing[ "No pattern", { { "Fatal", "UnexpectedCloser" } } ],
+    "f[{{3}}]",
     TestID -> "12_brackets"
-] *)
+]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}]]", ("Target" -> "Evaluator") ][ "FixedCode" ],
@@ -661,7 +661,7 @@ VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[
         "my_offset = 123;\n(* my_string_length is a really neat function *)\nmy_string_length[test_String] := StringLength[test] + my_offset;\nmy_string_length[\"my_string_length\"]"
     ],
-    "myOffset = 123;\n(* my_string_length is a really neat function *)\nmyStringLength[testString] := StringLength[test] + myOffset;\nmyStringLength[\"my_string_length\"]",
+    "myOffset = 123;\n(* my_string_length is a really neat function *)\nmyStringLength[test_String] := StringLength[test] + myOffset;\nmyStringLength[\"my_string_length\"]",
     TestID -> "14_snake"
 ]
 
@@ -783,6 +783,34 @@ VerificationTest[
     CodeCheckFix[ "x_a=1; y__b_2_d=2;x_a + x_b + x__c_1" ][ "FixedCode" ],
     "xA=1; yB2D=2;xA + x_b + xC1",
     TestID -> "34_snake"
+]
+
+VerificationTest[
+    CodeCheckFix[
+        "2+3;my_1[x_] = 1*my_code[x_];111111111;my_1a_b____c1_2[x_]:=33, a_b=2; a_b+2; MatchQ[{},y_List]; y_ y_Plus"
+    ][
+        "FixedCode"
+    ],
+    "2+3;my1[x_] = 1*myCode[x_];111111111;my1aBC12[x_]:=33, aB=2; aB+2; MatchQ[{},y_List]; y_ y_Plus",
+    TestID -> "35_snake"
+]
+
+VerificationTest[
+    CodeCheckFix[ "I_n_a[n_,x_,b_]:=n+x" ][ "FixedCode" ],
+    "INA[n_,x_,b_]:=n+x",
+    TestID -> "36_snake"
+]
+
+VerificationTest[
+    CodeCheckFix[ "I_1[n_,x_,b_]:=n+x" ][ "FixedCode" ],
+    "I1[n_,x_,b_]:=n+x",
+    TestID -> "37_snake"
+]
+
+VerificationTest[
+    CodeCheckFix[ "f[x_,x_a_]:=x_a+1 (*x_a_*); x_a_ + x_a" ][ "FixedCode" ],
+    "f[x_,xA_]:=xA+1 (*x_a_*); xA + x_a",
+    TestID -> "38_snake"
 ]
 
 VerificationTest[
@@ -1748,4 +1776,3 @@ VerificationTest[
     "clear formatting helpers",
     TestID -> "1_cleaning"
 ]
-
