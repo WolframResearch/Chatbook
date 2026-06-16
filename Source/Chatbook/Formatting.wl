@@ -1534,7 +1534,7 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s,
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
     s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
 };
 
