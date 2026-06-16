@@ -2980,7 +2980,7 @@ embeddedHTMLBoxes[ boxes_ ] := Enclose[
                     ]
                 ),
                 SynchronousInitialization -> False,
-                UnsavedVariables :> { display }
+                UnsavedVariables :> { b64, display }
             ]
         ];
 
