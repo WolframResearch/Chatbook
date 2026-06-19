@@ -302,7 +302,7 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 		, "LikelyFalsePositive" -> False
 		, "SafeToEvaluate" -> If[success, True, False]
 		, "Pattern" -> pat
-		, "FixedCode" -> If[success, fix["Code"], If[MissingQ@fix, fix, Missing["No brackets fix found"]]]
+		, "FixedCode" -> If[success, fix["Code"], If[MissingQ@fix, fix, Missing["Bracket fix"]]]
 		} // Association
 
 
@@ -312,7 +312,9 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
  Catch[
 	TimeConstrained[
-		Block[	{$fixed = <||> ,iter = 0, success, res, resf}
+		Block[	{$fixed = <||>}
+		,
+		Module[{iter = 0, success, res, resFixed, resSyntax}
 			,
 			res =	NestWhile[	(
 								decho[iter = iter + 1, "iter====================================="];
@@ -322,22 +324,24 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 								(* initial expression-association to fix*)
 								<|"Code" -> code, "Pattern"-> pattern, "Status" -> "ToFix", "Fixes" -> <||>, "RemainingErrors"-> <||>|>
 								,
-								(* Condition to stop iteration: by default as soon as one fix is found *)
+								(* Condition to stop iteration: by default as soon as 1 fix is found *)
 								(Not[(success = (Length@Keys@$fixed === extraiter))] &)
 								, 0
 								, $MaxIterationsBracketsFix
 					];
 
-			decho[iter, "number of iterations"];
-
-			resf= ( Flatten[res] // dechofunction["final: raw number", Length] //
-					Select[#Status === "Fixed" &] // dechofunction["final: fixed", Length] //
-					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
-
-			);
-			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
-
-			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
+			decho[iter, "number of iterations"]
+			;
+			resFixed=	( 	Flatten[res] // dechofunction["final: raw number", Length] //
+							Select[#Status === "Fixed" &]
+							// dechofunction["final: fixed", Length]
+							// dechofunction["see fixed cases in: Wolfram`Chatbook`CodeCheck`Private`$resFixed",($resFixed=#;"")&]
+						)
+			;
+			resSyntax= resFixed // Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
+			;
+			If[success && (Length@resSyntax>0), selectFixWithHighestScore[resSyntax], Missing["Bracket Fix", "No SyntaxQ"]]
+		]
 		]
 		, $MaxIterateTimeBracketsFix , Throw[Missing["Time limit exceeded"]] (*TimeConstrained*)
 	]
@@ -352,7 +356,8 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
 	//	dechofunction["Final number with max score + highest default score :", Length]
-	//	Replace[{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Mulitple fixes found"]], {}->Missing["No fix found"]}]
+	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Mulitple fixes found"]]
+				,	{}->Missing["Bracket fix", "No Highest score"]}]
 )
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "Failed"}]]:=Nothing
@@ -565,7 +570,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ :
 		}
 		,
 		{
-		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&](* //EchoLabel["UC finalBrackets:"] *)
+		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&]//EchoLabel["UC finalBrackets:"]
 		}
 		,
 		If[ finalBrackets==={}
@@ -694,20 +699,31 @@ scoreCode[code_String]:=
 		,
 		Block[{$funcsSyntax=allpat},
 			(*Echo[$funcsSyntax,"$funcsSyntax"];*)
-			Total@Map[scoreCallNode, cns] - countModuleUnusedVariables[code]
+			Total@Map[scoreCallNode, cns] - countErrors[code]
 
 		]
 	]
 
-countModuleUnusedVariables[code_String]:=
+countErrors[code_String]:=
 	(
-	CodeInspect[code]	//	Count[	InspectionObject[	___,
-														"UnusedVariable", ___,
-														"Scoping", ___,
-														KeyValuePattern["Argument" -> "Module"],
-														___
-									]
+	CodeInspect[code]	//	ReplaceAll[	{
+										InspectionObject[	___,
+															"UnusedVariable", ___,
+															"Scoping", ___,
+															KeyValuePattern["Argument" -> "Module"],
+															___
+										]	->	1
+										,
+										InspectionObject[	"Arguments",
+															_,
+															"Error",
+															KeyValuePattern["Argument" -> _String]
+										]	->	Infinity
+										,
+										InspectionObject[__] ->	0
+										}
 							]
+						// Total
 	)
 
 funcsNotToScore=Alternatives["Rule","List","Plus","Times","Power"]
@@ -716,7 +732,7 @@ scoreCallNode[cn_CallNode]:=
 Catch[
 	With[
 		{
-		syntaxPattern=(funcnameCN[cn] // ReplaceAll[ $funcsSyntax ] // Replace[f_String :> getSyntaxPattern@f])
+		syntaxPattern=(funcnameCN[cn] // (* decholabel["scoring: funcname"]// *)ReplaceAll[ $funcsSyntax ] // Replace[f_String :> getSyntaxPattern@f])
 		}
 		,
 		If[MissingQ[syntaxPattern](*//EchoLabel["syntaxPattern MissingQ"]*), Throw[0]];
@@ -743,7 +759,7 @@ Catch[
 				,
 				0
 			]
-		](*//EchoLabel["score"]*)
+		](* //decholabel["scoring: score"] *)
 		)
 	]
 ]
