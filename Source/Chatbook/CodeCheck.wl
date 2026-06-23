@@ -300,7 +300,7 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
 
 			);
-			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Wolfram`Chatbook`CodeCheck`Private`brackets=resf];
+			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],brackets=resf];
 
 			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
 		]
@@ -664,6 +664,7 @@ scoreCode[code_String]:=
 		]
 	]
 
+(* :!CodeAnalysis::Disable::KernelBug:: *)
 countModuleUnusedVariables[code_String]:=
 	(
 	CodeInspect[code]	//	Count[	InspectionObject[	___,
@@ -1307,6 +1308,7 @@ warnPattern[target_][_String, pat_]:=
 
 
 (*------- For debugging*)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Echo[x, mess], x]
 
 decholabel[mess_String][x_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],EchoLabel[mess][x],x]
