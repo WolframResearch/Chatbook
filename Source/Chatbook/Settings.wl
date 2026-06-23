@@ -275,6 +275,23 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 (*OpenRouter*)
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
+(*
+  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
+    * Reasoning is on by default, only supports effort level "high" and "xhigh".
+    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
+
+  * 2026-05-05: Tried turning reasoning on with
+        "Reasoning" -> <| "effort" -> "high" |>
+    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
+    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
+
+    The easy mitigation seems to be using
+        "Reasoning" -> <| "effort" -> "none" |>
+*)
+$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
 $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     "ProviderPreferences" -> <|
         (* Some providers seem to have misconfigured inference stacks for this model,
@@ -336,29 +353,6 @@ $modelAutoSettings[ "xAI", Automatic ] = <|
     "EndToken"         -> None,
     "ForceSynchronous" -> True,
     "ToolMethod"       -> "Service"
-|>;
-
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(* OpenRouter *)
-$modelAutoSettings[ "OpenRouter" ] = <| |>;
-
-(*
-  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
-    * Reasoning is on by default, only supports effort level "high" and "xhigh".
-    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
-
-  * 2026-05-05: Tried turning reasoning on with
-        "Reasoning" -> <| "effort" -> "high" |>
-    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
-    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
-
-    The easy mitigation seems to be using
-        "Reasoning" -> <| "effort" -> "none" |>
-*)
-$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
-    "Reasoning" -> <| "effort" -> "none" |>
 |>;
 
 (* ::**************************************************************************************************************:: *)
