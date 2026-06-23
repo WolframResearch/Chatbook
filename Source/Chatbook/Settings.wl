@@ -201,20 +201,6 @@ $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
     "ToolMethod" -> "Service"
 |>;
 
-(*
-    * DeepSeek API doc on thinking and reasoning_effort parameter:
-    <https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming#reasoning-effort>
-
-    * As of 2026-05-06, to test the "DeepSeek" service for "DeepSeekFlash", a paid DeepSeek account seems required,
-    otherwise it returns an "Insufficient Balance" error for every input and no real output is returned, so I
-    did NOT continue testing. See
-    <https://jira.wolfram.com/jira/browse/LLM-914?focusedId=4300822&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-4300822>).
-*)
-$modelAutoSettings[ "DeepSeek", "DeepSeekFlash" ] = <|
-    (*"thinking" -> <| "type" -> "enabled" |>,*) (* TODO: Define the new "thinking" parameter? The default is "enabled" so not defining this explicitly might be OK. Or turn off? *)
-    (*"Reasoning" -> <| "reasoning_effort" -> "high" |>*) (* TODO: Not defining it explicitly but using the service's default ("high"?) might be sufficient. *)
-|>;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*GoogleGemini*)
@@ -373,7 +359,6 @@ $modelAutoSettings[ "OpenRouter" ] = <| |>;
 *)
 $modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
     "Reasoning" -> <| "effort" -> "none" |>
-    (*"Reasoning" -> <| "effort" -> "high" |>*)
 |>;
 
 (* ::**************************************************************************************************************:: *)
