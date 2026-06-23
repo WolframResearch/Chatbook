@@ -516,7 +516,6 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
     "EndToken"               -> None,
@@ -528,6 +527,8 @@ $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
     "ToolResponseRole"       -> "User"
 |>;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (* Kimi *)
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
