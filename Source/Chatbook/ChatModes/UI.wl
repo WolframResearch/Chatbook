@@ -793,7 +793,7 @@ chatbarMinimizeButton // beginDefinition;
 
 Attributes[ chatbarMinimizeButton ] = { HoldAll };
 
-chatbarMinimizeButton[ chatbarCell_, activeQ_ ] :=
+chatbarMinimizeButton[ chatbarCell_, activeQ_, accessLevel_ ] :=
 Button[
     PaneSelector[
         {
@@ -822,6 +822,7 @@ Button[
         Dynamic @ activeQ,
         ImageSize -> Automatic
     ],
+    accessLevel = None; (* force chatbar to replace the tier indicator the next time the chatbar is maximized *)
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
     CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
     With[
@@ -873,7 +874,7 @@ chatbarOptionsButton // beginDefinition;
 
 Attributes[ chatbarOptionsButton ] = { HoldRest };
 
-chatbarOptionsButton[ nbo_NotebookObject, chatbarCell_, activeQ_ ] :=
+chatbarOptionsButton[ nbo_NotebookObject, chatbarCell_, activeQ_, accessLevel_ ] :=
 Button[
     PaneSelector[
         {
@@ -902,6 +903,7 @@ Button[
         Dynamic @ activeQ,
         ImageSize -> Automatic
     ],
+    accessLevel = "RECALCULATE"; (* force chatbar to recalculate tier indicator; only replaces it if it differs from the cached value *)
     If[ activeQ && Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`Menu" ] === { }, (* only attach once *)
         AttachCell[
            nbo,
@@ -1777,7 +1779,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
     DynamicModule[
         {
             Typeset`initializedQ = False, Typeset`thisCell, Typeset`activeQ = False, Typeset`selectionWithinQ = False,
-            Typeset`fieldContent = initialText, Typeset`state = "Loading", Typeset`WolframAccountInfo = <||>
+            Typeset`fieldContent = initialText, Typeset`state = "Loading", Typeset`WolframAccountInfo = <||>, Typeset`accessLevel = None
         },
         DynamicWrapper[
             PaneSelector[
@@ -1793,7 +1795,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 "NoInternet"       -> chatbarNoInternet @ Typeset`activeQ,
                                                 "InternetDisabled" -> chatbarDisabledInternet @ Typeset`activeQ,
                                                 "LocalAIOnly"      -> chatbarLocalAIOnly @ Typeset`activeQ,
-                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ ],
+                                                "Enabled"          -> chatbarInputFieldEnabled[ { nbo }, Typeset`thisCell, Typeset`fieldContent, Typeset`activeQ, Typeset`selectionWithinQ, Typeset`accessLevel ],
                                                 "SignInPending"    -> chatbarSignInPending @ Typeset`activeQ,
                                                 "SignIn"           -> chatbarSignIn @ Typeset`activeQ
                                             },
@@ -1849,8 +1851,8 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                     ,
                                     Grid[
                                         {
-                                            { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ ] },
-                                            { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ ] }
+                                            { chatbarMinimizeButton[ Typeset`thisCell, Typeset`activeQ, Typeset`accessLevel ] },
+                                            { chatbarOptionsButton[ nbo, Typeset`thisCell, Typeset`activeQ, Typeset`accessLevel ] }
                                         },
                                         Alignment -> { Left, Baseline },
                                         Spacings  -> { 0, 0 }
@@ -2167,64 +2169,96 @@ chatbarInputFieldEnabled // beginDefinition;
 
 Attributes[ chatbarInputFieldEnabled ] = { HoldRest };
 
-chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, activeQ_, selectionWithinQ_ ] :=
+chatbarInputFieldEnabled[ { nbo_NotebookObject }, chatbarCell_, fieldContent_, activeQ_, selectionWithinQ_, accessLevel_ ] :=
 RawBoxes @ TagBox[ ToBoxes @ #, "NotebookSelectionSnapshotExclusionZone" ]& @
-DynamicModule[ { userdata },
-    EventHandler[(* pre-emptive mouse-down event for return key *)
-        Framed[
-            Grid[
-                { {
-                    Pane[
-                        chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
-                        AppearanceElements -> { },
-                        ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
-                        Scrollbars         -> { False, Automatic },
-                        ScrollPosition     -> Dynamic @ scrollPosition
-                    ],
-                    chatbarSendButton[ nbo, chatbarCell, fieldContent, activeQ || fieldContent =!= "" ]
-                } },
-                Alignment        -> { Left, Center },
-                BaselinePosition -> { 1, 1 },
-                Spacings         -> { 0, 0 }
-            ],
-            Alignment      -> { Automatic, Center },
-            Background     -> None,
-            FrameMargins   -> { { 10, 5 }, { 5, 5 } },
-            FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
-                LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
-                LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
-            ],
-            RoundingRadius -> 9
-        ],
-        {
-            "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
-                fieldContent = ""
-                ,
-                With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
-            ],
-            { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
-        },
-        Method         -> "Preemptive",
-        PassEventsDown -> False
-    ],
-    SynchronousInitialization -> False,
-    Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ] === { },
-        userdata = chatbarUserData[ ];
-        If[ !AssociationQ[ userdata ], userdata = <| "credentialsQ" -> False |> ];
-        AttachCell[
-            EvaluationBox[ ],
-            Cell[
-                BoxData @ ToBoxes @ DynamicModule[ { },
-                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ], Lookup[ userdata, "tier", "Basic" ] ],
-                    InheritScope -> True
+DynamicModule[ { Typeset`serviceData, Typeset`cachedAccessLevel = None },
+    DynamicWrapper[
+        EventHandler[(* pre-emptive mouse-down event for return key *)
+            Framed[
+                Grid[
+                    { {
+                        Pane[
+                            chatbarInputField[ Dynamic @ fieldContent, Dynamic @ activeQ, Dynamic @ selectionWithinQ, { Scaled[ 1 ], Automatic } ],
+                            AppearanceElements -> { },
+                            ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
+                            Scrollbars         -> { False, Automatic },
+                            ScrollPosition     -> Dynamic @ scrollPosition
+                        ],
+                        chatbarSendButton[ nbo, chatbarCell, fieldContent, activeQ || fieldContent =!= "" ]
+                    } },
+                    Alignment        -> { Left, Center },
+                    BaselinePosition -> { 1, 1 },
+                    Spacings         -> { 0, 0 }
                 ],
-                "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
-                Evaluator     -> "System",
-                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                Alignment      -> { Automatic, Center },
+                Background     -> None,
+                FrameMargins   -> { { 10, 5 }, { 5, 5 } },
+                FrameStyle     -> Dynamic @ If[ activeQ || fieldContent =!= "",
+                    LightDarkSwitched[ RGBColor[ 0.458824, 0.760784, 0.921569 ], RGBColor[ 0.4, 0.611765, 0.741176 ] ],
+                    LightDarkSwitched[ GrayLevel[ 0.650980, 0.5 ], GrayLevel[ 0.392157, 0.5 ] ]
+                ],
+                RoundingRadius -> 9
             ],
-            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
+            {
+                "ReturnKeyDown" :> If[ ! validInputStringQ @ fieldContent,
+                    fieldContent = ""
+                    ,
+                    With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
+                ],
+                { "MenuCommand", "HandleShiftReturn" } :> (NotebookWrite[ InputNotebook[ ], "\n" ])
+            },
+            Method         -> "Preemptive",
+            PassEventsDown -> False
         ]
-    ]
+        ,
+        Switch[ accessLevel,
+            None,
+                NotebookDelete /@ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ];
+                Typeset`serviceData = getServiceData[ ];
+                If[ !AssociationQ[ Typeset`serviceData ], Typeset`serviceData = <| "credentialsQ" -> False |> ];
+                accessLevel = Typeset`cachedAccessLevel = Lookup[ Typeset`serviceData, "accessLevel", "Basic" ];
+                AttachCell[
+                    EvaluationBox[ ],
+                    Cell[
+                        BoxData @ ToBoxes @ DynamicModule[ { },
+                            chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ], Typeset`cachedAccessLevel ],
+                            InheritScope -> True
+                        ],
+                        "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+                        Evaluator     -> "System",
+                        Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                    ],
+                    { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
+                ],
+            "RECALCULATE",
+                Typeset`serviceData = getServiceData[ ];
+                If[ !AssociationQ[ Typeset`serviceData ], Typeset`serviceData = <| "credentialsQ" -> False |> ];
+                With[ { newValue = Lookup[ Typeset`serviceData, "accessLevel", "Basic" ] },
+                    If[ newValue =!= Typeset`cachedAccessLevel,
+                        accessLevel = Typeset`cachedAccessLevel = newValue;
+                        NotebookDelete /@ Cells[ nbo, AttachedCell -> True, CellStyle -> "NotebookAssistant`Chatbar`SubscriptionLevelIndicator" ];
+                        AttachCell[
+                            EvaluationBox[ ],
+                            Cell[
+                                BoxData @ ToBoxes @ DynamicModule[ { },
+                                    chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ || fieldContent =!= "" ], Typeset`cachedAccessLevel ],
+                                    InheritScope -> True
+                                ],
+                                "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
+                                Evaluator     -> "System",
+                                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                            ],
+                            { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
+                        ]
+                    ]
+                ],
+            _,
+                Null
+        ]
+        ,
+        SynchronousUpdating -> False,
+        TrackedSymbols      :> { accessLevel }
+]
 ];
 
 chatbarInputFieldEnabled // endDefinition;
@@ -2241,7 +2275,13 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
 
-        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
+        cellExpr = Cell[ text, "ChatInput",
+            CellTags -> uuid,
+            (* 476251: chatbar only uses Wolfram services and assistant *)
+            TaggingRules -> <|
+                "ChatNotebookSettings" -> <|
+                    "Model"        -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+                    "LLMEvaluator" -> "WolframAIAssistant" |> |> ];
 
         currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo, Except[ _Association ] -> <| |> ];
         activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
@@ -2269,7 +2309,7 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
-        setCurrentValue[ cellObject, CellTags, Inherited ];
+        setCurrentValue[ cellObject, CellTags, { } ];
 
         (* mark chatbar as the source of the chat input/output *)
         setCurrentValue[ chatbarCell, { TaggingRules, "ChatbarChatQ" }, True ];
@@ -2317,11 +2357,9 @@ chatbarInputFieldEnabledTierIndicatorFrame // endDefinition;
 
 chatbarInputFieldEnabledTierIndicator // beginDefinition;
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Basic" | "" ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], s:"Pro"|"Research" ] := chatbarInputFieldEnabledTierIndicatorFrame[ s, Dynamic @ activeQ ]
 
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Pro" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Pro", Dynamic @ activeQ ]
-
-chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], "Research" ] := chatbarInputFieldEnabledTierIndicatorFrame[ "Research", Dynamic @ activeQ ]
+chatbarInputFieldEnabledTierIndicator[ Dynamic[ activeQ_ ], _ ] := Graphics[ Background -> None, ImageSize -> { 1, 1 } ]
 
 chatbarInputFieldEnabledTierIndicator // endDefinition;
 

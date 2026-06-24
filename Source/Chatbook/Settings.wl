@@ -152,6 +152,7 @@ $modelAutoSettings = <| |>;
 $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
+    "PresencePenalty"           -> Missing[ "NotSupported" ],
     "ReplaceUnicodeCharacters"  -> True,
     "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
     "ToolMethod"                -> "Service"
@@ -175,6 +176,11 @@ $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
 $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "MaxContextTokens" -> 200000,
     "Multimodal"       -> True
+|>;
+
+$modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -274,6 +280,23 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*OpenRouter*)
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+(*
+  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
+    * Reasoning is on by default, only supports effort level "high" and "xhigh".
+    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
+
+  * 2026-05-05: Tried turning reasoning on with
+        "Reasoning" -> <| "effort" -> "high" |>
+    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
+    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
+
+    The easy mitigation seems to be using
+        "Reasoning" -> <| "effort" -> "none" |>
+*)
+$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
 
 $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     "ProviderPreferences" -> <|
@@ -478,7 +501,20 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*Kimi K2.5*)
+(* DeepSeek *)
+$modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
+    "EndToken"               -> None,
+    "HybridToolMethod"       -> False,
+    "MaxContextTokens"       -> 1048576,
+    "Multimodal"             -> False,
+    "ToolCallRetryMessage"   -> False,
+    "ToolMethod"             -> "Simple",
+    "ToolResponseRole"       -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(* Kimi *)
 $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
     "EndToken"             -> None,

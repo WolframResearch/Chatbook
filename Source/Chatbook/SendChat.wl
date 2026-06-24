@@ -226,7 +226,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        CurrentChatSettings[ cellObj, "Data" ] = data;
+        If[ ! TrueQ @ $cloudNotebooks, CurrentChatSettings[ cellObj, "Data" ] = data ];
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -1388,8 +1388,8 @@ $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
-    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /; 
-        toolShortNameQ @ name :> 
+    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
+        toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
@@ -3250,11 +3250,11 @@ makeReformattedCellTaggingRules[
             "CellToStringData" -> string,
             "MessageTag"       -> tag,
             "ChatData"         -> makeCompactChatData[ string, tag, settings ],
-            "PageData"         -> <|
+            "PageData"         -> If[ $cloudNotebooks, Inherited, <|
                 "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
                 "CurrentPage"-> p
-            |>
+            |> ]
         |>,
         Inherited
     ]
@@ -3277,7 +3277,7 @@ makeReformattedCellTaggingRules // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
-(* makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited; *)
+makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited;
 
 makeCompactChatData[
     message_,
@@ -3309,7 +3309,7 @@ makeCompactChatData // endDefinition;
 (*makeMinimalPageData*)
 makeMinimalPageData // beginDefinition;
 
-(* makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited; *)
+makeMinimalPageData[ content_, settings_Association ] /; $cloudNotebooks := Inherited;
 
 makeMinimalPageData[ content_, settings_Association ] :=
 BaseEncode @ BinarySerialize[

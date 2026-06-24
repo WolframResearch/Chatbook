@@ -704,6 +704,7 @@ scoreCode[code_String]:=
 		]
 	]
 
+(* :!CodeAnalysis::Disable::KernelBug:: *)
 countErrors[code_String]:=
 	(
 	CodeInspect[code]	//	ReplaceAll[	{
@@ -1353,6 +1354,7 @@ warnPattern[target_][_String, pat_]:=
 
 
 (*------- For debugging*)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 decho[x_,mess___]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],Echo[x, mess], x]
 
 decholabel[mess_String][x_]:=If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],EchoLabel[mess][x],x]

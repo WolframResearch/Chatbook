@@ -5,7 +5,7 @@
 "OKButton" -> "\:78BA\:5B9A",
 "CancelButton" -> "\:53D6\:6D88",
 "DeleteButton" -> "\:522A\:9664",
-"Retry" -> "Retry",
+"Retry" -> "\:91cd\:8a66",
 "SaveChangesButton" -> "\:5132\:5B58\:4FEE\:6539\:90E8\:5206",
 "SendButton" -> "\:767C\:9001",
 "URLButton" -> "\:7DB2\:5740",
@@ -226,7 +226,7 @@
 "ChatbarFieldHint" -> "\:60A8\:60F3\:8981\:505A\:4EC0\:9EBC\:FF1F",
 "ChatbarWolframDisabledInternet" -> "\:4e0d\:5141\:8a31\:9023\:7db2 \[RightGuillemet]",
 "ChatbarNoInternet" -> "\:6c92\:6709\:7db2\:8def\:9023\:7dda",
-"ChatbarSignIn" -> "\:767b\:9304\:4f7f\:7528 AI \:52a9\:624b",
+"ChatbarSignIn" -> "\:767b\:9304\:4f7f\:7528 AI Assistant",
 
 "ChatbarOptionsTitle" -> "AI Access\:ff1a",
 "ChatbarOptionsMonthlyUsage" -> "\:672c\:6708\:7528\:91cf\:ff1a",

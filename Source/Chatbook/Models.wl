@@ -514,6 +514,7 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Opus", "4", "7"|"8", ___ } ] ] := "ClaudeOpus47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
 
 chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";
@@ -524,6 +525,7 @@ chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrPara
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", $$version, "Flash" } ] ] := "DeepSeekFlash";
 
 chooseModelFamily0[ wordsPattern[ { "Grok", "3", ___ } ] ] := "Grok3";
 chooseModelFamily0[ wordsPattern[ { "Grok", "4.2" | "4.20", ___ } ] ] := "Grok42";
