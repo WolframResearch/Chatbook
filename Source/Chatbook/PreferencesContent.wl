@@ -46,7 +46,7 @@ createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
         DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
-            
+
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
             (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
@@ -83,12 +83,12 @@ createPreferencesContent[ ] := Enclose[
             Initialization   :> (
                 dmPrefCache = CurrentChatSettings[ $FrontEnd ];
                 tab = Lookup[ dmPrefCache, "CurrentPreferencesTab", "Services", Replace[ #, $$unspecified -> "Services" ]& ];
-                
+
                 default = Lookup[ dmPrefCache, "Model" ];
                 service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
                 model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
                 state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
-                
+
                 serviceSelector = makeServiceSelector[
                     <|
                         $availableServices,
@@ -283,7 +283,7 @@ localAIOnly[ ] := Which[
         !MemberQ[ #, "LLMSupport" ]&
     ],
         True,
-    
+
     (* if disabled via ERP *)
     Lookup[
         Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
@@ -431,7 +431,7 @@ createNotebookSettingsPanel[ dmPrefCache_, default_, service_, model_, state_, s
             Spacings  -> { 0, 0.7 }
         ];
 
-        
+
         Pane[
             content,
             FrameMargins -> { { 8, 8 }, { 13, 13 } },
@@ -1225,7 +1225,7 @@ makeToolCallFrequencySelector[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
             BaselinePosition -> 1,
             Spacings         -> 0.5
         ],
-        Initialization :> 
+        Initialization :>
             With[ { val = Lookup[ dmPrefCache, "ToolCallFrequency" ] },
                 type      = If[ NumberQ @ val, "Custom", Automatic ];
                 frequency = If[ NumberQ @ val, val, 0.5 ];
@@ -2039,6 +2039,12 @@ getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
         (* If the service has not been selected before, choose a default model by service name and save it: *)
         If[ ! StringQ @ name,
             name = ConfirmMatch[ chooseDefaultModelName @ service, _String|Automatic, "DefaultName" ];
+            If[ name === Automatic,
+                Replace[
+                    getServiceModelList @ service,
+                    { KeyValuePattern[ "Name" -> s_String ], ___ } :> (name = s)
+                ]
+            ];
             lastSelected[ service ] = name;
             dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = lastSelected;
         ];
