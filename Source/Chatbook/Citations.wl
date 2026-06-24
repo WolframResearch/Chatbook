@@ -300,9 +300,9 @@ appendCitations // Attributes = { HoldFirst };
 
 appendCitations[ container_, settings_ ] := Enclose[
     Catch @ Module[ { sources, citations },
-        sources = Values @ ConfirmBy[ $sources, AssociationQ, "Sources" ];
-        applyHandlerFunction[ settings, "AppendCitationsStart", "Sources" -> sources ];
         If[ ! TrueQ @ settings[ "AppendCitations" ], Throw @ Null ];
+        sources = Values @ Replace[ $sources, Except[ _? AssociationQ ] :> <| |> ];
+        applyHandlerFunction[ settings, "AppendCitationsStart", "Sources" -> sources ];
         citations = ConfirmBy[ makeCitationsString[ container[ "FullContent" ], sources ], StringQ, "Citations" ];
         container[ "FullContent" ] = container[ "FullContent" ] <> citations;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> citations;
