@@ -79,7 +79,7 @@ $defaultChatSettings = <|
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
-    "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
+    "TabbedOutput"                   -> Automatic, (* TODO: define a "MaxOutputPages" setting *) (* Cloud is False *)
     "TargetCloudObject"              -> Automatic,
     "Temperature"                    -> Automatic,
     "TimeConstraint"                 -> Automatic,
@@ -975,6 +975,7 @@ resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TabbedOutput"                   ] := ! $cloudNotebooks;
 resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
 resolveAutoSetting0[ as_, "Tokenizer"                      ] := getTokenizer @ as;
 resolveAutoSetting0[ as_, "TokenizerName"                  ] := getTokenizerName @ as;
