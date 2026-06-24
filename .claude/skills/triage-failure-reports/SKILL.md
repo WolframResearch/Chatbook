@@ -37,7 +37,7 @@ Each report has an auto-generated `<details>` block. The fields that matter:
   Tells you which service/model triggered it.
 - **Failure Data** - the heart of the signature:
   - `"Evaluation"` - the failing call, e.g.
-    `Wolfram`Chatbook`Common`resolveFullModelSpec[<|"Service" -> "OpenAI", "Name" -> Automatic|>]`.
+    ``Wolfram`Chatbook`Common`resolveFullModelSpec[<|"Service" -> "OpenAI", "Name" -> Automatic|>]``.
     The **short function name** (`resolveFullModelSpec`) is the primary key.
   - `"Expression"` - the value that broke a `Confirm*` check, e.g.
     `Missing["NoModelList"]`. (Unhandled-definition failures don't have this
