@@ -880,7 +880,7 @@ chatbookServiceCaller // beginDefinition;
 chatbookServiceCaller[ ] := Flatten @ {
     If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
     If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
-    If[ TrueQ @ $SidebarChat, "WorkspaceChat", Nothing ],
+    If[ TrueQ @ $SidebarChat, "SidebarChat", Nothing ],
     Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
 };
 
