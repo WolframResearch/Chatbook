@@ -213,7 +213,9 @@ toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_
 toModelName[ KeyValuePattern[ "Name"|"Model" -> model_ ] ] :=
     toModelName @ model;
 
-toModelName[ { service_String, name_String } ] := toModelName @ name;
+toModelName[ { service_String, name_ } ] := toModelName @ name;
+
+toModelName[ Automatic ] := Automatic;
 
 toModelName[ name_String? StringQ ] := toModelName[ name ] =
     If[ StringMatchQ[ name, "ft:"~~__~~":"~~__ ],
@@ -277,9 +279,12 @@ multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" 
 multimodalModelQ[ name_String? StringQ ] :=
     StringContainsQ[ toModelName @ name, WordBoundary~~"vision"~~WordBoundary, IgnoreCase -> True ];
 
+multimodalModelQ[ Automatic ] :=
+    False;
+
 multimodalModelQ[ other_ ] :=
     With[ { name = toModelName @ other },
-        multimodalModelQ @ name /; StringQ @ name
+        multimodalModelQ @ name /; MatchQ[ name, _String|Automatic ]
     ];
 
 multimodalModelQ // endDefinition;
@@ -799,15 +804,12 @@ standardizeModelData // endDefinition;
     Choose a default initial model according to the following rules:
         1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
         2. If the registered service specifies a "DefaultModel" property, we'll use that.
-        3. If the model list is already cached for the service, we'll use the first model in that list.
-        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
+        3. Otherwise, give Automatic to let the service connection logic handle it.
 *)
 chooseDefaultModelName // beginDefinition;
 chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
 chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
 chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
-chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
-chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
 chooseDefaultModelName[ service_ ] := Automatic;
 chooseDefaultModelName // endDefinition;
 
@@ -841,13 +843,10 @@ resolveFullModelSpec[ model: KeyValuePattern[ "Service" -> "LLMKit" ] ] :=
     |>;
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
-    Catch @ Module[ { default, models, name },
+    Catch @ Module[ { default },
         default = ConfirmMatch[ chooseDefaultModelName @ service, Automatic | _String, "Default" ];
         If[ StringQ @ default, Throw @ standardizeModelData @ <| model, "Name" -> default |> ];
-        models = ConfirmMatch[ getServiceModelList @ service, _List | Missing[ "NotConnected" ], "Models" ];
-        If[ MissingQ @ models, throwTop @ $Canceled ];
-        name = ConfirmBy[ chooseDefaultModelName @ models, StringQ, "ResolvedName" ];
-        standardizeModelData @ <| model, "Name" -> name |>
+        model
     ],
     throwInternalFailure
 ];
