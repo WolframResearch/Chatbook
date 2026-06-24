@@ -88,6 +88,7 @@ withChatState[ eval_ ] :=
             $excludedBasePrompts          = $excludedBasePrompts,
             $disabledBasePrompts          = $disabledBasePrompts,
             $endToken                     = $endToken,
+            $serviceCaller                = None,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

@@ -802,6 +802,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
             $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
+            $serviceCaller           = resolved[ "ServiceCaller" ];
 
             If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
