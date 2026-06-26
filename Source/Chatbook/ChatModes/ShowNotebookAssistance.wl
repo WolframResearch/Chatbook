@@ -34,7 +34,7 @@ $notebookAssistanceWorkspaceSettings := <|
     $notebookAssistanceBaseSettings,
     "AutoGenerateTitle"     -> True,
     "AutoSaveConversations" -> True,
-    "ConversationUUID"      -> CreateUUID[ ],
+    "ConversationUUID"      -> createUUID[ ],
     "SetCellDingbat"        -> False,
     "TabbedOutput"          -> False,
     "WorkspaceChat"         -> True
@@ -56,7 +56,7 @@ $notebookAssistanceSidebarSettings := <|
     "AllowSelectionContext" -> False,
     "AutoGenerateTitle"     -> True,
     "AutoSaveConversations" -> True,
-    "ConversationUUID"      -> CreateUUID[ ],
+    "ConversationUUID"      -> createUUID[ ],
     "SetCellDingbat"        -> False,
     "TabbedOutput"          -> False,
     "SidebarChat"           -> True
@@ -413,7 +413,7 @@ autoShowNotebookAssistance // beginDefinition;
 autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] /; sufficientVersionQ[ 15.0 ] := Enclose[
     Catch @ Module[ { nbo, newCell, uuid, sidebarInfo, sidebarCell, cellObject },
         nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         sidebarInfo = ConfirmMatch[ With[ { nb = nbo }, FE`Evaluate @ FEPrivate`SidebarExtensionInformation[ nb, "NotebookAssistant" ] ], _Association|None, "SidebarInfo" ];
 
@@ -455,7 +455,7 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
                     },
                     If[ ! MissingQ @ scrollablePaneCell, NotebookDelete /@ Cells[ scrollablePaneCell ] ];
                 ];
-                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
                 setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
                 cellObject = appendCellToSidebarChat[ nbo, sidebarCell, newCell, uuid ];
                 ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
