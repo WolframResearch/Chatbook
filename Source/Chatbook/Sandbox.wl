@@ -438,7 +438,7 @@ pingSandboxKernel // beginDefinition;
 pingSandboxKernel[ kernel_LinkObject ] := Enclose[
     Module[ { uuid, return },
 
-        uuid   = CreateUUID[ ];
+        uuid   = createUUID[ ];
         return = $Failed;
 
         ConfirmMatch[
