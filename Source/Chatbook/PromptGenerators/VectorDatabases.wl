@@ -173,7 +173,7 @@ makeDownloadURL // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $versionString };
+$localVectorDBDirectory  := ChatbookFilesDirectory[ { "VectorDatabases", $versionString }, "EnsureDirectory" -> False ];
 $cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
 
 $versionString := StringReplace[ ToString @ $VersionNumber, { "."~~EndOfString :> "-0", "." -> "-" } ];
