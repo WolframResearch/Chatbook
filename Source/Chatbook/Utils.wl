@@ -399,7 +399,7 @@ initializeProgressContainer[ container_Symbol ] := (
     container = <|
         "DynamicContent" -> $defaultProgress,
         "FullContent"    -> $defaultProgress,
-        "UUID"           -> CreateUUID[ ]
+        "UUID"           -> createUUID[ ]
     |>
 );
 
@@ -1209,7 +1209,7 @@ LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
 
 LogChatTiming[ eval_, tag_String ] := (
     If[ ! NumberQ @ $chatStartTime, $chatStartTime = AbsoluteTime[ ] ];
-    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = CreateUUID[ ] ];
+    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = createUUID[ ] ];
     If[ ! MatchQ[ $timingLog, _Internal`Bag ], $timingLog = Internal`Bag[ ] ];
     logChatTiming[ eval, tag ]
 );
@@ -1245,7 +1245,7 @@ logChatTiming[ eval_, tag_String ] :=
         ];
 
         usedTime = fullTime - Total @ innerTimings[[All, "FullTiming"]];
-        
+
         Internal`StuffBag[ $timingLog, <|
                 "ChatEvaluationCell" -> $ChatEvaluationCell,
                 "Tag"                -> tag,
