@@ -41,12 +41,13 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 If[ $download,
     Block[ { $ProgressReporting = True },
         cicd`ConsoleLog[ "Downloading documentation snippets..." ];
-        snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
         targetDir = FileNameJoin @ { $pacletDir, "Assets/Snippets/Streamable" };
         If[ DirectoryQ @ targetDir, DeleteDirectory[ targetDir, DeleteContents -> True ] ];
+        snippetDir = cDir @ Wolfram`Chatbook`InstallDocumentationResources[ ][ "Location" ];
         GeneralUtilities`EnsureDirectory @ DirectoryName @ targetDir;
+        cicd`ConsoleLog @ SequenceForm[ "Copying documentation snippets from ", snippetDir, " to ", targetDir ];
         copied = cDir @ CopyDirectory[ snippetDir, targetDir ];
-        cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets to: ", copied ];
+        cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets from ", snippetDir, " to ", copied ];
         If[ StringQ @ Environment[ "GITHUB_ACTIONS" ], DeleteDirectory[ snippetDir, DeleteContents -> True ] ];
     ]
 ];
