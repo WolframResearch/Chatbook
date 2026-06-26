@@ -157,9 +157,9 @@ CodeInspectTokenSequence[code_String, OptionsPattern[{}]]:=
 MySequencePosition[codeTokenized_List, pattern_]:=
 (
 		Position[codeTokenized, Alternatives@@Union@Cases[pattern, _LeafNode, {1, Infinity}]]
- 	//	Flatten // Split[#, #1 + 1 == #2 &] &
+	//	Flatten // Split[#, #1 + 1 == #2 &] &
 	//	Replace[#, {{_} -> Nothing, x_List :> x[[{1, -1}]]}, {1}] &
-  	//	Map[ Function[pos, SequencePosition[codeTokenized[[Span @@ pos]], pattern, Overlaps -> False] + First@pos - 1] ]
+	//	Map[ Function[pos, SequencePosition[codeTokenized[[Span @@ pos]], pattern, Overlaps -> False] + First@pos - 1] ]
 	//	Flatten[#, 1] &
 )
 
