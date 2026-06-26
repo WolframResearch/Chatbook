@@ -3,6 +3,7 @@
 .mcp.json
 .obsidian/
 *StackHistory.wxf
+bash.exe.stackdump
 Assets/Snippets/Streamable/*
 Assets/VectorDatabases/**/*.usearch
 Assets/VectorDatabases/**/*.wl
