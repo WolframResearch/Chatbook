@@ -1109,7 +1109,7 @@ createUUID // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*createUUIDFallback*)
 createUUIDFallback // beginDefinition;
-createUUIDFallback[ ] := StringInsert[ IntegerString[ RandomInteger[ 2^128 ], 16, 32 ], "-", { 9, 13, 17, 21 } ];
+createUUIDFallback[ ] := StringInsert[ IntegerString[ RandomInteger[ 2^128 - 1 ], 16, 32 ], "-", { 9, 13, 17, 21 } ];
 createUUIDFallback // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
