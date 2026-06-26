@@ -47,7 +47,6 @@ If[ $download,
         GeneralUtilities`EnsureDirectory @ DirectoryName @ targetDir;
         cicd`ConsoleLog @ SequenceForm[ "Copying documentation snippets from ", snippetDir, " to ", targetDir ];
         copied = cDir @ CopyDirectory[ snippetDir, targetDir ];
-        cicd`ConsoleLog @ SequenceForm[ "Copied documentation snippets from ", snippetDir, " to ", copied ];
         If[ StringQ @ Environment[ "GITHUB_ACTIONS" ], DeleteDirectory[ snippetDir, DeleteContents -> True ] ];
     ]
 ];
