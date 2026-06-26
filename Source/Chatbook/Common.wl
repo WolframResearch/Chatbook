@@ -612,7 +612,7 @@ catchTop[ eval_ ] := catchTop[ eval, Chatbook ];
 catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
-            $chatEvaluationID    = CreateUUID[ ],
+            $chatEvaluationID    = createUUID[ ],
             $currentChatSettings = None,
             $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching            = True,

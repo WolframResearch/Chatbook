@@ -407,7 +407,7 @@ sidebarNewChatButton[ nbo_, sidebarCell_ ] :=
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
         removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
-        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ]
         ,
         Appearance -> "Suppressed",
@@ -464,7 +464,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
             NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
             removeSidebarScrollingCellContent[ nbo, sidebarCell ];
             removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
-            CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+            CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
             setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
             FrontEndTokenExecute[ nbo, "HideSidebar" ];
         ]
@@ -2273,7 +2273,7 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cellExpr = Cell[ text, "ChatInput",
             CellTags -> uuid,
@@ -2563,7 +2563,7 @@ newChatButton[ nbo_NotebookObject ] :=
         clearOverlayMenus @ nbo;
         NotebookDelete @ Cells @ nbo;
         removeWorkspaceChatSubDockedCell @ nbo;
-        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
+        CurrentChatSettings[ nbo, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ];
         moveChatInputToTop @ nbo;
         ,
