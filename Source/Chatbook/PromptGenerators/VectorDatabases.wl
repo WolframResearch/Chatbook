@@ -495,7 +495,10 @@ getVectorDBDirectory[ ] := Enclose[
 
         If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
             (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
-            Quiet @ DeleteDirectory[ ChatbookFilesDirectory[ "VectorDatabases" ], DeleteContents -> True ]
+            Quiet @ DeleteDirectory[
+                ChatbookFilesDirectory[ "VectorDatabases", "EnsureDirectory" -> False ],
+                DeleteContents -> True
+            ]
         ];
 
         $vectorDBDirectory = dir
