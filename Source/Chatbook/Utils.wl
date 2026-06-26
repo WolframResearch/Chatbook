@@ -1095,6 +1095,25 @@ taskWaitYield // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*createUUID*)
+createUUID // beginDefinition;
+
+createUUID[ base_String: "" ] := Replace[
+    AbortProtect @ CreateUUID @ base,
+    Except[ _String ] :> base <> createUUIDFallback[ ]
+];
+
+createUUID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createUUIDFallback*)
+createUUIDFallback // beginDefinition;
+createUUIDFallback[ ] := StringInsert[ IntegerString[ RandomInteger[ 2^128 ], 16, 32 ], "-", { 9, 13, 17, 21 } ];
+createUUIDFallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*optionsAssociation*)
 optionsAssociation // beginDefinition;
 
