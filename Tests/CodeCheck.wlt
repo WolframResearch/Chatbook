@@ -1771,6 +1771,80 @@ VerificationTest[
 ]
 
 VerificationTest[
+    mainInfo[ CodeCheckFix[ "aaa+1; (*AAAA exp(2u*) BBB*) 32" ] ],
+    <|
+        "FixedCode" -> "aaa+1; (*AAAA exp(2u* ) BBB*) 32",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "1_trailingStar"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[ "(*aa+1 AAAA exp(2u*) exp(2u*) - f(k*) BB*) (*32*) 33" ]
+    ],
+    <|
+        "FixedCode" -> "(*aa+1 AAAA exp(2u* ) exp(2u* ) - f(k* ) BB*) (*32*) 33",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "2_trailingStar"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "(*aa+1 (*AAAA exp(2u*) exp(2u*) - f(k*) BB*); (*32*) 33*)"
+        ]
+    ],
+    <|
+        "FixedCode" -> "(*aa+1 (*AAAA exp(2u* ) exp(2u* ) - f(k* ) BB*); (*32*) 33*)",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "3_trailingStar"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "(*aa+1*) (*AAAA exp(2u*) exp(a,b,c*,2u*) - f(k*) BB*)1; Print[\"f(K*)\"];(*32*) 33"
+        ]
+    ],
+    <|
+        "FixedCode" -> "(*aa+1*) (*AAAA exp(2u* ) exp(a,b,c*,2u* ) - f(k* ) BB*)1; Print[\"f(K*)\"];(*32*) 33",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "4_trailingStar"
+]
+
+VerificationTest[
+    mainInfo[ CodeCheckFix[ "1+1 (*hello*) f(u*) (*dd*)" ] ],
+    <|
+        "FixedCode" -> Missing[ "..." ],
+        "SafeToEvaluate" -> False
+    |>,
+    TestID -> "5_trailingStar"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "(*aa+1 (* AAAA exp(2u*) exp(2u*) - f(k*) BB*); (*32*) 33"
+        ]
+    ],
+    <|
+        "FixedCode" -> Missing[ "..." ],
+        "SafeToEvaluate" -> False
+    |>,
+    TestID -> "6_trailingStar"
+]
+
+VerificationTest[
+    CodeCheckFix[ "1+1 (* (*hello*) f(u*) (*dd*)" ][ "ErrorsDetected" ],
+    False,
+    TestID -> "7_trailingStar"
+]
+
+VerificationTest[
     Clear[ mainInfo, finalState ];
     "clear formatting helpers",
     "clear formatting helpers",

@@ -115,6 +115,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					,
 					SourceConvention -> "SourceCharacterIndex"
 					,
+					(*---------------------- Custom checks --------------------------*)
 					"AbstractRules" ->	<|
 										CodeInspector`AbstractRules`$DefaultAbstractRules,
 										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set *),
@@ -123,14 +124,19 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 										|>
 					,
 					"SequenceTokenRules" ->	{pSnakeAll->scanSnakeMulti}
+					,
+					"StringScans"-> {scanTrailingStarCommentCloser}
 					};
 
 
 CodeCheck[target_][code_String, OptionsPattern[]]:=
 	(
 		Flatten@List[
-			CodeInspectTokenSequence[code,Sequence@@Options[CodeCheck]],
+			CodeInspectTokenSequence[code,Sequence@@Options[CodeCheck]]
+			,
 			CodeInspect[code, Sequence@@FilterRules[Options[CodeCheck],Options[CodeInspect]]]
+			,
+			stringScans[code, OptionValue[Options[CodeCheck],"StringScans"]]
 		]
 		//
 		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
@@ -162,6 +168,9 @@ MySequencePosition[codeTokenized_List, pattern_]:=
 	//	Map[ Function[pos, SequencePosition[codeTokenized[[Span @@ pos]], pattern, Overlaps -> False] + First@pos - 1] ]
 	//	Flatten[#, 1] &
 )
+
+stringScans[code_String, scans:{__}]:= Map[#[code]&, scans]
+
 
 (* ::Subsection:: *)
 (*Helpers*)
@@ -243,7 +252,8 @@ extractPatternFromInspectionObject[
 							,	"EntityClassBadSyntax"
 							,	"BadEntityType"
 							,	"SuspiciousFunctionSymbol"
-							,	"GlobalCapitalizedSymbol"]
+							,	"GlobalCapitalizedSymbol"
+							,	"TrailingStarCallFalseCommentCloser"]
 				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
@@ -286,6 +296,107 @@ mergeFixes[prevFix_, newFix_] :=
 (* ::Section:: *)
 (*Brackets Fix*)
 
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$TrailingStarCallFalseCommentCloser = HoldPattern[{___, {"Fatal", "TrailingStarCallFalseCommentCloser"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat : $$TrailingStarCallFalseCommentCloser[so_], patToIgnore_ : {}] :=
+	Module[	{
+			fixedCode=Missing["TrailingStarCallFalseCommentCloser","No fix found"]
+			,success=False
+			}
+			,
+			StringInsert[code, " ", Last /@ so]
+			//
+			If[	And[StringQ@#, balancedCommentQ@#]
+				,
+				success=True;fixedCode=#
+			]&
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, Length@so, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			, "StopCodeFix" -> True
+			} // Flatten // Association
+	]
+
+balancedCommentQ[code_String]:=
+	listCommentCloser[code][[All,2]] // ReplaceRepeated[{a___, "(*", "*)", b___} :> {a, b}] // Replace[{}->True] // TrueQ
+
+scanTrailingStarCommentCloser[code_String]:=
+	Catch[
+	With[
+		{	(* Stops evaluation if no comments  *)
+			posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]}
+		,
+		{
+			posTrailingStarCall =
+				(	(* Stops evaluation if all comments closer are balanced *)
+					ReplaceRepeated[	posCommentCloserAndtype[[All,2]]
+										,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
+					;
+					(* Stops evaluation if no trailing star call found *)
+					StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
+				)
+		}
+		,
+		Select[posTrailingStarCall, MatchQ[posCommentCloserAndtype , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
+		//
+		Replace[	{
+					p:{___} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
+																,	"Trailing star call inside comment "
+																,	"Fatal"
+																,	Association@{ConfidenceLevel -> 1, Source->p}]
+					,
+					_ -> {}
+					}
+		]
+	]]
+
+pNonParen = Repeated[Except["(" | ")"], {0, Infinity}];
+pTrailingStarCall = "(" ~~ Except["*"] ~~ Shortest[pNonParen] ~~ Verbatim["*"] ~~ ")";
+
+listCommentCloser[code_String]:=
+Catch[
+	With[
+		{
+			posStrings =	StringPosition[code, "\""]
+						//	If[EvenQ@Length@# ,Partition[#,2], Throw[Missing["Unbalanced strings"]]]& // Map[#[[All,1]]&]
+		}
+		,
+		{
+			posCommentCloser =	Select[	StringPosition[code, "(*" | "*)", Overlaps->False],
+										Not[Or @@ IntervalMemberQ[Interval /@ posStrings, Interval@#]] &]
+		}
+		,
+		{#, StringTake[code, #]} & /@ posCommentCloser
+
+	]
+]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$UnbalancedCommentsOrString = HoldPattern[{___, {"Fatal", "UnexpectedCommentCloser"}|{"Fatal", "UnterminatedString"}, ___}];
+
+fixPattern[target_][code_String, pat : $$UnbalancedCommentsOrString, patToIgnore_ : {}] :=
+	Module[	{
+			fixedCode=Missing["UnbalancedCommentsOrString"]
+			,success=False
+			}
+			,
+			{ "Success" -> success
+			, "TotalFixes" -> 0
+			, "LikelyFalsePositive" -> False
+			, "SafeToEvaluate" -> False
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			, "StopCodeFix" -> True
+			} // Flatten // Association
+	]
+
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
 $$FatalGroupMissingCloserORANDFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}|{"Fatal", "UnexpectedCloser"}, ___};
 
 fixPattern[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexpectedCloser, patToIgnore_ : {}] := fixBrackets[target][code, pat]
