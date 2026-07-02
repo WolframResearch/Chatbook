@@ -1803,11 +1803,12 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             ImageSize -> Automatic
                                         ],
                                         Typeset`state = Which[
-                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ],
+                                            (* 476792: VPN can make it seem as if internet is not allowed, but it is. So no longer show these states. *)
+                                            (* Not @ TrueQ @ CurrentValue[ "AllowDownloads" ],
                                                 "InternetDisabled",
 
                                             Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ],
-                                                "NoInternet",
+                                                "NoInternet", *)
 
                                             (* be very generous in allowing AI access; only disable chatbar *)
                                             (* if disabled via license *)
