@@ -6,6 +6,7 @@
         "Autoload",
         "Bezier",
         "Birdnardo",
+        "Chatbar",
         "Chatbook",
         "Checkmark",
         "Checkmarked",
@@ -129,7 +130,8 @@
         "wolframresearch",
         "wolframscript",
         "wstp",
-        "wxfl"
+        "wxfl",
+        "xhigh"
     ],
     "ignoreRegExpList": [
         "\\:\\:[a-z]+", // message names

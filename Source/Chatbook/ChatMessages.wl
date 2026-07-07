@@ -302,7 +302,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
@@ -1715,6 +1715,8 @@ tokenizerName[ name_String ] :=
         StringContainsQ[ name, #, IgnoreCase -> True ] &,
         name
     ];
+
+tokenizerName[ Automatic ] := tokenizerName[ "gpt-4o" ];
 
 tokenizerName // endDefinition;
 

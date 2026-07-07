@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990071603"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990249013"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -29,6 +29,7 @@ Notebook[
     StyleDefinitions -> StyleData["NotebookAssistant`Text"]
    ],
    CellFrame -> 1.75,
+   ShowGroupOpener -> { },
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    ShowCellLabel -> False,
    CellFrameMargins -> {{12, 25}, {8, 8}},
@@ -4880,6 +4881,7 @@ Notebook[
    CellFrame -> 0,
    CellDingbat -> None,
    ShowCellBracket -> False,
+   ShowGroupOpener -> { },
    CellMargins -> {{10, 5}, {5, 10}},
    CellEventActions -> None,
    CellFrameLabels -> None,
@@ -4905,6 +4907,7 @@ Notebook[
    CellFrame -> 0,
    CellDingbat -> None,
    ShowCellBracket -> False,
+   ShowGroupOpener -> { },
    CellMargins -> {{10, 5}, {30, 12}},
    Initialization :> None,
    Background -> None,
@@ -5046,7 +5049,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3990071363"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3990247606"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

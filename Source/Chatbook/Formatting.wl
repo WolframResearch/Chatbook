@@ -1022,20 +1022,44 @@ insertCodeBelow // endDefinition;
 insertCodeInUserNotebook // beginDefinition;
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "Sidebar" ] := Enclose[
-    Module[ { cellObj },
-        cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
-        (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
-        If[ cellObj =!= None && cellTaggedQ[ Last[ ParentCell[ cellObj, All ], cellObj ], { "NotebookAssistantSidebarCell" } ],
-            SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
-            cellObj = None
+    Module[ { currentSelections, activeSelection, remnantSelection, newCellPosition },
+
+        (* determine the current selections *)
+        currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ chatNB, Except[ _Association ] -> <| |> ];
+        activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
+        remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
+
+        (* pre-write: move the selection as needed *)
+        (* If there is a remnant selection in the main content area, then make it the active selection *)
+        If[ remnantSelection =!= None,
+            With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ]
+        ];
+        (* If there is no selection in the notebook, then move the selection to the bottom *)
+        If[ CurrentValue[ chatNB, "SelectionType" ] === None,
+            SelectionMove[ chatNB, After, Notebook ]
+        ];
+        (* If there is at least one cell selected, then move the selection after the last selected cell *)
+        With[ { sel = SelectedCells[ chatNB ] },
+            If[ MatchQ[ sel, { __ } ],
+                SelectionMove[ Last @ sel, After, Cell ]
+            ]
         ];
 
-        If[ cellObj === None,
-            SelectionMove[ chatNB, After, Cell, AutoScroll -> True ];
-            NotebookWrite[ chatNB, preprocessInsertedCell @ cell, All ]
+        (* write the cell: utilize "AfterEvaluationGroup" to not break up Input/Output cells *)
+        newCellPosition = PreviousCell @ NotebookSelection @ chatNB;
+        If[ newCellPosition === None, (* at top of notebook, but may be within the first cell *)
+            With[ { cellWithin = First[ SelectedCells[ chatNB ], None ] },
+                If[ cellWithin === None,
+                    NotebookWrite[ chatNB, cell, All ]
+                    ,
+                    NotebookWrite[ NotebookLocationSpecifier[ cellWithin, "AfterEvaluationGroup" ], cell, All ]
+                ]
+            ]
             ,
-            insertAfterChatGeneratedCells[ cellObj, cell ]
+            NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "AfterEvaluationGroup" ], cell, All ]
         ];
+        With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
+        With[ { s = currentSelections }, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s ];
 
         selectionEvaluateCreateCell @ chatNB
     ],
@@ -1124,7 +1148,6 @@ copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
 copyCodeBlock[ code_String ] := (CopyToClipboard @ code; attachCopiedTooltip[ ]);
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
-copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
 copyCodeBlock[ cell_Cell ] := (CopyToClipboard @ cell; attachCopiedTooltip[ ]);
 copyCodeBlock // endDefinition;
 
@@ -1257,17 +1280,16 @@ stripMarkdownBoxes // endDefinition;
 (*getCodeBlockContent*)
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+
+getCodeBlockContent[   Cell[    cData_, "ChatCode", cs:"Input", ___ ] ] := reparseCodeBoxes @ Cell[ cData, cs ];
+getCodeBlockContent[   Cell[    cData_, cs:"ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] := Cell[ cData, cs, CellEvaluationLanguage -> lang ];
+getCodeBlockContent[   Cell[ b_BoxData, "ChatCodeBlock",        ___ ] ] := getCodeBlockContent @ First @ b; (* recurse into BoxData content if a ChatCodeBlock cell *)
+getCodeBlockContent[   Cell[   BoxData[ c_Cell ],               ___ ] ] := getCodeBlockContent @ c;         (* recurse into any BoxData inline cells *)
+getCodeBlockContent[ c:Cell[    cData_, cs_String,              ___ ] ] := c;                               (* stop recursion at unexpected cell structures *)
+
 getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := reparseCodeBoxes @ Cell[ boxes, "Input" ];
-
-getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] :=
-    Cell[ boxes, "ExternalLanguage", CellEvaluationLanguage -> lang ];
-
-getCodeBlockContent[ cell: Cell[ _, _String, ___ ] ] := cell;
 
 getCodeBlockContent // endDefinition;
 
@@ -1536,7 +1558,7 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s,
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
     s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
 };
 

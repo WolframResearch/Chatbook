@@ -399,7 +399,7 @@ initializeProgressContainer[ container_Symbol ] := (
     container = <|
         "DynamicContent" -> $defaultProgress,
         "FullContent"    -> $defaultProgress,
-        "UUID"           -> CreateUUID[ ]
+        "UUID"           -> createUUID[ ]
     |>
 );
 
@@ -1095,6 +1095,25 @@ taskWaitYield // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*createUUID*)
+createUUID // beginDefinition;
+
+createUUID[ base_String: "" ] := Replace[
+    AbortProtect @ CreateUUID @ base,
+    Except[ _String ] :> base <> createUUIDFallback[ ]
+];
+
+createUUID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createUUIDFallback*)
+createUUIDFallback // beginDefinition;
+createUUIDFallback[ ] := StringInsert[ IntegerString[ RandomInteger[ 2^128 - 1 ], 16, 32 ], "-", { 9, 13, 17, 21 } ];
+createUUIDFallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*optionsAssociation*)
 optionsAssociation // beginDefinition;
 
@@ -1190,7 +1209,7 @@ LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
 
 LogChatTiming[ eval_, tag_String ] := (
     If[ ! NumberQ @ $chatStartTime, $chatStartTime = AbsoluteTime[ ] ];
-    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = CreateUUID[ ] ];
+    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = createUUID[ ] ];
     If[ ! MatchQ[ $timingLog, _Internal`Bag ], $timingLog = Internal`Bag[ ] ];
     logChatTiming[ eval, tag ]
 );
@@ -1226,7 +1245,7 @@ logChatTiming[ eval_, tag_String ] :=
         ];
 
         usedTime = fullTime - Total @ innerTimings[[All, "FullTiming"]];
-        
+
         Internal`StuffBag[ $timingLog, <|
                 "ChatEvaluationCell" -> $ChatEvaluationCell,
                 "Tag"                -> tag,

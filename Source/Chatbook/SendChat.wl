@@ -226,7 +226,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        CurrentChatSettings[ cellObj, "Data" ] = data;
+        If[ ! TrueQ @ $cloudNotebooks, CurrentChatSettings[ cellObj, "Data" ] = data ];
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -337,7 +337,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         container = <|
             "DynamicContent" -> ProgressIndicator[ Appearance -> "Percolate" ],
             "FullContent"    -> ProgressIndicator[ Appearance -> "Percolate" ],
-            "UUID"           -> CreateUUID[ ]
+            "UUID"           -> createUUID[ ]
         |>;
 
         $reformattedCell = None;
@@ -1388,8 +1388,8 @@ $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
-    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /; 
-        toolShortNameQ @ name :> 
+    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
+        toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
@@ -2997,7 +2997,7 @@ writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
             pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
             cellTags = CurrentValue[ cell, CellTags ];
-            uuid     = CreateUUID[ ];
+            uuid     = createUUID[ ];
             new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
 
             $lastChatString  = string;
@@ -3380,7 +3380,7 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
         b64      = ConfirmBy[ pageData[ "Pages", pageData[ "CurrentPage" ] ], StringQ, "Base64" ];
         bytes    = ConfirmBy[ ByteArray @ b64, ByteArrayQ, "ByteArray" ];
         content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData | _Association, "TextData" ];
-        uuid     = CreateUUID[ ];
+        uuid     = createUUID[ ];
 
         cell = Cell[
             If[ AssociationQ @ content, Lookup[ content, "Response" ], content ],
