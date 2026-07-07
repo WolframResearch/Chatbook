@@ -21,7 +21,7 @@ Needs["CodeParser`"]
 `$MaxIterateTimeBracketsFix=1. (*seconds*)
 `$MaxIterationsBracketsFix=10	(*iterations*)
 
-Off[CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled]
+codeCheckIgnoreMessage=(CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled)
 
 Begin[ "`Private`" ];
 
@@ -130,7 +130,8 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 
 
 CodeCheck[target_][code_String, OptionsPattern[]]:=
-	(
+	Quiet[
+
 		Flatten@List[
 			CodeInspectTokenSequence[code,Sequence@@Options[CodeCheck]]
 			,
@@ -140,7 +141,9 @@ CodeCheck[target_][code_String, OptionsPattern[]]:=
 		]
 		//
 		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
-	)
+	,
+		Evaluate@codeCheckIgnoreMessage
+	]
 
 CodeCheck[target_][x_, OptionsPattern[]]:=x
 
@@ -467,7 +470,7 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
 	//	dechofunction["Final number with max score + highest default score :", Length]
-	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Mulitple fixes found"]]
+	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Multiple fixes found"]]
 				,	{}->Missing["Bracket fix", "No Highest score"]}]
 )
 
