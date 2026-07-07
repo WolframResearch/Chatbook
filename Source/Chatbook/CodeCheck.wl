@@ -356,7 +356,7 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
 	//	dechofunction["Final number with max score + highest default score :", Length]
-	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Mulitple fixes found"]]
+	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Multiple fixes found"]]
 				,	{}->Missing["Bracket fix", "No Highest score"]}]
 )
 
