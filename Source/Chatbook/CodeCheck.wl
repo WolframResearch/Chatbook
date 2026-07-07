@@ -21,7 +21,7 @@ Needs["CodeParser`"]
 `$MaxIterateTimeBracketsFix=1. (*seconds*)
 `$MaxIterationsBracketsFix=10	(*iterations*)
 
-codeCheckIgnoreMessage=CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled
+codeCheckIgnoreMessage=(CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled)
 
 Begin[ "`Private`" ];
 
@@ -48,7 +48,7 @@ CodeCheckFix[code_String, OptionsPattern[]]:= (
 	Block[ {niter=0, recursionLimit=$FixRecursionLimit, $target=OptionValue["Target"]}
 			,
 			With[	{
-						aCodeCheckInitial	=	Quiet[CodeCheck[$target][code],codeCheckIgnoreMessage]
+						aCodeCheckInitial	=	CodeCheck[$target][code]
 					}
 					,
 					{	errorsDetectedQ		=	(aCodeCheckInitial["InspectionObjects"] =!= {}),
@@ -127,14 +127,17 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 
 
 CodeCheck[target_][code_String, OptionsPattern[]]:=
-	(
+	Quiet[
+
 		Flatten@List[
 			CodeInspectTokenSequence[code,Sequence@@Options[CodeCheck]],
 			CodeInspect[code, Sequence@@FilterRules[Options[CodeCheck],Options[CodeInspect]]]
 		]
 		//
 		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
-	)
+	,
+		Evaluate@codeCheckIgnoreMessage
+	]
 
 CodeCheck[target_][x_, OptionsPattern[]]:=x
 
