@@ -183,26 +183,17 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
-$modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = {
-    (* Anthropic turned off access to Claude Fable 5 on 2026-6-12:
-    <https://www.anthropic.com/news/fable-mythos-access>
-
-    But using the configuration of "ClaudeOpus47Plus" at least makes chat inputs
-    properly relay Anthropic warning:
-    "Claude Fable 5 is not available. Please use Opus 4.8. Learn more:
-https://www.anthropic.com/news/fable-mythos-access."
-    *)
-    $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ],
-
-    (* TODO: the supposed configuration for real Claude Fable 5 *)
-    <|
-        "MaxContextTokens" -> 1000000,
-        "Multimodal"       -> True,
-        "Reasoning"        -> "adaptive",
-        (*"Reasoning"        -> "high",*)
-        "Temperature"      -> 1
-    |>
-}[[1]];
+$modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
+    "MaxContextTokens" -> 1000000,
+    "Multimodal"       -> True,
+    "Reasoning"        -> {
+        Automatic, "None",
+        "low", "medium", "high", "max",
+        "Adaptive",
+        Quantity[16384, "Tokens"]
+    }[[7]],  (* TODO: pin down which value to use; "adaptive" may be the best. *)
+    "Temperature"      -> 1
+|>;
 
 (* TODO *)
 (*$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] =
