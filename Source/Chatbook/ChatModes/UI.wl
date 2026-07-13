@@ -428,46 +428,42 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
     ],
-    With[
-        {
-            newNB = ShowNotebookAssistance[ nbo, "Window",
-                "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ]
-        },
-        If[ MatchQ[ newNB, _NotebookObject ],
-            SelectionMove[ newNB, Before, Notebook ];
-            NotebookWrite[
-                newNB,
-                ReplaceRepeated[
-                    NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
-                    (* so far there's only one TemplateBox that needs to be unconverted *)
-                    {
-                        Cell[ a___, CellTags -> { b___, "SidebarTopCell", c___ }, d___ ] :>
-                            RuleCondition[ Cell[ a, CellTags -> { b, c }, d ], True ],
-                        Cell[ a___, CellTags -> "SidebarTopCell" | { }, b___ ] :>
-                            RuleCondition[ Cell[ a, b ], True ],
-                        Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
-                            RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
-                        TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___ ] :>
-                            RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
-                    }
-                ]
-            ];
-            attachWorkspaceChatInput @ newNB;
-            With[ { chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] },
-                If[ chatTitle =!= "",
-                    setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
-                    writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
-                ]
-            ];
+    Module[ { newNB, cells, chatTitle },
+        cells = ReplaceRepeated[
+            NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
+            (* so far there's only one TemplateBox that needs to be unconverted *)
+            {
+                Cell[ a___, CellTags -> { b___, "SidebarTopCell", c___ }, d___ ] :>
+                    RuleCondition[ Cell[ a, CellTags -> { b, c }, d ], True ],
+                Cell[ a___, CellTags -> "SidebarTopCell" | { }, b___ ] :>
+                    RuleCondition[ Cell[ a, b ], True ],
+                Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
+                    RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
+                TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___ ] :>
+                    RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
+            }
+        ];
+        chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ];
 
-            (* remove sidebar and its content *)
-            NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-            removeSidebarScrollingCellContent[ nbo, sidebarCell ];
-            removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
-            CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
-            setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
-            FrontEndTokenExecute[ nbo, "HideSidebar" ];
-        ]
+        FrontEndTokenExecute[ nbo, "HideSidebar" ]; (* not displaying the sidebar should reduce dynamics *)
+
+        (* remove everything from the closed sidebar *)
+        NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+        removeSidebarScrollingCellContent[ nbo, sidebarCell ];
+        removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
+        
+        (* open a new workspace window *)
+        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ];
+
+        If[ chatTitle =!= "",
+            setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
+            writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
+        ];
+        SelectionMove[ newNB, Before, Notebook ];
+        NotebookWrite[ newNB, cells ];
+        attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
     ],
     Appearance -> "Suppressed",
     Method     -> "Queued"
