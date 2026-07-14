@@ -439,7 +439,8 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
-    "MaxContextTokens" -> 400000
+    "MaxContextTokens" -> 400000,
+    "Reasoning"                  -> "Medium"(*Missing[ "NotSupported" ]*)
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
