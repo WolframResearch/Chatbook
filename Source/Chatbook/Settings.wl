@@ -442,7 +442,7 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
-$modelAutoSettings[ Automatic, "GPT56" ] =
+$modelAutoSettings[ Automatic, "GPT55" ] =
     $modelAutoSettings[ Automatic, "GPT54" ];
 (*
 * Using "Reasoning" -> "Medium"/"High"/... leads service error:
