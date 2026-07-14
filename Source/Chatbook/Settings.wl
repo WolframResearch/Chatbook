@@ -193,9 +193,9 @@ $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
     "Reasoning"        -> {
         Automatic, "None",
         "low", "medium", "high", "max",
-        "adaptive",
+        "Adaptive",
         Quantity[16384, "Tokens"]
-    }[[1]],  (* TODO: pin down which value to use; "adaptive" may be the best. *)
+    }[[7]],  (* TODO: pin down which value to use; "adaptive" may be the best. *)
     "Temperature"      -> 1
 |>;
 
