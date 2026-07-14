@@ -442,6 +442,21 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
+$modelAutoSettings[ Automatic, "GPT56" ] =
+    $modelAutoSettings[ Automatic, "GPT54" ];
+(*
+* Using "Reasoning" -> "Medium"/"High"/... leads service error:
+
+"The service returned the following error message: Function tools with reasoning_effort
+are not supported for gpt-5.6 in /v1/chat/completions. To use function tools, use
+/v1/responses or set reasoning_effort to 'none'.."
+
+*)
+$modelAutoSettings[ Automatic, "GPT56" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54" ],
+    "Reasoning" -> "None"
+|>;
+
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
