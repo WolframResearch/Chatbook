@@ -588,9 +588,8 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
         resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
-(* FIXME: This should just convert private use area characters to their corresponding ASCII representations *)
 replaceUnicodeCharacters[ content_String ] :=
-    StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
+    StringReplace[ content, "\[FreeformPrompt]" -> "\\"<>"[FreeformPrompt]" ];
 
 replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
     With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
@@ -1429,6 +1428,10 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     (*E*)RegularExpression[                   "\\S*\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
 
     (*F*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]"               ] :> "\[FreeformPrompt][$1]",
+
+    (* Must stay below (E), which captures this head itself: converting it earlier leaves a bare "[...]" for
+       (E) to match with an empty head, prepending a second \[FreeformPrompt] *)
+    "\\"<>"[FreeformPrompt]" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
