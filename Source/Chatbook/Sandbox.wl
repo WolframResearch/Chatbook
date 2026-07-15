@@ -409,7 +409,7 @@ getSandboxKernel // beginDefinition;
 getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
 getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
 getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
-getSandboxKernel[ { } ] := startSandboxKernel[ ];
+getSandboxKernel[ { } ] := Quiet[ startSandboxKernel[ ], { LinkObject::linkd, LinkObject::linkn } ];
 getSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -540,7 +540,12 @@ startSandboxKernel[ ] := Enclose[
                 Unevaluated @ EvaluatePacket[
                     UsingFrontEnd @ Null;
                     SetOptions[ First @ Streams[ "stdout" ], PageWidth -> Infinity ];
-                    Developer`StartProtectedMode[ "Read" -> read, "Write" -> write, "Execute" -> execute ]
+                    Developer`StartProtectedMode[
+                        "Read"                -> read,
+                        "Write"               -> write,
+                        "Execute"             -> execute,
+                        "ResolveAllowedPaths" -> False (* Skip checking for existence of files for faster startup *)
+                    ]
                 ]
             ]
         ];
@@ -1465,7 +1470,7 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
             "\[FreeformPrompt][" <> query <> "]",
         "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /;
             StringFreeQ[ query, "[" | "]" ] && ! StringMatchQ[ query, $$emptyListString ] :>
-            "\[FreeformPrompt][\"" <> query <> "\"]",
+                "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
         ("Import"|"Get") ~~ "[\"<!" ~~ uri: Except[ "!" ].. ~~ "!>\"]" :>
