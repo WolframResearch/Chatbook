@@ -127,8 +127,9 @@ esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c,
 $mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
-$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
-$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+$mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
+$texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -379,7 +380,7 @@ makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength
     makeResultCell0 @ inlineCodeCell @ name;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = makeTeXBoxes @ math },
+    With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
