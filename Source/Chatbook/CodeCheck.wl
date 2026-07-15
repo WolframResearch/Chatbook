@@ -135,7 +135,7 @@ CodeCheck[target_][code_String, OptionsPattern[]]:=
 		//
 		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
 	,
-		Evaluate@codeCheckIgnoreMessage
+		CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled
 	]
 
 CodeCheck[target_][x_, OptionsPattern[]]:=x
