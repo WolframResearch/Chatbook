@@ -367,3 +367,19 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "PropagateMessages-Workaround@@Tests/WolframLanguageToolEvaluate.wlt:360,1-369,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Auto-Correct Rewriting Valid FreeformPrompt Syntax*)
+(* The optional second argument constrains what the query parses to. Auto-correct rules used to treat it as a
+   hallucination and strip it, taking the surrounding code with it, leaving something that could not evaluate. *)
+VerificationTest[
+    WolframLanguageToolEvaluate[
+        "QuantityMagnitude[EntityValue[\[FreeformPrompt][\"France\", Entity], \"Population\"]]",
+        "Result",
+        Method -> "Session"
+    ],
+    HoldCompleteForm[ _Integer ],
+    SameTest -> MatchQ,
+    TestID   -> "RegressionTests-FreeformPromptTypeSpecifier@@Tests/WolframLanguageToolEvaluate.wlt:376,1-385,2"
+]
