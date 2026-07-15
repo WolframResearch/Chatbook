@@ -106,6 +106,8 @@ Settings that model configurations commonly override, organized by category. See
 | `"TokenizerName"` | String | Which tokenizer to use for token counting (e.g., `"gpt-4o"`) |
 | `"ExcludedBasePrompts"` | List | Base prompt components to skip for this model |
 
+If a model frequently writes the wrong character in place of a Wolfram Language special character, enable `"ReplaceUnicodeCharacters"` rather than adding auto-correct rules to `$llmAutoCorrectRules` in `SendChat.wl`. Sending the ASCII long name avoids the mojibake at its source, whereas rules that repair responses after the fact have to guess at the model's intent and can rewrite valid code. See [Chat Behavior Settings](settings/setting-groups/chat-behavior.md).
+
 Settings whose value is `Missing["NotSupported"]` receive special treatment throughout the system. See [Unsupported Parameters (`Missing["NotSupported"]`)](#unsupported-parameters-missingnotsupported) for details.
 
 ---
