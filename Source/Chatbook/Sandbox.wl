@@ -1549,7 +1549,9 @@ parseExpressionURI // endDefinition;
 (*parseControlEquals*)
 parseControlEquals // beginDefinition;
 
-parseControlEquals[ q_String ] := parseControlEquals[ q, _ ];
+parseControlEquals[ q: _String | { __String } ] := parseControlEquals[ q, _ ];
+
+parseControlEquals[ q: { __String }, patt_ ] := parseControlEquals[ #, patt ] & /@ q;
 
 parseControlEquals[ q_String, patt_ ] :=
     Module[ { bag },
@@ -1560,8 +1562,15 @@ parseControlEquals[ q_String, patt_ ] :=
         ]
     ];
 
-parseControlEquals[ messages_, HoldComplete[ q_String ] ] :=
+parseControlEquals[ messages_, HoldComplete[ q: _String | { __String } ] ] :=
     parseControlEquals[ messages, HoldComplete[ q, _ ] ];
+
+parseControlEquals[ messages_, HoldComplete[ q: { __String }, patt_ ] ] :=
+    Replace[
+        $ConditionHold @@ { parseControlEquals[ messages, HoldComplete[ #, patt ] ] & /@ q },
+        $ConditionHold[ e___ ] :> e,
+        { 2 }
+    ];
 
 parseControlEquals[ messages_, HoldComplete[ q_String, patt_ ] ] :=
     parseControlEquals0[
