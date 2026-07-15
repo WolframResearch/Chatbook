@@ -409,7 +409,7 @@ getSandboxKernel // beginDefinition;
 getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
 getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
 getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
-getSandboxKernel[ { } ] := Quiet[ startSandboxKernel[ ], LinkObject::linkn ];
+getSandboxKernel[ { } ] := Quiet[ startSandboxKernel[ ], { LinkObject::linkd, LinkObject::linkn } ];
 getSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
