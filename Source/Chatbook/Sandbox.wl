@@ -1448,6 +1448,10 @@ toHeldExpression // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*preprocessSandboxString*)
+
+(* An empty list is already a valid \[FreeformPrompt] argument, so it must not be quoted as an unparsed query: *)
+$$emptyListString = WhitespaceCharacter... ~~ "{" ~~ WhitespaceCharacter... ~~ "}" ~~ WhitespaceCharacter...;
+
 preprocessSandboxString // beginDefinition;
 
 preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringReplace[
@@ -1459,7 +1463,8 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
             "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt](" ~~ query: Except[ ")" ].. ~~ ")" :>
             "\[FreeformPrompt][" <> query <> "]",
-        "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
+        "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /;
+            StringFreeQ[ query, "[" | "]" ] && ! StringMatchQ[ query, $$emptyListString ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
         "\[FreeformPrompt]\"" ~~ query: Except[ "\"" ].. ~~ "\"" /; StringFreeQ[ query, "[" | "]" ] :>
             "\[FreeformPrompt][\"" <> query <> "\"]",
@@ -1549,7 +1554,9 @@ parseExpressionURI // endDefinition;
 (*parseControlEquals*)
 parseControlEquals // beginDefinition;
 
-parseControlEquals[ q_String ] := parseControlEquals[ q, _ ];
+parseControlEquals[ q: _String | { ___String } ] := parseControlEquals[ q, _ ];
+
+parseControlEquals[ q: { ___String }, patt_ ] := parseControlEquals[ #, patt ] & /@ q;
 
 parseControlEquals[ q_String, patt_ ] :=
     Module[ { bag },
@@ -1560,8 +1567,15 @@ parseControlEquals[ q_String, patt_ ] :=
         ]
     ];
 
-parseControlEquals[ messages_, HoldComplete[ q_String ] ] :=
+parseControlEquals[ messages_, HoldComplete[ q: _String | { ___String } ] ] :=
     parseControlEquals[ messages, HoldComplete[ q, _ ] ];
+
+parseControlEquals[ messages_, HoldComplete[ q: { ___String }, patt_ ] ] :=
+    Replace[
+        $ConditionHold @@ { parseControlEquals[ messages, HoldComplete[ #, patt ] ] & /@ q },
+        $ConditionHold[ e___ ] :> e,
+        { 2 }
+    ];
 
 parseControlEquals[ messages_, HoldComplete[ q_String, patt_ ] ] :=
     parseControlEquals0[
