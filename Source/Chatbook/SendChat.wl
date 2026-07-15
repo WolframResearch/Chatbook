@@ -1399,38 +1399,15 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "<" ~~ uri: $$attachmentURI ~~ ">" :> "<!" <> uri <> "!>",
     "!<" ~~ uri: $$attachmentURI ~~ "!>" :> "<!" <> uri <> "!>",
     (* ============ Entity hallucinations or mojibake ============ *)
+    (* Note: If a particular model is frequently using the wrong unicode character instead of \[FreeformPrompt],
+       the proper fix is almost certainly to use the `"ReplaceUnicodeCharacters" -> True` setting rather than add
+       extra rules here. This setting was recently updated to use a pure ASCII representation of the \[FreeformPrompt]
+       character, which should reduce the likelihood of incorrect unicode characters being used instead. *)
     RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
     RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
     "\:ff1d" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
     "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
-    (* catch-alls for any head in decreasing specificity
-        + non-greedy capturing of head where possible
-        + generous white space allowance
-        + captured quoted text can have escaped characters *)
-    (* These are concretely fixable since 'Entity' is easily identifiable in the string pattern for replacement
-        A) EntityValue[head["...", Entity]
-        B) EntityValue[head["..."],         << stop after comma, idempotent with correct head of \[FreeformPrompt] >>
-        C) \:XXXX["...", Entity]            << hexadecimal, any case, also covered by (F) but let's catch these early >>
-        D) \\uXXXX["...", Entity]           << hexadecimal, any case, also covered by (F) but let's catch these early >>
-
-        Entering dangerous territory with greedy head capture, but the weirdness of a standalone Entity symbol is odd enough
-        E) head["...", Entity]              << can't go above (E) because (E) has a space in it >>
-
-        Further dangerous territory, but the \:XXXX format is specific to WL, and normal function heads should be alphanumeric
-        F) \:XXXX["..."]                    << no Entity to mark it as a telltale hallucination, but uses WL hexadecimal so it is odd enough >>
-    *)
-    (*A*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "EntityValue[\[FreeformPrompt][$1]",
-    (*B*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]\\s*,"          ] :> "EntityValue[\[FreeformPrompt][$1],",
-    (*C*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-    (*D*)RegularExpression[    "\\\\u[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-
-    (*E*)RegularExpression[                   "\\S*\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-
-    (*F*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]"               ] :> "\[FreeformPrompt][$1]",
-
-    (* Must stay below (E), which captures this head itself: converting it earlier leaves a bare "[...]" for
-       (E) to match with an empty head, prepending a second \[FreeformPrompt] *)
     "\\"<>"[FreeformPrompt]" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
