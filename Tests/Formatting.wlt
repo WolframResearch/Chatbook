@@ -23,7 +23,7 @@ VerificationTest[
    intact for it to render a literal dollar sign: *)
 VerificationTest[
     FirstCase[
-        Wolfram`Chatbook`FormatChatOutput[ "Here is some TeX: $$\\$123.45 / \\$6.78$$" ],
+        FormatChatOutput[ "Here is some TeX: $$\\$123.45 / \\$6.78$$" ],
         TemplateBox[ as_Association, "TeXAssistantTemplate" ] :> as,
         $Failed,
         Infinity
@@ -40,7 +40,7 @@ VerificationTest[
 (* The same holds for the other characters markdown escapes: *)
 VerificationTest[
     FirstCase[
-        Wolfram`Chatbook`FormatChatOutput[ "$$a \\_ b \\# c$$" ],
+        FormatChatOutput[ "$$a \\_ b \\# c$$" ],
         TemplateBox[ as_Association, "TeXAssistantTemplate" ] :> as,
         $Failed,
         Infinity
@@ -63,7 +63,7 @@ VerificationTest[
 
 (* Outside of math the backslash only marks the escape, so it is dropped instead of being kept: *)
 VerificationTest[
-    Wolfram`Chatbook`FormatChatOutput[ "Cost: \\$5 and \\$6" ],
+    FormatChatOutput[ "Cost: \\$5 and \\$6" ],
     RawBoxes @ Cell @ TextData @ { "Cost: $5 and $6" },
     SameTest -> MatchQ,
     TestID   -> "Markdown-Escaped-Dollar@@Tests/Formatting.wlt:65,1-70,2"
