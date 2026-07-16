@@ -772,11 +772,7 @@ floatingButtonGrid // beginDefinition;
 floatingButtonGrid[ cell_Cell, lang_ ] /; $cloudNotebooks :=
     Grid[
         {
-            {
-                button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-            }
+            codeBlockButtons[ lang, EvaluationCell[ ], False ]
         },
         Alignment -> Top,
         Spacings  -> 0.2
@@ -789,21 +785,11 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
             {
                 checkTemplateBoxes @ Which[
                     TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
-                        {
-                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
-                        },
+                        codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
                     TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
-                        {
-                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], "Sidebar" ] ]
-                        },
+                        codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
-                        {
-                            button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                            button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                            button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-                        }
+                        codeBlockButtons[ lang, EvaluationCell[ ], False ]
                 ]
             },
             Alignment -> Top,
@@ -820,11 +806,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
     {
         ToBoxes @ Grid[
             {
-                checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ string, True ] ],
-                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
-                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
-                }
+                checkTemplateBoxes @ codeBlockButtons[ lang, string, False ]
             },
             Alignment -> Top,
             Spacings  -> 0.2
@@ -834,6 +816,39 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
 ];
 
 floatingButtonGrid // endDefinition;
+
+codeBlockButtons // beginDefinition;
+
+codeBlockButtons[ lang_, target_, workspaceQ_ ] /; plaintextLanguageQ @ lang := {
+    button[ $insertInputButtonLabel, insertCodeBelow[ target, False ] ],
+    button[ If[ TrueQ @ workspaceQ, $copyToClipboardButtonLabelWorkspaceChat, $copyToClipboardButtonLabel ], copyCodeBlock @ target ]
+};
+
+codeBlockButtons[ lang_, target_, workspaceQ_ ] := {
+    button[ evaluateLanguageLabel[ lang, workspaceQ ], insertCodeBelow[ target, True ] ],
+    button[ $insertInputButtonLabel, insertCodeBelow[ target, False ] ],
+    button[ If[ TrueQ @ workspaceQ, $copyToClipboardButtonLabelWorkspaceChat, $copyToClipboardButtonLabel ], copyCodeBlock @ target ]
+};
+
+codeBlockButtons // endDefinition;
+
+codeBlockWorkspaceButtons // beginDefinition;
+
+codeBlockWorkspaceButtons[ lang_, target_, _ ] /; plaintextLanguageQ @ lang := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ]
+};
+
+codeBlockWorkspaceButtons[ lang_, target_, evaluate_ ] := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ],
+    button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ target, evaluate ] ]
+};
+
+codeBlockWorkspaceButtons // endDefinition;
+
+plaintextLanguageQ // beginDefinition;
+plaintextLanguageQ[ language_String ] := MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ];
+plaintextLanguageQ[ ___ ] := False;
+plaintextLanguageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1683,7 +1698,7 @@ $stringFormatRules = {
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
 makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
-makeCodeBlockCell[ language_String, code_String ] /; MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ] :=
+makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ language :=
     makeInteractiveCodeCell[ "Plaintext", unescapePlainTextCodeBlock @ stripCodePadding @ code ];
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
