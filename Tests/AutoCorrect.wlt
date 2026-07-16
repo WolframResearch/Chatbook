@@ -73,4 +73,39 @@ VerificationTest[
     TestID   -> "AutoCorrect-Preserve-Structure@@Tests/AutoCorrect.wlt:69,1-74,2"
 ]
 
+(* Models sometimes over-escape the leading backslash, so any number of them must be accepted *)
+VerificationTest[
+    Wolfram`Chatbook`Common`autoCorrect[ "\\\\[FreeformPrompt][\"France\", Entity]" ],
+    "\[FreeformPrompt][\"France\", Entity]",
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Extra-Backslashes@@Tests/AutoCorrect.wlt:77,1-82,2"
+]
+
+VerificationTest[
+    (* Concatenated to keep the unrecognized long names out of the source text *)
+    Wolfram`Chatbook`Common`autoCorrect /@ {
+        "\\" <> "[FreeformInput][\"a\"]",
+        "\\\\" <> "[FreeformInput][\"a\"]",
+        "\\" <> "[FreeformEntity][\"a\"]",
+        "\\\\" <> "[FreeformEntity][\"a\"]"
+    },
+    ConstantArray[ "\[FreeformPrompt][\"a\"]", 4 ],
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Freeform-Aliases@@Tests/AutoCorrect.wlt:84,1-95,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`autoCorrect[ "\\[RawEscape][FreeformPrompt][\"France\"]" ],
+    "\[FreeformPrompt][\"France\"]",
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-RawEscape@@Tests/AutoCorrect.wlt:97,1-102,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`autoCorrect[ "\\\:ff1d[\"a\", Entity]" ],
+    "\[FreeformPrompt][\"a\", Entity]",
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Backslash-Fullwidth@@Tests/AutoCorrect.wlt:104,1-109,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

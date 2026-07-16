@@ -1405,10 +1405,11 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
        character, which should reduce the likelihood of incorrect unicode characters being used instead. *)
     RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
     RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
-    "\:ff1d" -> "\[FreeformPrompt]",
-    "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
-    "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
-    "\\"<>"[FreeformPrompt]" -> "\[FreeformPrompt]",
+    "\\"... ~~ "\:ff1d" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformInput]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformEntity]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformPrompt]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[RawEscape][FreeformPrompt]" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
