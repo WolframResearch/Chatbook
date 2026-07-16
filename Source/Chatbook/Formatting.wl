@@ -124,7 +124,7 @@ $autoOperatorRenderings = <|
 
 esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c, "UTF-8" ], 255 ] <> "\[EntityEnd]";
 
-$mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
+$mdEscapedCharacters = { "\\", "`", "$", "*", "_", "#", "|" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
 $mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
@@ -238,10 +238,7 @@ reformatTextData // endDefinition;
 reformatTextData0 // beginDefinition;
 
 reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    ReplaceAll[
-        reformatTextData0 @ StringReplace[ string, $mdEscapeRules ],
-        s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
-    ];
+    reformatTextDataEscaped @ StringSplit[ string, $textDataFormatRulesNoMarkdownUnescape ];
 
 reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
@@ -260,6 +257,24 @@ reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
 reformatTextData0[ other_ ] := other;
 
 reformatTextData0 // endDefinition;
+
+reformatTextDataEscaped // beginDefinition;
+
+reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten[
+    Replace[
+        parts,
+        {
+            s_String :> ReplaceAll[
+                reformatTextData0 @ StringReplace[ s, $mdEscapeRules ],
+                t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
+            ],
+            other_ :> makeResultCell @ other
+        },
+        { 1 }
+    ]
+];
+
+reformatTextDataEscaped // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -359,11 +374,14 @@ makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
+makeResultCell0[ codeBlockCell[ language_String, code_String ] ] := {
+    "\n",
     makeCodeBlockCell[
-        StringReplace[ StringTrim @ language, $externalLanguageRules, IgnoreCase -> True ],
+        StringReplace[ StringDelete[ StringTrim @ language, StartOfString~~"```" ], $externalLanguageRules, IgnoreCase -> True ],
         StringDelete[ code, { StartOfString~~Whitespace~~StartOfLine, Whitespace~~EndOfString } ]
-    ];
+    ],
+    "\n"
+};
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
     makeInlineWL @ code;
@@ -1459,7 +1477,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
-$$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
+$$cmd               = RegularExpression[ "[A-Za-z_]{1,80}" ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
@@ -1471,6 +1489,24 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+$textDataFormatRulesNoMarkdownUnescape = {
+    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+
+    speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
+
+    StringExpression[
+        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ code__ ],
+        ("```"|EndOfString)
+    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
+        If[ StringMatchQ[ code, $$mdTable ],
+            tableCell @ code,
+            codeBlockCell[ language, code ]
+        ]
+};
+
 $textDataFormatRules = {
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
@@ -1647,8 +1683,14 @@ $stringFormatRules = {
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
 makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] /; MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ] :=
+    makeInteractiveCodeCell[ "Plaintext", unescapePlainTextCodeBlock @ stripCodePadding @ code ];
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
+
+unescapePlainTextCodeBlock // beginDefinition;
+unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];
+unescapePlainTextCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

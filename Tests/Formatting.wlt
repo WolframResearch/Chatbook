@@ -68,3 +68,84 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Markdown-Escaped-Dollar@@Tests/Formatting.wlt:65,1-70,2"
 ]
+
+VerificationTest[
+    StringReplace[
+        FirstCase[ FormatChatOutput[ "/\\\\_/\\\\\n( o.o )\n > ^ <" ], s_String :> s, $Failed, Infinity ],
+        "\r\n" -> "\n"
+    ],
+    "/\\_/\\\n( o.o )\n > ^ <",
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-ASCII-Art-Backslashes@@Tests/Formatting.wlt:72,1-80,2"
+]
+
+VerificationTest[
+    ToCharacterCode /@ StringReplace[
+        Cases[
+            FormatChatOutput[ "```text\n /\\\\_/\\\\\\\\\n( o.o )\n > ^ <\n```" ],
+            Cell[ code_, "ChatPreformatted", ___ ] :> code,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    ToCharacterCode /@ { " /\\_/\\\\\n( o.o )\n > ^ <" },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:82,1-93,2"
+]
+
+VerificationTest[
+    StringReplace[
+        Cases[
+            FormatChatOutput[ "```python\nprint('\\\\')\n```" ],
+            Cell[ code_, "ExternalLanguage", ___ ] :> code,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    { "print('\\\\')" },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:95,1-106,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "/\\\\_/\\\\\n( o.o )\n > ^ <" ],
+        Cell[ _, "InlineToolCall", ___ ],
+        Infinity
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:96,1-104,2"
+]
+
+VerificationTest[
+    ToCharacterCode @ StringReplace[
+        FirstCase[
+            FormatChatOutput[ "<thinking>/\\\\_/\\\\\n( o.o )\n > ^ <</thinking>" ],
+            TemplateBox[ { text_String, _ }, "ThoughtsOpener" ] :> text,
+            $Failed,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    ToCharacterCode @ "/\\\\_/\\\\\n( o.o )\n > ^ <",
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:106,1-119,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[
+            "Sure:\n\n```text\n /\\\\_/\\\\\\\\\n( o.o )\n > ^ <\n```\n\nAnother one:\n\n```text\n /\\\\_/\\\\  \n( -.- ) \n > ~ <\n```"
+        ],
+        TextData[ data_ ] :> Replace[
+            data,
+            { ___, s1_String, _Cell, s2_String, _Cell, ___ } /;
+                StringEndsQ[ s1, "\n" ] && StringStartsQ[ s2, "\n" ] && StringEndsQ[ s2, "\n" ] :> True
+        ],
+        Infinity
+    ],
+    { True },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:136,1-151,2"
+]
