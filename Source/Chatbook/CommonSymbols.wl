@@ -167,6 +167,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `createMenuService;
 `createNewInlineOutput;
 `createPreferencesContent;
+`createUUID;
 `currentChatSettings;
 `cv;
 `cvExpand;

@@ -127,8 +127,9 @@ esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c,
 $mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
-$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
-$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+$mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
+$texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -379,7 +380,7 @@ makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength
     makeResultCell0 @ inlineCodeCell @ name;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = makeTeXBoxes @ math },
+    With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
@@ -1022,20 +1023,44 @@ insertCodeBelow // endDefinition;
 insertCodeInUserNotebook // beginDefinition;
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "Sidebar" ] := Enclose[
-    Module[ { cellObj },
-        cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
-        (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
-        If[ cellObj =!= None && cellTaggedQ[ Last[ ParentCell[ cellObj, All ], cellObj ], { "NotebookAssistantSidebarCell" } ],
-            SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
-            cellObj = None
+    Module[ { currentSelections, activeSelection, remnantSelection, newCellPosition },
+
+        (* determine the current selections *)
+        currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ chatNB, Except[ _Association ] -> <| |> ];
+        activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
+        remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
+
+        (* pre-write: move the selection as needed *)
+        (* If there is a remnant selection in the main content area, then make it the active selection *)
+        If[ remnantSelection =!= None,
+            With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ]
+        ];
+        (* If there is no selection in the notebook, then move the selection to the bottom *)
+        If[ CurrentValue[ chatNB, "SelectionType" ] === None,
+            SelectionMove[ chatNB, After, Notebook ]
+        ];
+        (* If there is at least one cell selected, then move the selection after the last selected cell *)
+        With[ { sel = SelectedCells[ chatNB ] },
+            If[ MatchQ[ sel, { __ } ],
+                SelectionMove[ Last @ sel, After, Cell ]
+            ]
         ];
 
-        If[ cellObj === None,
-            SelectionMove[ chatNB, After, Cell, AutoScroll -> True ];
-            NotebookWrite[ chatNB, preprocessInsertedCell @ cell, All ]
+        (* write the cell: utilize "AfterEvaluationGroup" to not break up Input/Output cells *)
+        newCellPosition = PreviousCell @ NotebookSelection @ chatNB;
+        If[ newCellPosition === None, (* at top of notebook, but may be within the first cell *)
+            With[ { cellWithin = First[ SelectedCells[ chatNB ], None ] },
+                If[ cellWithin === None,
+                    NotebookWrite[ chatNB, cell, All ]
+                    ,
+                    NotebookWrite[ NotebookLocationSpecifier[ cellWithin, "AfterEvaluationGroup" ], cell, All ]
+                ]
+            ]
             ,
-            insertAfterChatGeneratedCells[ cellObj, cell ]
+            NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "AfterEvaluationGroup" ], cell, All ]
         ];
+        With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
+        With[ { s = currentSelections }, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s ];
 
         selectionEvaluateCreateCell @ chatNB
     ],

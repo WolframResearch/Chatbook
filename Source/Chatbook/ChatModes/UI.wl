@@ -407,7 +407,7 @@ sidebarNewChatButton[ nbo_, sidebarCell_ ] :=
         NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
         removeSidebarScrollingCellContent[ nbo, sidebarCell ];
         removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
-        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ]
         ,
         Appearance -> "Suppressed",
@@ -428,46 +428,42 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
     ],
-    With[
-        {
-            newNB = ShowNotebookAssistance[ nbo, "Window",
-                "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ]
-        },
-        If[ MatchQ[ newNB, _NotebookObject ],
-            SelectionMove[ newNB, Before, Notebook ];
-            NotebookWrite[
-                newNB,
-                ReplaceRepeated[
-                    NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
-                    (* so far there's only one TemplateBox that needs to be unconverted *)
-                    {
-                        Cell[ a___, CellTags -> { b___, "SidebarTopCell", c___ }, d___ ] :>
-                            RuleCondition[ Cell[ a, CellTags -> { b, c }, d ], True ],
-                        Cell[ a___, CellTags -> "SidebarTopCell" | { }, b___ ] :>
-                            RuleCondition[ Cell[ a, b ], True ],
-                        Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
-                            RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
-                        TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___ ] :>
-                            RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
-                    }
-                ]
-            ];
-            attachWorkspaceChatInput @ newNB;
-            With[ { chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ] },
-                If[ chatTitle =!= "",
-                    setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
-                    writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
-                ]
-            ];
+    Module[ { newNB, cells, chatTitle },
+        cells = ReplaceRepeated[
+            NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
+            (* so far there's only one TemplateBox that needs to be unconverted *)
+            {
+                Cell[ a___, CellTags -> { b___, "SidebarTopCell", c___ }, d___ ] :>
+                    RuleCondition[ Cell[ a, CellTags -> { b, c }, d ], True ],
+                Cell[ a___, CellTags -> "SidebarTopCell" | { }, b___ ] :>
+                    RuleCondition[ Cell[ a, b ], True ],
+                Cell[ a_, b___String, c_String /; StringStartsQ[ c, "NotebookAssistant`Sidebar`" ], d___ ] :>
+                    RuleCondition[ Cell[ a, b, StringReplace[ c, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], d ], True ],
+                TemplateBox[ a_, b_String /; StringStartsQ[ b, "NotebookAssistant`Sidebar`" ], c___ ] :>
+                    RuleCondition[ TemplateBox[ a, StringReplace[ b, StartOfString ~~ "NotebookAssistant`Sidebar`" -> "" ], c ], True ]
+            }
+        ];
+        chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ];
 
-            (* remove sidebar and its content *)
-            NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
-            removeSidebarScrollingCellContent[ nbo, sidebarCell ];
-            removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
-            CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = CreateUUID[ ];
-            setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
-            FrontEndTokenExecute[ nbo, "HideSidebar" ];
-        ]
+        FrontEndTokenExecute[ nbo, "HideSidebar" ]; (* not displaying the sidebar should reduce dynamics *)
+
+        (* remove everything from the closed sidebar *)
+        NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+        removeSidebarScrollingCellContent[ nbo, sidebarCell ];
+        removeSidebarChatSubDockedCell[ nbo, sidebarCell ];
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
+        setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
+        
+        (* open a new workspace window *)
+        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ];
+
+        If[ chatTitle =!= "",
+            setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
+            writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
+        ];
+        SelectionMove[ newNB, Before, Notebook ];
+        NotebookWrite[ newNB, cells ];
+        attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
     ],
     Appearance -> "Suppressed",
     Method     -> "Queued"
@@ -925,7 +921,7 @@ Button[
     Method           -> "Preemptive"
 ]
 
-$chatbarOptionsAttachment[ ] := 
+$chatbarOptionsAttachment[ ] :=
     With[ { offset = If[ $OperatingSystem === "MacOSX", { -15., 55. }, { -13., 45. } ] },
         {
             { Right, Bottom },
@@ -971,7 +967,7 @@ chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     If we've made it this far, credentials are present, and rawAccessData is an
     Association with "success" -> True, and "data" is set to an Association.
 *)
-chatbarUserData[ rawAccessData_ ] := 
+chatbarUserData[ rawAccessData_ ] :=
     With[ { assoc = Lookup[ rawAccessData, "data" ] },
         AssociationMap[ getUserValue[ assoc, # ]&, {
             "credentialsQ",
@@ -1015,11 +1011,11 @@ getUserValue[ assoc_, "usage" ] :=
         If[ remaining <= 0, remaining = 0 ];
         If[ allotment <= 0, allotment = 1 ]; (* avoid division by zero *)
         If[ used <= 0, used = 0 ];
-        
+
         Clip[ (used) / (allotment + remaining), { 0, 1 } ]
     ]
 
-getUserValue[ assoc_, "daysToReset" ] := 
+getUserValue[ assoc_, "daysToReset" ] :=
     Module[ { date, remaining },
         date = DateObject @ Lookup[ assoc, "resetTimestamp" ];
         If[
@@ -1033,10 +1029,10 @@ getUserValue[ assoc_, "daysToReset" ] :=
         ]
     ]
 
-getUserValue[ assoc_, "upgradeURL" ] := 
+getUserValue[ assoc_, "upgradeURL" ] :=
     Lookup[ assoc, "upgradeUrl", "https://www.wolfram.com/wolfram-ai-services" ]
 
-getUserValue[ assoc_, "serviceCreditsOptions" ] := 
+getUserValue[ assoc_, "serviceCreditsOptions" ] :=
     Lookup[ assoc, "serviceCreditsOptions", { } ]
 
 
@@ -1188,12 +1184,12 @@ chatbarOptionsUser[ userdata_ ] :=
                 Pane[
                     RawBoxes[
                         DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ # ] ]&[
-                             LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]      
+                             LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.960784 ] ]
                         ]
                     ],
                     BaselinePosition -> Scaled[ 0.15 ],
                     ImageSize        -> Dynamic[ { Automatic, 1.25*CurrentValue[ "FontLineHeight" ] } ],
-                    ImageSizeAction  -> "ShrinkToFit"                    
+                    ImageSizeAction  -> "ShrinkToFit"
                 ],
                 Lookup[ userdata, "username" ],
                 chatbarOptionsArrowDown[ ]
@@ -1212,7 +1208,7 @@ chatbarOptionsUser[ userdata_ ] :=
     ]
 
 
-chatbarOptionsArrowDown[ ] := 
+chatbarOptionsArrowDown[ ] :=
     Pane[
         RawBoxes[
             DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "ArrowDownIcon" ][ # ] ]&[
@@ -1283,7 +1279,7 @@ chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
                             ImageMargins   -> { { $cutMargin, 3*$cutMargin-1 } + {-4,4}, { $cutMargin, $cutMargin } + {-1,1} },
                             ImageSize -> {$cutHeight - 2*$cutMargin, $cutHeight - 2*$cutMargin}
                         ],
-                            
+
                         Framed[ label,
                             Background     -> LightDarkSwitched @ GrayLevel[ 1, 0.8 ],
                             BaselinePosition -> Center -> Center,
@@ -1333,7 +1329,7 @@ chatbarUsageThermometerCap[ width_, label_, ellipsisQ_ : False ] :=
                                 { { 0, 0 }, { width, 0 } },
                                 { { width, $cutHeight }, { 0, $cutHeight } }
                             } ]
-    
+
                         ]
                     },
                     AspectRatio      -> Full,
@@ -1489,7 +1485,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
                             ],
                             Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                         }, BaseStyle -> { FontColor -> $coBodyColorHover } ]
-                    
+
                     ],
                     SystemOpen @ url,
                     Appearance       -> None,
@@ -1518,7 +1514,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Research", usage_, url_, creditsOptions_
 chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
     Module[ { creditChoices, amounts, widths },
         (*
-            creditsChoices contains those elements of creditsOptions which 
+            creditsChoices contains those elements of creditsOptions which
             have appropriate settings for "url" and "amount". We also add
             a "width" key below, for thermometer drawing.
         *)
@@ -1526,12 +1522,12 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
             creditsOptions,
             AssociationQ[ # ] && StringQ[ Lookup[ #, "url" ] ] && NumericQ[ Lookup[ #, "amount" ] ] &
         ];
-        
+
         (* log-rescale the amounts to get widths from 50 to 250 *)
         amounts = Lookup[ creditChoices, "amount" ] // N;
         widths = Rescale[ Log @ amounts, Log @ MinMax @ amounts, If[ tier === "Pro", { 50, 200 }, { 50, 260 } ] ];
         creditChoices = MapThread[ Append[ #1, "width" -> #2 ]&, { creditChoices, widths } ];
-        
+
         If[ creditChoices === { },
             Nothing,
             With[ { creditChoices = creditChoices },
@@ -1584,7 +1580,7 @@ chatbarAddServiceCreditsDisplay[ userdata_, tier: "Pro", creditChoices_ ] :=
         Grid[
             Append[
                 Table[
-                    { 
+                    {
                         Hyperlink[
                             Row[ { Round @ assoc[ "amount" ], " ", tr @ "ChatbarOptionsCredits" } ],
                             assoc[ "url" ]
@@ -1696,7 +1692,7 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
                 Spacings         -> 0.7
             ],
             BaselinePosition -> Baseline,
-            ImageMargins     -> 10            
+            ImageMargins     -> 10
         ],
         localSetting = state,
         Appearance       -> "Suppressed",
@@ -1803,11 +1799,12 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             ImageSize -> Automatic
                                         ],
                                         Typeset`state = Which[
-                                            Not @ TrueQ @ CurrentValue[ "AllowDownloads" ],
+                                            (* 476792: VPN can make it seem as if internet is not allowed, but it is. So no longer show these states. *)
+                                            (* Not @ TrueQ @ CurrentValue[ "AllowDownloads" ],
                                                 "InternetDisabled",
 
                                             Not @ TrueQ @ CurrentValue[ "InternetConnectionAvailable" ],
-                                                "NoInternet",
+                                                "NoInternet", *)
 
                                             (* be very generous in allowing AI access; only disable chatbar *)
                                             (* if disabled via license *)
@@ -1818,10 +1815,10 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 !MemberQ[ #, "LLMSupport" ]&
                                             ],
                                                 "LocalAIOnly",
-                                            
+
                                             MatchQ[ CurrentValue[ "WolframCloudConnected" ], False | "Pending" ],
                                                 "SignIn",
-                                            
+
                                             (* ======= Check ERP for AI access ======= *)
                                             Typeset`WolframAccountInfo = CurrentValue[ "WolframAccountInformation" ];
 
@@ -1841,7 +1838,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                                 # === False&
                                             ],
                                                 "LocalAIOnly",
-                                            
+
                                             (* ======= success ======= *)
                                             True,
                                                 "Enabled"
@@ -2273,15 +2270,19 @@ chatbarWriteAndEvaluateChatInputCell[ nbo_NotebookObject, chatbarCell_CellObject
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cellExpr = Cell[ text, "ChatInput",
             CellTags -> uuid,
             (* 476251: chatbar only uses Wolfram services and assistant *)
             TaggingRules -> <|
                 "ChatNotebookSettings" -> <|
-                    "Model"        -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-                    "LLMEvaluator" -> "WolframAIAssistant" |> |> ];
+                    "Model"         -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+                    "LLMEvaluator"  -> "WolframAIAssistant",
+                    "ServiceCaller" -> "Chatbar"
+                |>
+            |>
+        ];
 
         currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo, Except[ _Association ] -> <| |> ];
         activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
@@ -2559,7 +2560,7 @@ newChatButton[ nbo_NotebookObject ] :=
         clearOverlayMenus @ nbo;
         NotebookDelete @ Cells @ nbo;
         removeWorkspaceChatSubDockedCell @ nbo;
-        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
+        CurrentChatSettings[ nbo, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ];
         moveChatInputToTop @ nbo;
         ,

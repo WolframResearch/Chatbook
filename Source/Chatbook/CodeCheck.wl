@@ -21,7 +21,6 @@ Needs["CodeParser`"]
 `$MaxIterateTimeBracketsFix=1. (*seconds*)
 `$MaxIterationsBracketsFix=10	(*iterations*)
 
-codeCheckIgnoreMessage=(CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled)
 
 Begin[ "`Private`" ];
 
@@ -142,7 +141,7 @@ CodeCheck[target_][code_String, OptionsPattern[]]:=
 		//
 		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
 	,
-		Evaluate@codeCheckIgnoreMessage
+		CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled
 	]
 
 CodeCheck[target_][x_, OptionsPattern[]]:=x

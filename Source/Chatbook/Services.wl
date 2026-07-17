@@ -232,7 +232,8 @@ getServiceModelList[ service_String, info_, models0_List ] := Enclose[
     Module[ { models },
         models = ConfirmMatch[ preprocessModelList[ service, models0 ], { ___Association }, "Models" ];
         ConfirmAssert[ AssociationQ @ $serviceCache[ service ], "ServiceCache" ];
-        $serviceCache[ service, "CachedModels" ] = models;
+        (* Do not cache if model list is empty, since this usually indicates a retrieval error *)
+        If[ models =!= { }, $serviceCache[ service, "CachedModels" ] = models ];
         updateDynamics[ "Services" ];
         models
     ],

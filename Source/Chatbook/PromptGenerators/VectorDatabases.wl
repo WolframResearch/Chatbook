@@ -173,7 +173,7 @@ makeDownloadURL // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $versionString };
+$localVectorDBDirectory  := ChatbookFilesDirectory[ { "VectorDatabases", $versionString }, "EnsureDirectory" -> False ];
 $cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
 
 $versionString := StringReplace[ ToString @ $VersionNumber, { "."~~EndOfString :> "-0", "." -> "-" } ];
@@ -495,7 +495,10 @@ getVectorDBDirectory[ ] := Enclose[
 
         If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
             (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
-            Quiet @ DeleteDirectory[ ChatbookFilesDirectory[ "VectorDatabases" ], DeleteContents -> True ]
+            Quiet @ DeleteDirectory[
+                ChatbookFilesDirectory[ "VectorDatabases", "EnsureDirectory" -> False ],
+                DeleteContents -> True
+            ]
         ];
 
         $vectorDBDirectory = dir
