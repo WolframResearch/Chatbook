@@ -757,7 +757,16 @@ toolRequestParser[ content_String ] := Enclose[
                          ];
 
         If[ FailureQ @ params,
-            Throw @ { callPosition, Failure[ "InvalidJSON", <| "Message" -> makeJSONFailureMessage @ bag |> ] }
+            Throw @ {
+                callPosition,
+                Failure[
+                    "InvalidJSON",
+                    <|
+                        "MessageTemplate"   -> makeJSONFailureMessage @ bag,
+                        "MessageParameters" -> { }
+                    |>
+                ]
+            }
         ];
 
         {
