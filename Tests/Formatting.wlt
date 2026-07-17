@@ -90,7 +90,7 @@ VerificationTest[
     ],
     ToCharacterCode /@ { " /\\_/\\\\\n( o.o )\n > ^ <" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:82,1-93,2"
+    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:82,1-94,2"
 ]
 
 VerificationTest[
@@ -104,7 +104,7 @@ VerificationTest[
     ],
     { "print('\\\\')" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:95,1-106,2"
+    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:96,1-108,2"
 ]
 
 VerificationTest[
@@ -115,7 +115,18 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:96,1-104,2"
+    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:110,1-119,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "/external-tool.v1\n{}\nRESULT\nok\nENDRESULT(abc123)" ],
+        Cell[ _, "InlineToolCall", ___ ],
+        Infinity
+    ],
+    { _Cell },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-External-Slash-ToolCall@@Tests/Formatting.wlt:121,1-130,2"
 ]
 
 VerificationTest[
@@ -130,7 +141,7 @@ VerificationTest[
     ],
     ToCharacterCode @ "/\\\\_/\\\\\n( o.o )\n > ^ <",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:106,1-119,2"
+    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:132,1-145,2"
 ]
 
 VerificationTest[
@@ -147,5 +158,5 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:136,1-151,2"
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:147,1-162,2"
 ]

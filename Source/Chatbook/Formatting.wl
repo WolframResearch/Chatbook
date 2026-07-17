@@ -1492,7 +1492,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
-$$cmd               = RegularExpression[ "[A-Za-z_]{1,80}" ];
+$$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
@@ -1515,7 +1515,7 @@ $textDataFormatRulesNoMarkdownUnescape = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
+    ] /; toolCallStringFreeQ @ code :>
         If[ StringMatchQ[ code, $$mdTable ],
             tableCell @ code,
             codeBlockCell[ language, code ]
@@ -1533,7 +1533,7 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
+    ] /; toolCallStringFreeQ @ code :>
         If[ StringMatchQ[ code, $$mdTable ],
             tableCell @ code,
             codeBlockCell[ language, code ]
@@ -1547,7 +1547,7 @@ $textDataFormatRules = {
     Longest @ StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
         tool: $$simpleToolCall
-     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] :> inlineToolCallCell @ tool
+     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
     ,
     $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
@@ -1589,6 +1589,31 @@ toolShortNameQ[ cmd_String ] := MatchQ[ $ChatHandlerData[ "ToolShortNames" ][ cm
 toolShortNameQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleToolCallStringQ*)
+simpleToolCallStringQ // beginDefinition;
+simpleToolCallStringQ[ string_String ] := StringMatchQ[ string, $$simpleToolCall ] && simpleToolCallStringQ0 @ string;
+simpleToolCallStringQ[ ___ ] := False;
+simpleToolCallStringQ // endDefinition;
+
+simpleToolCallStringQ0 // beginDefinition;
+simpleToolCallStringQ0[ string_String ] /; StringContainsQ[ string, $$endToolCall ] := True;
+simpleToolCallStringQ0[ string_String ] := MatchQ[
+    StringCases[ string, StartOfString ~~ $$ws ~~ "/" ~~ cmd: $$cmd ~~ $$eol ~~ ___ :> cmd, 1 ],
+    { _String? toolShortNameQ }
+];
+simpleToolCallStringQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallStringFreeQ*)
+toolCallStringFreeQ // beginDefinition;
+toolCallStringFreeQ[ string_String ] :=
+    StringFreeQ[ string, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] &&
+    ! simpleToolCallStringQ[ string ];
+toolCallStringFreeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$dynamicSplitRules*)
 
@@ -1602,7 +1627,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
+    ] /; toolCallStringFreeQ @ code :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -1611,7 +1636,7 @@ $dynamicSplitRules = {
     ,
     (* Tool call *)
     s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
-    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
+    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] /; simpleToolCallStringQ @ s :> s
 };
 
 (* ::**************************************************************************************************************:: *)
