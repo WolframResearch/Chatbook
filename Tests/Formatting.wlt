@@ -332,6 +332,17 @@ VerificationTest[
 ]
 
 VerificationTest[
+    Cases[
+        FormatChatOutput[ "In Wolfram Language, use [Factorial2](paclet:ref/Factorial2)\\[42\\]." ],
+        s_String /; StringContainsQ[ s, "[42]" ] :> s,
+        Infinity
+    ],
+    { "[42]." },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:132,1-141,2"
+]
+
+VerificationTest[
     ToCharacterCode @ StringReplace[
         FirstCase[
             FormatChatOutput[ "<thinking>/\\\\_/\\\\\n( o.o )\n > ^ <</thinking>" ],
@@ -343,7 +354,7 @@ VerificationTest[
     ],
     ToCharacterCode @ "/\\\\_/\\\\\n( o.o )\n > ^ <",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:132,1-145,2"
+    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:143,1-156,2"
 ]
 
 VerificationTest[
@@ -360,5 +371,5 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:147,1-162,2"
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:158,1-173,2"
 ]
