@@ -319,6 +319,32 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     "Reasoning" -> <| "effort" -> "none" |>
 |>;
 
+$modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
+    (* TODO: Without an explicit max_tokens, OpenRouter seems to reserve the model max in its
+       upfront credit check, which rejects requests from keys with modest monthly limits or
+       remaining credits.
+
+       c.f <https://share.google/aimode/Z8iKb2FY3mGCfe2Nk> *)
+    "MaxTokens" -> 4096,
+
+    (* Reasoning is mandatory. An unset Reasoning also fails. "LLMConnections" paclet seems to
+    rewrite it to <| "enabled" -> True |> which leads to error. Using "enabled" -> True confirms it. *)
+    (*"Reasoning" -> <| "enabled" -> True |>*)
+
+    (* none: causes service error "Reasoning is mandatory for this endpoint and cannot be disabled.." *)
+    (*"Reasoning" -> <| "effort" -> "none" |>*)
+
+    (* named effort levels: low/high/max https://platform.kimi.ai/docs/guide/use-thinking-effort *)
+    "Reasoning" -> <| "effort" -> "high" |>
+
+    (* dev *)
+    (*"Reasoning" -> <| "effort" -> "max", "max_tokens" -> 4096 |>*)
+    (*"Reasoning" -> <| "enabled" -> True, "max_tokens" -> 4096 |>*)
+    (*"Reasoning" -> <| "exclude" -> True |>*)
+
+
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*xAI*)
@@ -523,6 +549,15 @@ $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "Multimodal"           -> True,
     "ToolCallRetryMessage" -> False,
     "ToolMethod"           -> "Simple"
+|>;
+
+$modelAutoSettings[ Automatic, "KimiK3" ] = <|
+    $modelAutoSettings[ Automatic, "KimiK25" ],
+    "MaxContextTokens" -> 1048576,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "Temperature"      -> Missing[ "NotSupported" ],
+    "TopP"             -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)

@@ -545,6 +545,7 @@ chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistr
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
 
 chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.5", ___ } ] ] := "KimiK25";
+chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K3", ___ } ] ] := "KimiK3";
 
 chooseModelFamily0[ _String ] := None;
 
