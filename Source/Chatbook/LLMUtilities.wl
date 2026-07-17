@@ -199,16 +199,18 @@ makeInvalidResponseFailure // beginDefinition;
 makeInvalidResponseFailure[ data_List ] /; MemberQ[ data, KeyValuePattern[ "StatusCode" -> 504 ] ] := Failure[
     "InvalidResponse",
     <|
-        "Message" -> "The server is currently unavailable (504 Gateway Time-out). Please try again later.",
-        "Data"    -> data
+        "MessageTemplate"   -> "The server is currently unavailable (504 Gateway Time-out). Please try again later.",
+        "MessageParameters" -> { },
+        "Data"              -> data
     |>
 ];
 
 makeInvalidResponseFailure[ data_List ] := Failure[
     "InvalidResponse",
     <|
-        "Message" -> "The server returned an invalid response. Please try again later.",
-        "Data"    -> data
+        "MessageTemplate"   -> "The server returned an invalid response. Please try again later.",
+        "MessageParameters" -> { },
+        "Data"              -> data
     |>
 ];
 
