@@ -1201,6 +1201,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                                 (* An emulated stop token was just detected, so end the streaming task now and
                                    process the response the same way the "TaskFinished" handler would have: *)
                                 Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ];
+                                taskFinishedHandler @ <|
+                                    as,
+                                    "TaskStatus"            -> "Finished",
+                                    "EventName"             -> "TaskFinished",
+                                    "EmulatedStopTriggered" -> True
+                                |>;
                                 logUsage @ container;
                                 checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
                             ]
