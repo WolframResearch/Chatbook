@@ -319,6 +319,11 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
     "Reasoning" -> <| "effort" -> "none" |>
 |>;
 
+$modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
+    (* Reasoning is mandatory for this endpoint (400 error if disabled), so exclude it from responses instead. *)
+    "Reasoning" -> <| "exclude" -> True |>
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*xAI*)
@@ -523,6 +528,11 @@ $modelAutoSettings[ Automatic, "KimiK25" ] = <|
     "Multimodal"           -> True,
     "ToolCallRetryMessage" -> False,
     "ToolMethod"           -> "Simple"
+|>;
+
+$modelAutoSettings[ Automatic, "KimiK3" ] = <|
+    $modelAutoSettings[ Automatic, "KimiK25" ],
+    "MaxContextTokens" -> 1048576
 |>;
 
 (* ::**************************************************************************************************************:: *)
