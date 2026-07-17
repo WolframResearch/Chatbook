@@ -124,7 +124,7 @@ $autoOperatorRenderings = <|
 
 esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c, "UTF-8" ], 255 ] <> "\[EntityEnd]";
 
-$mdEscapedCharacters = { "\\", "`", "$", "*", "_", "#", "|" };
+$mdEscapedCharacters = { "\\", "`", "$", "*", "_", "#", "|", "[", "]" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
 $mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
