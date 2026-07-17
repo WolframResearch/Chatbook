@@ -666,7 +666,7 @@ Module[ { cellStack, cellInformation, cellStyles },
     cellStack       = Prepend[ cellStack, cell ]; (* just in case we used topParentCell on a sidebar top-level cell *)
     cellInformation = Developer`CellInformation @ cellStack;
     cellStyles      = Lookup[ #, "Style", { }, Flatten[ { # } ]& ]& /@ cellInformation;
-    
+
     If[ MemberQ[ Last @ cellStyles, "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell" ],
         First[
             Pick[ cellStack, MemberQ[ #, "NotebookAssistant`Sidebar`ChatOutput" | "NotebookAssistant`Sidebar`ChatInput" ]& /@ cellStyles ],
@@ -702,7 +702,7 @@ cloudCellPrint[ cell_Cell ] :=
 
 cloudCellPrint[ Cell[ a__, CellTags -> tags0_, b___ ] ] := Enclose[
     Module[ { uuid, tags, cell, obj },
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
         tags = Select[ Flatten @ { tags0, uuid }, StringQ ];
         cell = Cell[ a, CellTags -> tags, b ];
         CellPrint @ cell;
@@ -738,7 +738,7 @@ cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ 
 );
 
 cellPrintAfter[ target_CellObject, cell_Cell ] :=
-    cellPrintAfter[ target, Append[ cell, ExpressionUUID -> CreateUUID[ ] ] ];
+    cellPrintAfter[ target, Append[ cell, ExpressionUUID -> createUUID[ ] ] ];
 
 cellPrintAfter[ a_, b__ ] := throwInternalFailure @ cellPrintAfter[ a, b ];
 cellPrintAfter[ a_ ][ b___ ] := throwInternalFailure @ cellPrintAfter[ a ][ b ];
@@ -1309,7 +1309,7 @@ $statelessProgressIndicator =
 (* ::Subsection::Closed:: *)
 (*CurrentValue*)
 
-(* CurrentValue[...] = value actually calls CurrentValue twice, requiring two MathLink transactions. 
+(* CurrentValue[...] = value actually calls CurrentValue twice, requiring two MathLink transactions.
     If we only want to set the value and are not using the returned value then only make one MathLink call. *)
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; value === Inherited  (* Inherited may return values other than Inherited, so don't use a single MathLink call *)
 setCurrentValue[ args__, value_ ] := (CurrentValue[ args ] = value) /; $cloudNotebooks
