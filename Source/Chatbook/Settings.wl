@@ -320,6 +320,9 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
 |>;
 
 $modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
+    (* Without an explicit max_tokens, OpenRouter reserves the model max (65536 tokens ~ $1) in its
+       upfront credit check, which rejects requests from keys with modest monthly limits. *)
+    "MaxTokens" -> 16384,
     (* Reasoning is mandatory for this endpoint (400 error if disabled), so exclude it from responses instead. *)
     "Reasoning" -> <| "exclude" -> True |>
 |>;
