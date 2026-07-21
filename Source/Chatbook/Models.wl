@@ -17,7 +17,7 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 $llmKitPreferredModels = <|
     "Pro"      -> { "gpt-5.4" },
     "Research" -> { "gpt-5.4" },
-    "Basic"    -> { "gpt-5.4-mini" }
+    "Basic"    -> { "gpt-5.4" }
 |>;
 
 $$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
