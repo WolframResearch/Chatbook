@@ -384,10 +384,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] := {
 };
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
-    makeInlineWL @ code;
+    makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
-    makeInlineCodeCell @ code,
+    makeInlineCodeCell @ StringReplace[ code, $mdUnescapeRules ],
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 
@@ -2746,6 +2746,9 @@ makeInlineCodeCell // beginDefinition;
 
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
+
+makeInlineCodeCell[ refLink_String ] /; StringMatchQ[ refLink, "[" ~~ name__ ~~ "](paclet:ref/" ~~ name__ ~~ ")" ] :=
+    formatTextString @ refLink;
 
 makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
