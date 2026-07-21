@@ -129,9 +129,11 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - Pattern variables use `$$` prefix for reusable patterns (e.g., `$$chatInputStyle`, `$$string`)
 - Build scripts use ``Wolfram`PacletCICD` `` for CI/CD utilities
 
-## Testing
+## Writing and Running Tests
 
-Tests are in `Tests/` using Wolfram's `VerificationTest` framework. Tests require a FrontEnd (`UsingFrontEnd`) since Chatbook is a notebook-based tool. Test utilities in `Tests/Common.wl` provide `WithTestNotebook`, `CreateTestChatNotebook`, and `CreateChatCells` helpers.
+Use the TestReport MCP tool to run tests.
+
+Always review [testing.md](docs/testing.md) for detailed instructions before modifying or adding tests.
 
 ## CI/CD
 
@@ -169,3 +171,7 @@ wolframscript -code 'Print[1 + 1]'
 ```
 
 Both of these will evaluate the code in an entirely separate process.
+
+Note: To print input form from wolframscript, use `Print[ToString[expr, InputForm]]`.
+
+You only need to use this wolframscript fallback if you're certain that your changes will affect the tools, or if the tools stop working as expected. The WolframLanguageEvaluator tool is designed to produce better output for AI than wolframscript.
