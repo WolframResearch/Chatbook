@@ -31,6 +31,11 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 (*Initialization*)
 $buffer = "";
 
+(* State for emulated stop tokens (used when the model does not support server-side stop tokens): *)
+$emulatedStopBuffer        = "";
+$emulatedStopTriggered     = False;
+$lastEmulatedStopDiscarded = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AgentEvaluate*)
@@ -588,9 +593,8 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
         resp_LLMToolResponse :> RuleCondition @ replaceUnicodeCharacters @ resp
     };
 
-(* FIXME: This should just convert private use area characters to their corresponding ASCII representations *)
 replaceUnicodeCharacters[ content_String ] :=
-    StringReplace[ content, "\[FreeformPrompt]" -> "\:ff1d" ];
+    StringReplace[ content, "\[FreeformPrompt]" -> "\\"<>"[FreeformPrompt]" ];
 
 replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
     With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
@@ -906,7 +910,9 @@ chatSubmit // Attributes = { HoldFirst };
 
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
-    $receivedToolCall = False;
+    $receivedToolCall      = False;
+    $emulatedStopBuffer    = "";
+    $emulatedStopTriggered = False;
     rasterizeBlock @ chatSubmit0 @ args,
     {
         ServiceConnections`SavedConnections::wname,
@@ -962,6 +968,11 @@ chatSubmit0[
         |>;
 
         content = extractBodyChunks @ chunks;
+
+        (* There's no streaming here, so the whole response is checked for an emulated stop token at once: *)
+        If[ emulateStopTokensQ @ settings && MatchQ[ content, { __String } ],
+            content = { emulatedStopTokenTrim[ container, StringJoin @ content ] }
+        ];
 
         writeChunk[ <| "ExtractedBodyChunks" -> content |>, Dynamic @ container, cellObject ];
 
@@ -1149,7 +1160,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
             toolFormatter = getToolFormatter @ settings,
-            stop          = makeStopTokens @ settings
+            stop          = makeStopTokens @ settings,
+            stopEmulation = emulateStopTokensQ @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1171,11 +1183,34 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $timeToFirstToken = AbsoluteTime[ ] - $chatStartTime;
                         addHandlerArguments[ "TimeToFirstToken" -> Quantity[ $timeToFirstToken, "Seconds" ] ];
                     ];
-                    With[ { as = <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |> },
-                        bodyChunkHandler[ as ];
-                        Internal`StuffBag[ $debugLog, $lastStatus = as ];
-                        checkFinishReason[ as ];
-                        writeChunk[ as, Dynamic @ container, cellObject ]
+                    (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
+                    If[ ! (stopEmulation && $emulatedStopTriggered),
+                        With[
+                            {
+                                as = applyEmulatedStopTokens[
+                                    container,
+                                    stopEmulation,
+                                    <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |>
+                                ]
+                            },
+                            bodyChunkHandler[ as ];
+                            Internal`StuffBag[ $debugLog, $lastStatus = as ];
+                            checkFinishReason[ as ];
+                            writeChunk[ as, Dynamic @ container, cellObject ];
+                            If[ stopEmulation && $emulatedStopTriggered,
+                                (* An emulated stop token was just detected, so end the streaming task now and
+                                   process the response the same way the "TaskFinished" handler would have: *)
+                                Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ];
+                                taskFinishedHandler @ <|
+                                    as,
+                                    "TaskStatus"            -> "Finished",
+                                    "EventName"             -> "TaskFinished",
+                                    "EmulatedStopTriggered" -> True
+                                |>;
+                                logUsage @ container;
+                                checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
+                            ]
+                        ]
                     ]
                 ]
             ],
@@ -1189,12 +1224,17 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
                     },
-                    taskFinishedHandler[ #1 ];
-                    Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
-                    checkFinishReason[ #1 ];
-                    logUsage @ container;
-                    trimStopTokens[ container, stop ];
-                    checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                    If[ stopEmulation && $emulatedStopTriggered,
+                        (* The response was already processed when the emulated stop token was detected: *)
+                        Internal`StuffBag[ $debugLog, $lastStatus = #1 ]
+                        ,
+                        taskFinishedHandler[ #1 ];
+                        Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                        checkFinishReason[ #1 ];
+                        logUsage @ container;
+                        trimStopTokens[ container, stop ];
+                        checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                    ]
                 ]
             ]
         |>
@@ -1220,6 +1260,132 @@ trimStopTokens[ container_, { ___String } | _Missing ] :=
     Null;
 
 trimStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*emulateStopTokensQ*)
+
+(* Models that do not support stop tokens (e.g. gpt-5 and later) cannot be stopped server-side when they write the
+   tool call end token, so the end token needs to be detected client-side as content arrives instead. Without this,
+   a model that keeps writing after "/exec" would bury its tool call in extra text (typically hallucinating the tool
+   result), and even a model that correctly ends its response after writing "/exec" would leave a trailing "/exec"
+   that prevents `simpleToolRequestParser` from identifying the tool call. *)
+
+emulateStopTokensQ // beginDefinition;
+
+emulateStopTokensQ[ settings_Association ] := TrueQ @ And[
+    settings[ "ToolMethod" ] === "Simple",
+    TrueQ @ settings[ "ToolsEnabled" ],
+    ! MatchQ[ makeStopTokens @ settings, { __String } ]
+];
+
+emulateStopTokensQ // endDefinition;
+
+
+$emulatedStopTokens = { "\n/exec" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyEmulatedStopTokens*)
+applyEmulatedStopTokens // beginDefinition;
+applyEmulatedStopTokens // Attributes = { HoldFirst };
+
+applyEmulatedStopTokens[ container_, False, as_Association ] :=
+    as;
+
+applyEmulatedStopTokens[ container_, True, as: KeyValuePattern[ "ExtractedBodyChunks" -> strings: { __String } ] ] :=
+    <| as, "ExtractedBodyChunks" -> { emulatedStopTokenTrim[ container, StringJoin @ strings ] } |>;
+
+applyEmulatedStopTokens[ container_, True, as_Association ] :=
+    as;
+
+applyEmulatedStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*emulatedStopTokenTrim*)
+
+(* Accumulates the raw streamed text for the current chat round in `$emulatedStopBuffer` and checks it for stop
+   tokens. The buffer only contains text from the current round, so stop tokens belonging to completed tool calls
+   from earlier rounds (already part of the container content) can never match. If a stop token is found, sets
+   `$emulatedStopTriggered` and returns only the text that comes before it. Since a stop token can arrive split
+   across several chunks, its initial characters may have already been written to the container by previous calls,
+   in which case they are removed from the container content. *)
+
+emulatedStopTokenTrim // beginDefinition;
+emulatedStopTokenTrim // Attributes = { HoldFirst };
+
+emulatedStopTokenTrim[ container_, text_String ] := Enclose[
+    Module[ { previous, buffer, positions, start },
+
+        previous  = ConfirmBy[ $emulatedStopBuffer, StringQ, "Buffer" ];
+        buffer    = $emulatedStopBuffer = previous <> text;
+        positions = StringPosition[ buffer, $emulatedStopTokens ];
+
+        If[ positions === { },
+            (* No stop token appears in the response so far, so continue streaming normally: *)
+            text
+            ,
+            (* Otherwise everything from the start of the first stop token onward gets discarded: *)
+            $emulatedStopTriggered = True;
+            start = ConfirmBy[ Min @ positions[[ All, 1 ]], IntegerQ, "Position" ];
+            $lastEmulatedStopDiscarded = StringDrop[ buffer, start - 1 ];
+            If[ start > StringLength @ previous
+                ,
+                (* The stop token begins within the newly received text: *)
+                StringTake[ text, start - StringLength[ previous ] - 1 ]
+                ,
+                (* The stop token started in a previous chunk, so characters that have already been written to the
+                   container need to be removed: *)
+                trimPartialStopToken[ container, StringTake[ buffer, { start, StringLength @ previous } ] ];
+                ""
+            ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+emulatedStopTokenTrim // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimPartialStopToken*)
+trimPartialStopToken // beginDefinition;
+trimPartialStopToken // Attributes = { HoldFirst };
+
+trimPartialStopToken[ container_, partial_String ] := (
+    If[ StringQ @ container[ "FullContent" ],
+        container[ "FullContent" ] = dropPartialSuffix[ container[ "FullContent" ], partial ]
+    ];
+    If[ StringQ @ container[ "DynamicContent" ],
+        container[ "DynamicContent" ] = dropPartialSuffix[ container[ "DynamicContent" ], partial ]
+    ]
+);
+
+trimPartialStopToken // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropPartialSuffix*)
+
+(* Removes the longest trailing portion of `partial` from the end of `string`. The dynamic content may have already
+   had earlier text moved into static output, so it might only end with some of the partial text. *)
+
+dropPartialSuffix // beginDefinition;
+
+dropPartialSuffix[ string_String, partial_String ] :=
+    dropPartialSuffix[ string, partial, StringLength @ partial ];
+
+dropPartialSuffix[ string_String, partial_String, 0 ] :=
+    string;
+
+dropPartialSuffix[ string_String, partial_String, n_Integer ] :=
+    If[ StringEndsQ[ string, StringTake[ partial, -n ] ],
+        StringDrop[ string, -n ],
+        dropPartialSuffix[ string, partial, n - 1 ]
+    ];
+
+dropPartialSuffix // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1400,35 +1566,17 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "<" ~~ uri: $$attachmentURI ~~ ">" :> "<!" <> uri <> "!>",
     "!<" ~~ uri: $$attachmentURI ~~ "!>" :> "<!" <> uri <> "!>",
     (* ============ Entity hallucinations or mojibake ============ *)
+    (* Note: If a particular model is frequently using the wrong unicode character instead of \[FreeformPrompt],
+       the proper fix is almost certainly to use the `"ReplaceUnicodeCharacters" -> True` setting rather than add
+       extra rules here. This setting was recently updated to use a pure ASCII representation of the \[FreeformPrompt]
+       character, which should reduce the likelihood of incorrect unicode characters being used instead. *)
     RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
     RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
-    "\:ff1d" -> "\[FreeformPrompt]",
-    "\\"<>"[FreeformInput]" -> "\[FreeformPrompt]",
-    "\\"<>"[FreeformEntity]" -> "\[FreeformPrompt]",
-    (* catch-alls for any head in decreasing specificity
-        + non-greedy capturing of head where possible
-        + generous white space allowance
-        + captured quoted text can have escaped characters *)
-    (* These are concretely fixable since 'Entity' is easily identifiable in the string pattern for replacement
-        A) EntityValue[head["...", Entity]
-        B) EntityValue[head["..."],         << stop after comma, idempotent with correct head of \[FreeformPrompt] >>
-        C) \:XXXX["...", Entity]            << hexadecimal, any case, also covered by (F) but let's catch these early >>
-        D) \\uXXXX["...", Entity]           << hexadecimal, any case, also covered by (F) but let's catch these early >>
-
-        Entering dangerous territory with greedy head capture, but the weirdness of a standalone Entity symbol is odd enough
-        E) head["...", Entity]              << can't go above (E) because (E) has a space in it >>
-
-        Further dangerous territory, but the \:XXXX format is specific to WL, and normal function heads should be alphanumeric
-        F) \:XXXX["..."]                    << no Entity to mark it as a telltale hallucination, but uses WL hexadecimal so it is odd enough >>
-    *)
-    (*A*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "EntityValue[\[FreeformPrompt][$1]",
-    (*B*)RegularExpression["EntityValue\\[\\s*\\S+?\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]\\s*,"          ] :> "EntityValue[\[FreeformPrompt][$1],",
-    (*C*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-    (*D*)RegularExpression[    "\\\\u[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-
-    (*E*)RegularExpression[                   "\\S*\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*,\\s*Entity\\s*\\]"] :> "\[FreeformPrompt][$1]",
-
-    (*F*)RegularExpression[      "\\:[A-Fa-f0-9]{4}\\[\\s*(\"(?:\\\\.|[^\"\\\\])*?\")\\s*\\]"               ] :> "\[FreeformPrompt][$1]",
+    "\\"... ~~ "\:ff1d" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformInput]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformEntity]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[FreeformPrompt]" -> "\[FreeformPrompt]",
+    "\\".. ~~ "[RawEscape][FreeformPrompt]" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",

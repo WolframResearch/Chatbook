@@ -114,24 +114,64 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					,
 					SourceConvention -> "SourceCharacterIndex"
 					,
+					(*---------------------- Custom checks --------------------------*)
 					"AbstractRules" ->	<|
 										CodeInspector`AbstractRules`$DefaultAbstractRules,
-										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set or as a function name *),
-										pMultiSnake -> scanMultiSnake (* detect bad multiple snake usage anywhere *),
+										pSingleSnake -> scanSingleSnake (* detect bad single snake usage inside Set *),
 										pQuantityUnitName -> scanQuantityUnitName,
 										pSuspiciousFunctionSymbol -> scanSuspiciousSymbol
 										|>
-						};
+					,
+					"SequenceTokenRules" ->	{pSnakeAll->scanSnakeMulti}
+					,
+					"StringScans"-> {scanTrailingStarCommentCloser}
+					};
 
 
 CodeCheck[target_][code_String, OptionsPattern[]]:=
-	(
-		 CodeInspect[code, Sequence@@Options[CodeCheck]]
-		 //
-		 Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
-	)
+	Quiet[
+
+		Flatten@List[
+			CodeInspectTokenSequence[code,Sequence@@Options[CodeCheck]]
+			,
+			CodeInspect[code, Sequence@@FilterRules[Options[CodeCheck],Options[CodeInspect]]]
+			,
+			stringScans[code, OptionValue[Options[CodeCheck],"StringScans"]]
+		]
+		//
+		Association@@{"InspectionObjects"->#,"OverallSeverity"->codeInspectOverallSeverityLevel[#]}&
+	,
+		CodeInspector`Utils`conventionAgnosticSourceOrdering::unhandled
+	]
 
 CodeCheck[target_][x_, OptionsPattern[]]:=x
+
+(* --- *)
+
+CodeInspectTokenSequence[code_String, OptionsPattern[{}]]:=
+	With[
+		{ct=CodeTokenize[code, SourceConvention->OptionValue[SourceConvention]]}
+		,
+		OptionValue["SequenceTokenRules"]
+		//
+		ReplaceAll[	HoldPattern[Rule[pattern_,scan_]]	:>
+					Replace[	MySequencePosition[ct, pattern]
+								,
+								p:{__} :> scan[ct,p]
+					]
+		]
+	]
+
+MySequencePosition[codeTokenized_List, pattern_]:=
+(
+		Position[codeTokenized, Alternatives@@Union@Cases[pattern, _LeafNode, {1, Infinity}]]
+	//	Flatten // Split[#, #1 + 1 == #2 &] &
+	//	Replace[#, {{_} -> Nothing, x_List :> x[[{1, -1}]]}, {1}] &
+	//	Map[ Function[pos, SequencePosition[codeTokenized[[Span @@ pos]], pattern, Overlaps -> False] + First@pos - 1] ]
+	//	Flatten[#, 1] &
+)
+
+stringScans[code_String, scans:{__}]:= Map[#[code]&, scans]
 
 
 (* ::Subsection:: *)
@@ -192,9 +232,9 @@ CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:
 			merged
 			,
 			generatePatternFromCodeCheck@CodeCheck[target][merged["FixedCode"]]
-			//	If[	 niter > recursionLimit
+			//	If[	 And[niter > recursionLimit, Subtract @@ (Length/@merged["PatternLogs"][[{-1, -2}]]) >= 0]
 					,
-					{merged, "Success"->False, "RecursionLimitExceeded"->True}
+					Association@@{merged, "Success"->False, "RecursionLimitExceeded"->True}
 					,
 					If[#==={}, merged, (niter++; CodeFix[target][merged, fixPattern[target][merged["FixedCode"],#]])]
 				]&
@@ -204,21 +244,28 @@ CodeFix[target_][kvFixPrev_, kvFixNew:KeyValuePattern[{"Success"->True|False}]]:
 
 generatePatternFromCodeCheck[KeyValuePattern[{"InspectionObjects"->{}}]]:={}
 
-generatePatternFromCodeCheck[kv:KeyValuePattern[{"InspectionObjects"->ios_}]]:= ios // Map[extractPatternFromInspectionObject] // Sort
-
+generatePatternFromCodeCheck[kv:KeyValuePattern[{"InspectionObjects"->ios_}]]:= ios // Map[extractPatternFromInspectionObject] // Sort //groupPattern
 
 extractPatternFromInspectionObject[
 	io:InspectionObject[
 				Alternatives[	"BadSingleSnakeUsage"
-							,	"BadSnakeUsage"
+							,	"BadMultiSnakeUsage"
 							,	"SuspiciousQuantityUnitName"
 							,	"EntityClassBadSyntax"
 							,	"BadEntityType"
 							,	"SuspiciousFunctionSymbol"
-							,	"GlobalCapitalizedSymbol"]
+							,	"GlobalCapitalizedSymbol"
+							,	"TrailingStarCallFalseCommentCloser"]
 				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
+
+patternsToGroup={_,"BadSingleSnakeUsage"};
+groupPattern[patterns_]:=
+	patterns // ReplaceRepeated[{a___, gg : Longest[(x : patternsToGroup -> _) ..], b___} :> {a, Hold[gg], b}] //
+ 	ReplaceAll[Hold->List] //
+	ReplaceAll[h : List[(pg : patternsToGroup -> {{_, _} ..}) ..] :> (pg -> Sort@*Join @@ h[[All, 2]])]
+
 
 lengthErrors[code_]:=CodeCheck[$target][code]//generatePatternFromCodeCheck//Length
 lengthErrors[f_Failure]:=f
@@ -251,6 +298,107 @@ mergeFixes[prevFix_, newFix_] :=
 (* ::Section:: *)
 (*Brackets Fix*)
 
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$TrailingStarCallFalseCommentCloser = HoldPattern[{___, {"Fatal", "TrailingStarCallFalseCommentCloser"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat : $$TrailingStarCallFalseCommentCloser[so_], patToIgnore_ : {}] :=
+	Module[	{
+			fixedCode=Missing["TrailingStarCallFalseCommentCloser","No fix found"]
+			,success=False
+			}
+			,
+			StringInsert[code, " ", Last /@ so]
+			//
+			If[	And[StringQ@#, balancedCommentQ@#]
+				,
+				success=True;fixedCode=#
+			]&
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, Length@so, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			, "StopCodeFix" -> True
+			} // Flatten // Association
+	]
+
+balancedCommentQ[code_String]:=
+	listCommentCloser[code][[All,2]] // ReplaceRepeated[{a___, "(*", "*)", b___} :> {a, b}] // Replace[{}->True] // TrueQ
+
+scanTrailingStarCommentCloser[code_String]:=
+	Catch[
+	With[
+		{	(* Stops evaluation if no comments  *)
+			posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]}
+		,
+		{
+			posTrailingStarCall =
+				(	(* Stops evaluation if all comments closer are balanced *)
+					ReplaceRepeated[	posCommentCloserAndtype[[All,2]]
+										,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
+					;
+					(* Stops evaluation if no trailing star call found *)
+					StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
+				)
+		}
+		,
+		Select[posTrailingStarCall, MatchQ[posCommentCloserAndtype , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
+		//
+		Replace[	{
+					p:{___} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
+																,	"Trailing star call inside comment "
+																,	"Fatal"
+																,	Association@{ConfidenceLevel -> 1, Source->p}]
+					,
+					_ -> {}
+					}
+		]
+	]]
+
+pNonParen = Repeated[Except["(" | ")"], {0, Infinity}];
+pTrailingStarCall = "(" ~~ Except["*"] ~~ Shortest[pNonParen] ~~ Verbatim["*"] ~~ ")";
+
+listCommentCloser[code_String]:=
+Catch[
+	With[
+		{
+			posStrings =	StringPosition[code, "\""]
+						//	If[EvenQ@Length@# ,Partition[#,2], Throw[Missing["Unbalanced strings"]]]& // Map[#[[All,1]]&]
+		}
+		,
+		{
+			posCommentCloser =	Select[	StringPosition[code, "(*" | "*)", Overlaps->False],
+										Not[Or @@ IntervalMemberQ[Interval /@ posStrings, Interval@#]] &]
+		}
+		,
+		{#, StringTake[code, #]} & /@ posCommentCloser
+
+	]
+]
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
+$$UnbalancedCommentsOrString = HoldPattern[{___, {"Fatal", "UnexpectedCommentCloser"}|{"Fatal", "UnterminatedString"}, ___}];
+
+fixPattern[target_][code_String, pat : $$UnbalancedCommentsOrString, patToIgnore_ : {}] :=
+	Module[	{
+			fixedCode=Missing["UnbalancedCommentsOrString"]
+			,success=False
+			}
+			,
+			{ "Success" -> success
+			, "TotalFixes" -> 0
+			, "LikelyFalsePositive" -> False
+			, "SafeToEvaluate" -> False
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			, "StopCodeFix" -> True
+			} // Flatten // Association
+	]
+
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
 $$FatalGroupMissingCloserORANDFatalUnexpectedCloser = {___, {"Fatal","GroupMissingCloser"}|{"Fatal", "UnexpectedCloser"}, ___};
 
 fixPattern[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexpectedCloser, patToIgnore_ : {}] := fixBrackets[target][code, pat]
@@ -267,7 +415,7 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 		, "LikelyFalsePositive" -> False
 		, "SafeToEvaluate" -> If[success, True, False]
 		, "Pattern" -> pat
-		, "FixedCode" -> If[success, fix["Code"], If[MissingQ@fix, fix, Missing["No brackets fix found"]]]
+		, "FixedCode" -> If[success, fix["Code"], If[MissingQ@fix, fix, Missing["Bracket fix"]]]
 		} // Association
 
 
@@ -277,7 +425,9 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
  Catch[
 	TimeConstrained[
-		Block[	{$fixed = <||> ,iter = 0, success, res, resf}
+		Block[	{$fixed = <||>}
+		,
+		Module[{iter = 0, success, res, resFixed, resSyntax}
 			,
 			res =	NestWhile[	(
 								decho[iter = iter + 1, "iter====================================="];
@@ -287,22 +437,24 @@ iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
 								(* initial expression-association to fix*)
 								<|"Code" -> code, "Pattern"-> pattern, "Status" -> "ToFix", "Fixes" -> <||>, "RemainingErrors"-> <||>|>
 								,
-								(* Condition to stop iteration: by default as soon as one fix is found *)
+								(* Condition to stop iteration: by default as soon as 1 fix is found *)
 								(Not[(success = (Length@Keys@$fixed === extraiter))] &)
 								, 0
 								, $MaxIterationsBracketsFix
 					];
 
-			decho[iter, "number of iterations"];
-
-			resf= ( Flatten[res] // dechofunction["final: raw number", Length] //
-					Select[#Status === "Fixed" &] // dechofunction["final: fixed", Length] //
-					Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
-
-			);
-			If[TrueQ[Wolfram`Chatbook`CodeCheck`$CodeCheckDebug],brackets=resf];
-
-			If[success && (Length@resf>0), selectFixWithHighestScore[resf], Missing["No fix found"]]
+			decho[iter, "number of iterations"]
+			;
+			resFixed=	( 	Flatten[res] // dechofunction["final: raw number", Length] //
+							Select[#Status === "Fixed" &]
+							// dechofunction["final: fixed", Length]
+							// dechofunction["see fixed cases in: Wolfram`Chatbook`CodeCheck`Private`$resFixed",($resFixed=#;"")&]
+						)
+			;
+			resSyntax= resFixed // Select[SyntaxQ @ #Code &] // dechofunction["final: SyntaxQ", Length]
+			;
+			If[success && (Length@resSyntax>0), selectFixWithHighestScore[resSyntax], Missing["Bracket Fix", "No SyntaxQ"]]
+		]
 		]
 		, $MaxIterateTimeBracketsFix , Throw[Missing["Time limit exceeded"]] (*TimeConstrained*)
 	]
@@ -317,7 +469,8 @@ selectFixWithHighestScore[listAsc_, multiple_:False] :=
 	//	dechofunction["Final number with max score:", Length]
 	//	With[{maxsdefscore = Max[#[[All, "DefaultScore"]]]}, Select[#, #DefaultScore == maxsdefscore &]] &
 	//	dechofunction["Final number with max score + highest default score :", Length]
-	//	Replace[{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Mulitple fixes found"]], {}->Missing["No fix found"]}]
+	//	Replace[	{{asc_}:>asc, m:{__}:>If[multiple, m, Missing["Bracket fix","Multiple fixes found"]]
+				,	{}->Missing["Bracket fix", "No Highest score"]}]
 )
 
 generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "Failed"}]]:=Nothing
@@ -530,7 +683,7 @@ fixPatternBrackets[_][code_String, pat : $$FatalUnexpectedCloser, patToIgnore_ :
 		}
 		,
 		{
-		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&](* //EchoLabel["UC finalBrackets:"] *)
+		finalBrackets=Select[allbrackets, Not[Or@@IntervalMemberQ[Map[Interval@#[Source]&,excludedRanges],#[[1,1]]]]&]//SortBy[#[[-1,-1]]&]//decholabel["UC finalBrackets:"]
 		}
 		,
 		If[ finalBrackets==={}
@@ -659,21 +812,32 @@ scoreCode[code_String]:=
 		,
 		Block[{$funcsSyntax=allpat},
 			(*Echo[$funcsSyntax,"$funcsSyntax"];*)
-			Total@Map[scoreCallNode, cns] - countModuleUnusedVariables[code]
+			Total@Map[scoreCallNode, cns] - countErrors[code]
 
 		]
 	]
 
 (* :!CodeAnalysis::Disable::KernelBug:: *)
-countModuleUnusedVariables[code_String]:=
+countErrors[code_String]:=
 	(
-	CodeInspect[code]	//	Count[	InspectionObject[	___,
-														"UnusedVariable", ___,
-														"Scoping", ___,
-														KeyValuePattern["Argument" -> "Module"],
-														___
-									]
+	CodeInspect[code]	//	ReplaceAll[	{
+										InspectionObject[	___,
+															"UnusedVariable", ___,
+															"Scoping", ___,
+															KeyValuePattern["Argument" -> "Module"],
+															___
+										]	->	1
+										,
+										InspectionObject[	"Arguments",
+															_,
+															"Error",
+															KeyValuePattern["Argument" -> _String]
+										]	->	Infinity
+										,
+										InspectionObject[__] ->	0
+										}
 							]
+						// Total
 	)
 
 funcsNotToScore=Alternatives["Rule","List","Plus","Times","Power"]
@@ -682,7 +846,7 @@ scoreCallNode[cn_CallNode]:=
 Catch[
 	With[
 		{
-		syntaxPattern=(funcnameCN[cn] // ReplaceAll[ $funcsSyntax ] // Replace[f_String :> getSyntaxPattern@f])
+		syntaxPattern=(funcnameCN[cn] // (* decholabel["scoring: funcname"]// *)ReplaceAll[ $funcsSyntax ] // Replace[f_String :> getSyntaxPattern@f])
 		}
 		,
 		If[MissingQ[syntaxPattern](*//EchoLabel["syntaxPattern MissingQ"]*), Throw[0]];
@@ -709,7 +873,7 @@ Catch[
 				,
 				0
 			]
-		](*//EchoLabel["score"]*)
+		](* //decholabel["scoring: score"] *)
 		)
 	]
 ]
@@ -864,34 +1028,134 @@ fixPattern[target_][code_String, pat:$$FatalExpectedOperandFatalOpenSquare, patT
 	]
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
+$$BadSnakeUsage = HoldPattern[{___, {"Fatal", "BadMultiSnakeUsage"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat : $$BadSnakeUsage[so_], patToIgnore_ : {}] :=
+	Module[	{
+			fixedCode=Missing["BadMultiSnakeUsage","No fix found"]
+			,success=False
+			}
+			,
+
+			{formatSnake@StringTake[code, #], #} & /@ so // Transpose // StringReplacePart[code, Sequence @@ #] &
+			// If[success=StringQ@#, fixedCode=#]&
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, Length@so, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+	]
+
+formatSnake[s_String] := StringSplit[s, "_"] // {First@#, Capitalize@Rest@#} & // Flatten // StringJoin;
+
+scanSnakeMulti[codeTokenized_, tokenPositions_List]:=
+(
+	With[	{
+			stringPositions =	tokenPositions // Select[Not@MatchQ[codeTokenized[[Span @@ #]], pSnakeSingleTokens] &] //
+								Map[{codeTokenized[[First@#, -1, Key@Source, 1]], codeTokenized[[Last@#, -1, Key@Source, -1]]} &]
+			}
+			,
+			If[
+				stringPositions === {}
+				,
+				Nothing
+				,
+					checkSnakeInSetDelayed[codeTokenized, stringPositions] //
+					CodeInspector`InspectionObject["BadMultiSnakeUsage","Bad Snake Usage", "Fatal",
+											Association@{ConfidenceLevel -> 1, Source->#}]&
+			]
+	]
+)
+
+(* checking for for bad snake arguments in SetDelayed definitions*)
+checkSnakeInSetDelayed[codeTokenized_, stringPositions_List]:=
+	With[
+			{codeStringFromCT = codeTokenized[[All, 2]] // StringJoin}
+			,
+			{cp = CodeParse[codeStringFromCT, SourceConvention -> "SourceCharacterIndex"]}
+			,
+			{posSDWithUnder = Position[cp, pSnakeUnderInSetDelayed]}
+			,
+			If[	posSDWithUnder==={}
+				,
+				stringPositions
+				,
+				Table[	Cases[	Extract[cp,posSDWithUnder[[i]]][[2,1]] (* checking LHS *)
+								,
+								u:pSnakeUnder :>(	u[[-1,Key@Source]] //
+													(
+													#->	(		StringTake[codeStringFromCT,#]
+															//	StringDrop[#,-1]&
+															//	CodeParse
+															//	#[[2,1]]&
+															//	ReplaceAll[<|__|>->_]
+															//	Cases[	Extract[cp,posSDWithUnder[[i]]][[2,2]] (* checking RHS*)
+																		,
+																		x:#	:>x[[-1,Key@Source]]
+																		,Infinity
+																]&
+														)
+													)&
+												)
+								,Infinity
+						]
+						,
+						{i,Length@posSDWithUnder}
+				]
+				//
+				Join[
+						ReplaceAll[stringPositions,	Cases[#, HoldPattern[Rule[x_, _]] :> x -> (x + {0, -1}), Infinity]]
+						,
+						Cases[#, HoldPattern[Rule[_, y_]] :> y, Infinity] // Flatten[#, 1] &
+				]&
+			]
+	];
+
+
+pSnakeUnder=CallNode[LeafNode[Symbol,"Times",<||>],{__,CallNode[LeafNode[Symbol,"Blank",<||>],{},_]},_];
+pSnakeUnderInSetDelayed= CallNode[LeafNode[Symbol,"SetDelayed",<||>],{CallNode[LeafNode[Symbol,_,_],{___,pSnakeUnder,___},_],_},_];
+
+scanSnakeAllButSingle[codeTokenized_, positions_List]:=
+(
+		positions
+		//
+		Select[Not@MatchQ[codeTokenized[[Span @@ #]], pSnakeSingleTokens] &]
+		//
+		Map[{codeTokenized[[First@#, -1, Key@Source, 1]], codeTokenized[[Last@#, -1, Key@Source, -1]]} &]
+		//
+		Replace[	{	{}	->	Nothing
+						,
+						p:{__} :>	CodeInspector`InspectionObject["BadMultiSnakeUsage","Bad Snake Usage", "Fatal",
+										Association@{ConfidenceLevel -> 1, Source->p}]
+					}
+		]
+)
+
+(* all snakes: "a_b", "a_1" "a_b__1_a2___" *)
+pSnakeAll={$lnSymbol,$lnUnders,($lnSymbol|$lnInteger|$lnUnders)..,Repeated[$lnOpensquare,{0,1}]};
+
+(* a_b but not a_b_ nor a_b[ *)
+pSnakeSingleTokens={$lnSymbol,$lnUnders,$lnSymbol,Repeated[Except[$lnUnders|$lnOpensquare],{0,1}]};
+
+$lnSymbol=LeafNode[Symbol,_,_];
+$lnInteger=LeafNode[Integer,_,_];
+$lnUnders=LeafNode[Token`Under|Token`UnderUnder|Token`UnderUnderUnder,__];
+$lnOpensquare=LeafNode[Token`OpenSquare,__];
+
+(* FIX PATTERN ----------------------------------------------------------------------- *)
 $$BadSingleSnakeUsage = HoldPattern[{___, {"Fatal", "BadSingleSnakeUsage"}->#, ___}]&;
 
 fixPattern[target_][code_String, pat:$$BadSingleSnakeUsage[so_], patToIgnore_ : {}] :=
 	Module[	{
-			 fixedCode=Missing[]
+			 fixedCode=Missing["BadSingleSnakeUsage","No fix found"]
 			,success=False
-			,finalgnso
 			}
 			,
-			(* Echo["FIX BadSingleSnakeUsage "]; *)
-			With[
-				{
-				ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]
-				}
-				,
-				{
-				nodeCCP = FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]
-				}
-				,
-				{
-				newName = 	Cases[nodeCCP, _String, Infinity] //
-							ReplaceRepeated[{a___, PatternSequence["_" | "__" | "___", x_String], b___} :> {a, Capitalize[x], b}] //
-							StringJoin
-				}
-				,
-				fixedCode=ReplaceAll[ccp, (nodeCCP /. _Association -> _) -> LeafNode[Symbol, newName, <||>]] // ToSourceCharacterString
-			]
-			;success=If[FailureQ@fixedCode,False,True]
+			{formatSnake@StringTake[code, #], #} & /@ so // Transpose // StringReplacePart[code, Sequence @@ #] &
+			// If[success=StringQ@#, fixedCode=#]&
 			;
 			{ "Success" -> success
 			, "TotalFixes" -> If[success, 1, 0]
@@ -904,122 +1168,17 @@ fixPattern[target_][code_String, pat:$$BadSingleSnakeUsage[so_], patToIgnore_ : 
 	]
 
 pSingleSnake=
-	Alternatives[
-				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{LeafNode[Symbol,_,_]},_]},_],__},_]
-				,
-				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Times",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{},_]},_],LeafNode[Integer,_,_]},_],__},_]
-				,
-				CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Times",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{},_]},_],LeafNode[Integer,_,_],LeafNode[Symbol,_,_]},_],__},_]
-				,
-				CallNode[CallNode[LeafNode[Symbol, "Pattern", <||>], {LeafNode[Symbol, _, _], CallNode[LeafNode[Symbol, "Blank"|"BlankSequence"|"BlankNullSequence", <||>], {LeafNode[Symbol, _, _]}, _]}, _], __(*any arguments*),_]
-
-	]
+	(* a_b = ...*)
+	CallNode[LeafNode[Symbol,"Set",<||>],{CallNode[LeafNode[Symbol,"Pattern",<||>],{LeafNode[Symbol,_,_],CallNode[LeafNode[Symbol,"Blank"|"BlankSequence"|"BlankNullSequence",<||>],{LeafNode[Symbol,_,_]},_]},_],__},_]
 
 scanSingleSnake // ClearAll;
 scanSingleSnake[pos_, ast_] :=
 (
-	Module[{subpos},
-		(* Echo["SET BAD SNAKE"]; *)
-		If[
-			Extract[ast, pos] //
-			Extract[#, subpos=If[Head[#[[1]]]===CallNode, {1,2}, {2,1,2}]]& //
-			Cases[#, (LeafNode | CallNode)[__, <|Source -> {s1_, s2_}|>] :> {s1-1, s2}, {1}] & //
-			BlockMap[#[[1, 2]] === #[[2, 1]] &, #, 2, 1] & //
-			Replace[{}->{False}]//Apply[And] // TrueQ
-			,
-			CodeInspector`InspectionObject["BadSingleSnakeUsage","Bad Snake Usage", "Fatal",
-											Association@{ConfidenceLevel -> 1,Extract[ast, Join[pos, Most@subpos, {-1}]]}]
-			,
-			Nothing
-		]
-	]
+	Cases[ast, cn : (Extract[ast,pos][[2,1]] /. <|__|> -> _) :> cn[[-1, Key@Source]], Infinity] //
+	CodeInspector`InspectionObject["BadSingleSnakeUsage","Bad Snake Usage", "Fatal",
+									Association@{ConfidenceLevel -> 1, <|Source->#|>}]&
 )
 (* -------- *)
-$$BadSnakeUsage = HoldPattern[{___, {"Fatal", "BadSnakeUsage"}->#, ___}]&;
-
-fixPattern[target_][code_String, pat : $$BadSnakeUsage[so_], patToIgnore_ : {}] :=
-	Module[	{
-			 fixedCode=Missing[]
-			,success=False
-			}
-			,
-			(* Echo["FIX BadSnakeUsage "]; *)
-			With[
-				{ccp = CodeConcreteParse[code,SourceConvention->"SourceCharacterIndex"]}
-				,
-				{nodeCCP =FirstCase[ccp, _[_, _, <|Source -> so|>], Missing[], Infinity]}
-				,
-				{
-				newNode = 	Cases[nodeCCP, _LeafNode, Infinity] //
-							Replace[{pMulti : Longest@PatternSequence[LeafNode[Except[Token`Comment | Whitespace], __] ..], r___} :>
-									{Cases[{pMulti}, _String, {2}] //
-							ReplaceRepeated[{a___, PatternSequence["_" | "__" | "___", x_String], b___} :> {a, Capitalize[x], b}] // StringJoin //
-							LeafNode[Symbol, #, <||>] &, r}] // InfixNode[Times, #, _] &
-				}
-				,
-				fixedCode=ccp /. (nodeCCP /. _Association->_) -> newNode // ToSourceCharacterString
-			]
-			;success=If[FailureQ@fixedCode,False,True]
-			;
-			{ "Success" -> success
-			, "TotalFixes" -> If[success, 1, 0]
-			, "LikelyFalsePositive" -> If[success, False, True]
-			, "SafeToEvaluate" -> If[success, True, False]
-			, "Pattern" -> pat
-			, "FixedCode" -> fixedCode
-			} // Flatten // Association
-
-	]
-
-pMultiSnake=
-	CallNode[LeafNode[Symbol, "Times", _]
-    		,
-    		{
-          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
-													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
-													   			, {} | {LeafNode[Symbol, _, _]} ,_ ]
-													   },_]
-        	,
-          	(
-          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
-													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>]
-													   			,{LeafNode[Symbol, _, _]} ,_ ]
-													   },_] |
-			LeafNode[Integer | Symbol , _, _] |
-			CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>], {} | {LeafNode[Symbol, _, _]},_]
-            ) ...
-			,
-			CallNode[CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence", <||>], {LeafNode[Symbol, _, _]}, _]|
-					 LeafNode[Integer, _, _], _, _]...
-  			}
-     		,_
-	]
-
-pFalsePositiveMulti=CallNode[LeafNode[Symbol, "Times", <||>], {_, LeafNode[Symbol | Integer, _, _] ..}, _]
-pTruePositiveSingle=
-	CallNode[LeafNode[Symbol, "Times", _]
-    		,
-    		{
-          	CallNode[LeafNode[Symbol, "Pattern", <||>],{LeafNode[Symbol, _, _]
-													   ,CallNode[LeafNode[Symbol, "Blank" | "BlankSequence" | "BlankNullSequence",<||>],{},_ ]
-													   }
-													   ,<|Source -> {_, x_}|>]
-			,
-			LeafNode[Integer, _, <|Source -> {y_, _}|>] | CallNode[LeafNode[Integer, _, _],_, <|Source -> {y_, _}|>]
-			,___
-			}
-			,_
-	] /; (x+1==y)
-
-scanMultiSnake // ClearAll;
-scanMultiSnake[pos_, ast_] :=
-(
-    (* Echo["BAD MULTI SNAKE"]; *)
-    Extract[ast, pos]//If[Not@MatchQ[#,pTruePositiveSingle] && MatchQ[#, pFalsePositiveMulti]
-   		, Nothing
-		, CodeInspector`InspectionObject["BadSnakeUsage", "Bad Snake Usage","Fatal",
-			Association@{ConfidenceLevel -> 1, Extract[ast, Join[pos, {-1}]]}]]&
-);
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $$SuspiciousQuantityUnitName = HoldPattern[{___, {"Fatal", "SuspiciousQuantityUnitName"}->#, ___}]&;
