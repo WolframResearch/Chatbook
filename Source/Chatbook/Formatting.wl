@@ -366,10 +366,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
     ];
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
-    makeInlineWL @ code;
+    makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
-    makeInlineCodeCell @ code,
+    makeInlineCodeCell @ StringReplace[ code, $mdUnescapeRules ],
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 
