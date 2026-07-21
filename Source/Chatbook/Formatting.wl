@@ -2665,6 +2665,9 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
+makeInlineCodeCell[ refLink_String ] /; StringMatchQ[ refLink, "[" ~~ name__ ~~ "](paclet:ref/" ~~ name__ ~~ ")" ] :=
+    formatTextString @ refLink;
+
 makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
 
