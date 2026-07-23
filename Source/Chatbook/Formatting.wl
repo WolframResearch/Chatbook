@@ -124,7 +124,7 @@ $autoOperatorRenderings = <|
 
 esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c, "UTF-8" ], 255 ] <> "\[EntityEnd]";
 
-$mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
+$mdEscapedCharacters = { "\\", "`", "$", "*", "_", "#", "|", "[", "]" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
 $mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
@@ -238,10 +238,7 @@ reformatTextData // endDefinition;
 reformatTextData0 // beginDefinition;
 
 reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    ReplaceAll[
-        reformatTextData0 @ StringReplace[ string, $mdEscapeRules ],
-        s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
-    ];
+    reformatTextDataEscaped @ StringSplit[ string, $textDataFormatRulesNoMarkdownUnescape ];
 
 reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
@@ -260,6 +257,24 @@ reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
 reformatTextData0[ other_ ] := other;
 
 reformatTextData0 // endDefinition;
+
+reformatTextDataEscaped // beginDefinition;
+
+reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten[
+    Replace[
+        parts,
+        {
+            s_String :> ReplaceAll[
+                reformatTextData0 @ StringReplace[ s, $mdEscapeRules ],
+                t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
+            ],
+            other_ :> makeResultCell @ other
+        },
+        { 1 }
+    ]
+];
+
+reformatTextDataEscaped // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -359,11 +374,14 @@ makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
+makeResultCell0[ codeBlockCell[ language_String, code_String ] ] := {
+    "\n",
     makeCodeBlockCell[
-        StringReplace[ StringTrim @ language, $externalLanguageRules, IgnoreCase -> True ],
+        StringReplace[ StringDelete[ StringTrim @ language, StartOfString~~"```" ], $externalLanguageRules, IgnoreCase -> True ],
         StringDelete[ code, { StartOfString~~Whitespace~~StartOfLine, Whitespace~~EndOfString } ]
-    ];
+    ],
+    "\n"
+};
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
     makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
@@ -754,11 +772,7 @@ floatingButtonGrid // beginDefinition;
 floatingButtonGrid[ cell_Cell, lang_ ] /; $cloudNotebooks :=
     Grid[
         {
-            {
-                button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-            }
+            codeBlockButtons[ lang, EvaluationCell[ ], False ]
         },
         Alignment -> Top,
         Spacings  -> 0.2
@@ -771,21 +785,11 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
             {
                 checkTemplateBoxes @ Which[
                     TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
-                        {
-                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], True ] ]
-                        },
+                        codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
                     TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
-                        {
-                            button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ EvaluationCell[ ] ],
-                            button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ EvaluationCell[ ], "Sidebar" ] ]
-                        },
+                        codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
-                        {
-                            button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
-                            button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
-                            button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
-                        }
+                        codeBlockButtons[ lang, EvaluationCell[ ], False ]
                 ]
             },
             Alignment -> Top,
@@ -802,11 +806,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
     {
         ToBoxes @ Grid[
             {
-                checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ string, True ] ],
-                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
-                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
-                }
+                checkTemplateBoxes @ codeBlockButtons[ lang, string, False ]
             },
             Alignment -> Top,
             Spacings  -> 0.2
@@ -816,6 +816,39 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
 ];
 
 floatingButtonGrid // endDefinition;
+
+codeBlockButtons // beginDefinition;
+
+codeBlockButtons[ lang_, target_, workspaceQ_ ] /; plaintextLanguageQ @ lang := {
+    button[ $insertInputButtonLabel, insertCodeBelow[ target, False ] ],
+    button[ If[ TrueQ @ workspaceQ, $copyToClipboardButtonLabelWorkspaceChat, $copyToClipboardButtonLabel ], copyCodeBlock @ target ]
+};
+
+codeBlockButtons[ lang_, target_, workspaceQ_ ] := {
+    button[ evaluateLanguageLabel[ lang, workspaceQ ], insertCodeBelow[ target, True ] ],
+    button[ $insertInputButtonLabel, insertCodeBelow[ target, False ] ],
+    button[ If[ TrueQ @ workspaceQ, $copyToClipboardButtonLabelWorkspaceChat, $copyToClipboardButtonLabel ], copyCodeBlock @ target ]
+};
+
+codeBlockButtons // endDefinition;
+
+codeBlockWorkspaceButtons // beginDefinition;
+
+codeBlockWorkspaceButtons[ lang_, target_, _ ] /; plaintextLanguageQ @ lang := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ]
+};
+
+codeBlockWorkspaceButtons[ lang_, target_, evaluate_ ] := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ],
+    button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ target, evaluate ] ]
+};
+
+codeBlockWorkspaceButtons // endDefinition;
+
+plaintextLanguageQ // beginDefinition;
+plaintextLanguageQ[ language_String ] := MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ];
+plaintextLanguageQ[ ___ ] := False;
+plaintextLanguageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1471,6 +1504,24 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+$textDataFormatRulesNoMarkdownUnescape = {
+    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+
+    speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
+
+    StringExpression[
+        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ code__ ],
+        ("```"|EndOfString)
+    ] /; toolCallStringFreeQ @ code :>
+        If[ StringMatchQ[ code, $$mdTable ],
+            tableCell @ code,
+            codeBlockCell[ language, code ]
+        ]
+};
+
 $textDataFormatRules = {
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
@@ -1482,7 +1533,7 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
+    ] /; toolCallStringFreeQ @ code :>
         If[ StringMatchQ[ code, $$mdTable ],
             tableCell @ code,
             codeBlockCell[ language, code ]
@@ -1496,7 +1547,7 @@ $textDataFormatRules = {
     Longest @ StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
         tool: $$simpleToolCall
-     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] :> inlineToolCallCell @ tool
+     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
     ,
     $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
@@ -1538,6 +1589,31 @@ toolShortNameQ[ cmd_String ] := MatchQ[ $ChatHandlerData[ "ToolShortNames" ][ cm
 toolShortNameQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleToolCallStringQ*)
+simpleToolCallStringQ // beginDefinition;
+simpleToolCallStringQ[ string_String ] := StringMatchQ[ string, $$simpleToolCall ] && simpleToolCallStringQ0 @ string;
+simpleToolCallStringQ[ ___ ] := False;
+simpleToolCallStringQ // endDefinition;
+
+simpleToolCallStringQ0 // beginDefinition;
+simpleToolCallStringQ0[ string_String ] /; StringContainsQ[ string, $$endToolCall ] := True;
+simpleToolCallStringQ0[ string_String ] := MatchQ[
+    StringCases[ string, StartOfString ~~ $$ws ~~ "/" ~~ cmd: $$cmd ~~ $$eol ~~ ___ :> cmd, 1 ],
+    { _String? toolShortNameQ }
+];
+simpleToolCallStringQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallStringFreeQ*)
+toolCallStringFreeQ // beginDefinition;
+toolCallStringFreeQ[ string_String ] :=
+    StringFreeQ[ string, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] &&
+    ! simpleToolCallStringQ[ string ];
+toolCallStringFreeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$dynamicSplitRules*)
 
@@ -1551,7 +1627,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
+    ] /; toolCallStringFreeQ @ code :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -1560,7 +1636,7 @@ $dynamicSplitRules = {
     ,
     (* Tool call *)
     s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
-    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
+    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] /; simpleToolCallStringQ @ s :> s
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1647,8 +1723,14 @@ $stringFormatRules = {
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
 makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ language :=
+    makeInteractiveCodeCell[ "Plaintext", unescapePlainTextCodeBlock @ stripCodePadding @ code ];
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
+
+unescapePlainTextCodeBlock // beginDefinition;
+unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];
+unescapePlainTextCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
