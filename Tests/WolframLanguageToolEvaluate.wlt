@@ -119,13 +119,124 @@ VerificationTest[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*List Input*)
+(* A list of queries is interpreted element-wise, splicing a list of interpretations into the surrounding code. *)
+VerificationTest[
+    as = WolframLanguageToolEvaluate[
+        "\[FreeformPrompt][{\"Boston, MA\", \"Chicago, IL\"}]",
+        All,
+        Method -> "Session"
+    ],
+    KeyValuePattern @ {
+        "Result" -> HoldCompleteForm @ {
+            Entity[ "City", { "Boston", "Massachusetts", "UnitedStates" } ],
+            Entity[ "City", { "Chicago", "Illinois", "UnitedStates" } ]
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List@@Tests/WolframLanguageToolEvaluate.wlt:125,1-139,2"
+]
+
+VerificationTest[
+    StringContainsQ[
+        as[ "String" ],
+        "[INFO] Interpreted \"Boston, MA\" as: Entity[\"City\", {\"Boston\", \"Massachusetts\", \"UnitedStates\"}]"
+    ] && StringContainsQ[
+        as[ "String" ],
+        "[INFO] Interpreted \"Chicago, IL\" as: Entity[\"City\", {\"Chicago\", \"Illinois\", \"UnitedStates\"}]"
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-InfoMessages@@Tests/WolframLanguageToolEvaluate.wlt:141,1-152,2"
+]
+
+(* A single-element list interprets to a list, not a bare interpretation. *)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "\[FreeformPrompt][{\"Boston, MA\"}]", "Result", Method -> "Session" ],
+    HoldCompleteForm @ { Entity[ "City", { "Boston", "Massachusetts", "UnitedStates" } ] },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-SingleElement@@Tests/WolframLanguageToolEvaluate.wlt:155,1-160,2"
+]
+
+(* An empty list has nothing to interpret, so it evaluates to itself. The unquoted-query auto-correct used to
+   rewrite it into the query "{}", which reached the right answer only because the interpreter happened to read
+   "{}" back as an empty list. *)
+VerificationTest[
+    as = WolframLanguageToolEvaluate[ "\[FreeformPrompt][{}]", All, Method -> "Session" ],
+    KeyValuePattern @ { "Result" -> HoldCompleteForm @ { } },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-Empty@@Tests/WolframLanguageToolEvaluate.wlt:165,1-170,2"
+]
+
+VerificationTest[
+    StringFreeQ[ as[ "String" ], "Interpreted" ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-Empty-NotInterpreted@@Tests/WolframLanguageToolEvaluate.wlt:172,1-177,2"
+]
+
+VerificationTest[
+    WolframLanguageToolEvaluate[ "\[FreeformPrompt][{ }]", "Result", Method -> "Session" ],
+    HoldCompleteForm @ { },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-Empty-Whitespace@@Tests/WolframLanguageToolEvaluate.wlt:179,1-184,2"
+]
+
+(* The optional type specifier constrains every element of the list. *)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "\[FreeformPrompt][{\"France\", \"Germany\"}, Entity]", "Result", Method -> "Session" ],
+    HoldCompleteForm @ { Entity[ "Country", "France" ], Entity[ "Country", "Germany" ] },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-TypeSpecifier@@Tests/WolframLanguageToolEvaluate.wlt:187,1-192,2"
+]
+
+VerificationTest[
+    WolframLanguageToolEvaluate[
+        "EntityValue[\[FreeformPrompt][{\"France\", \"Germany\"}, Entity], \"Population\"]",
+        "Result",
+        Method -> "Session"
+    ],
+    HoldCompleteForm @ { _Quantity, _Quantity },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-InExpression@@Tests/WolframLanguageToolEvaluate.wlt:194,1-203,2"
+]
+
+(* An element that cannot be interpreted fails on its own without discarding the others. *)
+VerificationTest[
+    WolframLanguageToolEvaluate[
+        "\[FreeformPrompt][{\"France\", \"three point one four\"}, Entity]",
+        "Result",
+        Method -> "Session"
+    ],
+    HoldCompleteForm @ { Entity[ "Country", "France" ], $Failed },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-PartialFailure@@Tests/WolframLanguageToolEvaluate.wlt:206,1-215,2"
+]
+
+(* A list that is not made up entirely of strings is still rejected as invalid arguments. *)
+VerificationTest[
+    as = WolframLanguageToolEvaluate[ "\[FreeformPrompt][{\"France\", 5}]", All, Method -> "Session" ],
+    KeyValuePattern @ { "Result" -> HoldCompleteForm @ $Failed },
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-InvalidElement@@Tests/WolframLanguageToolEvaluate.wlt:218,1-223,2"
+]
+
+VerificationTest[
+    StringContainsQ[ as[ "String" ], "[ERROR] invalid arguments in" ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "NaturalLanguageInput-List-InvalidElement-Message@@Tests/WolframLanguageToolEvaluate.wlt:225,1-230,2"
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Multimodal Input*)
 VerificationTest[
     WolframLanguageToolEvaluate[ { "ImageDimensions[", RandomImage[ ], "]" }, "Result", Method -> "Session" ],
     HoldCompleteForm @ { _Integer, _Integer },
     SameTest -> MatchQ,
-    TestID   -> "MultimodalInput-1@@Tests/WolframLanguageToolEvaluate.wlt:124,1-129,2"
+    TestID   -> "MultimodalInput-1@@Tests/WolframLanguageToolEvaluate.wlt:235,1-240,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -135,14 +246,14 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "Dimensions[{{1,2},{3,4},{5,6}}", "Result", Method -> "Session" ],
     HoldCompleteForm @ { 3, 2 },
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-1@@Tests/WolframLanguageToolEvaluate.wlt:134,1-139,2"
+    TestID   -> "AutoCorrectingInput-1@@Tests/WolframLanguageToolEvaluate.wlt:245,1-250,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ { "ImageDimensions[", RandomImage[ ] }, "Result", Method -> "Session" ],
     HoldCompleteForm @ { _Integer, _Integer },
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-2@@Tests/WolframLanguageToolEvaluate.wlt:141,1-146,2"
+    TestID   -> "AutoCorrectingInput-2@@Tests/WolframLanguageToolEvaluate.wlt:252,1-257,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -159,7 +270,7 @@ VerificationTest[
         "Result" -> HoldCompleteForm @ Sequence[ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-SequenceInput@@Tests/WolframLanguageToolEvaluate.wlt:155,1-163,2"
+    TestID   -> "EdgeCases-SequenceInput@@Tests/WolframLanguageToolEvaluate.wlt:266,1-274,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -172,21 +283,21 @@ VerificationTest[
         "Result" -> HoldCompleteForm @ Hold @ Throw @ Null
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-UncaughtThrow@@Tests/WolframLanguageToolEvaluate.wlt:168,1-176,2"
+    TestID   -> "EdgeCases-UncaughtThrow@@Tests/WolframLanguageToolEvaluate.wlt:279,1-287,2"
 ]
 
 VerificationTest[
     StringContainsQ[ as[ "String" ], "Throw::nocatch: Uncaught Throw[Null] returned to top level." ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-UncaughtThrow-Message@@Tests/WolframLanguageToolEvaluate.wlt:178,1-183,2"
+    TestID   -> "EdgeCases-UncaughtThrow-Message@@Tests/WolframLanguageToolEvaluate.wlt:289,1-294,2"
 ]
 
 VerificationTest[
     StringContainsQ[ as[ "String" ], "Out[1]= Hold[Throw[Null]]" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-UncaughtThrow-Output@@Tests/WolframLanguageToolEvaluate.wlt:185,1-190,2"
+    TestID   -> "EdgeCases-UncaughtThrow-Output@@Tests/WolframLanguageToolEvaluate.wlt:296,1-301,2"
 ]
 
 VerificationTest[
@@ -196,7 +307,7 @@ VerificationTest[
         "Result" -> HoldCompleteForm @ Hold @ Throw[ Throw @ Null, "tag" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-UncaughtThrow-Tagged@@Tests/WolframLanguageToolEvaluate.wlt:192,1-200,2"
+    TestID   -> "EdgeCases-UncaughtThrow-Tagged@@Tests/WolframLanguageToolEvaluate.wlt:303,1-311,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -209,7 +320,7 @@ VerificationTest[
         "Result" -> HoldCompleteForm @ $Aborted
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-Abort@@Tests/WolframLanguageToolEvaluate.wlt:205,1-213,2"
+    TestID   -> "EdgeCases-Abort@@Tests/WolframLanguageToolEvaluate.wlt:316,1-324,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -222,7 +333,7 @@ VerificationTest[
         "Result" -> Failure[ "KernelQuit", _ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-KernelQuit-Exit-Null@@Tests/WolframLanguageToolEvaluate.wlt:218,1-226,2"
+    TestID   -> "EdgeCases-KernelQuit-Exit-Null@@Tests/WolframLanguageToolEvaluate.wlt:329,1-337,2"
 ]
 
 VerificationTest[
@@ -232,7 +343,7 @@ VerificationTest[
         "Result" -> Failure[ "KernelQuit", _ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-KernelQuit-Exit-1@@Tests/WolframLanguageToolEvaluate.wlt:228,1-236,2"
+    TestID   -> "EdgeCases-KernelQuit-Exit-1@@Tests/WolframLanguageToolEvaluate.wlt:339,1-347,2"
 ]
 
 VerificationTest[
@@ -242,7 +353,7 @@ VerificationTest[
         "Result" -> Failure[ "KernelQuit", _ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-KernelQuit-Quit-Null@@Tests/WolframLanguageToolEvaluate.wlt:238,1-246,2"
+    TestID   -> "EdgeCases-KernelQuit-Quit-Null@@Tests/WolframLanguageToolEvaluate.wlt:349,1-357,2"
 ]
 
 VerificationTest[
@@ -252,7 +363,7 @@ VerificationTest[
         "Result" -> Failure[ "KernelQuit", _ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-KernelQuit-Quit-1@@Tests/WolframLanguageToolEvaluate.wlt:248,1-256,2"
+    TestID   -> "EdgeCases-KernelQuit-Quit-1@@Tests/WolframLanguageToolEvaluate.wlt:359,1-367,2"
 ]
 
 VerificationTest[
@@ -262,7 +373,7 @@ VerificationTest[
         "Result" -> Failure[ "KernelQuit", _ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "EdgeCases-KernelQuit-Exit-Stop@@Tests/WolframLanguageToolEvaluate.wlt:258,1-266,2"
+    TestID   -> "EdgeCases-KernelQuit-Exit-Stop@@Tests/WolframLanguageToolEvaluate.wlt:369,1-377,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -276,14 +387,14 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "1/0", "String", Method -> "Session" ],
     _String? (StringContainsQ[ "Power::infy: Infinite expression 1/0 encountered." ]),
     SameTest -> MatchQ,
-    TestID   -> "MessageFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:275,1-280,2"
+    TestID   -> "MessageFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:386,1-391,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "Message[f::argx, f, Range[1000]]", "String", Method -> "Session" ],
     s_String /; StringLength[ s ] < 500,
     SameTest -> MatchQ,
-    TestID   -> "MessageFormatting-2@@Tests/WolframLanguageToolEvaluate.wlt:282,1-287,2"
+    TestID   -> "MessageFormatting-2@@Tests/WolframLanguageToolEvaluate.wlt:393,1-398,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -294,7 +405,7 @@ VerificationTest[
     _String? (StringContainsQ[ "Power::infy: Infinite expression 1/0 encountered." ]),
     { Power::infy },
     SameTest -> MatchQ,
-    TestID   -> "PropagateMessages@@Tests/WolframLanguageToolEvaluate.wlt:292,1-298,2"
+    TestID   -> "PropagateMessages@@Tests/WolframLanguageToolEvaluate.wlt:403,1-409,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -307,7 +418,7 @@ VerificationTest[
     _String? (StringContainsQ[ "First::argt: First called with 0 arguments" ]),
     { }, (* No messages should be issued externally in a Session by default *)
     SameTest -> MatchQ,
-    TestID   -> "PropagateMessages-Session@@Tests/WolframLanguageToolEvaluate.wlt:303,1-311,2"
+    TestID   -> "PropagateMessages-Session@@Tests/WolframLanguageToolEvaluate.wlt:414,1-422,2"
 ]
 
 VerificationTest[
@@ -317,7 +428,7 @@ VerificationTest[
     _String? (StringContainsQ[ "First::argt: First called with 0 arguments" ]),
     { First::argt }, (* Messages should be issued externally in other environments *)
     SameTest -> MatchQ,
-    TestID   -> "PropagateMessages-OtherEnvironment@@Tests/WolframLanguageToolEvaluate.wlt:313,1-321,2"
+    TestID   -> "PropagateMessages-OtherEnvironment@@Tests/WolframLanguageToolEvaluate.wlt:424,1-432,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -327,7 +438,7 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "Print[\"a\"]; 1+1", "String", Method -> "Session" ],
     _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
     SameTest -> MatchQ,
-    TestID   -> "PrintFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:326,1-331,2"
+    TestID   -> "PrintFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:437,1-442,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -337,7 +448,7 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "PrintTemporary[\"a\"]; 1+1", "String", Method -> "Session" ],
     _String? (StringMatchQ[ "During evaluation of In["~~NumberString~~"]:= a\n\nOut["~~NumberString~~"]= 2" ]),
     SameTest -> MatchQ,
-    TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:336,1-341,2"
+    TestID   -> "PrintTemporaryFormatting-1@@Tests/WolframLanguageToolEvaluate.wlt:447,1-452,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -351,7 +462,7 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "ContinuedFraction[Pi, 5]", "Result", Method -> "Session" ],
     HoldCompleteForm @ { 3, 7, 15, 1, 292 },
     SameTest -> MatchQ,
-    TestID   -> "RegressionTests-OverrideTagForcing@@Tests/WolframLanguageToolEvaluate.wlt:350,1-355,2"
+    TestID   -> "RegressionTests-OverrideTagForcing@@Tests/WolframLanguageToolEvaluate.wlt:461,1-466,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -365,5 +476,21 @@ VerificationTest[
     ],
     _String? (StringFreeQ[ "General::messages" ]),
     SameTest -> MatchQ,
-    TestID   -> "PropagateMessages-Workaround@@Tests/WolframLanguageToolEvaluate.wlt:360,1-369,2"
+    TestID   -> "PropagateMessages-Workaround@@Tests/WolframLanguageToolEvaluate.wlt:471,1-480,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Auto-Correct Rewriting Valid FreeformPrompt Syntax*)
+(* The optional second argument constrains what the query parses to. Auto-correct rules used to treat it as a
+   hallucination and strip it, taking the surrounding code with it, leaving something that could not evaluate. *)
+VerificationTest[
+    WolframLanguageToolEvaluate[
+        "QuantityMagnitude[EntityValue[\[FreeformPrompt][\"France\", Entity], \"Population\"]]",
+        "Result",
+        Method -> "Session"
+    ],
+    HoldCompleteForm[ _Integer ],
+    SameTest -> MatchQ,
+    TestID   -> "RegressionTests-FreeformPromptTypeSpecifier@@Tests/WolframLanguageToolEvaluate.wlt:487,1-496,2"
 ]

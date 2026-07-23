@@ -199,12 +199,14 @@ When `Automatic`, resolves via `autoModelSetting` to the model-specific default.
 
 ### Model-Specific Overrides
 
-- **`True`**: All Anthropic models (service-level default in `$modelAutoSettings["Anthropic", Automatic]`), GPT-5.2
-- **`False`**: Global default (from `$modelAutoSettings[Automatic, Automatic]`)
+- **`True`**: All Anthropic models (service-level default in `$modelAutoSettings["Anthropic", Automatic]`); GPT-5.2 and later (set on the `GPT52` family and inherited by `GPT53`, `GPT53Chat`, and `GPT54`)
+- **`False`**: Global default (from `$modelAutoSettings[Automatic, Automatic]`), including GPT-5.1 and earlier
 
 ### Implementation
 
 When `True`, the `replaceUnicodeCharacters` function in `SendChat.wl` performs string replacements on all message content, including strings inside `LLMTool`, `LLMToolRequest`, and `LLMToolResponse` expressions. The replacement is applied in the message preparation pipeline (after role rewriting, before tool response splitting). The check uses `TrueQ`, so only an explicit `True` triggers replacement; `False`, `Automatic`, or any other value leaves messages unchanged.
+
+Each character is replaced with its long name representation, so `\[FreeformPrompt]` (U+F351) is sent to the model as the literal ASCII text `\[FreeformPrompt]`. `autoCorrect` maps that text back to the character when the response is processed (via `$llmAutoCorrectRules`), so the round trip is transparent to the rest of the pipeline.
 
 ### Integration Points
 

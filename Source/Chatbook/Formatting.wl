@@ -127,8 +127,9 @@ esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c,
 $mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
-$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
-$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+$mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
+$texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -365,10 +366,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
     ];
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
-    makeInlineWL @ code;
+    makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
-    makeInlineCodeCell @ code,
+    makeInlineCodeCell @ StringReplace[ code, $mdUnescapeRules ],
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 
@@ -379,7 +380,7 @@ makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength
     makeResultCell0 @ inlineCodeCell @ name;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = makeTeXBoxes @ math },
+    With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
@@ -2663,6 +2664,9 @@ makeInlineCodeCell // beginDefinition;
 
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
+
+makeInlineCodeCell[ refLink_String ] /; StringMatchQ[ refLink, "[" ~~ name__ ~~ "](paclet:ref/" ~~ name__ ~~ ")" ] :=
+    formatTextString @ refLink;
 
 makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
