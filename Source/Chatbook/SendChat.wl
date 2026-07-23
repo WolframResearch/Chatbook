@@ -63,7 +63,7 @@ chatEvaluateHeadless[ messages0_, settings_? AssociationQ ] := Enclose[
         ChatEvaluationBlock[
             Module[ { messages, as, container },
                 messages = ConfirmMatch[ ensureChatMessages @ messages0, $$chatMessages, "Messages" ];
-                as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ];
+                as = ConfirmBy[ sendChatHeadless @ messages, AssociationQ, "SendChatHeadless" ]; (* TODO*)
                 catchAlways @ waitForLastTask @ $CurrentChatSettings;
                 container = ConfirmBy[ as[ "Container" ], AssociationQ, "Container" ];
                 StringTrim @ ConfirmBy[ container[ "FullContent" ], StringQ, "ResultString" ]
