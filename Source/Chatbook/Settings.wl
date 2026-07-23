@@ -320,12 +320,26 @@ $modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
 |>;
 
 $modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
-    (* TODO: Without an explicit max_tokens, OpenRouter seems to reserve the model max in its
-       upfront credit check, which rejects requests from keys with modest monthly limits or
-       remaining credits.
+    (* MaxTokens
 
-       c.f <https://share.google/aimode/Z8iKb2FY3mGCfe2Nk> *)
-    "MaxTokens" -> 4096,
+    * Without an explicit MaxTokens, OpenRouter seems to reserve the model max
+      ("MaxContextTokens" -> 1048576) in its upfront credit check, which rejects
+      requests from keys with modest monthly limits or remaining credits.
+      c.f <https://share.google/aimode/Z8iKb2FY3mGCfe2Nk>
+
+   * Explicit output cap. Kimi K3 advertises no max output ("MaxContextTokens" -> 1048576), so leaving
+     max_tokens unset makes OpenRouter's credit check reserve the whole window
+     (~$15/request) and reject modest keys. Reasoning is billed as output and shares
+     this budget.
+     c.f. <https://web.archive.org/web/20260731200453/https://openrouter.ai/docs/guides/best-practices/reasoning-tokens>
+
+    * A reasonable defensive default value should be
+        1. large enough to never truncate reasoning+answer, which will cause malformed
+           reasoning markup to leak into the output, and
+        2. small enough to stay under the credit reservation your keys tolerate, and
+        3. stay well below the model max context, which is ~1M tokens for Kimi K3.
+   *)
+    "MaxTokens" -> 128000,
 
     (* Reasoning is mandatory. An unset Reasoning also fails. "LLMConnections" paclet seems to
     rewrite it to <| "enabled" -> True |> which leads to error. Using "enabled" -> True confirms it. *)
@@ -337,11 +351,12 @@ $modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
     (* named effort levels: low/high/max https://platform.kimi.ai/docs/guide/use-thinking-effort *)
     "Reasoning" -> <| "effort" -> "high" |>
 
-    (* dev *)
-    (*"Reasoning" -> <| "effort" -> "max", "max_tokens" -> 4096 |>*)
-    (*"Reasoning" -> <| "enabled" -> True, "max_tokens" -> 4096 |>*)
-    (*"Reasoning" -> <| "exclude" -> True |>*)
 
+    (* dev *)
+
+    (* Capping the reasoning budget to handle runaway reasoning *)
+    (*"Reasoning" -> <| "effort" -> "max", "max_tokens" -> 32000 |>*)
+    (*"Reasoning" -> <| "enabled" -> True, "max_tokens" -> 32000 |>*)
 
 |>;
 
