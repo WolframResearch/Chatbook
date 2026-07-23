@@ -624,6 +624,7 @@ $defaultWritePaths := $defaultWritePaths = Select[
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Wolfram", "AgentTools" },
         FileNameJoin @ { $UserBaseDirectory, "Knowledgebase" },
         FileNameJoin @ { $UserBaseDirectory, "Logs" },
         FileNameJoin @ { ExpandFileName @ URL @ $LocalBase, "Resources" }
