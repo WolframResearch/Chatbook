@@ -325,7 +325,7 @@ $modelAutoSettings[ "OpenRouter", "KimiK3" ] = <|
        remaining credits.
 
        c.f <https://share.google/aimode/Z8iKb2FY3mGCfe2Nk> *)
-    "MaxTokens" -> 4096,
+    (*"MaxTokens" -> 4096,*)
 
     (* Reasoning is mandatory. An unset Reasoning also fails. "LLMConnections" paclet seems to
     rewrite it to <| "enabled" -> True |> which leads to error. Using "enabled" -> True confirms it. *)
