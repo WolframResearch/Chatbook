@@ -15,9 +15,9 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (*Configuration*)
 (* Add additional supported models here as needed: *)
 $llmKitPreferredModels = <|
-    "Pro"      -> { "gpt-5.4" },
-    "Research" -> { "gpt-5.4" },
-    "Basic"    -> { "gpt-5.4" }
+    "Pro"      -> { "gpt-5.6-sol", "gpt-5.4" },
+    "Research" -> { "gpt-5.6-sol", "gpt-5.4" },
+    "Basic"    -> { "gpt-5.6-luna", "gpt-5.4" }
 |>;
 
 $$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
