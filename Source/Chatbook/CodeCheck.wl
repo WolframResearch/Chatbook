@@ -392,7 +392,7 @@ scanStrayCommentCloser[code_String]:=
 				Select[posTrailingStarCall, MatchQ[posCommentCloserAndTypeNoBullet , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
 				//
 				Replace[	{
-							p:{___} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
+							p:{__} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
 																		,	"Trailing star call inside comment "
 																		,	"Fatal"
 																		,	Association@{ConfidenceLevel -> 1, Source->p}]
