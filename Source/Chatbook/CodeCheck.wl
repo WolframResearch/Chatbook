@@ -125,7 +125,7 @@ Options[CodeCheck]={"SeverityExclusions" ->{(*(*4/4*)"Fatal", (*3/4*)"Error"*)
 					,
 					"SequenceTokenRules" ->	{pSnakeAll->scanSnakeMulti}
 					,
-					"StringScans"-> {scanTrailingStarCommentCloser}
+					"StringScans"-> {scanStrayCommentCloser}
 					};
 
 
@@ -256,7 +256,8 @@ extractPatternFromInspectionObject[
 							,	"BadEntityType"
 							,	"SuspiciousFunctionSymbol"
 							,	"GlobalCapitalizedSymbol"
-							,	"TrailingStarCallFalseCommentCloser"]
+							,	"TrailingStarCallFalseCommentCloser"
+							,	"BulletStarFalseCommentCloser"]
 				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
@@ -300,11 +301,35 @@ mergeFixes[prevFix_, newFix_] :=
 (*Brackets Fix*)
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
+$$BulletStarFalseCommentCloser = HoldPattern[{___, {"Fatal", "BulletStarFalseCommentCloser"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat : $$BulletStarFalseCommentCloser[so_], patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing["BulletStarFalseCommentCloser","No fix found"]
+			,success=False
+			}
+			,
+			StringReplacePart[code, "( * )", so]
+			//
+			If[	StringQ@#
+				,
+				success=True;fixedCode=#
+			]&
+			;
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, Length@so, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			} // Flatten // Association
+	]
+
 $$TrailingStarCallFalseCommentCloser = HoldPattern[{___, {"Fatal", "TrailingStarCallFalseCommentCloser"}->#, ___}]&;
 
 fixPattern[target_][code_String, pat : $$TrailingStarCallFalseCommentCloser[so_], patToIgnore_ : {}] :=
 	Module[	{
-			fixedCode=Missing["TrailingStarCallFalseCommentCloser","No fix found"]
+			 fixedCode=Missing["TrailingStarCallFalseCommentCloser","No fix found"]
 			,success=False
 			}
 			,
@@ -321,42 +346,66 @@ fixPattern[target_][code_String, pat : $$TrailingStarCallFalseCommentCloser[so_]
 			, "SafeToEvaluate" -> If[success, True, False]
 			, "Pattern" -> pat
 			, "FixedCode" -> fixedCode
-			, "StopCodeFix" -> True
 			} // Flatten // Association
 	]
 
 balancedCommentQ[code_String]:=
 	listCommentCloser[code][[All,2]] // ReplaceRepeated[{a___, "(*", "*)", b___} :> {a, b}] // Replace[{}->True] // TrueQ
 
-scanTrailingStarCommentCloser[code_String]:=
-	Catch[
+scanStrayCommentCloser[code_String]:=
 	With[
-		{	(* Stops evaluation if no comments  *)
-			posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]}
+		{posBulletStar = StringPosition[code, "(*)"]}
 		,
 		{
-			posTrailingStarCall =
-				(	(* Stops evaluation if all comments closer are balanced *)
-					ReplaceRepeated[	posCommentCloserAndtype[[All,2]]
-										,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
-					;
-					(* Stops evaluation if no trailing star call found *)
-					StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
-				)
-		}
-		,
-		Select[posTrailingStarCall, MatchQ[posCommentCloserAndtype , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
+		posBulletStar
 		//
 		Replace[	{
-					p:{___} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
-																,	"Trailing star call inside comment "
-																,	"Fatal"
-																,	Association@{ConfidenceLevel -> 1, Source->p}]
-					,
-					_ -> {}
-					}
+							p:{__} :>	CodeInspector`InspectionObject[		"BulletStarFalseCommentCloser"
+																		,	"Bullet Star like inside comment "
+																		,	"Fatal"
+																		,	Association@{ConfidenceLevel -> 1, Source->p}]
+							,
+							_ -> {}
+							}
+				]
+		,
+		Catch[
+			With[
+				{	(* Stops evaluation if no comments  *)
+					posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]
+				}
+				,
+				{
+					posCommentCloserAndTypeNoBullet=Select[posCommentCloserAndtype, Not@MatchQ[#[[1]], Alternatives @@ posBulletStar[[All, 1]]] &]
+				}
+				,
+				{
+					posTrailingStarCall =
+						(	(* Stops evaluation if all comments closer are balanced *)
+							ReplaceRepeated[	posCommentCloserAndTypeNoBullet[[All,2]]
+												,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
+							;
+							(* Stops evaluation if no trailing star call found *)
+							StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
+						)
+				}
+				,
+				Select[posTrailingStarCall, MatchQ[posCommentCloserAndTypeNoBullet , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
+				//
+				Replace[	{
+							p:{___} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
+																		,	"Trailing star call inside comment "
+																		,	"Fatal"
+																		,	Association@{ConfidenceLevel -> 1, Source->p}]
+							,
+							_ -> {}
+							}
+				]
+			]
 		]
-	]]
+		} // Flatten
+
+	]
 
 pNonParen = Repeated[Except["(" | ")"], {0, Infinity}];
 pTrailingStarCall = "(" ~~ Except["*"] ~~ Shortest[pNonParen] ~~ Verbatim["*"] ~~ ")";
