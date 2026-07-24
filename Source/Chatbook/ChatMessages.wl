@@ -1716,6 +1716,8 @@ tokenizerName[ name_String ] :=
         name
     ];
 
+tokenizerName[ Automatic ] := tokenizerName[ "gpt-4o" ];
+
 tokenizerName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -307,7 +307,7 @@ insertCellStyle[ style_String ] :=
 
 insertCellStyle[ style_String, nbo_NotebookObject ] := Enclose[
     Module[ { tag, cell, cellObject },
-        tag = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        tag = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
         cell = Cell[ "", style, CellTags -> tag ];
         SelectionMove[ nbo, After, Cell ]; (* prevents inline cells *)
         NotebookWrite[ nbo, cell ];

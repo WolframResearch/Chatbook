@@ -612,7 +612,7 @@ catchTop[ eval_ ] := catchTop[ eval, Chatbook ];
 catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
-            $chatEvaluationID    = CreateUUID[ ],
+            $chatEvaluationID    = createUUID[ ],
             $currentChatSettings = None,
             $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching            = True,
@@ -880,7 +880,7 @@ chatbookServiceCaller // beginDefinition;
 chatbookServiceCaller[ ] := Flatten @ {
     If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
     If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
-    If[ TrueQ @ $SidebarChat, "WorkspaceChat", Nothing ],
+    If[ TrueQ @ $SidebarChat, "SidebarChat", Nothing ],
     Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
 };
 

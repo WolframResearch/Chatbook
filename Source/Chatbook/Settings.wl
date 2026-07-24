@@ -79,7 +79,7 @@ $defaultChatSettings = <|
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
-    "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
+    "TabbedOutput"                   -> Automatic, (* TODO: define a "MaxOutputPages" setting *) (* Cloud is False *)
     "TargetCloudObject"              -> Automatic,
     "Temperature"                    -> Automatic,
     "TimeConstraint"                 -> Automatic,
@@ -577,7 +577,7 @@ autoModelSetting[ model0_Association, key_String ] :=
         ]
     ];
 
-autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
+autoModelSetting[ service_String, name_, id_, family_, key_String ] :=
     autoModelSetting[ service, name, id, family, key ] =
         FirstCase[
             Unevaluated @ {
@@ -802,6 +802,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
             $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
+            $serviceCaller           = resolved[ "ServiceCaller" ];
 
             If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
@@ -974,6 +975,7 @@ resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TabbedOutput"                   ] := ! $cloudNotebooks;
 resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
 resolveAutoSetting0[ as_, "Tokenizer"                      ] := getTokenizer @ as;
 resolveAutoSetting0[ as_, "TokenizerName"                  ] := getTokenizerName @ as;
@@ -1252,6 +1254,7 @@ autoMaxContextTokens[ as_Association? llmKitQ ] := Min[ 2^16, autoMaxContextToke
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
 autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
+autoMaxContextTokens[ _, _, Automatic ] := 2^16;
 autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
@@ -1270,7 +1273,7 @@ autoMaxContextTokens0[ { ___, "chat", "bison", "001"        , ___ } ] := 20000;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro", "vision", ___ } ] := 12288;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
 autoMaxContextTokens0[ { ___, "phi3.5"                      , ___ } ] := 2^17;
-autoMaxContextTokens0[ _List                                        ] := 2^12;
+autoMaxContextTokens0[ _List                                        ] := 2^16;
 autoMaxContextTokens0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1305,7 +1308,7 @@ serviceMaxContextTokens // endDefinition;
 autoMaxTokens // beginDefinition;
 autoMaxTokens[ as_Association ] := autoMaxTokens[ as, as[ "Model" ] ];
 autoMaxTokens[ as_, model_ ] := autoMaxTokens[ as, model, toModelName @ model ];
-autoMaxTokens[ as_, model_, name_String ] := Lookup[ $maxTokensTable, name, Automatic ];
+autoMaxTokens[ as_, model_, name: _String|Automatic ] := Lookup[ $maxTokensTable, name, Automatic ];
 autoMaxTokens // endDefinition;
 
 (* FIXME: this should be something queryable from LLMServices: *)
