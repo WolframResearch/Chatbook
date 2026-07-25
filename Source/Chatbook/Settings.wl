@@ -183,6 +183,10 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
+(* Shallow config: inherit Opus 4.7+ so Opus 5 is usable without unsupported-parameter errors. *)
+$modelAutoSettings[ "Anthropic", "ClaudeOpus5" ] =
+    $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*AzureOpenAI*)
