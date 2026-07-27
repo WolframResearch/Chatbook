@@ -345,4 +345,135 @@ VerificationTest[
     TestID   -> "ApplyEmulatedStopTokens-PassThrough@@Tests/EmulatedStopTokens.wlt:316,1-346,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*stopTokenTrim*)
+
+(* llmChat and llmSynthesizeSubmit drop the server-side stop parameter for models that do not support it
+   (via dropModelUnsupportedParameters) and instead trim the generated content client-side with stopTokenTrim. *)
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "text with [WL] inside", { } ],
+    "text with [WL] inside",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-NoStopTokens@@Tests/EmulatedStopTokens.wlt:355,1-360,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[
+        "query one\nquery two\n[NONE] extra",
+        { "[NONE]", "[WL]" }
+    ],
+    "query one\nquery two\n",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-TrimsToEnd@@Tests/EmulatedStopTokens.wlt:362,1-370,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "a[WL]b[WL]c", { "[NONE]", "[WL]" } ],
+    "a",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-FirstOccurrence@@Tests/EmulatedStopTokens.wlt:372,1-377,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "[WL] use documentation instead", { "[NONE]", "[WL]" } ],
+    "",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-EntireResponse@@Tests/EmulatedStopTokens.wlt:379,1-384,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "123456789th prime", { "[NONE]", "[WL]" } ],
+    "123456789th prime",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-NoMatch@@Tests/EmulatedStopTokens.wlt:386,1-391,2"
+]
+
+(* A stop token may arrive split across several streamed chunks: *)
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ { "queries", "\n[NO", "NE] extra" }, { "[NONE]", "[WL]" } ],
+    "queries\n",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-SplitChunks@@Tests/EmulatedStopTokens.wlt:394,1-399,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ { }, { "[NONE]", "[WL]" } ],
+    "",
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-EmptyChunks@@Tests/EmulatedStopTokens.wlt:401,1-406,2"
+]
+
+(* llmChat responses are associations with a "Content" key; other keys pass through unchanged: *)
+VerificationTest[
+    Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[
+        <| "Content" -> "q1\n[WL] junk", "ToolRequests" -> { } |>,
+        { "[NONE]", "[WL]" }
+    ],
+    <| "Content" -> "q1\n", "ToolRequests" -> { } |>,
+    SameTest -> MatchQ,
+    TestID   -> "StopTokenTrim-Association@@Tests/EmulatedStopTokens.wlt:409,1-417,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*dropModelUnsupportedParameters*)
+
+(* gpt-5 does not support stop tokens, so the parameter is dropped before creating the LLMConfiguration: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        Automatic,
+        <|
+            "Model"      -> <| "Service" -> "OpenAI", "Name" -> "gpt-5" |>,
+            "StopTokens" -> { "[NONE]" },
+            "MaxTokens"  -> 250
+        |>
+    ],
+    <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5" |>, "MaxTokens" -> 250 |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-Automatic-Unsupported@@Tests/EmulatedStopTokens.wlt:424,1-436,2"
+]
+
+(* gpt-4o supports stop tokens, so the settings are unchanged: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        Automatic,
+        <|
+            "Model"      -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+            "StopTokens" -> { "[NONE]" },
+            "MaxTokens"  -> 250
+        |>
+    ],
+    <|
+        "Model"      -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+        "StopTokens" -> { "[NONE]" },
+        "MaxTokens"  -> 250
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-Automatic-Supported@@Tests/EmulatedStopTokens.wlt:439,1-455,2"
+]
+
+(* Shorthand model specifications are resolved with resolveFullModelSpec: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        { "OpenAI", "gpt-5" },
+        <| "StopTokens" -> { "[NONE]" }, "MaxTokens" -> 250 |>
+    ],
+    <| "MaxTokens" -> 250 |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:458,1-466,2"
+]
+
+(* Automatic also works when the config specifies its model in shorthand form: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        Automatic,
+        <| "Model" -> { "OpenAI", "o4-mini" }, "StopTokens" -> { "[NONE]" }, "Temperature" -> 0.7 |>
+    ],
+    <| "Model" -> { "OpenAI", "o4-mini" } |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:469,1-477,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
