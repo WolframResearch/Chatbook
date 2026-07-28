@@ -1886,8 +1886,8 @@ VerificationTest[
         ]
     ],
     <|
-        "FixedCode" -> "1+1 (*aa+1 (* ( * ) AAAA exp(2u* ) *) ( * ) exp(2u* ) - f(k* ) BB*); ( * ) (*32*) 33",
-        "SafeToEvaluate" -> Failure[ "...", <| |> ]
+        "FixedCode" -> "1+1 (*aa+1 (* ( * ) AAAA exp(2u*) *) ( * ) exp(2u*) - f(k*) BB*); (*) (*32*) 33",
+        "SafeToEvaluate" -> False
     |>,
     TestID -> "11_08_strayCommentCloser"
 ]

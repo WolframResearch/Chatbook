@@ -248,16 +248,17 @@ generatePatternFromCodeCheck[kv:KeyValuePattern[{"InspectionObjects"->ios_}]]:= 
 
 extractPatternFromInspectionObject[
 	io:InspectionObject[
-				Alternatives[	"BadSingleSnakeUsage"
-							,	"BadMultiSnakeUsage"
-							,	"SuspiciousQuantityUnitName"
-							,	"EntityClassBadSyntax"
-							,	"BadEntityType"
-							,	"SuspiciousFunctionSymbol"
-							,	"GlobalCapitalizedSymbol"
-							,	"TrailingStarCallFalseCommentCloser"
-							,	"BulletStarFalseCommentCloser"]
-				,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
+						Alternatives[	"BadSingleSnakeUsage"
+									,	"BadMultiSnakeUsage"
+									,	"SuspiciousQuantityUnitName"
+									,	"EntityClassBadSyntax"
+									,	"BadEntityType"
+									,	"SuspiciousFunctionSymbol"
+									,	"GlobalCapitalizedSymbol"
+									,	"TrailingStarCallFalseCommentCloser"
+									,	"BulletStarFalseCommentCloser"
+									,	"BulletStarInsideCode"]
+						,__]]:=	Apply[Sequence,io]//({#3,#1}->#4[Source])&
 
 extractPatternFromInspectionObject[io_]:=Apply[Sequence,io]//{#3,#1}&
 
@@ -324,6 +325,24 @@ fixPattern[target_][code_String, pat : $$BulletStarFalseCommentCloser[so_], patT
 			} // Flatten // Association
 	]
 
+$$BulletStarInsideCode = HoldPattern[{___, {"Fatal", "BulletStarInsideCode"}->#, ___}]&;
+
+fixPattern[target_][code_String, pat : $$BulletStarInsideCode[so_], patToIgnore_ : {}] :=
+	Module[	{
+			 fixedCode=Missing["BulletStarInsideCode","No fix found"]
+			,success=False
+			}
+			,
+			{ "Success" -> success
+			, "TotalFixes" -> If[success, Length@so, 0]
+			, "LikelyFalsePositive" -> If[success, False, True]
+			, "SafeToEvaluate" -> If[success, True, False]
+			, "Pattern" -> pat
+			, "FixedCode" -> fixedCode
+			, "StopCodeFix" -> True
+			} // Flatten // Association
+	]
+
 $$TrailingStarCallFalseCommentCloser = HoldPattern[{___, {"Fatal", "TrailingStarCallFalseCommentCloser"}->#, ___}]&;
 
 fixPattern[target_][code_String, pat : $$TrailingStarCallFalseCommentCloser[so_], patToIgnore_ : {}] :=
@@ -353,56 +372,88 @@ balancedCommentQ[code_String]:=
 
 scanStrayCommentCloser[code_String]:=
 	With[
-		{posBulletStar = StringPosition[code, "(*)"]}
+		{
+			posBulletStar = StringPosition[code, "(*)"]
+		,
+			(* Stops evaluation if no comments  *)
+			posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]
+		}
 		,
 		{
-		posBulletStar
-		//
-		Replace[	{
-							p:{__} :>	CodeInspector`InspectionObject[		"BulletStarFalseCommentCloser"
-																		,	"Bullet Star like inside comment "
-																		,	"Fatal"
-																		,	Association@{ConfidenceLevel -> 1, Source->p}]
-							,
-							_ -> {}
-							}
-				]
+			posCommentCloserAndTypeNoBullet=Select[posCommentCloserAndtype, Not@MatchQ[#[[1,1]], Alternatives @@ posBulletStar[[All, 1]]] &]
+		}
 		,
-		Catch[
-			With[
-				{	(* Stops evaluation if no comments  *)
-					posCommentCloserAndtype = listCommentCloser[code] /. _Missing :> Throw[{}]
-				}
-				,
-				{
-					posCommentCloserAndTypeNoBullet=Select[posCommentCloserAndtype, Not@MatchQ[#[[1]], Alternatives @@ posBulletStar[[All, 1]]] &]
-				}
-				,
-				{
-					posTrailingStarCall =
-						(	(* Stops evaluation if all comments closer are balanced *)
-							ReplaceRepeated[	posCommentCloserAndTypeNoBullet[[All,2]]
-												,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
-							;
-							(* Stops evaluation if no trailing star call found *)
-							StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
-						)
-				}
-				,
-				Select[posTrailingStarCall, MatchQ[posCommentCloserAndTypeNoBullet , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
-				//
-				Replace[	{
-							p:{__} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
-																		,	"Trailing star call inside comment "
-																		,	"Fatal"
-																		,	Association@{ConfidenceLevel -> 1, Source->p}]
-							,
-							_ -> {}
-							}
+		{
+			posTrailingStarCall =
+				Catch[
+						(* Stops evaluation if all comments closer are balanced *)
+						ReplaceRepeated[	posCommentCloserAndTypeNoBullet[[All,2]]
+											,{a___, "(*", "*)", b___} :> {a, b}] /. {}:>Throw[{}]
+						;
+						(* Stops evaluation if no trailing star call found *)
+						StringPosition[code, pTrailingStarCall] /. {} :> Throw[{}]
 				]
+		}
+		,
+		{
+			finalTrailingStarPositions =
+				Select[posTrailingStarCall, MatchQ[posCommentCloserAndTypeNoBullet , {___, {{_, #[[2]]}, "*)"}, {{_, _}, "*)"}, ___}] &]
+		}
+		,
+		{
+			intervalComments =
+				Select[posCommentCloserAndTypeNoBullet,Not@MemberQ[finalTrailingStarPositions[[All,2]],#[[1,2]]]& ]
+				//	ReplaceRepeated[{a___, x:PatternSequence[{{c1_,_},"(*"}, __Interval | PatternSequence[], {{_,c2_},"*)"}],b___}:>{a,Interval[{c1,c2}],b}]
+		}
+		,
+		{
+			starBulletsInsideCommentsPositions =
+				posBulletStar 	// Select[		Or@@Replace[ IntervalMemberQ[intervalComments, Interval@#], {}->False]&]
+		,
+			starBulletsInsideCodePositions =
+				posBulletStar 	// Select[Not[	Or@@Replace[ IntervalMemberQ[intervalComments, Interval@#], {}->False]]&]
+								// Select[Not[	Or@@Replace[ IntervalMemberQ[Interval/@listStringCloser[code], Interval@#],{}->False]]&]
+		}
+		,
+		{
+			finalTrailingStarPositions
+			//
+			Replace[	{
+						p:{__} :>	CodeInspector`InspectionObject[		"TrailingStarCallFalseCommentCloser"
+																	,	"Trailing star call inside comment "
+																	,	"Fatal"
+																	,	Association@{ConfidenceLevel -> 1, Source->p}]
+						,
+						_ -> {}
+						}
 			]
-		]
-		} // Flatten
+		,
+			starBulletsInsideCommentsPositions
+			//
+			Replace[	{
+						p:{__} :>	CodeInspector`InspectionObject[		"BulletStarFalseCommentCloser"
+																	,	"Bullet Star like inside comment"
+																	,	"Fatal"
+																	,	Association@{ConfidenceLevel -> 1, Source->p}]
+						,
+						_ -> {}
+						}
+			]
+		,
+			starBulletsInsideCodePositions
+			//
+			Replace[	{
+						p:{__} :>	CodeInspector`InspectionObject[		"BulletStarInsideCode"
+																	,	"Bullet Star inside code"
+																	,	"Fatal"
+																	,	Association@{ConfidenceLevel -> 1, Source->p}]
+						,
+						_ -> {}
+						}
+			]
+
+		}
+		// Flatten
 
 	]
 
@@ -413,8 +464,7 @@ listCommentCloser[code_String]:=
 Catch[
 	With[
 		{
-			posStrings =	StringPosition[code, "\""]
-						//	If[EvenQ@Length@# ,Partition[#,2], Throw[Missing["Unbalanced strings"]]]& // Map[#[[All,1]]&]
+			posStrings = listStringCloser@code
 		}
 		,
 		{
@@ -426,6 +476,10 @@ Catch[
 
 	]
 ]
+
+listStringCloser[code_String]:=
+	StringPosition[code, "\""] // If[EvenQ@Length@# ,Partition[#,2], Throw[Missing["Unbalanced strings"]]]& // Map[#[[All,1]]&]
+
 
 (* FIX PATTERN ----------------------------------------------------------------------- *)
 $$UnbalancedCommentsOrString = HoldPattern[{___, {"Fatal", "UnexpectedCommentCloser"}|{"Fatal", "UnterminatedString"}, ___}];
