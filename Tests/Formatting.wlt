@@ -130,3 +130,80 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Inline-Code-Ref-Link-Mismatched-Name@@Tests/Formatting.wlt:117,1-132,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Placeholders*)
+
+(* Placeholder["description"] in WL code gets its StandardForm typesetting so it displays as a proper placeholder
+   instead of plain code: *)
+VerificationTest[
+    FirstCase[
+        StringToBoxes[ "data = Placeholder[\"your data\"];\ndoTheThing[data]", "WL" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"your data\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:140,1-150,2"
+]
+
+(* Only quoted string arguments are formatted; other arguments could pick up unwanted symbol contexts during
+   parsing, so they are left as-is: *)
+VerificationTest[
+    StringToBoxes[ "f[Placeholder[x], Placeholder[]]", "WL" ],
+    boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-NonString-Arguments-Unchanged@@Tests/Formatting.wlt:154,1-159,2"
+]
+
+(* The full formatting path renders the placeholder in finished chat output: *)
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "```wl\ndata = Placeholder[\"your data\"];\ndoTheThing[data]\n```\n" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"your data\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:162,1-172,2"
+]
+
+(* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
+VerificationTest[
+    Position[
+        FormatChatOutput[
+            "```wl\ndata = Placeholder[\"your data\"];\ndoTheThing[data]\n```\n",
+            <| "Status" -> "Streaming" |>
+        ],
+        s_String /; StringContainsQ[ s, "TagBox" ] && StringContainsQ[ s, "Placeholder" ]
+    ],
+    { __ },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:175,1-186,2"
+]
+
+(* A placeholder that has not finished streaming in yet is still rendered: *)
+VerificationTest[
+    Position[
+        FormatChatOutput[ "```wl\ndata = Placeholder[\"your da", <| "Status" -> "Streaming" |> ],
+        s_String /; StringContainsQ[ s, "TagBox" ] && StringContainsQ[ s, "Placeholder" ]
+    ],
+    { __ },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:189,1-197,2"
+]
+
+(* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
+   Placeholder head: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ RowBox @ { "data", "=", TagBox[ FrameBox[ "\"your data\"" ], "Placeholder" ], ";" },
+        "Input"
+    ],
+    "```wl\ndata = Placeholder[\"your data\"];\n```",
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:201,1-209,2"
+]

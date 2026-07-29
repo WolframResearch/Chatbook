@@ -54,6 +54,7 @@ $basePromptOrder = {
     "ModernMethods",
     "FunctionalStyle",
     "WolframLanguageStyle",
+    "Placeholders",
     "WolframLanguageEvaluatorTool",
     "WolframLanguageEvaluatorToolInteractive",
     "ExampleDataFiles",
@@ -112,10 +113,11 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ExpressionURIResults"                 -> { "SpecialURI" },
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
+    "Placeholders"                         -> { },
     "WolframSymbolCapitalization"          -> { },
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
-    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks", "Placeholders" },
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
@@ -356,6 +358,12 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Always use proper naming conventions for your variables (e.g. lowerCamelCase)
 * Never use single capital letters to represent variables (e.g. use `a Sin[k x + \[Phi]]` instead of `A Sin[k x + \[Phi]]`)
 * Prefer modern Wolfram Language symbols and methods";
+
+$basePromptComponents[ "Placeholders" ] = "\
+* If your code needs a value that only the user can provide, represent it with ``Placeholder[\"description\"]``, \
+for example: ``data = Placeholder[\"your data\"]; doTheThing[data]``. \
+NEVER use a comment as a stand-in for an expression (e.g. ``data = (* your data *)``), \
+since this is invalid syntax and will not display correctly to the user.";
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";

@@ -2101,7 +2101,7 @@ boxToString[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
 (* RadicalBox *)
 boxToString[ RadicalBox[ a_, b_, ___, SurdForm -> True, ___ ] ] :=
     (needsBasePrompt[ "Math" ]; "Surd[" <> boxToString @ a <> ", " <> boxToString @ b <> "]");
-s
+
 boxToString[ RadicalBox[ a_, b_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "Math" ]; boxToString @ a <> "^(1/(" <> boxToString @ b <> "))");
 
@@ -2110,6 +2110,15 @@ boxToString[ box: TagBox[ _, "Piecewise", ___ ] ] :=
     With[ { expr = Quiet @ ToExpression[ box, StandardForm, HoldComplete ] },
         Replace[ expr, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ] /;
             MatchQ[ expr, HoldComplete[ _Piecewise ] ]
+    ];
+
+(* Placeholder *)
+boxToString[ box: TagBox[ _FrameBox, "Placeholder", ___ ] ] :=
+    With[ { expr = Quiet @ ToExpression[ box, StandardForm, HoldComplete ] },
+        (
+            needsBasePrompt[ "Placeholders" ];
+            Replace[ expr, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
+        ) /; MatchQ[ expr, HoldComplete @ Placeholder[ _String ] ]
     ];
 
 (* CenteredInterval *)
