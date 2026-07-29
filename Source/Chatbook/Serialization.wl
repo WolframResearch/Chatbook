@@ -2113,13 +2113,10 @@ boxToString[ box: TagBox[ _, "Piecewise", ___ ] ] :=
     ];
 
 (* Placeholder *)
-boxToString[ box: TagBox[ _FrameBox, "Placeholder", ___ ] ] :=
-    With[ { expr = Quiet @ ToExpression[ box, StandardForm, HoldComplete ] },
-        (
-            needsBasePrompt[ "Placeholders" ];
-            Replace[ expr, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
-        ) /; MatchQ[ expr, HoldComplete @ Placeholder[ _String ] ]
-    ];
+boxToString[ TagBox[ FrameBox[ label_, ___ ], "Placeholder", ___ ] ] := (
+    needsBasePrompt[ "Placeholders" ];
+    "Placeholder[" <> Block[ { $showStringCharacters = True }, boxToString @ label ] <> "]"
+);
 
 (* CenteredInterval *)
 boxToString[

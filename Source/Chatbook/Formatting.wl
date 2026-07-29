@@ -2415,7 +2415,7 @@ formatSpecialBoxes[ string_String ] :=
                 ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ],
             ps: ("PacletSymbol[" ~~ Except[ "]" ].. ~~ ("]"|EndOfString)) :>
                 ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ],
-            "Placeholder[\"" ~~ p: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+            "Placeholder[\"" ~~ p: (("\\\""|Except[ "\"" ])..) ~~ ("\"]"|EndOfString) :>
                 ToString[ RawBoxes @ formatPlaceholderFast @ p, StandardForm ]
         }
     ];
@@ -2443,8 +2443,8 @@ formatSpecialBoxes[ boxes_ ] :=
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
         ,
-        box: RowBox @ { "Placeholder", "[", _String? quotedStringQ, "]" } :>
-            RuleCondition @ formatPlaceholderBoxes @ box
+        RowBox @ { "Placeholder", "[", label: Except[ RowBox @ { ___, ",", ___ } ], "]" } :>
+            RuleCondition @ formatPlaceholderBoxes @ label
         ,
         box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
             With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatSpecialBoxes @ a, "]" } },
@@ -2556,24 +2556,18 @@ $$possibleDateObject = HoldPattern @ DateObject[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*formatPlaceholderBoxes*)
+
+(* Wraps the already-parsed label boxes directly instead of going through MakeBoxes, since parsing the label with
+   ToExpression could create symbols and typeset them with unwanted context qualifications: *)
 formatPlaceholderBoxes // beginDefinition;
-
-formatPlaceholderBoxes[ boxes_RowBox ] :=
-    Quiet @ Module[ { new },
-        new = ToExpression[ boxes, StandardForm, MakeBoxes ];
-        If[ MatchQ[ new, TagBox[ _FrameBox, "Placeholder", ___ ] ],
-            new,
-            boxes
-        ]
-    ];
-
+formatPlaceholderBoxes[ label_ ] := TagBox[ FrameBox @ label, "Placeholder" ];
 formatPlaceholderBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*formatPlaceholderFast*)
 formatPlaceholderFast // beginDefinition;
-formatPlaceholderFast[ p_String ] := TagBox[ FrameBox[ "\"" <> p <> "\"" ], "Placeholder" ];
+formatPlaceholderFast[ p_String ] := formatPlaceholderBoxes[ "\"" <> p <> "\"" ];
 formatPlaceholderFast // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -149,13 +149,42 @@ VerificationTest[
     TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:140,1-150,2"
 ]
 
-(* Only quoted string arguments are formatted; other arguments could pick up unwanted symbol contexts during
-   parsing, so they are left as-is: *)
+(* Placeholder allows arbitrary label expressions, so these are formatted too by wrapping the already-parsed
+   label boxes (avoiding a ToExpression round trip that could create symbols with unwanted contexts): *)
 VerificationTest[
-    StringToBoxes[ "f[Placeholder[x], Placeholder[]]", "WL" ],
+    FirstCase[
+        StringToBoxes[ "DateListPlot[Placeholder[your data]]", "WL" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox @ RowBox @ { "your", " ", "data" },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:154,1-164,2"
+]
+
+(* String labels can contain escaped quotes: *)
+VerificationTest[
+    FirstCase[
+        StringToBoxes[
+            "data = Placeholder[\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"];\nDateListPlot[data]",
+            "WL"
+        ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:167,1-180,2"
+]
+
+(* Placeholder takes at most one argument, so empty or multiple arguments are not valid labels and are left as-is: *)
+VerificationTest[
+    StringToBoxes[ "f[Placeholder[a, b], Placeholder[]]", "WL" ],
     boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-NonString-Arguments-Unchanged@@Tests/Formatting.wlt:154,1-159,2"
+    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:183,1-188,2"
 ]
 
 (* The full formatting path renders the placeholder in finished chat output: *)
@@ -168,7 +197,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:162,1-172,2"
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:191,1-201,2"
 ]
 
 (* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
@@ -182,7 +211,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:175,1-186,2"
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:204,1-215,2"
 ]
 
 (* A placeholder that has not finished streaming in yet is still rendered: *)
@@ -193,7 +222,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:189,1-197,2"
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:218,1-226,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
@@ -205,5 +234,16 @@ VerificationTest[
     ],
     "```wl\ndata = Placeholder[\"your data\"];\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:201,1-209,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:230,1-238,2"
+]
+
+(* Expression labels round-trip through serialization as well: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ RowBox @ { "DateListPlot", "[", TagBox[ FrameBox @ RowBox @ { "your", " ", "data" }, "Placeholder" ], "]" },
+        "Input"
+    ],
+    "```wl\nDateListPlot[Placeholder[your data]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:241,1-249,2"
 ]
