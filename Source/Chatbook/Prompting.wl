@@ -360,8 +360,9 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Prefer modern Wolfram Language symbols and methods";
 
 $basePromptComponents[ "Placeholders" ] = "\
-* If your code needs a value that only the user can provide, represent it with ``Placeholder[\"description\"]``, \
-for example: ``data = Placeholder[\"your data\"]; doTheThing[data]``. \
+* If your code needs a value that only the user can provide, represent it with ``Placeholder[\"description\"]``. \
+For example: ``data = Placeholder[\"your data\"]; DateListPlot[data]``. \
+This will render as an inline input field that replaces itself with the user's input. \
 NEVER use a comment as a stand-in for an expression (e.g. ``data = (* your data *)``), \
 since this is invalid syntax and will not display correctly to the user.";
 

@@ -24,7 +24,10 @@ physics, geography, history, art, astronomy, and more.
 IMPORTANT: If you need the results of multiple queries, it's important that you combine them into a single tool call \
 whenever possible to save on token usage and time.";
 
-$queryHelp = "The query (or queries) to send to Wolfram|Alpha. Separate multiple queries with tab characters (\\t).";
+$queryHelp = "\
+The query (or queries) to send to Wolfram|Alpha. \
+All queries should be written in English. \
+Separate multiple queries with tab characters (\\t).";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
