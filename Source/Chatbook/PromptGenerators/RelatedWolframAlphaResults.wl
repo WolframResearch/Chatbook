@@ -243,6 +243,7 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 `Examples`
 </examples>
 
+All queries should be written in English.
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
 e.g. casual conversation.
@@ -257,6 +258,7 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 `Examples`
 </examples>
 
+All queries should be written in English.
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
 e.g. casual conversation.
