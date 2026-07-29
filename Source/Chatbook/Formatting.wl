@@ -2414,7 +2414,9 @@ formatSpecialBoxes[ string_String ] :=
             "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
                 ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ],
             ps: ("PacletSymbol[" ~~ Except[ "]" ].. ~~ ("]"|EndOfString)) :>
-                ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ]
+                ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ],
+            "Placeholder[\"" ~~ p: (("\\\""|Except[ "\"" ])..) ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatPlaceholderFast @ p, StandardForm ]
         }
     ];
 
@@ -2440,6 +2442,9 @@ formatSpecialBoxes[ boxes_ ] :=
         ,
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
+        ,
+        RowBox @ { "Placeholder", "[", label: Except[ RowBox @ { ___, ",", ___ } ], "]" } :>
+            RuleCondition @ formatPlaceholderBoxes @ label
         ,
         box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
             With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatSpecialBoxes @ a, "]" } },
@@ -2547,6 +2552,23 @@ $$possibleDateObject = HoldPattern @ DateObject[
     (_Real|_Integer)...,
     OptionsPattern[ ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPlaceholderBoxes*)
+
+(* Wraps the already-parsed label boxes directly instead of going through MakeBoxes, since parsing the label with
+   ToExpression could create symbols and typeset them with unwanted context qualifications: *)
+formatPlaceholderBoxes // beginDefinition;
+formatPlaceholderBoxes[ label_ ] := TagBox[ FrameBox @ label, "Placeholder" ];
+formatPlaceholderBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPlaceholderFast*)
+formatPlaceholderFast // beginDefinition;
+formatPlaceholderFast[ p_String ] := formatPlaceholderBoxes[ "\"" <> p <> "\"" ];
+formatPlaceholderFast // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
