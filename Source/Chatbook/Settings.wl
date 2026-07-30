@@ -178,25 +178,32 @@ $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "Multimodal"       -> True
 |>;
 
-$modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
+(* Temperature is rejected from 4.7 onward, and by every 5.x model: *)
+$modelAutoSettings[ "Anthropic", "Claude47Plus" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude4" ],
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
+$modelAutoSettings[ "Anthropic", "Claude5" ] = <|
+    (* MaxContextTokens 200000 is inherited; the real 5.x window is unverified *)
+    $modelAutoSettings[ "Anthropic", "Claude47Plus" ]
+|>;
+
 $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude5" ],
     "MaxContextTokens" -> 1000000,
     "MaxTokens"        -> 128000, (* otherwise the provider defaults to 4096 *)
-    "Multimodal"       -> True,
     (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
     "ToolExamplePrompt" -> None,
     (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)
-    "Reasoning"        -> "adaptive",
-    "Temperature"      -> 1
+    "Reasoning"        -> "adaptive"
 |>;
 
-(* TODO *)
-(*$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] =
-    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ];*)
+(* TODO: unverified, no account access to mythos-5; conservative context window *)
+$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] = <|
+    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ],
+    "MaxContextTokens" -> 200000
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
