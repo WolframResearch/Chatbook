@@ -183,6 +183,21 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
+$modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
+    "MaxContextTokens" -> 1000000,
+    "MaxTokens"        -> 128000, (* otherwise the provider defaults to 4096 *)
+    "Multimodal"       -> True,
+    (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
+    "ToolExamplePrompt" -> None,
+    (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)
+    "Reasoning"        -> "adaptive",
+    "Temperature"      -> 1
+|>;
+
+(* TODO *)
+(*$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] =
+    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ];*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*AzureOpenAI*)
