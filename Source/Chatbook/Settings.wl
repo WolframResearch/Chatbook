@@ -185,13 +185,12 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
 
 $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
     "MaxContextTokens" -> 1000000,
+    "MaxTokens"        -> 128000, (* otherwise the provider defaults to 4096 *)
     "Multimodal"       -> True,
-    "Reasoning"        -> {
-        Automatic, "None",
-        "low", "medium", "high", "max",
-        "Adaptive",
-        Quantity[16384, "Tokens"]
-    }[[7]],  (* TODO: pin down which value to use; "adaptive" may be the best. *)
+    (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
+    "ToolExamplePrompt" -> None,
+    (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)
+    "Reasoning"        -> "adaptive",
     "Temperature"      -> 1
 |>;
 
