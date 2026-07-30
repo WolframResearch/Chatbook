@@ -327,6 +327,10 @@ extractBodyChunks0[ content_String ] :=
 extractBodyChunks0[ content_List ] :=
     extractBodyChunks0 /@ content;
 
+(* Streamed API error (e.g. overloaded_error) surfaces as a Failure instead of a silent blank *)
+extractBodyChunks0[ failure_Failure ] :=
+    Throw[ failure, $bodyChunksTag ];
+
 extractBodyChunks0[ as: KeyValuePattern[ "ToolRequestsChunk" -> t_ ] ] :=
     { extractBodyChunks0 @ KeyDrop[ as, "ToolRequestsChunk" ], toolRequestsToStrings @ t };
 
