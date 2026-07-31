@@ -907,7 +907,10 @@ Button[
                 BoxData @ ToBoxes @ chatbarOptionsDisplay @ nbo,
                 "NotebookAssistant`Chatbar`Menu",
                 Evaluator     -> CurrentValue[ chatbarCell, Evaluator ], (* menu evaluator matches the chatbar's evaluator *)
-                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                Magnification -> Dynamic[
+                    AbsoluteCurrentValue[ nbo, Magnification ]*
+                    AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                ]
             ],
             Sequence @@ $chatbarOptionsAttachment[ ],
             RemovalConditions -> { "MouseClickOutside" }
@@ -1769,8 +1772,12 @@ makeChatbarChatInputCellContent // beginDefinition;
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
 makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
-    Style[ Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ], Magnification -> Dynamic @
-        AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+    Style[
+        Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ],
+        Magnification -> Dynamic[
+            AbsoluteCurrentValue[ nbo, Magnification ]*
+            AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+        ]
     ]& @
     DynamicModule[
         {
@@ -2223,7 +2230,10 @@ DynamicModule[ { Typeset`serviceData, Typeset`cachedAccessLevel = None },
                         ],
                         "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
                         Evaluator     -> "System",
-                        Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                        Magnification -> Dynamic[
+                            AbsoluteCurrentValue[ nbo, Magnification ]*
+                            AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                        ]
                     ],
                     { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
                 ],
@@ -2243,7 +2253,10 @@ DynamicModule[ { Typeset`serviceData, Typeset`cachedAccessLevel = None },
                                 ],
                                 "NotebookAssistant`Chatbar`SubscriptionLevelIndicator",
                                 Evaluator     -> "System",
-                                Magnification -> Dynamic @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                                Magnification -> Dynamic[
+                                    AbsoluteCurrentValue[ nbo, Magnification ]*
+                                    AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
+                                ]
                             ],
                             { Left, Top }, Offset[ { -2, If[ $OperatingSystem === "MacOSX", 9, 8 ] }, Automatic ], { Left, Top }
                         ]

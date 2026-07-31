@@ -45,12 +45,13 @@ llmChat[ messages: $$chatMessages ] :=
     llmChat[ messages, <| |> ];
 
 llmChat[ messages: $$chatMessages, evaluator0_Association ] :=
-    Enclose @ Module[ { evaluator, config, auth, response },
+    Enclose @ Module[ { evaluator, stop, config, auth, response },
 
         evaluator = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+        stop = Select[ Flatten @ { evaluator[ "StopTokens" ] }, StringQ ];
 
         config = ConfirmMatch[
-            LLMConfiguration @ evaluator,
+            LLMConfiguration @ dropModelUnsupportedParameters[ Automatic, evaluator ],
             HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
             "Config"
         ];
@@ -63,7 +64,7 @@ llmChat[ messages: $$chatMessages, evaluator0_Association ] :=
 
         If[ FailureQ @ response, throwFailureToChatOutput @ response ];
 
-        response
+        stopTokenTrim[ response, stop ]
     ];
 
 llmChat // endDefinition;
@@ -121,14 +122,15 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, allowEmpty, handlers, keys, auth },
+    Module[ { evaluator, prompt, messages, config, chunks, stop, allowEmpty, handlers, keys, auth },
 
         evaluator  = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
         prompt     = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
         messages   = { <| "Role" -> "User", "Content" -> prompt |> };
-        config     = LLMConfiguration @ evaluator;
+        config     = LLMConfiguration @ dropModelUnsupportedParameters[ Automatic, evaluator ];
         chunks     = Internal`Bag[ ];
-        allowEmpty = MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ];
+        stop       = Select[ Flatten @ { evaluator[ "StopTokens" ] }, StringQ ];
+        allowEmpty = Length @ stop > 0;
 
         handlers = <|
             "BodyChunkReceived" -> Function[
@@ -141,7 +143,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                     strings = extractBodyChunks @ data;
                     Which[
                         MatchQ[ strings, { __String } ] || (allowEmpty && strings === { }),
-                            With[ { s = StringJoin @ strings }, callback[ s, #1 ] ],
+                            With[ { s = stopTokenTrim[ strings, stop ] }, callback[ s, #1 ] ],
                         FailureQ @ strings,
                             callback[ strings, #1 ],
                         True,
@@ -170,6 +172,25 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 ];
 
 llmSynthesizeSubmit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stopTokenTrim*)
+(* For models that do not support stop tokens, we manually trim the content to emulate stop token behavior *)
+stopTokenTrim // beginDefinition;
+
+stopTokenTrim[ content_String, { } ] := content;
+
+stopTokenTrim[ content_String, stop: { __String } ] :=
+    StringDelete[ content, stop ~~ ___ ~~ EndOfString ];
+
+stopTokenTrim[ content: { ___String }, stop_ ] :=
+    stopTokenTrim[ StringJoin @ content, stop ];
+
+stopTokenTrim[ as: KeyValuePattern[ "Content" -> content_ ], stop_ ] :=
+    <| as, "Content" -> stopTokenTrim[ content, stop ] |>;
+
+stopTokenTrim // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

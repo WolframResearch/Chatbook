@@ -650,6 +650,14 @@ dropModelUnsupportedParameters[ model_Association, config_Association ] := Enclo
     throwInternalFailure
 ];
 
+dropModelUnsupportedParameters[ Automatic, config_Association ] :=
+    dropModelUnsupportedParameters[ config[ "Model" ], config ];
+
+dropModelUnsupportedParameters[ model0: Except[ _Association ], config_Association ] :=
+    With[ { model = resolveFullModelSpec @ model0 },
+        dropModelUnsupportedParameters[ model, config ] /; AssociationQ @ model
+    ];
+
 dropModelUnsupportedParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
