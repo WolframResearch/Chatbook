@@ -171,7 +171,7 @@ MySequencePosition[codeTokenized_List, pattern_]:=
 	//	Flatten[#, 1] &
 )
 
-stringScans[code_String, scans:{__}]:= Map[#[code]&, scans]
+stringScans[code_String, scans:{__}]:= Map[Catch[#[code]]&, scans]
 
 
 (* ::Subsection:: *)
