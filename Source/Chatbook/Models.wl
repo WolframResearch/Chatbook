@@ -524,6 +524,7 @@ chooseModelFamily0[ wordsPattern[ { "Claude", "Fable" , "5", ___ } ] ] := "Claud
 chooseModelFamily0[ wordsPattern[ { "Claude", "Mythos", "5", ___ } ] ] := "ClaudeMythos5";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "5", ___ } ] ] := "Claude5";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "7"|"8"|"9", ___ } ] ] := "Claude47Plus";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "6", ___ } ] ] := "Claude46";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
 
 chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";

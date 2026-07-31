@@ -173,14 +173,28 @@ $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
     "ToolExamplePrompt"        -> Automatic
 |>;
 
+(* MaxTokens must be set explicitly or the Anthropic provider defaults to 4096. Ceilings below
+   are the values the API itself reports when an oversized max_tokens is requested. *)
 $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "MaxContextTokens" -> 200000,
+    "MaxTokens"        -> 64000,
     "Multimodal"       -> True
+|>;
+
+(* 4.1 predates the 64k ceiling; keyed on BaseID, which is checked before Family: *)
+$modelAutoSettings[ "Anthropic", "ClaudeOpus41" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "MaxTokens" -> 32000
+|>;
+
+$modelAutoSettings[ "Anthropic", "Claude46" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "MaxTokens" -> 128000
 |>;
 
 (* Temperature is rejected from 4.7 onward, and by every 5.x model: *)
 $modelAutoSettings[ "Anthropic", "Claude47Plus" ] = <|
-    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    $modelAutoSettings[ "Anthropic", "Claude46" ],
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
@@ -192,7 +206,6 @@ $modelAutoSettings[ "Anthropic", "Claude5" ] = <|
 $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude5" ],
     "MaxContextTokens" -> 1000000,
-    "MaxTokens"        -> 128000, (* otherwise the provider defaults to 4096 *)
     (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
     "ToolExamplePrompt" -> None,
     (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)
