@@ -3782,31 +3782,27 @@ SaveAsChatNotebook // endExportedDefinition;
 saveAsChatNB // beginDefinition;
 
 saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
-    Catch @ Module[ { cellObjects, title, filepath, cells, settings, nbExpr },
+    Catch @ Module[ { cellObjects, title, filepath, cells, settings, nbExpr, newNBObj, check },
         cellObjects = Cells @ targetObj;
         If[ ! MatchQ[ cellObjects, { __CellObject } ], Throw @ Null ];
         title = Replace[
             CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ],
             "" | Except[ _String ] -> None
         ];
-        filepath = SystemDialogInput[
-            "FileSave",
-            If[ title === None,
-                "UntitledChat-" <> DateString[ "ISODate" ] <> ".nb",
-                StringReplace[ title, " " -> "_" ] <> ".nb"
-            ]
+        filepath = If[ title === None,
+            "UntitledChat-" <> DateString[ "ISODate" ] <> ".nb",
+            StringReplace[ title, " " -> "_" ] <> ".nb"
         ];
-        Which[
-            filepath === $Canceled,
-                Null,
-            StringQ @ filepath && StringEndsQ[ filepath, ".nb" ],
-                cells = NotebookRead @ cellObjects;
-                If[ ! MatchQ[ cells, { __Cell } ], Throw @ Null ];
-                settings = CurrentChatSettings @ targetObj;
-                nbExpr = ConfirmMatch[ cellsToChatNB[ cells, settings ], _Notebook, "Converted" ];
-                ConfirmBy[ Export[ filepath, nbExpr, "NB" ], FileExistsQ, "Exported" ],
-            True,
-                Null
+        cells = NotebookRead @ cellObjects;
+        If[ ! MatchQ[ cells, { __Cell } ], Throw @ Null ];
+        settings = CurrentChatSettings @ targetObj;
+        nbExpr = ConfirmMatch[ cellsToChatNB[ cells, settings ], _Notebook, "Converted" ];
+        (* 477359: can't use SystemDialog due to pre-emptive block. Downside is we can't auto-close the new nb. *)
+        WithCleanup[
+            newNBObj = NotebookPut @ nbExpr;
+            check = NotebookSave[ newNBObj, filepath, Interactive -> True ];
+            ,
+            If[ check === $Failed, NotebookClose @ newNBObj ]
         ]
     ],
     throwInternalFailure
