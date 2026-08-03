@@ -260,21 +260,33 @@ reformatTextData0 // endDefinition;
 
 reformatTextDataEscaped // beginDefinition;
 
-reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten[
-    Replace[
-        parts,
-        {
-            s_String :> ReplaceAll[
-                reformatTextData0 @ StringReplace[ s, $mdEscapeRules ],
-                t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
-            ],
-            other_ :> makeResultCell @ other
-        },
-        { 1 }
-    ]
-];
+reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ parts;
 
 reformatTextDataEscaped // endDefinition;
+
+reformatTextDataEscaped0 // beginDefinition;
+
+reformatTextDataEscaped0[ { before___, text_String, cell: codeBlockCell[ __ ], after___ } ] /;
+    StringMatchQ[ text, ___~~"\n\n"~~("\n"...) ] :=
+        reformatTextDataEscaped0 @ { before, textBeforeCodeBlock @ text, cell, after };
+
+reformatTextDataEscaped0[ parts_List ] := Replace[
+    parts,
+    {
+        s_String :> ReplaceAll[
+            reformatTextData0 @ StringReplace[ s, $mdEscapeRules ],
+            t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
+        ],
+        textBeforeCodeBlock[ s_String ] :> ReplaceAll[
+            formatTextString @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
+            t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
+        ],
+        other_ :> makeResultCell @ other
+    },
+    { 1 }
+];
+
+reformatTextDataEscaped0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -375,12 +387,10 @@ makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
 makeResultCell0[ str_String ] := formatTextString @ str;
 
 makeResultCell0[ codeBlockCell[ language_String, code_String ] ] := {
-    "\n",
     makeCodeBlockCell[
         StringReplace[ StringDelete[ StringTrim @ language, StartOfString~~"```" ], $externalLanguageRules, IgnoreCase -> True ],
         StringDelete[ code, { StartOfString~~Whitespace~~StartOfLine, Whitespace~~EndOfString } ]
-    ],
-    "\n"
+    ]
 };
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
