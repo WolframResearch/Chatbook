@@ -131,6 +131,22 @@ VerificationTest[
     TestID   -> "Inline-Code-Ref-Link-Mismatched-Name@@Tests/Formatting.wlt:117,1-132,2"
 ]
 
+(* Combination of link around the function head and escaped brackets around the arguments. *)
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "In Wolfram Language, use [Factorial2](paclet:ref/Factorial2)\\[42\\]." ],
+        s_String /; StringContainsQ[ s, "[42]" ] :> s,
+        Infinity
+    ],
+    { "[42]." },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:194,1-203,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ASCII art versus tool calls*)
+
 VerificationTest[
     StringReplace[
         FirstCase[ FormatChatOutput[ "/\\\\_/\\\\\n( o.o )\n > ^ <" ], s_String :> s, $Failed, Infinity ],
@@ -192,17 +208,6 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Cases[
-        FormatChatOutput[ "In Wolfram Language, use [Factorial2](paclet:ref/Factorial2)\\[42\\]." ],
-        s_String /; StringContainsQ[ s, "[42]" ] :> s,
-        Infinity
-    ],
-    { "[42]." },
-    SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:194,1-203,2"
-]
-
-VerificationTest[
     ToCharacterCode @ StringReplace[
         FirstCase[
             FormatChatOutput[ "<thinking>/\\\\_/\\\\\n( o.o )\n > ^ <</thinking>" ],
@@ -232,4 +237,121 @@ VerificationTest[
     { True },
     SameTest -> MatchQ,
     TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:220,1-235,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Placeholders*)
+
+(* Placeholder["description"] in WL code gets its StandardForm typesetting so it displays as a proper placeholder
+   instead of plain code: *)
+VerificationTest[
+    FirstCase[
+        StringToBoxes[ "data = Placeholder[\"your data\"];\ndoTheThing[data]", "WL" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"your data\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:140,1-150,2"
+]
+
+(* Placeholder allows arbitrary label expressions, so these are formatted too by wrapping the already-parsed
+   label boxes (avoiding a ToExpression round trip that could create symbols with unwanted contexts): *)
+VerificationTest[
+    FirstCase[
+        StringToBoxes[ "DateListPlot[Placeholder[your data]]", "WL" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox @ RowBox @ { "your", " ", "data" },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:154,1-164,2"
+]
+
+(* String labels can contain escaped quotes: *)
+VerificationTest[
+    FirstCase[
+        StringToBoxes[
+            "data = Placeholder[\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"];\nDateListPlot[data]",
+            "WL"
+        ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:167,1-180,2"
+]
+
+(* Placeholder takes at most one argument, so empty or multiple arguments are not valid labels and are left as-is: *)
+VerificationTest[
+    StringToBoxes[ "f[Placeholder[a, b], Placeholder[]]", "WL" ],
+    boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:183,1-188,2"
+]
+
+(* The full formatting path renders the placeholder in finished chat output: *)
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "```wl\ndata = Placeholder[\"your data\"];\ndoTheThing[data]\n```\n" ],
+        TagBox[ b_FrameBox, "Placeholder" ] :> b,
+        $Failed,
+        Infinity
+    ],
+    FrameBox[ "\"your data\"" ],
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:191,1-201,2"
+]
+
+(* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
+VerificationTest[
+    Position[
+        FormatChatOutput[
+            "```wl\ndata = Placeholder[\"your data\"];\ndoTheThing[data]\n```\n",
+            <| "Status" -> "Streaming" |>
+        ],
+        s_String /; StringContainsQ[ s, "TagBox" ] && StringContainsQ[ s, "Placeholder" ]
+    ],
+    { __ },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:204,1-215,2"
+]
+
+(* A placeholder that has not finished streaming in yet is still rendered: *)
+VerificationTest[
+    Position[
+        FormatChatOutput[ "```wl\ndata = Placeholder[\"your da", <| "Status" -> "Streaming" |> ],
+        s_String /; StringContainsQ[ s, "TagBox" ] && StringContainsQ[ s, "Placeholder" ]
+    ],
+    { __ },
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:218,1-226,2"
+]
+
+(* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
+   Placeholder head: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ RowBox @ { "data", "=", TagBox[ FrameBox[ "\"your data\"" ], "Placeholder" ], ";" },
+        "Input"
+    ],
+    "```wl\ndata = Placeholder[\"your data\"];\n```",
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:230,1-238,2"
+]
+
+(* Expression labels round-trip through serialization as well: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ RowBox @ { "DateListPlot", "[", TagBox[ FrameBox @ RowBox @ { "your", " ", "data" }, "Placeholder" ], "]" },
+        "Input"
+    ],
+    "```wl\nDateListPlot[Placeholder[your data]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:241,1-249,2"
 ]
