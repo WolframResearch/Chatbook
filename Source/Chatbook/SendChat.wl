@@ -2860,10 +2860,7 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            (* If[ TrueQ @ settings[ "SetCellDingbat" ],
-                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                Sequence @@ { }
-            ], *)
+            CellDingbat        -> ToBoxes @ chatbookIcon[ "ChatOutputCellDingbatActive", False ],
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -3016,7 +3013,13 @@ dynamicTextDisplay[ container_, formatter_, True ] := With[
             $ChatHandlerData
         |>
     },
-    conformToExpression @ ReplaceAll[
+    conformToExpression @
+    If[ StringQ @ container[ "DynamicContent" ] && toolFreeQ0 @ container[ "DynamicContent" ],
+        Grid[ { { # }, { chatbookIcon[ "PercolateProgressAnimation", False ] } }, Alignment -> Left ]
+        ,
+        #
+    ]& @
+    ReplaceAll[
         formatter[ container[ "DynamicContent" ], data ],
         {
             TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>

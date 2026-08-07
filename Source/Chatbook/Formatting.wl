@@ -2059,7 +2059,7 @@ With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
         Style[ string, FontWeight -> "DemiBold", FontColor -> col ],
-        RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "PercolateColorAnimator" ][ Small, col ]
+        chatbookIcon[ "PercolateProgressAnimation", False ]
     }
 ];
 

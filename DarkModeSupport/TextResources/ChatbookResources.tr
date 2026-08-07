@@ -3048,28 +3048,25 @@ qvmGcPth+lHdh3A/ADVIfz0=
 
 "StopChatButtonLabel" -> (TagBox[
   FrameBox[
-   OverlayBox[{
-     DynamicBox[
-      FEPrivate`FrontEndResource[
-      "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
-       LightDarkSwitched[
-        RGBColor[0.9411764, 0.9411764, 0.9411764], 
-        GrayLevel[0.2]], 
-       LightDarkSwitched[
-        RGBColor[0.4588235, 0.7607843, 0.9215686], 
-        RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
-     GraphicsBox[{#, 
-       RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
-      1.1]}, Alignment -> {Center, Center}, BaselinePosition -> Baseline], 
-   Alignment -> {Center, Center}, Background -> ThemeColor["Background"], 
-   BaselinePosition -> Baseline, FrameMargins -> 0, FrameStyle -> Dynamic[
-     If[
-      CurrentValue["MouseOver"], 
+   GraphicsBox[{
+     Thickness[0.09090909090909091], 
+     FaceForm[
       LightDarkSwitched[
-       RGBColor[0.6941176, 0.8352941, 0.9098039], 
-       RGBColor[0.3764705, 0.490196, 0.5607843]], 
-      ThemeColor["Background"]]], ImageSize -> #2, RoundingRadius -> 4, 
-   StripOnInput -> False], 
+       RGBColor[0.0705882, 0.55686275, 0.8196078, 1.], 
+       RGBColor[0.49803922, 0.78039216, 0.9843137]]], 
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{9., 0.}, {2., 0.}, {
+      0.8949995040893555, 0.}, {0., 0.8949999809265137}, {0., 2.}, {0., 9.}, {
+      0., 10.105000495910645`}, {0.8949995040893555, 11.}, {2., 11.}, {9., 
+      11.}, {10.105000019073486`, 11.}, {11., 10.105000495910645`}, {11., 
+      9.}, {11., 2.}, {11., 0.8949999809265137}, {10.105000019073486`, 0.}, {
+      9., 0.}}}]}, ImageSize -> 0.7 #3, 
+    PlotRange -> {{-0.5, 11.5}, {-0.5, 11.5}}], Alignment -> {Center, Center},
+    Background -> ThemeColor["Background"], BaselinePosition -> Baseline, 
+   FrameMargins -> 0, FrameStyle -> LightDarkSwitched[
+     RGBColor[0.6941176, 0.8352941, 0.9098039], 
+     RGBColor[0.3764705, 0.490196, 0.5607843]], ImageSize -> #2, 
+   RoundingRadius -> 4, StripOnInput -> False], 
   MouseAppearanceTag["LinkHand"]]& ),
 
 "ToolIconWolframAlpha" -> GraphicsBox[
@@ -9671,7 +9668,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"bff69828-16ae-4c47-a99f-70c87c27322c"], Cell[BoxData[
+    ExpressionUUID->"f8841ca6-af9d-294f-854e-60c25821e905"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10598,7 +10595,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "2be37515-ab67-7c48-8640-2fff8cc85115"], Cell[BoxData[
+    "eb6a4228-43d4-d14a-a886-ebeac4447fed"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10907,7 +10904,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "6d5bc7f7-d4da-8d45-8881-0dfdc0982bb8"]}],
+    "18a57d63-40b2-6d42-ad48-f645c9f5c84b"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10923,8 +10920,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"1334b99c-f68d-654e-a188-\
-0b1f9779b0a8"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"d75fc6e9-793c-314c-829f-\
+0ad556f95082"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11043,8 +11040,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"86061cf4-d1c8-f44e-956a-\
-51cdaeec9241"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"449353b0-7af9-c240-a7a6-\
+38f5c4f81551"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -12029,7 +12026,169 @@ YHkAxA1Ujw==
     CurveClosed->{0}]},
   AspectRatio->Automatic,
   ImageSize->{77., 23.},
-  PlotRange->{{-0.5, 75.80740356445312}, {-0.5, 21.523799896240234`}}]
+  PlotRange->{{-0.5, 75.80740356445312}, {-0.5, 21.523799896240234`}}],
+
+"ChatOutputCellDingbatActive" -> DynamicModuleBox[{Typeset`t$$ = 0.}, 
+  OverlayBox[{
+   AnimatorBox[Dynamic[Typeset`t$$], {0., 1.},
+    AnimationRunTime->0.,
+    AnimationRunning->True,
+    AppearanceElements->{},
+    DefaultDuration->1.882716863,
+    ImageSize->{1, 1}], 
+   GraphicsBox[
+    {LightDarkSwitched[
+      RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+      RGBColor[
+      0.20784313725490197`, 0.28627450980392155`, 0.3411764705882353]], 
+     Opacity[1.], EdgeForm[{LightDarkSwitched[
+      RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+      RGBColor[
+      0.20784313725490197`, 0.28627450980392155`, 0.3411764705882353]], 
+     Opacity[1.], AbsoluteThickness[1.5], JoinForm["Miter"]}], 
+     GeometricTransformationBox[
+      GeometricTransformationBox[
+       FilledCurveBox[{
+        Line[{{-5.029, -5.126}, {-8.941, -5.126}}], 
+         BezierCurve[{{-8.941, -5.126}, {-9.249, -5.126}, {-9.5, -4.875}, \
+{-9.5, -4.568}}], Line[{{-9.5, -4.568}, {-9.5, 8.844}}], 
+         BezierCurve[{{-9.5, 8.844}, {-9.5, 9.152}, {-9.249, 9.403}, {-8.941, 
+          9.403}}], Line[{{-8.941, 9.403}, {8.942, 9.403}}], 
+         BezierCurve[{{8.942, 9.403}, {9.25, 9.403}, {9.5, 9.152}, {9.5, 
+          8.844}}], Line[{{9.5, 8.844}, {9.5, -4.569}}], 
+         BezierCurve[{{9.5, -4.569}, {9.5, -4.876}, {9.25, -5.126}, {
+          8.942, -5.126}}], 
+         Line[{{8.942, -5.126}, {
+          0.097, -5.126}, {-5.029, -9.403}, {-5.029, -5.126}}]}], {{{0.97, 
+        0.}, {0., 0.97}}, {0., 0.}}], {25.025, 15.114}], 
+     {EdgeForm[None], 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[2. Subtract[
+           Which[
+           Typeset`t$$ <= 0.576854550646, 1., Typeset`t$$ <= 0.594881352056, 
+            1. + 27.736479069583293` (Typeset`t$$ - 0.576854550646), 
+            Typeset`t$$ <= 0.666988557695, 1.5, Typeset`t$$ <= 0.685015359104,
+             1.5 - 27.736479071121884` (Typeset`t$$ - 0.666988557695), 
+            Typeset`t$$ <= 1., 1., True, 1.], 1.]]], 
+       RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}]}, 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{24.135113227868022, 16.182113227868022}, \
+{25.914886772131975, 17.961886772131976}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[2. Subtract[
+           Which[
+           Typeset`t$$ <= 0.721068961924, 1., Typeset`t$$ <= 0.739095763334, 
+            1. + 27.736479069583464` (Typeset`t$$ - 0.721068961924), 
+            Typeset`t$$ <= 0.811202968972, 1.5, Typeset`t$$ <= 0.829229770382,
+             1.5 - 27.736479069583293` (Typeset`t$$ - 0.811202968972), 
+            Typeset`t$$ <= 1., 1., True, 1.], 1.]]], 
+       RectangleBox[{24.135113227868022, 16.182113227868022}, \
+{25.914886772131975, 17.961886772131976}]}, 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[2. Subtract[
+           Which[
+           Typeset`t$$ <= 0.865283373202, 1., Typeset`t$$ <= 0.883310174611, 
+            1. + 27.736479071121884` (Typeset`t$$ - 0.865283373202), 
+            Typeset`t$$ <= 0.955415833018, 1.5, Typeset`t$$ <= 0.973442634428,
+             1.5 - 27.736479069583293` (Typeset`t$$ - 0.955415833018), 
+            Typeset`t$$ <= 1., 1., True, 1.], 1.]]], 
+       RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}]}}},
+    Background->None,
+    ImageSize->{19, 19},
+    PlotRange->{{15., 35.}, {5., 25.}}]},
+   BaseStyle->{CacheGraphics -> False},
+   ContentPadding->False],
+  DynamicModuleValues:>{}],
+
+"PercolateProgressAnimation" -> DynamicModuleBox[{Typeset`t$$ = 0.}, 
+  OverlayBox[{
+   AnimatorBox[Dynamic[Typeset`t$$], {0., 1.},
+    AnimationRepetitions->DirectedInfinity[1],
+    AnimationRunTime->0.,
+    AnimationRunning->True,
+    AppearanceElements->{},
+    DefaultDuration->1.882716863,
+    ImageSize->{1, 1}], 
+   GraphicsBox[
+    {LightDarkSwitched[
+      RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+      RGBColor[0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]],
+      EdgeForm[None], 
+     DynamicBox[({
+       RectangleBox[{20.677 - 0.8755 #, 17.072 - 0.8755 #}, {
+        20.677 + 0.8755 #, 17.072 + 0.8755 #}], 
+       Directive[
+        Opacity[2. (# - 1.)], 
+        LightDarkSwitched[
+         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
+         RGBColor[
+         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
+       RectangleBox[{20.677 - 0.8755 #, 17.072 - 0.8755 #}, {
+        20.677 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+       Which[
+       Typeset`t$$ <= 0.576854550646, 1., Typeset`t$$ <= 0.594881352056, 1. + 
+        27.736479069583293` (Typeset`t$$ - 0.576854550646), Typeset`t$$ <= 
+        0.666988557695, 1.5, Typeset`t$$ <= 0.685015359104, 1.5 - 
+        27.736479071121884` (Typeset`t$$ - 0.666988557695), Typeset`t$$ <= 1.,
+         1., True, 1.]],
+      TrackedSymbols:>{Typeset`t$$}], 
+     DynamicBox[({
+       RectangleBox[{25.025 - 0.8755 #, 17.072 - 0.8755 #}, {
+        25.025 + 0.8755 #, 17.072 + 0.8755 #}], 
+       Directive[
+        Opacity[2. (# - 1.)], 
+        LightDarkSwitched[
+         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
+         RGBColor[
+         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
+       RectangleBox[{25.025 - 0.8755 #, 17.072 - 0.8755 #}, {
+        25.025 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+       Which[
+       Typeset`t$$ <= 0.721068961924, 1., Typeset`t$$ <= 0.739095763334, 1. + 
+        27.736479069583464` (Typeset`t$$ - 0.721068961924), Typeset`t$$ <= 
+        0.811202968972, 1.5, Typeset`t$$ <= 0.829229770382, 1.5 - 
+        27.736479069583293` (Typeset`t$$ - 0.811202968972), Typeset`t$$ <= 1.,
+         1., True, 1.]],
+      TrackedSymbols:>{Typeset`t$$}], 
+     DynamicBox[({
+       RectangleBox[{29.373 - 0.8755 #, 17.072 - 0.8755 #}, {
+        29.373 + 0.8755 #, 17.072 + 0.8755 #}], 
+       Directive[
+        Opacity[2. (# - 1.)], 
+        LightDarkSwitched[
+         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
+         RGBColor[
+         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
+       RectangleBox[{29.373 - 0.8755 #, 17.072 - 0.8755 #}, {
+        29.373 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+       Which[
+       Typeset`t$$ <= 0.865283373202, 1., Typeset`t$$ <= 0.883310174611, 1. + 
+        27.736479071121884` (Typeset`t$$ - 0.865283373202), Typeset`t$$ <= 
+        0.955415833018, 1.5, Typeset`t$$ <= 0.973442634428, 1.5 - 
+        27.736479069583293` (Typeset`t$$ - 0.955415833018), Typeset`t$$ <= 1.,
+         1., True, 1.]],
+      TrackedSymbols:>{Typeset`t$$}]},
+    Background->None,
+    ImageSize->{19, Automatic},
+    PlotRange->{{18., 32.}, {14.6, 19.6}}]},
+   BaseStyle->{CacheGraphics -> False},
+   ContentPadding->False],
+  DynamicModuleValues:>{}]
 }
 @|
 @|
