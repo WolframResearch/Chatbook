@@ -1836,13 +1836,15 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                             (* ======= Check ERP for AI access ======= *)
                                             Typeset`WolframAccountInfo = CurrentValue[ "WolframAccountInformation" ];
 
+                                            (*
                                             (* You must be signed in to get account info; given the ordering of this Which we should technically never hit this case *)
                                             Typeset`WolframAccountInfo === <| |>,
-                                                "SignIn",
+                                                "SignIn",*)
 
+                                            (* 477891: for AKs generated internally, they can get stuck on this state, so remove it
                                             (* if key "ServerMetadata" has missing data then the front end is signed in but hasn't really talked to EPR yet *)
                                             KeyExistsQ[ Typeset`WolframAccountInfo, "ServerMetadata" ] && MissingQ @ Lookup[ Typeset`WolframAccountInfo, "ServerMetadata" ],
-                                                "SignInPending",
+                                                "SignInPending",*)
 
                                             (* fall-through to allowing AI unless ERP is explicitly set as "LLMFeaturesPermitted" -> False *)
                                             Lookup[
