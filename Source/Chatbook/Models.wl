@@ -521,7 +521,6 @@ chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 (* Fable and Mythos mandate thinking, so they get their own tiers ahead of the general 5 rule: *)
 chooseModelFamily0[ wordsPattern[ { "Claude", "Fable" , "5", ___ } ] ] := "ClaudeFable5";
-chooseModelFamily0[ wordsPattern[ { "Claude", "Mythos", "5", ___ } ] ] := "ClaudeMythos5";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "5", ___ } ] ] := "Claude5";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "7"|"8"|"9", ___ } ] ] := "Claude47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "6", ___ } ] ] := "Claude46";

@@ -212,12 +212,6 @@ $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
     "Reasoning"        -> "adaptive"
 |>;
 
-(* TODO: unverified, no account access to mythos-5; conservative context window *)
-$modelAutoSettings[ "Anthropic", "ClaudeMythos5" ] = <|
-    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ],
-    "MaxContextTokens" -> 200000
-|>;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*AzureOpenAI*)
