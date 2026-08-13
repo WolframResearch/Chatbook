@@ -457,12 +457,12 @@ $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
 |>;
 
-$modelAutoSettings[ Automatic, "GPT54" ] = <|
+$modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
     "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
-    "Reasoning"                  -> Missing[ "NotSupported" ], (* Doesn't work with tools in the completions endpoint *)
+    "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;

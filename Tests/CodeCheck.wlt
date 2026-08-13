@@ -46,7 +46,7 @@ VerificationTest[
 
     "Formatting function defined",
     "Formatting function defined",
-    TestID -> "1_formatting"
+    TestID -> "1_00_formatting"
 ]
 
 VerificationTest[
@@ -59,7 +59,7 @@ VerificationTest[
 
     "finalState defined",
     "finalState defined",
-    TestID -> "2_formatting"
+    TestID -> "2_00_formatting"
 ]
 
 VerificationTest[
@@ -68,7 +68,7 @@ VerificationTest[
         "FixedCode" -> "f1[x,y]",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "1_comma_operand"
+    TestID -> "1_01_comma_operand"
 ]
 
 VerificationTest[
@@ -77,7 +77,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "2_comma_operand"
+    TestID -> "2_01_comma_operand"
 ]
 
 VerificationTest[
@@ -86,7 +86,7 @@ VerificationTest[
         "FixedCode" -> "f1[x,y,(*comment*)]",
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "3_comma_operand"
+    TestID -> "3_01_comma_operand"
 ]
 
 VerificationTest[
@@ -95,7 +95,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "4_comma_operand"
+    TestID -> "4_01_comma_operand"
 ]
 
 VerificationTest[
@@ -104,7 +104,7 @@ VerificationTest[
         "FixedCode" -> "f1[{x,y}z]",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "5_comma_operand"
+    TestID -> "5_01_comma_operand"
 ]
 
 VerificationTest[
@@ -113,7 +113,7 @@ VerificationTest[
         "FixedCode" -> "{f1[x,y]}",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "6_comma_operand"
+    TestID -> "6_01_comma_operand"
 ]
 
 VerificationTest[
@@ -122,7 +122,7 @@ VerificationTest[
         "FixedCode" -> "{f1[x]}",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "7_comma_operand"
+    TestID -> "7_01_comma_operand"
 ]
 
 VerificationTest[
@@ -135,7 +135,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "8_comma_operand"
+    TestID -> "8_01_comma_operand"
 ]
 
 VerificationTest[
@@ -148,7 +148,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "9_comma_operand"
+    TestID -> "9_01_comma_operand"
 ]
 
 VerificationTest[
@@ -161,7 +161,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "10_comma_operand"
+    TestID -> "10_01_comma_operand"
 ]
 
 VerificationTest[
@@ -174,7 +174,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "11_comma_operand"
+    TestID -> "11_01_comma_operand"
 ]
 
 VerificationTest[
@@ -187,7 +187,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "12_comma_operand"
+    TestID -> "12_01_comma_operand"
 ]
 
 VerificationTest[
@@ -200,7 +200,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "13_comma_operand"
+    TestID -> "13_01_comma_operand"
 ]
 
 VerificationTest[
@@ -209,7 +209,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "14_comma_operand"
+    TestID -> "14_01_comma_operand"
 ]
 
 VerificationTest[
@@ -218,7 +218,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> Failure[ "...", <| |> ]
     |>,
-    TestID -> "15_comma_operand"
+    TestID -> "15_01_comma_operand"
 ]
 
 VerificationTest[
@@ -227,7 +227,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "16_comma_operand"
+    TestID -> "16_01_comma_operand"
 ]
 
 VerificationTest[
@@ -236,7 +236,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "17_comma_operand"
+    TestID -> "17_01_comma_operand"
 ]
 
 VerificationTest[
@@ -245,7 +245,7 @@ VerificationTest[
         "FixedCode" -> "k[(* 111 *)];",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "18_comma_operand"
+    TestID -> "18_01_comma_operand"
 ]
 
 VerificationTest[
@@ -258,7 +258,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "19_comma_operand"
+    TestID -> "19_01_comma_operand"
 ]
 
 VerificationTest[
@@ -271,7 +271,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "20_comma_operand"
+    TestID -> "20_01_comma_operand"
 ]
 
 VerificationTest[
@@ -284,7 +284,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "21_comma_operand"
+    TestID -> "21_01_comma_operand"
 ]
 
 VerificationTest[
@@ -297,7 +297,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "22_comma_operand"
+    TestID -> "22_01_comma_operand"
 ]
 
 VerificationTest[
@@ -310,7 +310,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "23_comma_operand"
+    TestID -> "23_01_comma_operand"
 ]
 
 VerificationTest[
@@ -319,7 +319,7 @@ VerificationTest[
         "FixedCode" -> "f1[x,...,y]",
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "24_comma_operand"
+    TestID -> "24_01_comma_operand"
 ]
 
 VerificationTest[
@@ -332,7 +332,7 @@ VerificationTest[
         "FixedCode" -> "\nranges = Tuples[{{-1, 0, 1}, Range[-3, 3], Range[-3, 3]}];\n...\n",
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "25_comma_operand"
+    TestID -> "25_01_comma_operand"
 ]
 
 VerificationTest[
@@ -345,7 +345,7 @@ VerificationTest[
         "FixedCode" -> "\nranges = Tuples[{{-1, 0, 1}, Range[-3, 3], Range[-3, 3]}];\n....\n",
         "SafeToEvaluate" -> Failure[ "...", <| |> ]
     |>,
-    TestID -> "26_comma_operand"
+    TestID -> "26_01_comma_operand"
 ]
 
 VerificationTest[
@@ -354,7 +354,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "27_comma_operand"
+    TestID -> "27_01_comma_operand"
 ]
 
 VerificationTest[
@@ -367,7 +367,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "28_comma_operand"
+    TestID -> "28_01_comma_operand"
 ]
 
 VerificationTest[
@@ -380,7 +380,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "29_comma_operand"
+    TestID -> "29_01_comma_operand"
 ]
 
 VerificationTest[
@@ -393,7 +393,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "30_comma_operand"
+    TestID -> "30_01_comma_operand"
 ]
 
 VerificationTest[
@@ -406,7 +406,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "31_comma_operand"
+    TestID -> "31_01_comma_operand"
 ]
 
 VerificationTest[
@@ -414,7 +414,7 @@ VerificationTest[
     <|
         "FixedCode" -> Missing[ "..." ]
     |>,
-    TestID -> "1_misc"
+    TestID -> "1_02_misc"
 ]
 
 VerificationTest[
@@ -422,7 +422,7 @@ VerificationTest[
     <|
         "FixedCode" -> Missing[ "..." ]
     |>,
-    TestID -> "2_misc"
+    TestID -> "2_02_misc"
 ]
 
 VerificationTest[
@@ -430,67 +430,67 @@ VerificationTest[
     <|
         "FixedCode" -> Missing[ "..." ]
     |>,
-    TestID -> "3_misc"
+    TestID -> "3_02_misc"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}}" ][ "FixedCode" ],
     "f[{{3}}]",
-    TestID -> "1_brackets"
+    TestID -> "1_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3,4}}}" ][ "FixedCode" ],
     "f[{{3,4}}]",
-    TestID -> "2_brackets"
+    TestID -> "2_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3,4}]}" ][ "FixedCode" ],
     "f[{{3,4}}]",
-    TestID -> "3_brackets"
+    TestID -> "3_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "g[f[{{3,4}}},\n5]" ][ "FixedCode" ],
     "g[f[{{3,4}}],\n5]",
-    TestID -> "4_brackets"
+    TestID -> "4_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "{g[f[{{3,4}}},5]}" ][ "FixedCode" ],
     "{g[f[{{3,4}}],5]}",
-    TestID -> "5_brackets"
+    TestID -> "5_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "g[f[{{3,4}}},h[}]" ][ "FixedCode" ],
     "g[f[{{3,4}}],h[]]",
-    TestID -> "6_brackets"
+    TestID -> "6_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "g[(dothis;1},2]" ][ "FixedCode" ],
     "g[(dothis;1),2]",
-    TestID -> "7_brackets"
+    TestID -> "7_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "foo[1,2,g[{3]]]" ][ "FixedCode" ],
     "foo[1,2,g[{3}]]",
-    TestID -> "8_brackets"
+    TestID -> "8_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "(1;2;g[3))" ][ "FixedCode" ],
     "(1;2;g[3])",
-    TestID -> "9_brackets"
+    TestID -> "9_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "(1;2;g[3\n   ))" ][ "FixedCode" ],
     "(1;2;g[3\n   ])",
-    TestID -> "10_brackets"
+    TestID -> "10_03_brackets"
 ]
 
 VerificationTest[
@@ -500,31 +500,31 @@ VerificationTest[
         "FixedCode"
     ],
     "\nmaxC = 20;\n\tprimTriples = Select[\n\t  With[{m = #1, n = #2}, \n\t    {m ^ 2 - n ^ 2, 2 m n, m ^ 2 + n ^ 2}\n\t  ] & @@@ \n\t  Select[\n\t    Flatten[Table[{m, n}, {n, Floor[Sqrt[maxC / 2]]}, {m, n + 1, Floor[Sqrt[maxC]], 2}], 1], \n\t    #[[1]] ^ 2 + #[[2]] ^ 2 <= maxC &\n\t  ], \n\t  Apply[CoprimeQ, #] &\n\t];\n\t\n\tprimTriples\n",
-    TestID -> "11_brackets"
+    TestID -> "11_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}]]" ][ "FixedCode" ],
     "f[{{3}}]",
-    TestID -> "12_brackets"
+    TestID -> "12_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}]]", ("Target" -> "Evaluator") ][ "FixedCode" ],
     "f[{{3}}]",
-    TestID -> "13_brackets"
+    TestID -> "13_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}}}", ("Target" -> "Evaluator") ][ "FixedCode" ],
     "f[{{3}}]",
-    TestID -> "14_brackets"
+    TestID -> "14_03_brackets"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[{{3}}}]", ("Target" -> "Evaluator") ][ "FixedCode" ],
     "f[{{3}}]",
-    TestID -> "15_brackets"
+    TestID -> "15_03_brackets"
 ]
 
 VerificationTest[
@@ -532,7 +532,7 @@ VerificationTest[
         "f[a,g[h];b[c]"
     ],
     "f[a,g[h];b[c]]",
-    TestID -> "16_brackets"
+    TestID -> "16_03_brackets"
 ]
 
 VerificationTest[
@@ -540,7 +540,7 @@ VerificationTest[
         "Graphics3D[{a,{b},{c,Red},ViewPoint -> {1, -2, 1}]"
     ],
     "Graphics3D[{a,{b},{c,Red}},ViewPoint -> {1, -2, 1}]",
-    TestID -> "17_brackets"
+    TestID -> "17_03_brackets"
 ]
 
 VerificationTest[
@@ -548,7 +548,7 @@ VerificationTest[
         "Graphics3D[{a,{b},{c,Red},ViewPoint -> Automatic]"
     ],
     "Graphics3D[{a,{b},{c,Red}},ViewPoint -> Automatic]",
-    TestID -> "18_brackets"
+    TestID -> "18_03_brackets"
 ]
 
 VerificationTest[
@@ -556,7 +556,7 @@ VerificationTest[
         "graphics3D[{a,{b},{c,Red},ViewPoint -> Automatic]"
     ],
     "graphics3D[{a,{b},{c,Red}},ViewPoint -> Automatic]",
-    TestID -> "19_brackets"
+    TestID -> "19_03_brackets"
 ]
 
 VerificationTest[
@@ -564,7 +564,7 @@ VerificationTest[
         "Graphics3D[{a,b,{c,Red},viewPoint -> Automatic]"
     ],
     "Graphics3D[{a,b,{c,Red}},viewPoint -> Automatic]",
-    TestID -> "20_brackets"
+    TestID -> "20_03_brackets"
 ]
 
 VerificationTest[
@@ -572,7 +572,7 @@ VerificationTest[
         "graphics3D[{a,b,{c,Red},viewPoint -> {1, -2, 1}]"
     ],
     "graphics3D[{a,b,{c,Red},viewPoint -> {1, -2, 1}}]",
-    TestID -> "21_brackets"
+    TestID -> "21_03_brackets"
 ]
 
 VerificationTest[
@@ -580,7 +580,7 @@ VerificationTest[
         "first_symbol = 1;\nsecond_symbol = 2;\nfirst_symbol + second_symbol"
     ],
     "firstSymbol = 1;\nsecondSymbol = 2;\nfirstSymbol + secondSymbol",
-    TestID -> "1_snake"
+    TestID -> "1_04_snake"
 ]
 
 VerificationTest[
@@ -588,73 +588,73 @@ VerificationTest[
         "x_1 = 1;\nx_2 = 2;\ny_1_2 = f[x_1, x_2]"
     ],
     "x1 = 1;\nx2 = 2;\ny12 = f[x1, x2]",
-    TestID -> "2_snake"
+    TestID -> "2_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "f[my_symbol] = 123" ],
     Missing[ "No errors detected" ],
-    TestID -> "3_snake"
+    TestID -> "3_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "f[my_cool_symbol] = 123" ],
     "f[myCoolSymbol] = 123",
-    TestID -> "4_snake"
+    TestID -> "4_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_cool_symbol[a]" ],
     "myCoolSymbol[a]",
-    TestID -> "5_snake"
+    TestID -> "5_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_cool_1[a]" ],
     "myCool1[a]",
-    TestID -> "6_snake"
+    TestID -> "6_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_cool[a]" ],
     "myCool[a]",
-    TestID -> "7_snake"
+    TestID -> "7_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_1[a]" ],
     "my1[a]",
-    TestID -> "8_snake"
+    TestID -> "8_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_symbol := 123" ],
     Missing[ "No errors detected" ],
-    TestID -> "9_snake"
+    TestID -> "9_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "my_cool_symbol := 123" ],
     "myCoolSymbol := 123",
-    TestID -> "10_snake"
+    TestID -> "10_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "f[x_1, x_2]" ],
     "f[x1, x2]",
-    TestID -> "11_snake"
+    TestID -> "11_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "x_1=2" ],
     "x1=2",
-    TestID -> "12_snake"
+    TestID -> "12_04_snake"
 ]
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[ "f[x_ 1, x_ 2]" ],
     Missing[ "No errors detected" ],
-    TestID -> "13_snake"
+    TestID -> "13_04_snake"
 ]
 
 VerificationTest[
@@ -662,127 +662,127 @@ VerificationTest[
         "my_offset = 123;\n(* my_string_length is a really neat function *)\nmy_string_length[test_String] := StringLength[test] + my_offset;\nmy_string_length[\"my_string_length\"]"
     ],
     "myOffset = 123;\n(* my_string_length is a really neat function *)\nmyStringLength[test_String] := StringLength[test] + myOffset;\nmyStringLength[\"my_string_length\"]",
-    TestID -> "14_snake"
+    TestID -> "14_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_a=1" ][ "FixedCode" ],
     "xA=1",
-    TestID -> "15_snake"
+    TestID -> "15_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_a+1" ][ "FixedCode" ],
     Missing[ "No errors detected" ],
-    TestID -> "16_snake"
+    TestID -> "16_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_ a =1" ][ "FixedCode" ],
     Missing[ "No pattern", { { "Error", "ImplicitTimesInSet" } } ],
-    TestID -> "17_snake"
+    TestID -> "17_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_ a +1" ][ "FixedCode" ],
     Missing[ "No errors detected" ],
-    TestID -> "18_snake"
+    TestID -> "18_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_123=1" ][ "FixedCode" ],
     "x123=1",
-    TestID -> "19_snake"
+    TestID -> "19_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_123+1" ][ "FixedCode" ],
     "x123+1",
-    TestID -> "20_snake"
+    TestID -> "20_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_ 123=1" ][ "FixedCode" ],
     Missing[ "No pattern", { { "Error", "ImplicitTimesInSet" } } ],
-    TestID -> "21_snake"
+    TestID -> "21_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_ 123+1" ][ "FixedCode" ],
     Missing[ "No errors detected" ],
-    TestID -> "22_snake"
+    TestID -> "22_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1a=1" ][ "FixedCode" ],
     "x1a=1",
-    TestID -> "23_snake"
+    TestID -> "23_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1a+1" ][ "FixedCode" ],
     "x1a+1",
-    TestID -> "24_snake"
+    TestID -> "24_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1a9=1" ][ "FixedCode" ],
     "x1a9=1",
-    TestID -> "25_snake"
+    TestID -> "25_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1a9+1" ][ "FixedCode" ],
     "x1a9+1",
-    TestID -> "26_snake"
+    TestID -> "26_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1 a9=1" ][ "FixedCode" ],
     "x1 a9=1",
-    TestID -> "27_snake"
+    TestID -> "27_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1 a9+1" ][ "FixedCode" ],
     "x1 a9+1",
-    TestID -> "28_snake"
+    TestID -> "28_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1a 9+1" ][ "FixedCode" ],
     "x1a 9+1",
-    TestID -> "29_snake"
+    TestID -> "29_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1_2=1" ][ "FixedCode" ],
     "x12=1",
-    TestID -> "30_snake"
+    TestID -> "30_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_1_2:=1" ][ "FixedCode" ],
     "x12:=1",
-    TestID -> "31_snake"
+    TestID -> "31_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x__1___2:=1" ][ "FixedCode" ],
     "x12:=1",
-    TestID -> "32_snake"
+    TestID -> "32_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x___a_1__2b_CC__2:=1" ][ "FixedCode" ],
     "xA12bCC2:=1",
-    TestID -> "33_snake"
+    TestID -> "33_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "x_a=1; y__b_2_d=2;x_a + x_b + x__c_1" ][ "FixedCode" ],
     "xA=1; yB2D=2;xA + x_b + xC1",
-    TestID -> "34_snake"
+    TestID -> "34_04_snake"
 ]
 
 VerificationTest[
@@ -792,25 +792,25 @@ VerificationTest[
         "FixedCode"
     ],
     "2+3;my1[x_] = 1*myCode[x_];111111111;my1aBC12[x_]:=33, aB=2; aB+2; MatchQ[{},y_List]; y_ y_Plus",
-    TestID -> "35_snake"
+    TestID -> "35_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "I_n_a[n_,x_,b_]:=n+x" ][ "FixedCode" ],
     "INA[n_,x_,b_]:=n+x",
-    TestID -> "36_snake"
+    TestID -> "36_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "I_1[n_,x_,b_]:=n+x" ][ "FixedCode" ],
     "I1[n_,x_,b_]:=n+x",
-    TestID -> "37_snake"
+    TestID -> "37_04_snake"
 ]
 
 VerificationTest[
     CodeCheckFix[ "f[x_,x_a_]:=x_a+1 (*x_a_*); x_a_ + x_a" ][ "FixedCode" ],
     "f[x_,xA_]:=xA+1 (*x_a_*); xA + x_a",
-    TestID -> "38_snake"
+    TestID -> "38_04_snake"
 ]
 
 VerificationTest[
@@ -1412,7 +1412,7 @@ VerificationTest[
         ]
     ],
     { },
-    TestID -> "1_units"
+    TestID -> "1_06_units"
 ]
 
 VerificationTest[
@@ -1484,44 +1484,44 @@ VerificationTest[
         ]
     ],
     True,
-    TestID -> "2_units"
+    TestID -> "2_06_units"
 ]
 
 VerificationTest[
     CodeCheckFix[ "Quantity[1, \"Meter\"]" ][ "FixedCode" ],
     Missing[ "No errors detected" ],
-    TestID -> "3_units"
+    TestID -> "3_06_units"
 ]
 
 VerificationTest[
     CodeCheckFix[ "Quantity[1, \"AmpereSquareMeter\"]" ][ "FixedCode" ],
     "Quantity[1, \"Ampere\"*\"SquareMeters\"]",
-    TestID -> "4_units"
+    TestID -> "4_06_units"
 ]
 
 VerificationTest[
     CodeCheckFix[ "Quantity[1, \"DecibelPerMeter\"]" ][ "FixedCode" ],
     Missing[ "Unknown unit", "DecibelPerMeter" ],
-    TestID -> "5_units"
+    TestID -> "5_06_units"
 ]
 
 VerificationTest[
     CodeCheckFix[ "Quantity[1, \"Attohenry\"]" ][ "FixedCode" ],
     Missing[ "Unknown unit", "Attohenry" ],
-    TestID -> "6_units"
+    TestID -> "6_06_units"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ = <| |>,
     <| |>,
-    TestID -> "1_suspiciousSymbols"
+    TestID -> "1_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
     "MyFunc: cleared",
-    TestID -> "2_suspiciousSymbols"
+    TestID -> "2_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1535,14 +1535,14 @@ VerificationTest[
             CodeParser`Source -> { 5, 14 }
         |>
     },
-    TestID -> "3_suspiciousSymbols"
+    TestID -> "3_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyContext`Func ];
     "MyContext`Func: cleared",
     "MyContext`Func: cleared",
-    TestID -> "4_suspiciousSymbols"
+    TestID -> "4_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1556,58 +1556,58 @@ VerificationTest[
             CodeParser`Source -> { 5, 22 }
         |>
     },
-    TestID -> "5_suspiciousSymbols"
+    TestID -> "5_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ,
     <| |>,
-    TestID -> "6_suspiciousSymbols"
+    TestID -> "6_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;myContext`Func[22]" ][ "ErrorsDetected" ],
     False,
-    TestID -> "7_suspiciousSymbols"
+    TestID -> "7_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyContext`func[22]" ][ "ErrorsDetected" ],
     False,
-    TestID -> "8_suspiciousSymbols"
+    TestID -> "8_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
     "MyFunc: cleared",
-    TestID -> "9_suspiciousSymbols"
+    TestID -> "9_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     MyFunc[ x_ ] := x^2;
     "MyFunc: defined",
     "MyFunc: defined",
-    TestID -> "10_suspiciousSymbols"
+    TestID -> "10_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFunc[22]" ][ "ErrorsDetected" ],
     False,
-    TestID -> "11_suspiciousSymbols"
+    TestID -> "11_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ,
     <| |>,
-    TestID -> "12_suspiciousSymbols"
+    TestID -> "12_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
     "MyFunc: cleared",
-    TestID -> "13_suspiciousSymbols"
+    TestID -> "13_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1618,46 +1618,46 @@ VerificationTest[
 
     "MyFunc: defined",
     "MyFunc: defined",
-    TestID -> "14_suspiciousSymbols"
+    TestID -> "14_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFunc[22]" ][ "ErrorsDetected" ],
     False,
-    TestID -> "15_suspiciousSymbols"
+    TestID -> "15_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ,
     <| |>,
-    TestID -> "16_suspiciousSymbols"
+    TestID -> "16_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
     "MyFunc: cleared",
-    TestID -> "17_suspiciousSymbols"
+    TestID -> "17_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     MyFunc = 2;
     "MyFunc: defined",
     "MyFunc: defined",
-    TestID -> "18_suspiciousSymbols"
+    TestID -> "18_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFunc[22]" ][ "ErrorsDetected" ],
     False,
-    TestID -> "19_suspiciousSymbols"
+    TestID -> "19_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Clear[ MyFunc ];
     "MyFunc: cleared",
     "MyFunc: cleared",
-    TestID -> "20_suspiciousSymbols"
+    TestID -> "20_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1671,25 +1671,25 @@ VerificationTest[
             CodeParser`Source -> { 5, 14 }
         |>
     },
-    TestID -> "21_suspiciousSymbols"
+    TestID -> "21_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ,
     <| |>,
-    TestID -> "22_suspiciousSymbols"
+    TestID -> "22_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ = <| |>,
     <| |>,
-    TestID -> "23_suspiciousSymbols"
+    TestID -> "23_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFunc[22];MyFunc[x_]:=x+1" ][ "ErrorsDetected" ],
     False,
-    TestID -> "24_suspiciousSymbols"
+    TestID -> "24_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1697,26 +1697,26 @@ VerificationTest[
     <|
         "MyFunc" -> True
     |>,
-    TestID -> "25_suspiciousSymbols"
+    TestID -> "25_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFunc[22];" ][ "ErrorsDetected" ],
     False,
-    TestID -> "26_suspiciousSymbols"
+    TestID -> "26_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ = <| |>,
     <| |>,
-    TestID -> "27_suspiciousSymbols"
+    TestID -> "27_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     Remove[ MyFunc ];
     "MyFunc: removed",
     "MyFunc: removed",
-    TestID -> "28_suspiciousSymbols"
+    TestID -> "28_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1730,13 +1730,13 @@ VerificationTest[
             CodeParser`Source -> { 5, 17 }
         |>
     },
-    TestID -> "29_suspiciousSymbols"
+    TestID -> "29_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     $UserDefinedFunctionsQ,
     <| |>,
-    TestID -> "30_suspiciousSymbols"
+    TestID -> "30_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1744,7 +1744,7 @@ VerificationTest[
         "ErrorsDetected"
     ],
     False,
-    TestID -> "31_suspiciousSymbols"
+    TestID -> "31_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1752,13 +1752,13 @@ VerificationTest[
     <|
         "MyFuncSub" -> True
     |>,
-    TestID -> "32_suspiciousSymbols"
+    TestID -> "32_07_suspiciousSymbols"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1;MyFuncSet[22];MyFuncSet[x_]=x" ][ "ErrorsDetected" ],
     False,
-    TestID -> "33_suspiciousSymbols"
+    TestID -> "33_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1767,7 +1767,7 @@ VerificationTest[
         "MyFuncSub" -> True,
         "MyFuncSet" -> True
     |>,
-    TestID -> "34_suspiciousSymbols"
+    TestID -> "34_07_suspiciousSymbols"
 ]
 
 VerificationTest[
@@ -1776,7 +1776,7 @@ VerificationTest[
         "FixedCode" -> "aaa+1; (*AAAA exp(2u* ) BBB*) 32",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "1_trailingStar"
+    TestID -> "1_08_strayCommentCloser"
 ]
 
 VerificationTest[
@@ -1787,7 +1787,7 @@ VerificationTest[
         "FixedCode" -> "(*aa+1 AAAA exp(2u* ) exp(2u* ) - f(k* ) BB*) (*32*) 33",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "2_trailingStar"
+    TestID -> "2_08_strayCommentCloser"
 ]
 
 VerificationTest[
@@ -1800,7 +1800,7 @@ VerificationTest[
         "FixedCode" -> "(*aa+1 (*AAAA exp(2u* ) exp(2u* ) - f(k* ) BB*); (*32*) 33*)",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "3_trailingStar"
+    TestID -> "3_08_strayCommentCloser"
 ]
 
 VerificationTest[
@@ -1813,7 +1813,7 @@ VerificationTest[
         "FixedCode" -> "(*aa+1*) (*AAAA exp(2u* ) exp(a,b,c*,2u* ) - f(k* ) BB*)1; Print[\"f(K*)\"];(*32*) 33",
         "SafeToEvaluate" -> True
     |>,
-    TestID -> "4_trailingStar"
+    TestID -> "4_08_strayCommentCloser"
 ]
 
 VerificationTest[
@@ -1822,7 +1822,7 @@ VerificationTest[
         "FixedCode" -> Missing[ "..." ],
         "SafeToEvaluate" -> False
     |>,
-    TestID -> "5_trailingStar"
+    TestID -> "5_08_strayCommentCloser"
 ]
 
 VerificationTest[
@@ -1833,20 +1833,68 @@ VerificationTest[
     ],
     <|
         "FixedCode" -> Missing[ "..." ],
-        "SafeToEvaluate" -> False
+        "SafeToEvaluate" -> Missing[ "..." ]
     |>,
-    TestID -> "6_trailingStar"
+    TestID -> "6_08_strayCommentCloser"
 ]
 
 VerificationTest[
     CodeCheckFix[ "1+1 (* (*hello*) f(u*) (*dd*)" ][ "ErrorsDetected" ],
     False,
-    TestID -> "7_trailingStar"
+    TestID -> "7_08_strayCommentCloser"
+]
+
+VerificationTest[
+    mainInfo[ CodeCheckFix[ "(*aa (*)bb *) 1+1" ] ],
+    <|
+        "FixedCode" -> "(*aa ( * )bb *) 1+1",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "8_08_strayCommentCloser"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "1+1 (*aa+1 (* (*) AAAA exp(2u*) *) exp(2u*) - f(k*) BB*); (*32*) 33"
+        ]
+    ],
+    <|
+        "FixedCode" -> "1+1 (*aa+1 (* ( * ) AAAA exp(2u* ) *) exp(2u* ) - f(k* ) BB*); (*32*) 33",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "9_08_strayCommentCloser"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "1+1 (*aa+1 (* (*) AAAA exp(2u*) *) (*) exp(2u*) - f(k*) BB*); (*32*) 33"
+        ]
+    ],
+    <|
+        "FixedCode" -> "1+1 (*aa+1 (* ( * ) AAAA exp(2u* ) *) ( * ) exp(2u* ) - f(k* ) BB*); (*32*) 33",
+        "SafeToEvaluate" -> True
+    |>,
+    TestID -> "10_08_strayCommentCloser"
+]
+
+VerificationTest[
+    mainInfo[
+        CodeCheckFix[
+            "1+1 (*aa+1 (* (*) AAAA exp(2u*) *) (*) exp(2u*) - f(k*) BB*); (*) (*32*) 33"
+        ]
+    ],
+    <|
+        "FixedCode" -> "1+1 (*aa+1 (* ( * ) AAAA exp(2u*) *) ( * ) exp(2u*) - f(k*) BB*); (*) (*32*) 33",
+        "SafeToEvaluate" -> False
+    |>,
+    TestID -> "11_08_strayCommentCloser"
 ]
 
 VerificationTest[
     Clear[ mainInfo, finalState ];
     "clear formatting helpers",
     "clear formatting helpers",
-    TestID -> "1_cleaning"
+    TestID -> "1_99_cleaning"
 ]
