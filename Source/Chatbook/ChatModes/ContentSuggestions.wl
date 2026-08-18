@@ -528,7 +528,7 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
         style = First[ ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], "Input" ];
 
         suggestions = DeleteDuplicates @ ConfirmMatch[
-            getWLSuggestions[ style, response ],
+            Replace[ getWLSuggestions[ style, response ], bd_BoxData :> { bd } ],
             { __BoxData },
             "Suggestions"
         ];
@@ -917,7 +917,7 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
             "TextSuggestions"
         ];
 
-        suggestions = DeleteDuplicates @ ConfirmMatch[ getTextSuggestions @ response, { __TextData }, "Suggestions" ];
+        suggestions = DeleteDuplicates @ ConfirmMatch[ Replace[ getTextSuggestions @ response, td_TextData :> { td } ], { __TextData }, "Suggestions" ];
 
         $lastSuggestions = suggestions;
 
@@ -1270,7 +1270,7 @@ formatSuggestions[
                     FrameStyle -> color @ "ProgressCellFrame",
                     Spacings   -> 0.5
                 ],
-                ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, maxWidth ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
+                ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, Max[ maxWidth, 50 ] ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
             ]
         ]
     ],
