@@ -38,6 +38,7 @@ $defaultChatSettings = <|
     "EnableChatGroupSettings"        -> False,
     "EnabledBasePrompts"             -> Automatic,
     "EnableLLMServices"              -> Automatic,
+    "Endpoint"                       -> Automatic,
     "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
@@ -129,6 +130,19 @@ $modelInheritedLists = {
     "ExcludedBasePrompts"
 };
 
+(* Check both the version of LLMFunctions that starts to support Responses endpoint and if the necessary endpoint
+   functions exist: *)
+$responsesEndpointAvailable := $responsesEndpointAvailable = (
+    Quiet @ Needs[ "LLMServices`" -> None ];
+    TrueQ @ And[
+        ! Quiet @ PacletNewerQ[ "2.4", PacletObject[ "Wolfram/LLMFunctions" ] ],
+        ContainsAll[
+            SymbolName /@ Cases[ Flatten @ { LLMServices`$LLMServicesEndpoints }, _Symbol ],
+            { "Response", "ResponseSubmit" }
+        ]
+    ]
+);
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -136,6 +150,7 @@ $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
 $$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
+$$endpointSetting       = Automatic | "Responses" | "ChatCompletions";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
