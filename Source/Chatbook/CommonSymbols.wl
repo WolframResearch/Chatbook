@@ -1,6 +1,7 @@
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$$attachmentURI;
+`$$endpointSetting;
 `$$ignoredBox;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;
@@ -80,6 +81,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$progressWidth;
 `$rasterCache;
 `$receivedToolCall;
+`$responsesEndpointAvailable;
 `$resultCellCache;
 `$rightSelectionIndicator;
 `$sandboxKernelCommandLine;

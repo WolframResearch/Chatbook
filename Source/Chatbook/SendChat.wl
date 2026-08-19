@@ -1039,6 +1039,65 @@ chatSubmit0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*resolveChatEndpoint*)
+
+(* Model families that use the Responses endpoint by default, keyed by service: *)
+$responsesEndpointFamilies = <| "OpenAI" -> { "GPT54Plus" } |>;
+
+$completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
+$responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
+
+resolveChatEndpoint // beginDefinition;
+
+resolveChatEndpoint[ settings_Association ] :=
+    If[ TrueQ @ responsesEndpointQ @ settings, $responsesEndpoint, $completionsEndpoint ];
+
+resolveChatEndpoint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesEndpointQ*)
+responsesEndpointQ // beginDefinition;
+
+responsesEndpointQ[ settings_Association ] :=
+    responsesEndpointQ[ Lookup[ settings, "Endpoint", Automatic ], settings[ "Model" ] ];
+
+responsesEndpointQ[ endpoint_, KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] :=
+    responsesEndpointQ[ endpoint, service, family ];
+
+(* Anything short of a fully resolved model spec falls back: *)
+responsesEndpointQ[ endpoint_, model_ ] := False;
+
+(* The rollback switch always wins: *)
+responsesEndpointQ[ "ChatCompletions", service_, family_ ] := False;
+
+(* Forcing the endpoint skips the family opt-in, but not the support checks: *)
+responsesEndpointQ[ "Responses", service_, family_ ] := responsesServiceQ @ service;
+
+responsesEndpointQ[ Automatic, service_, family_ ] :=
+    responsesServiceQ @ service && MemberQ[ Lookup[ $responsesEndpointFamilies, service, { } ], family ];
+
+responsesEndpointQ[ endpoint_, service_, family_ ] := False;
+
+responsesEndpointQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesServiceQ*)
+responsesServiceQ // beginDefinition;
+
+responsesServiceQ[ service_String ] := And[
+    TrueQ @ $responsesEndpointAvailable,
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
+];
+
+responsesServiceQ[ service_ ] := False;
+
+responsesServiceQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
