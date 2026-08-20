@@ -247,3 +247,21 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:241,1-249,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Dynamic Attachments*)
+
+(* Each insertion of dynamic content needs fresh boxes. Reusing cached Manipulate boxes aliases their generated
+   DynamicModule identities, so a second reference to the same expression does not work independently: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Formatting`Private`$boxCache = <| |> },
+        With[ { uri = MakeExpressionURI @ Manipulate[ x, { x, 0, 1 } ] },
+            FormatChatOutput @ StringRiffle[ { uri, uri }, "\n\n" ]
+        ];
+        Wolfram`Chatbook`Formatting`Private`$boxCache
+    ],
+    <| |>,
+    SameTest -> MatchQ,
+    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:257,1-265,2"
+]
