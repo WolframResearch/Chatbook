@@ -9668,7 +9668,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"f8841ca6-af9d-294f-854e-60c25821e905"], Cell[BoxData[
+    ExpressionUUID->"706a590b-723d-9647-8243-2fc12d4a2c4d"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10595,7 +10595,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "eb6a4228-43d4-d14a-a886-ebeac4447fed"], Cell[BoxData[
+    "0c8138d1-712f-3042-ae4c-e9dd296fc3e5"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10904,7 +10904,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "18a57d63-40b2-6d42-ad48-f645c9f5c84b"]}],
+    "3a9a1f20-a730-e24b-95dc-8502ad9fabbf"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10920,8 +10920,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"d75fc6e9-793c-314c-829f-\
-0ad556f95082"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"e0a18a19-bc0b-4f43-91ff-\
+815e352741ac"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11040,8 +11040,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"449353b0-7af9-c240-a7a6-\
-38f5c4f81551"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"9c713c85-f9b6-374d-b47b-\
+783b69fa98df"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -12129,60 +12129,48 @@ YHkAxA1Ujw==
       RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
       RGBColor[0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]],
       EdgeForm[None], 
-     DynamicBox[({
-       RectangleBox[{20.677 - 0.8755 #, 17.072 - 0.8755 #}, {
-        20.677 + 0.8755 #, 17.072 + 0.8755 #}], 
-       Directive[
+     RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}], 
+     RectangleBox[{24.1495, 16.1965}, \
+{25.900499999999997, 17.947499999999998}], 
+     RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}], 
+     {LightDarkSwitched[
+       RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
+       RGBColor[0.7215686274509804, 0.7803921568627451, 0.8117647058823529]], 
+      
+      DynamicBox[({
         Opacity[2. (# - 1.)], 
-        LightDarkSwitched[
-         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
-         RGBColor[
-         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
-       RectangleBox[{20.677 - 0.8755 #, 17.072 - 0.8755 #}, {
-        20.677 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
-       Which[
-       Typeset`t$$ <= 0.576854550646, 1., Typeset`t$$ <= 0.594881352056, 1. + 
-        27.736479069583293` (Typeset`t$$ - 0.576854550646), Typeset`t$$ <= 
-        0.666988557695, 1.5, Typeset`t$$ <= 0.685015359104, 1.5 - 
-        27.736479071121884` (Typeset`t$$ - 0.666988557695), Typeset`t$$ <= 1.,
+        RectangleBox[{20.677 - 0.8755 #, 17.072 - 0.8755 #}, {
+         20.677 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+        Which[
+        Typeset`t$$ <= 0.576854550646, 1., Typeset`t$$ <= 0.594881352056, 1. + 
+         27.7364790695833 (Typeset`t$$ - 0.576854550646), Typeset`t$$ <= 
+         0.666988557695, 1.5, Typeset`t$$ <= 0.685015359104, 1.5 - 
+         27.7364790695833 (Typeset`t$$ - 0.666988557695), Typeset`t$$ <= 1., 
          1., True, 1.]],
-      TrackedSymbols:>{Typeset`t$$}], 
-     DynamicBox[({
-       RectangleBox[{25.025 - 0.8755 #, 17.072 - 0.8755 #}, {
-        25.025 + 0.8755 #, 17.072 + 0.8755 #}], 
-       Directive[
+       TrackedSymbols:>{Typeset`t$$}], 
+      DynamicBox[({
         Opacity[2. (# - 1.)], 
-        LightDarkSwitched[
-         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
-         RGBColor[
-         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
-       RectangleBox[{25.025 - 0.8755 #, 17.072 - 0.8755 #}, {
-        25.025 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
-       Which[
-       Typeset`t$$ <= 0.721068961924, 1., Typeset`t$$ <= 0.739095763334, 1. + 
-        27.736479069583464` (Typeset`t$$ - 0.721068961924), Typeset`t$$ <= 
-        0.811202968972, 1.5, Typeset`t$$ <= 0.829229770382, 1.5 - 
-        27.736479069583293` (Typeset`t$$ - 0.811202968972), Typeset`t$$ <= 1.,
+        RectangleBox[{25.025 - 0.8755 #, 17.072 - 0.8755 #}, {
+         25.025 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+        Which[
+        Typeset`t$$ <= 0.721068961924, 1., Typeset`t$$ <= 0.739095763334, 1. + 
+         27.7364790695833 (Typeset`t$$ - 0.721068961924), Typeset`t$$ <= 
+         0.811202968972, 1.5, Typeset`t$$ <= 0.829229770382, 1.5 - 
+         27.7364790695833 (Typeset`t$$ - 0.811202968972), Typeset`t$$ <= 1., 
          1., True, 1.]],
-      TrackedSymbols:>{Typeset`t$$}], 
-     DynamicBox[({
-       RectangleBox[{29.373 - 0.8755 #, 17.072 - 0.8755 #}, {
-        29.373 + 0.8755 #, 17.072 + 0.8755 #}], 
-       Directive[
+       TrackedSymbols:>{Typeset`t$$}], 
+      DynamicBox[({
         Opacity[2. (# - 1.)], 
-        LightDarkSwitched[
-         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
-         RGBColor[
-         0.7215686274509804, 0.7803921568627451, 0.8117647058823529]]], 
-       RectangleBox[{29.373 - 0.8755 #, 17.072 - 0.8755 #}, {
-        29.373 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
-       Which[
-       Typeset`t$$ <= 0.865283373202, 1., Typeset`t$$ <= 0.883310174611, 1. + 
-        27.736479071121884` (Typeset`t$$ - 0.865283373202), Typeset`t$$ <= 
-        0.955415833018, 1.5, Typeset`t$$ <= 0.973442634428, 1.5 - 
-        27.736479069583293` (Typeset`t$$ - 0.955415833018), Typeset`t$$ <= 1.,
+        RectangleBox[{29.373 - 0.8755 #, 17.072 - 0.8755 #}, {
+         29.373 + 0.8755 #, 17.072 + 0.8755 #}]}& )[
+        Which[
+        Typeset`t$$ <= 0.865283373202, 1., Typeset`t$$ <= 0.883310174611, 1. + 
+         27.7364790695833 (Typeset`t$$ - 0.865283373202), Typeset`t$$ <= 
+         0.955415833018, 1.5, Typeset`t$$ <= 0.973442634428, 1.5 - 
+         27.7364790695833 (Typeset`t$$ - 0.955415833018), Typeset`t$$ <= 1., 
          1., True, 1.]],
-      TrackedSymbols:>{Typeset`t$$}]},
+       TrackedSymbols:>{Typeset`t$$}]}},
     Background->None,
     ImageSize->{19, Automatic},
     PlotRange->{{18., 32.}, {14.6, 19.6}}]},
