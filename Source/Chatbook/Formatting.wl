@@ -2991,6 +2991,9 @@ targetImageSize // endDefinition;
 (*cachedBoxes*)
 cachedBoxes // beginDefinition;
 
+cachedBoxes[ e: _Manipulate|_DynamicModule|_Dynamic ] :=
+    checkBoxes @ MakeBoxes @ e;
+
 cachedBoxes[ e_ ] :=
     With[ { h = Hash @ Unevaluated @ e },
         Lookup[ $boxCache, h, $boxCache[ h ] = checkBoxes @ MakeBoxes @ e ]
