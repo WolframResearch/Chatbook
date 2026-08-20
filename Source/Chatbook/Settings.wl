@@ -451,7 +451,8 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
-    "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
+    (* Reasoning and tools only coexist on the Responses endpoint: *)
+    "Reasoning"                  :> If[ TrueQ @ $responsesEndpointAvailable, "Medium", Missing[ "NotSupported" ] ],
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
