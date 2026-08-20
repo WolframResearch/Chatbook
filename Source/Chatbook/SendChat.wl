@@ -1171,6 +1171,11 @@ registerParameter // beginDefinition;
 registerParameter[ service_String, param_String ] := (
     registerParameter[ service, param, LLMServices`Chat       ];
     registerParameter[ service, param, LLMServices`ChatSubmit ];
+    (* Only registered services have a registry entry to patch: *)
+    If[ responsesServiceQ @ service,
+        registerParameter[ service, param, LLMServices`Response       ];
+        registerParameter[ service, param, LLMServices`ResponseSubmit ];
+    ];
 );
 
 (* :!CodeAnalysis::BeginBlock:: *)
