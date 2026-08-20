@@ -757,6 +757,80 @@ makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeReasoningParameter*)
+makeReasoningParameter // beginDefinition;
+
+makeReasoningParameter[ settings_Association ] :=
+    With[ { effort = resolveReasoningEffort @ settings },
+        If[ TrueQ @ responsesEndpointQ @ settings, requestReasoningSummary @ effort, effort ]
+    ];
+
+makeReasoningParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestReasoningSummary*)
+
+(* The Responses endpoint returns an encrypted reasoning blob and no readable summary unless one is
+   requested: *)
+requestReasoningSummary // beginDefinition;
+
+(* Reasoning is off, so there is nothing to summarize: *)
+requestReasoningSummary[ effort_String ] /; StringMatchQ[ effort, "None", IgnoreCase -> True ] := effort;
+
+requestReasoningSummary[ effort_String ] := <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |>;
+
+(* The setting already spells out a summary, or turns reasoning off: *)
+requestReasoningSummary[ as_Association ] /;
+    reasoningSummaryRequestedQ @ as || reasoningDisabledQ @ as := as;
+
+requestReasoningSummary[ as_Association ] := Append[ as, "summary" -> "auto" ];
+
+(* Automatic, Inherited, None, False, Missing[ ... ], Quantity[ n, "Tokens" ]: *)
+requestReasoningSummary[ other_ ] := other;
+
+requestReasoningSummary // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningSummaryRequestedQ*)
+reasoningSummaryRequestedQ // beginDefinition;
+reasoningSummaryRequestedQ[ as_Association ] := ! MissingQ @ reasoningParameterValue[ as, "summary" ];
+reasoningSummaryRequestedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningDisabledQ*)
+reasoningDisabledQ // beginDefinition;
+
+reasoningDisabledQ[ as_Association ] :=
+    Or[
+        reasoningParameterValue[ as, "enabled" ] === False,
+        With[ { effort = reasoningParameterValue[ as, "effort" ] },
+            StringQ @ effort && StringMatchQ[ effort, "None", IgnoreCase -> True ]
+        ]
+    ];
+
+reasoningDisabledQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningParameterValue*)
+
+(* The Responses endpoint lowercases parameter keys on the way to the wire, so "Summary" and
+   "summary" name the same thing here: *)
+reasoningParameterValue // beginDefinition;
+
+reasoningParameterValue[ as_Association, key_String ] :=
+    First[
+        Values @ KeySelect[ as, StringQ @ # && StringMatchQ[ #, key, IgnoreCase -> True ] & ],
+        Missing[ ]
+    ];
+
+reasoningParameterValue // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatIndicatorSymbol*)
 chatIndicatorSymbol // beginDefinition;
 chatIndicatorSymbol[ settings_Association ] := chatIndicatorSymbol @ settings[ "ChatInputIndicator" ];
@@ -1118,6 +1192,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
@@ -1129,6 +1204,7 @@ makeLLMConfiguration0[ as_Association ] :=
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "StopTokens" -> makeStopTokens @ as
         ] // dropModelUnsupportedParameters[ as ]
     ];

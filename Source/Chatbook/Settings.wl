@@ -414,6 +414,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "Minimal", "Low", "Medium", "High" }, (* No "None" *)
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -424,7 +425,8 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning"        :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High" } (* "None" replaces "Minimal" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
@@ -439,8 +441,9 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
-    "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "MaxContextTokens"  -> 128000,
+    "Reasoning"         :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"  -> { "Low", "Medium", "High" } (* No "None" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
@@ -672,6 +675,76 @@ modelUnsupportedParameters[ as_, config_Association ] :=
     modelUnsupportedParameters[ as, Keys @ config ];
 
 modelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveReasoningEffort*)
+
+(* Ordered weakest-to-strongest; a family's "ReasoningEfforts" is a subset of this: *)
+$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh" };
+
+resolveReasoningEffort // beginDefinition;
+
+resolveReasoningEffort[ settings_Association ] :=
+    resolveReasoningEffort[ settings[ "Reasoning" ], autoModelSetting[ settings, "ReasoningEfforts" ] ];
+
+(* Families that declare no effort levels are left exactly as they were: *)
+resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
+
+(* Off, however the family spells it: *)
+resolveReasoningEffort[ False | None, levels: { __String } ] := clampReasoningEffort[ "None", levels ];
+
+resolveReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ If[ StringMatchQ[ effort, "Off", IgnoreCase -> True ], "None", effort ], levels ];
+
+(* Automatic, Inherited, Missing[ ... ], an explicit association, Quantity[ n, "Tokens" ]: *)
+resolveReasoningEffort[ value_, levels_ ] := value;
+
+resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clampReasoningEffort*)
+clampReasoningEffort // beginDefinition;
+
+(* The family accepts the level as spelled, so use the family's own spelling: *)
+clampReasoningEffort[ effort_String, levels: { __String } ] /;
+    AnyTrue[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ] :=
+    SelectFirst[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ];
+
+(* Dropping the parameter would fall back to the vendor default, so clamp instead of dropping: *)
+clampReasoningEffort[ "None", levels: { __String } ] := First @ SortBy[ levels, reasoningEffortIndex ];
+
+clampReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ reasoningEffortIndex @ effort, effort, levels ];
+
+(* Not a level this scale knows about, so leave it alone: *)
+clampReasoningEffort[ _Missing, effort_String, levels_ ] := effort;
+
+(* The nearest supported level, ties resolving upward: *)
+clampReasoningEffort[ want_Integer, effort_String, levels: { __String } ] :=
+    With[ { known = Select[ levels, IntegerQ @ reasoningEffortIndex @ # & ] },
+        If[ known === { },
+            effort,
+            First @ MinimalBy[ known, { Abs[ reasoningEffortIndex @ # - want ], -reasoningEffortIndex @ # } & ]
+        ]
+    ];
+
+clampReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningEffortIndex*)
+reasoningEffortIndex // beginDefinition;
+
+reasoningEffortIndex[ effort_String ] :=
+    SelectFirst[
+        Range @ Length @ $reasoningEffortScale,
+        StringMatchQ[ effort, $reasoningEffortScale[[ # ]], IgnoreCase -> True ] &,
+        Missing[ ]
+    ];
+
+reasoningEffortIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
