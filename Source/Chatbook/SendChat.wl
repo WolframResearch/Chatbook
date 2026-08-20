@@ -941,20 +941,21 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result, chunks, content },
+    Module[ { auth, endpoint, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
+        endpoint = ConfirmMatch[ resolveChatEndpoint[ settings ][ "Synchronous" ], _Symbol, "Endpoint" ];
         stop = makeStopTokens @ settings;
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
-                LLMServices`Chat[
+                endpoint[
                     standardizeMessageKeys @ messages,
                     makeLLMConfiguration @ settings,
                     Authentication -> auth
                 ],
-                { LLMServices`Chat::unsupported }
+                { General::llmunsupported }
             ],
             _Association | _Failure,
             "ChatResult"
