@@ -98,6 +98,76 @@ This is a non-inherited persona value (listed in `$nonInheritedPersonaValues` in
 
 Not exposed directly in the preferences UI.
 
+## `"Endpoint"`
+
+Selects which API endpoint chat requests use: OpenAI's Responses endpoint or the legacy chat completions endpoint.
+
+### Default Value
+
+`Automatic`.
+
+### Behavior by Value
+
+- **`Automatic`**: the Responses endpoint is used only when the service supports it *and* the model's family opts in; otherwise chat completions. See Resolution below.
+- **`"Responses"`**: forces the Responses endpoint. This skips the model-family opt-in but not the support checks, so a service or an installed `Wolfram/LLMFunctions` that cannot provide the endpoint still falls back to chat completions.
+- **`"ChatCompletions"`**: always uses the legacy endpoint. This is the rollback switch.
+
+Any unrecognized value behaves as `"ChatCompletions"`. The value is not validated: the pattern `$$endpointSetting` in `Settings.wl` describes the three accepted values but nothing currently checks the setting against it.
+
+### Resolution
+
+`responsesEndpointQ` (`SendChat.wl`) makes the decision, and `resolveChatEndpoint` maps it onto a pair of endpoint symbols:
+
+| Decision | Synchronous | Streaming |
+| -------- | ----------- | --------- |
+| Responses | `LLMServices`Response` | `LLMServices`ResponseSubmit` |
+| Chat completions | `LLMServices`Chat` | `LLMServices`ChatSubmit` |
+
+Under `Automatic`, a request goes to the Responses endpoint only when **all** of the following hold. Any failure falls back to chat completions silently; none of them is an error condition:
+
+1. **The installed LLMFunctions provides the endpoint.** `$responsesEndpointAvailable` (`Settings.wl`) requires `Wolfram/LLMFunctions` version `2.4` or newer *and* separately checks that `Response` and `ResponseSubmit` appear in `LLMServices`$LLMServicesEndpoints`. Both checks are needed because version `2.3.2` exists both with and without the endpoint, which makes the version alone ambiguous.
+2. **The endpoint is registered for the model's service.** `LLMServices`RegisteredServiceQ` must report it for both `Response` and `ResponseSubmit` (`responsesServiceQ` in `SendChat.wl`).
+3. **The model family opts in.** `$responsesEndpointFamilies` (`SendChat.wl`) currently holds `<| "OpenAI" -> { "GPT54Plus" } |>`, which covers every `GPT 5.<digit>` model.
+
+A model specification that has not been resolved to a full spec carrying both `"Service"` and `"Family"` also falls back.
+
+The decision is made once per request and drives both the synchronous and the streaming path, so a single chat never mixes endpoints.
+
+### Parameter Consequences
+
+The two endpoints accept different parameter sets, so the resolved endpoint changes what is sent. `"Reasoning"` is the current case: on the Responses path it goes out as an association carrying the effort level and a summary request, such as `<| "effort" -> "medium", "summary" -> "auto" |>`, and on the completions path as a plain effort string. The completions path does not accept the association form.
+
+Because that association form only ever appears on the Responses path, it doubles as a check of which endpoint a chat actually used. After a chat, in the same kernel:
+
+```wl
+Wolfram`Chatbook`SendChat`Private`$lastLLMConfiguration["Reasoning"]
+```
+
+An association means the Responses endpoint; a plain string means chat completions. A Responses result association also carries `"ResponseID"` and `"PreviousResponseID"`, which a completions result does not.
+
+### Rollback
+
+Setting `"ChatCompletions"` restores the previous behavior without a code change, and can be scoped per chat, per notebook, or globally.
+
+One caveat applies to GPT-5.4 and newer. Those models request reasoning by default, and OpenAI rejects reasoning together with function tools on the completions endpoint. Rolling such a chat back to `"ChatCompletions"` while tools are enabled therefore fails with a service error rather than degrading quietly:
+
+```
+Function tools with reasoning_effort are not supported for gpt-5.6 in /v1/chat/completions.
+To use function tools, use /v1/responses or set reasoning_effort to 'none'.
+```
+
+To roll one of those models back, also set `"Reasoning"` to `"None"`, or disable tools.
+
+### Integration Points
+
+- **LLM passthrough**: Not in `$llmConfigPassedKeys`. Chatbook uses it to choose the endpoint and never sends it to the provider.
+- **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
+- **Notebook conversion**: Not listed in `$popOutSettings`.
+
+### Preferences UI
+
+Not exposed in the preferences UI.
+
 ## `"Multimodal"`
 
 Controls whether Chatbook includes image data in messages sent to the LLM.
