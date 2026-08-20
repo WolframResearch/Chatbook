@@ -990,28 +990,30 @@ chatSubmit0[
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
-    $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+    With[ { endpoint = resolveChatEndpoint[ settings ][ "Streaming" ] },
+        $lastChatSubmitResult = ReleaseHold[
+            $lastChatSubmit = HoldForm @ applyProcessingFunction[
+                settings,
+                "ChatSubmit",
+                HoldComplete[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ settings,
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    "TestConnection"     -> False
+                ],
+                <|
+                    "Container"             :> container,
+                    "Messages"              -> messages,
+                    "CellObject"            -> cellObject,
+                    "DefaultSubmitFunction" -> endpoint
+                |>,
+                endpoint
+            ]
         ]
     ],
-    { LLMServices`ChatSubmit::unsupported }
+    { General::llmunsupported }
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
