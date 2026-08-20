@@ -80,6 +80,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$progressText;
 `$progressWidth;
 `$rasterCache;
+`$reasoningOpen;
 `$receivedToolCall;
 `$responsesEndpointAvailable;
 `$resultCellCache;

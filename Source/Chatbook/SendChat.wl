@@ -911,6 +911,7 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
+    $reasoningOpen         = False;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
     rasterizeBlock @ chatSubmit0 @ args,
