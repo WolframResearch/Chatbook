@@ -125,7 +125,7 @@ Give that an `OwnValue` for the duration of the test, which shadows its `DownVal
 
 ```wl
 Block[ { Wolfram`Chatbook`SendChat`Private`responsesServiceQ = Function[ # === "OpenAI" ] },
-    Wolfram`Chatbook`SendChat`Private`responsesEndpointQ[ Automatic, "OpenAI", "GPT54Plus" ]
+    Wolfram`Chatbook`Common`responsesEndpointQ[ Automatic, "OpenAI", "GPT54Plus" ]
 ]
 ```
 

@@ -1068,7 +1068,12 @@ makeMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
+
+(* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
+allowedMultimodalRoles[ settings_ ] /; TrueQ @ responsesEndpointQ @ settings := { "User" };
+
 allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+
 allowedMultimodalRoles // endDefinition;
 
 
