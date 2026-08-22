@@ -335,6 +335,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolvePromptGenerators;
 `resolveReasoningEffort;
 `resolveTools;
+`responsesEndpointQ;
 `revertMultimodalContent;
 `rootEvaluationCell;
 `sandboxEvaluate;

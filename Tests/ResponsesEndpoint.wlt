@@ -34,7 +34,7 @@ VerificationTest[
 
 (* The rollback switch wins before any support check runs, so this needs no stub: *)
 VerificationTest[
-    Wolfram`Chatbook`SendChat`Private`responsesEndpointQ[ "ChatCompletions", "OpenAI", "GPT54Plus" ],
+    Wolfram`Chatbook`Common`responsesEndpointQ[ "ChatCompletions", "OpenAI", "GPT54Plus" ],
     False,
     SameTest -> MatchQ,
     TestID   -> "ResponsesEndpointQ-RollbackWins@@Tests/ResponsesEndpoint.wlt:36,1-41,2"
@@ -42,7 +42,7 @@ VerificationTest[
 
 (* Anything short of a fully resolved model spec falls back, whatever the setting says: *)
 VerificationTest[
-    Wolfram`Chatbook`SendChat`Private`responsesEndpointQ[ #, "gpt-5.6" ] & /@ {
+    Wolfram`Chatbook`Common`responsesEndpointQ[ #, "gpt-5.6" ] & /@ {
         Automatic,
         "Responses",
         "ChatCompletions"
@@ -53,7 +53,7 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Wolfram`Chatbook`SendChat`Private`responsesEndpointQ[
+    Wolfram`Chatbook`Common`responsesEndpointQ[
         Automatic,
         (* no "Family" key, so not a resolved spec: *)
         <| "Service" -> "OpenAI", "Name" -> "gpt-5.6" |>
@@ -69,7 +69,7 @@ VerificationTest[
 VerificationTest[
     Block[
         { Wolfram`Chatbook`SendChat`Private`responsesServiceQ = Function[ # === "OpenAI" ] },
-        Wolfram`Chatbook`SendChat`Private`responsesEndpointQ @@@ {
+        Wolfram`Chatbook`Common`responsesEndpointQ @@@ {
             (* Automatic: needs both a supporting service and an opted-in family *)
             { Automatic, "OpenAI", "GPT54Plus" },
             { Automatic, "OpenAI", "GPT5"      },
