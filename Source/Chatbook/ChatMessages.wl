@@ -1072,22 +1072,12 @@ allowedMultimodalRoles // beginDefinition;
 (* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
 allowedMultimodalRoles[ settings_ ] /; TrueQ @ responsesEndpointQ @ settings := { "User" };
 
-allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+(* A family or service may declare which roles can carry an image; anything undeclared is
+   unrestricted, which is what every provider except OpenAI has been verified to allow: *)
+allowedMultimodalRoles[ settings_ ] :=
+    Replace[ autoModelSetting[ settings, "MultimodalRoles" ], Except[ { __String } ] -> All ];
 
 allowedMultimodalRoles // endDefinition;
-
-
-allowedMultimodalRoles0 // beginDefinition;
-
-allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
-    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
-        { "User" },
-        All
-    ];
-
-allowedMultimodalRoles0[ _Missing ] := All;
-
-allowedMultimodalRoles0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

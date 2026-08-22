@@ -220,6 +220,43 @@ When `True`, `makeMessageContent` (`ChatMessages.wl`) processes cell content thr
 
 **Serialization:** In `Serialization.wl`, the related `$multimodalImages` variable (derived from `$contentTypes`) controls whether graphics boxes are encoded as image URIs (`toMarkdownImageBox`) or replaced with `"[GRAPHIC]"` placeholders, and whether `"Picture"` style cells are serialized as image URIs. Graphics exceeding `$maxBoxSizeForImages` bytes fall back to non-multimodal serialization.
 
+### Allowed Roles
+
+`"Multimodal"` decides *whether* images are included at all. A separate rule decides *which message
+roles* may carry one, because providers restrict this and reject a request that gets it wrong.
+`allowedMultimodalRoles` (`ChatMessages.wl`) answers that question, and both callers — the per-cell
+message builder and the tool response path in `toolEvaluation` — consult it before expanding an image
+into typed content parts.
+
+It resolves in two steps:
+
+1. **The Responses endpoint permits an image only inside a user item**, whatever the model, so a
+   request that resolves to it is restricted to `{ "User" }`. See [`"Endpoint"`](#endpoint).
+2. Otherwise the `"MultimodalRoles"` entry in `$modelAutoSettings` applies. This is a model auto
+   setting only — it is not a chat setting, so it cannot be set through `CurrentChatSettings` — and it
+   can be declared per family or, as OpenAI does, once for the whole service. Anything undeclared
+   means unrestricted.
+
+OpenAI declares `{ "User" }` at the service level (`$modelAutoSettings["OpenAI", Automatic]`) because
+both of its endpoints enforce it, and say so explicitly:
+
+```
+chat completions:  Invalid 'messages[0]'. Image URLs are only allowed for messages with role
+                   'user', but this message with role 'system' contains an image URL.
+responses:         Invalid value: 'input_image'. Supported values are: 'input_text'.
+```
+
+Declaring it for the service rather than per model matters in practice: the rule is a property of the
+API rather than of any one model, so every current and future variant — `gpt-4o`, `gpt-4o-mini`,
+dated snapshots, `chatgpt-4o-latest`, the GPT-5 families, the o-series — is covered without anyone
+having to notice a new name.
+
+Other providers are unrestricted. Anthropic was verified to accept an image in a system message.
+
+The visible consequence, where a restriction applies, is that a tool result carrying an image is sent
+to the model as text: the image is dropped from the request rather than the request failing. The
+image is still displayed in the notebook, which does not depend on what was sent.
+
 ### Chat Mode Overrides
 
 - **ContentSuggestions** mode sets its own `$wlSuggestionsMultimodal`, `$textSuggestionsMultimodal`, and `$notebookSuggestionsMultimodal` flags (all `False`).

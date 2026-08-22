@@ -274,6 +274,8 @@ $modelAutoSettings[ "OpenAI", "GPT35" ] = <|
 |>;
 
 $modelAutoSettings[ "OpenAI", Automatic ] = <|
+    (* Images are only accepted in user messages, on both endpoints: *)
+    "MultimodalRoles"            -> { "User" },
     "ToolMethod"                 -> "Service",
     "ToolCallExamplePromptStyle" -> "Basic"
 |>;
