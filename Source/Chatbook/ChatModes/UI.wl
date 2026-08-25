@@ -1002,10 +1002,10 @@ getUserValue[ assoc_, "tier" ] :=
     ]
 
 getUserValue[ assoc_, "usage" ] :=
-    Module[ { remaining, allotment, used },
-        { remaining, allotment, used } =
+    Module[ { allotment, used },
+        { allotment, used } =
             Replace[
-                Lookup[ assoc, { "remainingCredits", "allotment", "allotmentUsed" } ],
+                Lookup[ assoc, { "allotment", "allotmentUsed" } ],
                 {
                     a_?NumberQ :> a,
                     a_String?DigitQ :> ToExpression[ a ],
@@ -1013,11 +1013,10 @@ getUserValue[ assoc_, "usage" ] :=
                 },
                 { 1 }
             ];
-        If[ remaining <= 0, remaining = 0 ];
         If[ allotment <= 0, allotment = 1 ]; (* avoid division by zero *)
         If[ used <= 0, used = 0 ];
 
-        Clip[ (used) / (allotment + remaining), { 0, 1 } ]
+        Clip[ used / allotment, { 0, 1 } ]
     ]
 
 getUserValue[ assoc_, "daysToReset" ] :=
