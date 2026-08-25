@@ -947,6 +947,7 @@ $chatbarAccessFailedData :=
         "tier"         -> "",
         "usage"        -> Missing["Unknown"],
         "daysToReset"  -> "\[LongDash]",
+        "upgradeOptions" -> { },
         "upgradeURL"   -> "https://www.wolfram.com",
         "serviceCreditsOptions" -> { }
     |>;
@@ -978,6 +979,7 @@ chatbarUserData[ rawAccessData_ ] :=
             "tier",
             "usage",
             "daysToReset",
+            "upgradeOptions",
             "upgradeURL",
             "serviceCreditsOptions"
         } ]
@@ -1031,6 +1033,9 @@ getUserValue[ assoc_, "daysToReset" ] :=
             "\[LongDash]"
         ]
     ]
+
+getUserValue[ assoc_, "upgradeOptions" ] :=
+    Lookup[ assoc, "upgradeOptions", { } ]
 
 getUserValue[ assoc_, "upgradeURL" ] :=
     Lookup[ assoc, "upgradeUrl", "https://www.wolfram.com/wolfram-ai-services" ]
@@ -1431,7 +1436,10 @@ chatbarWarningStripe[ tier_, usage_, daysToReset_ ] := Nothing
 
 
 chatbarUpgradeStripe[ userdata_ ] :=
-    chatbarUpgradeStripe[ userdata, ## ]& @@ Lookup[ userdata, { "tier", "usage", "upgradeURL", "serviceCreditsOptions" } ]
+    If[ Lookup[ userdata, "upgradeOptions" ] === { },
+        Nothing,
+        chatbarUpgradeStripe[ userdata, ## ]& @@ Lookup[ userdata, { "tier", "usage", "upgradeURL", "serviceCreditsOptions" } ]
+    ]
 
 chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] :=
     MouseAppearance[
