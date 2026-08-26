@@ -44,23 +44,20 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
         Dynamic[
           Times[
             2.,
-            Subtract[
-              Which[
-                LessEqual[Typeset`t, 0.576854550646],
-                  1.,
-                LessEqual[Typeset`t, 0.594881352056],
-                  1. + 27.736479069583293 * (Typeset`t - 0.576854550646),
-                LessEqual[Typeset`t, 0.666988557695],
-                  1.5,
-                LessEqual[Typeset`t, 0.685015359104],
-                  1.5 + -27.736479071121884 * (Typeset`t - 0.666988557695),
-                LessEqual[Typeset`t, 1.],
-                  1.,
-                True,
-                  1.
-              ],
-              1.
-            ]
+            Which[
+              LessEqual[Typeset`t, 0.576854550646],
+                1.,
+              LessEqual[Typeset`t, 0.594881352056],
+                1. + 27.736479069583293 * (Typeset`t - 0.576854550646),
+              LessEqual[Typeset`t, 0.666988557695],
+                1.5,
+              LessEqual[Typeset`t, 0.685015359104],
+                1.5 + -27.736479071121884 * (Typeset`t - 0.666988557695),
+              LessEqual[Typeset`t, 1.],
+                1.,
+              True,
+                1.
+            ] - 1.
           ]
         ],
         White
@@ -77,23 +74,20 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
         Dynamic[
           Times[
             2.,
-            Subtract[
-              Which[
-                LessEqual[Typeset`t, 0.721068961924],
-                  1.,
-                LessEqual[Typeset`t, 0.739095763334],
-                  1. + 27.736479069583464 * (Typeset`t - 0.721068961924),
-                LessEqual[Typeset`t, 0.811202968972],
-                  1.5,
-                LessEqual[Typeset`t, 0.829229770382],
-                  1.5 + -27.736479069583293 * (Typeset`t - 0.811202968972),
-                LessEqual[Typeset`t, 1.],
-                  1.,
-                True,
-                  1.
-              ],
-              1.
-            ]
+            Which[
+              LessEqual[Typeset`t, 0.721068961924],
+                1.,
+              LessEqual[Typeset`t, 0.739095763334],
+                1. + 27.736479069583464 * (Typeset`t - 0.721068961924),
+              LessEqual[Typeset`t, 0.811202968972],
+                1.5,
+              LessEqual[Typeset`t, 0.829229770382],
+                1.5 + -27.736479069583293 * (Typeset`t - 0.811202968972),
+              LessEqual[Typeset`t, 1.],
+                1.,
+              True,
+                1.
+            ] - 1.
           ]
         ],
         White
@@ -109,23 +103,20 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
         Dynamic[
           Times[
             2.,
-            Subtract[
-              Which[
-                LessEqual[Typeset`t, 0.865283373202],
-                  1.,
-                LessEqual[Typeset`t, 0.883310174611],
-                  1. + 27.736479071121884 * (Typeset`t - 0.865283373202),
-                LessEqual[Typeset`t, 0.955415833018],
-                  1.5,
-                LessEqual[Typeset`t, 0.973442634428],
-                  1.5 + -27.736479069583293 * (Typeset`t - 0.955415833018),
-                LessEqual[Typeset`t, 1.],
-                  1.,
-                True,
-                  1.
-              ],
-              1.
-            ]
+            Which[
+              LessEqual[Typeset`t, 0.865283373202],
+                1.,
+              LessEqual[Typeset`t, 0.883310174611],
+                1. + 27.736479071121884 * (Typeset`t - 0.865283373202),
+              LessEqual[Typeset`t, 0.955415833018],
+                1.5,
+              LessEqual[Typeset`t, 0.973442634428],
+                1.5 + -27.736479069583293 * (Typeset`t - 0.955415833018),
+              LessEqual[Typeset`t, 1.],
+                1.,
+              True,
+                1.
+            ] - 1.
           ]
         ],
         White
