@@ -397,7 +397,7 @@ initializeProgressContainer[ container_Symbol ] := (
     $progressContainer = HoldComplete @ container[ "DynamicContent" ];
 
     container = <|
-        "DynamicContent" -> $defaultProgress,
+        "DynamicContent" -> "",
         "FullContent"    -> $defaultProgress,
         "UUID"           -> createUUID[ ]
     |>

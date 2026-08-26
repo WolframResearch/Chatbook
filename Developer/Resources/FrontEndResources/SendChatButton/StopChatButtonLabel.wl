@@ -25,10 +25,13 @@ Function[ Evaluate @ ToBoxes @
 					PlotRange -> {{-0.5, 11.5}, {-0.5, 11.5}}
 				],
 				Alignment        -> { Center, Center },
-				Background       -> ThemeColor[ "Background" ],
+				Background       -> Dynamic @ If[ CurrentValue[ "MouseOver" ],
+					LightDarkSwitched[RGBColor[0.071, 0.557, 0.820, 0.08], RGBColor[0.498, 0.78, 0.984, 0.22]],
+					GrayLevel[ 0, 0 ]
+				],
 				BaselinePosition -> Baseline,
 				FrameMargins     -> 0,
-				FrameStyle       -> frameHover,
+				FrameStyle       -> LightDarkSwitched[RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
 				ImageSize        -> #2,
 				RoundingRadius   -> 4
 			],

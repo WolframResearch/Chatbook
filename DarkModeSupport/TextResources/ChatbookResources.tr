@@ -3062,11 +3062,17 @@ qvmGcPth+lHdh3A/ADVIfz0=
       9.}, {11., 2.}, {11., 0.8949999809265137}, {10.105000019073486`, 0.}, {
       9., 0.}}}]}, ImageSize -> 0.7 #3, 
     PlotRange -> {{-0.5, 11.5}, {-0.5, 11.5}}], Alignment -> {Center, Center},
-    Background -> ThemeColor["Background"], BaselinePosition -> Baseline, 
-   FrameMargins -> 0, FrameStyle -> LightDarkSwitched[
-     RGBColor[0.6941176, 0.8352941, 0.9098039], 
-     RGBColor[0.3764705, 0.490196, 0.5607843]], ImageSize -> #2, 
-   RoundingRadius -> 4, StripOnInput -> False], 
+    Background -> Dynamic[
+     If[
+      CurrentValue["MouseOver"], 
+      LightDarkSwitched[
+       RGBColor[0.071, 0.557, 0.82, 0.08], 
+       RGBColor[0.498, 0.78, 0.984, 0.22]], 
+      GrayLevel[0, 0]]], BaselinePosition -> Baseline, FrameMargins -> 0, 
+   FrameStyle -> LightDarkSwitched[
+     RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+     RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]], 
+   ImageSize -> #2, RoundingRadius -> 4, StripOnInput -> False], 
   MouseAppearanceTag["LinkHand"]]& ),
 
 "ToolIconWolframAlpha" -> GraphicsBox[
@@ -9668,7 +9674,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"706a590b-723d-9647-8243-2fc12d4a2c4d"], Cell[BoxData[
+    ExpressionUUID->"64e27d0f-1074-bc42-a039-e162368b8e5d"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10595,7 +10601,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "0c8138d1-712f-3042-ae4c-e9dd296fc3e5"], Cell[BoxData[
+    "3b5121b1-bc6a-f644-bf98-2633479203b7"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10904,7 +10910,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "3a9a1f20-a730-e24b-95dc-8502ad9fabbf"]}],
+    "14f6458e-1efa-2943-b310-0805448b2a58"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10920,8 +10926,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"e0a18a19-bc0b-4f43-91ff-\
-815e352741ac"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"baf66d56-1440-de4a-a126-\
+74c8cb3aa98b"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11040,8 +11046,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"9c713c85-f9b6-374d-b47b-\
-783b69fa98df"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"ee7c86db-34d9-4940-8587-\
+e8254f5d4171"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
