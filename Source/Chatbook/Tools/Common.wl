@@ -38,7 +38,7 @@ $AvailableTools := Association[ $DefaultTools, $InstalledTools, $selectedTools ]
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
-$ToolFunctions = <|
+$ToolFunctions := $ToolFunctions = <|
     "ChatPreferences"          -> chatPreferences,
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
@@ -57,7 +57,7 @@ $defaultWebTextLength    = 2^16;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
-$DefaultToolOptions = <|
+$DefaultToolOptions := $DefaultToolOptions = <|
     Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "FileReader" -> <||> }, { } ],
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
@@ -109,7 +109,7 @@ $defaultToolOrder = {
     "WolframLanguageEvaluator"
 };
 
-$toolNameAliases = <|
+$toolNameAliases := $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
     Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "ReadFile" -> "FileReader" }, { } ],
     "WebFetch"            -> "WebFetcher",
@@ -140,9 +140,12 @@ $appearanceRulesKeys = Keys @ $autoAppearanceRules;
 (*Default Tools*)
 $defaultChatTools := (
     reevaluateToolExpressions[ ];
-    If[ TrueQ @ $CloudEvaluation,
-        KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
-        $defaultChatTools0
+    KeyDrop[
+        $defaultChatTools0,
+        Join[
+            If[ TrueQ @ $CloudEvaluation, $cloudUnsupportedTools, { } ],
+            If[ sufficientVersionQ[ 15.1 ], { }, { "FileReader" } ]
+        ]
     ]
 );
 

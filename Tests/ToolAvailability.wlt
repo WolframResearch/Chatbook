@@ -28,7 +28,7 @@ VerificationTest[
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 VerificationTest[
-    KeyExistsQ[ Wolfram`Chatbook`Tools`Private`$defaultChatTools0, "FileReader" ],
+    KeyExistsQ[ Wolfram`Chatbook`$DefaultTools, "FileReader" ],
     TrueQ @ ( $VersionNumber >= 15.1 ),
     SameTest -> SameQ,
     TestID   -> "FileReader-DefaultToolDefinition@@Tests/ToolAvailability.wlt:28,1-33,2"
