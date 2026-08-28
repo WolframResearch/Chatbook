@@ -3007,22 +3007,15 @@ dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicCont
 
 dynamicTextDisplay[ container_, _, _ ] /; AssociationQ @ container && container[ "DynamicContent" ] === None := "";
 
-dynamicTextDisplay[ container_, formatter_, True ] := With[
-    {
-        data = <|
-            "Status"    -> If[ StringQ @ container[ "DynamicContent" ], "Streaming", "Waiting" ],
-            "Container" :> container,
-            $ChatHandlerData
-        |>
-    },
-    conformToExpression @
-    If[ StringQ @ container[ "DynamicContent" ] && toolFreeQ0 @ container[ "DynamicContent" ],
-        Grid[ { { # }, { chatbookIcon[ "PercolateProgressAnimation", False ] } }, Alignment -> Left ]
-        ,
-        #
-    ]& @
-    ReplaceAll[
-        formatter[ container[ "DynamicContent" ], data ],
+dynamicTextDisplay[ container_, formatter_, True ] := Module[ { content, data, formatted },
+    content = container[ "DynamicContent" ];
+    data = <|
+        "Status"    -> If[ StringQ @ content, "Streaming", "Waiting" ],
+        "Container" :> container,
+        $ChatHandlerData
+    |>;
+    formatted = ReplaceAll[
+        formatter[ content, data ],
         {
             TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
                 If[ TrueQ @ $highlightDynamicContent,
@@ -3035,6 +3028,12 @@ dynamicTextDisplay[ container_, formatter_, True ] := With[
                     TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ]
                 ]
         }
+    ];
+    conformToExpression @ If[
+        dynamicProgressIndicatorQ[ content, formatted ],
+        Grid[ { { formatted }, { chatbookIcon[ "PercolateProgressAnimation", False ] } }, Alignment -> Left ]
+        ,
+        formatted
     ]
 ];
 
@@ -3046,6 +3045,21 @@ dynamicTextDisplay[ _Symbol, _, _ ] := ProgressIndicator[ Appearance -> "Percola
 dynamicTextDisplay[ other_, _, _ ] := other;
 
 dynamicTextDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicProgressIndicatorQ*)
+dynamicProgressIndicatorQ // beginDefinition;
+
+dynamicProgressIndicatorQ[ content_String, formatted_ ] := TrueQ @ And[
+    content =!= "",
+    toolFreeQ[ $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ], content ],
+    FreeQ[ formatted, TagBox[ _, "ChatbookActiveToolProgress", ___ ] ]
+];
+
+dynamicProgressIndicatorQ[ _, _ ] := False;
+
+dynamicProgressIndicatorQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
