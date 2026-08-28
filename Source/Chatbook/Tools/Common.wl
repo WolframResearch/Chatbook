@@ -111,7 +111,7 @@ $defaultToolOrder = {
 
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
-     "ReadFile" -> "FileReader",
+    "ReadFile" -> "FileReader",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
