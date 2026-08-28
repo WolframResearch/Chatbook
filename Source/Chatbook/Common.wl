@@ -69,6 +69,7 @@ System`HoldCompleteForm;
 `catchMine;
 `catchTop;
 `catchTopAs;
+`cloudShrinkToFit;
 `endDefinition;
 `endExportedDefinition;
 `importResourceFunction;
@@ -1541,6 +1542,30 @@ getCloudChatbookExpressions[ ] := Enclose[
 ];
 
 getCloudChatbookExpressions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudShrinkToFit*)
+cloudShrinkToFit[ TemplateBox[ _, s_String, ___ ], size_ ] :=
+    cloudShrinkToFit[ FrontEndResource[ "ChatbookExpressions", s ], size ]
+
+cloudShrinkToFit[ Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "ChatbookExpressions", s_String ] ] ], size_ ] := 
+    cloudShrinkToFit[ FrontEndResource[ "ChatbookExpressions", s ], size ]
+
+cloudShrinkToFit[ Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "ChatbookExpressions", s_String ] ] ], size_ ] := 
+    cloudShrinkToFit[ FrontEndResource[ "ChatbookExpressions", s ], size ]
+
+cloudShrinkToFit[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", s_String ] ], size_ ] := 
+    cloudShrinkToFit[ FrontEndResource[ "ChatbookExpressions", s ], size ]
+
+cloudShrinkToFit[ FEPrivate`FrontEndResource[ "ChatbookExpressions", s_String ], size_ ] := 
+    cloudShrinkToFit[ FrontEndResource[ "ChatbookExpressions", s ], size ]
+
+cloudShrinkToFit[ Graphics[ a___, ImageSize -> _, b___ ], size_ ] := Graphics[ a, ImageSize -> size, b ]
+cloudShrinkToFit[ Graphics[ a___ ], size_ ] := Graphics[ a, ImageSize -> size ]
+cloudShrinkToFit[ GraphicsBox[ a___, ImageSize -> _, b___ ], size_ ] := RawBoxes @ GraphicsBox[ a, ImageSize -> size, b ]
+cloudShrinkToFit[ GraphicsBox[ a___ ], size_ ] := RawBoxes @ GraphicsBox[ a, ImageSize -> size ]
+cloudShrinkToFit[ other_, size_ ] := other
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
