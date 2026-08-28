@@ -57,6 +57,21 @@ VerificationTest[
     TestID   -> "TeX-Escaped-Underscore-And-Hash@@Tests/Formatting.wlt:41,1-58,2"
 ]
 
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "Before \\[x^2\\] after" ],
+        TemplateBox[ as_Association, "TeXAssistantTemplate" ] :> as,
+        $Failed,
+        Infinity
+    ],
+    KeyValuePattern @ {
+        "input" -> "x^2",
+        "state" -> "Boxes"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Whitespace-Delimited-Brackets"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Markdown Escapes*)
@@ -220,6 +235,18 @@ VerificationTest[
     ToCharacterCode @ "/\\\\_/\\\\\n( o.o )\n > ^ <",
     SameTest -> MatchQ,
     TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:210,1-223,2"
+]
+
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "<THINKING>fish &amp; chips /\\\\_/\\\\</THINKING>" ],
+        TemplateBox[ { text_String, _ }, "ThoughtsOpener" ] :> text,
+        $Failed,
+        Infinity
+    ],
+    "fish & chips /\\\\_/\\\\",
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML"
 ]
 
 VerificationTest[

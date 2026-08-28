@@ -238,7 +238,11 @@ reformatTextData // endDefinition;
 reformatTextData0 // beginDefinition;
 
 reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    reformatTextDataEscaped @ StringSplit[ string, $textDataFormatRulesNoMarkdownUnescape ];
+    reformatTextDataEscaped @ StringSplit[
+        importHTMLEntities @ string,
+        $textDataFormatRulesNoMarkdownUnescape,
+        IgnoreCase -> True
+    ];
 
 reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
@@ -1520,6 +1524,9 @@ $textDataFormatRulesNoMarkdownUnescape = {
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
+
+    math: RegularExpression[ "(?s)(?<!\\S)\\\\\\[.+?\\\\\\](?!\\S)" ] :>
+        mathCell @ StringTake[ math, { 3, -3 } ],
 
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
