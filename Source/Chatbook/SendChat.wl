@@ -3005,6 +3005,8 @@ dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicCont
         Framed[ dynamicTextDisplay[ container, formatter, reformat ], FrameStyle -> Purple ]
     ];
 
+dynamicTextDisplay[ container_, _, _ ] /; AssociationQ @ container && container[ "DynamicContent" ] === None := "";
+
 dynamicTextDisplay[ container_, formatter_, True ] := With[
     {
         data = <|
