@@ -42,7 +42,7 @@ $ToolFunctions = <|
     "ChatPreferences"          -> chatPreferences,
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
-    "FileReader"               -> readFile,
+    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "FileReader" -> readFile }, { } ],
     "WebFetcher"               -> webFetch,
     "WebImageSearcher"         -> webImageSearch,
     "WebSearcher"              -> webSearch,
@@ -58,8 +58,7 @@ $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
-    "FileReader" -> <|
-    |>,
+    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "FileReader" -> <||> }, { } ],
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
         "FoldPods"        -> False,
@@ -112,7 +111,7 @@ $defaultToolOrder = {
 
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
-    "ReadFile"            -> "FileReader",
+    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "ReadFile" -> "FileReader" }, { } ],
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"

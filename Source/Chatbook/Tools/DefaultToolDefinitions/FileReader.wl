@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 
-$readFileEnabled = True;
+$readFileEnabled := $readFileEnabled = sufficientVersionQ[15.1];
 
 
 (* ::Subsection::Closed:: *)
@@ -44,7 +44,6 @@ to the user."
 (*Spec*)
 $defaultChatTools0[ "FileReader" ] = <|
     toolDefaultData[ "FileReader" ],
-    (* "Icon"               -> $nbEditIcon, *)
     "Description"        -> $readFiletDescription,
     "Enabled"            :> $readFileEnabled,
     "Function"           -> readFile,
