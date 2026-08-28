@@ -38,11 +38,11 @@ $AvailableTools := Association[ $DefaultTools, $InstalledTools, $selectedTools ]
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
-$ToolFunctions := $ToolFunctions = <|
+$ToolFunctions = <|
     "ChatPreferences"          -> chatPreferences,
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
-    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "FileReader" -> readFile }, { } ],
+    "FileReader"               -> readFile,
     "WebFetcher"               -> webFetch,
     "WebImageSearcher"         -> webImageSearch,
     "WebSearcher"              -> webSearch,
@@ -57,8 +57,8 @@ $defaultWebTextLength    = 2^16;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
-$DefaultToolOptions := $DefaultToolOptions = <|
-    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "FileReader" -> <||> }, { } ],
+$DefaultToolOptions = <|
+    "FileReader" -> <||>,
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
         "FoldPods"        -> False,
@@ -109,9 +109,9 @@ $defaultToolOrder = {
     "WolframLanguageEvaluator"
 };
 
-$toolNameAliases := $toolNameAliases = <|
+$toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
-    Sequence @@ If[ sufficientVersionQ[ 15.1 ], { "ReadFile" -> "FileReader" }, { } ],
+     "ReadFile" -> "FileReader",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
