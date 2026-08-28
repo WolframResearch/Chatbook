@@ -3088,13 +3088,17 @@ makeOutputDingbat // endDefinition;
 (*resizeDingbat*)
 resizeDingbat // beginDefinition;
 
-resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
-    icon,
-    ContentPadding  -> False,
-    FrameMargins    -> 0,
-    ImageSize       -> { Automatic, 19 },
-    ImageSizeAction -> "ShrinkToFit",
-    Alignment       -> { Center, Center }
+resizeDingbat[ icon_ ] /; $resizeDingbats := If[ $cloudNotebooks,
+    cloudShrinkToFit[ icon, { Automatic, 19 } ]
+    ,
+    Pane[
+        icon,
+        ContentPadding  -> False,
+        FrameMargins    -> 0,
+        ImageSize       -> { Automatic, 19 },
+        ImageSizeAction -> "ShrinkToFit",
+        Alignment       -> { Center, Center }
+    ]
 ];
 
 resizeDingbat[ icon_ ] := icon;

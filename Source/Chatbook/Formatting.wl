@@ -1995,7 +1995,7 @@ toolCallIconPane0[ $$unspecified ] :=
 toolCallIconPane0[ icon_ ] :=
     Dynamic[
         If[ TrueQ @ $CloudEvaluation,
-            #1,
+            cloudShrinkToFit[ #1, { 16, 16 } ],
             Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
         ] &[ icon ],
         SingleEvaluation -> True,

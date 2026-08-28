@@ -1397,11 +1397,7 @@ cloudToolGridRow // beginDefinition;
 cloudToolGridRow[ tool_Association ] := {
     Grid[
         { {
-            Pane[
-                tool[ "Icon" ],
-                ImageSize       -> { 22, 20 },
-                ImageSizeAction -> "ShrinkToFit"
-            ],
+            cloudShrinkToFit[ tool[ "Icon" ], { 22, 20 } ],
             tool[ "CanonicalName" ]
         } },
         Alignment -> { { Center, Left }, Center },
