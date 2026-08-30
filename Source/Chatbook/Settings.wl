@@ -468,6 +468,11 @@ $modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
     $modelAutoSettings[ Automatic, "GPT54Plus" ],
     "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
 |>;
+
+$modelAutoSettings[ Automatic, "GPT56Cyber" ] = <|
+    "MaxContextTokens" -> 400000
+|>;
+
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
