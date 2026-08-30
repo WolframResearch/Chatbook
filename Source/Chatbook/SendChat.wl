@@ -1120,7 +1120,7 @@ chatSubmit0 // endDefinition;
 (*resolveChatEndpoint*)
 
 (* Model families that use the Responses endpoint by default, keyed by service: *)
-$responsesEndpointFamilies = <| "OpenAI" -> { "GPT54Plus" } |>;
+$responsesEndpointFamilies = <| "OpenAI" -> { "GPT54Plus", "GPT56Plus" } |>;
 
 $completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
 $responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
