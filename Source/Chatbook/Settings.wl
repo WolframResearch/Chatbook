@@ -455,6 +455,7 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "MaxContextTokens"           -> 1050000,
     (* Reasoning and tools only coexist on the Responses endpoint: *)
     "Reasoning"                  :> If[ TrueQ @ $responsesEndpointAvailable, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
@@ -463,6 +464,10 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
+$modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
+|>;
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -684,7 +689,7 @@ modelUnsupportedParameters // endDefinition;
 (*resolveReasoningEffort*)
 
 (* Ordered weakest-to-strongest; a family's "ReasoningEfforts" is a subset of this: *)
-$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh" };
+$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "Max" };
 
 resolveReasoningEffort // beginDefinition;
 

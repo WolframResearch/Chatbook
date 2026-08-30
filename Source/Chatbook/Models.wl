@@ -513,8 +513,9 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5.1", ___ } ] ] := "GPT51";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.2", ___ } ] ] := "GPT52";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Chat";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
-chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54Plus";
-chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.4"|"5.5", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.6", ___ } ] ] := "GPT56Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT56Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
