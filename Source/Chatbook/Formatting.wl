@@ -337,10 +337,14 @@ makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
 );
 
 makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
-    Module[ { seconds, label },
+    Module[ { duration, label },
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
+        duration = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, $thinkingEnd - $thinkingStart ];
+        label = If[
+            NumberQ @ duration,
+            trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> thinkingDurationString @ duration |> ],
+            tr @ "FormattingThinkingCompleteFallback"
+        ];
         {
             Cell[
                 BoxData @ templateBox[ { reasoningTextData @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
@@ -457,6 +461,23 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
 ];
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*thinkingDurationString*)
+
+(* Anything under a second rounds to zero, so it is shown to a tenth instead of as "0 seconds". *)
+thinkingDurationString // beginDefinition;
+
+thinkingDurationString[ duration_? NumberQ ] :=
+    With[ { rounded = Round @ duration },
+        If[ rounded > 0,
+            ToString @ rounded,
+            ToString @ NumberForm[ Max[ duration, 0.1 ], { Infinity, 1 } ]
+        ]
+    ];
+
+thinkingDurationString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
