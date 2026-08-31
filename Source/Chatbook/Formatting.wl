@@ -330,7 +330,7 @@ makeResultCell0 // beginDefinition;
 makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
+        BoxData @ templateBox[ { reasoningTextData @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
         "ThinkingOpener",
         Background -> None
     ]
@@ -343,7 +343,7 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
         label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
         {
             Cell[
-                BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
+                BoxData @ templateBox[ { reasoningTextData @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
                 "ThoughtsOpener",
                 Background -> None
             ],
@@ -457,6 +457,18 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
 ];
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningTextData*)
+
+(* Reasoning text is markdown like any other model output, so it is formatted rather than shown raw. *)
+reasoningTextData // beginDefinition;
+
+reasoningTextData[ thoughts_String ] :=
+    TextData @ Flatten @ { reformatTextData @ StringTrim @ thoughts };
+
+reasoningTextData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
