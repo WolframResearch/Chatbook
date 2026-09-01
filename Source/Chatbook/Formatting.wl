@@ -337,13 +337,15 @@ makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
 );
 
 makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
-    Module[ { duration, label },
+    Module[ { duration, time, label },
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
         duration = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, $thinkingEnd - $thinkingStart ];
-        label = If[
-            NumberQ @ duration,
-            trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> thinkingDurationString @ duration |> ],
-            tr @ "FormattingThinkingCompleteFallback"
+        time = If[ NumberQ @ duration, thinkingDurationString @ duration ];
+        (* "seconds" is baked into each localized template, so one second needs its own string: *)
+        label = Which[
+            ! StringQ @ time, tr @ "FormattingThinkingCompleteFallback",
+            time === "1"    , tr @ "FormattingThinkingCompleteSingular",
+            True            , trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> time |> ]
         ];
         {
             Cell[
