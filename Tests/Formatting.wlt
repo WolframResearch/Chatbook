@@ -57,6 +57,21 @@ VerificationTest[
     TestID   -> "TeX-Escaped-Underscore-And-Hash@@Tests/Formatting.wlt:41,1-58,2"
 ]
 
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "Before \\[x^2\\] after" ],
+        TemplateBox[ as_Association, "TeXAssistantTemplate" ] :> as,
+        $Failed,
+        Infinity
+    ],
+    KeyValuePattern @ {
+        "input" -> "x^2",
+        "state" -> "Boxes"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Whitespace-Delimited-Brackets"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Markdown Escapes*)
@@ -131,6 +146,136 @@ VerificationTest[
     TestID   -> "Inline-Code-Ref-Link-Mismatched-Name@@Tests/Formatting.wlt:117,1-132,2"
 ]
 
+(* Combination of link around the function head and escaped brackets around the arguments. *)
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "In Wolfram Language, use [Factorial2](paclet:ref/Factorial2)\\[42\\]." ],
+        s_String /; StringContainsQ[ s, "[42]" ] :> s,
+        Infinity
+    ],
+    { "[42]." },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:135,1-144,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ASCII art versus tool calls*)
+
+VerificationTest[
+    StringReplace[
+        FirstCase[ FormatChatOutput[ "/\\\\_/\\\\\n( o.o )\n > ^ <" ], s_String :> s, $Failed, Infinity ],
+        "\r\n" -> "\n"
+    ],
+    "/\\_/\\\n( o.o )\n > ^ <",
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-ASCII-Art-Backslashes@@Tests/Formatting.wlt:150,1-158,2"
+]
+
+VerificationTest[
+    ToCharacterCode /@ StringReplace[
+        Cases[
+            FormatChatOutput[ "```text\n /\\\\_/\\\\\\\\\n( o.o )\n > ^ <\n```" ],
+            Cell[ code_, "ChatPreformatted", ___ ] :> code,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    ToCharacterCode /@ { " /\\_/\\\\\n( o.o )\n > ^ <" },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:160,1-172,2"
+]
+
+VerificationTest[
+    StringReplace[
+        Cases[
+            FormatChatOutput[ "```python\nprint('\\\\')\n```" ],
+            Cell[ code_, "ExternalLanguage", ___ ] :> code,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    { "print('\\\\')" },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:174,1-186,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "/\\\\_/\\\\\n( o.o )\n > ^ <" ],
+        Cell[ _, "InlineToolCall", ___ ],
+        Infinity
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:188,1-197,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "/external-tool.v1\n{}\nRESULT\nok\nENDRESULT(abc123)" ],
+        Cell[ _, "InlineToolCall", ___ ],
+        Infinity
+    ],
+    { _Cell },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-External-Slash-ToolCall@@Tests/Formatting.wlt:199,1-208,2"
+]
+
+VerificationTest[
+    ToCharacterCode @ StringReplace[
+        FirstCase[
+            FormatChatOutput[ "<thinking>/\\\\_/\\\\\n( o.o )\n > ^ <</thinking>" ],
+            TemplateBox[ { text_String, _ }, "ThoughtsOpener" ] :> text,
+            $Failed,
+            Infinity
+        ],
+        "\r\n" -> "\n"
+    ],
+    ToCharacterCode @ "/\\\\_/\\\\\n( o.o )\n > ^ <",
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:210,1-223,2"
+]
+
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "<THINKING>fish &amp; chips /\\\\_/\\\\</THINKING>" ],
+        TemplateBox[ { text_String, _ }, "ThoughtsOpener" ] :> text,
+        $Failed,
+        Infinity
+    ],
+    "fish & chips /\\\\_/\\\\",
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[
+            "Sure:\n\n```text\n /\\\\_/\\\\\\\\\n( o.o )\n > ^ <\n```\n\nAnother one:\n\n```text\n /\\\\_/\\\\  \n( -.- ) \n > ~ <\n```"
+        ],
+        TextData[ data_ ] :> Replace[
+            data,
+            { ___, "Sure: \n", _Cell, "\nAnother one: \n", _Cell, ___ } :> True
+        ],
+        Infinity
+    ],
+    { True },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:225,1-239,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "Here is some code:\n\n```text\n1+1\n```" ],
+        TextData[ { "Here is some code: \n", Cell[ _, "ChatCodeBlock", ___ ] } ] :> True,
+        Infinity
+    ],
+    { True },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-TextFence-Text-Before-Code@@Tests/Formatting.wlt:241,1-250,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Placeholders*)
@@ -146,7 +291,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:140,1-150,2"
+    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:258,1-268,2"
 ]
 
 (* Placeholder allows arbitrary label expressions, so these are formatted too by wrapping the already-parsed
@@ -160,7 +305,7 @@ VerificationTest[
     ],
     FrameBox @ RowBox @ { "your", " ", "data" },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:154,1-164,2"
+    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:272,1-282,2"
 ]
 
 (* String labels can contain escaped quotes: *)
@@ -176,7 +321,7 @@ VerificationTest[
     ],
     FrameBox[ "\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:167,1-180,2"
+    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:285,1-298,2"
 ]
 
 (* Placeholder takes at most one argument, so empty or multiple arguments are not valid labels and are left as-is: *)
@@ -184,7 +329,7 @@ VerificationTest[
     StringToBoxes[ "f[Placeholder[a, b], Placeholder[]]", "WL" ],
     boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:183,1-188,2"
+    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:301,1-306,2"
 ]
 
 (* The full formatting path renders the placeholder in finished chat output: *)
@@ -197,7 +342,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:191,1-201,2"
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:309,1-319,2"
 ]
 
 (* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
@@ -211,7 +356,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:204,1-215,2"
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:322,1-333,2"
 ]
 
 (* A placeholder that has not finished streaming in yet is still rendered: *)
@@ -222,7 +367,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:218,1-226,2"
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:336,1-344,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
@@ -234,7 +379,7 @@ VerificationTest[
     ],
     "```wl\ndata = Placeholder[\"your data\"];\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:230,1-238,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:348,1-356,2"
 ]
 
 (* Expression labels round-trip through serialization as well: *)
@@ -245,7 +390,7 @@ VerificationTest[
     ],
     "```wl\nDateListPlot[Placeholder[your data]]\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:241,1-249,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:359,1-367,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
