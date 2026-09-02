@@ -3031,7 +3031,7 @@ dynamicTextDisplay[ container_, formatter_, True ] := Module[ { content, data, f
     ];
     conformToExpression @ If[
         dynamicProgressIndicatorQ[ content, formatted ],
-        Grid[ { { formatted }, { chatbookIcon[ "PercolateProgressAnimation", False ] } }, Alignment -> Left ]
+        Grid[ { { formatted }, { Pane[ chatbookIcon[ "PercolateProgressAnimation", False ], Alignment -> Left, ImageSize -> Scaled[ 1 ] ] } }, Alignment -> Left ]
         ,
         formatted
     ]
