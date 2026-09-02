@@ -1505,6 +1505,10 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$endToolRequest    = "\nENDARGUMENTS\nENDTOOLCALL";
+$$textualToolCall   = RegularExpression[
+    "TOOLCALL:(?:(?!\\nENDARGUMENTS\\nENDTOOLCALL)[\\s\\S])*(?:\\nENDARGUMENTS\\nENDTOOLCALL(?:\\nRESULT\\n[\\s\\S]*?ENDRESULT(?:\\([A-Za-z0-9]+\\))?)?|$)"
+];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
@@ -1556,9 +1560,9 @@ $textDataFormatRules = {
             codeBlockCell[ language, code ]
         ]
     ,
-    Longest @ StringExpression[
+    StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+        tool: $$textualToolCall
     ] :> inlineToolCallCell @ tool
     ,
     Longest @ StringExpression[
@@ -1653,6 +1657,7 @@ $dynamicSplitRules = {
     ,
     (* Tool call *)
     s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolRequest ] :> s <> "\n",
     s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] /; simpleToolCallStringQ @ s :> s
 };
 
