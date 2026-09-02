@@ -146,7 +146,7 @@ parsePersona // beginDefinition;
 
 parsePersona[ name_String ] /; MemberQ[ $personaNames, name ] :=
     Append[
-        personaTemplateCell[ name, "Chosen", CreateUUID[ ] ],
+        personaTemplateCell[ name, "Chosen", createUUID[ ] ],
         TaggingRules -> <| "PersonaName" -> name, "PromptArguments" -> { } |>
     ];
 
@@ -163,7 +163,7 @@ parseModifier[ text_String ] := parseModifier @ functionInputSetting @ text;
 
 parseModifier[ { name_String, params___String } ] /; MemberQ[ $modifierNames, name ] :=
     Append[
-        modifierTemplateCell[ name, { params }, "Chosen", CreateUUID[ ] ],
+        modifierTemplateCell[ name, { params }, "Chosen", createUUID[ ] ],
         TaggingRules -> <| "PromptModifierName" -> name, "PromptArguments" -> { params } |>
     ];
 
@@ -180,7 +180,7 @@ parseFunction[ text_String ] := parseFunction @ functionInputSetting @ text;
 
 parseFunction[ { name_String, params___String } ] /; MemberQ[ $functionNames, name ] :=
     Append[
-        functionTemplateCell[ name, { params }, "Chosen", CreateUUID[ ] ],
+        functionTemplateCell[ name, { params }, "Chosen", createUUID[ ] ],
         TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> { params } |>
     ];
 
@@ -277,7 +277,7 @@ insertModifierInputBox[ cell_CellObject ] :=
 insertModifierInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ "", uuid ], "InlineModifierChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -289,7 +289,7 @@ insertModifierInputBox[ args_List, cell_CellObject ] :=
 insertModifierInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ ParentCell @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ args, uuid ], "InlineModifierChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -546,7 +546,7 @@ insertFunctionInputBox[ cell_CellObject ] :=
 insertFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ "", uuid ], "InlineFunctionChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -558,7 +558,7 @@ insertFunctionInputBox[ args_List, cell_CellObject ] :=
 insertFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ ParentCell @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ args, uuid ], "InlineFunctionChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -825,7 +825,7 @@ insertTrailingFunctionInputBox[ cell_CellObject ] :=
 insertTrailingFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[
             BoxData @ ToBoxes @ trailingFunctionInputBox[ "", uuid ],
             "InlineTrailingFunctionChooser",
@@ -841,7 +841,7 @@ insertTrailingFunctionInputBox[ args_List, cell_CellObject ] :=
 insertTrailingFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ ParentCell @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[
             BoxData @ ToBoxes @ trailingFunctionInputBox[ args, uuid ],
             "InlineTrailingFunctionChooser",
@@ -1083,7 +1083,7 @@ insertPersonaInputBox[ cell_CellObject ] := insertPersonaInputBox[ cell, parentN
 insertPersonaInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ "", uuid ], "InlinePersonaChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -1094,7 +1094,7 @@ insertPersonaInputBox[ name_String, cell_CellObject ] := insertPersonaInputBox[ 
 insertPersonaInputBox[ name_String, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         resolveInlineReferences @ ParentCell @ parent;
-        uuid = CreateUUID[ ];
+        uuid = createUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ name, uuid ], "InlinePersonaChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -1473,7 +1473,7 @@ insertPersonaTemplate[ cell_CellObject ] := insertPersonaTemplate[ cell, parentN
 insertPersonaTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = personaTemplateCell[ "", "Input", uuid ];
 		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
@@ -1485,7 +1485,7 @@ insertPersonaTemplate[ name_String, cell_CellObject ] := insertPersonaTemplate[ 
 insertPersonaTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = personaTemplateCell[ name, "Input", uuid ];
 		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -1679,7 +1679,7 @@ insertModifierTemplate[ cell_CellObject ] :=
 insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = modifierTemplateCell[ "", {}, "Input", uuid ];
 		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
@@ -1691,7 +1691,7 @@ insertModifierTemplate[ name_String, cell_CellObject ] := insertModifierTemplate
 insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = modifierTemplateCell[ name, {}, "Input", uuid ];
 		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -1900,7 +1900,7 @@ insertFunctionTemplate[ cell_CellObject ] :=
 insertFunctionTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = functionTemplateCell[ "", {}, "Input", uuid ];
 		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
@@ -1912,7 +1912,7 @@ insertFunctionTemplate[ name_String, cell_CellObject ] := insertFunctionTemplate
 insertFunctionTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = functionTemplateCell[ name, {}, "Input", uuid ];
 		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -2088,7 +2088,7 @@ insertWLTemplate[ cell_CellObject ] :=
 insertWLTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = wlTemplateCell[ "", "Input", uuid ];
 		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
@@ -2100,7 +2100,7 @@ insertWLTemplate[ name_String, cell_CellObject ] := insertWLTemplate[ name, cell
 insertWLTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
-		uuid = CreateUUID[ ];
+		uuid = createUUID[ ];
 		cellExpr = wlTemplateCell[ name, "Input", uuid ];
 		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -2117,7 +2117,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                 Style[ tr[ "InlineReferencesInsertLabel" ], "Text" ],
                 Button[
                     First @ personaTemplateBoxes[ 1, "Persona", "Chosen", "PersonaInsertButton" ],
-                    With[ { name = InputString[ tr[ "InlineReferencesInsertPersonaPrompt" ] ], uuid = CreateUUID[ ] },
+                    With[ { name = InputString[ tr[ "InlineReferencesInsertPersonaPrompt" ] ], uuid = createUUID[ ] },
                         If[ MemberQ[ $personaNames, name ],
                             NotebookWrite[
                                 EvaluationNotebook[ ],
@@ -2143,7 +2143,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                 ],
                 Button[
                     First @ modifierTemplateBoxes[ 1, "Modifier", { }, "Chosen", "ModifierInsertButton" ],
-                    With[ { s = InputString[ tr[ "InlineReferencesInsertModifierPrompt" ] ], uuid = CreateUUID[ ] },
+                    With[ { s = InputString[ tr[ "InlineReferencesInsertModifierPrompt" ] ], uuid = createUUID[ ] },
                         Replace[
                             functionInputSetting @ s,
                             { name_String, args___String } :>
@@ -2172,7 +2172,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                 ],
                 Button[
                     First @ functionTemplateBoxes[ 1, "Function", { }, "Chosen", "FunctionInsertButton" ],
-                    With[ { s = InputString[ tr[ "InlineReferencesInsertFunctionPrompt" ] ], uuid = CreateUUID[ ] },
+                    With[ { s = InputString[ tr[ "InlineReferencesInsertFunctionPrompt" ] ], uuid = createUUID[ ] },
                         Replace[
                             functionInputSetting @ s,
                             { name_String, args___String } :>

@@ -3,6 +3,7 @@
 .mcp.json
 .obsidian/
 *StackHistory.wxf
+bash.exe.stackdump
 Assets/Snippets/Streamable/*
 Assets/VectorDatabases/**/*.usearch
 Assets/VectorDatabases/**/*.wl
@@ -10,7 +11,9 @@ Assets/VectorDatabases/**/*.wxf
 build
 Developer/VectorDatabases/SourceData/*.jsonl
 Source/Chatbook/64Bit/Chatbook.mx
+
 # IntelliJ IDEA project metadata
 .idea
+
 # Eclipse project metadata
 .project

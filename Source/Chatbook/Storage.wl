@@ -334,7 +334,7 @@ ensureConversationUUID[ nbo_NotebookObject, settings0_Association ] := Enclose[
         settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ appContainer, settings0 |>, AssociationQ, "Settings" ];
         uuid = settings[ "ConversationUUID" ];
         If[ ! StringQ @ uuid,
-            uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+            uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
             settings[ "ConversationUUID" ] = uuid;
             ConfirmBy[ CurrentChatSettings[ appContainer, "ConversationUUID" ] = uuid, StringQ, "SetUUID" ];
         ];
@@ -677,7 +677,7 @@ getChatMetadata // endDefinition;
 (*getChatUUID*)
 getChatUUID // beginDefinition;
 getChatUUID[ KeyValuePattern[ "ConversationUUID" -> id_String ] ] := id;
-getChatUUID[ _Association ] := CreateUUID[ ];
+getChatUUID[ _Association ] := createUUID[ ];
 getChatUUID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

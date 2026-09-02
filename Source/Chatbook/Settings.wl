@@ -48,7 +48,7 @@ $defaultChatSettings = <|
     "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
-    "LLMEvaluator"                   -> "CodeAssistant",
+    "LLMEvaluator"                   -> "WolframAIAssistant",
     "MaxCellStringLength"            -> Automatic,
     "MaxContextTokens"               -> Automatic,
     "MaxOutputCellStringLength"      -> Automatic,
@@ -69,6 +69,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> Automatic,
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -78,7 +79,7 @@ $defaultChatSettings = <|
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
-    "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
+    "TabbedOutput"                   -> Automatic, (* TODO: define a "MaxOutputPages" setting *) (* Cloud is False *)
     "TargetCloudObject"              -> Automatic,
     "Temperature"                    -> Automatic,
     "TimeConstraint"                 -> Automatic,
@@ -151,6 +152,7 @@ $modelAutoSettings = <| |>;
 $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
+    "PresencePenalty"           -> Missing[ "NotSupported" ],
     "ReplaceUnicodeCharacters"  -> True,
     "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
     "ToolMethod"                -> "Service"
@@ -174,6 +176,11 @@ $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
 $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "MaxContextTokens" -> 200000,
     "Multimodal"       -> True
+|>;
+
+$modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -237,8 +244,9 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "ToolResponseRole"  -> "User",
-    "ToolResponseStyle" -> "SystemTags"
+    "EndToken"          -> None,
+    "ToolMethod"        -> "Service",
+    "PresencePenalty"   -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -262,6 +270,95 @@ $modelAutoSettings[ "TogetherAI" ] = <| |>;
 
 $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
     "ToolResponseRole" -> "User"
+|>;
+
+$modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
+    (* "Reasoning" -> <| "enabled" -> False |> *) (* Waiting on bug 474121 *)
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*OpenRouter*)
+$modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+(*
+  * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
+    * Reasoning is on by default, only supports effort level "high" and "xhigh".
+    * To turn off, use effort level "none": "Reasoning" -> <| "effort" -> "none" |>
+
+  * 2026-05-05: Tried turning reasoning on with
+        "Reasoning" -> <| "effort" -> "high" |>
+    but the returned reasoning markup is not consistently cleaned. It seems Chatbook only handles well-formed think tags,
+    so sometimes malformed leftover think tags such as `hink>` leak into visible output.
+
+    The easy mitigation seems to be using
+        "Reasoning" -> <| "effort" -> "none" |>
+*)
+$modelAutoSettings[ "OpenRouter", "DeepSeekFlash" ] = <|
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
+$modelAutoSettings[ "OpenRouter", "KimiK25" ] = <|
+    "ProviderPreferences" -> <|
+        (* Some providers seem to have misconfigured inference stacks for this model,
+           so we specify that OpenRouter should avoid selecting them. *)
+        "ignore" -> {
+            (* no response after tool call *)
+            "deepinfra",
+            "venice",
+
+            (* stop tokens don't work *)
+            "cloudflare",
+            "siliconflow",
+            "atlas-cloud",
+
+            (* repeated punctuation issue across line breaks *)
+            "novita"
+        }
+    |>,
+    "Reasoning" -> <| "effort" -> "none" |>
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xAI*)
+(*
+  * Grok model doc:
+    * Grok-4.2: https://docs.x.ai/developers/models/grok-4.2
+    * Grok-4: https://docs.x.ai/developers/models/grok-4
+      * changes compared to Grok-3: https://web.archive.org/web/20260402072522/https://docs.x.ai/developers/models
+    * Grok-3: https://docs.x.ai/developers/models/grok-3
+    * streaming: https://web.archive.org/web/20260402153607/https://docs.x.ai/developers/model-capabilities/text/streaming
+*)
+
+$modelAutoSettings[ "xAI" ] = <| |>;
+
+$modelAutoSettings[ "xAI", "Grok3" ] = <|
+    "MaxContextTokens" -> 131072,
+    "Multimodal"       -> False,
+    "Reasoning"        -> False,
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok4" ] = <|
+    "FrequencyPenalty" -> Missing[ "NotSupported" ],
+    "MaxContextTokens" -> 256000,
+    "Multimodal"       -> True,
+    "PresencePenalty"  -> Missing[ "NotSupported" ],
+    "Reasoning"        -> Missing[ "NotSupported" ], (* TODO: "Grok-4.*-non-reasoning" models need to be treated separately? *)
+    "StopTokens"       -> Missing[ "NotSupported" ],
+    "ToolsEnabled"     -> True
+|>;
+
+$modelAutoSettings[ "xAI", "Grok42" ] = <|
+    $modelAutoSettings[ "xAI", "Grok4" ],
+    "MaxContextTokens" -> 2000000
+|>;
+
+$modelAutoSettings[ "xAI", Automatic ] = <|
+    "EndToken"         -> None,
+    "ForceSynchronous" -> True,
+    "ToolMethod"       -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -331,14 +428,18 @@ $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
 |>;
 
-$modelAutoSettings[ Automatic, "GPT54" ] = <|
+$modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
     "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
-    "Reasoning"                  -> Missing[ "NotSupported" ], (* Doesn't work with tools in the completions endpoint *)
+    "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
+|>;
+
+$modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
+    "MaxContextTokens" -> 400000
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
@@ -400,6 +501,32 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(* DeepSeek *)
+$modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
+    "EndToken"               -> None,
+    "HybridToolMethod"       -> False,
+    "MaxContextTokens"       -> 1048576,
+    "Multimodal"             -> False,
+    "ToolCallRetryMessage"   -> False,
+    "ToolMethod"             -> "Simple",
+    "ToolResponseRole"       -> "User"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(* Kimi *)
+$modelAutoSettings[ Automatic, "KimiK25" ] = <|
+    "EnabledBasePrompts"   -> { "FunctionRepositoryIntegration", "FunctionRepositoryFunctionSyntax", "ExpressionURIResults" },
+    "EndToken"             -> None,
+    "HybridToolMethod"     -> False,
+    "MaxContextTokens"     -> 262144,
+    "Multimodal"           -> True,
+    "ToolCallRetryMessage" -> False,
+    "ToolMethod"           -> "Simple"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
     "ToolResponseRole" -> "User"
@@ -423,6 +550,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
@@ -449,7 +577,7 @@ autoModelSetting[ model0_Association, key_String ] :=
         ]
     ];
 
-autoModelSetting[ service_String, name_String, id_String, family_String, key_String ] :=
+autoModelSetting[ service_String, name_, id_, family_, key_String ] :=
     autoModelSetting[ service, name, id, family, key ] =
         FirstCase[
             Unevaluated @ {
@@ -507,6 +635,14 @@ dropModelUnsupportedParameters[ model_Association, config_Association ] := Enclo
     throwInternalFailure
 ];
 
+dropModelUnsupportedParameters[ Automatic, config_Association ] :=
+    dropModelUnsupportedParameters[ config[ "Model" ], config ];
+
+dropModelUnsupportedParameters[ model0: Except[ _Association ], config_Association ] :=
+    With[ { model = resolveFullModelSpec @ model0 },
+        dropModelUnsupportedParameters[ model, config ] /; AssociationQ @ model
+    ];
+
 dropModelUnsupportedParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -528,12 +664,7 @@ modelUnsupportedParameters // endDefinition;
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-
-$DefaultModel :=
-    If[ $VersionNumber >= 14.1,
-        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
-    ];
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -679,6 +810,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
             $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
+            $serviceCaller           = resolved[ "ServiceCaller" ];
 
             If[ resolved[ "ShowProgressText" ] || resolved[ "ForceSynchronous" ], $showProgressText = True ];
 
@@ -851,6 +983,7 @@ resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TabbedOutput"                   ] := ! $cloudNotebooks;
 resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
 resolveAutoSetting0[ as_, "Tokenizer"                      ] := getTokenizer @ as;
 resolveAutoSetting0[ as_, "TokenizerName"                  ] := getTokenizerName @ as;
@@ -1071,7 +1204,7 @@ autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
 
 autoStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
-        methodStopTokens @ as[ "ToolMethod" ],
+        methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
         If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
     },
@@ -1084,10 +1217,10 @@ autoStopTokens // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
 methodStopTokens // beginDefinition;
-methodStopTokens[ "Simple"         ] := Select[ { "\n/exec", $endToken }, StringQ ];
-methodStopTokens[ "Service"        ] := Select[ { $endToken }, StringQ ];
-methodStopTokens[ "Textual"|"JSON" ] := Select[ { "ENDTOOLCALL", $endToken }, StringQ ];
-methodStopTokens[ _                ] := Select[ { "ENDTOOLCALL", "\n/exec", $endToken }, StringQ ];
+methodStopTokens[ "Simple"        , end_ ] := Select[ { "\n/exec", end }, StringQ ];
+methodStopTokens[ "Service"       , end_ ] := Select[ { end }, StringQ ];
+methodStopTokens[ "Textual"|"JSON", end_ ] := Select[ { "ENDTOOLCALL", end }, StringQ ];
+methodStopTokens[ _               , end_ ] := Select[ { "ENDTOOLCALL", "\n/exec", end }, StringQ ];
 methodStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1129,6 +1262,7 @@ autoMaxContextTokens[ as_Association? llmKitQ ] := Min[ 2^16, autoMaxContextToke
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
 autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
+autoMaxContextTokens[ _, _, Automatic ] := 2^16;
 autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
@@ -1147,7 +1281,7 @@ autoMaxContextTokens0[ { ___, "chat", "bison", "001"        , ___ } ] := 20000;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro", "vision", ___ } ] := 12288;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
 autoMaxContextTokens0[ { ___, "phi3.5"                      , ___ } ] := 2^17;
-autoMaxContextTokens0[ _List                                        ] := 2^12;
+autoMaxContextTokens0[ _List                                        ] := 2^16;
 autoMaxContextTokens0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1182,7 +1316,7 @@ serviceMaxContextTokens // endDefinition;
 autoMaxTokens // beginDefinition;
 autoMaxTokens[ as_Association ] := autoMaxTokens[ as, as[ "Model" ] ];
 autoMaxTokens[ as_, model_ ] := autoMaxTokens[ as, model, toModelName @ model ];
-autoMaxTokens[ as_, model_, name_String ] := Lookup[ $maxTokensTable, name, Automatic ];
+autoMaxTokens[ as_, model_, name: _String|Automatic ] := Lookup[ $maxTokensTable, name, Automatic ];
 autoMaxTokens // endDefinition;
 
 (* FIXME: this should be something queryable from LLMServices: *)
@@ -1195,58 +1329,8 @@ $maxTokensTable = <|
 (* ::Subsubsection::Closed:: *)
 (*multimodalQ*)
 multimodalQ // beginDefinition;
-multimodalQ[ as_Association ] := multimodalQ[ as, multimodalModelQ @ as[ "Model" ], as[ "EnableLLMServices" ] ];
-multimodalQ[ as_, True , False ] := True;
-multimodalQ[ as_, True , True  ] := multimodalPacletsAvailable[ ];
-multimodalQ[ as_, False, _     ] := False;
+multimodalQ[ as_Association ] := multimodalModelQ @ Lookup[ as, "Model", "UnknownModel" ];
 multimodalQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*$multimodalPacletsAvailable*)
-multimodalPacletsAvailable // beginDefinition;
-
-multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
-    initTools[ ];
-    multimodalPacletsAvailable[
-        PacletObject[ "Wolfram/LLMFunctions"     ],
-        PacletObject[ "ServiceConnection_OpenAI" ]
-    ]
-);
-
-multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[
-        PacletNewerQ[ llmFunctions, "1.2.4" ],
-        Or[ PacletNewerQ[ openAI, "13.3.18" ],
-            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
-        ]
-    ];
-
-multimodalPacletsAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*multimodalOpenAIQ*)
-multimodalOpenAIQ // beginDefinition;
-
-multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
-    Catch @ Module[ { dir, file, multimodal },
-
-        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
-
-        multimodal = WithCleanup[
-            Quiet @ Close @ file,
-            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
-            Quiet @ Close @ file
-        ];
-
-        StringQ @ multimodal
-    ],
-    throwInternalFailure
-];
-
-multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -13,12 +13,79 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$defaultLLMKitService  := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
-$defaultLLMKitModelName = "gpt-4.1-2025-04-14";
+(* Add additional supported models here as needed: *)
+$llmKitPreferredModels = <|
+    "Pro"      -> { "gpt-5.4" },
+    "Research" -> { "gpt-5.4" },
+    "Basic"    -> { "gpt-5.4" }
+|>;
+
+$$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
+
+$defaultLLMKitService   := Replace[ $llmKitService, Except[ _String ] :> "AzureOpenAI" ];
+$defaultLLMKitModelName := defaultLLMKitModelName[ ];
+$fallbackLLMKitModelName = "gpt-5.4-2026-03-05";
 
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
 $defaultModelIcon = "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LLMKit*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*defaultLLMKitModelName*)
+defaultLLMKitModelName // beginDefinition;
+
+defaultLLMKitModelName[ ] :=
+    defaultLLMKitModelName @ getLLMKitInfo[ ];
+
+defaultLLMKitModelName[ None ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName[ as_Association ] :=
+    defaultLLMKitModelName[ as[ "accessLevel" ], as[ "availableModels" ] ];
+
+defaultLLMKitModelName[ level: $$llmKitAccessLevel, models_ ] := Enclose[
+    ConfirmBy[ chooseFirstAvailableModel[ level, models ], StringQ, "ModelName" ],
+    throwInternalFailure
+];
+
+defaultLLMKitModelName[ _, _ ] :=
+    $fallbackLLMKitModelName;
+
+defaultLLMKitModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseFirstAvailableModel*)
+chooseFirstAvailableModel // beginDefinition;
+
+chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
+    Module[ { preferred, available },
+        preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
+        available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
+        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+    ],
+    throwInternalFailure
+];
+
+chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractModelNames*)
+extractModelNames // beginDefinition;
+extractModelNames[ _Missing ] := { };
+extractModelNames[ models_List ] := Flatten[ extractModelNames /@ models ];
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_List ] ] := extractModelNames @ models;
+extractModelNames[ KeyValuePattern[ "ChatCompletion" -> models_Association ] ] := extractModelNames @ Values @ models;
+extractModelNames[ KeyValuePattern @ { "model" -> name_String, "type" -> "ChatCompletion" } ] := name;
+extractModelNames[ KeyValuePattern[ "type" -> _ ] ] := Nothing;
+extractModelNames[ name_String ] := name;
+extractModelNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -146,7 +213,9 @@ toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_
 toModelName[ KeyValuePattern[ "Name"|"Model" -> model_ ] ] :=
     toModelName @ model;
 
-toModelName[ { service_String, name_String } ] := toModelName @ name;
+toModelName[ { service_String, name_ } ] := toModelName @ name;
+
+toModelName[ Automatic ] := Automatic;
 
 toModelName[ name_String? StringQ ] := toModelName[ name ] =
     If[ StringMatchQ[ name, "ft:"~~__~~":"~~__ ],
@@ -210,9 +279,12 @@ multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" 
 multimodalModelQ[ name_String? StringQ ] :=
     StringContainsQ[ toModelName @ name, WordBoundary~~"vision"~~WordBoundary, IgnoreCase -> True ];
 
+multimodalModelQ[ Automatic ] :=
+    False;
+
 multimodalModelQ[ other_ ] :=
     With[ { name = toModelName @ other },
-        multimodalModelQ @ name /; StringQ @ name
+        multimodalModelQ @ name /; MatchQ[ name, _String|Automatic ]
     ];
 
 multimodalModelQ // endDefinition;
@@ -376,25 +448,25 @@ makeBaseID // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*capitalize*)
 capitalize // beginDefinition;
-
 capitalize[ { } ] := { };
-
-capitalize[ str: _String | { __String } ] := StringReplace[
-    Capitalize @ str,
-    {
-        WordBoundary~~"ai"~~WordBoundary -> "AI",
-        WordBoundary~~"dbrx"~~WordBoundary -> "Databricks",
-        WordBoundary~~"dpo"~~WordBoundary -> "DPO",
-        WordBoundary~~"hf"~~WordBoundary -> "HF",
-        WordBoundary~~"llm"~~WordBoundary -> "LLM",
-        WordBoundary~~"lm"~~WordBoundary -> "LM",
-        WordBoundary~~"vl"~~WordBoundary -> "VL",
-        WordBoundary~~"llama"~~WordBoundary -> "Llama"
-    },
-    IgnoreCase -> True
-];
-
+capitalize[ str: _String | { __String } ] := StringReplace[ Capitalize @ str, $capitalizeRules, IgnoreCase -> True ];
 capitalize // endDefinition;
+
+$capitalizeRules = MapAt[
+    WordBoundary ~~ # ~~ WordBoundary &,
+    {
+        "ai"         -> "AI",
+        "dbrx"       -> "Databricks",
+        "dpo"        -> "DPO",
+        "hf"         -> "HF",
+        "llama"      -> "Llama",
+        "llm"        -> "LLM",
+        "lm"         -> "LM",
+        "moonshotAI" -> "MoonshotAI",
+        "vl"         -> "VL"
+    },
+    { All, 1 }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -441,12 +513,13 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5.1", ___ } ] ] := "GPT51";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.2", ___ } ] ] := "GPT52";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Chat";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
-chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54";
-chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT54";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT54Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Opus", "4", "7"|"8", ___ } ] ] := "ClaudeOpus47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
 
 chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";
@@ -457,6 +530,11 @@ chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "V3"      , $$versionOrPara
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Reasoner", $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "R1"      , $$versionOrParams } ] ] := "DeepSeekReasoner";
 chooseModelFamily0[ wordsPattern[ { "DeepSeek", ___, "Coder"   , $$versionOrParams } ] ] := "DeepSeekCoder";
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", $$version, "Flash" } ] ] := "DeepSeekFlash";
+
+chooseModelFamily0[ wordsPattern[ { "Grok", "3", ___ } ] ] := "Grok3";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4.2" | "4.20", ___ } ] ] := "Grok42";
+chooseModelFamily0[ wordsPattern[ { "Grok", "4", ___ } ] ] := "Grok4";
 
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
 chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";
@@ -465,6 +543,8 @@ chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen"
 chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
 chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
 chooseModelFamily0[ wordsPattern[ "Mixtral"   ~~ $$versionOrParams ] ] := "Mistral";
+
+chooseModelFamily0[ wordsPattern[ { ___, "Kimi", "K2.5", ___ } ] ] := "KimiK25";
 
 chooseModelFamily0[ _String ] := None;
 
@@ -724,15 +804,12 @@ standardizeModelData // endDefinition;
     Choose a default initial model according to the following rules:
         1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
         2. If the registered service specifies a "DefaultModel" property, we'll use that.
-        3. If the model list is already cached for the service, we'll use the first model in that list.
-        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
+        3. Otherwise, give Automatic to let the service connection logic handle it.
 *)
 chooseDefaultModelName // beginDefinition;
 chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
 chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
 chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
-chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
-chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
 chooseDefaultModelName[ service_ ] := Automatic;
 chooseDefaultModelName // endDefinition;
 
@@ -766,13 +843,10 @@ resolveFullModelSpec[ model: KeyValuePattern[ "Service" -> "LLMKit" ] ] :=
     |>;
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
-    Catch @ Module[ { default, models, name },
+    Catch @ Module[ { default },
         default = ConfirmMatch[ chooseDefaultModelName @ service, Automatic | _String, "Default" ];
         If[ StringQ @ default, Throw @ standardizeModelData @ <| model, "Name" -> default |> ];
-        models = ConfirmMatch[ getServiceModelList @ service, _List | Missing[ "NotConnected" ], "Models" ];
-        If[ MissingQ @ models, throwTop @ $Canceled ];
-        name = ConfirmBy[ chooseDefaultModelName @ models, StringQ, "ResolvedName" ];
-        standardizeModelData @ <| model, "Name" -> name |>
+        model
     ],
     throwInternalFailure
 ];

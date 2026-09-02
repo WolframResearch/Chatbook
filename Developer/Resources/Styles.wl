@@ -4,6 +4,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
 color = Wolfram`Chatbook`Common`color;
+System`CellFrameRoundingRadius; (* in case stylesheets build prior to 15.0 *)
 
 
 (* ::Section::Closed:: *)
@@ -28,7 +29,6 @@ Cell[
 
     CellTrayWidgets -> <|
         "GearMenu"     -> <| "Condition" -> False |>,
-        "ChatIncluded" -> <| "Condition" -> False, "Content" -> $includedCellWidget |>,
         "ChatWidget"   -> <|
             "Type"    -> "Focus",
             "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatWidgetButton" ], "ChatWidget" ]
@@ -39,13 +39,7 @@ Cell[
         "CellBracket" -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellBracket" ],
         "CellGroup"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellGroup" ],
         "CellRange"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellRange" ]
-    |>,
-
-    PrivateCellOptions -> {
-        "AccentStyle" -> {
-            CellTrayWidgets -> <| "ChatIncluded" -> <| "Condition" -> True |> |>
-        }
-    }
+    |>
 ]
 
 
@@ -129,9 +123,10 @@ Cell[
     CellFrame                -> 1.75,
     CellFrameColor           -> color @ "FramedChatCellFrame",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
-    System`CellFrameRoundingRadius -> 8,
+    CellFrameRoundingRadius  -> 8,
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
+    ShowGroupOpener          -> { },
     TaggingRules             -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
@@ -195,19 +190,6 @@ Cell[
         { "KeyDown", "\\" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "WLTemplate", $CellContext`cell ]
-        ]
-        ,
-        (* NOTE: MouseEntered/Exited actions are removed from the version of this style in CoreExtensions.nb, see StyleSheetBuilder.wl. *)
-        (* Highlight cells that will be included in chat context: *)
-        "MouseEntered" :> With[ { $CellContext`cell = EvaluationCell[ ] },
-            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AccentIncludedCells", $CellContext`cell ]
-        ]
-        ,
-        (* Remove cell highlights: *)
-        "MouseExited" :> With[ { $CellContext`cell = EvaluationCell[ ] },
-            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "RemoveCellAccents", $CellContext`cell ]
         ]
         ,
         (* the following three events swap the effects of Enter and Shift+Enter, PassEventsDown -> False is also needed *)

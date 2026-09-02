@@ -24,6 +24,7 @@ $instructions       = None;
 $reinterpret        = False;
 $showSteps          = True;
 $includeWLResults  := TrueQ @ toolSelectedQ[ "WolframLanguageEvaluator" ];
+$docsProvided       = False;
 
 $timeouts = <|
     "URLSubmit"   -> 25,
@@ -66,6 +67,7 @@ $$ignoredXMLTag = Alternatives[
     "sources",
     "states",
     "stepbystepcontenttype",
+    "subpodcustomizationdata",
     "userinfoused"
 ];
 (* cSpell: enable *)
@@ -93,18 +95,19 @@ Chatbook::UnhandledWolframAlphaXMLTag = "Unhandled Wolfram Alpha XML tag: ``";
 (*RelatedWolframAlphaResults*)
 RelatedWolframAlphaResults // beginDefinition;
 RelatedWolframAlphaResults // Options = {
-    "AppID"             -> Automatic,
-    "CacheResults"      -> False,
-    "Debug"             -> False,
-    "IncludeWLResults"  -> Automatic,
-    "Instructions"      -> None,
-    "LLMEvaluator"      -> Automatic,
-    "MaxItems"          -> Automatic,
-    "PromptHeader"      -> Automatic,
-    "RandomQueryCount"  -> Automatic,
-    "Reinterpret"       -> False,
-    "RelatedQueryCount" -> Automatic,
-    "SampleQueryCount"  -> Automatic
+    "AppID"                 -> Automatic,
+    "CacheResults"          -> False,
+    "Debug"                 -> False,
+    "DocumentationProvided" -> False, (* Set to True if RelatedDocumentation is also being provided separately *)
+    "IncludeWLResults"      -> Automatic,
+    "Instructions"          -> None,
+    "LLMEvaluator"          -> Automatic,
+    "MaxItems"              -> Automatic,
+    "PromptHeader"          -> Automatic,
+    "RandomQueryCount"      -> Automatic,
+    "Reinterpret"           -> False,
+    "RelatedQueryCount"     -> Automatic,
+    "SampleQueryCount"      -> Automatic
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -159,12 +162,14 @@ RelatedWolframAlphaResults[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ 
             $generatorLLMConfig = Replace[ OptionValue[ "LLMEvaluator" ], $$unspecified :> $generatorLLMConfig ],
             $usePromptHeader    = Replace[ OptionValue[ "PromptHeader" ], $$unspecified :> $usePromptHeader ],
             $includeWLResults   = Replace[ OptionValue[ "IncludeWLResults" ], $$unspecified :> $includeWLResults ],
+            $docsProvided       = Replace[ OptionValue[ "DocumentationProvided" ], $$unspecified :> $docsProvided ],
             $instructions       = OptionValue[ "Instructions" ],
             $maxItems           = n,
             $sampleQueries      = None,
             $sampleQueryCount   = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> 0 ],
             $reinterpret        = Replace[ OptionValue[ "Reinterpret" ], $$unspecified :> $reinterpret ]
         },
+        If[ $docsProvided, $includeWLResults = True ];
         relatedWolframAlphaResultsPrompt[
             ensureChatMessages @ prompt,
             n,
@@ -200,12 +205,14 @@ RelatedWolframAlphaResults[ prompt_, "FullData", n_Integer, opts: OptionsPattern
             $generatorLLMConfig = Replace[ OptionValue[ "LLMEvaluator" ], $$unspecified :> $generatorLLMConfig ],
             $usePromptHeader    = Replace[ OptionValue[ "PromptHeader" ], $$unspecified :> $usePromptHeader ],
             $includeWLResults   = Replace[ OptionValue[ "IncludeWLResults" ], $$unspecified :> $includeWLResults ],
+            $docsProvided       = Replace[ OptionValue[ "DocumentationProvided" ], $$unspecified :> $docsProvided ],
             $instructions       = OptionValue[ "Instructions" ],
             $maxItems           = n,
             $sampleQueries      = None,
             $sampleQueryCount   = Replace[ OptionValue[ "SampleQueryCount" ], $$unspecified|None :> All ],
             $reinterpret        = Replace[ OptionValue[ "Reinterpret" ], $$unspecified :> $reinterpret ]
         },
+        If[ $docsProvided, $includeWLResults = True ];
         relatedWolframAlphaResultsFullData[
             ensureChatMessages @ prompt,
             n,
@@ -237,6 +244,7 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 `Examples`
 </examples>
 
+All queries should be written in English.
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
 e.g. casual conversation.
@@ -251,10 +259,15 @@ Here are some examples of valid Wolfram Alpha queries to give you a sense of wha
 `Examples`
 </examples>
 
+All queries should be written in English.
 Reply with up to `MaxItems` queries each on a separate line and nothing else. \
 Reply with [NONE] if the user's prompt is completely unrelated to anything computational or knowledge-based, \
 e.g. casual conversation.
-Reply with [WL] if the user's prompt would be better answered with Wolfram Language documentation instead.
+Reply with [WL] if the user's prompt would be better answered with Wolfram documentation instead, e.g.
+* asking *how* to do something
+* concerns Wolfram Language functions, syntax, or other programming concepts
+* explicitly asking about Wolfram Language or other Wolfram products
+* looking for examples rather than a concrete answer
 
 `Instructions`" ];
 
@@ -379,6 +392,7 @@ makeMessagePairs // endDefinition;
 (*usingDocumentationQ*)
 usingDocumentationQ // beginDefinition;
 usingDocumentationQ[ ] := usingDocumentationQ @ $ChatHandlerData[ "ChatNotebookSettings", "PromptGenerators" ];
+usingDocumentationQ[ _ ] /; $docsProvided := True;
 usingDocumentationQ[ generators_List ] := AnyTrue[ generators, usingDocumentationQ ];
 usingDocumentationQ[ HoldPattern @ LLMPromptGenerator[ as_, ___ ] ] := usingDocumentationQ @ as;
 usingDocumentationQ[ KeyValuePattern[ "Name" -> name_String ] ] := usingDocumentationQ @ name;
@@ -991,7 +1005,8 @@ submitXMLRequest[ assoc_, query_String ] /; StringQ @ $wolframAlphaAppID := Encl
                     "podtimeout"    -> $timeouts[ "AlphaPod"    ],
                     "formattimeout" -> $timeouts[ "AlphaFormat" ],
                     "parsetimeout"  -> $timeouts[ "AlphaParse"  ],
-                    "totaltimeout"  -> $timeouts[ "AlphaTotal"  ]
+                    "totaltimeout"  -> $timeouts[ "AlphaTotal"  ],
+                    getGeoIPRule[ ]
                 |>
             |>
         ];
@@ -1022,7 +1037,7 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
                 query,
                 "URL",
                 PodStates -> $podStates,
-                Method    -> { "Formats" -> $formats }
+                Method    -> { "Formats" -> $formats, "Reinterpret" -> $reinterpret }
             ],
             StringQ,
             "URL"
@@ -1043,6 +1058,29 @@ submitXMLRequest[ assoc_, query_String ] := Enclose[
 ];
 
 submitXMLRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getGeoIPRule*)
+getGeoIPRule // beginDefinition;
+getGeoIPRule[ ] :=
+    Which[
+        StringQ[ $RequesterAddress ],
+        "ip" -> $RequesterAddress
+        ,
+        MatchQ[ $GeoLocation, _GeoPosition | {_Integer | _Real, _Integer | _Real} ],
+        "latlong" -> StringJoin @ Riffle[ ToString /@ DecimalForm /@ Replace[$GeoLocation,
+                        p_GeoPosition :> p[ "LatitudeLongitude" ]
+                    ], "," ]
+        ,
+        True,
+        (* I could imagine choosing an external IPv4 address via
+             "ip" -> SelectFirst[$MachineAddresses, StringFreeQ[#, "::"] && !StringStartsQ[#, "10." | "192.168"]&]
+           but I can also imagine that would always be Missing because the router assigns an internal address.
+           In this case, the Alpha server can use GeoIP based on the remote IPAddress *)
+        "ip" -> Missing[ "NotApplicable" ]
+    ]
+getGeoIPRule // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1314,6 +1352,11 @@ parsePodContent[ XMLElement[ "mathml", _, xml_ ] ] :=
 
 parsePodContent[ XMLElement[ $$ignoredXMLTag, _, _ ] ] :=
     { };
+
+parsePodContent[ XMLElement[ unhandledTag_String, _, _ ] ] := (
+    If[ TrueQ @ $wolframAlphaDebug, messagePrint[ "UnhandledWolframAlphaXMLTag", unhandledTag ] ];
+    { }
+);
 
 parsePodContent[ _String ] :=
     { };

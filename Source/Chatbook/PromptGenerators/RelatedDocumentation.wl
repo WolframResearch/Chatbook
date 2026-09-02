@@ -50,21 +50,26 @@ $sourceAliases = <|
 
 $maxSelectedSources       = 3;
 $minUnfilteredItems       = 20;
-$unfilteredItemsPerSource = 50;
+$unfilteredItemsPerSource = 25;
 
-$filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+$filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
+
+$taskPrompt = "\
+Your task is to read a chat transcript and select relevant Wolfram Language documentation snippets to help answer the \
+user's latest message.";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 14.3, "14-3-0-11967661", "14-2-0-11168610" ];
+$snippetVersion := $snippetVersion = If[ $VersionNumber >= 15.0, "15-0-0-13528852", "14-3-0-11967661" ];
 
 $streamableSnippetVersions := $streamableSnippetVersions = <|
     "Documentation"  -> $snippetVersion,
-    "ResourceSystem" -> "1.0.0"
+    "ResourceSystem" -> "1.1.0"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -78,6 +83,9 @@ Invalid value for the \"Sources\" option: `1`.";
 
 Chatbook::InvalidMaxSources = "\
 Invalid value for the \"MaxSources\" option: `1`.";
+
+Chatbook::InvalidTaskPrompt = "\
+Invalid value for the \"TaskPrompt\" option: `1`.";
 
 Chatbook::InstructionsFunctionOutputFailure = "\
 The instructions function `1` returned an invalid output: `2`.";
@@ -108,9 +116,10 @@ RelatedDocumentation // Options = {
     "MaxItems"          -> Automatic,
     "MaxSources"        -> $maxSelectedSources,
     "PromptHeader"      -> Automatic,
-    "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
-    "Sources"           :> $RelatedDocumentationSources
+    "RerankPromptStyle" -> Automatic,
+    "Sources"           :> $RelatedDocumentationSources,
+    "TaskPrompt"        -> $taskPrompt
 };
 
 GeneralUtilities`SetUsage[ RelatedDocumentation, "\
@@ -254,7 +263,8 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
                 $$unspecified :> $usePromptHeader
             ],
             $RelatedDocumentationSources = getSources[ prompt, OptionValue[ "Sources" ], OptionValue[ "MaxSources" ] ],
-            $snippetFetchBatchSize = OptionValue[ "DownloadBatchSize" ]
+            $snippetFetchBatchSize = OptionValue[ "DownloadBatchSize" ],
+            $taskPrompt = getTaskPrompt @ OptionValue[ "TaskPrompt" ]
         },
         relatedDocumentationPrompt[
             ensureChatMessages @ prompt,
@@ -274,10 +284,20 @@ RelatedDocumentation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*getTaskPrompt*)
+getTaskPrompt // beginDefinition;
+getTaskPrompt[ prompt_String ] := prompt;
+getTaskPrompt[ $$unspecified ] := $taskPrompt;
+getTaskPrompt[ None ] := "";
+getTaskPrompt[ other_ ] := throwFailure[ "InvalidTaskPrompt", other ];
+getTaskPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*getMaxItems*)
 getMaxItems // beginDefinition;
 getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
-getMaxItems[ Infinity, _ ] := 250;
+getMaxItems[ Infinity, _ ] := 125;
 getMaxItems[ n: $$size, _ ] := Ceiling @ n;
 getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
 getMaxItems // endDefinition;
@@ -468,12 +488,12 @@ filterSnippets[
     Catch @ Module[ { snippets, inserted, transcript, instructions, resp, respResults, idx, ranked },
 
         snippets = ConfirmMatch[ makeDocSnippets @ results, { ___String }, "Snippets" ];
-        setProgressDisplay[ "ProgressTextChoosingDocumentation" ];
+        setProgressDisplay[ "ChoosingDocumentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         instructions = ConfirmBy[
-            TemplateApply[ $documentationRerankPrompt, <| "Transcript" -> transcript |> ],
+            TemplateApply[ $documentationRerankPrompt, <| "TaskPrompt" -> $taskPrompt, "Transcript" -> transcript |> ],
             StringQ,
             "Prompt"
         ];
@@ -521,11 +541,12 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ DeleteDuplicates[ snippetXML /@ results ], { __String }, "XML" ];
-        ids = ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
+        ids = DeleteDuplicates @ ConfirmMatch[ uriToSnippetID /@ results[[ All, "Value" ]], { ___String }, "IDs" ];
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
                 <|
+                    "TaskPrompt"    -> $taskPrompt,
                     "FilteredCount" -> filterCount,
                     "Snippets"      -> StringRiffle[ xml, "\n\n" ],
                     "Transcript"    -> transcript,
@@ -550,6 +571,8 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             StringQ,
             "Response"
         ];
+
+        If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
         uriToSnippet = GroupBy[ results, Lookup[ "Value" ] -> Lookup[ "Snippet" ] ];
         uris = ConfirmMatch[ Keys @ uriToSnippet, { ___String }, "URIs" ];
@@ -594,8 +617,7 @@ filterSnippets // endDefinition;
 
 
 $bestDocumentationPromptLarge = StringTemplate[ "\
-Your task is to read a chat transcript between a user and assistant, and then select any relevant Wolfram Language \
-documentation snippets that could help the assistant answer the user's latest message.
+%%TaskPrompt%%
 
 Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://*.wolframcloud.com').
 You must also include the fragment appearing after the '#' in the URI.
@@ -647,8 +669,7 @@ If there are no relevant pages, respond with [].
 
 
 $bestDocumentationPromptSmall = StringTemplate[ "\
-Your task is to read a chat transcript and select relevant Wolfram Language documentation snippets to help answer the \
-user's latest message.
+%%TaskPrompt%%
 
 On the first line of your response, write one of these assistant types:
 	\"Computational\": The user's message requires a computational response.
@@ -697,8 +718,7 @@ Reminder: These are the available snippet IDs:
 
 
 $documentationRerankPrompt = StringTemplate[ "\
-Read the chat transcript between a user and assistant, and then give me the best Wolfram Language documentation \
-snippet that could help the assistant answer the user's latest message.
+%%TaskPrompt%%
 
 The snippet does not need to exactly answer the user's message if it can be easily generalized.
 Prefer built-in system symbols over other resources.

@@ -2,7 +2,7 @@ Graphics[
 	{
 		Thickness @ 0.05714285714285714,
 		{
-			FaceForm @ color @ "IconsChatIconUserBackground",
+			FaceForm @ ThemeColor[ "Background" ],
 			FilledCurve[
 				{
 					{

@@ -75,6 +75,12 @@ If[ ! FileExistsQ @ $mxFile && getBooleanArgument[ { "b", "build" }, True ],
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Run Tests*)
+(* Suppress LLM-related messages during tests. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+Quiet[ LLMSynthesize, LLMServices`Defaults`Private`LLMFunctions::llmrstrt ];
+(* :!CodeAnalysis::EndBlock:: *)
+
 (* This is a hack to avoid a mysterious issue with the FE not finding the chatbook stylesheet
    the first time a test is run: *)
 If[ FileExistsQ @ $ccsTests, UsingFrontEnd @ TestReport @ $ccsTests ];

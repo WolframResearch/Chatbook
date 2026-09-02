@@ -31,7 +31,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
 
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
         text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cell = Cell[
             BoxData @ TemplateBox[
@@ -98,7 +98,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
     Module[ { text, uuid, cell },
 
         text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cell = Cell[
             BoxData @ TemplateBox[
@@ -108,7 +108,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             "NotebookAssistant`Sidebar`ChatInput",
             (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
                 However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
-            CellTags -> uuid 
+            CellTags -> uuid
         ];
 
         cellObject = appendCellToSidebarChat[ nbo, sidebarCell, cell, uuid ];
@@ -129,7 +129,7 @@ evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtT
 
         cellObject = None;
         text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
 
@@ -143,7 +143,7 @@ evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtT
         cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
         ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
         setCurrentValue[ cellObject, CellTags, Inherited ];
-        
+
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
     ],
     throwInternalFailure

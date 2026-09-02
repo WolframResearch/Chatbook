@@ -146,13 +146,13 @@ makeSidebarMenuContent[ sidebarCell_CellObject, nbObj_NotebookObject ] := Enclos
 
 		items = ConfirmBy[ makeChatActionMenu[ "Sidebar", nbObj ], ListQ, "Items" ];
 
-		new = Join[ 
-			{ <|
+		new = Join[ (* don't include auto-analysis in 15.0 *)
+			{ (*<|
 				 "Type"           -> "Custom",
 				 "Content"        -> Pane[ makeAutomaticResultAnalysisCheckboxSidebar @ nbObj, ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } } ],
 				 "ResetAction"    :> (setCurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" }, Inherited ]),
 				 "ResetCondition" :> (CurrentValue[ nbObj, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] =!= Inherited)
-			|> },
+			|>*) },
 			items ];
 
 		MakeSidebarMenu[ sidebarCell, new ]
@@ -1091,11 +1091,11 @@ DynamicModule[
 	{
 		Typeset`dingbatCell  = None,
 		Typeset`targetCell   = None,
-		Typeset`personaCache = "CodeAssistant"
+		Typeset`personaCache = "WolframAIAssistant"
 	},
 	DynamicWrapper[
 		Button[
-			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 } ],
+			blueHueButtonAppearance[ chatbookIcon[ "ChatInputCellDingbat", False ], { 24, 24 }, 0, True ],
 			With[ { attachedMenuCells = Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ] },
 				If[ attachedMenuCells === {},
 					MakeMenu[
@@ -1122,18 +1122,22 @@ DynamicModule[
 				If[ persona =!= Typeset`personaCache,
 					Typeset`personaCache = persona;
 					NotebookDelete /@ Cells[ Typeset`dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatInput`PersonaIcon" ];
-					If[ Typeset`personaCache =!= "CodeAssistant",
+					If[ Typeset`personaCache =!= "WolframAIAssistant",
 						AttachCell[
 							Typeset`dingbatCell,
 							Cell[ BoxData @ ToBoxes @
 								Tooltip[
-									Pane[
-										getPersonaMenuIcon @ persona,
-										Alignment       -> { Center, Center },
-										ImageSize       -> { 25, 25 },
-										ImageSizeAction -> "ShrinkToFit"
+									If[ $cloudNotebooks,
+										cloudShrinkToFit[ getPersonaMenuIcon @ persona, { 25, 25 } ]
+										,
+										Pane[
+											getPersonaMenuIcon @ persona,
+											Alignment       -> { Center, Center },
+											ImageSize       -> { 25, 25 },
+											ImageSizeAction -> "ShrinkToFit"
+										]
 									],
-									persona
+									personaDisplayName @ persona
 								],
 								"NotebookAssistant`ChatInput`PersonaIcon"
 							],
@@ -1166,6 +1170,7 @@ makeChatInputActiveCellDingbat // endDefinition;
 
 makeChatOutputActiveCellDingbat // beginDefinition;
 
+(* Cloud version: does not have access to CellObject of CellDingbat *)
 (*
 	The dingbat loads using the System kernel, but the DynamicWrapper must use the ambient kernel in order to "hear" any trigger signals.
 	The CellObject may change when we cut+paste the cell.
@@ -1183,16 +1188,22 @@ DynamicModule[
 		,
 		(* this updates whenever TaggingRules changes here, or at a more global scope *)
 		Catch[
-			With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
-				Typeset`display = Which[
-					FailureQ @ tagRules,
-						chatbookIcon[ "ChatOutputCellDingbat", False ],
-					KeyExistsQ[ tagRules, "PageData" ],
-						makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
-					KeyExistsQ[ tagRules, "ChatData" ],
-						makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
-					True,
-						chatbookIcon[ "ChatOutputCellDingbat", False ]
+			(* CLOUD-28257: never look inside potentially large data stored in TaggingRules
+				Consequences:
+					1. Cloud only gets a static CellDingbat of the generic chat icon for ChatOutput cells.
+					2. No PageData interface. *)
+			If[ ! $cloudNotebooks,
+				With[ { tagRules = CurrentValue[ Typeset`targetCell, TaggingRules ] },
+					Typeset`display = Which[
+						FailureQ @ tagRules,
+							chatbookIcon[ "ChatOutputCellDingbat", False ],
+						KeyExistsQ[ tagRules, "PageData" ],
+							makeChatOutputPagedDingbat[ Typeset`targetCell, Typeset`dingbatCell, Lookup[ tagRules, "PageData", <| |> ] ],
+						KeyExistsQ[ tagRules, "ChatData" ],
+							makeChatOutputDingbat @ Lookup[ tagRules, "ChatData", <| |>, BinaryDeserialize[ BaseDecode[ # ] ]& ],
+						True,
+							chatbookIcon[ "ChatOutputCellDingbat", False ]
+					]
 				]
 			]
 			,
@@ -1203,8 +1214,12 @@ DynamicModule[
 		TrackedSymbols      :> { }
 	],
 	Initialization   :> (
-		Typeset`dingbatCell = EvaluationCell[ ];
-		Typeset`targetCell  = ParentCell @ Typeset`dingbatCell;
+		If[ $cloudNotebooks,
+			Typeset`targetCell = EvaluationCell[ ]
+			,
+			Typeset`dingbatCell = EvaluationCell[ ];
+			Typeset`targetCell  = ParentCell @ Typeset`dingbatCell
+		];
 		Needs[ "Wolfram`Chatbook`" -> None ];
 	),
 	UnsavedVariables :> { Typeset`dingbatCell, Typeset`targetCell }
@@ -1217,7 +1232,8 @@ makeChatOutputActiveCellDingbat // endDefinition;
 (*makeChatOutputPagedDingbat*)
 makeChatOutputPagedDingbat // beginDefinition;
 
-makeChatOutputPagedDingbat[ targetCell_CellObject, dingbatCell_CellObject, allPageData_Association ] :=
+(* Cloud: has no CellObject for the CellDingbat *)
+makeChatOutputPagedDingbat[ targetCell_CellObject, dingbatCell:None|_CellObject, allPageData_Association ] :=
 Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 	currentPage = Lookup[ allPageData, "CurrentPage", 1 ];
 	currentPageData = Lookup[ allPageData, "Pages", <| |>, Lookup[ #, currentPage, Missing[ "NoPageData" ], BinaryDeserialize[ BaseDecode[ # ] ]& ]& ];
@@ -1236,42 +1252,61 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		displayName = None
 		,
 		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
-			icon = Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ];
+			icon = If[ $cloudNotebooks,
+				cloudShrinkToFit[ getPersonaMenuIcon @ persona, { Automatic, 19 } ],
+				Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ]
+			];
 			displayName = personaDisplayName[ evaluatorName, personaSettings ]
 		]
 	];
 
-	DynamicModule[ { },
-		If[ displayName === None, icon, Tooltip[ icon, displayName ] ],
-		SynchronousInitialization -> False,
-		Initialization            :> (
-			If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatOutput`PagedNavigation" ] === { },
-				AttachCell[
-					dingbatCell,
-					Cell[ BoxData @ ToBoxes @
-						Grid[
-							{
-								{
-									makeChatOutputPagedDingbatNavButtons @ targetCell
-								},
-								{
-									RawBoxes @ StyleBox[
-										RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
-										FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
-										FontFamily -> "Roboto",
-										FontSize   -> 8
-									]
-								}
-							},
-							BaseStyle -> { FontSize -> 0.5 },
-							Spacings -> { 0, 0 }
-						],
-						"NotebookAssistant`ChatOutput`PagedNavigation"
-					],
-					{ Center, Bottom }, 0, { Center, Top }
-				]
+	With[
+		{ rows =
+			{
+				{
+					makeChatOutputPagedDingbatNavButtons @ targetCell
+				},
+				{
+					RawBoxes @ StyleBox[
+						RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
+						FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+						FontFamily -> "Roboto",
+						FontSize   -> 8
+					]
+				}
+			}
+		},
+
+		If[ $cloudNotebooks || dingbatCell === None,
+			Grid[
+				Prepend[ rows, { If[ displayName === None, icon, Tooltip[ icon, displayName ] ] } ],
+				Alignment        -> { Center, Baseline },
+				BaselinePosition -> { 1, 1 },
+				BaseStyle        -> { FontSize -> 0.5 },
+				Spacings         -> { 0, 0 }
 			]
-		)
+			, (* Desktop: use an attached cell so there's less wiggling when the paged UI appears *)
+			DynamicModule[ { },
+				If[ displayName === None, icon, Tooltip[ icon, displayName ] ],
+				SynchronousInitialization -> False,
+				Initialization            :> (
+					If[ Cells[ dingbatCell, AttachedCell -> True, CellStyle -> "NotebookAssistant`ChatOutput`PagedNavigation" ] === { },
+						AttachCell[
+							dingbatCell,
+							Cell[ BoxData @ ToBoxes @
+								Grid[
+									rows,
+									BaseStyle -> { FontSize -> 0.5 },
+									Spacings  -> { 0, 0 }
+								],
+								"NotebookAssistant`ChatOutput`PagedNavigation"
+							],
+							{ Center, Bottom }, 0, { Center, Top }
+						]
+					]
+				)
+			]
+		]
 	]
 ];
 
@@ -1296,7 +1331,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabLeft", targetCell ], _ ],
 				Appearance -> "Suppressed",
@@ -1311,7 +1348,9 @@ Grid[
 							Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
-					{ 8, 11 }
+					{ 8, 11 },
+					0,
+					True
 				],
 				Quiet @ Needs[ "Wolfram`Chatbook`" -> None ]; Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "TabRight", targetCell ], _ ],
 				Appearance -> "Suppressed",
@@ -1385,15 +1424,7 @@ MakeChatDelimiterCellDingbat[ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatOutputCellDingbat*)
-MakeChatOutputCellDingbat[ ] :=
-	PaneSelector[
-		{
-			True  -> "",
-			False -> makeChatOutputActiveCellDingbat[ ]
-		},
-		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
-		ImageSize -> Automatic
-	];
+MakeChatOutputCellDingbat[ ] := makeChatOutputActiveCellDingbat[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1414,7 +1445,7 @@ Module[ { personas },
 		]
 	];
 	If[!MatchQ[CurrentChatSettings[$FrontEnd, "PersonaFavorites"], {___String}],
-        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"CodeAssistant", "CodeWriter", "PlainChat"}
+        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"WolframAIAssistant", "PlainChat"}
 	];
 
 	(* only show visible personas and sort visible personas based on favorites setting *)
@@ -1451,7 +1482,7 @@ Module[ { personas },
 					"PlainChat",
 					"RawModel",
 					"CodeWriter",
-					"CodeAssistant"
+					"WolframAIAssistant"
 				}
 			],
 			personas
@@ -1495,7 +1526,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIPersonas",
 			"Icon"    -> resizeMenuIcon @ chatbookIcon[ "ChatIconCodeAssistant", False ],
 			"MenuTag" -> "Personas",
-			"Menu"    :> createPersonasMenu @ targetObj,
+			"Menu"    :> createMenuPersonas @ targetObj,
 			"Width"   -> 200,
 			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
@@ -1505,7 +1536,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIModels",
 			"Icon"    -> chatbookIcon[ "ChatBlockSettingsMenuIcon", False ],
 			"MenuTag" -> "Services",
-			"Menu"    :> createServiceMenu @ targetObj,
+			"Menu"    :> createMenuService @ targetObj,
 			"Width"    -> 150,
 			"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" }, Inherited ]),
 			"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =!= Inherited)
@@ -1515,7 +1546,7 @@ makeChatActionMenu[
 			"Label"   -> tr @ "UIAdvancedSettings",
 			"Icon"    -> chatbookIcon[ "AdvancedSettings", False ],
 			"MenuTag" -> "AdvancedSettings",
-			"Menu"    :> createAdvancedSettingsMenu[ targetObj, None ],
+			"Menu"    :> createMenuAdvancedSettings[ targetObj, None ],
 			"Width"   -> 200
 		|>
 	}
@@ -1526,11 +1557,11 @@ makeChatActionMenu[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createPersonasMenu*)
+(*createMenuPersonas*)
 
-createPersonasMenu // beginDefinition;
+createMenuPersonas // beginDefinition;
 
-createPersonasMenu[ targetObj_ ] :=
+createMenuPersonas[ targetObj_ ] :=
 With[
 	{
 		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
@@ -1543,8 +1574,8 @@ With[
 				"ResetAction"    :> (setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }, Inherited ]),
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 			|>,
-			(* always display the Code Assistant persona as it is the default *)
-			With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+			(* always display the WolframAIAssistant persona as it is the default *)
+			With[ { persona = "WolframAIAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "WolframAIAssistant" ] },
 				<|
 					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
 					"Label"  -> personaDisplayName[ persona, personaSettings ],
@@ -1579,12 +1610,12 @@ With[
 				"Value"    -> persona,
 				"Category" -> "Persona"
 			|>,
-			KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
+			KeyDrop[ filterPersonas @ targetObj, "WolframAIAssistant" ]
 		]
 	]
 ] /; AssociationQ @ Wolfram`Chatbook`Personas`$CachedPersonaData;
 
-createPersonasMenu[ targetObj_ ] := {
+createMenuPersonas[ targetObj_ ] := {
 With[
 	{
 		personaValue = currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ]
@@ -1599,10 +1630,10 @@ With[
 				"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 			|>,
 			(* always display the Code Assistant persona as it is the default; construct such that we don't need to read the info *)
-			With[ { persona = "CodeAssistant" },
+			With[ { persona = "WolframAIAssistant" },
 				<|
 					"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
-					"Label"  -> tr @ "PersonaNameCodeAssistant",
+					"Label"  -> tr @ "PersonaNameNotebookAssistant",
 					"Icon"   -> chatbookIcon[ "ChatOutputCellDingbat", False ],
 					"Check"  -> styleListItem[ persona, personaValue ],
 					"Action" :> (
@@ -1639,7 +1670,7 @@ With[
 						"ResetCondition" :> (CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= Inherited)
 					|>,
 					(* always display the Code Assistant persona as it is the default *)
-					With[ { persona = "CodeAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "CodeAssistant" ] },
+					With[ { persona = "WolframAIAssistant", personaSettings = Lookup[ GetPersonasAssociation[ ], "WolframAIAssistant" ] },
 						<|
 							"Type"   -> "Setter", (* automatically closes the menu in addition to performing the Action *)
 							"Label"  -> personaDisplayName[ persona, personaSettings ],
@@ -1674,14 +1705,14 @@ With[
 						"Value"    -> persona,
 						"Category" -> "Persona"
 					|>,
-					KeyDrop[ filterPersonas @ targetObj, "CodeAssistant" ]
+					KeyDrop[ filterPersonas @ targetObj, "WolframAIAssistant" ]
 				]
 			]
 	|>
 ]
 };
 
-createPersonasMenu // endDefinition;
+createMenuPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1689,10 +1720,10 @@ createPersonasMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createAdvancedSettingsMenu*)
-createAdvancedSettingsMenu // beginDefinition;
+(*createMenuAdvancedSettings*)
+createMenuAdvancedSettings // beginDefinition;
 
-createAdvancedSettingsMenu[ targetObj_, appContainer_ ] :=
+createMenuAdvancedSettings[ targetObj_, appContainer_ ] :=
 With[
 	{
 		roleValue = Replace[ currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "Role" } ], { source_, Inherited } :> { source, "User" } ]
@@ -1723,7 +1754,7 @@ With[
 	]
 ];
 
-createAdvancedSettingsMenu // endDefinition;
+createMenuAdvancedSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1737,7 +1768,7 @@ wolframServiceMenuItem // beginDefinition;
 wolframServiceMenuItem[ targetObj_, model_ ] :=
 <|
 	"Type"   -> "Setter",
-	"Label"  -> "Wolfram LLM Kit",
+	"Label"  -> "Wolfram AI Access",
 	"Icon"   -> serviceIcon[ model, "Wolfram" ],
 	"Check"  -> serviceIconCheck[ model, "Wolfram" ],
 	"Action" :> (setModel[ targetObj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ]),
@@ -1749,10 +1780,10 @@ wolframServiceMenuItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createServiceMenu*)
-createServiceMenu // beginDefinition;
+(*createMenuService*)
+createMenuService // beginDefinition;
 
-createServiceMenu[ targetObj_ ] :=
+createMenuService[ targetObj_ ] :=
 With[
 	{
 		model = currentChatSettings[ targetObj, "Model" ]
@@ -1769,7 +1800,7 @@ With[
 	]
 ] /; AssociationQ @ $serviceCache;
 
-createServiceMenu[ targetObj_ ] := {
+createMenuService[ targetObj_ ] := {
 With[
 	{
 		model = currentChatSettings[ targetObj, "Model" ]
@@ -1807,7 +1838,7 @@ With[
 ]
 };
 
-createServiceMenu // endDefinition;
+createMenuService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2189,6 +2220,8 @@ alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> 
 (*resizeMenuIcon*)
 resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
 	Show[ icon, ImageSize -> { 21, 21 } ];
+
+resizeMenuIcon[ icon_ ] /; $cloudNotebooks := cloudShrinkToFit[ icon, { 21, 21 } ];
 
 resizeMenuIcon[ icon_ ] := Pane[
 	icon,

@@ -24,7 +24,10 @@ physics, geography, history, art, astronomy, and more.
 IMPORTANT: If you need the results of multiple queries, it's important that you combine them into a single tool call \
 whenever possible to save on token usage and time.";
 
-$queryHelp = "The query (or queries) to send to Wolfram|Alpha. Separate multiple queries with tab characters (\\t).";
+$queryHelp = "\
+The query (or queries) to send to Wolfram|Alpha. \
+All queries should be written in English. \
+Separate multiple queries with tab characters (\\t).";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -65,6 +68,7 @@ $defaultPods           := toolOptionValue[ "WolframAlpha", "DefaultPods"     ];
 $foldPods              := toolOptionValue[ "WolframAlpha", "FoldPods"        ];
 $maximumWAPodByteCount := toolOptionValue[ "WolframAlpha", "MaxPodByteCount" ];
 $plaintextOnly         := toolOptionValue[ "WolframAlpha", "PlaintextOnly"   ];
+$allowReinterpret      := toolOptionValue[ "WolframAlpha", "Reinterpret"     ];
 
 $moreDetailsPlusIcon  := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialOpenerIcon" ];
 $moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialCloserIcon" ];
@@ -108,7 +112,8 @@ wolframAlphaToolEvaluate0[ query_String, steps: True|False|_Missing ] :=
         data = WolframAlpha[
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
-            PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+            PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] },
+            Method    -> { "Reinterpret" -> TrueQ @ $allowReinterpret }
         ];
         string = wolframAlphaToolEvaluate0[ query, steps, data ];
         url = StringReplace[ URLBuild[ "https://www.wolframalpha.com/input", <| "i" -> query |> ], "%20" -> "+" ];
@@ -160,7 +165,8 @@ fasterWolframAlphaPods[ query_String, steps: True|False|_Missing ] := Enclose[
             WolframAlpha[
                 query,
                 { All, { "Title", "Cell" } },
-                PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+                PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] },
+                Method    -> { "Reinterpret" -> TrueQ @ $allowReinterpret }
             ],
             "WolframAlpha"
         ];

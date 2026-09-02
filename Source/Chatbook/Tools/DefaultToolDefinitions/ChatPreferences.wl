@@ -35,18 +35,18 @@ Setting chat preferences
 * When setting, both the `key` parameter and the `value` parameter are required.
 
 Key descriptions
-| key                 | type       | default         | description |
-| ------------------- | ---------- | --------------- | ----------- |
-| Assistance          | boolean    | false           | Whether to enable automatic AI assistance for normal input cell evaluations. |
-| ChatHistoryLength   | integer    | 100             | The maximum number of cells to include in chat history. |
-| LLMEvaluator        | string     | 'CodeAssistant' | The name of the LLM evaluator (aka persona) to use for chat. Use the 'get' action for available names. |
-| MaxCellStringLength | integer    | 0               | The maximum number of characters to include in a cell's string representation. A 0 means determine automatically. |
-| MergeMessages       | boolean    | true            | Whether to merge consecutive messages from the same user into a single message. |
-| Model               | string     | 'gpt-4'         | The name of the model to use for AI assistance. |
-| Prompts             | [ string ] | [ ]             | A list of instructions to append to the system prompt. |
-| Temperature         | real       | 0.7             | The temperature to use for the LLM. Values should be a real between 0 and 2. |
-| ToolCallFrequency   | real       | 0.5             | The frequency with which to use tools. Values should be a number between 0 and 1. |
-| Tools               | [ string ] |                 | The list of currently enabled tools. Use the 'get' action for available names. |
+| key                 | type       | default              | description |
+| ------------------- | ---------- | -------------------- | ----------- |
+| Assistance          | boolean    | false                | Whether to enable automatic AI assistance for normal input cell evaluations. |
+| ChatHistoryLength   | integer    | 100                  | The maximum number of cells to include in chat history. |
+| LLMEvaluator        | string     | 'WolframAIAssistant' | The name of the LLM evaluator (aka persona) to use for chat. Use the 'get' action for available names. |
+| MaxCellStringLength | integer    | 0                    | The maximum number of characters to include in a cell's string representation. A 0 means determine automatically. |
+| MergeMessages       | boolean    | true                 | Whether to merge consecutive messages from the same user into a single message. |
+| Model               | string     | 'gpt-4'              | The name of the model to use for AI assistance. |
+| Prompts             | [ string ] | [ ]                  | A list of instructions to append to the system prompt. |
+| Temperature         | real       | 0.7                  | The temperature to use for the LLM. Values should be a real between 0 and 2. |
+| ToolCallFrequency   | real       | 0.5                  | The frequency with which to use tools. Values should be a number between 0 and 1. |
+| Tools               | [ string ] |                      | The list of currently enabled tools. Use the 'get' action for available names. |
 ";
 
 (* ::**************************************************************************************************************:: *)

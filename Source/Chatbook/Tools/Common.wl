@@ -52,7 +52,7 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
-$defaultWebTextLength    = 12000;
+$defaultWebTextLength    = 2^16;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
@@ -60,14 +60,17 @@ $DefaultToolOptions = <|
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
         "FoldPods"        -> False,
-        "MaxPodByteCount" -> 1000000
+        "MaxPodByteCount" -> 1000000,
+        "Reinterpret"     -> True
     |>,
     "WolframLanguageEvaluator" -> <|
         "AllowedExecutePaths"      -> Automatic,
         "AllowedReadPaths"         -> All,
         "AllowedWritePaths"        -> Automatic,
         "AppendURIPrompt"          -> False,
+        "DisabledHints"            -> None,
         "EvaluationTimeConstraint" -> 60,
+        "HintMethod"               -> Automatic,
         "Method"                   -> Automatic,
         "PingTimeConstraint"       -> 30
     |>,
@@ -754,7 +757,16 @@ toolRequestParser[ content_String ] := Enclose[
                          ];
 
         If[ FailureQ @ params,
-            Throw @ { callPosition, Failure[ "InvalidJSON", <| "Message" -> makeJSONFailureMessage @ bag |> ] }
+            Throw @ {
+                callPosition,
+                Failure[
+                    "InvalidJSON",
+                    <|
+                        "MessageTemplate"   -> makeJSONFailureMessage @ bag,
+                        "MessageParameters" -> { }
+                    |>
+                ]
+            }
         ];
 
         {

@@ -276,6 +276,7 @@ $graphicsHeads = Alternatives[
 
 $$ignoredImportImage = Alternatives[
     FrontEnd`FileName[ { "Documentation", "FooterIcons" }, _ ],
+    FrontEnd`FileName[ { "Documentation", "Miscellaneous" }, _ ],
     FrontEnd`FileName[ { "Documentation", "SymbolIcons", _ }, _ ]
 ];
 
@@ -845,6 +846,8 @@ cellsToString[ cells_List ] :=
 rasterWholeCellQ // beginDefinition;
 
 rasterWholeCellQ[ $$ignoredBox ] := False;
+
+rasterWholeCellQ[ Cell[ _, "GuideTitle", ___ ] ] := False;
 
 rasterWholeCellQ[ cell_Cell ] := Enclose[
     Module[ { maxBoxCount, boxes, count },
@@ -2098,7 +2101,7 @@ boxToString[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
 (* RadicalBox *)
 boxToString[ RadicalBox[ a_, b_, ___, SurdForm -> True, ___ ] ] :=
     (needsBasePrompt[ "Math" ]; "Surd[" <> boxToString @ a <> ", " <> boxToString @ b <> "]");
-s
+
 boxToString[ RadicalBox[ a_, b_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "Math" ]; boxToString @ a <> "^(1/(" <> boxToString @ b <> "))");
 
@@ -2108,6 +2111,12 @@ boxToString[ box: TagBox[ _, "Piecewise", ___ ] ] :=
         Replace[ expr, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ] /;
             MatchQ[ expr, HoldComplete[ _Piecewise ] ]
     ];
+
+(* Placeholder *)
+boxToString[ TagBox[ FrameBox[ label_, ___ ], "Placeholder", ___ ] ] := (
+    needsBasePrompt[ "Placeholders" ];
+    "Placeholder[" <> Block[ { $showStringCharacters = True }, boxToString @ label ] <> "]"
+);
 
 (* CenteredInterval *)
 boxToString[
@@ -2530,6 +2539,12 @@ boxToString[ Cell[ boxes_, "FunctionEssay", ___ ] ] :=
 (*Guide Pages*)
 boxToString[ GridBox[ { { cell: Cell[ _, "GuideTitle", ___ ], TagBox[ _ButtonBox, __ ] } }, ___ ] ] :=
     boxToString @ cell;
+
+boxToString[ Cell[
+    BoxData[ GridBox[ { { cell: Cell[ _, "GuideTitle", ___ ], TagBox[ _ButtonBox, ___ ] } }, ___ ], ___ ],
+    "GuideTitle",
+    ___
+] ] := boxToString @ cell;
 
 (* ctrl+= hints on entity-related guide pages: *)
 boxToString[ Cell[

@@ -127,8 +127,9 @@ esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c,
 $mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
 $$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
 
-$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
-$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+$mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
+$texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -365,10 +366,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
     ];
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
-    makeInlineWL @ code;
+    makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
-    makeInlineCodeCell @ code,
+    makeInlineCodeCell @ StringReplace[ code, $mdUnescapeRules ],
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 
@@ -379,7 +380,7 @@ makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength
     makeResultCell0 @ inlineCodeCell @ name;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = makeTeXBoxes @ math },
+    With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
@@ -590,7 +591,7 @@ delimiterAlignment[ s_String ] := delimiterAlignment @ StringSplit[ StringDelete
 delimiterAlignment[ { ":", " "      } ] := Left;
 delimiterAlignment[ { ":", " ", ":" } ] := Center;
 delimiterAlignment[ {      " ", ":" } ] := Right;
-delimiterAlignment[ ___               ] := Center;
+delimiterAlignment[ ___               ] := Left;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1022,20 +1023,44 @@ insertCodeBelow // endDefinition;
 insertCodeInUserNotebook // beginDefinition;
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, "Sidebar" ] := Enclose[
-    Module[ { cellObj },
-        cellObj = ConfirmMatch[ getLastSelectedCell @ chatNB, _CellObject|None, "SelectedCell" ];
-        (* check whether the selection is within the side bar, and if so, move out to the notebook content areaa *)
-        If[ cellObj =!= None && cellTaggedQ[ Last[ ParentCell[ cellObj, All ], cellObj ], { "NotebookAssistantSidebarCell" } ],
-            SelectionMove[ chatNB, After, Notebook, AutoScroll -> True ];
-            cellObj = None
+    Module[ { currentSelections, activeSelection, remnantSelection, newCellPosition },
+
+        (* determine the current selections *)
+        currentSelections = Replace[ FE`Evaluate @ FEPrivate`GetCurrentSelections @ chatNB, Except[ _Association ] -> <| |> ];
+        activeSelection = Lookup[ currentSelections, "ActiveSelection", None ];
+        remnantSelection = Lookup[ currentSelections, "RemnantSelection", None ];
+
+        (* pre-write: move the selection as needed *)
+        (* If there is a remnant selection in the main content area, then make it the active selection *)
+        If[ remnantSelection =!= None,
+            With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "ActiveSelection" -> s |> ]
+        ];
+        (* If there is no selection in the notebook, then move the selection to the bottom *)
+        If[ CurrentValue[ chatNB, "SelectionType" ] === None,
+            SelectionMove[ chatNB, After, Notebook ]
+        ];
+        (* If there is at least one cell selected, then move the selection after the last selected cell *)
+        With[ { sel = SelectedCells[ chatNB ] },
+            If[ MatchQ[ sel, { __ } ],
+                SelectionMove[ Last @ sel, After, Cell ]
+            ]
         ];
 
-        If[ cellObj === None,
-            SelectionMove[ chatNB, After, Cell, AutoScroll -> True ];
-            NotebookWrite[ chatNB, preprocessInsertedCell @ cell, All ]
+        (* write the cell: utilize "AfterEvaluationGroup" to not break up Input/Output cells *)
+        newCellPosition = PreviousCell @ NotebookSelection @ chatNB;
+        If[ newCellPosition === None, (* at top of notebook, but may be within the first cell *)
+            With[ { cellWithin = First[ SelectedCells[ chatNB ], None ] },
+                If[ cellWithin === None,
+                    NotebookWrite[ chatNB, cell, All ]
+                    ,
+                    NotebookWrite[ NotebookLocationSpecifier[ cellWithin, "AfterEvaluationGroup" ], cell, All ]
+                ]
+            ]
             ,
-            insertAfterChatGeneratedCells[ cellObj, cell ]
+            NotebookWrite[ NotebookLocationSpecifier[ newCellPosition, "AfterEvaluationGroup" ], cell, All ]
         ];
+        With[ { s = remnantSelection }, FE`Evaluate @ FEPrivate`SetCurrentSelections @ <| "RemnantSelection" -> s |> ];
+        With[ { s = currentSelections }, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s ];
 
         selectionEvaluateCreateCell @ chatNB
     ],
@@ -1124,7 +1149,6 @@ copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
 copyCodeBlock[ code_String ] := (CopyToClipboard @ code; attachCopiedTooltip[ ]);
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
-copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
 copyCodeBlock[ cell_Cell ] := (CopyToClipboard @ cell; attachCopiedTooltip[ ]);
 copyCodeBlock // endDefinition;
 
@@ -1257,17 +1281,16 @@ stripMarkdownBoxes // endDefinition;
 (*getCodeBlockContent*)
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+
+getCodeBlockContent[   Cell[    cData_, "ChatCode", cs:"Input", ___ ] ] := reparseCodeBoxes @ Cell[ cData, cs ];
+getCodeBlockContent[   Cell[    cData_, cs:"ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] := Cell[ cData, cs, CellEvaluationLanguage -> lang ];
+getCodeBlockContent[   Cell[ b_BoxData, "ChatCodeBlock",        ___ ] ] := getCodeBlockContent @ First @ b; (* recurse into BoxData content if a ChatCodeBlock cell *)
+getCodeBlockContent[   Cell[   BoxData[ c_Cell ],               ___ ] ] := getCodeBlockContent @ c;         (* recurse into any BoxData inline cells *)
+getCodeBlockContent[ c:Cell[    cData_, cs_String,              ___ ] ] := c;                               (* stop recursion at unexpected cell structures *)
+
 getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := reparseCodeBoxes @ Cell[ boxes, "Input" ];
-
-getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] :=
-    Cell[ boxes, "ExternalLanguage", CellEvaluationLanguage -> lang ];
-
-getCodeBlockContent[ cell: Cell[ _, _String, ___ ] ] := cell;
 
 getCodeBlockContent // endDefinition;
 
@@ -1306,7 +1329,7 @@ button // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*buttonMouseover*)
 buttonMouseover[ a_, b_ ] := Mouseover[ a, b, BaselinePosition -> Baseline ];
-buttonMouseover[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ]
+buttonMouseover[ a_, b_, c_ ] := If[ $cloudNotebooks, buttonMouseover[ a, b ], NotebookTools`Mousedown[ a, b, c, BaselinePosition -> Baseline ] ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1536,7 +1559,7 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s,
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
     s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
 };
 
@@ -1932,7 +1955,7 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
-With[ { col = color @ "NA_ChatOutputToolCallLabelFont" },
+With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
@@ -1943,8 +1966,8 @@ With[ { col = color @ "NA_ChatOutputToolCallLabelFont" },
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> color @ "NA_ChatOutputToolCallLabelFont" ]
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
@@ -1972,7 +1995,7 @@ toolCallIconPane0[ $$unspecified ] :=
 toolCallIconPane0[ icon_ ] :=
     Dynamic[
         If[ TrueQ @ $CloudEvaluation,
-            #1,
+            cloudShrinkToFit[ #1, { 16, 16 } ],
             Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
         ] &[ icon ],
         SingleEvaluation -> True,
@@ -2220,17 +2243,19 @@ makeInteractiveCodeCell // endDefinition;
 parseCellGroupBlock // beginDefinition;
 
 parseCellGroupBlock[ code_String ] := Enclose[
-    Catch @ Module[ { split, trimmed, rows },
+    Catch @ Module[ { sl, split, trimmed, rows },
+
+        sl = StartOfLine ~~ # &;
 
         split = StringSplit[
             code,
             {
-                l: $$inLabel         :> label[ "Input"     , StringTrim @ l ],
-                l: $$outLabel        :> label[ "Output"    , StringTrim @ l ],
-                l: $$echoLabel       :> label[ "Echo"      , StringTrim @ l ],
-                l: $$echoTimingLabel :> label[ "EchoTiming", StringTrim @ l ],
-                l: $$messageLabel    :> label[ "Message"   , StringTrim @ l ],
-                l: $$printLabel      :> label[ "Print"     , StringTrim @ l ]
+                l: sl @ $$inLabel         :> label[ "Input"     , StringTrim @ l ],
+                l: sl @ $$outLabel        :> label[ "Output"    , StringTrim @ l ],
+                l: sl @ $$echoLabel       :> label[ "Echo"      , StringTrim @ l ],
+                l: sl @ $$echoTimingLabel :> label[ "EchoTiming", StringTrim @ l ],
+                l: sl @ $$messageLabel    :> label[ "Message"   , StringTrim @ l ],
+                l: sl @ $$printLabel      :> label[ "Print"     , StringTrim @ l ]
             }
         ];
 
@@ -2275,7 +2300,7 @@ parseCellGroupBlock // endDefinition;
 $$equals          = ":=" | "=";
 $$inLabel         = "In" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
 $$outLabel        = "Out" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
-$$echoLabel       = Longest[ ">>".. | "<<".. ];
+$$echoLabel       = ">>";
 $$echoTimingLabel = "\[WatchIcon]";
 $$messageLabel    = Except[ WhitespaceCharacter ].. ~~ "::" ~~ (LetterCharacter|DigitCharacter) .. ~~ ":";
 $$printLabel      = "During evaluation of " ~~ $$inLabel;
@@ -2389,7 +2414,9 @@ formatSpecialBoxes[ string_String ] :=
             "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
                 ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ],
             ps: ("PacletSymbol[" ~~ Except[ "]" ].. ~~ ("]"|EndOfString)) :>
-                ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ]
+                ToString[ RawBoxes @ formatPacletSymbol @ ps, StandardForm ],
+            "Placeholder[\"" ~~ p: (("\\\""|Except[ "\"" ])..) ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatPlaceholderFast @ p, StandardForm ]
         }
     ];
 
@@ -2415,6 +2442,9 @@ formatSpecialBoxes[ boxes_ ] :=
         ,
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
+        ,
+        RowBox @ { "Placeholder", "[", label: Except[ RowBox @ { ___, ",", ___ } ], "]" } :>
+            RuleCondition @ formatPlaceholderBoxes @ label
         ,
         box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
             With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatSpecialBoxes @ a, "]" } },
@@ -2522,6 +2552,23 @@ $$possibleDateObject = HoldPattern @ DateObject[
     (_Real|_Integer)...,
     OptionsPattern[ ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPlaceholderBoxes*)
+
+(* Wraps the already-parsed label boxes directly instead of going through MakeBoxes, since parsing the label with
+   ToExpression could create symbols and typeset them with unwanted context qualifications: *)
+formatPlaceholderBoxes // beginDefinition;
+formatPlaceholderBoxes[ label_ ] := TagBox[ FrameBox @ label, "Placeholder" ];
+formatPlaceholderBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPlaceholderFast*)
+formatPlaceholderFast // beginDefinition;
+formatPlaceholderFast[ p_String ] := formatPlaceholderBoxes[ "\"" <> p <> "\"" ];
+formatPlaceholderFast // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2639,6 +2686,9 @@ makeInlineCodeCell // beginDefinition;
 
 makeInlineCodeCell[ s_String? systemNameQ ] :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
+
+makeInlineCodeCell[ refLink_String ] /; StringMatchQ[ refLink, "[" ~~ name__ ~~ "](paclet:ref/" ~~ name__ ~~ ")" ] :=
+    formatTextString @ refLink;
 
 makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
@@ -2940,6 +2990,9 @@ targetImageSize // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cachedBoxes*)
 cachedBoxes // beginDefinition;
+
+cachedBoxes[ e: _Manipulate|_DynamicModule|_Dynamic ] :=
+    checkBoxes @ MakeBoxes @ e;
 
 cachedBoxes[ e_ ] :=
     With[ { h = Hash @ Unevaluated @ e },

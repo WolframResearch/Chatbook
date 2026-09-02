@@ -662,13 +662,51 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 $workspaceChatDockedCells = {
-    With[ { c = color @ "NA_SidebarToolbarFrame" }, (* GraphicsBox is HoldAll *)
+    With[
+        {
+            background  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ],
+            colorCenter = LightDarkSwitched[ RGBColor["#E0F2FC"], RGBColor["#F5F5F5"] ],
+            colorEdges  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ]
+        },
         Cell[ BoxData @
-            GraphicsBox[ { }, Background -> c, AspectRatio -> Full, ImageSize -> { Scaled[ 1 ], 5 } ],
+            ToBoxes @ PaneSelector[
+                {
+                    True  -> RawBoxes @ DynamicModuleBox[ { Typeset`v$$ = 0 },
+                        OverlayBox[
+                            {
+                                AnimatorBox[ Dynamic[ Typeset`v$$ ], { 0, 1.2 }, AppearanceElements -> { }, ImageSize -> { 1, 1 }, DefaultDuration -> 2.5 ],
+                                GraphicsBox[
+                                    {
+                                        Thickness[1],
+                                        LineBox[
+                                            Dynamic[ { { -0.2 + Typeset`v$$, 0 }, { -0.1 + Typeset`v$$, 0 }, { Typeset`v$$, 0 } } ],
+                                            VertexColors -> { colorEdges, colorCenter, colorEdges }
+                                        ]
+                                    },
+                                    AspectRatio      -> Full,
+                                    Background       -> background,
+                                    ImageMargins     -> 0,
+                                    ImageSize        -> { Scaled[ 1 ], 15 }, (* much taller than it needs to be to compensate for negative CellFrameMargins *)
+                                    PlotRange        -> { { 0, 1 }, Automatic },
+                                    PlotRangePadding -> None
+                                ]
+                            }
+                        ],
+                        DynamicModuleValues :> { }
+                    ]
+                },
+                Dynamic @ AbsoluteCurrentValue[ FrontEnd`EvaluationCell[ ], { TaggingRules, "ProgressIndicator" } ],
+                Graphics[ Background -> background, ImageSize -> { 1, 1 } ],
+                ImageSize -> Automatic
+            ],
             "NotebookAssistant`TopStripe",
+            Background       -> background,
             CellFrame        -> False,
-            CellFrameMargins -> { { 0, 0 }, { -3, -6 } }, (* negative margins to reduce cell height *)
-            CellMargins      -> 0
+            CellFrameMargins -> { { 0, 0 }, { 0, -5 } }, (* negative margins to reduce cell height *)
+            CellMargins      -> 0,
+            CellSize         -> { Automatic, 12 },
+            Evaluator        -> None, (* animation runs entirely in the front end *)
+            TaggingRules     -> <| "ProgressIndicator" -> None |>
         ]
     ],
     Cell[

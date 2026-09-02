@@ -89,6 +89,62 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*DocumentationProvided*)
+VerificationTest[
+    Lookup[ Options @ RelatedWolframAlphaResults, "DocumentationProvided" ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-Default@@Tests/RelatedWolframAlphaResults.wlt:93,1-98,2"
+]
+
+(* Prompts better answered by documentation should not generate any Wolfram Alpha queries: *)
+VerificationTest[
+    RelatedWolframAlphaResults[
+        "How do I deploy a web form to the cloud?",
+        "DocumentationProvided" -> True,
+        $defaultTestOptions
+    ],
+    "",
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-DefersToDocs@@Tests/RelatedWolframAlphaResults.wlt:101,1-110,2"
+]
+
+(* Computational prompts still give results, which now include equivalent Wolfram Language code: *)
+VerificationTest[
+    RelatedWolframAlphaResults[
+        "What is the 1000th prime number?",
+        "DocumentationProvided" -> True,
+        $defaultTestOptions
+    ],
+    _String? (StringContainsQ[ #, ToString @ Prime[ 1000 ] ] && StringContainsQ[ #, "```wl" ] &),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-IncludesWLResults@@Tests/RelatedWolframAlphaResults.wlt:113,1-122,2"
+]
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* The DocumentationProvided option forces usingDocumentationQ to give True regardless of chat settings: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`$docsProvided = True },
+        Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`usingDocumentationQ[ ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-UsingDocumentationQ@@Tests/RelatedWolframAlphaResults.wlt:128,1-135,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`usingDocumentationQ[ ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-UsingDocumentationQ-Default@@Tests/RelatedWolframAlphaResults.wlt:137,1-142,2"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Handler Data*)
 VerificationTest[
     $ChatHandlerData = <| |>;
@@ -101,7 +157,7 @@ VerificationTest[
         "SampleQueries" -> { ___String }
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:93,1-105,2"
+    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:149,1-161,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -120,5 +176,5 @@ VerificationTest[
     _Failure,
     If[ $VersionNumber >= 14.3, { }, { ServiceExecute::apierr } ],
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:112,1-124,2"
+    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:168,1-180,2"
 ]

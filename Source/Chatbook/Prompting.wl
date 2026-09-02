@@ -44,14 +44,17 @@ $basePromptOrder = {
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
+    "ExpressionURIResults",
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
     "FunctionRepositoryIntegration",
+    "FunctionRepositoryFunctionSyntax",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
     "WolframLanguageStyle",
+    "Placeholders",
     "WolframLanguageEvaluatorTool",
     "WolframLanguageEvaluatorToolInteractive",
     "ExampleDataFiles",
@@ -107,12 +110,14 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "SpecialURIAudio"                      -> { "SpecialURI" },
     "SpecialURIVideo"                      -> { "SpecialURI" },
     "SpecialURIDynamic"                    -> { "SpecialURI" },
+    "ExpressionURIResults"                 -> { "SpecialURI" },
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
+    "Placeholders"                         -> { },
     "WolframSymbolCapitalization"          -> { },
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
-    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks", "Placeholders" },
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
@@ -123,7 +128,8 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebookAssistanceInstructionsHeader" -> { },
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
-    "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" }
+    "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" },
+    "FunctionRepositoryIntegration"        -> { "FunctionRepositoryFunctionSyntax" }
 |>;
 
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
@@ -134,7 +140,9 @@ $excludedBasePrompts = { };
    enabled via the "EnabledBasePrompts" setting. *)
 $disabledBasePrompts = {
     "FunctionRepositoryIntegration",
-    "WolframLanguageEvaluatorToolInteractive"
+    "FunctionRepositoryFunctionSyntax",
+    "WolframLanguageEvaluatorToolInteractive",
+    "ExpressionURIResults"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -309,6 +317,11 @@ $basePromptComponents[ "SpecialURIVideo" ] = "\
 $basePromptComponents[ "SpecialURIDynamic" ] = "\
 	* ![label](dynamic://content-id) represents an embedded dynamic UI.";
 
+$basePromptComponents[ "ExpressionURIResults" ] = "\
+* When wolfram_language_evaluator returns a result containing an expression URI \
+(e.g. ![result](expression://content-id)), always display it using that URI. Never attempt to reproduce or summarize \
+the formatted result as markdown text.";
+
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
 
@@ -321,6 +334,11 @@ $basePromptComponents[ "Packages" ] = "\
 $basePromptComponents[ "FunctionRepositoryIntegration" ] = "\
 * ResourceFunctions published in the Function Repository are reviewed and approved by Wolfram staff, \
 so you can treat them as first-class citizens of the Wolfram Language if there isn't already a built-in equivalent.";
+
+$basePromptComponents[ "FunctionRepositoryFunctionSyntax" ] = "\
+* ALWAYS call repository functions via the wrapped head, with the name as a string: \
+`ResourceFunction[\"SomeFunctionName\"][args]`. A bare `SomeFunctionName` is just an unbound symbol and will not \
+resolve.";
 
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
@@ -340,6 +358,13 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Always use proper naming conventions for your variables (e.g. lowerCamelCase)
 * Never use single capital letters to represent variables (e.g. use `a Sin[k x + \[Phi]]` instead of `A Sin[k x + \[Phi]]`)
 * Prefer modern Wolfram Language symbols and methods";
+
+$basePromptComponents[ "Placeholders" ] = "\
+* If your code needs a value that only the user can provide, represent it with ``Placeholder[\"description\"]``. \
+For example: ``data = Placeholder[\"your data\"]; DateListPlot[data]``. \
+This will render as an inline input field that replaces itself with the user's input. \
+NEVER use a comment as a stand-in for an expression (e.g. ``data = (* your data *)``), \
+since this is invalid syntax and will not display correctly to the user.";
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";

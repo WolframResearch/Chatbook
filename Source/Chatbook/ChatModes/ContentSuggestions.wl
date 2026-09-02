@@ -12,8 +12,9 @@ $ContentSuggestions = False;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$suggestionsAuthentication      := If[ $VersionNumber >= 15.0, Automatic, "LLMKit" ];
+$suggestionsChatMethod          := If[ $suggestionsService === $fallbackLLMKitService, "ChatService", "Chat" ];
 $suggestionsService             := $llmKitService;
-$suggestionsAuthentication      := "LLMKit";
 $stripWhitespace                 = True;
 $defaultWLContextString          = "";
 $finishReason                    = None;
@@ -75,6 +76,14 @@ Delimiters -> "%%" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Fill-in-the-Middle Completions*)
+
+
+(*
+    FIM calls `ServiceExecute[$wlFIMService, "RawCompletion", ...]`, so $wlFIMService must be a service
+    that exposes "RawCompletion" (e.g. "Ollama" or a per-provider LLMKit connection). This is not the
+    case for the generic "LLMKit" service on 15.0+, whose chat method is "ChatService" and which does
+    not support FIM-style suffix completion.
+*)
 $wlFIM                 = False;
 $wlFIMService          = "Ollama";
 $wlFIMModel            = "deepseek-coder-v2";
@@ -519,7 +528,7 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
         style = First[ ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], "Input" ];
 
         suggestions = DeleteDuplicates @ ConfirmMatch[
-            getWLSuggestions[ style, response ],
+            Replace[ getWLSuggestions[ style, response ], bd_BoxData :> { bd } ],
             { __BoxData },
             "Suggestions"
         ];
@@ -555,7 +564,7 @@ executeWLSuggestions0[ KeyValuePattern @ { "Instructions" -> instructions_, "Con
 executeWLSuggestions0[ instructions_, context_ ] := setServiceCaller[
     LogChatTiming @ suggestionServiceExecute[
         $suggestionsService,
-        "Chat",
+        $suggestionsChatMethod,
         {
             "Messages" -> {
                 <| "Role" -> "System", "Content" -> instructions |>,
@@ -605,7 +614,8 @@ executeWLSuggestionsFIM[ as_Association ] := Enclose[
                             "suffix"  -> suffix,
                             "stream"  -> False,
                             "options" -> $wlFIMOptions
-                        |>
+                        |>,
+                        Authentication -> $wlFIMAuthentication
                     ],
                     $wlFIMSuggestionsCount
                 ],
@@ -891,7 +901,7 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
         response = setServiceCaller[
             LogChatTiming @ suggestionServiceExecute[
                 $suggestionsService,
-                "Chat",
+                $suggestionsChatMethod,
                 {
                     "Messages" -> {
                         <| "Role" -> "System", "Content" -> instructions |>,
@@ -907,7 +917,7 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
             "TextSuggestions"
         ];
 
-        suggestions = DeleteDuplicates @ ConfirmMatch[ getTextSuggestions @ response, { __TextData }, "Suggestions" ];
+        suggestions = DeleteDuplicates @ ConfirmMatch[ Replace[ getTextSuggestions @ response, td_TextData :> { td } ], { __TextData }, "Suggestions" ];
 
         $lastSuggestions = suggestions;
 
@@ -1064,7 +1074,7 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
         response = setServiceCaller[
             LogChatTiming @ suggestionServiceExecute[
                 $suggestionsService,
-                "Chat",
+                $suggestionsChatMethod,
                 {
                     "Messages" -> {
                         <| "Role" -> "System", "Content" -> instructions |>,
@@ -1260,7 +1270,7 @@ formatSuggestions[
                     FrameStyle -> color @ "ProgressCellFrame",
                     Spacings   -> 0.5
                 ],
-                ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, maxWidth ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
+                ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, Max[ maxWidth, 50 ] ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
             ]
         ]
     ],

@@ -302,7 +302,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
@@ -368,11 +368,12 @@ constructInlineMessages // endDefinition;
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, inline, prompt },
+    Module[ { custom, workspace, inline, sidebar, prompt },
         custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
         workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
         inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
-        prompt    = StringRiffle[ Select[ { custom, workspace, inline }, StringQ ], "\n\n" ];
+        sidebar   = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
+        prompt    = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
         addPrompts[ prompt, messages ]
     ],
     throwInternalFailure
@@ -1714,6 +1715,8 @@ tokenizerName[ name_String ] :=
         StringContainsQ[ name, #, IgnoreCase -> True ] &,
         name
     ];
+
+tokenizerName[ Automatic ] := tokenizerName[ "gpt-4o" ];
 
 tokenizerName // endDefinition;
 
