@@ -2542,6 +2542,11 @@ formatSpecialBoxes[ boxes_ ] :=
         box: RowBox @ { "DateObject", "[", ___, "]" } :>
             RuleCondition @ formatDateObjectBoxes @ box
         ,
+        box: RowBox @ { $$colorConstructor, "[", ___, "]" } :>
+            With[ { swatch = Quiet @ ToExpression[ box, StandardForm, MakeBoxes ] },
+                swatch /; MatchQ[ swatch, _TemplateBox ]
+            ]
+        ,
         RowBox @ { "Placeholder", "[", label: Except[ RowBox @ { ___, ",", ___ } ], "]" } :>
             RuleCondition @ formatPlaceholderBoxes @ label
         ,
@@ -2552,6 +2557,20 @@ formatSpecialBoxes[ boxes_ ] :=
     };
 
 formatSpecialBoxes // endDefinition;
+
+(* Color constructors that render as interactive color pickers in notebooks: *)
+$$colorConstructor = Alternatives[
+    "CMYKColor",
+    "GrayLevel",
+    "Hue",
+    "LABColor",
+    "LCHColor",
+    "LightDarkSwitched",
+    "LUVColor",
+    "RGBColor",
+    "ThemeColor",
+    "XYZColor"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
