@@ -577,3 +577,68 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:569,1-579,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Textual Tool Calls*)
+
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`discardBadToolCalls @ StringSplit[
+        StringRiffle[
+            {
+                "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\n$Failed\nENDRESULT(first)",
+                "/retry",
+                "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL",
+                "Here is the plot:\n\n![Weather plot](attachment://content)\n\n- highs and lows"
+            },
+            "\n\n"
+        ],
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        Wolfram`Chatbook`Formatting`Private`discardedMaterial[
+            Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[ _String ],
+            ""
+        ],
+        "\n",
+        Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[
+            "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL"
+        ],
+        "\n\nHere is the plot:\n\n",
+        Wolfram`Chatbook`Formatting`Private`imageCell[ "Weather plot", "attachment://content" ],
+        "",
+        Wolfram`Chatbook`Formatting`Private`bulletCell[ "", "highs and lows" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Trailing-Text@@Tests/Formatting.wlt:273,1-302,2"
+]
+
+VerificationTest[
+    StringSplit[
+        "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\ntool output\nENDRESULT(abc123)\n\nTrailing text",
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[
+            "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\ntool output\nENDRESULT(abc123)"
+        ],
+        "\n\nTrailing text"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Completed-Result@@Tests/Formatting.wlt:304,1-317,2"
+]
+
+VerificationTest[
+    StringSplit[
+        "Leading text\n\nTOOLCALL: test\n{\n\t\"code\": \"1 + 1",
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        "Leading text\n\n",
+        Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[
+            "TOOLCALL: test\n{\n\t\"code\": \"1 + 1"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Partial-Streaming@@Tests/Formatting.wlt:319,1-332,2"
+]
