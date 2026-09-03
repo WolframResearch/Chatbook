@@ -22,6 +22,8 @@ If[ ! DirectoryQ @ $pacletDir || ! FileExistsQ @ FileNameJoin @ { $pacletDir, "P
 
 relative[ path_String ] := StringDelete[ path, StartOfString ~~ $pacletDir ];
 
+$exitCode = 0;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Artifact Groups*)
@@ -65,11 +67,28 @@ Scan[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Delete*)
-Scan[
-    If[ DirectoryQ @ #, DeleteDirectory[ #, DeleteContents -> True ], DeleteFile @ # ] &,
-    $targets
+$failures = { };
+
+removePath[ path_String ] := (
+    Quiet @ If[ DirectoryQ @ path,
+                DeleteDirectory[ path, DeleteContents -> True ],
+                DeleteFile @ path
+            ];
+    (* Trust the filesystem rather than the return value. *)
+    If[ FileExistsQ @ path || DirectoryQ @ path, AppendTo[ $failures, path ] ]
+);
+
+Scan[ removePath, $targets ];
+
+If[ $failures =!= { },
+    Print[ "Failed to remove ", Length @ $failures, " item(s):" ];
+    Scan[ Print[ "    ", relative @ # ] &, $failures ];
+    $exitCode = 1
+    ,
+    Print[ "Removed ", Length @ $targets, " item(s)." ]
 ];
 
-Print[ "Done!" ];
-
 EndPackage[ ];
+
+(* Fully qualified: EndPackage has already popped the context. *)
+Exit[ Wolfram`ChatbookScripts`$exitCode ]
