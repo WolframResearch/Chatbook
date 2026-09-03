@@ -1,6 +1,40 @@
 #!/usr/bin/env wolframscript
 
+
+(* Removes build artifacts from the Chatbook paclet directory.
+
+   Unlike its sibling scripts, this one deliberately does NOT load Common.wl:
+   that file may install PacletCICD over the network, calls PacletDirectoryLoad,
+   and asserts that Wolfram`Chatbook` resolves inside this repository. Cleaning
+   has to keep working when exactly those things are broken.
+
+   Usage:
+       wolframscript -f Scripts/Clean.wls [options]
+
+   Options:
+       -n, --dry-run           List what would be done without changing anything.
+           --usage             Show this message.
+*)
+
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Arguments*)
+$args = Select[ Flatten @ { $ScriptCommandLine }, StringQ ];
+
+flagQ[ names___String ] := AnyTrue[ { names }, MemberQ[ $args, # ] & ];
+
+$dryRun = flagQ[ "-n", "--dry-run" ];
+
+If[ flagQ[ "--usage", "-?" ],
+    Print[ "Usage: wolframscript -f Scripts/Clean.wls [options]\n\n" <>
+           "  -n, --dry-run           List what would be done without changing anything.\n" <>
+           "      --usage             Show this message (wolframscript takes -h/--help)."
+    ];
+    Exit[ 0 ]
+];
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -52,7 +86,7 @@ If[ $targets === { },
     Exit[ 0 ]
 ];
 
-Print[ "Removing:" ];
+Print[ If[ $dryRun, "Would remove:", "Removing:" ] ];
 
 Scan[
     Function[ group,
@@ -78,7 +112,12 @@ removePath[ path_String ] := (
     If[ FileExistsQ @ path || DirectoryQ @ path, AppendTo[ $failures, path ] ]
 );
 
-Scan[ removePath, $targets ];
+If[ ! $dryRun, Scan[ removePath, $targets ] ];
+
+If[ $dryRun,
+    Print[ "Dry run: ", Length @ $targets, " item(s) left untouched." ];
+    Exit[ $exitCode ]
+];
 
 If[ $failures =!= { },
     Print[ "Failed to remove ", Length @ $failures, " item(s):" ];
