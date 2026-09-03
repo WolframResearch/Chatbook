@@ -20,11 +20,29 @@
            --all               Enable every optional group above.
            --usage             Show this message.
 
+   Exit codes:
+       0  Everything requested succeeded, or there was nothing to do.
+       1  A restore or a delete was attempted and failed.
+       2  The invocation was rejected; nothing was touched.
+
    Note: wolframscript itself consumes -h/--help, so they never reach the
    script; --usage (or -?) is the equivalent here.
 *)
 
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Exit*)
+
+(* 0 = succeeded or nothing to do; 1 = an operation failed; 2 = invocation rejected. *)
+$exitCode = 0;
+
+(* Monotone, so no later branch can downgrade a recorded failure. *)
+raiseExitCode[ code_Integer ] := $exitCode = Max[ $exitCode, code ];
+
+(* The script's only Exit. *)
+finish[ ] := Exit[ $exitCode ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -46,9 +64,13 @@ If[ flagQ[ "--usage", "-?" ],
            "      --snippets          Also remove Assets/Snippets/Streamable.\n" <>
            "      --vector-databases  Also remove generated vector database assets.\n" <>
            "      --all               Enable every optional group above.\n" <>
-           "      --usage             Show this message (wolframscript takes -h/--help)."
+           "      --usage             Show this message (wolframscript takes -h/--help).\n\n" <>
+           "Exit codes:\n" <>
+           "  0  Succeeded, or there was nothing to do.\n" <>
+           "  1  A restore or a delete failed.\n" <>
+           "  2  The invocation was rejected; nothing was touched."
     ];
-    Exit[ 0 ]
+    finish[ ]
 ];
 
 
@@ -59,7 +81,8 @@ $scriptFile = If[ StringQ @ $InputFileName && $InputFileName =!= "", $InputFileN
 
 If[ $scriptFile === "",
     Print[ "Cannot locate this script: $InputFileName is unset." ];
-    Exit[ 1 ]
+    raiseExitCode[ 2 ];
+    finish[ ]
 ];
 
 $pacletDir = DirectoryName[ ExpandFileName @ $scriptFile, 2 ];
@@ -67,12 +90,11 @@ $pacletDir = DirectoryName[ ExpandFileName @ $scriptFile, 2 ];
 (* Guard the recursive deletes below against ever running outside the paclet. *)
 If[ ! DirectoryQ @ $pacletDir || ! FileExistsQ @ FileNameJoin @ { $pacletDir, "PacletInfo.wl" },
     Print[ "Refusing to clean: no PacletInfo.wl found in ", $pacletDir ];
-    Exit[ 1 ]
+    raiseExitCode[ 2 ];
+    finish[ ]
 ];
 
 relative[ path_String ] := StringDelete[ path, StartOfString ~~ $pacletDir ];
-
-$exitCode = 0;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -124,7 +146,7 @@ If[ $restore,
                     Scan[ Print[ "    ", # ] &, modified ];
                     If[ ! gitOK @ runGit @ Join[ { "restore", "--" }, modified ],
                         Print[ "    git restore failed." ];
-                        $exitCode = 1
+                        raiseExitCode[ 1 ]
                     ]
             ]
         ]
@@ -181,7 +203,7 @@ $targets = DeleteDuplicates @ Flatten[ Last /@ $groups ];
 (*Report*)
 If[ $targets === { },
     Print[ "Nothing to clean in ", $pacletDir ];
-    Exit[ 0 ]
+    finish[ ]
 ];
 
 Print[ If[ $dryRun, "Would remove:", "Removing:" ] ];
@@ -214,13 +236,13 @@ If[ ! $dryRun, Scan[ removePath, $targets ] ];
 
 If[ $dryRun,
     Print[ "Dry run: ", Length @ $targets, " item(s) left untouched." ];
-    Exit[ $exitCode ]
+    finish[ ]
 ];
 
 If[ $failures =!= { },
     Print[ "Failed to remove ", Length @ $failures, " item(s):" ];
     Scan[ Print[ "    ", relative @ # ] &, $failures ];
-    $exitCode = 1
+    raiseExitCode[ 1 ]
     ,
     Print[ "Removed ", Length @ $targets, " item(s)." ]
 ];
@@ -228,4 +250,4 @@ If[ $failures =!= { },
 EndPackage[ ];
 
 (* Fully qualified: EndPackage has already popped the context. *)
-Exit[ Wolfram`ChatbookScripts`$exitCode ]
+Wolfram`ChatbookScripts`finish[ ]
