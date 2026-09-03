@@ -14,7 +14,11 @@ If[ $scriptFile === "",
 
 $pacletDir = DirectoryName[ ExpandFileName @ $scriptFile, 2 ];
 
-If[!DirectoryQ[$pacletDir], Print["paclet directory does NOT exist: ", $pacletDir]; Exit[1]];
+(* Guard the recursive deletes below against ever running outside the paclet. *)
+If[ ! DirectoryQ @ $pacletDir || ! FileExistsQ @ FileNameJoin @ { $pacletDir, "PacletInfo.wl" },
+    Print[ "Refusing to clean: no PacletInfo.wl found in ", $pacletDir ];
+    Exit[ 1 ]
+];
 
 $buildArtifactDirectory  = FileNameJoin @ { $pacletDir, "build" };
 $mxFileArtifact  = FileNameJoin @ { $pacletDir, "Source", "Chatbook", ToString[$SystemWordLength] <> "Bit", "Chatbook.mx" };
