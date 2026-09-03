@@ -9,8 +9,6 @@ If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputF
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
-Print["$Version: ", UsingFrontEnd @ SystemInformation @ "Small" ];
-
 If[!DirectoryQ[$pacletDir], Print["paclet directory does NOT exist: ", $pacletDir]; Exit[1]];
 
 $buildArtifactDirectory  = FileNameJoin @ { $pacletDir, "build" };
