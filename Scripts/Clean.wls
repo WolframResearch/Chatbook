@@ -4,10 +4,15 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Initialization*)
-If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
+(*Paclet Directory*)
+$scriptFile = If[ StringQ @ $InputFileName && $InputFileName =!= "", $InputFileName, "" ];
 
-Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
+If[ $scriptFile === "",
+    Print[ "Cannot locate this script: $InputFileName is unset." ];
+    Exit[ 1 ]
+];
+
+$pacletDir = DirectoryName[ ExpandFileName @ $scriptFile, 2 ];
 
 If[!DirectoryQ[$pacletDir], Print["paclet directory does NOT exist: ", $pacletDir]; Exit[1]];
 
