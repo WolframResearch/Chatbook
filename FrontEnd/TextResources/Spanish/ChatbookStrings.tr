@@ -74,6 +74,7 @@
 "FormattingToolUsing" -> "Utilizando ",
 "FormattingToolUsed" -> "Se utiliz\[OAcute] ",
 "FormattingToolUsingLoading" -> "Utilizando herramienta\[Ellipsis]",
+"FormattingToolRetryIncomplete" -> "The retried tool call did not complete. No tool result was received, so subsequent generated content was discarded.",
 "FormattingThinkingActive" -> "Pensando\[Ellipsis]",
 "FormattingThinkingComplete" -> "Se pens\[OAcute] durante `time`segundos",
 "FormattingThinkingCompleteFallback" -> "Pensado",
