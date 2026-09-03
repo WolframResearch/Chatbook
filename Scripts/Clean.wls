@@ -1,7 +1,8 @@
 #!/usr/bin/env wolframscript
 
 
-(* Removes build artifacts from the Chatbook paclet directory.
+(* Restores the front-end files that the build rewrites in place, then removes
+   the paclet's build artifacts.
 
    Unlike its sibling scripts, this one deliberately does NOT load Common.wl:
    that file may install PacletCICD over the network, calls PacletDirectoryLoad,
@@ -13,10 +14,14 @@
 
    Options:
        -n, --dry-run           List what would be done without changing anything.
+           --no-restore        Skip the git restore of front-end files.
            --snippets          Also remove Assets/Snippets/Streamable.
            --vector-databases  Also remove generated vector database assets.
            --all               Enable every optional group above.
            --usage             Show this message.
+
+   Note: wolframscript itself consumes -h/--help, so they never reach the
+   script; --usage (or -?) is the equivalent here.
 *)
 
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
@@ -29,6 +34,7 @@ $args = Select[ Flatten @ { $ScriptCommandLine }, StringQ ];
 flagQ[ names___String ] := AnyTrue[ { names }, MemberQ[ $args, # ] & ];
 
 $dryRun = flagQ[ "-n", "--dry-run" ];
+$restore        = ! flagQ[ "--no-restore" ];
 $allOptional    = flagQ[ "--all" ];
 $cleanSnippets  = $allOptional || flagQ[ "--snippets" ];
 $cleanVectorDBs = $allOptional || flagQ[ "--vector-databases" ];
@@ -36,6 +42,7 @@ $cleanVectorDBs = $allOptional || flagQ[ "--vector-databases" ];
 If[ flagQ[ "--usage", "-?" ],
     Print[ "Usage: wolframscript -f Scripts/Clean.wls [options]\n\n" <>
            "  -n, --dry-run           List what would be done without changing anything.\n" <>
+           "      --no-restore        Skip the git restore of front-end files.\n" <>
            "      --snippets          Also remove Assets/Snippets/Streamable.\n" <>
            "      --vector-databases  Also remove generated vector database assets.\n" <>
            "      --all               Enable every optional group above.\n" <>
@@ -66,6 +73,64 @@ If[ ! DirectoryQ @ $pacletDir || ! FileExistsQ @ FileNameJoin @ { $pacletDir, "P
 relative[ path_String ] := StringDelete[ path, StartOfString ~~ $pacletDir ];
 
 $exitCode = 0;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Restore Front-End Files*)
+
+(* The build reformats these in place; restore them from the index. *)
+$frontEndFiles = {
+    "DarkModeSupport/StyleSheets/Chatbook.nb",
+    "DarkModeSupport/StyleSheets/Wolfram/WorkspaceChat.nb",
+    "FrontEnd/Assets/Extensions/CoreExtensions.nb",
+    "FrontEnd/StyleSheets/Chatbook.nb",
+    "FrontEnd/StyleSheets/Wolfram/WorkspaceChat.nb"
+};
+
+runGit[ args_List ] :=
+    With[ { res = Quiet @ RunProcess[ Prepend[ args, "git" ], ProcessDirectory -> $pacletDir ] },
+        If[ AssociationQ @ res, res, $Failed ]
+    ];
+
+gitOK[ res_ ] := AssociationQ @ res && res[ "ExitCode" ] === 0;
+
+(* Only act on files git reports as modified, so the output names what changed.
+   `git restore` reads from the index, so compare against the index too. *)
+modifiedFrontEndFiles[ ] :=
+    With[ { res = runGit @ Join[ { "diff", "--name-only", "--" }, $frontEndFiles ] },
+        If[ gitOK @ res,
+            Select[ StringTrim /@ StringSplit[ res[ "StandardOutput" ], "\n" ], # =!= "" & ],
+            { }
+        ]
+    ];
+
+If[ $restore,
+    If[ ! gitOK @ runGit @ { "rev-parse", "--is-inside-work-tree" }
+        ,
+        (* Artifacts are still worth removing outside a work tree. *)
+        Print[ "Not a git work tree; skipping front-end restore." ]
+        ,
+        With[ { modified = modifiedFrontEndFiles[ ] },
+            Which[
+                modified === { },
+                    Print[ "No modified front-end files to restore." ],
+
+                $dryRun,
+                    Print[ "Would restore ", Length @ modified, " modified front-end file(s):" ];
+                    Scan[ Print[ "    ", # ] &, modified ],
+
+                True,
+                    Print[ "Restoring ", Length @ modified, " modified front-end file(s):" ];
+                    Scan[ Print[ "    ", # ] &, modified ];
+                    If[ ! gitOK @ runGit @ Join[ { "restore", "--" }, modified ],
+                        Print[ "    git restore failed." ];
+                        $exitCode = 1
+                    ]
+            ]
+        ]
+    ]
+];
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
