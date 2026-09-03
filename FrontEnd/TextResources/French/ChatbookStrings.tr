@@ -74,6 +74,7 @@
 "FormattingToolUsing" -> "Utilisation de ",
 "FormattingToolUsed" -> "Utilisant ",
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
+"FormattingToolRetryIncomplete" -> "The retried tool call did not complete. No tool result was received, so subsequent generated content was discarded.",
 "FormattingThinkingActive" -> "En train de r\[EAcute]fl\[EAcute]chir\[Ellipsis]",
 "FormattingThinkingComplete" -> "A r\[EAcute]fl\[EAcute]chi pendant `time` secondes",
 "FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
