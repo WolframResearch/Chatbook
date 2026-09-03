@@ -7,7 +7,7 @@ This file provides guidance to AI agents (Claude Code, Cursor, etc.) when workin
 Chatbook (`Wolfram/Chatbook`) is a Wolfram Language paclet that adds LLM-powered notebook support to Wolfram. It integrates chat-based AI interactions directly into Wolfram notebooks, with tool use, prompt augmentation, persona management, and sandboxed code evaluation.
 
 - **Language**: Wolfram Language (`.wl` files)
-- **Requires**: Wolfram Engine 14.3+
+- **Requires**: Wolfram Engine 15.0+
 - **Primary Context**: ``Wolfram`Chatbook` ``
 - **License**: MIT
 
@@ -138,7 +138,7 @@ Always review [testing.md](docs/testing.md) for detailed instructions before mod
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:
-- **Build.yml** — PR validation: build + test (wolframengine:14.3.0 Docker container)
+- **Build.yml** — PR validation: build + test (wolframengine:15.0.0 Docker container)
 - **Release.yml** — Publish to Wolfram Paclet Repository on push to `release/paclet`
 - **IncrementPacletVersion.yml** — Auto-increments version in PacletInfo.wl on main branch pushes
 
