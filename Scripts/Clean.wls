@@ -13,6 +13,9 @@
 
    Options:
        -n, --dry-run           List what would be done without changing anything.
+           --snippets          Also remove Assets/Snippets/Streamable.
+           --vector-databases  Also remove generated vector database assets.
+           --all               Enable every optional group above.
            --usage             Show this message.
 *)
 
@@ -26,10 +29,16 @@ $args = Select[ Flatten @ { $ScriptCommandLine }, StringQ ];
 flagQ[ names___String ] := AnyTrue[ { names }, MemberQ[ $args, # ] & ];
 
 $dryRun = flagQ[ "-n", "--dry-run" ];
+$allOptional    = flagQ[ "--all" ];
+$cleanSnippets  = $allOptional || flagQ[ "--snippets" ];
+$cleanVectorDBs = $allOptional || flagQ[ "--vector-databases" ];
 
 If[ flagQ[ "--usage", "-?" ],
     Print[ "Usage: wolframscript -f Scripts/Clean.wls [options]\n\n" <>
            "  -n, --dry-run           List what would be done without changing anything.\n" <>
+           "      --snippets          Also remove Assets/Snippets/Streamable.\n" <>
+           "      --vector-databases  Also remove generated vector database assets.\n" <>
+           "      --all               Enable every optional group above.\n" <>
            "      --usage             Show this message (wolframscript takes -h/--help)."
     ];
     Exit[ 0 ]
@@ -75,6 +84,30 @@ $groups = {
     { "Test stack history",
       FileNames[ "*StackHistory.wxf", $pacletDir, 1 ] }
 };
+
+If[ $cleanSnippets,
+    AppendTo[ $groups,
+        { "Documentation snippets",
+          Select[ { FileNameJoin @ { $pacletDir, "Assets", "Snippets", "Streamable" } }, DirectoryQ ] }
+    ]
+];
+
+If[ $cleanVectorDBs,
+    AppendTo[ $groups,
+        { "Vector databases",
+          Join[
+              FileNames[ { "*.usearch", "*.wl", "*.wxf" },
+                         FileNameJoin @ { $pacletDir, "Assets", "VectorDatabases" },
+                         Infinity
+              ],
+              FileNames[ "*.jsonl",
+                         FileNameJoin @ { $pacletDir, "Developer", "VectorDatabases", "SourceData" },
+                         1
+              ]
+          ] }
+    ]
+];
+
 
 $targets = DeleteDuplicates @ Flatten[ Last /@ $groups ];
 
