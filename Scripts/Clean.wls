@@ -29,17 +29,12 @@ relative[ path_String ] := StringDelete[ path, StartOfString ~~ $pacletDir ];
 (* Each group is { label, paths }; the paths are collected once and reused for
    both the report and the deletion, so the two can never disagree. *)
 $groups = {
+    (* Every *Bit subdirectory, so a stale MX from another word length also goes. *)
     { "Compiled MX file",
-      Select[
-          { FileNameJoin @ {
-                $pacletDir, "Source", "Chatbook",
-                ToString[ $SystemWordLength ] <> "Bit", "Chatbook.mx"
-            } },
-          FileExistsQ
-      ] },
+      FileNames[ "Chatbook.mx", FileNameJoin @ { $pacletDir, "Source", "Chatbook" }, 2 ] },
 
-    { "Build directory contents",
-      FileNames[ "*", FileNameJoin @ { $pacletDir, "build" }, 1 ] },
+    { "Build directory",
+      Select[ { FileNameJoin @ { $pacletDir, "build" } }, DirectoryQ ] },
 
     { "Test stack history",
       FileNames[ "*StackHistory.wxf", $pacletDir, 1 ] }
