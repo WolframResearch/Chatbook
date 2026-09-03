@@ -256,8 +256,12 @@ $templateBoxRules = <|
     "HueColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "LABColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "LCHColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "LightDarkSwitched"            -> serializeLightDarkSwitched,
+    "LightDarkSwitched1"           -> serializeLightDarkSwitched,
     "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "ThemeColor"                   -> serializeThemeColor,
+    "ThemeColorBlended"            -> serializeThemeColor,
     "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ]
 |>;
 
@@ -3311,6 +3315,32 @@ $inputFormReplacements = {
         "CompressedData[\"\[LeftSkeleton]" <> ToString @ StringLength @ s <> "\[RightSkeleton]\"]",
     "$CellContext`" -> ""
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serializeLightDarkSwitched*)
+serializeLightDarkSwitched // beginDefinition;
+
+serializeLightDarkSwitched[ KeyValuePattern @ { "light" -> light_, "dark" -> dark_ } ] :=
+    inputFormString @ LightDarkSwitched[ light, dark ];
+
+serializeLightDarkSwitched[ KeyValuePattern[ "light" -> light_ ] ] :=
+    inputFormString @ LightDarkSwitched[ light ];
+
+serializeLightDarkSwitched // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serializeThemeColor*)
+serializeThemeColor // beginDefinition;
+
+serializeThemeColor[ KeyValuePattern[ "name" -> name_ ] ] :=
+    inputFormString @ ThemeColor[ name ];
+
+serializeThemeColor[ KeyValuePattern @ { "frac1" -> f1_, "name1" -> n1_, "frac2" -> f2_, "name2" -> n2_ } ] :=
+    inputFormString @ ThemeColor[ { f1 -> n1, f2 -> n2 } ];
+
+serializeThemeColor // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

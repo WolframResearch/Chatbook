@@ -1127,11 +1127,15 @@ DynamicModule[
 							Typeset`dingbatCell,
 							Cell[ BoxData @ ToBoxes @
 								Tooltip[
-									Pane[
-										getPersonaMenuIcon @ persona,
-										Alignment       -> { Center, Center },
-										ImageSize       -> { 25, 25 },
-										ImageSizeAction -> "ShrinkToFit"
+									If[ $cloudNotebooks,
+										cloudShrinkToFit[ getPersonaMenuIcon @ persona, { 25, 25 } ]
+										,
+										Pane[
+											getPersonaMenuIcon @ persona,
+											Alignment       -> { Center, Center },
+											ImageSize       -> { 25, 25 },
+											ImageSizeAction -> "ShrinkToFit"
+										]
 									],
 									personaDisplayName @ persona
 								],
@@ -1248,7 +1252,10 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		displayName = None
 		,
 		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
-			icon = Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ];
+			icon = If[ $cloudNotebooks,
+				cloudShrinkToFit[ getPersonaMenuIcon @ persona, { Automatic, 19 } ],
+				Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ]
+			];
 			displayName = personaDisplayName[ evaluatorName, personaSettings ]
 		]
 	];
@@ -2213,6 +2220,8 @@ alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> 
 (*resizeMenuIcon*)
 resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
 	Show[ icon, ImageSize -> { 21, 21 } ];
+
+resizeMenuIcon[ icon_ ] /; $cloudNotebooks := cloudShrinkToFit[ icon, { 21, 21 } ];
 
 resizeMenuIcon[ icon_ ] := Pane[
 	icon,

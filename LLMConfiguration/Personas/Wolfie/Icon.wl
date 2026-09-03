@@ -1,1 +1,1 @@
-RawBoxes @ TemplateBox[ { }, "WolfieIcon" ]
+Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WolfieIcon" ]

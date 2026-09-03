@@ -67,6 +67,7 @@ $$ignoredXMLTag = Alternatives[
     "sources",
     "states",
     "stepbystepcontenttype",
+    "subpodcustomizationdata",
     "userinfoused"
 ];
 (* cSpell: enable *)
@@ -1351,6 +1352,11 @@ parsePodContent[ XMLElement[ "mathml", _, xml_ ] ] :=
 
 parsePodContent[ XMLElement[ $$ignoredXMLTag, _, _ ] ] :=
     { };
+
+parsePodContent[ XMLElement[ unhandledTag_String, _, _ ] ] := (
+    If[ TrueQ @ $wolframAlphaDebug, messagePrint[ "UnhandledWolframAlphaXMLTag", unhandledTag ] ];
+    { }
+);
 
 parsePodContent[ _String ] :=
     { };
