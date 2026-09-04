@@ -577,3 +577,170 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:569,1-579,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Textual Tool Calls*)
+
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`discardBadToolCalls @ StringSplit[
+        StringRiffle[
+            {
+                "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\n$Failed\nENDRESULT(first)",
+                "/retry",
+                "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL",
+                "Here is the plot:\n\n![Weather plot](attachment://content)\n\n- highs and lows"
+            },
+            "\n\n"
+        ],
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        Wolfram`Chatbook`Formatting`Private`discardedMaterial[
+            Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[ _String ],
+            ""
+        ],
+        "\n",
+        Wolfram`Chatbook`Formatting`Private`retriedToolCallCell[
+            "TOOLCALL: wolfram_language_evaluator\n{}\nENDARGUMENTS\nENDTOOLCALL\n\n" <>
+            "Here is the plot:\n\n![Weather plot](attachment://content)\n\n- highs and lows"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Trailing-Text@@Tests/Formatting.wlt:273,1-302,2"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Formatting`Private`$dynamicText = False },
+        Wolfram`Chatbook`Formatting`Private`retriedToolCall[
+            "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\n\nFabricated result"
+        ]
+    ],
+    Cell[ BoxData[ _ ], "Text", ___ ],
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Incomplete-Retry-Fails"
+]
+
+VerificationTest[
+    FreeQ[
+        Block[ { Wolfram`Chatbook`Formatting`Private`$dynamicText = False },
+            Wolfram`Chatbook`Formatting`Private`retriedToolCall[
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\n\nFabricated result"
+            ]
+        ],
+        _Failure
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Incomplete-Retry-Does-Not-Render-Failure"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`formatChatOutput[
+        StringRiffle[
+            {
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nfailed\nENDRESULT(first)",
+                "/retry",
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\n\nFabricated result"
+            },
+            "\n\n"
+        ],
+        "Finished"
+    ],
+    RawBoxes @ Cell @ TextData @ {
+        Cell[ _, "DiscardedMaterial", ___ ],
+        _String,
+        Cell[ BoxData[ _ ], "Text", ___ ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Incomplete-Retry-Finished-Output"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`formatChatOutput[
+        StringRiffle[
+            {
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nfailed\nENDRESULT(first)",
+                "/retry",
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL"
+            },
+            "\n\n"
+        ],
+        "Streaming"
+    ],
+    RawBoxes @ Cell @ TextData @ {
+        Cell[ _, "DiscardedMaterial", ___ ],
+        _String,
+        Cell[ _, "InlineToolCall", ___ ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Incomplete-Retry-Streams"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Formatting`Private`$dynamicText = False },
+        Wolfram`Chatbook`Formatting`Private`retriedToolCall[
+            "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\ntool output\nENDRESULT(abc123)"
+        ]
+    ],
+    Cell[ _, "InlineToolCall", ___ ],
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Completed-Retry-Succeeds"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`discardBadToolCalls @ StringSplit[
+        StringRiffle[
+            {
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nfirst failure\nENDRESULT(first)",
+                "/retry",
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nsecond failure\nENDRESULT(second)",
+                "/retry",
+                "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\n\nFabricated result"
+            },
+            "\n\n"
+        ],
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        Wolfram`Chatbook`Formatting`Private`discardedMaterial[ ___ ],
+        "\n",
+        Wolfram`Chatbook`Formatting`Private`discardedMaterial[ ___ ],
+        "\n",
+        Wolfram`Chatbook`Formatting`Private`retriedToolCallCell[
+            "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\n\nFabricated result"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Multiple-Retries"
+]
+
+VerificationTest[
+    StringSplit[
+        "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\ntool output\nENDRESULT(abc123)\n\nTrailing text",
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[
+            "TOOLCALL: test\n{}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\ntool output\nENDRESULT(abc123)"
+        ],
+        "\n\nTrailing text"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Completed-Result@@Tests/Formatting.wlt:304,1-317,2"
+]
+
+VerificationTest[
+    StringSplit[
+        "Leading text\n\nTOOLCALL: test\n{\n\t\"code\": \"1 + 1",
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules
+    ],
+    {
+        "Leading text\n\n",
+        Wolfram`Chatbook`Formatting`Private`inlineToolCallCell[
+            "TOOLCALL: test\n{\n\t\"code\": \"1 + 1"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Textual-Tool-Call-Partial-Streaming@@Tests/Formatting.wlt:319,1-332,2"
+]
