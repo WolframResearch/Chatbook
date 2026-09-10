@@ -312,6 +312,26 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 (*OpenRouter*)
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
+(* Opus 5 and Sonnet 5 are served through OpenRouter as well, and that route needs the same
+   corrections the ClaudeFable5 entry below makes: the Anthropic service-level declarations do not
+   carry over to it. Inheriting the Anthropic tier supplies MaxContextTokens 1000000,
+   Multimodal -> True and Temperature -> Missing[ "NotSupported" ]; only the route-specific keys
+   are overridden here. No "Reasoning" override is needed, unlike Fable, because the Claude5 tier
+   does not pin one. *)
+$modelAutoSettings[ "OpenRouter", "Claude5" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude5" ],
+
+    (* as for Fable below: advertised max_out is 128000 and an unset max_tokens reserves all of it *)
+    "MaxTokens" -> 64000,
+
+    (* without this a native tool_calls turn is answered with a System message and the provider
+       rejects it for a missing tool_call_id *)
+    "ToolMethod" -> "Service",
+
+    (* OpenRouter's Anthropic adapter rejects an image_url block in a system message *)
+    "MultimodalRoles" -> { "User" }
+|>;
+
 $modelAutoSettings[ "OpenRouter", "ClaudeFable5" ] = <|
     (* same model as the Anthropic route; inherits that tier, incl. ToolExamplePrompt -> None *)
     $modelAutoSettings[ "Anthropic", "ClaudeFable5" ],
