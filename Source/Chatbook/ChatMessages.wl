@@ -1068,7 +1068,18 @@ makeMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
-allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+
+(* A family or service may declare which roles can carry an image; anything undeclared falls back to
+   the model name check below. It has to be declarable per service because the same model can be
+   restricted on one route and not another: OpenRouter's Anthropic adapter rejects an image_url block
+   in a system message, which is where Chatbook puts tool result images, so "anthropic/claude-fable-5"
+   declares { "User" } there, while the Anthropic service accepts that image and stays unrestricted. *)
+allowedMultimodalRoles[ settings_ ] :=
+    Replace[
+        autoModelSetting[ settings, "MultimodalRoles" ],
+        Except[ { __String } ] :> allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ]
+    ];
+
 allowedMultimodalRoles // endDefinition;
 
 
