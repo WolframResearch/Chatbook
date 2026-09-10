@@ -173,14 +173,45 @@ $modelAutoSettings[ "Anthropic", "Claude37Sonnet" ] = <|
     "ToolExamplePrompt"        -> Automatic
 |>;
 
+(* MaxTokens must be set explicitly or the Anthropic provider defaults to 4096. Ceilings below
+   are the values the API itself reports when an oversized max_tokens is requested. *)
 $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
     "MaxContextTokens" -> 200000,
+    "MaxTokens"        -> 64000,
     "Multimodal"       -> True
 |>;
 
-$modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
+(* 4.1 predates the 64k ceiling; keyed on BaseID, which is checked before Family: *)
+$modelAutoSettings[ "Anthropic", "ClaudeOpus41" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "MaxTokens" -> 32000
+|>;
+
+$modelAutoSettings[ "Anthropic", "Claude46" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude4" ],
+    "MaxTokens" -> 128000
+|>;
+
+(* Temperature is rejected from 4.7 onward, and by every 5.x model: *)
+$modelAutoSettings[ "Anthropic", "Claude47Plus" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude46" ],
     "Temperature" -> Missing[ "NotSupported" ]
+|>;
+
+(* Opus 5 and Sonnet 5 carry a 1M window, not the 200000 inherited from Claude4. A future Haiku 5
+   with a smaller window would need a BaseID-keyed override, the way ClaudeOpus41 does. *)
+$modelAutoSettings[ "Anthropic", "Claude5" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude47Plus" ],
+    "MaxContextTokens" -> 1000000
+|>;
+
+$modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude5" ],
+    "MaxContextTokens" -> 1000000,
+    (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
+    "ToolExamplePrompt" -> None,
+    (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)
+    "Reasoning"        -> "adaptive"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -280,6 +311,47 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*OpenRouter*)
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
+
+(* Opus 5 and Sonnet 5 are served through OpenRouter as well, and that route needs the same
+   corrections the ClaudeFable5 entry below makes: the Anthropic service-level declarations do not
+   carry over to it. Inheriting the Anthropic tier supplies MaxContextTokens 1000000,
+   Multimodal -> True and Temperature -> Missing[ "NotSupported" ]; only the route-specific keys
+   are overridden here. No "Reasoning" override is needed, unlike Fable, because the Claude5 tier
+   does not pin one. *)
+$modelAutoSettings[ "OpenRouter", "Claude5" ] = <|
+    $modelAutoSettings[ "Anthropic", "Claude5" ],
+
+    (* as for Fable below: advertised max_out is 128000 and an unset max_tokens reserves all of it *)
+    "MaxTokens" -> 64000,
+
+    (* without this a native tool_calls turn is answered with a System message and the provider
+       rejects it for a missing tool_call_id *)
+    "ToolMethod" -> "Service",
+
+    (* OpenRouter's Anthropic adapter rejects an image_url block in a system message *)
+    "MultimodalRoles" -> { "User" }
+|>;
+
+$modelAutoSettings[ "OpenRouter", "ClaudeFable5" ] = <|
+    (* same model as the Anthropic route; inherits that tier, incl. ToolExamplePrompt -> None *)
+    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ],
+
+    (* OpenRouter encodes a Reasoning string as {"effort": ...} and "adaptive" is not a valid
+       effort there, so omit the parameter and let the provider default apply *)
+    "Reasoning" -> Verbatim @ Automatic,
+
+    (* advertised max_out is 128000; an unset max_tokens reserves all of it upfront *)
+    "MaxTokens" -> 64000,
+
+    (* the Anthropic service declares this at its service level, which the OpenRouter route does
+       not inherit; without it a native tool_calls turn is answered with a System message and the
+       provider rejects it for a missing tool_call_id *)
+    "ToolMethod" -> "Service",
+
+    (* OpenRouter's Anthropic adapter rejects an image_url block in a system message, which is
+       where Chatbook puts tool result images; stricter than the Anthropic service itself *)
+    "MultimodalRoles" -> { "User" }
+|>;
 
 (*
   * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>

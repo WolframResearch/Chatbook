@@ -388,6 +388,10 @@ extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
         ]
     ] := { };
 
+(* Other potential streamed API errors (e.g. overloaded_error) surfaces as a Failure instead of a silent blank *)
+extractBodyChunks0[ failure_Failure ] :=
+    Throw[ failure, $bodyChunksTag ];
+
 extractBodyChunks0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -1750,7 +1750,10 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
         If[ settings[ "BypassResponseChecking" ], Throw @ writeReformattedCell[ settings, container, cell ] ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
-        processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ];
+        processed = Replace[
+            ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ],
+            strings: { ___String } :> StringJoin @ strings
+        ];
         If[ FailureQ @ processed, throwTop @ writeErrorCell[ cell, processed ] ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
