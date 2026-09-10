@@ -198,9 +198,11 @@ $modelAutoSettings[ "Anthropic", "Claude47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
+(* Opus 5 and Sonnet 5 carry a 1M window, not the 200000 inherited from Claude4. A future Haiku 5
+   with a smaller window would need a BaseID-keyed override, the way ClaudeOpus41 does. *)
 $modelAutoSettings[ "Anthropic", "Claude5" ] = <|
-    (* MaxContextTokens 200000 is inherited; the real 5.x window is unverified *)
-    $modelAutoSettings[ "Anthropic", "Claude47Plus" ]
+    $modelAutoSettings[ "Anthropic", "Claude47Plus" ],
+    "MaxContextTokens" -> 1000000
 |>;
 
 $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
