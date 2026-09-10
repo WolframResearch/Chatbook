@@ -130,10 +130,13 @@ VerificationTest[
     TestID -> "Multimodal-Opus5@@Tests/ModelFamilies.wlt:135,1-140,2"
 ]
 
+(* Both 5.x models carry a 1M window. The 200000 this asserted before was inherited from Claude4
+   and flagged in the source as unverified; it is now confirmed against Anthropic's published model
+   table and, independently, the context_length OpenRouter advertises for the same two models. *)
 VerificationTest[
-    settingOf[ "claude-opus-5", "MaxContextTokens" ],
-    200000,
-    TestID -> "MaxContextTokens-Opus5@@Tests/ModelFamilies.wlt:143,1-148,2"
+    settingOf[ #, "MaxContextTokens" ] & /@ { "claude-opus-5", "claude-sonnet-5" },
+    { 1000000, 1000000 },
+    TestID -> "MaxContextTokens-Claude5@@Tests/ModelFamilies.wlt:143,1-148,2"
 ]
 
 (* Temperature is still permitted for 4.6 and earlier, which do accept it: *)
