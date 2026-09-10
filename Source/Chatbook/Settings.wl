@@ -310,6 +310,27 @@ $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
 (*OpenRouter*)
 $modelAutoSettings[ "OpenRouter" ] = <| |>;
 
+$modelAutoSettings[ "OpenRouter", "ClaudeFable5" ] = <|
+    (* same model as the Anthropic route; inherits that tier, incl. ToolExamplePrompt -> None *)
+    $modelAutoSettings[ "Anthropic", "ClaudeFable5" ],
+
+    (* OpenRouter encodes a Reasoning string as {"effort": ...} and "adaptive" is not a valid
+       effort there, so omit the parameter and let the provider default apply *)
+    "Reasoning" -> Verbatim @ Automatic,
+
+    (* advertised max_out is 128000; an unset max_tokens reserves all of it upfront *)
+    "MaxTokens" -> 64000,
+
+    (* the Anthropic service declares this at its service level, which the OpenRouter route does
+       not inherit; without it a native tool_calls turn is answered with a System message and the
+       provider rejects it for a missing tool_call_id *)
+    "ToolMethod" -> "Service",
+
+    (* OpenRouter's Anthropic adapter rejects an image_url block in a system message, which is
+       where Chatbook puts tool result images; stricter than the Anthropic service itself *)
+    "MultimodalRoles" -> { "User" }
+|>;
+
 (*
   * <https://web.archive.org/web/20260506040101/https://openrouter.ai/deepseek/deepseek-v4-flash>
     * Reasoning is on by default, only supports effort level "high" and "xhigh".
