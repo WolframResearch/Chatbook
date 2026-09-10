@@ -142,6 +142,25 @@ declared levels directly and is pure:
 Wolfram`Chatbook`Common`resolveReasoningEffort[ "None", { "Low", "Medium", "High" } ]  (* -> "Low" *)
 ```
 
+### Assert the level table through the five-argument `autoModelSetting`
+
+The `"ReasoningEfforts"` entries themselves are asserted in the same file, through
+`autoModelSetting[ service, name, id, family, key ]`. That form is a plain table lookup with no model
+spec to resolve, so it stays pure and gate-free like everything else here:
+
+```wl
+Wolfram`Chatbook`Common`autoModelSetting[ "OpenAI", "gpt-5.6-sol", "GPT56Sol", "GPT56Plus", "ReasoningEfforts" ]
+```
+
+One of these is an invariant rather than a fact about a model:
+`ReasoningEfforts-ScaleCoversEveryDeclaredLevel` fails if a family declares a level missing from
+`$reasoningEffortScale`, which would make that level unreachable as a clamp target.
+
+These tests pin what the models accept, but they cannot notice that a model has *started* accepting
+more — nothing in CI talks to OpenAI. Re-derive the lists from the service with
+`Scripts/CheckReasoningEfforts.wls` whenever a GPT-5.x model is added; see
+[Supported Effort Levels](settings/setting-groups/llm-parameters.md#supported-effort-levels).
+
 ### Compare endpoint pairs, not service symbol names
 
 Naming `LLMServices`Response` in a test would autoload the paclet, and the symbol is absent in CI

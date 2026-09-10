@@ -263,5 +263,94 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:257,1-265,2"
+    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:257,1-267,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Reasoning Text*)
+
+(* Reasoning text is markdown like the rest of the response. *)
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "<think>\n**bold** and plain\n</think>\ndone" ],
+        TemplateBox[ { thoughts_, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] :> thoughts,
+        $Failed,
+        Infinity
+    ],
+    TextData @ { StyleBox[ "bold", FontWeight -> Bold ], " and plain" },
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningText-MarkdownIsFormatted@@Tests/Formatting.wlt:274,1-284,2"
+]
+
+(* The streaming opener formats too, so the text does not reflow when the closing tag arrives: *)
+VerificationTest[
+    FirstCase[
+        FormatChatOutput[ "<think>\n**bold** and plain", <| "Status" -> "Streaming" |> ],
+        TemplateBox[ { thoughts_, _ }, name: "ThinkingOpener"|"ThoughtsOpener", ___ ] :> { name, thoughts },
+        $Failed,
+        Infinity
+    ],
+    { "ThinkingOpener", TextData @ { StyleBox[ "bold", FontWeight -> Bold ], " and plain" } },
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningText-StreamingOpenerIsFormatted@@Tests/Formatting.wlt:287,1-297,2"
+]
+
+(* Formatted reasoning still serializes back into a <think> envelope, which is how it reaches the
+   model as conversation history. *)
+VerificationTest[
+    Replace[
+        FormatChatOutput[ "<think>\n**bold** text\n</think>\ndone" ],
+        RawBoxes[ Cell[ data_, ___ ] ] :> CellToString @ Cell[ data, "ChatOutput" ]
+    ],
+    "<think>\n**bold** text\n</think>\n\ndone",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningText-SerializationRoundTrip@@Tests/Formatting.wlt:301,1-309,2"
+]
+
+(* Sub-second reasoning used to render as "Thought for 0 seconds". Anything that rounds to zero is
+   shown to a tenth instead, floored at 0.1 so the label never claims no time passed! *)
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`thinkingDurationString /@ { 0.0, 0.04, 0.44, 0.5, 0.51, 1.4, 12.3, 125.7 },
+    { "0.1", "0.1", "0.4", "0.5", "1", "1", "12", "126" },
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningText-SubSecondDurationLabel@@Tests/Formatting.wlt:313,1-318,2"
+]
+
+(* "seconds" is baked into every localized template, so exactly one second selects a separate string
+   rather than rendering as "Thought for 1 seconds". Asserted as the branch taken rather than the
+   rendered text, so it does not depend on a front end resolving the resource: *)
+VerificationTest[
+    Block[
+        { Wolfram`Chatbook`Common`$thinkingStart, Wolfram`Chatbook`Common`$thinkingEnd },
+        Function[
+            seconds,
+            Wolfram`Chatbook`Common`$thinkingStart = 100.0;
+            Wolfram`Chatbook`Common`$thinkingEnd   = 100.0 + seconds;
+            Replace[
+                FirstCase[
+                    Wolfram`Chatbook`Formatting`Private`makeResultCell0[
+                        Wolfram`Chatbook`Formatting`Private`thoughtsOpener[ "some thoughts" ]
+                    ],
+                    TemplateBox[ { _, label_ }, "ThoughtsOpener", ___ ] :> label,
+                    $Failed,
+                    Infinity
+                ],
+                {
+                    _String :> "template",
+                    box_    :> FirstCase[ box, k_String /; StringStartsQ[ k, "Formatting" ], $Failed, Infinity ]
+                }
+            ]
+        ] /@ { 0.4, 0.51, 1.0, 1.49, 1.5, 7.0 }
+    ],
+    {
+        "template",
+        "FormattingThinkingCompleteSingular",
+        "FormattingThinkingCompleteSingular",
+        "FormattingThinkingCompleteSingular",
+        "template",
+        "template"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningText-SingularSecondLabel@@Tests/Formatting.wlt:323,1-356,2"
 ]
