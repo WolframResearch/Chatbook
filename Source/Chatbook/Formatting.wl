@@ -361,20 +361,26 @@ makeResultCell0 // beginDefinition;
 makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
+        BoxData @ templateBox[ { reasoningTextData @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
         "ThinkingOpener",
         Background -> None
     ]
 );
 
 makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
-    Module[ { seconds, label },
+    Module[ { duration, time, label },
         If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
+        duration = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, $thinkingEnd - $thinkingStart ];
+        time = If[ NumberQ @ duration, thinkingDurationString @ duration ];
+        (* "seconds" is baked into each localized template, so one second needs its own string: *)
+        label = Which[
+            ! StringQ @ time, tr @ "FormattingThinkingCompleteFallback",
+            time === "1"    , tr @ "FormattingThinkingCompleteSingular",
+            True            , trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> time |> ]
+        ];
         {
             Cell[
-                BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
+                BoxData @ templateBox[ { reasoningTextData @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
                 "ThoughtsOpener",
                 Background -> None
             ],
@@ -489,6 +495,35 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
 ];
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*thinkingDurationString*)
+
+(* Anything under a second rounds to zero, so it is shown to a tenth instead of as "0 seconds". *)
+thinkingDurationString // beginDefinition;
+
+thinkingDurationString[ duration_? NumberQ ] :=
+    With[ { rounded = Round @ duration },
+        If[ rounded > 0,
+            ToString @ rounded,
+            ToString @ NumberForm[ Max[ duration, 0.1 ], { Infinity, 1 } ]
+        ]
+    ];
+
+thinkingDurationString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningTextData*)
+
+(* Reasoning text is markdown like any other model output, so it is formatted rather than shown raw. *)
+reasoningTextData // beginDefinition;
+
+reasoningTextData[ thoughts_String ] :=
+    TextData @ Flatten @ { reformatTextData @ StringTrim @ thoughts };
+
+reasoningTextData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

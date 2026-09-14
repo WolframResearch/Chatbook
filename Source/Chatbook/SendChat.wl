@@ -757,6 +757,80 @@ makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeReasoningParameter*)
+makeReasoningParameter // beginDefinition;
+
+makeReasoningParameter[ settings_Association ] :=
+    With[ { effort = resolveReasoningEffort @ settings },
+        If[ TrueQ @ responsesEndpointQ @ settings, requestReasoningSummary @ effort, effort ]
+    ];
+
+makeReasoningParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestReasoningSummary*)
+
+(* The Responses endpoint returns an encrypted reasoning blob and no readable summary unless one is
+   requested: *)
+requestReasoningSummary // beginDefinition;
+
+(* Reasoning is off, so there is nothing to summarize: *)
+requestReasoningSummary[ effort_String ] /; StringMatchQ[ effort, "None", IgnoreCase -> True ] := effort;
+
+requestReasoningSummary[ effort_String ] := <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |>;
+
+(* The setting already spells out a summary, or turns reasoning off: *)
+requestReasoningSummary[ as_Association ] /;
+    reasoningSummaryRequestedQ @ as || reasoningDisabledQ @ as := as;
+
+requestReasoningSummary[ as_Association ] := Append[ as, "summary" -> "auto" ];
+
+(* Automatic, Inherited, None, False, Missing[ ... ], Quantity[ n, "Tokens" ]: *)
+requestReasoningSummary[ other_ ] := other;
+
+requestReasoningSummary // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningSummaryRequestedQ*)
+reasoningSummaryRequestedQ // beginDefinition;
+reasoningSummaryRequestedQ[ as_Association ] := ! MissingQ @ reasoningParameterValue[ as, "summary" ];
+reasoningSummaryRequestedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningDisabledQ*)
+reasoningDisabledQ // beginDefinition;
+
+reasoningDisabledQ[ as_Association ] :=
+    Or[
+        reasoningParameterValue[ as, "enabled" ] === False,
+        With[ { effort = reasoningParameterValue[ as, "effort" ] },
+            StringQ @ effort && StringMatchQ[ effort, "None", IgnoreCase -> True ]
+        ]
+    ];
+
+reasoningDisabledQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningParameterValue*)
+
+(* The Responses endpoint lowercases parameter keys on the way to the wire, so "Summary" and
+   "summary" name the same thing here: *)
+reasoningParameterValue // beginDefinition;
+
+reasoningParameterValue[ as_Association, key_String ] :=
+    First[
+        Values @ KeySelect[ as, StringQ @ # && StringMatchQ[ #, key, IgnoreCase -> True ] & ],
+        Missing[ ]
+    ];
+
+reasoningParameterValue // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatIndicatorSymbol*)
 chatIndicatorSymbol // beginDefinition;
 chatIndicatorSymbol[ settings_Association ] := chatIndicatorSymbol @ settings[ "ChatInputIndicator" ];
@@ -911,6 +985,7 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
+    $reasoningOpen         = False;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
     rasterizeBlock @ chatSubmit0 @ args,
@@ -941,20 +1016,21 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result, chunks, content },
+    Module[ { auth, endpoint, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
+        endpoint = ConfirmMatch[ resolveChatEndpoint[ settings ][ "Synchronous" ], _Symbol, "Endpoint" ];
         stop = makeStopTokens @ settings;
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
-                LLMServices`Chat[
+                endpoint[
                     standardizeMessageKeys @ messages,
                     makeLLMConfiguration @ settings,
                     Authentication -> auth
                 ],
-                { LLMServices`Chat::unsupported }
+                { General::llmunsupported }
             ],
             _Association | _Failure,
             "ChatResult"
@@ -989,28 +1065,30 @@ chatSubmit0[
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
-    $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+    With[ { endpoint = resolveChatEndpoint[ settings ][ "Streaming" ] },
+        $lastChatSubmitResult = ReleaseHold[
+            $lastChatSubmit = HoldForm @ applyProcessingFunction[
+                settings,
+                "ChatSubmit",
+                HoldComplete[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ settings,
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    "TestConnection"     -> False
+                ],
+                <|
+                    "Container"             :> container,
+                    "Messages"              -> messages,
+                    "CellObject"            -> cellObject,
+                    "DefaultSubmitFunction" -> endpoint
+                |>,
+                endpoint
+            ]
         ]
     ],
-    { LLMServices`ChatSubmit::unsupported }
+    { General::llmunsupported }
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1039,6 +1117,65 @@ chatSubmit0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*resolveChatEndpoint*)
+
+(* Model families that use the Responses endpoint by default, keyed by service: *)
+$responsesEndpointFamilies = <| "OpenAI" -> { "GPT54Plus", "GPT56Plus" } |>;
+
+$completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
+$responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
+
+resolveChatEndpoint // beginDefinition;
+
+resolveChatEndpoint[ settings_Association ] :=
+    If[ TrueQ @ responsesEndpointQ @ settings, $responsesEndpoint, $completionsEndpoint ];
+
+resolveChatEndpoint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesEndpointQ*)
+responsesEndpointQ // beginDefinition;
+
+responsesEndpointQ[ settings_Association ] :=
+    responsesEndpointQ[ Lookup[ settings, "Endpoint", Automatic ], settings[ "Model" ] ];
+
+responsesEndpointQ[ endpoint_, KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] :=
+    responsesEndpointQ[ endpoint, service, family ];
+
+(* Anything short of a fully resolved model spec falls back: *)
+responsesEndpointQ[ endpoint_, model_ ] := False;
+
+(* The rollback switch always wins: *)
+responsesEndpointQ[ "ChatCompletions", service_, family_ ] := False;
+
+(* Forcing the endpoint skips the family opt-in, but not the support checks: *)
+responsesEndpointQ[ "Responses", service_, family_ ] := responsesServiceQ @ service;
+
+responsesEndpointQ[ Automatic, service_, family_ ] :=
+    responsesServiceQ @ service && MemberQ[ Lookup[ $responsesEndpointFamilies, service, { } ], family ];
+
+responsesEndpointQ[ endpoint_, service_, family_ ] := False;
+
+responsesEndpointQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesServiceQ*)
+responsesServiceQ // beginDefinition;
+
+responsesServiceQ[ service_String ] := And[
+    TrueQ @ $responsesEndpointAvailable,
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
+];
+
+responsesServiceQ[ service_ ] := False;
+
+responsesServiceQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
@@ -1055,6 +1192,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
@@ -1066,6 +1204,7 @@ makeLLMConfiguration0[ as_Association ] :=
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "StopTokens" -> makeStopTokens @ as
         ] // dropModelUnsupportedParameters[ as ]
     ];
@@ -1109,6 +1248,11 @@ registerParameter // beginDefinition;
 registerParameter[ service_String, param_String ] := (
     registerParameter[ service, param, LLMServices`Chat       ];
     registerParameter[ service, param, LLMServices`ChatSubmit ];
+    (* Only registered services have a registry entry to patch: *)
+    If[ responsesServiceQ @ service,
+        registerParameter[ service, param, LLMServices`Response       ];
+        registerParameter[ service, param, LLMServices`ResponseSubmit ];
+    ];
 );
 
 (* :!CodeAnalysis::BeginBlock:: *)

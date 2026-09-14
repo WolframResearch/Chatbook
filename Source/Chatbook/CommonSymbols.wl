@@ -1,6 +1,7 @@
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$$attachmentURI;
+`$$endpointSetting;
 `$$ignoredBox;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;
@@ -79,7 +80,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$progressText;
 `$progressWidth;
 `$rasterCache;
+`$reasoningOpen;
 `$receivedToolCall;
+`$responsesEndpointAvailable;
 `$resultCellCache;
 `$rightSelectionIndicator;
 `$sandboxKernelCommandLine;
@@ -330,7 +333,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolveFullModelSpec;
 `resolveInlineReferences;
 `resolvePromptGenerators;
+`resolveReasoningEffort;
 `resolveTools;
+`responsesEndpointQ;
 `revertMultimodalContent;
 `rootEvaluationCell;
 `sandboxEvaluate;
