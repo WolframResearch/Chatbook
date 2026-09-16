@@ -302,7 +302,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
+        Sow[ <| "Messages" -> revertMultimodalContentPreservingReasoning @ processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
@@ -626,7 +626,7 @@ tokenCheckedMessage // beginDefinition;
 tokenCheckedMessage[
     as: KeyValuePattern[ "TokenizerName" -> "claude-3" ],
     message0: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> Except[ _String ] }
-] :=
+] /; FreeQ[ message0, KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
     With[ { message = revertMultimodalContent @ message0 },
         tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
     ];
@@ -634,7 +634,7 @@ tokenCheckedMessage[
 tokenCheckedMessage[
     as_,
     message0: KeyValuePattern @ { "Content" -> Except[ _String ] }
-] /; ! $countImageTokens :=
+] /; ! $countImageTokens && FreeQ[ message0, KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
     With[ { message = revertMultimodalContent @ message0 },
         tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
     ];
@@ -703,6 +703,23 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphi
 
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
     cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> content_List ], count_, budget_ ] :=
+    Module[ { scale },
+        scale = Max[ 0.0, 0.9 * N[ budget / count ] ];
+        <|
+            message,
+            "Content" -> Replace[
+                content,
+                {
+                    KeyValuePattern[ "Type" -> "Reasoning" ] :> Nothing,
+                    part: KeyValuePattern[ "Data" -> data_String ] :>
+                        <| part, "Data" -> truncateString[ data, Floor[ scale * StringLength @ data ] ] |>
+                },
+                { 1 }
+            ]
+        |>
+    ];
 
 cutMessageContent[ as_, message_String, count_, budget_ ] :=
     cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
@@ -815,7 +832,8 @@ messageContent // beginDefinition;
 messageContent[ "[Cell Excised]" ] := "";
 messageContent[ content_String ] := content;
 messageContent[ KeyValuePattern[ "Content" -> content_ ] ] := messageContent @ content;
-messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> content_ } ] := messageContent @ content;
+messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image"|"Reasoning", "Data" -> content_ } ] := messageContent @ content;
+messageContent[ KeyValuePattern[ "Type" -> "Reasoning" ] ] := "";
 
 messageContent[ content_List ] :=
     With[ { s = messageContent /@ content },
@@ -1066,6 +1084,34 @@ makeMessageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*canonicalCellMessages*)
+canonicalCellMessages // beginDefinition;
+
+canonicalCellMessages[ Cell[ __, TaggingRules -> tags_, ___ ] ] :=
+    With[
+        {
+            data = Lookup[ Association @ tags, "ChatData", Missing[ "NotAvailable" ] ],
+            messages = Lookup[ Association @ tags, "ChatMessages", Missing[ "NotAvailable" ] ]
+        },
+        Which[
+            MatchQ[ messages, { $$chatMessage.. } ], messages,
+            True, canonicalCellMessages @ data
+        ]
+    ];
+
+canonicalCellMessages[ encoded_String ] := Enclose[
+    With[ { data = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encoded, AssociationQ, "Data" ] },
+        ConfirmMatch[ data[ "Data", "ResponseMessages" ], { $$chatMessage.. }, "Messages" ]
+    ],
+    Missing[ "NotAvailable" ] &
+];
+
+canonicalCellMessages[ _ ] := Missing[ "NotAvailable" ];
+
+canonicalCellMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
 
@@ -1197,6 +1243,11 @@ validContentPartQ[ ___ ] := False;
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
+
+makeCellMessage[ cell_Cell, settings_ ] :=
+    With[ { messages = canonicalCellMessages @ cell },
+        messages /; MatchQ[ messages, { $$chatMessage.. } ]
+    ];
 
 makeCellMessage[ cell_Cell, settings_ ] :=
     With[ { role = cellRole @ cell },

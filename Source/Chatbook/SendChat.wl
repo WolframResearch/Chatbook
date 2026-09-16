@@ -986,6 +986,8 @@ chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
     $reasoningOpen         = False;
+    $responseContent       = { };
+    $responseTextChunks    = { };
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
     rasterizeBlock @ chatSubmit0 @ args,
@@ -1037,6 +1039,9 @@ chatSubmit0[
         ];
 
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
+
+        $responseContent = responseContentParts @ Lookup[ result, "Content", { } ];
+        $responseTextChunks = responseTextParts @ Lookup[ result, "Content", { } ];
 
         chunks = <|
             "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
@@ -1338,6 +1343,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                                 ]
                             },
                             bodyChunkHandler[ as ];
+                            collectResponseContent @ as;
+                            collectResponseText @ as;
                             Internal`StuffBag[ $debugLog, $lastStatus = as ];
                             checkFinishReason[ as ];
                             writeChunk[ as, Dynamic @ container, cellObject ];
@@ -1385,6 +1392,115 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*collectResponseContent*)
+collectResponseContent // beginDefinition;
+
+collectResponseContent[ data_ ] :=
+    With[ { parts = Cases[ { data }, KeyValuePattern[ "ResponseContent" -> content_ ] :> content, Infinity ] },
+        If[ parts =!= { }, $responseContent = Join[ $responseContent, responseContentParts @ parts ] ]
+    ];
+
+collectResponseContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responseContentParts*)
+responseContentParts // beginDefinition;
+
+responseContentParts[ content_ ] := DeleteDuplicates @
+    Cases[
+        Flatten @ { content },
+        part: KeyValuePattern[ "Type" -> "Reasoning" ] /;
+            ! MissingQ @ Lookup[ part, "Signature", Missing[ ] ] ||
+            ! MissingQ @ Lookup[ part, "CallID", Missing[ ] ]
+    ];
+
+responseContentParts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responseTextParts*)
+responseTextParts // beginDefinition;
+
+responseTextParts[ content_ ] := Cases[
+    Flatten @ { content },
+    s_String :> s,
+    KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
+];
+
+responseTextParts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*collectResponseText*)
+collectResponseText // beginDefinition;
+
+collectResponseText[ data_ ] :=
+    With[
+        {
+            chunks = Cases[
+                { data },
+                KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_String ] :> content,
+                Infinity
+            ]
+        },
+        If[ chunks =!= { }, $responseTextChunks = Join[ $responseTextChunks, chunks ] ]
+    ];
+
+collectResponseText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*completeResponseMessages*)
+completeResponseMessages // beginDefinition;
+
+completeResponseMessages[ extra_: <| |> ] := (
+    With[ { completed = Association[ makeAssistantMessage[ $responseContent, StringJoin @ $responseTextChunks ], extra ] },
+        If[
+            ($responseContent =!= { } || $responseTextChunks =!= { } || extra =!= <| |>) &&
+                ! SameQ[ Last[ $responseMessages, Missing[ ] ], completed ],
+            AppendTo[ $responseMessages, completed ]
+        ]
+    ];
+    $responseContent = { };
+    $responseTextChunks = { };
+);
+
+completeResponseMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeAssistantMessage*)
+makeAssistantMessage // beginDefinition;
+
+makeAssistantMessage[ message_String ] := makeAssistantMessage[ { }, message ];
+
+makeAssistantMessage[ content_, message_String ] :=
+    With[ { reasoning = responseContentParts @ content },
+        <|
+            "Role" -> "Assistant",
+            "Content" -> Which[
+                reasoning === { }, message,
+                message === "", reasoning,
+                True, Append[ reasoning, <| "Type" -> "Text", "Data" -> message |> ]
+            ]
+        |>
+    ];
+
+makeAssistantMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*storedAssistantMessages*)
+storedAssistantMessages // beginDefinition;
+
+storedAssistantMessages[ message_String ] :=
+    If[ $responseMessages === { }, { makeAssistantMessage @ message }, $responseMessages ];
+
+storedAssistantMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1879,6 +1995,7 @@ writeResult // beginDefinition;
 
 writeResult[ settings_, container_, cell_, as_ ] /; $headlessChat := (
     appendCitations[ Unevaluated @ container, settings ];
+    completeResponseMessages[ ];
     Null
 );
 
@@ -1886,6 +2003,7 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
     Catch @ Module[ { log, processed, body, data },
 
         appendCitations[ Unevaluated @ container, settings ];
+        completeResponseMessages[ ];
 
         If[ TrueQ @ $AutomaticAssistance,
             NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
@@ -2096,7 +2214,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         toolID = tinyHash[ toolResponse, 9 ];
-        toolCall = insertToolID[ toolCall, toolID ];
+        If[ ! TrueQ @ responsesEndpointQ @ settings, toolCall = insertToolID[ toolCall, toolID ] ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
@@ -2122,8 +2240,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 ToString @ output
             ];
 
+        completeResponseMessages[ ];
+
         newMessages = Flatten @ {
             messages,
+            $responseMessages,
             <|
                 "Role"         -> "Assistant",
                 "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
@@ -2132,6 +2253,17 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             |>,
             makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
         };
+
+        $responseMessages = Join[ $responseMessages, {
+            <|
+                "Role"         -> "Assistant",
+                "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "ToolRequest"  -> True,
+                "ToolRequests" -> { toolCall }
+            |>,
+            Splice @ makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
+        }
+        ];
 
         $finishReason = None;
 
@@ -3587,10 +3719,8 @@ makeCompactChatData[
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
-                    "Messages" -> revertMultimodalContent @ Append[
-                        messages,
-                        <| "Role" -> "Assistant", "Content" -> message |>
-                    ]
+                    "Messages"         -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ],
+                    "ResponseMessages" -> storedAssistantMessages @ message
                 ]
             ],
             Inherited
