@@ -500,9 +500,9 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                     With[
                         {
-                            chat = constructChatObject @ mergeToolCallMessages @ Append[
+                            chat = constructChatObject @ Append[
                                 $lastMessages,
-                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                                makeAssistantMessage @ $lastChatString
                             ] // LogChatTiming[ "ConstructChatObject" ]
                         },
                         If[ TrueQ @ settings[ "AutoSaveConversations" ],
@@ -860,6 +860,23 @@ revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
     as;
 
 revertMultimodalContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*revertMultimodalContentPreservingReasoning*)
+revertMultimodalContentPreservingReasoning // beginDefinition;
+
+revertMultimodalContentPreservingReasoning[ messages_List ] :=
+    revertMultimodalContentPreservingReasoning /@ messages;
+
+revertMultimodalContentPreservingReasoning[
+    message: KeyValuePattern[ "Content" -> content_List ]
+] /; MemberQ[ content, KeyValuePattern[ "Type" -> "Reasoning" ] ] := message;
+
+revertMultimodalContentPreservingReasoning[ message_Association ] :=
+    revertMultimodalContent @ message;
+
+revertMultimodalContentPreservingReasoning // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
