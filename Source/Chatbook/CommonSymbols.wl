@@ -275,6 +275,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeChatNotebookOptions;
 `makeChatNotebookSettings;
 `makeCurrentRole;
+`makeAssistantMessage;
 `makeExpressionURI;
 `makeFailureString;
 `makeChatbarChatInputCellContent;
