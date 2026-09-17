@@ -47,6 +47,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$evaluationNotebook;
 `$excludedBasePrompts;
 `$experimentalFeatures;
+`$fallbackLLMKitService;
 `$filterDocumentationRAG;
 `$finalCell;
 `$fixedProgressText;
