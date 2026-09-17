@@ -14,7 +14,10 @@ $hardMaxTitleLength     = 50; (* Use 40 for gpt-4o-mini *)
 $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
 $tokenLengthMultiplier  = 3.0;
-$defaultEvaluator       = <| "Model" -> <| "Service" -> Automatic, "Name" -> "gpt-4.1-nano" |> |>;
+$defaultEvaluator       = <|
+    "Model"     -> <| "Service" -> Automatic, "Name" -> "gpt-5.6-luna" |>,
+    "Reasoning" -> "None"
+|>;
 
 $titlePrompt := "\
 Please come up with a meaningful window title for the current chat conversation using no more than \
