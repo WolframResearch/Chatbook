@@ -465,13 +465,13 @@ VerificationTest[
     TestID   -> "DropModelUnsupportedParameters-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:458,1-466,2"
 ]
 
-(* Automatic also works when the config specifies its model in shorthand form: *)
+(* Automatic also works when the config specifies a GPT-5.6 model in shorthand form: *)
 VerificationTest[
     Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
         Automatic,
-        <| "Model" -> { "OpenAI", "o4-mini" }, "StopTokens" -> { "[NONE]" }, "Temperature" -> 0.7 |>
+        <| "Model" -> { "OpenAI", "gpt-5.6-terra" }, "StopTokens" -> { "[NONE]" }, "Temperature" -> 0.7 |>
     ],
-    <| "Model" -> { "OpenAI", "o4-mini" } |>,
+    <| "Model" -> { "OpenAI", "gpt-5.6-terra" } |>,
     SameTest -> MatchQ,
     TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:469,1-477,2"
 ]

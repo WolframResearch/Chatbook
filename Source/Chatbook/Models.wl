@@ -166,7 +166,7 @@ getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" 
 getModelList // endDefinition;
 
 
-$fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
+$fallbackModelList = { "gpt-5.6-terra", "gpt-5.6-sol" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
