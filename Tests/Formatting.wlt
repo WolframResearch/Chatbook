@@ -659,3 +659,16 @@ VerificationTest[
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[
+            "TOOLCALL: WFRSearch\n{\n\t\"query\":\"ASCII art image to text animal function repository\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\n\nENDRESULT(eqpuy6jhv)\n\nHere are a few:\n\n```text\n /\\_/\\\\\n( o.o )\n > ^ <\n```"
+        ],
+        Cell[ _, "InlineToolCall", ___ ],
+        Infinity
+    ],
+    { _Cell },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock"
+]
