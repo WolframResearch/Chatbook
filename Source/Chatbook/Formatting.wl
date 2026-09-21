@@ -289,7 +289,7 @@ reformatTextDataEscaped0[ parts_List ] := Replace[
             t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
         ],
         textBeforeCodeBlock[ s_String ] :> ReplaceAll[
-            formatTextString @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
+            reformatTextBeforeCodeBlock @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
             t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
         ],
         toolCallSpacing[ s_String ] :> formatTextString @ s,
@@ -301,6 +301,19 @@ reformatTextDataEscaped0[ parts_List ] := Replace[
 ];
 
 reformatTextDataEscaped0 // endDefinition;
+
+reformatTextBeforeCodeBlock // beginDefinition;
+
+reformatTextBeforeCodeBlock[ string_String ] :=
+    makeResultCell /@ StringSplit[
+        string,
+        Longest @ StringExpression[
+            (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+            tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+        ] :> inlineToolCallCell @ tool
+    ];
+
+reformatTextBeforeCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
