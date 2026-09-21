@@ -2094,7 +2094,7 @@ With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
         Style[ string, FontWeight -> "DemiBold", FontColor -> col ],
-        RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "PercolateColorAnimator" ][ Small, col ]
+        activeToolProgressIndicator[ ]
     }
 ];
 
@@ -2105,6 +2105,16 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*activeToolProgressIndicator*)
+activeToolProgressIndicator // beginDefinition;
+
+activeToolProgressIndicator[ ] :=
+    RawBoxes @ TagBox[ ToBoxes @ chatbookIcon[ "PercolateProgressAnimation", False ], "ChatbookActiveToolProgress" ];
+
+activeToolProgressIndicator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

@@ -577,3 +577,85 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:569,1-579,2"
 ]
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Dynamic Progress Indicators*)
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`activeToolProgressIndicator[ ],
+    RawBoxes @ TagBox[ _, "ChatbookActiveToolProgress" ],
+    SameTest -> MatchQ,
+    TestID   -> "ActiveToolProgressIndicator-Tagged"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$ChatHandlerData =
+                <| "ChatNotebookSettings" -> <| "ToolMethod" -> "Textual" |> |>
+        },
+        Wolfram`Chatbook`SendChat`Private`dynamicProgressIndicatorQ[ "Streaming text", "Formatted text" ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "DynamicProgressIndicator-OrdinaryText"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$ChatHandlerData =
+                <| "ChatNotebookSettings" -> <| "ToolMethod" -> "Textual" |> |>
+        },
+        Wolfram`Chatbook`SendChat`Private`dynamicProgressIndicatorQ[
+            "Partial tool call",
+            RawBoxes @ TagBox[ "Progress", "ChatbookActiveToolProgress" ]
+        ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "DynamicProgressIndicator-ActiveTool"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$ChatHandlerData =
+                <| "ChatNotebookSettings" -> <| "ToolMethod" -> "Textual" |> |>
+        },
+        Wolfram`Chatbook`SendChat`Private`dynamicProgressIndicatorQ[ "", "" ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "DynamicProgressIndicator-EmptyContent"
+]
+
+VerificationTest[
+    Internal`InheritedBlock[
+        {
+            Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ,
+            Wolfram`Chatbook`SendChat`Private`toolFreeQ0
+        },
+        ClearAll[
+            Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ,
+            Wolfram`Chatbook`SendChat`Private`toolFreeQ0
+        ];
+        Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ[ _String ] := True;
+        Wolfram`Chatbook`SendChat`Private`toolFreeQ0[ _String ] := False;
+        Block[
+            {
+                Wolfram`Chatbook`$ChatHandlerData =
+                    <| "ChatNotebookSettings" -> <| "ToolMethod" -> "Simple" |> |>
+            },
+            Wolfram`Chatbook`SendChat`Private`dynamicProgressIndicatorQ[ "text", "Formatted text" ]
+        ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "DynamicProgressIndicator-MethodAware"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
