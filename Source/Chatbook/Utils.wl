@@ -397,7 +397,7 @@ initializeProgressContainer[ container_Symbol ] := (
     $progressContainer = HoldComplete @ container[ "DynamicContent" ];
 
     container = <|
-        "DynamicContent" -> $defaultProgress,
+        "DynamicContent" -> None,
         "FullContent"    -> $defaultProgress,
         "UUID"           -> createUUID[ ]
     |>
@@ -478,29 +478,55 @@ setProgressDisplay // endDefinition;
 basicProgressPanel // beginDefinition;
 
 (* Include progress text above progress indicator bar: *)
-basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
-    {
-        {
-            Pane[
-                Grid[
+basicProgressPanel[ expr_, p_ ] := Module[ { rawString = None, progressStyle },
+    If[ StringQ @ expr, rawString = trRaw[ "ProgressText" <> expr ] ];
+
+    progressStyle =
+        Style[
+            #,
+            "ProgressTitle",
+            FontColor    -> LightDarkSwitched[ Hue[ 0.558, 0.429, 0.604 ], Hue[ 0.562, 0.513, 0.838 ] ],
+            FontFamily   -> "Source Sans Pro",
+            FontSize     -> 12.5,
+            FontSlant    -> "Italic",
+            FontTracking -> "Extended",
+            FontWeight   -> "DemiBold"
+        ]&;
+
+    Deploy @ Which[
+        (* special case for ChatInput cell's initial progress indicator when sending a chat *)
+        StringQ @ rawString && StringContainsQ[ rawString, "||"],
+            progressStyle @ RandomChoice @ StringSplit[ rawString, "||" ],
+        (* other cases of progress indicators e.g. downloading snippets or producing suggestions *)
+        StringQ @ rawString,
+            Row @ { progressStyle @ rawString, chatbookIcon[ "PercolateProgressAnimation", False ] },
+        (* ELSE normal case with progress bar *)
+        True, 
+            Grid[
+                {
                     {
-                        basicProgressTextRow[ expr, p ],
-                        basicProgressBarRow[ expr, p ]
-                    },
-                    Alignment  -> { Left, Automatic },
-                    Background -> None,
-                    Frame      -> All,
-                    FrameStyle -> Directive[ 1, Transparent ],
-                    Spacings   -> { { 0, { 0 }, 0 }, { 0.6, { -0.2 }, 0.0 } }
-                ],
-                FrameMargins -> { { 0, 0 }, { 0, 0 } },
-                ImageSize    -> { $progressWidth, Automatic }
+                        Pane[
+                            Grid[
+                                {
+                                    basicProgressTextRow[ expr, p ],
+                                    basicProgressBarRow[ expr, p ]
+                                },
+                                Alignment  -> { Left, Automatic },
+                                Background -> None,
+                                Frame      -> All,
+                                FrameStyle -> Directive[ 1, Transparent ],
+                                Spacings   -> { { 0, { 0 }, 0 }, { 0.6, { -0.2 }, 0.0 } }
+                            ],
+                            FrameMargins -> { { 0, 0 }, { 0, 0 } },
+                            ImageSize    -> { $progressWidth, Automatic }
+                        ]
+                    }
+                },
+                Frame      -> All,
+                FrameStyle -> Directive[ 1, Transparent ],
+                Spacings   -> { { 0, { 0 }, 0 }, { 0, { 0 }, 0 } }
             ]
-        }
-    },
-    Frame      -> All,
-    FrameStyle -> Directive[ 1, Transparent ],
-    Spacings   -> { { 0, { 0 }, 0 }, { 0, { 0 }, 0 } }
+    ]
 ];
 
 basicProgressPanel // endDefinition;
@@ -526,14 +552,7 @@ basicProgressTextRow1 // beginDefinition;
 basicProgressTextRow1[ expr_, p_ ] := {
     Style[
         If[ StringQ @ expr,
-            Row @ {
-                If[ StringStartsQ[ expr, "ProgressText" ],
-                    RandomChoice @ StringSplit[ Replace[ trRaw @ expr, Except[ _String ] -> " " ], "||" ]
-                    ,
-                    expr
-                ],
-                ProgressIndicator[ Appearance -> "Ellipsis" ]
-            },
+            Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
             expr
         ],
         "ProgressTitle"
