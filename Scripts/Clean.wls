@@ -149,32 +149,61 @@ modifiedFrontEndFiles[ ] :=
         ]
     ];
 
-If[ $restore,
-    If[ ! gitOK @ runGit @ { "rev-parse", "--is-inside-work-tree" }
-        ,
-        (* Artifacts are still worth removing outside a work tree. *)
-        Print[ "Not a git work tree; skipping front-end restore." ]
-        ,
-        With[ { modified = modifiedFrontEndFiles[ ] },
-            Which[
-                modified === $Failed,
-                    Null,
+(* Returns True inside a work tree, False outside one, and $Failed if the
+   check itself could not be performed. Distinguishes "git is unavailable /
+   RunProcess failed" from "this directory is not a git work tree". *)
+workTreeCheck[ ] :=
+    With[ { res = runGit @ { "rev-parse", "--is-inside-work-tree" } },
+        Which[
+            ! gitOK @ res,
+                Print[ "git rev-parse failed; cannot determine whether this is a git work tree." ];
+                raiseExitCode[ 1 ];
+                $Failed,
 
-                modified === { },
-                    Print[ "No modified front-end files to restore." ],
-
-                $dryRun,
-                    Print[ "Would restore ", Length @ modified, " modified front-end file(s):" ];
-                    Scan[ Print[ "    ", # ] &, modified ],
-
+            StringTrim @ res[ "StandardOutput" ] === "true",
                 True,
-                    Print[ "Restoring ", Length @ modified, " modified front-end file(s):" ];
-                    Scan[ Print[ "    ", # ] &, modified ];
-                    If[ ! gitOK @ runGit @ Join[ { "restore", "--" }, modified ],
-                        Print[ "    git restore failed." ];
-                        raiseExitCode[ 1 ]
-                    ]
+
+            StringTrim @ res[ "StandardOutput" ] === "false",
+                Print[ "Not a git work tree; front-end restore skipped." ];
+                raiseExitCode[ 1 ];
+                False,
+
+            True,
+                Print[ "Unexpected output from git rev-parse: ", res[ "StandardOutput" ] ];
+                raiseExitCode[ 1 ];
+                $Failed
+        ]
+    ];
+
+If[ $restore,
+    With[ { inside = workTreeCheck[ ] },
+        If[ inside === True,
+            With[ { modified = modifiedFrontEndFiles[ ] },
+                Which[
+                    modified === $Failed,
+                        Null,
+
+                    modified === { },
+                        Print[ "No modified front-end files to restore." ],
+
+                    $dryRun,
+                        Print[ "Would restore ", Length @ modified, " modified front-end file(s):" ];
+                        Scan[ Print[ "    ", # ] &, modified ],
+
+                    True,
+                        Print[ "Restoring ", Length @ modified, " modified front-end file(s):" ];
+                        Scan[ Print[ "    ", # ] &, modified ];
+                        If[ ! gitOK @ runGit @ Join[ { "restore", "--" }, modified ],
+                            Print[ "    git restore failed." ];
+                            raiseExitCode[ 1 ]
+                        ]
+                ]
             ]
+            ,
+            (* Not a work tree or the check failed; the failure has already
+               been reported and the exit code raised. Artifacts are still
+               worth cleaning, so execution continues. *)
+            Null
         ]
     ]
 ];
