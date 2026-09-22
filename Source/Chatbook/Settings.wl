@@ -76,6 +76,7 @@ $defaultChatSettings = <|
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
     "ShowProgressText"               -> Automatic,
+    "Skills"                         -> Automatic,
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
@@ -843,7 +844,9 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
             If[ override[ "SidebarChat"   ], $SidebarChat         = True ];
         ];
-        result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
+        (* Skills are resolved first, since they determine whether the skill tool is included: *)
+        result = ConfirmBy[ resolveSkills @ KeySort @ override, AssociationQ, "ResolveSkills" ];
+        result = ConfirmBy[ resolveTools @ result, AssociationQ, "ResolveTools" ];
         result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
@@ -1127,6 +1130,8 @@ chooseToolMethod // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*simpleToolQ*)
 simpleToolQ // beginDefinition;
+(* The skill tool is built for each chat, so it's not in $DefaultTools, but its parameters are simple strings: *)
+simpleToolQ[ tool_? skillToolQ ] := True;
 simpleToolQ[ tool_ ] := simpleToolQ[ tool, $DefaultTools ];
 simpleToolQ[ name_String, default_Association ] := KeyExistsQ[ default, name ];
 simpleToolQ[ tool: HoldPattern[ _LLMTool ], default_Association ] := MemberQ[ default, tool ];

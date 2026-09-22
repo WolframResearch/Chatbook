@@ -70,6 +70,73 @@ If `WolframLanguageEvaluator` is among the selected tools, `resolveTools` trigge
 
 Exposed indirectly via the "Tools" tab (`PreferencesContent.wl`), which renders the `toolSettingsPanel` (`ToolManager.wl`) providing a grid interface to install, enable/disable, and configure tools per persona.
 
+## `"Skills"`
+
+[Agent skills](https://agentskills.io) available to the LLM, resolved as a list of `LLMSkill` objects during chat processing. A skill is a directory containing a `SKILL.md` file (YAML frontmatter with a `name` and `description`, followed by markdown instructions) and optional supporting files such as `references/`, `scripts/`, or `assets/`.
+
+### Accepted Values
+
+- **`Automatic`** (default) — the built-in skills that are enabled by default (currently none; see [Built-in Skills](#built-in-skills))
+- **`None`** — no skills
+- **`All`** — all built-in skills, including opt-in skills
+- **`Inherited`** — inherit from parent scope
+- **A skill name** — e.g., `"test-skill"`, or a list of names
+- **List of `LLMSkill` objects**
+- **Mixed list** — names, `LLMSkill` objects, and `ParentList` (which includes the default skills)
+
+After resolution, the value is always a flat list of `LLMSkill` objects (`{ ___LLMSkill }`).
+
+### Resolution
+
+`resolveSkills` (`Skills.wl`) runs in `resolveAutoSettings0` just before `resolveTools`:
+
+1. If `"ToolsEnabled"` is not `True`, the setting resolves to `{}`, since skills can only be activated with a tool call.
+2. Names are looked up in `$DefaultSkills`. Unknown names issue a `Chatbook::SkillNotFound` message and are skipped; other invalid values issue `Chatbook::InvalidSkillSpecification`.
+3. `LLMSkill` objects are used as given. When several skills have the same name, the last one wins.
+
+Chatbook only reads the association inside `LLMSkill[<|...|>]` (`"Name"`, `"Description"`, `"Location"`, and `"Body"`), so it doesn't depend on the `LLMSkill` implementation in LLMFunctions.
+
+### Skill Tool
+
+When at least one skill is resolved, `selectTools` (`Tools/Common.wl`) calls `selectSkillTool`, which adds an `ActivateSkill` tool (machine name `activate_skill`, short name `skill`) to the selected tools. It is removed again when no skills are resolved. The tool is built by `makeSkillTool` for the resolved skills and is not part of `$DefaultTools`, so it doesn't appear in the tool manager. It still counts as a simple tool (`skillToolQ` in `simpleToolQ`), so adding skills doesn't stop `"ToolMethod"` from resolving to `"Simple"`.
+
+The tool takes two parameters:
+
+- **`name`** (required) — an enum of the resolved skill names.
+- **`path`** (optional) — a file to read, relative to the skill directory. It defaults to `SKILL.md`.
+
+Reading `SKILL.md` gives the skill body without its frontmatter, wrapped in `<skill_content name="...">`, followed by the skill directory and a `<skill_resources>` listing of the other files in the skill. The listing skips hidden files, `__pycache__`, and `node_modules`, and shows up to 50 files. Other files are returned in a `<skill_file name="..." path="...">` wrapper and truncated after 2^16 characters. Only UTF-8 text files up to 4 MB can be read. Paths that leave the skill directory or refer to hidden files are rejected. Errors are returned to the LLM as `"Error: ..."` strings, while the tool call box shows the corresponding `Failure`.
+
+Skills whose `"Location"` is not a directory containing a `SKILL.md` file (e.g., `LLMSkill` objects created in memory) only provide their instructions.
+
+### System Prompt
+
+`getSkillsPrompt` adds a `# Skills` section after the tool instructions in the system prompt (the `Skills` slot of `$promptTemplate` in `ChatMessages.wl`). It lists the `name` and `description` of each resolved skill in an `<available_skills>` block and tells the LLM to call the skill tool when a task matches a skill's description. The section is omitted when there are no resolved skills.
+
+### Built-in Skills
+
+Built-in skills live in `Assets/Skills/<name>/SKILL.md` and are declared as the `"Skills"` asset in `PacletInfo.wl`. They are loaded by `getBuiltInSkills` and available as `$DefaultSkills`, an association of skill names to `LLMSkill` objects. Parsed skills are cached until their `SKILL.md` file is modified.
+
+The parser is lenient: it strips a byte order mark, normalizes line endings, and retries YAML with unquoted colons in values (e.g. `description: Use when: ...`) as block scalars. The name falls back to the directory name. A skill without a description is skipped.
+
+Skills listed in `$optInSkills` are excluded from `Automatic`, so they are only used when requested by name or with `All`:
+
+- **`test-skill`** — used to check that skills work from end to end. Its instructions contain an activation code, and its `references/verification.md` file contains a verification code, so a chat can confirm that both the instructions and a bundled file were read. Enable it with `"Skills" -> {"test-skill"}`.
+
+### Persona Overrides
+
+- **RawModel**: `None` (no skills)
+
+### Integration Points
+
+- **Dependencies**: Resolved after `"ToolsEnabled"` in `resolveAutoSettings0`.
+- **LLM passthrough**: Not passed to `LLMConfiguration` as `"Skills"`. The skill tool is included in `"Tools"` and the catalog in the system prompt, so `GenerateLLMConfiguration` includes both.
+- **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations. `makeCurrentRole` drops the persona's unresolved `"Skills"` value along with `"Tools"` when building the system prompt.
+
+### Preferences UI
+
+Not exposed in the preferences UI.
+
 ## `"ToolsEnabled"`
 
 Whether tools are enabled for the current chat.
@@ -128,7 +195,7 @@ Controls the mechanism by which the LLM invokes tools.
 
 ### Resolution
 
-When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolved tools are "simple tools" (members of `$DefaultTools`), resolves to `"Simple"`; otherwise remains `Automatic` (treated as a generic prompt-based method using `ENDTOOLCALL` markers). Automatic resolution happens in `resolveAutoSettings0` after `Tools` has been resolved.
+When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolved tools are "simple tools" (members of `$DefaultTools`, or the `ActivateSkill` tool added for [skills](#skills)), resolves to `"Simple"`; otherwise remains `Automatic` (treated as a generic prompt-based method using `ENDTOOLCALL` markers). Automatic resolution happens in `resolveAutoSettings0` after `Tools` has been resolved.
 
 ### Effects by Method
 
