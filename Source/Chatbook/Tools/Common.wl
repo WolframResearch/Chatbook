@@ -58,7 +58,6 @@ $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
-    "FileReader" -> <||>,
     "WolframAlpha" -> <|
         "DefaultPods"     -> False,
         "FoldPods"        -> False,
@@ -111,7 +110,7 @@ $defaultToolOrder = {
 
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
-    "ReadFile" -> "FileReader",
+    "ReadFile"            -> "FileReader",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
@@ -140,12 +139,9 @@ $appearanceRulesKeys = Keys @ $autoAppearanceRules;
 (*Default Tools*)
 $defaultChatTools := (
     reevaluateToolExpressions[ ];
-    KeyDrop[
-        $defaultChatTools0,
-        Join[
-            If[ TrueQ @ $CloudEvaluation, $cloudUnsupportedTools, { } ],
-            If[ sufficientVersionQ[ 15.1 ], { }, { "FileReader" } ]
-        ]
+    If[ TrueQ @ $CloudEvaluation,
+        KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
+        $defaultChatTools0
     ]
 );
 
