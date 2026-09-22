@@ -216,9 +216,9 @@ If[ $restore,
 (* Each group is { label, paths }; the paths are collected once and reused for
    both the report and the deletion, so the two can never disagree. *)
 $groups = {
-    (* Every *Bit subdirectory, so a stale MX from another word length also goes. *)
+    (* Only direct children of a *Bit subdirectory are Chatbook MX artifacts. *)
     { "Compiled MX file",
-      FileNames[ "Chatbook.mx", FileNameJoin @ { $pacletDir, "Source", "Chatbook" }, 2 ] },
+      FileNames[ FileNameJoin @ { $pacletDir, "Source", "Chatbook", "*Bit", "Chatbook.mx" } ] },
 
     { "Build directory",
       Select[ { FileNameJoin @ { $pacletDir, "build" } }, DirectoryQ ] },
