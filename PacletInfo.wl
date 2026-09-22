@@ -40,6 +40,7 @@ PacletObject[ <|
                 { "Snippets"            , "Snippets"                 },
                 { "Icons"               , "Icons.wxf"                },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
+                { "Skills"              , "Skills"                   },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },
                 { "Tokenizers"          , "Tokenizers"               },
                 { "SyntaxInformation"   , "SyntaxArguments.wxf"      },

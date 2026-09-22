@@ -76,6 +76,7 @@ $defaultChatSettings = <|
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
     "ShowProgressText"               -> Automatic,
+    "Skills"                         -> Automatic,
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
@@ -843,7 +844,9 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
             If[ override[ "SidebarChat"   ], $SidebarChat         = True ];
         ];
-        result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
+        (* Skills are resolved first, since they determine whether the skill tool is included: *)
+        result = ConfirmBy[ resolveSkills @ KeySort @ override, AssociationQ, "ResolveSkills" ];
+        result = ConfirmBy[ resolveTools @ result, AssociationQ, "ResolveTools" ];
         result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result

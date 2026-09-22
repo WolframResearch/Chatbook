@@ -444,6 +444,7 @@ selectTools[ as_Association ] := Enclose[
         selectTools0 /@ selectedNames;
 
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
         addHandlerArguments[ "ToolShortNames" -> short ];
