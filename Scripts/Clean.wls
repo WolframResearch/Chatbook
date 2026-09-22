@@ -17,7 +17,7 @@
            --no-restore        Skip the git restore of front-end files.
            --snippets          Also remove Assets/Snippets/Streamable.
            --vector-databases  Also remove generated vector database assets.
-           --all               Enable every optional group above.
+           --all               Enable all optional artifact groups.
            --usage             Show this message.
 
    Exit codes:
@@ -84,7 +84,7 @@ If[ flagQ[ "--usage", "-?" ],
            "      --no-restore        Skip the git restore of front-end files.\n" <>
            "      --snippets          Also remove Assets/Snippets/Streamable.\n" <>
            "      --vector-databases  Also remove generated vector database assets.\n" <>
-           "      --all               Enable every optional group above.\n" <>
+           "      --all               Enable all optional artifact groups.\n" <>
            "      --usage             Show this message (wolframscript takes -h/--help).\n\n" <>
            "Exit codes:\n" <>
            "  0  Succeeded, or there was nothing to do.\n" <>
