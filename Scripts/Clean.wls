@@ -143,7 +143,9 @@ modifiedFrontEndFiles[ ] :=
     With[ { res = runGit @ Join[ { "diff", "--name-only", "--" }, $frontEndFiles ] },
         If[ gitOK @ res,
             Select[ StringTrim /@ StringSplit[ res[ "StandardOutput" ], "\n" ], # =!= "" & ],
-            { }
+            Print[ "git diff failed; cannot determine modified front-end files." ];
+            raiseExitCode[ 1 ];
+            $Failed
         ]
     ];
 
@@ -155,6 +157,9 @@ If[ $restore,
         ,
         With[ { modified = modifiedFrontEndFiles[ ] },
             Which[
+                modified === $Failed,
+                    Null,
+
                 modified === { },
                     Print[ "No modified front-end files to restore." ],
 
