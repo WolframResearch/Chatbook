@@ -27,6 +27,8 @@ Resolution only occurs when `ToolsEnabled` is `True`; otherwise the setting rema
    - Per-tool selection types from `getToolSelectionTypes` (stored in `"ToolSelectionType"`)
 3. The resolved `$selectedTools` association (filtered by `toolEnabledQ`, which checks each tool's `"Enabled"` key) is stored as `Values @ $selectedTools` (a list of `LLMTool` objects) back into the `"Tools"` key of the settings.
 
+A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys: `FileReader` wraps `FormatUtilities`LLM`ReadFile` and requires Wolfram 15.1, so on earlier versions it stays in `$DefaultTools` (persona tool lists that name it remain valid) but is filtered out by `toolEnabledQ` and hidden from the tool manager UI.
+
 The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name list through a two-level dispatch:
 
 - If the persona declares tools (via `LLMEvaluator["Tools"]`), persona tools and setting-level tools are combined.
@@ -45,9 +47,13 @@ If `WolframLanguageEvaluator` is among the selected tools, `resolveTools` trigge
 
 ### Persona Overrides
 
-- **CodeAssistant / AgentOne / AgentOneCoder**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList}`
+- **AgentOne / AgentOneCoder**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList}`
+- **CodeAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebFetcher", "FileReader", ParentList}`
+- **NotebookAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "CreateNotebook", "WebFetcher", "FileReader", ParentList}`
+- **Wolfie**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebSearcher", "WebFetcher", "FileReader", ParentList}`
+- **Birdnardo**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebSearcher", "WebFetcher", "WebImageSearcher", "FileReader", ParentList}`
 - **WolframAlpha**: `{"WolframAlpha", ParentList}`
-- **PlainChat**: `{"WebSearcher", "WebImageSearcher", "WebFetcher", ParentList}`
+- **PlainChat**: `{"WebSearcher", "WebImageSearcher", "WebFetcher", "FileReader", ParentList}`
 - **CodeWriter**: `{ParentList}`
 - **RawModel**: `None` (no tools)
 - **Wolfie / Birdnardo / NotebookAssistant**: custom tool lists with `ParentList`

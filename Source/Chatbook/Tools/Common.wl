@@ -42,6 +42,7 @@ $ToolFunctions = <|
     "ChatPreferences"          -> chatPreferences,
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
+    "FileReader"               -> readFile,
     "WebFetcher"               -> webFetch,
     "WebImageSearcher"         -> webImageSearch,
     "WebSearcher"              -> webSearch,
@@ -109,6 +110,7 @@ $defaultToolOrder = {
 
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
+    "ReadFile"            -> "FileReader",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
