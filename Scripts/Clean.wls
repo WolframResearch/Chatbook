@@ -108,9 +108,27 @@ If[ $scriptFile === "",
 
 $pacletDir = DirectoryName[ ExpandFileName @ $scriptFile, 2 ];
 
+$expectedPacletName = "Wolfram/Chatbook";
+
+(* A relocated or copied script could still find a PacletInfo.wl in an unrelated
+   directory. Verify the directory actually contains this paclet by checking its
+   declared name and a repository-specific landmark file. *)
+pacletDirLooksValid[ pacDir_String ] := Module[ { pacletInfoPath, pacletInfoText },
+    pacletInfoPath = FileNameJoin @ { pacDir, "PacletInfo.wl" };
+    And[
+        FileExistsQ @ pacletInfoPath,
+        FileExistsQ @ FileNameJoin @ { pacDir, "Source", "Chatbook", "Chatbook.wl" },
+        StringQ @ (pacletInfoText = Quiet @ Import[ pacletInfoPath, "Text" ]),
+        StringContainsQ[
+            pacletInfoText,
+            RegularExpression[ "\"Name\"\\s*->\\s*\"" <> $expectedPacletName <> "\"" ]
+        ]
+    ]
+];
+
 (* Guard the recursive deletes below against ever running outside the paclet. *)
-If[ ! DirectoryQ @ $pacletDir || ! FileExistsQ @ FileNameJoin @ { $pacletDir, "PacletInfo.wl" },
-    Print[ "Refusing to clean: no PacletInfo.wl found in ", $pacletDir ];
+If[ ! DirectoryQ @ $pacletDir || ! pacletDirLooksValid @ $pacletDir,
+    Print[ "Refusing to clean: ", $pacletDir, " does not look like the ", $expectedPacletName, " paclet." ];
     raiseExitCode[ 2 ];
     finish[ ]
 ];
