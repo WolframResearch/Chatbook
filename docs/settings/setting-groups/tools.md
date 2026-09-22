@@ -98,7 +98,7 @@ Chatbook only reads the association inside `LLMSkill[<|...|>]` (`"Name"`, `"Desc
 
 ### Skill Tool
 
-When at least one skill is resolved, `selectTools` (`Tools/Common.wl`) calls `selectSkillTool`, which adds an `ActivateSkill` tool (machine name `activate_skill`, short name `skill`) to the selected tools. It is removed again when no skills are resolved. The tool is built by `makeSkillTool` for the resolved skills and is not part of `$DefaultTools`, so it doesn't appear in the tool manager.
+When at least one skill is resolved, `selectTools` (`Tools/Common.wl`) calls `selectSkillTool`, which adds an `ActivateSkill` tool (machine name `activate_skill`, short name `skill`) to the selected tools. It is removed again when no skills are resolved. The tool is built by `makeSkillTool` for the resolved skills and is not part of `$DefaultTools`, so it doesn't appear in the tool manager. It still counts as a simple tool (`skillToolQ` in `simpleToolQ`), so adding skills doesn't stop `"ToolMethod"` from resolving to `"Simple"`.
 
 The tool takes two parameters:
 
@@ -195,7 +195,7 @@ Controls the mechanism by which the LLM invokes tools.
 
 ### Resolution
 
-When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolved tools are "simple tools" (members of `$DefaultTools`), resolves to `"Simple"`; otherwise remains `Automatic` (treated as a generic prompt-based method using `ENDTOOLCALL` markers). Automatic resolution happens in `resolveAutoSettings0` after `Tools` has been resolved.
+When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolved tools are "simple tools" (members of `$DefaultTools`, or the `ActivateSkill` tool added for [skills](#skills)), resolves to `"Simple"`; otherwise remains `Automatic` (treated as a generic prompt-based method using `ENDTOOLCALL` markers). Automatic resolution happens in `resolveAutoSettings0` after `Tools` has been resolved.
 
 ### Effects by Method
 

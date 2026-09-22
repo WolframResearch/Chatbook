@@ -652,6 +652,74 @@ VerificationTest[
     TestID   -> "ChatSettings-NoSkills@@Tests/Skills.wlt:643,1-653,2"
 ]
 
+(* The skill tool works with the "Simple" tool method, so it should not change the automatic choice of tool method: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`skillToolQ /@ { $skillTool, First @ $DefaultTools, "ActivateSkill" },
+    { True, False, False },
+    SameTest -> SameQ,
+    TestID   -> "ChatSettings-SkillToolQ@@Tests/Skills.wlt:656,1-661,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Settings`Private`simpleToolQ @ $skillTool,
+    True,
+    SameTest -> SameQ,
+    TestID   -> "ChatSettings-SimpleToolQ@@Tests/Skills.wlt:663,1-668,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Settings`Private`chooseToolMethod /@ {
+        <| "Tools" -> Values @ $DefaultTools |>,
+        <| "Tools" -> Append[ Values @ $DefaultTools, $skillTool ] |>,
+        <| "Tools" -> { $skillTool, LLMTool[ { "custom_tool", "A custom tool." }, { "x" -> "String" }, # & ] } |>
+    },
+    { "Simple", "Simple", Automatic },
+    SameTest -> SameQ,
+    TestID   -> "ChatSettings-ChooseToolMethod@@Tests/Skills.wlt:670,1-679,2"
+]
+
+VerificationTest[
+    $skillSettings[ "ToolMethod" ],
+    $defaultSettings[ "ToolMethod" ],
+    SameTest -> SameQ,
+    TestID   -> "ChatSettings-ToolMethod@@Tests/Skills.wlt:681,1-686,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Simple Tool Method*)
+VerificationTest[
+    Wolfram`Chatbook`Tools`Private`simpleToolSchema @ $skillTool,
+    _String? (StringStartsQ[ "Activate Skill (/skill)\n" ]),
+    SameTest -> MatchQ,
+    TestID   -> "SimpleToolMethod-Schema@@Tests/Skills.wlt:691,1-696,2"
+]
+
+VerificationTest[
+    simpleSkillToolCall // ClearAll;
+    simpleSkillToolCall[ response_String ] :=
+        Module[ { request },
+            request = Block[ { Wolfram`Chatbook`Common`$selectedTools = <| "ActivateSkill" -> $skillTool |> },
+                Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ response
+            ];
+            GenerateLLMToolResponse[ LLMConfiguration @ <| "Tools" -> { $skillTool } |>, request ][ "Output" ]
+        ];
+    simpleSkillToolCall[ "I'll check that skills are working.\n\n/skill\ntest-skill\n" ],
+    _String? (StringContainsQ[ "MAROON-ORCHID-7214" ]),
+    SameTest -> MatchQ,
+    TestID   -> "SimpleToolMethod-Instructions@@Tests/Skills.wlt:698,1-711,2"
+]
+
+VerificationTest[
+    simpleSkillToolCall /@ {
+        "/skill\ntest-skill\nreferences/verification.md\n",
+        "/skill\nname: test-skill\npath: references/verification.md\n"
+    },
+    { _String? (StringContainsQ[ "SLATE-HERON-3908" ]).. },
+    SameTest -> MatchQ,
+    TestID   -> "SimpleToolMethod-ReadFile@@Tests/Skills.wlt:713,1-721,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*GenerateLLMConfiguration*)
@@ -662,28 +730,28 @@ VerificationTest[
     ],
     HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
     SameTest -> MatchQ,
-    TestID   -> "GenerateLLMConfiguration-Skills@@Tests/Skills.wlt:658,1-666,2"
+    TestID   -> "GenerateLLMConfiguration-Skills@@Tests/Skills.wlt:726,1-734,2"
 ]
 
 VerificationTest[
     MemberQ[ #[ "Data" ][ "CanonicalName" ] & /@ $config[ "Tools" ], "ActivateSkill" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-Skills-Tool@@Tests/Skills.wlt:668,1-673,2"
+    TestID   -> "GenerateLLMConfiguration-Skills-Tool@@Tests/Skills.wlt:736,1-741,2"
 ]
 
 VerificationTest[
     StringContainsQ[ StringJoin @ Select[ $config[ "Prompts" ], StringQ ], "<name>test-skill</name>" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-Skills-Prompt@@Tests/Skills.wlt:675,1-680,2"
+    TestID   -> "GenerateLLMConfiguration-Skills-Prompt@@Tests/Skills.wlt:743,1-748,2"
 ]
 
 VerificationTest[
     MemberQ[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ], "ActivateSkill" ],
     False,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-NoSkills@@Tests/Skills.wlt:682,1-687,2"
+    TestID   -> "GenerateLLMConfiguration-NoSkills@@Tests/Skills.wlt:750,1-755,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -693,7 +761,7 @@ VerificationTest[
     DeleteDirectory[ $tempRoot, DeleteContents -> True ],
     Null,
     SameTest -> SameQ,
-    TestID   -> "Cleanup@@Tests/Skills.wlt:692,1-697,2"
+    TestID   -> "Cleanup@@Tests/Skills.wlt:760,1-765,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

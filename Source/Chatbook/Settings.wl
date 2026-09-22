@@ -1130,6 +1130,8 @@ chooseToolMethod // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*simpleToolQ*)
 simpleToolQ // beginDefinition;
+(* The skill tool is built for each chat, so it's not in $DefaultTools, but its parameters are simple strings: *)
+simpleToolQ[ tool_? skillToolQ ] := True;
 simpleToolQ[ tool_ ] := simpleToolQ[ tool, $DefaultTools ];
 simpleToolQ[ name_String, default_Association ] := KeyExistsQ[ default, name ];
 simpleToolQ[ tool: HoldPattern[ _LLMTool ], default_Association ] := MemberQ[ default, tool ];

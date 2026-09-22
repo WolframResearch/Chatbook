@@ -352,6 +352,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `setProgressDisplay;
 `simpleResultQ;
 `simpleToolRequestParser;
+`skillToolQ;
 `snapshotModelQ;
 `snippetIDToURI;
 `standardizeMessageKeys;

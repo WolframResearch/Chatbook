@@ -637,6 +637,14 @@ activateSkillFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*skillToolQ*)
+skillToolQ // beginDefinition;
+skillToolQ[ HoldPattern @ LLMTool[ as_Association? AssociationQ, ___ ] ] := Lookup[ as, "CanonicalName" ] === $skillToolName;
+skillToolQ[ _ ] := False;
+skillToolQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*activateSkill*)
 activateSkill // beginDefinition;
 
