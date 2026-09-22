@@ -39,6 +39,7 @@ $defaultChatTools0[ "FileReader" ] = <|
     "Function"           -> readFile,
     "FormattingFunction" -> toolAutoFormatter,
     "Origin"             -> "BuiltIn",
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconFileReader" ],
     "Parameters"         -> {
         "Path" -> <|
             "Interpreter" -> "String",
