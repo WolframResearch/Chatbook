@@ -51,6 +51,27 @@ $args = Select[ Flatten @ { $ScriptCommandLine }, StringQ ];
 
 flagQ[ names___String ] := AnyTrue[ { names }, MemberQ[ $args, # ] & ];
 
+(* Reject unknown options before any destructive work. The script name at
+   position 1 is not an option and is ignored. *)
+$knownOptions = {
+    "-n", "--dry-run",
+    "--no-restore",
+    "--snippets",
+    "--vector-databases",
+    "--all",
+    "--usage",
+    "-?"
+};
+
+$unknownOptions = Select[ Rest @ $args, ! MemberQ[ $knownOptions, # ] & ];
+
+If[ $unknownOptions =!= { },
+    Print[ "Unknown option(s): " <> StringRiffle[ $unknownOptions, ", " ] ];
+    Print[ "Run with --usage for the list of valid options." ];
+    raiseExitCode[ 2 ];
+    finish[ ]
+];
+
 $dryRun = flagQ[ "-n", "--dry-run" ];
 $restore        = ! flagQ[ "--no-restore" ];
 $allOptional    = flagQ[ "--all" ];
