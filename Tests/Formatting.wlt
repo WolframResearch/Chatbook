@@ -588,7 +588,7 @@ VerificationTest[
     Wolfram`Chatbook`Formatting`Private`activeToolProgressIndicator[ ],
     RawBoxes @ TagBox[ _, "ChatbookActiveToolProgress" ],
     SameTest -> MatchQ,
-    TestID   -> "ActiveToolProgressIndicator-Tagged"
+    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:587,1-592,2"
 ]
 
 VerificationTest[
@@ -601,7 +601,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-OrdinaryText"
+    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:594,1-605,2"
 ]
 
 VerificationTest[
@@ -617,7 +617,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-ActiveTool"
+    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:607,1-621,2"
 ]
 
 VerificationTest[
@@ -630,7 +630,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-EmptyContent"
+    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:623,1-634,2"
 ]
 
 VerificationTest[
@@ -655,7 +655,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-MethodAware"
+    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:636,1-659,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
