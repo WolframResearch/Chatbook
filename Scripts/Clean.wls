@@ -133,7 +133,12 @@ If[ ! DirectoryQ @ $pacletDir || ! pacletDirLooksValid @ $pacletDir,
     finish[ ]
 ];
 
-relative[ path_String ] := StringDelete[ path, StartOfString ~~ $pacletDir ];
+(* Path-aware so Windows case/normalization differences and leading separators are
+   handled correctly; the result is displayed with forward slashes. *)
+relative[ path_String ] := StringReplace[
+    FileNameDrop[ path, FileNameDepth @ $pacletDir ],
+    "\\" -> "/"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
