@@ -41,15 +41,16 @@ Chatbook::SkillNotFound             = "Skill `1` not found.";
 Chatbook::InvalidSkillSpecification = "Expected a skill name or an LLMSkill object instead of `1`.";
 
 $skillFailureTemplates = <|
-    "InvalidSkillPath"     -> "Invalid path \"`2`\" for the skill \"`1`\". Paths must be relative to the skill directory and cannot refer to parent directories or hidden files.",
-    "MissingSkillFile"     -> "The skill file `1` does not exist.",
-    "SkillFileNotFound"    -> "The file \"`2`\" does not exist in the skill \"`1`\". Available files: `3`.",
-    "SkillFileNotText"     -> "The file \"`2`\" in the skill \"`1`\" is not a text file. Only text files can be read.",
-    "SkillFileTooLarge"    -> "The file \"`2`\" in the skill \"`1`\" is too large to read (`3` bytes).",
-    "SkillFileUnreadable"  -> "The file \"`2`\" in the skill \"`1`\" could not be read.",
-    "SkillHasNoDirectory"  -> "The skill \"`1`\" does not have a directory, so only its instructions can be read. Omit the path parameter to read them.",
-    "SkillNotAvailable"    -> "The skill \"`1`\" is not available. Available skills: `2`.",
-    "SkillPathIsDirectory" -> "The path \"`2`\" is a directory in the skill \"`1`\", not a file. Available files: `3`."
+    "InvalidSkillPath"          -> "Invalid path \"`2`\" for the skill \"`1`\". Paths must be relative to the skill directory and cannot refer to parent directories, hidden files, or ignored directories such as node_modules.",
+    "MissingSkillFile"          -> "The skill file `1` does not exist.",
+    "SkillFileNotFound"         -> "The file \"`2`\" does not exist in the skill \"`1`\". Available files: `3`.",
+    "SkillFileNotText"          -> "The file \"`2`\" in the skill \"`1`\" is not a text file. Only text files can be read.",
+    "SkillFileTooLarge"         -> "The file \"`2`\" in the skill \"`1`\" is too large to read (`3` bytes).",
+    "SkillFileUnreadable"       -> "The file \"`2`\" in the skill \"`1`\" could not be read.",
+    "SkillHasNoDirectory"       -> "The skill \"`1`\" does not have a directory, so only its instructions can be read. Omit the path parameter to read them.",
+    "SkillNotAvailable"         -> "The skill \"`1`\" is not available. Available skills: `2`.",
+    "SkillPathIsDirectory"      -> "The path \"`2`\" is a directory in the skill \"`1`\", not a file. Available files: `3`.",
+    "SkillPathOutsideDirectory" -> "The path \"`2`\" in the skill \"`1`\" is a link to a location that cannot be read, such as a file outside the skill directory."
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -132,6 +133,9 @@ importSkill0 // beginDefinition;
 
 importSkill0[ file_String ] := Enclose[
     Catch @ Module[ { text, parsed },
+        If[ ! StringQ @ resolvedSkillPath[ realSkillPath @ FileNameDrop[ file, -1 ], file ],
+            Throw @ invalidSkillFailure[ file, "the file is a link to a location outside of the skill directory" ]
+        ];
         text = readSkillText @ file;
         If[ ! StringQ @ text, Throw @ invalidSkillFailure[ file, "the file could not be read as UTF-8 text" ] ];
         parsed = ConfirmMatch[ parseSkillMarkdown[ text, file ], _Association | _Failure, "Parsed" ];
@@ -416,27 +420,67 @@ skillDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*realSkillPath*)
+(* Resolves symbolic links, giving Missing for paths that do not exist, including broken links. *)
+realSkillPath // beginDefinition;
+realSkillPath[ path_String ] := Replace[ Quiet @ AbsoluteFileName @ path, Except[ _String ] -> Missing[ "NotAvailable" ] ];
+realSkillPath[ _Missing ] := Missing[ "NotAvailable" ];
+realSkillPath // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolvedSkillPath*)
+(* A skill can contain links to files anywhere, e.g. from a cloned repository, so the location of a path is only
+   readable if it's inside the resolved skill directory (root) after resolving links. This gives the resolved location
+   relative to the skill directory, or Missing if it can't be read. *)
+resolvedSkillPath // beginDefinition;
+resolvedSkillPath[ root_, path_String ] := resolvedSkillPath0[ root, realSkillPath @ path ];
+resolvedSkillPath // endDefinition;
+
+
+resolvedSkillPath0 // beginDefinition;
+
+resolvedSkillPath0[ root_String, real_String ] /; StringStartsQ[ real, root <> $PathnameSeparator ] :=
+    With[ { relative = StringReplace[ StringDrop[ real, StringLength @ root + 1 ], "\\" -> "/" ] },
+        If[ AnyTrue[ StringSplit[ relative, "/" ], ignoredSkillFileNameQ ], Missing[ "NotReadable" ], relative ]
+    ];
+
+resolvedSkillPath0[ _, _ ] := Missing[ "NotReadable" ];
+
+resolvedSkillPath0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*skillResourceFiles*)
 (* Lists the files bundled with a skill as relative paths, skipping SKILL.md itself and hidden files. *)
 skillResourceFiles // beginDefinition;
 
 skillResourceFiles[ dir_String ] :=
-    Sort @ DeleteCases[ Flatten @ listSkillFiles[ dir, "", 1 ], $skillFileName ];
+    skillResourceFiles[ dir, realSkillPath @ dir ];
+
+skillResourceFiles[ dir_String, root_String ] :=
+    Sort @ DeleteCases[ Flatten @ listSkillFiles[ root, root, "", 1 ], $skillFileName ];
+
+skillResourceFiles[ dir_String, _Missing ] :=
+    { };
 
 skillResourceFiles // endDefinition;
 
 
 listSkillFiles // beginDefinition;
 
-listSkillFiles[ dir_String, prefix_String, depth_Integer ] /; depth > $maxSkillResourceDepth := { };
+listSkillFiles[ root_String, dir_String, prefix_String, depth_Integer ] /; depth > $maxSkillResourceDepth := { };
 
-listSkillFiles[ dir_String, prefix_String, depth_Integer ] := Map[
+listSkillFiles[ root_String, dir_String, prefix_String, depth_Integer ] := Map[
     Function[
         path,
-        With[ { name = FileNameTake @ path },
+        With[ { name = FileNameTake @ path, real = realSkillPath @ path },
             Which[
                 ignoredSkillFileNameQ @ name, Nothing,
-                DirectoryQ @ path, listSkillFiles[ path, prefix <> name <> "/", depth + 1 ],
+                (* Broken links and links to locations that can't be read: *)
+                ! StringQ @ resolvedSkillPath0[ root, real ], Nothing,
+                (* Linked directories are not followed, which also avoids cycles: *)
+                DirectoryQ @ path, If[ real === path, listSkillFiles[ root, path, prefix <> name <> "/", depth + 1 ], Nothing ],
                 True, prefix <> name
             ]
         ]
@@ -729,7 +773,8 @@ skillPathComponents[ dir_String, path0_String ] :=
 
         Which[
             StringStartsQ[ path, "/" | "~" ] || StringMatchQ[ path, LetterCharacter ~~ ":" ~~ ___ ], $Failed,
-            AnyTrue[ parts, StringStartsQ[ "." ] ], $Failed,
+            (* Parent directories, hidden files, and ignored directories: *)
+            AnyTrue[ parts, ignoredSkillFileNameQ ], $Failed,
             True, parts
         ]
     ];
@@ -798,6 +843,9 @@ readSkillFile[ skill_, dir_String, path_String, file_String ] := Which[
         skillFailure[ "SkillPathIsDirectory", skillName @ skill, path, availableSkillFiles @ dir ],
     ! FileExistsQ @ file,
         skillFailure[ "SkillFileNotFound", skillName @ skill, path, availableSkillFiles @ dir ],
+    (* The path is inside the skill directory, but it could be a link to a file elsewhere: *)
+    ! StringQ @ resolvedSkillPath[ realSkillPath @ dir, file ],
+        skillFailure[ "SkillPathOutsideDirectory", skillName @ skill, path ],
     True,
         skillFileContent[ skillName @ skill, path, readSkillText @ file ]
 ];

@@ -443,10 +443,17 @@ VerificationTest[
 ]
 
 VerificationTest[
-    activate[ "sample-skill", # ] & /@ { "../unnamed-skill/SKILL.md", "/etc/passwd", "~/.bashrc", ".env", ".hidden/secret.txt" },
+    activate[ "sample-skill", # ] & /@ {
+        "../unnamed-skill/SKILL.md",
+        "/etc/passwd",
+        "~/.bashrc",
+        ".env",
+        ".hidden/secret.txt",
+        "__pycache__/cached.pyc"
+    },
     { KeyValuePattern @ { "Result" -> Failure[ "InvalidSkillPath", _ ], "String" -> _String? (StringStartsQ[ "Error: " ]) } .. },
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-ReadFile-InvalidPaths@@Tests/Skills.wlt:445,1-450,2"
+    TestID   -> "SkillTool-ReadFile-InvalidPaths@@Tests/Skills.wlt:445,1-457,2"
 ]
 
 VerificationTest[
@@ -456,21 +463,21 @@ VerificationTest[
         "String" -> _String? (StringContainsQ[ "Available files: data.bin, references/guide.md, scripts/run.wl" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-ReadFile-NotFound@@Tests/Skills.wlt:452,1-460,2"
+    TestID   -> "SkillTool-ReadFile-NotFound@@Tests/Skills.wlt:459,1-467,2"
 ]
 
 VerificationTest[
     activate[ "sample-skill", "references" ],
     KeyValuePattern[ "Result" -> Failure[ "SkillPathIsDirectory", _ ] ],
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-ReadFile-Directory@@Tests/Skills.wlt:462,1-467,2"
+    TestID   -> "SkillTool-ReadFile-Directory@@Tests/Skills.wlt:469,1-474,2"
 ]
 
 VerificationTest[
     activate[ "sample-skill", "data.bin" ],
     KeyValuePattern[ "Result" -> Failure[ "SkillFileNotText", _ ] ],
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-ReadFile-Binary@@Tests/Skills.wlt:469,1-474,2"
+    TestID   -> "SkillTool-ReadFile-Binary@@Tests/Skills.wlt:476,1-481,2"
 ]
 
 VerificationTest[
@@ -480,7 +487,7 @@ VerificationTest[
         "String" -> _String? (StringContainsQ[ "Available skills: test-skill, sample-skill" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-SkillNotAvailable@@Tests/Skills.wlt:476,1-484,2"
+    TestID   -> "SkillTool-SkillNotAvailable@@Tests/Skills.wlt:483,1-491,2"
 ]
 
 (* The built-in test skill can read its own reference file: *)
@@ -488,7 +495,7 @@ VerificationTest[
     activate[ "test-skill", "references/verification.md" ],
     _String? (StringContainsQ[ "SLATE-HERON-3908" ]),
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-TestSkill-Reference@@Tests/Skills.wlt:487,1-492,2"
+    TestID   -> "SkillTool-TestSkill-Reference@@Tests/Skills.wlt:494,1-499,2"
 ]
 
 (* Skills that were not loaded from a directory only have instructions: *)
@@ -511,7 +518,7 @@ VerificationTest[
         KeyValuePattern[ "Result" -> Failure[ "SkillHasNoDirectory", _ ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-NoDirectory@@Tests/Skills.wlt:495,1-515,2"
+    TestID   -> "SkillTool-NoDirectory@@Tests/Skills.wlt:502,1-522,2"
 ]
 
 (* Files can only be read from directories that contain a SKILL.md file: *)
@@ -519,7 +526,7 @@ VerificationTest[
     Wolfram`Chatbook`Skills`Private`skillDirectory /@ { File @ $tempRoot, File @ $sampleSkillDir, None },
     { _Missing, $sampleSkillDir, _Missing },
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-SkillDirectory@@Tests/Skills.wlt:518,1-523,2"
+    TestID   -> "SkillTool-SkillDirectory@@Tests/Skills.wlt:525,1-530,2"
 ]
 
 (* Tool calls through LLMFunctions: *)
@@ -530,7 +537,7 @@ VerificationTest[
     ][ "Output" ],
     _String? (StringContainsQ[ "MAROON-ORCHID-7214" ]),
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-GenerateLLMToolResponse@@Tests/Skills.wlt:526,1-534,2"
+    TestID   -> "SkillTool-GenerateLLMToolResponse@@Tests/Skills.wlt:533,1-541,2"
 ]
 
 VerificationTest[
@@ -540,7 +547,130 @@ VerificationTest[
     ],
     _Failure,
     SameTest -> MatchQ,
-    TestID   -> "SkillTool-GenerateLLMToolResponse-InvalidName@@Tests/Skills.wlt:536,1-544,2"
+    TestID   -> "SkillTool-GenerateLLMToolResponse-InvalidName@@Tests/Skills.wlt:543,1-551,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Symbolic Links*)
+(* A skill can contain links to files anywhere on the machine (e.g. from a cloned repository), which must not be
+   readable through the skill tool: *)
+VerificationTest[
+    createLink // ClearAll;
+    createLink[ target_String, link_String ] := RunProcess[ { "ln", "-s", target, link } ][ "ExitCode" ] === 0;
+
+    $linksSupported = $OperatingSystem =!= "Windows";
+    $outsideDir     = FileNameJoin @ { $tempRoot, "outside" };
+    $linkedSkillDir = FileNameJoin @ { $tempRoot, "linked-skill" };
+
+    writeTestFile[ FileNameJoin @ { $outsideDir, "secret.txt" }, "OUTSIDE-SECRET\n" ];
+    writeTestFile[ FileNameJoin @ { $outsideDir, "SKILL.md" }, "---\nname: outside\ndescription: Outside.\n---\nOUTSIDE\n" ];
+    writeTestFile[ FileNameJoin @ { $linkedSkillDir, "SKILL.md" }, "---\nname: linked-skill\ndescription: Links.\n---\nBody\n" ];
+    writeTestFile[ FileNameJoin @ { $linkedSkillDir, "references", "guide.md" }, "INSIDE-GUIDE\n" ];
+    writeTestFile[ FileNameJoin @ { $linkedSkillDir, ".env" }, "SECRET=1\n" ];
+
+    If[ $linksSupported,
+        AllTrue[
+            {
+                createLink[ "guide.md", FileNameJoin @ { $linkedSkillDir, "references", "inside.md" } ],
+                createLink[ "../../outside/secret.txt", FileNameJoin @ { $linkedSkillDir, "references", "relative.md" } ],
+                createLink[ FileNameJoin @ { $outsideDir, "secret.txt" }, FileNameJoin @ { $linkedSkillDir, "references", "absolute.md" } ],
+                createLink[ "../outside", FileNameJoin @ { $linkedSkillDir, "outside-dir" } ],
+                createLink[ "references", FileNameJoin @ { $linkedSkillDir, "refs" } ],
+                createLink[ ".", FileNameJoin @ { $linkedSkillDir, "loop" } ],
+                createLink[ ".env", FileNameJoin @ { $linkedSkillDir, "env.md" } ],
+                createLink[ FileNameJoin @ { $tempRoot, "does-not-exist" }, FileNameJoin @ { $linkedSkillDir, "broken.md" } ],
+                createLink[ $linkedSkillDir, FileNameJoin @ { $tempRoot, "linked-skill-alias" } ]
+            },
+            TrueQ
+        ],
+        True
+    ],
+    True,
+    SameTest -> SameQ,
+    TestID   -> "SymbolicLinks-Setup@@Tests/Skills.wlt:558,1-592,2"
+]
+
+(* Links are only listed if they point to a readable file in the skill, and linked directories are not followed: *)
+VerificationTest[
+    If[ $linksSupported, Wolfram`Chatbook`Skills`Private`skillResourceFiles @ $linkedSkillDir, Missing[ "TestSkipped" ] ],
+    Missing[ "TestSkipped" ] | { "references/guide.md", "references/inside.md" },
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-Listing@@Tests/Skills.wlt:595,1-600,2"
+]
+
+VerificationTest[
+    If[ $linksSupported,
+        $linkedTool = Wolfram`Chatbook`Skills`Private`makeSkillTool @ {
+            Wolfram`Chatbook`Skills`Private`importSkill @ $linkedSkillDir
+        };
+        readLinked // ClearAll;
+        readLinked[ path_String ] := $linkedTool[ "Function" ][ <| "name" -> "linked-skill", "path" -> path |> ];
+        readLinked /@ { "references/inside.md", "refs/guide.md", "loop/references/guide.md" },
+        Missing[ "TestSkipped" ]
+    ],
+    Missing[ "TestSkipped" ] | { _String? (StringContainsQ[ "INSIDE-GUIDE" ]).. },
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-ReadInside@@Tests/Skills.wlt:602,1-615,2"
+]
+
+VerificationTest[
+    If[ $linksSupported,
+        readLinked /@ { "references/relative.md", "references/absolute.md", "outside-dir/secret.txt", "env.md" },
+        Missing[ "TestSkipped" ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        KeyValuePattern @ {
+            "Result" -> Failure[ "SkillPathOutsideDirectory", _ ],
+            "String" -> _String? (StringFreeQ[ "OUTSIDE-SECRET" | "SECRET=1" ])
+        }..
+    },
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-ReadOutside@@Tests/Skills.wlt:617,1-630,2"
+]
+
+VerificationTest[
+    If[ $linksSupported, readLinked[ "broken.md" ], Missing[ "TestSkipped" ] ],
+    Missing[ "TestSkipped" ] | KeyValuePattern[ "Result" -> Failure[ "SkillFileNotFound", _ ] ],
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-BrokenLink@@Tests/Skills.wlt:632,1-637,2"
+]
+
+(* The skill directory itself can be a link: *)
+VerificationTest[
+    If[ $linksSupported,
+        Module[ { tool },
+            tool = Wolfram`Chatbook`Skills`Private`makeSkillTool @ {
+                Wolfram`Chatbook`Skills`Private`importSkill @ FileNameJoin @ { $tempRoot, "linked-skill-alias" }
+            };
+            tool[ "Function" ][ <| "name" -> "linked-skill", "path" -> # |> ] & /@ {
+                "references/guide.md",
+                "references/relative.md"
+            }
+        ],
+        Missing[ "TestSkipped" ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        _String? (StringContainsQ[ "INSIDE-GUIDE" ]),
+        KeyValuePattern[ "Result" -> Failure[ "SkillPathOutsideDirectory", _ ] ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-LinkedSkillDirectory@@Tests/Skills.wlt:640,1-659,2"
+]
+
+(* SKILL.md itself cannot be a link to a file outside of the skill directory: *)
+VerificationTest[
+    If[ $linksSupported,
+        Module[ { dir },
+            dir = CreateDirectory @ FileNameJoin @ { $tempRoot, "linked-instructions" };
+            createLink[ FileNameJoin @ { $outsideDir, "SKILL.md" }, FileNameJoin @ { dir, "SKILL.md" } ];
+            Wolfram`Chatbook`Skills`Private`importSkill @ dir
+        ],
+        Missing[ "TestSkipped" ]
+    ],
+    Missing[ "TestSkipped" ] | Failure[ "InvalidSkill", _ ],
+    SameTest -> MatchQ,
+    TestID   -> "SymbolicLinks-SkillFile@@Tests/Skills.wlt:662,1-674,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -554,7 +684,7 @@ VerificationTest[
     |>,
     _String? (StringStartsQ[ "# Skills\n" ]),
     SameTest -> MatchQ,
-    TestID   -> "SkillsPrompt@@Tests/Skills.wlt:549,1-558,2"
+    TestID   -> "SkillsPrompt@@Tests/Skills.wlt:679,1-688,2"
 ]
 
 VerificationTest[
@@ -568,14 +698,14 @@ VerificationTest[
     },
     { True, True, True, True, True, False },
     SameTest -> SameQ,
-    TestID   -> "SkillsPrompt-Content@@Tests/Skills.wlt:560,1-572,2"
+    TestID   -> "SkillsPrompt-Content@@Tests/Skills.wlt:690,1-702,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`getSkillsPrompt @ <| "ToolsEnabled" -> True, "ToolMethod" -> "Simple", "Skills" -> { $testSkill } |>,
     _String? (StringContainsQ[ "call the /skill tool" ]),
     SameTest -> MatchQ,
-    TestID   -> "SkillsPrompt-SimpleToolMethod@@Tests/Skills.wlt:574,1-579,2"
+    TestID   -> "SkillsPrompt-SimpleToolMethod@@Tests/Skills.wlt:704,1-709,2"
 ]
 
 VerificationTest[
@@ -586,7 +716,7 @@ VerificationTest[
     },
     { _Missing, _Missing, _Missing },
     SameTest -> MatchQ,
-    TestID   -> "SkillsPrompt-NoSkills@@Tests/Skills.wlt:581,1-590,2"
+    TestID   -> "SkillsPrompt-NoSkills@@Tests/Skills.wlt:711,1-720,2"
 ]
 
 VerificationTest[
@@ -605,7 +735,7 @@ VerificationTest[
     |>,
     _String? (StringContainsQ[ "<description>Use &lt;b&gt;this&lt;/b&gt; &amp; that.</description>" ]),
     SameTest -> MatchQ,
-    TestID   -> "SkillsPrompt-Escaping@@Tests/Skills.wlt:592,1-609,2"
+    TestID   -> "SkillsPrompt-Escaping@@Tests/Skills.wlt:722,1-739,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -615,7 +745,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`$defaultChatSettings[ "Skills" ],
     Automatic,
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-Default@@Tests/Skills.wlt:614,1-619,2"
+    TestID   -> "ChatSettings-Default@@Tests/Skills.wlt:744,1-749,2"
 ]
 
 VerificationTest[
@@ -629,14 +759,14 @@ VerificationTest[
     },
     { { "test-skill" }, True },
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-ResolveSkills@@Tests/Skills.wlt:621,1-633,2"
+    TestID   -> "ChatSettings-ResolveSkills@@Tests/Skills.wlt:751,1-763,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`makeCurrentRole[ $skillSettings ][ "Content" ],
     _String? (StringContainsQ[ "<available_skills>" ]),
     SameTest -> MatchQ,
-    TestID   -> "ChatSettings-SystemPrompt@@Tests/Skills.wlt:635,1-640,2"
+    TestID   -> "ChatSettings-SystemPrompt@@Tests/Skills.wlt:765,1-770,2"
 ]
 
 (* The skill tool is removed again when skills are no longer used: *)
@@ -649,7 +779,7 @@ VerificationTest[
     },
     { { }, False, False },
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-NoSkills@@Tests/Skills.wlt:643,1-653,2"
+    TestID   -> "ChatSettings-NoSkills@@Tests/Skills.wlt:773,1-783,2"
 ]
 
 (* The skill tool works with the "Simple" tool method, so it should not change the automatic choice of tool method: *)
@@ -657,14 +787,14 @@ VerificationTest[
     Wolfram`Chatbook`Common`skillToolQ /@ { $skillTool, First @ $DefaultTools, "ActivateSkill" },
     { True, False, False },
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-SkillToolQ@@Tests/Skills.wlt:656,1-661,2"
+    TestID   -> "ChatSettings-SkillToolQ@@Tests/Skills.wlt:786,1-791,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Settings`Private`simpleToolQ @ $skillTool,
     True,
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-SimpleToolQ@@Tests/Skills.wlt:663,1-668,2"
+    TestID   -> "ChatSettings-SimpleToolQ@@Tests/Skills.wlt:793,1-798,2"
 ]
 
 VerificationTest[
@@ -675,14 +805,14 @@ VerificationTest[
     },
     { "Simple", "Simple", Automatic },
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-ChooseToolMethod@@Tests/Skills.wlt:670,1-679,2"
+    TestID   -> "ChatSettings-ChooseToolMethod@@Tests/Skills.wlt:800,1-809,2"
 ]
 
 VerificationTest[
     $skillSettings[ "ToolMethod" ],
     $defaultSettings[ "ToolMethod" ],
     SameTest -> SameQ,
-    TestID   -> "ChatSettings-ToolMethod@@Tests/Skills.wlt:681,1-686,2"
+    TestID   -> "ChatSettings-ToolMethod@@Tests/Skills.wlt:811,1-816,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -692,7 +822,7 @@ VerificationTest[
     Wolfram`Chatbook`Tools`Private`simpleToolSchema @ $skillTool,
     _String? (StringStartsQ[ "Activate Skill (/skill)\n" ]),
     SameTest -> MatchQ,
-    TestID   -> "SimpleToolMethod-Schema@@Tests/Skills.wlt:691,1-696,2"
+    TestID   -> "SimpleToolMethod-Schema@@Tests/Skills.wlt:821,1-826,2"
 ]
 
 VerificationTest[
@@ -707,7 +837,7 @@ VerificationTest[
     simpleSkillToolCall[ "I'll check that skills are working.\n\n/skill\ntest-skill\n" ],
     _String? (StringContainsQ[ "MAROON-ORCHID-7214" ]),
     SameTest -> MatchQ,
-    TestID   -> "SimpleToolMethod-Instructions@@Tests/Skills.wlt:698,1-711,2"
+    TestID   -> "SimpleToolMethod-Instructions@@Tests/Skills.wlt:828,1-841,2"
 ]
 
 VerificationTest[
@@ -717,7 +847,7 @@ VerificationTest[
     },
     { _String? (StringContainsQ[ "SLATE-HERON-3908" ]).. },
     SameTest -> MatchQ,
-    TestID   -> "SimpleToolMethod-ReadFile@@Tests/Skills.wlt:713,1-721,2"
+    TestID   -> "SimpleToolMethod-ReadFile@@Tests/Skills.wlt:843,1-851,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -730,28 +860,28 @@ VerificationTest[
     ],
     HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
     SameTest -> MatchQ,
-    TestID   -> "GenerateLLMConfiguration-Skills@@Tests/Skills.wlt:726,1-734,2"
+    TestID   -> "GenerateLLMConfiguration-Skills@@Tests/Skills.wlt:856,1-864,2"
 ]
 
 VerificationTest[
     MemberQ[ #[ "Data" ][ "CanonicalName" ] & /@ $config[ "Tools" ], "ActivateSkill" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-Skills-Tool@@Tests/Skills.wlt:736,1-741,2"
+    TestID   -> "GenerateLLMConfiguration-Skills-Tool@@Tests/Skills.wlt:866,1-871,2"
 ]
 
 VerificationTest[
     StringContainsQ[ StringJoin @ Select[ $config[ "Prompts" ], StringQ ], "<name>test-skill</name>" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-Skills-Prompt@@Tests/Skills.wlt:743,1-748,2"
+    TestID   -> "GenerateLLMConfiguration-Skills-Prompt@@Tests/Skills.wlt:873,1-878,2"
 ]
 
 VerificationTest[
     MemberQ[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ], "ActivateSkill" ],
     False,
     SameTest -> SameQ,
-    TestID   -> "GenerateLLMConfiguration-NoSkills@@Tests/Skills.wlt:750,1-755,2"
+    TestID   -> "GenerateLLMConfiguration-NoSkills@@Tests/Skills.wlt:880,1-885,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -761,7 +891,7 @@ VerificationTest[
     DeleteDirectory[ $tempRoot, DeleteContents -> True ],
     Null,
     SameTest -> SameQ,
-    TestID   -> "Cleanup@@Tests/Skills.wlt:760,1-765,2"
+    TestID   -> "Cleanup@@Tests/Skills.wlt:890,1-895,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
