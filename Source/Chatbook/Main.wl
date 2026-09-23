@@ -19,11 +19,13 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatPost;
 `$ChatPre;
 `$ChatTimingData;
+`$CloudSessionMX;
 `$ContentSuggestions;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
 `$DefaultModel;
+`$DefaultSkills;
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
@@ -186,6 +188,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
     "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`Skills`",
     "Wolfram`Chatbook`SpeechInput`",
     "Wolfram`Chatbook`Storage`",
     "Wolfram`Chatbook`TeXBoxes`",
@@ -219,6 +222,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$DefaultChatHandlerFunctions",
     "$DefaultChatProcessingFunctions",
     "$DefaultModel",
+    "$DefaultSkills",
     "$DefaultToolOptions",
     "$DefaultTools",
     "$InlineChat",

@@ -30,6 +30,7 @@ sp`InlinedExpression;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$CloudSessionMX            = None;
 $SandboxKernel             = None;
 $appendURIPrompt          := toolOptionValue[ "WolframLanguageEvaluator", "AppendURIPrompt"          ];
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
@@ -43,7 +44,6 @@ $hintMethod               := toolOptionValue[ "WolframLanguageEvaluator", "HintM
 $disabledHints            := toolOptionValue[ "WolframLanguageEvaluator", "DisabledHints"            ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
-$cloudSession              = None;
 $maxSandboxMessages        = 10;
 $maxMessageParameterLength = 100;
 $toolOutputPageWidth       = 100;
@@ -1132,8 +1132,8 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
                         "Body" -> {
                             "Evaluation" -> BaseEncode @ wxf,
                             "TimeConstraint" -> $sandboxEvaluationTimeout,
-                            If[ ByteArrayQ @ definitions  , "Definitions" -> BaseEncode @ definitions  , Nothing ],
-                            If[ ByteArrayQ @ $cloudSession, "SessionMX"   -> BaseEncode @ $cloudSession, Nothing ]
+                            If[ ByteArrayQ @ definitions    , "Definitions" -> BaseEncode @ definitions    , Nothing ],
+                            If[ ByteArrayQ @ $CloudSessionMX, "SessionMX"   -> BaseEncode @ $CloudSessionMX, Nothing ]
                         }
                     |>
                 ],
@@ -1171,7 +1171,7 @@ cloudSandboxEvaluate // endDefinition;
 (*setCloudSessionString*)
 setCloudSessionString // beginDefinition;
 setCloudSessionString[ KeyValuePattern[ "SessionMX" -> mx_ ] ] := setCloudSessionString @ mx;
-setCloudSessionString[ mx_ByteArray ] := $cloudSession = mx;
+setCloudSessionString[ mx_ByteArray ] := $CloudSessionMX = mx;
 setCloudSessionString[ s_String ] := setCloudSessionString @ ByteArray @ s;
 setCloudSessionString // endDefinition;
 

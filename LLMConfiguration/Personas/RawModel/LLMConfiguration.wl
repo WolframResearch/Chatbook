@@ -2,8 +2,9 @@
     "BasePrompt"       -> None,
     "UserInstructions" -> None,
 	"DisplayName"      -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameRawModel" ],
-    "Icon"             -> RawBoxes @ TemplateBox[ { }, "PersonaRawModel" ],
+    "Icon"             -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "PersonaRawModel" ],
     "Description"      -> "No custom prompting, just the raw LLM",
     "PromptGenerators" -> { },
+    "Skills"           -> None,
     "Tools"            -> None
 |>

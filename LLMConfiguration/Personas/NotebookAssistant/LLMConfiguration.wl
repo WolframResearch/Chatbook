@@ -11,6 +11,7 @@
         "WolframAlpha",
         "CreateNotebook",
         "WebFetcher",
+        "FileReader",
         ParentList
     }
 |>

@@ -1,8 +1,8 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "2.7.9",
-    "WolframVersion" -> "14.3+",
+    "Version"        -> "2.7.23",
+    "WolframVersion" -> "15.0+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
     "Creator"        -> "Connor Gray, Theodore Gray, Richard Hennigan, Kevin Daily",
@@ -40,6 +40,7 @@ PacletObject[ <|
                 { "Snippets"            , "Snippets"                 },
                 { "Icons"               , "Icons.wxf"                },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
+                { "Skills"              , "Skills"                   },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },
                 { "Tokenizers"          , "Tokenizers"               },
                 { "SyntaxInformation"   , "SyntaxArguments.wxf"      },
@@ -67,7 +68,7 @@ PacletObject[ <|
         },
         { "FrontEnd",
             "Root" -> "DarkModeSupport",
-            "WolframVersion" -> "14.3+",
+            "WolframVersion" -> "15.0+",
             Prepend -> True
         }
     }

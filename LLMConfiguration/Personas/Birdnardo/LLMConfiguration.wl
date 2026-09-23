@@ -10,10 +10,11 @@
 		"WebSearcher",
 		"WebFetcher",
 		"WebImageSearcher",
+		"FileReader",
 		ParentList
 	},
 	"Icon" -> <|
-		"Default" -> RawBoxes @ TemplateBox[ { }, "BirdnardoIcon" ],
-		"Active"  -> RawBoxes @ TemplateBox[ { }, "BirdnardoIconActive" ]
+		"Default" -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "BirdnardoIcon" ],
+		"Active"  -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "BirdnardoIconActive" ]
 	|>
 |>

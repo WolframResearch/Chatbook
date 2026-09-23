@@ -443,9 +443,9 @@ addPersonaSource // endDefinition;
 (*getFullToolList*)
 getFullToolList // beginDefinition;
 
-getFullToolList[ ] := DeleteCases[
+getFullToolList[ ] := Select[
     Values @ DeleteDuplicatesBy[ "Name" ] @ Join[ $DefaultTools, $InstalledTools ],
-    _[ KeyValuePattern[ "Hidden" -> True ], ___ ]
+    #[ "Data" ][ "Hidden" ] =!= True &
 ];
 
 getFullToolList // endDefinition;
@@ -1397,11 +1397,7 @@ cloudToolGridRow // beginDefinition;
 cloudToolGridRow[ tool_Association ] := {
     Grid[
         { {
-            Pane[
-                tool[ "Icon" ],
-                ImageSize       -> { 22, 20 },
-                ImageSizeAction -> "ShrinkToFit"
-            ],
+            cloudShrinkToFit[ tool[ "Icon" ], { 22, 20 } ],
             tool[ "CanonicalName" ]
         } },
         Alignment -> { { Center, Left }, Center },

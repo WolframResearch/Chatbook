@@ -7,7 +7,7 @@ This file provides guidance to AI agents (Claude Code, Cursor, etc.) when workin
 Chatbook (`Wolfram/Chatbook`) is a Wolfram Language paclet that adds LLM-powered notebook support to Wolfram. It integrates chat-based AI interactions directly into Wolfram notebooks, with tool use, prompt augmentation, persona management, and sandboxed code evaluation.
 
 - **Language**: Wolfram Language (`.wl` files)
-- **Requires**: Wolfram Engine 14.3+
+- **Requires**: Wolfram Engine 15.0+
 - **Primary Context**: ``Wolfram`Chatbook` ``
 - **License**: MIT
 
@@ -86,6 +86,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
+- **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool
 - **UI.wl** — Chat UI components; **Actions.wl** — User actions
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
 
@@ -120,6 +121,7 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - `Assets/Snippets/Streamable/` — Documentation snippets downloaded during build (not in repo)
 - `Assets/Tokenizers/` — Token counting resources
 - `Assets/AIAssistant/` — AI assistant configurations
+- `Assets/Skills/` — Built-in agent skills (`<name>/SKILL.md` plus supporting files), declared as the `"Skills"` asset in PacletInfo.wl
 
 ## Code Conventions
 
@@ -138,7 +140,7 @@ Always review [testing.md](docs/testing.md) for detailed instructions before mod
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:
-- **Build.yml** — PR validation: build + test (wolframengine:14.3.0 Docker container)
+- **Build.yml** — PR validation: build + test (wolframengine:15.0.0 Docker container)
 - **Release.yml** — Publish to Wolfram Paclet Repository on push to `release/paclet`
 - **IncrementPacletVersion.yml** — Auto-increments version in PacletInfo.wl on main branch pushes
 

@@ -42,6 +42,7 @@ $ToolFunctions = <|
     "ChatPreferences"          -> chatPreferences,
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
+    "FileReader"               -> readFile,
     "WebFetcher"               -> webFetch,
     "WebImageSearcher"         -> webImageSearch,
     "WebSearcher"              -> webSearch,
@@ -109,6 +110,7 @@ $defaultToolOrder = {
 
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
+    "ReadFile"            -> "FileReader",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
@@ -442,6 +444,7 @@ selectTools[ as_Association ] := Enclose[
         selectTools0 /@ selectedNames;
 
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
         addHandlerArguments[ "ToolShortNames" -> short ];
