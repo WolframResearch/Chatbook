@@ -327,7 +327,7 @@ discardBadToolCalls[ {
     b: Except[ _inlineToolCallCell ]...,
     $discardPreviousToolCall,
     c___
-} ] := discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ tc, b ], c };
+} ] := discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ tc, b ], $retriedToolCall, c };
 
 discardBadToolCalls[ { a: Except[ _inlineToolCallCell ]..., $discardPreviousToolCall, b___ } ] :=
     discardBadToolCalls @ { a, b };
@@ -336,7 +336,17 @@ discardBadToolCalls[ { a___, discardedMaterial[ b___ ], discardedMaterial[ c___ 
     discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ b, c ], d };
 
 discardBadToolCalls[ textData_List ] :=
-    textData;
+    DeleteCases[
+        SequenceReplace[
+            textData,
+            {
+                $retriedToolCall,
+                b: Except[ _inlineToolCallCell ]...,
+                inlineToolCallCell[ string_String ]
+            } :> Sequence[ b, retriedToolCallCell @ string ]
+        ],
+        $retriedToolCall
+    ];
 
 discardBadToolCalls // endDefinition;
 
@@ -456,6 +466,11 @@ makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
 makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
     $lastToolCallString = string;
     $lastFormattedToolCall = inlineToolCall @ string
+);
+
+makeResultCell0[ retriedToolCallCell[ string_String ] ] := (
+    $lastToolCallString = string;
+    $lastFormattedToolCall = retriedToolCall @ string
 );
 
 makeResultCell0[ tableCell[ string_String ] ] :=
@@ -1505,6 +1520,10 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$endToolRequest    = "\nENDARGUMENTS\nENDTOOLCALL";
+$$textualToolCall   = RegularExpression[
+    "TOOLCALL:(?:(?!\\nENDARGUMENTS\\nENDTOOLCALL\\nRESULT\\n)[\\s\\S])*(?:\\nENDARGUMENTS\\nENDTOOLCALL\\nRESULT\\n[\\s\\S]*?ENDRESULT(?:\\([A-Za-z0-9]+\\))?|$)"
+];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
@@ -1556,9 +1575,9 @@ $textDataFormatRules = {
             codeBlockCell[ language, code ]
         ]
     ,
-    Longest @ StringExpression[
+    StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+        tool: $$textualToolCall
     ] :> inlineToolCallCell @ tool
     ,
     Longest @ StringExpression[
@@ -1653,6 +1672,7 @@ $dynamicSplitRules = {
     ,
     (* Tool call *)
     s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolRequest ] :> s <> "\n",
     s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] /; simpleToolCallStringQ @ s :> s
 };
 
@@ -1791,6 +1811,36 @@ inlineToolCall[ string_String, as_ ] :=
     ];
 
 inlineToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*retriedToolCall*)
+retriedToolCall // beginDefinition;
+
+retriedToolCall[ string_String ] :=
+    If[ TrueQ @ $dynamicText || StringContainsQ[ string, "\nRESULT\n" ~~ ___ ~~ $$endToolCall ],
+        inlineToolCall @ string,
+        retriedToolCallErrorCell[ ]
+    ];
+
+retriedToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*retriedToolCallErrorCell*)
+retriedToolCallErrorCell // beginDefinition;
+
+retriedToolCallErrorCell[ ] := Cell[
+    BoxData @ ToBoxes @ errorMessageBox[
+        tr @ "FormattingToolRetryIncomplete",
+        Appearance -> "Fatal",
+        ImageSize  -> { Scaled[ 1 ], Automatic }
+    ],
+    "Text",
+    Background -> None
+];
+
+retriedToolCallErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

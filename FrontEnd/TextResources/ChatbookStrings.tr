@@ -74,6 +74,7 @@
 "FormattingToolUsing" -> "Using ",
 "FormattingToolUsed" -> "Used ",
 "FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
+"FormattingToolRetryIncomplete" -> "The retried tool call did not complete. No tool result was received, so subsequent generated content was discarded.",
 "FormattingThinkingActive" -> "Thinking\[Ellipsis]",
 "FormattingThinkingComplete" -> "Thought for `time` seconds",
 "FormattingThinkingCompleteFallback" -> "Thought",
