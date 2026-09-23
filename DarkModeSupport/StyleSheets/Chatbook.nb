@@ -55,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990249013"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.7.18.3999061706"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -411,13 +411,21 @@ Notebook[
                  BoxData[
                   ToBoxes[
                    Tooltip[
-                    Pane[
-                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
-                      Wolfram`Chatbook`UI`Private`persona$
+                    If[ Wolfram`Chatbook`Common`$cloudNotebooks,
+                     Wolfram`Chatbook`Common`cloudShrinkToFit[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      {25, 25}
                      ],
-                     Alignment -> {Center, Center},
-                     ImageSize -> {25, 25},
-                     ImageSizeAction -> "ShrinkToFit"
+                     Pane[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      Alignment -> {Center, Center},
+                      ImageSize -> {25, 25},
+                      ImageSizeAction -> "ShrinkToFit"
+                     ]
                     ],
                     Wolfram`Chatbook`Common`personaDisplayName[
                      Wolfram`Chatbook`UI`Private`persona$
@@ -1479,13 +1487,21 @@ Notebook[
                  BoxData[
                   ToBoxes[
                    Tooltip[
-                    Pane[
-                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
-                      Wolfram`Chatbook`UI`Private`persona$
+                    If[ Wolfram`Chatbook`Common`$cloudNotebooks,
+                     Wolfram`Chatbook`Common`cloudShrinkToFit[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      {25, 25}
                      ],
-                     Alignment -> {Center, Center},
-                     ImageSize -> {25, 25},
-                     ImageSizeAction -> "ShrinkToFit"
+                     Pane[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      Alignment -> {Center, Center},
+                      ImageSize -> {25, 25},
+                      ImageSizeAction -> "ShrinkToFit"
+                     ]
                     ],
                     Wolfram`Chatbook`Common`personaDisplayName[
                      Wolfram`Chatbook`UI`Private`persona$
@@ -3020,6 +3036,20 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ToolIconDocumentationSearcher"
+       ]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ToolIconFileReader"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+        "ChatbookExpressions",
+        "ToolIconFileReader"
        ]
       ]
      ])

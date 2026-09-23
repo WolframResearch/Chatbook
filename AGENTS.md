@@ -86,6 +86,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
+- **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool
 - **UI.wl** — Chat UI components; **Actions.wl** — User actions
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
 
@@ -120,6 +121,7 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - `Assets/Snippets/Streamable/` — Documentation snippets downloaded during build (not in repo)
 - `Assets/Tokenizers/` — Token counting resources
 - `Assets/AIAssistant/` — AI assistant configurations
+- `Assets/Skills/` — Built-in agent skills (`<name>/SKILL.md` plus supporting files), declared as the `"Skills"` asset in PacletInfo.wl
 
 ## Code Conventions
 

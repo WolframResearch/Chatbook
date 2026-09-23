@@ -5,5 +5,6 @@
     "Icon"             -> Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "PersonaRawModel" ],
     "Description"      -> "No custom prompting, just the raw LLM",
     "PromptGenerators" -> { },
+    "Skills"           -> None,
     "Tools"            -> None
 |>

@@ -112,6 +112,7 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"Tools"` | `Automatic` | Tool definitions available to the LLM, resolved as a list of `LLMTool` objects. |
+| `"Skills"` | `Automatic` | Agent skills available to the LLM, resolved as a list of `LLMSkill` objects. Skills are listed in the system prompt and loaded with the `ActivateSkill` tool. |
 | `"ToolsEnabled"` | `Automatic` | Whether tools are enabled for the current chat. |
 | `"ToolMethod"` | `Automatic` | Mechanism for tool calling (`"Service"`, `"Simple"`, `"Textual"`, `"JSON"`, or `Automatic`). |
 | `"HybridToolMethod"` | `Automatic` | Whether to combine service-level and prompt-based tool calling. |
