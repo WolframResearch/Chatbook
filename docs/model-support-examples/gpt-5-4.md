@@ -99,9 +99,16 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 | `"EndToken"` | `None` | GPT 5.4 doesn't need an end-of-turn token and sometimes emits it incorrectly. See [Issue 2](#issue-2-disabling-the-end-token). |
 | `"HybridToolMethod"` | `True` | Avoids JSON syntax errors in long tool arguments. See [Issue 1](#issue-1-switching-to-hybrid-tool-calling). |
 | `"MaxContextTokens"` | `1050000` | GPT 5.4 has a 1M+ token context window. |
-| `"Reasoning"` | `Missing["NotSupported"]` | Reasoning mode does not work with tools in the completions endpoint. |
+| `"Reasoning"` | `Missing["NotSupported"]` | Reasoning mode does not work with tools in the completions endpoint. **No longer current** — see the note below. |
 | `"ToolCallExamplePromptStyle"` | `Automatic` | Use the default example prompt style. |
 | `"ToolMethod"` | `Verbatim @ Automatic` | Required for hybrid tool calling; `Verbatim` prevents `Automatic` from resolving further down the hierarchy. |
+
+> **Since this case study was written**, the `GPT54Plus` family moved to OpenAI's Responses
+> endpoint, where reasoning and tool calling do coexist, and its `"Reasoning"` value is now a real
+> effort level rather than `Missing["NotSupported"]`. The reasoning here explains why the value was
+> originally disabled; it is no longer the shipped configuration. See
+> [`"Reasoning"`](../settings/setting-groups/llm-parameters.md#reasoning) and
+> [`"Endpoint"`](../settings/setting-groups/model-and-service.md#endpoint).
 
 ---
 

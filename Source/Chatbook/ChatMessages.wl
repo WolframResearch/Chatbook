@@ -305,7 +305,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
+        Sow[ <| "Messages" -> revertMultimodalContentPreservingReasoning @ processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
@@ -629,7 +629,7 @@ tokenCheckedMessage // beginDefinition;
 tokenCheckedMessage[
     as: KeyValuePattern[ "TokenizerName" -> "claude-3" ],
     message0: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> Except[ _String ] }
-] :=
+] /; FreeQ[ message0, KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
     With[ { message = revertMultimodalContent @ message0 },
         tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
     ];
@@ -637,7 +637,7 @@ tokenCheckedMessage[
 tokenCheckedMessage[
     as_,
     message0: KeyValuePattern @ { "Content" -> Except[ _String ] }
-] /; ! $countImageTokens :=
+] /; ! $countImageTokens && FreeQ[ message0, KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
     With[ { message = revertMultimodalContent @ message0 },
         tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
     ];
@@ -706,6 +706,23 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphi
 
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
     cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> content_List ], count_, budget_ ] :=
+    Module[ { scale },
+        scale = Max[ 0.0, 0.9 * N[ budget / count ] ];
+        <|
+            message,
+            "Content" -> Replace[
+                content,
+                {
+                    KeyValuePattern[ "Type" -> "Reasoning" ] :> Nothing,
+                    part: KeyValuePattern[ "Data" -> data_String ] :>
+                        <| part, "Data" -> truncateString[ data, Floor[ scale * StringLength @ data ] ] |>
+                },
+                { 1 }
+            ]
+        |>
+    ];
 
 cutMessageContent[ as_, message_String, count_, budget_ ] :=
     cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
@@ -818,7 +835,8 @@ messageContent // beginDefinition;
 messageContent[ "[Cell Excised]" ] := "";
 messageContent[ content_String ] := content;
 messageContent[ KeyValuePattern[ "Content" -> content_ ] ] := messageContent @ content;
-messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> content_ } ] := messageContent @ content;
+messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image"|"Reasoning", "Data" -> content_ } ] := messageContent @ content;
+messageContent[ KeyValuePattern[ "Type" -> "Reasoning" ] ] := "";
 
 messageContent[ content_List ] :=
     With[ { s = messageContent /@ content },
@@ -1070,23 +1088,46 @@ makeMessageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*allowedMultimodalRoles*)
-allowedMultimodalRoles // beginDefinition;
-allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
-allowedMultimodalRoles // endDefinition;
+(*canonicalCellMessages*)
+canonicalCellMessages // beginDefinition;
 
-
-allowedMultimodalRoles0 // beginDefinition;
-
-allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
-    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
-        { "User" },
-        All
+canonicalCellMessages[ Cell[ __, TaggingRules -> tags_, ___ ] ] :=
+    With[
+        {
+            data = Lookup[ Association @ tags, "ChatData", Missing[ "NotAvailable" ] ],
+            messages = Lookup[ Association @ tags, "ChatMessages", Missing[ "NotAvailable" ] ]
+        },
+        Which[
+            MatchQ[ messages, { $$chatMessage.. } ], messages,
+            True, canonicalCellMessages @ data
+        ]
     ];
 
-allowedMultimodalRoles0[ _Missing ] := All;
+canonicalCellMessages[ encoded_String ] := Enclose[
+    With[ { data = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encoded, AssociationQ, "Data" ] },
+        ConfirmMatch[ data[ "Data", "ResponseMessages" ], { $$chatMessage.. }, "Messages" ]
+    ],
+    Missing[ "NotAvailable" ] &
+];
 
-allowedMultimodalRoles0 // endDefinition;
+canonicalCellMessages[ _ ] := Missing[ "NotAvailable" ];
+
+canonicalCellMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowedMultimodalRoles*)
+allowedMultimodalRoles // beginDefinition;
+
+(* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
+allowedMultimodalRoles[ settings_ ] /; TrueQ @ responsesEndpointQ @ settings := { "User" };
+
+(* A family or service may declare which roles can carry an image; anything undeclared is
+   unrestricted, which is what every provider except OpenAI has been verified to allow: *)
+allowedMultimodalRoles[ settings_ ] :=
+    Replace[ autoModelSetting[ settings, "MultimodalRoles" ], Except[ { __String } ] -> All ];
+
+allowedMultimodalRoles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1206,6 +1247,11 @@ validContentPartQ[ ___ ] := False;
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
+
+makeCellMessage[ cell_Cell, settings_ ] :=
+    With[ { messages = canonicalCellMessages @ cell },
+        messages /; MatchQ[ messages, { $$chatMessage.. } ]
+    ];
 
 makeCellMessage[ cell_Cell, settings_ ] :=
     With[ { role = cellRole @ cell },
