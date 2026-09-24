@@ -537,8 +537,11 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
             "Message"
         ];
 
+        (* Cells are visited newest-first so recent cells get priority under the token budget. A cell can yield
+           several messages (e.g. a tool-call turn), so restore chronological order per cell before flattening,
+           otherwise each cell's own messages would be reversed too: *)
         history = ConfirmMatch[
-            Reverse @ Flatten @ MapIndexed[
+            Flatten @ Reverse @ MapIndexed[
                 toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] &,
                 Reverse @ Most @ cells
             ],
