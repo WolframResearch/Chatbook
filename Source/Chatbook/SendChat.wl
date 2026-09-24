@@ -2183,12 +2183,13 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
-            messages, roles, response, newMessages, req, toolID, task
+            messages, roles, response, newMessages, req, toolID, task, step
         },
 
         $toolCallCount = If[ IntegerQ @ $toolCallCount, $toolCallCount + 1, 1 ];
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
+        step   = ConfirmBy[ toolCallStepContent @ string, StringQ, "StepContent" ];
 
         simple = settings[ "ToolMethod" ] === "Simple";
         parser = If[ simple, simpleToolRequestParser, toolRequestParser ];
@@ -2240,6 +2241,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 ToString @ output
             ];
 
+        (* The tool call message below carries this step's text, so only keep the reasoning here: *)
+        $responseTextChunks = { };
         completeResponseMessages[ ];
 
         newMessages = Flatten @ {
@@ -2247,7 +2250,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             $responseMessages,
             <|
                 "Role"         -> "Assistant",
-                "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "Content"      -> appendToolCallEndToken[ settings, step ],
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
@@ -2257,7 +2260,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $responseMessages = Join[ $responseMessages, {
             <|
                 "Role"         -> "Assistant",
-                "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "Content"      -> appendToolCallEndToken[ settings, step ],
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
@@ -2504,6 +2507,21 @@ appendToolCallEndToken // beginDefinition;
 appendToolCallEndToken[ settings_, string_String ] /; settings[ "ToolMethod" ] === "Simple" := string <> "\n/exec";
 appendToolCallEndToken[ settings_, string_String ] := string <> "\nENDTOOLCALL";
 appendToolCallEndToken // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallStepContent*)
+toolCallStepContent // beginDefinition;
+
+(* The output cell's content accumulates every tool call and result of the turn, but each step's message should only
+   contain what was generated since the previous tool result: *)
+toolCallStepContent[ string_String ] := StringTrim @ Last @ StringSplit[
+    string,
+    "\nENDRESULT(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")\n",
+    All
+];
+
+toolCallStepContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
