@@ -33,8 +33,11 @@ $reasoningData = <| |>;
 (* The id of the reasoning summary that is currently being streamed (if any): *)
 $reasoningStreamID = None;
 
-(* Keys that are stored for each reasoning item: *)
-$reasoningDataKeys = { "Signature", "CallID", "Service", "Model" };
+(* When the model started working on the current reasoning item (see reasoningDuration): *)
+$reasoningStart = None;
+
+(* Keys that are stored for each reasoning item ("Duration" is in seconds): *)
+$reasoningDataKeys = { "Signature", "CallID", "Service", "Model", "Duration" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -147,16 +150,17 @@ newReasoningID // endDefinition;
 storeReasoningData // beginDefinition;
 
 storeReasoningData[ settings_Association, id_String, part_Association ] :=
-    With[ { signature = part[ "Signature" ] },
-        If[ ByteArrayQ @ signature,
-            $reasoningData[ id ] = DeleteMissing @ <|
-                "Signature" -> signature,
-                "CallID"    -> Lookup[ part, "CallID", Missing[ "NotAvailable" ] ],
-                "Service"   -> reasoningServiceName @ settings,
-                "Model"     -> Replace[ toModelName @ settings, Except[ _String ] -> Missing[ "NotAvailable" ] ]
-            |>
-        ]
-    ];
+    $reasoningData[ id ] = DeleteMissing @ <|
+        "Signature" -> Replace[ Lookup[ part, "Signature" ], Except[ _? ByteArrayQ ] -> Missing[ "NotAvailable" ] ],
+        "CallID"    -> Lookup[ part, "CallID", Missing[ "NotAvailable" ] ],
+        "Service"   -> reasoningServiceName @ settings,
+        "Model"     -> Replace[ toModelName @ settings, Except[ _String ] -> Missing[ "NotAvailable" ] ],
+        "Duration"  -> reasoningDuration[ ]
+    |>;
+
+(* A summary that was interrupted before the reasoning item was complete only has a duration: *)
+storeReasoningData[ id_String ] :=
+    $reasoningData[ id ] = DeleteMissing @ <| "Duration" -> reasoningDuration[ ] |>;
 
 storeReasoningData // endDefinition;
 
@@ -166,9 +170,9 @@ storeReasoningData // endDefinition;
 restoreReasoningData // beginDefinition;
 
 (* Restores reasoning data from template box metadata (e.g. when a notebook is opened in a new kernel session): *)
-restoreReasoningData[ meta: KeyValuePattern @ { "ID" -> id_String, "Signature" -> _? ByteArrayQ } ] :=
-    If[ ! KeyExistsQ[ $reasoningData, id ],
-        $reasoningData[ id ] = KeyTake[ meta, $reasoningDataKeys ]
+restoreReasoningData[ meta: KeyValuePattern[ "ID" -> id_String ] ] /; ! KeyExistsQ[ $reasoningData, id ] :=
+    With[ { data = KeyTake[ meta, $reasoningDataKeys ] },
+        If[ data =!= <| |>, $reasoningData[ id ] = data ]
     ];
 
 restoreReasoningData[ _Association ] :=
@@ -207,8 +211,27 @@ reasoningMetadata // endDefinition;
 (* ::Subsection::Closed:: *)
 (*resetReasoningStream*)
 resetReasoningStream // beginDefinition;
-resetReasoningStream[ ] := $reasoningStreamID = None;
+resetReasoningStream[ ] := ($reasoningStreamID = None; $reasoningStart = None);
 resetReasoningStream // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*reasoningDuration*)
+
+(* Returns the number of seconds spent on the current reasoning item and restarts the timer for the next one. The timer
+   starts when the first chunk of a response is received, and restarts after any other output, since reasoning that
+   follows other output can't have started before it: *)
+reasoningDuration // beginDefinition;
+
+reasoningDuration[ ] :=
+    Module[ { now, duration },
+        now = AbsoluteTime[ ];
+        duration = If[ NumberQ @ $reasoningStart, now - $reasoningStart, Missing[ "NotAvailable" ] ];
+        $reasoningStart = now;
+        duration
+    ];
+
+reasoningDuration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -219,8 +242,10 @@ resetReasoningStream // endDefinition;
    in a "ResponseContent" chunk once the reasoning item is complete. *)
 convertReasoningChunks // beginDefinition;
 
-convertReasoningChunks[ settings_Association, as: KeyValuePattern[ "BodyChunkProcessed" -> chunks_List ] ] :=
-    <| as, "BodyChunkProcessed" -> Flatten[ convertReasoningChunk[ settings, # ] & /@ chunks ] |>;
+convertReasoningChunks[ settings_Association, as: KeyValuePattern[ "BodyChunkProcessed" -> chunks_List ] ] := (
+    If[ ! NumberQ @ $reasoningStart, $reasoningStart = AbsoluteTime[ ] ];
+    <| as, "BodyChunkProcessed" -> Flatten[ convertReasoningChunk[ settings, # ] & /@ chunks ] |>
+);
 
 convertReasoningChunks[ settings_Association, as_ ] :=
     as;
@@ -246,9 +271,17 @@ convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ResponseContent" -> p
 |>;
 
 (* Anything else that arrives while a summary is still open ends the summary: *)
-convertReasoningChunk[ settings_, chunk: KeyValuePattern[ ("ContentChunk"|"ToolRequestsChunk"|"FinishReason") -> _ ] ] /;
-    StringQ @ $reasoningStreamID :=
-        { <| "ContentChunk" -> closeReasoningStream[ ] |>, chunk };
+convertReasoningChunk[ settings_, chunk: KeyValuePattern[ ("ContentChunk"|"ToolRequestsChunk"|"FinishReason") -> _ ] ] :=
+    Module[ { close },
+        close = If[ StringQ @ $reasoningStreamID,
+                    storeReasoningData @ $reasoningStreamID;
+                    <| "ContentChunk" -> closeReasoningStream[ ] |>,
+                    Nothing
+                ];
+        (* Reasoning that comes after this output can't have started before it: *)
+        $reasoningStart = AbsoluteTime[ ];
+        { close, chunk }
+    ];
 
 convertReasoningChunk[ settings_, chunk_ ] :=
     chunk;
@@ -276,7 +309,7 @@ reasoningPartString[ settings_, part: KeyValuePattern[ "Type" -> "Reasoning" ] ]
 (* Nothing was streamed for this item (e.g. an empty summary), so the complete summary string is created here: *)
 reasoningPartString[ settings_, part: KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
     With[ { id = newReasoningID[ ], summary = Replace[ Lookup[ part, "Data" ], Except[ _String ] -> "" ] },
-        If[ ByteArrayQ @ part[ "Signature" ] || StringTrim @ summary =!= "",
+        If[ ByteArrayQ @ Lookup[ part, "Signature" ] || StringTrim @ summary =!= "",
             storeReasoningData[ settings, id, part ];
             summaryString[ id, summary ],
             ""

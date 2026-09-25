@@ -385,20 +385,14 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
 makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
     makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
 
-makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
-    Module[ { seconds, label },
-        If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
-        {
-            Cell[
-                BoxData @ templateBox[ { formatThoughts @ thoughts, ToBoxes @ label, meta }, "ThoughtsOpener" ],
-                "ThoughtsOpener",
-                Background -> None
-            ],
-            "\n"
-        }
-    ];
+makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] := {
+    Cell[
+        BoxData @ templateBox[ { formatThoughts @ thoughts, ToBoxes @ thoughtsLabel @ meta, meta }, "ThoughtsOpener" ],
+        "ThoughtsOpener",
+        Background -> None
+    ],
+    "\n"
+};
 
 makeResultCell0[ speechCell[ speech_String ] ] :=
     formatSpeechInput @ speech;
@@ -507,6 +501,32 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
 ];
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*thoughtsLabel*)
+thoughtsLabel // beginDefinition;
+
+(* Reasoning summaries store the time spent on each reasoning item: *)
+thoughtsLabel[ KeyValuePattern @ { "Type" -> "Summary", "Duration" -> seconds_? NumberQ } ] :=
+    thoughtsLabel @ Max[ 1, Round @ seconds ];
+
+thoughtsLabel[ KeyValuePattern[ "Type" -> "Summary" ] ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+(* Literal think tags are timed from when they're first displayed: *)
+thoughtsLabel[ _Association ] := (
+    If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
+    thoughtsLabel @ If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ], None ]
+);
+
+thoughtsLabel[ seconds_Integer ] :=
+    trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
+
+thoughtsLabel[ None ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+thoughtsLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
