@@ -223,7 +223,7 @@ restoreAttachments // beginDefinition;
 restoreAttachments[ KeyValuePattern[ "Attachments" -> attachments_Association ] ] :=
     Association @ KeyValueMap[ # -> restoreAttachments @ ## &, attachments ];
 
-restoreAttachments[ type: "Expressions"|"ToolCalls", as_Association ] := Enclose[
+restoreAttachments[ type: "Expressions"|"ToolCalls"|"Reasoning", as_Association ] := Enclose[
     ConfirmBy[ LoadAttachments[ type, as ], AssociationQ, "LoadAttachments" ],
     throwInternalFailure
 ];
@@ -488,7 +488,7 @@ setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle"
         writeWorkspaceChatTitleDockedCell[ nbo, WindowTitle ]
     ];
 
-setChatDisplayTitle[ None, _ ] :=
+setChatDisplayTitle[ None, _, _ ] :=
     Null;
 
 setChatDisplayTitle // endDefinition;

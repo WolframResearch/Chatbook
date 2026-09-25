@@ -66,6 +66,31 @@ Exposed in `PreferencesContent.wl` in both the "Notebooks" tab and the "Services
 
 When `Automatic`, resolves based on the model specification: if the model has an explicit `"Authentication"` field, that value is used; if the model's `"Service"` is `"LLMKit"`, resolves to `"LLMKit"`; otherwise remains `Automatic` (uses the service's default authentication). Depends on `"Model"`. Passed directly to `LLMServices`Chat` and `LLMServices`ChatSubmit` (not via `LLMConfiguration`).
 
+## `"RequestMethod"`
+
+Selects the API endpoint used for chat requests.
+
+### Values
+
+- **`"ChatCompletions"`**: Requests use `LLMServices`ChatSubmit` (or `LLMServices`Chat` when `"ForceSynchronous"` is `True`).
+- **`"Responses"`**: Requests use `LLMServices`ResponseSubmit` (or `LLMServices`Response`). This endpoint returns reasoning summaries along with an encrypted copy of the model's reasoning (a signature), which is sent back to the model in later requests. Requires `Wolfram/LLMFunctions` 2.4.0+ and `LLMConnections` 1.1.0+; if they are not installed, an explicit `"Responses"` setting fails with a `Chatbook::ResponsesAPIUnavailable` message.
+- **`Automatic`**: Resolved from `$modelAutoSettings`. GPT-5 and later models (`"GPT5"`, `"GPT51"`, `"GPT52"`, `"GPT53"`, `"GPT53Chat"`, and `"GPT54Plus"` families) resolve to `"Responses"` for the `"OpenAI"` and `"LLMKit"` services when the required paclets are available (`$responsesAPIAvailable`). Everything else resolves to `"ChatCompletions"`.
+
+Invalid values produce a `Chatbook::InvalidRequestMethod` message and fall back to `"ChatCompletions"`.
+
+### Reasoning with the Responses Endpoint
+
+- When `"Reasoning"` is a plain effort level (e.g. `"High"`), it is sent as `<| "effort" -> "high", "summary" -> "auto" |>` so that reasoning summaries are included (see `requestReasoningSummaries` in `SendChat.wl`). `"None"` and association values are sent as-is.
+- Stop tokens are not supported by this endpoint, so `"StopTokens"` resolves to `Missing["NotSupported"]` (client-side stop token emulation is used where applicable).
+- Streamed reasoning summaries are written to the response string as `<think type='summary' id='...'>...</think>`. The `id` refers to an entry in `$reasoningData` (`Reasoning.wl`), which stores the signature along with the service and model that produced it.
+- Summaries are displayed with the `"ThinkingOpener"`/`"ThoughtsOpener"` template boxes. Their first argument is the markdown-formatted text (as `TextData`, formatted without tool call or think tag rules), and their third argument holds metadata such as `<| "Type" -> "Summary", "ID" -> ..., "Signature" -> ... |>` (or `<| "Type" -> "Literal" |>` for literal `<think>` text). This metadata determines how the box is serialized, and allows the signature to be restored when constructing messages from a notebook in a new kernel session.
+- When constructing messages, summary text is never sent. With the Responses endpoint, each summary is replaced by a `<| "Type" -> "Reasoning", "Signature" -> ... |>` content part, but only if the signature was produced by the same service (signatures can't be decrypted by other services, e.g. OpenAI vs. LLMKit). Otherwise, summaries are removed.
+- `SaveChat` stores the reasoning data referenced by a conversation as `"Reasoning"` attachments (alongside `"Expressions"` and `"ToolCalls"`), and `LoadChat` restores them.
+
+### Dependencies
+
+Depends on `"Model"`. `"StopTokens"` depends on this setting.
+
 ## `"EnableLLMServices"`
 
 Controls whether Chatbook uses `LLMServices` for chat requests or falls back to direct API calls.

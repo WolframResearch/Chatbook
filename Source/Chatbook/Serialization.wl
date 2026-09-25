@@ -1927,6 +1927,11 @@ boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
 (* Reasoning Text *)
+boxToString[ TemplateBox[ { thoughts_, _, meta_Association }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
+    With[ { string = thoughtsToString @ thoughts },
+        reasoningBoxToString[ string, meta ] /; StringQ @ string
+    ];
+
 boxToString[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
     "<think>\n" <> thoughts <> "\n</think>\n";
 
@@ -1948,6 +1953,14 @@ boxToString[ box: TemplateBox[ args_, name_String, ___ ] ] :=
 
 boxToString[ OverlayBox[ { a_, ___ }, ___ ] ] :=
     boxToString @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*thoughtsToString*)
+thoughtsToString // beginDefinition;
+thoughtsToString[ thoughts_String ] := thoughts;
+thoughtsToString[ thoughts_TextData ] := boxToString @ Cell[ thoughts, "Text" ];
+thoughtsToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -3486,7 +3499,13 @@ escapeMarkdownCharacters[ text_ ] := text;
 
 $escapeMarkdown = False;
 
-$markdownReplacements = Flatten[ { "\\" <> # -> "\\" <> #, # -> "\\" <> # } & /@ $escapedMarkdownCharacters ];
+$markdownReplacements = Flatten @ {
+    (* Underscores only mark emphasis at word boundaries (see $stringFormatRules in Formatting.wl), so underscores
+       inside words aren't escaped: *)
+    "\\_" -> "\\_",
+    (WordBoundary ~~ u: "_"..) | (u: "_".. ~~ WordBoundary) :> StringReplace[ u, "_" -> "\\_" ],
+    { "\\" <> # -> "\\" <> #, # -> "\\" <> # } & /@ DeleteCases[ $escapedMarkdownCharacters, "_" ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

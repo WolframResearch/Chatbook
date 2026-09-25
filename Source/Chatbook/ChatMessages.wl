@@ -792,6 +792,8 @@ applyTokenizer // beginDefinition;
 applyTokenizer[ tokenizer_, content_String ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_? graphicsQ ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
+(* Reasoning is encrypted, so it can't be counted locally: *)
+applyTokenizer[ tokenizer_, KeyValuePattern[ "Type" -> "Reasoning" ] ] := { };
 applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := applyTokenizer0[ tokenizer, data ];
 applyTokenizer // endDefinition;
 

@@ -466,7 +466,7 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase },
+    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
@@ -475,10 +475,11 @@ prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
         noSources     = ConfirmMatch[ removeSources @ stringResults, { ___Association }, "NoSources" ];
         cleanBase     = ConfirmMatch[ removeBasePromptTags @ noSources, { ___Association }, "CleanBase" ];
+        reasoning     = ConfirmMatch[ convertReasoningMessages[ settings, cleanBase ], { ___Association }, "Reasoning" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> cleanBase ];
+        addHandlerArguments[ "SubmittedMessages" -> reasoning ];
 
-        cleanBase
+        reasoning
     ],
     throwInternalFailure
 ];
@@ -913,6 +914,7 @@ chatSubmit[ args__ ] := Quiet[
     $receivedToolCall      = False;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
+    resetReasoningStream[ ];
     rasterizeBlock @ chatSubmit0 @ args,
     {
         ServiceConnections`SavedConnections::wname,
@@ -941,20 +943,21 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result, chunks, content },
+    Module[ { auth, stop, chat, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
         stop = makeStopTokens @ settings;
+        chat = ConfirmMatch[ chatFunction @ settings, LLMServices`Chat | LLMServices`Response, "ChatFunction" ];
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
-                LLMServices`Chat[
+                chat[
                     standardizeMessageKeys @ messages,
-                    makeLLMConfiguration @ settings,
+                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
                     Authentication -> auth
                 ],
-                { LLMServices`Chat::unsupported }
+                { LLMServices`Chat::unsupported, LLMServices`Response::llmunsupported }
             ],
             _Association | _Failure,
             "ChatResult"
@@ -963,7 +966,7 @@ chatSubmit0[
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
 
         chunks = <|
-            "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
+            "ContentChunk"      -> convertReasoningContent[ settings, Lookup[ result, "Content", { } ] ],
             "ToolRequestsChunk" -> Lookup[ result, "ToolRequests", { } ]
         |>;
 
@@ -989,28 +992,30 @@ chatSubmit0[
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
-    $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+    With[ { submit = chatSubmitFunction @ settings },
+        $lastChatSubmitResult = ReleaseHold[
+            $lastChatSubmit = HoldForm @ applyProcessingFunction[
+                settings,
+                "ChatSubmit",
+                HoldComplete[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    "TestConnection"     -> False
+                ],
+                <|
+                    "Container"             :> container,
+                    "Messages"              -> messages,
+                    "CellObject"            -> cellObject,
+                    "DefaultSubmitFunction" -> submit
+                |>,
+                submit
+            ]
         ]
     ],
-    { LLMServices`ChatSubmit::unsupported }
+    { LLMServices`ChatSubmit::unsupported, LLMServices`ResponseSubmit::llmunsupported }
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1036,6 +1041,24 @@ chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings
 );
 
 chatSubmit0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatFunction*)
+chatFunction // beginDefinition;
+chatFunction[ settings_Association ] := chatFunction @ requestMethod @ settings;
+chatFunction[ "ChatCompletions" ] := LLMServices`Chat;
+chatFunction[ "Responses" ] := LLMServices`Response;
+chatFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatSubmitFunction*)
+chatSubmitFunction // beginDefinition;
+chatSubmitFunction[ settings_Association ] := chatSubmitFunction @ requestMethod @ settings;
+chatSubmitFunction[ "ChatCompletions" ] := LLMServices`ChatSubmit;
+chatSubmitFunction[ "Responses" ] := LLMServices`ResponseSubmit;
+chatSubmitFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1081,6 +1104,25 @@ $llmConfigPassedKeys = {
     "Reasoning",
     "Temperature"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestReasoningSummaries*)
+
+(* The responses endpoint only includes reasoning summaries when they're requested, so plain effort levels like "High"
+   are expanded to <| "effort" -> "high", "summary" -> "auto" |>. Associations are passed through as-is. *)
+requestReasoningSummaries // beginDefinition;
+
+requestReasoningSummaries[ as: KeyValuePattern @ { "RequestMethod" -> "Responses", "Reasoning" -> effort_String } ] :=
+    If[ ToLowerCase @ effort === "none",
+        as,
+        <| as, "Reasoning" -> <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |> |>
+    ];
+
+requestReasoningSummaries[ as_Association ] :=
+    as;
+
+requestReasoningSummaries // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1161,7 +1203,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             useTasks      = feTaskQ @ settings,
             toolFormatter = getToolFormatter @ settings,
             stop          = makeStopTokens @ settings,
-            stopEmulation = emulateStopTokensQ @ settings
+            stopEmulation = emulateStopTokensQ @ settings,
+            responses     = settings[ "RequestMethod" ] === "Responses"
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1190,7 +1233,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                                 as = applyEmulatedStopTokens[
                                     container,
                                     stopEmulation,
-                                    <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |>
+                                    addExtractedBodyChunks @ If[ responses, convertReasoningChunks[ settings, # ], # ]
                                 ]
                             },
                             bodyChunkHandler[ as ];
@@ -1241,6 +1284,13 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addExtractedBodyChunks*)
+addExtractedBodyChunks // beginDefinition;
+addExtractedBodyChunks[ as_Association ] := <| as, "ExtractedBodyChunks" -> extractBodyChunks @ as |>;
+addExtractedBodyChunks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

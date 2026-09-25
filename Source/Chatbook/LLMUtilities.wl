@@ -376,6 +376,10 @@ extractBodyChunks0[ Failure[
 extractBodyChunks0[ fail_Failure? apiFailureQ ] :=
     throwFailureToChatOutput @ fail;
 
+(* Errors reported by events in a Responses API stream (e.g. "response.failed") don't include a status code: *)
+extractBodyChunks0[ fail: Failure[ "APIError", as_Association ] ] /; ! KeyExistsQ[ as, "StatusCode" ] :=
+    throwFailureToChatOutput @ fail;
+
 extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
     ! FreeQ[
         fail,

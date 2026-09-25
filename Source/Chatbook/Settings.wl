@@ -72,6 +72,7 @@ $defaultChatSettings = <|
     "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
+    "RequestMethod"                  -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
@@ -361,6 +362,39 @@ $modelAutoSettings[ "xAI", Automatic ] = <|
     "ForceSynchronous" -> True,
     "ToolMethod"       -> "Service"
 |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Responses API*)
+$modelAutoSettings[ "LLMKit" ] = <| |>;
+
+(* These services support the responses endpoint for GPT-5 and later: *)
+Do[
+    $modelAutoSettings[ service, family ] = <|
+        Lookup[ $modelAutoSettings[ service ], family, <| |> ],
+        "RequestMethod" :> If[ TrueQ @ $responsesAPIAvailable, "Responses", "ChatCompletions" ]
+    |>,
+    { service, { "LLMKit", "OpenAI" } },
+    { family , { "GPT5", "GPT51", "GPT52", "GPT53", "GPT53Chat", "GPT54Plus" } }
+];
+
+(* The responses endpoint requires LLMFunctions 2.4.0+ and LLMConnections 1.1.0+: *)
+$responsesAPIAvailable := $responsesAPIAvailable = TrueQ @ And[
+    pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.4.0" ],
+    pacletVersionAtLeastQ[ "LLMConnections", "1.1.0" ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*pacletVersionAtLeastQ*)
+pacletVersionAtLeastQ // beginDefinition;
+
+pacletVersionAtLeastQ[ name_String, version_String ] :=
+    With[ { paclet = Quiet @ PacletObject @ name },
+        TrueQ[ PacletObjectQ @ paclet && ! PacletNewerQ[ version, paclet ] ]
+    ];
+
+pacletVersionAtLeastQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -984,6 +1018,7 @@ resolveAutoSetting0[ as_, "OpenToolCallBoxes"              ] := openToolCallBoxe
 resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
 resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
+resolveAutoSetting0[ as_, "RequestMethod"                  ] := "ChatCompletions";
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "TabbedOutput"                   ] := ! $cloudNotebooks;
@@ -1014,6 +1049,7 @@ $autoSettingKeyDependencies = <|
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
     "OpenToolCallBoxes"          -> "SendToolResponse",
+    "RequestMethod"              -> "Model",
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
     "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
@@ -1202,6 +1238,10 @@ autoToolExamplePromptStyle0 // endDefinition;
 autoStopTokens // beginDefinition;
 
 autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    Missing[ "NotSupported" ];
+
+(* The responses endpoint does not support stop tokens: *)
+autoStopTokens[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] :=
     Missing[ "NotSupported" ];
 
 autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=

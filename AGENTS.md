@@ -86,6 +86,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
+- **Reasoning.wl** — Reasoning summaries and signatures from the Responses API (`"RequestMethod" -> "Responses"`): the `<think type='summary' id='...'>` string representation, stream conversion, and replacing summaries with signatures in outgoing messages
 - **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool
 - **UI.wl** — Chat UI components; **Actions.wl** — User actions
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
