@@ -598,6 +598,11 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |
+| `"Claude46"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "6", ___ }` | `Anthropic` (128k output; inherits from Claude4) |
+| `"Claude47Plus"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "7"\|"8"\|"9", ___ }` | `Anthropic` (temperature unsupported; inherits from Claude46) |
+| `"Claude5"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "5", ___ }` | `Anthropic` (inherits from Claude47Plus) |
+| `"ClaudeFable5"` | `{ "Claude", "Fable", "5", ___ }` | `Anthropic` (thinking mandatory) |
+| `"ClaudeMythos5"` | `{ "Claude", "Mythos", "5", ___ }` | `Anthropic` (inherits from ClaudeFable5) |
 | `"Gemini2"` | `{ "Gemini", "2", ___ }` | `GoogleGemini` |
 | `"Gemini3"` | `{ "Gemini", "3", ___ }` | `GoogleGemini` |
 | `"DeepSeekChat"` | `{ "DeepSeek", ___, "Chat"\|"V3", ... }` | `DeepSeek` |
