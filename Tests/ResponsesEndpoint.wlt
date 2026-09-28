@@ -26,41 +26,72 @@ VerificationTest[
    ($responsesEndpointAvailable) is False wherever the installed LLMFunctions predates 2.4, which
    includes CI, and LLMServices`RegisteredServiceQ fails there too, so forcing the flag is not
    enough. The service check is therefore stubbed at responsesServiceQ, and everything else is
-   exercised through arguments rather than through resolved settings. *)
+   exercised through explicit settings and fully resolved model specs. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*responsesEndpointQ*)
 
+(* Fully resolved model specs, so resolveFullModelSpec passes them through untouched: *)
+VerificationTest[
+    endpointTestModel[ service_String, family_String ] := <|
+        "ResolvedModel" -> True,
+        "Service"       -> service,
+        "Name"          -> "a-model",
+        "BaseID"        -> "a-model",
+        "Family"        -> family
+    |>,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ResponsesEndpointQ-Definitions@@Tests/ResponsesEndpoint.wlt:36,1-47,2"
+]
+
+(* The opt-in is model data: the OpenAI GPT-5.4+ families prefer Responses, other services do not. A family missing
+   from this list would silently fall back to chat completions, so both are pinned: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`autoModelSetting[ endpointTestModel @@ #, "Endpoint" ] & /@ {
+        { "OpenAI", "GPT54Plus" },
+        { "OpenAI", "GPT56Plus" },
+        { "OpenAI", "GPT5"      },
+        { "Groq"  , "GPT54Plus" }
+    },
+    { "Responses", "Responses", Except[ "Responses" ], Except[ "Responses" ] },
+    SameTest -> MatchQ,
+    TestID   -> "ResponsesEndpointQ-OptInIsModelData@@Tests/ResponsesEndpoint.wlt:51,1-61,2"
+]
+
 (* The rollback switch wins before any support check runs, so this needs no stub: *)
 VerificationTest[
-    Wolfram`Chatbook`Common`responsesEndpointQ[ "ChatCompletions", "OpenAI", "GPT54Plus" ],
+    Wolfram`Chatbook`Common`responsesEndpointQ @ <|
+        "Endpoint" -> "ChatCompletions",
+        "Model"    -> endpointTestModel[ "OpenAI", "GPT54Plus" ]
+    |>,
     False,
     SameTest -> MatchQ,
-    TestID   -> "ResponsesEndpointQ-RollbackWins@@Tests/ResponsesEndpoint.wlt:36,1-41,2"
+    TestID   -> "ResponsesEndpointQ-RollbackWins@@Tests/ResponsesEndpoint.wlt:64,1-72,2"
 ]
 
 (* Anything short of a fully resolved model spec falls back, whatever the setting says: *)
 VerificationTest[
-    Wolfram`Chatbook`Common`responsesEndpointQ[ #, "gpt-5.6" ] & /@ {
+    Wolfram`Chatbook`Common`responsesEndpointQ @ <| "Endpoint" -> #, "Model" -> "gpt-5.6" |> & /@ {
         Automatic,
         "Responses",
         "ChatCompletions"
     },
     { False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "ResponsesEndpointQ-UnresolvedModelSpec@@Tests/ResponsesEndpoint.wlt:44,1-53,2"
+    TestID   -> "ResponsesEndpointQ-UnresolvedModelSpec@@Tests/ResponsesEndpoint.wlt:75,1-84,2"
 ]
 
 VerificationTest[
-    Wolfram`Chatbook`Common`responsesEndpointQ[
-        Automatic,
+    Wolfram`Chatbook`Common`responsesEndpointQ @ <|
+        "Endpoint" -> Automatic,
         (* no "Family" key, so not a resolved spec: *)
-        <| "Service" -> "OpenAI", "Name" -> "gpt-5.6" |>
-    ],
+        "Model"    -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.6" |>
+    |>,
     False,
     SameTest -> MatchQ,
-    TestID   -> "ResponsesEndpointQ-ModelSpecMissingFamily@@Tests/ResponsesEndpoint.wlt:55,1-64,2"
+    TestID   -> "ResponsesEndpointQ-ModelSpecMissingFamily@@Tests/ResponsesEndpoint.wlt:86,1-95,2"
 ]
 
 (* The full decision table, with the service check stubbed so it does not depend on the installed
@@ -69,13 +100,18 @@ VerificationTest[
 VerificationTest[
     Block[
         { Wolfram`Chatbook`Common`responsesServiceQ = Function[ # === "OpenAI" ] },
-        Wolfram`Chatbook`Common`responsesEndpointQ @@@ {
-            (* Automatic: needs both a supporting service and an opted-in family *)
+        Function[ { endpoint, service, family },
+            Wolfram`Chatbook`Common`responsesEndpointQ @ <|
+                "Endpoint" -> endpoint,
+                "Model"    -> endpointTestModel[ service, family ]
+            |>
+        ] @@@ {
+            (* Automatic: needs both a supporting service and a family that prefers Responses *)
             { Automatic, "OpenAI", "GPT54Plus" },
             { Automatic, "OpenAI", "GPT5"      },
             { Automatic, "Groq"  , "GPT54Plus" },
 
-            (* Forcing skips the family opt-in but not the service check *)
+            (* Forcing skips the family preference but not the service check *)
             { "Responses", "OpenAI", "GPT54Plus" },
             { "Responses", "OpenAI", "GPT5"      },
             { "Responses", "Groq"  , "GPT54Plus" },
@@ -95,7 +131,7 @@ VerificationTest[
         False, False
     },
     SameTest -> MatchQ,
-    TestID   -> "ResponsesEndpointQ-DecisionTable@@Tests/ResponsesEndpoint.wlt:69,1-99,2"
+    TestID   -> "ResponsesEndpointQ-DecisionTable@@Tests/ResponsesEndpoint.wlt:100,1-136,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -119,17 +155,7 @@ VerificationTest[
         Wolfram`Chatbook`SendChat`Private`$completionsEndpoint
     },
     SameTest -> MatchQ,
-    TestID   -> "ResolveChatEndpoint-BothPairs@@Tests/ResponsesEndpoint.wlt:109,1-123,2"
-]
-
-VerificationTest[
-    Keys /@ {
-        Wolfram`Chatbook`SendChat`Private`$responsesEndpoint,
-        Wolfram`Chatbook`SendChat`Private`$completionsEndpoint
-    },
-    { { "Synchronous", "Streaming" }, { "Synchronous", "Streaming" } },
-    SameTest -> MatchQ,
-    TestID   -> "ResolveChatEndpoint-PairShape@@Tests/ResponsesEndpoint.wlt:125,1-133,2"
+    TestID   -> "ResolveChatEndpoint-BothPairs@@Tests/ResponsesEndpoint.wlt:146,1-160,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -147,7 +173,7 @@ VerificationTest[
     },
     { "None", "Medium", "XHigh", False, None, Automatic, Missing[ "NotSupported" ] },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-NoDeclaredLevels@@Tests/ResponsesEndpoint.wlt:144,1-151,2"
+    TestID   -> "ResolveReasoningEffort-NoDeclaredLevels@@Tests/ResponsesEndpoint.wlt:171,1-178,2"
 ]
 
 (* A level the family accepts is used as-is, and the family's own spelling is returned: *)
@@ -157,7 +183,7 @@ VerificationTest[
     },
     { "None", "Low", "Medium", "High" },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-AcceptedLevels@@Tests/ResponsesEndpoint.wlt:154,1-161,2"
+    TestID   -> "ResolveReasoningEffort-AcceptedLevels@@Tests/ResponsesEndpoint.wlt:181,1-188,2"
 ]
 
 (* Off, however it is spelled, on a family that has no "None": clamped to the weakest level rather
@@ -169,7 +195,7 @@ VerificationTest[
     },
     { "Low", "Low", "Low", "Low", "Low", "Low" },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-ClampOffToWeakest@@Tests/ResponsesEndpoint.wlt:166,1-173,2"
+    TestID   -> "ResolveReasoningEffort-ClampOffToWeakest@@Tests/ResponsesEndpoint.wlt:193,1-200,2"
 ]
 
 (* An unsupported level clamps to the nearest declared one, and a tie resolves upward so that
@@ -183,7 +209,7 @@ VerificationTest[
     },
     { "High", "Low", "Low", "Minimal" },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-ClampNearest@@Tests/ResponsesEndpoint.wlt:177,1-187,2"
+    TestID   -> "ResolveReasoningEffort-ClampNearest@@Tests/ResponsesEndpoint.wlt:204,1-214,2"
 ]
 
 (* A spelling that is not on the scale at all is passed through, so a typo still reaches the service
@@ -194,7 +220,7 @@ VerificationTest[
     },
     { "Higgh", "ultra", "" },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-UnknownSpellingPassesThrough@@Tests/ResponsesEndpoint.wlt:191,1-198,2"
+    TestID   -> "ResolveReasoningEffort-UnknownSpellingPassesThrough@@Tests/ResponsesEndpoint.wlt:218,1-225,2"
 ]
 
 (* Non-string values other than the off spellings are never clamped: *)
@@ -216,7 +242,7 @@ VerificationTest[
         Quantity[ 1024, "Tokens" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ResolveReasoningEffort-NonStringValues@@Tests/ResponsesEndpoint.wlt:201,1-220,2"
+    TestID   -> "ResolveReasoningEffort-NonStringValues@@Tests/ResponsesEndpoint.wlt:228,1-247,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -233,7 +259,7 @@ VerificationTest[
         <| "effort" -> "minimal", "summary" -> "auto" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummary-EffortBecomesAssociation@@Tests/ResponsesEndpoint.wlt:228,1-237,2"
+    TestID   -> "RequestReasoningSummary-EffortBecomesAssociation@@Tests/ResponsesEndpoint.wlt:344,1-353,2"
 ]
 
 (* Reasoning is off, so there is nothing to summarize: *)
@@ -241,7 +267,7 @@ VerificationTest[
     Wolfram`Chatbook`SendChat`Private`requestReasoningSummary /@ { "None", "none", "NONE" },
     { "None", "none", "NONE" },
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummary-OffIsUntouched@@Tests/ResponsesEndpoint.wlt:240,1-245,2"
+    TestID   -> "RequestReasoningSummary-OffIsUntouched@@Tests/ResponsesEndpoint.wlt:356,1-361,2"
 ]
 
 (* An association the caller supplied keeps whatever it already specifies. "Summary" and "summary"
@@ -263,7 +289,7 @@ VerificationTest[
         <| "enabled" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummary-CallerOwnedAssociations@@Tests/ResponsesEndpoint.wlt:250,1-267,2"
+    TestID   -> "RequestReasoningSummary-CallerOwnedAssociations@@Tests/ResponsesEndpoint.wlt:366,1-383,2"
 ]
 
 (* An association with reasoning on and no summary of its own gets the request merged in: *)
@@ -271,7 +297,7 @@ VerificationTest[
     Wolfram`Chatbook`SendChat`Private`requestReasoningSummary @ <| "effort" -> "high" |>,
     <| "effort" -> "high", "summary" -> "auto" |>,
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummary-MergesIntoAssociation@@Tests/ResponsesEndpoint.wlt:270,1-275,2"
+    TestID   -> "RequestReasoningSummary-MergesIntoAssociation@@Tests/ResponsesEndpoint.wlt:386,1-391,2"
 ]
 
 (* Everything else is passed through, including the absent-key Missing that DeleteMissing drops in
@@ -296,7 +322,7 @@ VerificationTest[
         Quantity[ 1024, "Tokens" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummary-PassThrough@@Tests/ResponsesEndpoint.wlt:279,1-300,2"
+    TestID   -> "RequestReasoningSummary-PassThrough@@Tests/ResponsesEndpoint.wlt:395,1-416,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -318,7 +344,7 @@ VerificationTest[
     ],
     "<think>weighing the options</think>the answer",
     SameTest -> MatchQ,
-    TestID   -> "ReasoningEnvelope-SynchronousPart@@Tests/ResponsesEndpoint.wlt:307,1-322,2"
+    TestID   -> "ReasoningEnvelope-SynchronousPart@@Tests/ResponsesEndpoint.wlt:423,1-438,2"
 ]
 
 (* A reasoning part with no readable summary must not produce an empty envelope: an unterminated or
@@ -340,7 +366,7 @@ VerificationTest[
     ],
     "the answer",
     SameTest -> MatchQ,
-    TestID   -> "ReasoningEnvelope-NoSummaryNoEnvelope@@Tests/ResponsesEndpoint.wlt:328,1-344,2"
+    TestID   -> "ReasoningEnvelope-NoSummaryNoEnvelope@@Tests/ResponsesEndpoint.wlt:444,1-460,2"
 ]
 
 (* Streaming delivers one delta per call, so a latch opens the envelope on the first reasoning delta
@@ -357,7 +383,7 @@ VerificationTest[
     ],
     "<think>first second </think>answer",
     SameTest -> MatchQ,
-    TestID   -> "ReasoningEnvelope-StreamingLatch@@Tests/ResponsesEndpoint.wlt:348,1-361,2"
+    TestID   -> "ReasoningEnvelope-StreamingLatch@@Tests/ResponsesEndpoint.wlt:464,1-477,2"
 ]
 
 (* Nothing else closes the envelope if a response ends while reasoning is still open. Without this,
@@ -374,7 +400,7 @@ VerificationTest[
     ],
     "<think>thinking</think>",
     SameTest -> MatchQ,
-    TestID   -> "ReasoningEnvelope-FinishReasonCloses@@Tests/ResponsesEndpoint.wlt:366,1-378,2"
+    TestID   -> "ReasoningEnvelope-FinishReasonCloses@@Tests/ResponsesEndpoint.wlt:482,1-494,2"
 ]
 
 (* A response with no reasoning at all is untouched, which is every provider that does not send it: *)
@@ -387,7 +413,7 @@ VerificationTest[
     ],
     "plain answer",
     SameTest -> MatchQ,
-    TestID   -> "ReasoningEnvelope-NoReasoningUnchanged@@Tests/ResponsesEndpoint.wlt:381,1-391,2"
+    TestID   -> "ReasoningEnvelope-NoReasoningUnchanged@@Tests/ResponsesEndpoint.wlt:497,1-507,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

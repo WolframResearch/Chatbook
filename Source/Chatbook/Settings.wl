@@ -297,6 +297,11 @@ $modelAutoSettings[ "OpenAI", Automatic ] = <|
     "ToolCallExamplePromptStyle" -> "Basic"
 |>;
 
+(* Families that prefer the Responses endpoint on OpenAI. This is only a preference: chooseEndpoint still falls back to
+   chat completions when the installed LLMFunctions cannot provide the endpoint for the service. *)
+$modelAutoSettings[ "OpenAI", "GPT54Plus" ] = <| "Endpoint" -> "Responses" |>;
+$modelAutoSettings[ "OpenAI", "GPT56Plus" ] = <| "Endpoint" -> "Responses" |>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*TogetherAI*)
@@ -1159,6 +1164,42 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseEndpoint*)
+chooseEndpoint // beginDefinition;
+
+(* The endpoint an Automatic "Endpoint" setting stands for. A model family prefers Responses by declaring it in
+   $modelAutoSettings; anything short of a fully resolved model spec uses chat completions: *)
+chooseEndpoint[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] ] :=
+    If[ And[
+            autoModelSetting[ toBaseServiceName @ service, model[ "Name" ], model[ "BaseID" ], family, "Endpoint" ] === "Responses",
+            responsesServiceQ @ service
+        ],
+        "Responses",
+        "ChatCompletions"
+    ];
+
+chooseEndpoint[ _ ] := "ChatCompletions";
+
+chooseEndpoint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesEndpointQ*)
+responsesEndpointQ // beginDefinition;
+
+(* Whether a request with these settings goes to the Responses endpoint. An explicit "Responses" still needs a
+   supporting service; unresolved settings are resolved on the spot: *)
+responsesEndpointQ[ settings: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> _String, "Family" -> _String } ] ] :=
+    With[ { endpoint = Replace[ Lookup[ settings, "Endpoint", Automatic ], Automatic :> chooseEndpoint @ settings ] },
+        endpoint === "Responses" && responsesServiceQ @ model[ "Service" ]
+    ];
+
+responsesEndpointQ[ _ ] := False;
+
+responsesEndpointQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
