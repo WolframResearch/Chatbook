@@ -589,8 +589,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
-    "Temperature"               -> 0.7,
-    "ToolResponseRole"          -> "System"
+    "Temperature"               -> 0.7
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -1029,6 +1028,7 @@ resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle"     ] := chooseToolExampl
 resolveAutoSetting0[ as_, "ToolCallFrequency"              ] := Automatic;
 resolveAutoSetting0[ as_, "ToolCallRetryMessage"           ] := toolCallRetryMessageQ @ as;
 resolveAutoSetting0[ as_, "ToolExamplePrompt"              ] := chooseToolExamplePromptSpec @ as;
+resolveAutoSetting0[ as_, "ToolResponseRole"               ] := chooseToolResponseRole @ as;
 resolveAutoSetting0[ as_, "ToolsEnabled"                   ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"       ] := scrollOutputQ @ as;
 resolveAutoSetting0[ as_, key_String                       ] := Automatic;
@@ -1055,6 +1055,7 @@ $autoSettingKeyDependencies = <|
     "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
     "ToolCallRetryMessage"       -> { "Authentication", "Model" },
     "ToolExamplePrompt"          -> "Model",
+    "ToolResponseRole"           -> { "RequestMethod", "ToolMethod" },
     "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
 |>;
@@ -1231,6 +1232,16 @@ autoToolExamplePromptStyle0[ _, "DeepSeekCoder" ] := "DeepSeekCoder";
 autoToolExamplePromptStyle0[ _, _ ] := "Basic";
 
 autoToolExamplePromptStyle0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseToolResponseRole*)
+chooseToolResponseRole // beginDefinition;
+chooseToolResponseRole[ as_Association ] := chooseToolResponseRole[ as[ "RequestMethod" ], as[ "ToolMethod" ] ];
+chooseToolResponseRole[ _, "Service" ] := Automatic;
+chooseToolResponseRole[ "Responses", _ ] := "User";
+chooseToolResponseRole[ _, _ ] := "System";
+chooseToolResponseRole // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
