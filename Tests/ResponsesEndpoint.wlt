@@ -68,7 +68,7 @@ VerificationTest[
    does not. *)
 VerificationTest[
     Block[
-        { Wolfram`Chatbook`SendChat`Private`responsesServiceQ = Function[ # === "OpenAI" ] },
+        { Wolfram`Chatbook`Common`responsesServiceQ = Function[ # === "OpenAI" ] },
         Wolfram`Chatbook`Common`responsesEndpointQ @@@ {
             (* Automatic: needs both a supporting service and an opted-in family *)
             { Automatic, "OpenAI", "GPT54Plus" },
@@ -108,7 +108,7 @@ VerificationTest[
    the paclet. *)
 VerificationTest[
     Block[
-        { Wolfram`Chatbook`SendChat`Private`responsesServiceQ = Function[ # === "OpenAI" ] },
+        { Wolfram`Chatbook`Common`responsesServiceQ = Function[ # === "OpenAI" ] },
         Wolfram`Chatbook`SendChat`Private`resolveChatEndpoint /@ {
             <| "Endpoint" -> Automatic         , "Model" -> <| "Service" -> "OpenAI", "Family" -> "GPT54Plus" |> |>,
             <| "Endpoint" -> "ChatCompletions" , "Model" -> <| "Service" -> "OpenAI", "Family" -> "GPT54Plus" |> |>

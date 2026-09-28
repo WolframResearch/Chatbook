@@ -1166,21 +1166,6 @@ responsesEndpointQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*responsesServiceQ*)
-responsesServiceQ // beginDefinition;
-
-responsesServiceQ[ service_String ] := And[
-    TrueQ @ $responsesEndpointAvailable,
-    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
-    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
-];
-
-responsesServiceQ[ service_ ] := False;
-
-responsesServiceQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
