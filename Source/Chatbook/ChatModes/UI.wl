@@ -365,7 +365,8 @@ sidebarHistoryButton[ nbo_, sidebarCell_ ] := Button[
         { { 5, 5 }, { 0, 0 } }
     ],
     toggleOverlayMenu[ nbo, sidebarCell, "History" ],
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NASidebarHistoryToggle"
 ];
 
 sidebarHistoryButton // endDefinition;
@@ -384,7 +385,8 @@ sidebarSourcesButton[ nbo_, sidebarCell_ ] := Button[
         { { 5, 5 }, { 0, 0 } }
     ],
     toggleOverlayMenu[ nbo, sidebarCell, "Sources" ],
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NASidebarSourcesToggle"
 ];
 
 sidebarSourcesButton // endDefinition;
@@ -411,6 +413,7 @@ sidebarNewChatButton[ nbo_, sidebarCell_ ] :=
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ]
         ,
         Appearance -> "Suppressed",
+        BoxID      -> "NASidebarNewChat",
         Method     -> "Queued"
     ];
 
@@ -466,6 +469,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
     ],
     Appearance -> "Suppressed",
+    BoxID      -> "NASidebarOpenAsAssistantWindowButton",
     Method     -> "Queued"
 ];
 
@@ -486,7 +490,8 @@ sidebarHideButton[ nbo_ ] := Button[
     ],
     setCurrentValue[ $FrontEndSession, "ShowNotebookAssistant", False ];
     FrontEndTokenExecute[ nbo, "HideSidebar" ],
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NASidebarClose"
 ]
 
 sidebarHideButton // endDefinition;
@@ -506,7 +511,7 @@ PaneSelector[
                 blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
                 If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
                 Appearance   -> "Suppressed",
-                BoxID        -> "SidebarChatInputCellSendButton",
+                BoxID        -> "NASidebarChatInputCellSendButton",
                 FrameMargins -> 0,
                 ImageSize    -> Automatic,
                 Method       -> "Preemptive"
@@ -517,6 +522,7 @@ PaneSelector[
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",
+                BoxID        -> "NASidebarChatInputCellStopButton",
                 FrameMargins -> 0,
                 ImageSize    -> Automatic
             ]
@@ -775,7 +781,7 @@ Button[
         With[ { input = fieldContent }, fieldContent = ""; chatbarWriteAndEvaluateChatInputCell[ nbo, chatbarCell, input ] ]
     ],
     Appearance   -> "Suppressed",
-    BoxID        -> "SidebarChatInputCellSendButton",
+    BoxID        -> "NAChatbarChatInputCellSendButton",
     FrameMargins -> 0,
     Method       -> "Preemptive"
 ]
@@ -831,6 +837,7 @@ Button[
         ]
     ],
     Appearance   -> "Suppressed",
+    BoxID        -> "NAChatbarMinimizeButton",
     ImageMargins -> { { 1, 0 }, { 1, 0 } },
     ImageSize    -> Automatic
 ]
@@ -919,6 +926,7 @@ Button[
     Appearance       -> "Suppressed",
     DefaultBaseStyle -> { },
     BaseStyle        -> { },
+    BoxID            -> "NAChatbarOptionsButton",
     ImageMargins     -> { { 1, 0 }, { 0, 1 } },
     ImageSize        -> Automatic,
     Method           -> "Preemptive"
@@ -1466,6 +1474,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] 
             SystemOpen @ url,
             Appearance       -> None,
             BaseStyle        -> { },
+            BoxID            -> "NAChatbarUpgradeBasicStripe",
             DefaultBaseStyle -> { },
             ImageSize        -> Automatic,
             Tooltip          -> ToBoxes @ url,
@@ -1500,6 +1509,7 @@ chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
                     SystemOpen @ url,
                     Appearance       -> None,
                     BaseStyle        -> { },
+                    BoxID            -> "NAChatbarUpgradeProStripe",
                     DefaultBaseStyle -> { },
                     ImageSize        -> Automatic,
                     Tooltip          -> ToBoxes @ url,
@@ -1554,6 +1564,7 @@ chatbarAddServiceCreditsButton[ userdata_, tier_, creditsOptions_ ] :=
                         RemovalConditions -> { "MouseClickOutside" }
                     ],
                     Appearance       -> None,
+                    BoxID            -> "NAChatbarAddServiceCreditsButton",
                     BaseStyle        -> { },
                     DefaultBaseStyle -> { },
                     ImageSize        -> Automatic
@@ -1708,6 +1719,7 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
         Appearance       -> "Suppressed",
         BaselinePosition -> Baseline,
         BaseStyle        -> { FontSize -> Inherited-1 },
+        BoxID            -> "NAChatbarSetterState" <> state,
         DefaultBaseStyle -> { }
     ]
 
@@ -1749,6 +1761,7 @@ Button[
         FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued @ FrontEnd`MoveCursorToInputField[ n, "AttachedChatInputField", c, c ]
     ],
     Appearance -> "Suppressed",
+    BoxID      -> "NAChatbarMaximizeButton",
     ImageSize  -> Automatic
 ]
 
@@ -2007,6 +2020,7 @@ Button[
     ],
     If[ CurrentValue[ "WolframCloudConnected" ] === "Pending", Null, CloudConnect[ ] ],
     Appearance -> "Suppressed",
+    BoxID      -> "NAChatbarSignIn",
     ImageSize  -> Automatic,
     Method     -> "Queued"
 ];
@@ -2106,6 +2120,7 @@ Button[
     chatbarDisabledFrame[ Dynamic @ activeQ, "ChatbarWolframDisabledInternet" ],
     NotebookTools`OpenPreferencesDialog[ { "InternetConnectivity" }, "AllowDownloads" ],
     Appearance -> "Suppressed",
+    BoxID      -> "NAChatbarNoInternetOpenPreferencesButton",
     ImageSize  -> Automatic,
     Method     -> "Queued"
 ];
@@ -2544,7 +2559,8 @@ historyButton[ nbo_NotebookObject ] := Button[
         { { 5, 5 }, { 0, 0 } }
     ],
     toggleOverlayMenu[ nbo, None, "History" ],
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NAHistoryToggle",
 ];
 
 historyButton // endDefinition;
@@ -2561,7 +2577,8 @@ sourcesButton[ nbo_NotebookObject ] := Button[
         { { 5, 5 }, { 0, 0 } }
     ],
     toggleOverlayMenu[ nbo, None, "Sources" ],
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NASourcesToggle",
 ];
 
 sourcesButton // endDefinition;
@@ -2587,6 +2604,7 @@ newChatButton[ nbo_NotebookObject ] :=
         moveChatInputToTop @ nbo;
         ,
         Appearance -> "Suppressed",
+        BoxID      -> "NANewChatButton",
         Method     -> "Queued"
     ];
 
@@ -2604,6 +2622,7 @@ openAsChatbookButton[ nbo_NotebookObject ] := Button[
     ],
     popOutChatNB @ nbo,
     Appearance -> "Suppressed",
+    BoxID      -> "NAOpenAsChatbookButton",
     Method     -> "Queued"
 ];
 
@@ -2747,6 +2766,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                                         Dynamic @ $WorkspaceChatInput
                                                     ],
                                                     Appearance   -> "Suppressed",
+                                                    BoxID        -> "NASendChatButton",
                                                     FrameMargins -> 0,
                                                     Method       -> "Queued"
                                                 ]
@@ -2757,6 +2777,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                                 Needs[ "Wolfram`Chatbook`" -> None ];
                                                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                                                 Appearance   -> "Suppressed",
+                                                BoxID        -> "NAStopChatButton",
                                                 FrameMargins -> 0
                                             ],
                                             Alignment -> { Automatic, Baseline }
@@ -3100,6 +3121,7 @@ closeButton[ cell_CellObject ] := ToBoxes @ Button[
     ],
     NotebookDelete @ cell,
     Appearance -> "Suppressed",
+    BoxID      -> "NACloseInlineChat",
     Tooltip    -> ToBoxes @ tr[ "InlineChatButtonTooltipClose" ]
 ];
 
@@ -3139,6 +3161,7 @@ popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
     NotebookDelete @ cell;
     popOutWorkspaceChatNB @ messageCells,
     Appearance -> "Suppressed",
+    BoxID      -> "NAPopOutAsWorkspaceChat",
     Tooltip    -> ToBoxes @ tr[ "InlineChatButtonTooltipViewNotebookAssist" ]
 ];
 
@@ -3514,6 +3537,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]; (* in case kernel was quit *)
                     ChatbookAction[ "RegenerateAssistantMessage", Typeset`cell, sidebarCellQ ],
                     Appearance -> "Suppressed",
+                    BoxID      -> "NARegenerateAssistantMessageButton",
                     Method     -> "Queued"
                 ],
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
@@ -3528,6 +3552,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                             ],
                             ChatbookAction[ "SendFeedback", Typeset`cell, True ],
                             Appearance -> "Suppressed",
+                            BoxID      -> "NAThumbsUpButton",
                             Method     -> "Queued"
                         ],
                         Button[
@@ -3537,6 +3562,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
                             ],
                             ChatbookAction[ "SendFeedback", Typeset`cell, False ],
                             Appearance -> "Suppressed",
+                            BoxID      -> "NAThumbsDownButton",
                             Method     -> "Queued"
                         ],
                         Spacer[ If[ sidebarCellQ, 40, 27 ] ]
@@ -3702,6 +3728,7 @@ Button[
     clickAction;
     NotebookDelete[ Cells[ EvaluationNotebook[ ], AttachedCell -> True, CellTags -> "CustomActionMenu" ] ],
     Appearance -> "Suppressed",
+    BoxID      -> "NAActionMenuItem" <> Replace[ Hold[ clickAction ], { Hold[ ChatbookAction[ s_String, ___ ] ] :> s, "" } ],
     Method     -> "Queued",
     ImageSize  -> Automatic ]
 
@@ -4173,7 +4200,8 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
                                     ToggleChatInclusion @ nbo,
                                     Alignment  -> Left,
                                     Appearance -> "Suppressed",
-                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False }
+                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                                    BoxID      -> "NASourcesToggleChatInclusions"
                                 ],
                                 ItemSize -> Fit
                             ],
@@ -4188,7 +4216,8 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
                                 SetSelectedNotebook @ nbo,
                                 Alignment  -> Right,
                                 Appearance -> "Suppressed",
-                                BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" }
+                                BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" },
+                                BoxID      -> "NASourcesGoToNotebook"
                             ]
                         }
                     ],
@@ -4417,12 +4446,14 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
                     page = 1,
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAHistoryFirstPage",
                     Tooltip          -> tr @ "WorkspaceHistoryFirstPage" ],
                 Button[
                     chatbookIcon @ "WorkspaceHistoryPreviousPage",
                     If[ IntegerQ @ page && page > 1, page -= 1 ],
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAHistoryPageLeft",
                     Tooltip          -> tr @ "WorkspaceHistoryPreviousPage" ],
                 With[ { c1 = color @ "NA_OverlayMenuIcon_Blue", c2 = color @ "NA_OverlayMenuHistoryPaginationIcon" },
                     Dynamic[
@@ -4463,12 +4494,14 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
                     If[ IntegerQ @ page && IntegerQ @ totalPages && page < totalPages, page += 1 ],
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAHistoryPageRight",
                     Tooltip          -> tr @ "WorkspaceHistoryNextPage" ],
                 Button[
                     chatbookIcon @ "WorkspaceHistoryLastPage",
                     If[ IntegerQ @ totalPages, page = totalPages, Beep[ ] ],
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAHistoryLastPage",
                     Tooltip          -> tr @ "WorkspaceHistoryLastPage" ]
             } },
             BaselinePosition -> { 1, 2 }
@@ -4588,7 +4621,8 @@ historySearchButton[ Dynamic[ searching_ ] ] := Button[
     chatbookIcon[ "WorkspaceHistorySearchIcon", False ],
     searching = ! TrueQ @ searching,
     Alignment  -> Right,
-    Appearance -> "Suppressed"
+    Appearance -> "Suppressed",
+    BoxID      -> "NAHistorySearchButton"
 ];
 
 historySearchButton // endDefinition;
@@ -4627,6 +4661,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                     Appearance       -> "Suppressed",
                     BaseStyle        -> { "Text", FontSize -> 14, LineBreakWithin -> False },
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAHistoryLoadConversation" <> title,
                     Method           -> "Queued"
                 ],
                 Grid[
@@ -4636,6 +4671,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                             popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
+                            BoxID            -> "NAHistoryPopOutConversation" <> title,
                             Method           -> "Queued"
                         ],
                         Button[
@@ -4644,6 +4680,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                             removeChatFromRows[ Dynamic @ chats, chat ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
+                            BoxID            -> "NAHistoryDeleteConversation" <> title,
                             Method           -> "Queued"
                         ]
                     } },
