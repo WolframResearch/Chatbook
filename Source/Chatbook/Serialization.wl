@@ -1926,14 +1926,9 @@ boxToString[ TemplateBox[ _, "TabularReferenceWrapper", ___ ] ] :=
 boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
-(* Reasoning Text *)
+(* Reasoning Summary Text *)
 boxToString[ TemplateBox[ { TextData[ thoughts_ ], _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
     "<think>\n" <> boxToString @ thoughts <> "\n</think>\n";
-
-(* Fallback formatting for reasoning text stored as an unformatted string -- typically unformatted Markdown string --
-as reasoning started being supported since v2.8.0). *)
-boxToString[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
-    "<think>\n" <> thoughts <> "\n</think>\n";
 
 (* System Modeler Boxes *)
 boxToString[ TemplateBox[ KeyValuePattern[ "model" -> Hold[ model_ ] ], "IOModel"|"SystemsModel", ___ ] ] :=
