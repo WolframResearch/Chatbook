@@ -263,7 +263,7 @@ VerificationTest[
     ],
     {
         s1_String /; StringContainsQ[ s1, " 7 " ],
-        s2_String /; StringContainsQ[ s2, " 1 " ],
+        DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingThinkingCompleteSingular" ], ___ ], ___ ],
         (* No duration is available: *)
         DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingThinkingCompleteFallback" ], ___ ], ___ ]
     },

@@ -517,8 +517,14 @@ thoughtsLabel[ KeyValuePattern[ "Type" -> "Summary" ] ] :=
 (* Literal think tags are timed from when they're first displayed: *)
 thoughtsLabel[ _Association ] := (
     If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-    thoughtsLabel @ If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ], None ]
+    thoughtsLabel @ If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd,
+                        Max[ 1, Round[ $thinkingEnd - $thinkingStart ] ],
+                        None
+                    ]
 );
+
+thoughtsLabel[ 1 ] :=
+    tr[ "FormattingThinkingCompleteSingular" ];
 
 thoughtsLabel[ seconds_Integer ] :=
     trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
