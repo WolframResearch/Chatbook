@@ -1075,6 +1075,10 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 
+(* A model's "Endpoint" setting is only a preference, so it goes through the support check rather than being used
+   directly like other model-specific defaults: *)
+resolveAutoSetting0[ as_, "Endpoint" ] := chooseEndpoint @ as;
+
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
@@ -1126,6 +1130,7 @@ $autoSettingKeyDependencies = <|
     "Authentication"             -> "Model",
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "BypassResponseChecking"     -> "ForceSynchronous",
+    "Endpoint"                   -> "Model",
     "ExperimentalFeatures"       -> { "WolframAlphaCAGEnabled", "WebSearchRAGMethod", "PromptGenerators" },
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
@@ -1170,7 +1175,8 @@ $autoSettingKeyPriority := Enclose[
 (*chooseEndpoint*)
 chooseEndpoint // beginDefinition;
 
-(* The endpoint an Automatic "Endpoint" setting stands for. A model family prefers Responses by declaring it in
+(* Resolved here rather than at submit time, so the endpoint that will actually be used is visible in
+   AbsoluteCurrentChatSettings and $ChatHandlerData. A model family prefers Responses by declaring it in
    $modelAutoSettings; anything short of a fully resolved model spec uses chat completions: *)
 chooseEndpoint[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] ] :=
     If[ And[
