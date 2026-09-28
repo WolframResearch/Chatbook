@@ -1124,9 +1124,9 @@ chatSubmit0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*resolveChatEndpoint*)
 
-(* Model families that use the Responses endpoint by default, keyed by service: *)
-$responsesEndpointFamilies = <| "OpenAI" -> { "GPT54Plus", "GPT56Plus" } |>;
-
+(* The LLMServices functions for each endpoint. Which endpoint a request uses is decided by responsesEndpointQ
+   (Settings.wl) from the "Endpoint" setting; this only maps that decision onto the synchronous and streaming
+   functions, so a chat cannot mix endpoints: *)
 $completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
 $responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
 
@@ -1136,33 +1136,6 @@ resolveChatEndpoint[ settings_Association ] :=
     If[ TrueQ @ responsesEndpointQ @ settings, $responsesEndpoint, $completionsEndpoint ];
 
 resolveChatEndpoint // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*responsesEndpointQ*)
-responsesEndpointQ // beginDefinition;
-
-responsesEndpointQ[ settings_Association ] :=
-    responsesEndpointQ[ Lookup[ settings, "Endpoint", Automatic ], settings[ "Model" ] ];
-
-responsesEndpointQ[ endpoint_, KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] :=
-    responsesEndpointQ[ endpoint, service, family ];
-
-(* Anything short of a fully resolved model spec falls back: *)
-responsesEndpointQ[ endpoint_, model_ ] := False;
-
-(* The rollback switch always wins: *)
-responsesEndpointQ[ "ChatCompletions", service_, family_ ] := False;
-
-(* Forcing the endpoint skips the family opt-in, but not the support checks: *)
-responsesEndpointQ[ "Responses", service_, family_ ] := responsesServiceQ @ service;
-
-responsesEndpointQ[ Automatic, service_, family_ ] :=
-    responsesServiceQ @ service && MemberQ[ Lookup[ $responsesEndpointFamilies, service, { } ], family ];
-
-responsesEndpointQ[ endpoint_, service_, family_ ] := False;
-
-responsesEndpointQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
