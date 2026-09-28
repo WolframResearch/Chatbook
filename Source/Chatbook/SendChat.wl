@@ -1124,9 +1124,9 @@ chatSubmit0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*resolveChatEndpoint*)
 
-(* The LLMServices functions for each endpoint. Which endpoint a request uses is decided by responsesEndpointQ
-   (Settings.wl) from the "Endpoint" setting; this only maps that decision onto the synchronous and streaming
-   functions, so a chat cannot mix endpoints: *)
+(* The LLMServices functions for each endpoint. Which endpoint a request uses is decided by the "Endpoint" setting,
+   resolved in resolveAutoSettings (see responsesEndpointQ in Settings.wl); this only maps that decision onto the
+   synchronous and streaming functions, so a chat cannot mix endpoints: *)
 $completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
 $responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
 
