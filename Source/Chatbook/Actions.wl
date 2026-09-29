@@ -842,41 +842,48 @@ chatObject := chatObject = Symbol[ "System`ChatObject" ];
 (*revertMultimodalContent*)
 revertMultimodalContent // beginDefinition;
 
-revertMultimodalContent[ messages_List ] :=
-    revertMultimodalContent /@ messages;
+(* "ReasoningContent" controls what happens to reasoning parts:
+     "Preserve": a message holding them is left as it is, since they carry opaque state that is replayed verbatim
+     "Drop":     they are removed when the content is flattened to text
+     "Summary":  each part's readable summary is kept as a <think> block when the content is flattened to text *)
+revertMultimodalContent // Options = { "ReasoningContent" -> "Preserve" };
 
-revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] := <|
-    as,
-    "Content" -> StringJoin @ Cases[
-        content,
-        s_String | KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
-    ]
-|>;
+revertMultimodalContent[ messages_List, opts: OptionsPattern[ ] ] :=
+    revertMultimodalContent[ #, opts ] & /@ messages;
 
-revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_Association ] ] :=
-    revertMultimodalContent[ <| as, "Content" -> { content } |> ];
-
-revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
-    as;
+revertMultimodalContent[ message: KeyValuePattern[ "Content" -> _ ], opts: OptionsPattern[ ] ] :=
+    revertMultimodalContent0[ message, OptionValue[ "ReasoningContent" ] ];
 
 revertMultimodalContent // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*revertMultimodalContentPreservingReasoning*)
-revertMultimodalContentPreservingReasoning // beginDefinition;
 
-revertMultimodalContentPreservingReasoning[ messages_List ] :=
-    revertMultimodalContentPreservingReasoning /@ messages;
+revertMultimodalContent0 // beginDefinition;
 
-revertMultimodalContentPreservingReasoning[
-    message: KeyValuePattern[ "Content" -> content_List ]
-] /; MemberQ[ content, KeyValuePattern[ "Type" -> "Reasoning" ] ] := message;
+revertMultimodalContent0[ message: KeyValuePattern[ "Content" -> content_List ], "Preserve" ] /;
+    MemberQ[ content, KeyValuePattern[ "Type" -> "Reasoning" ] ] := message;
 
-revertMultimodalContentPreservingReasoning[ message_Association ] :=
-    revertMultimodalContent @ message;
+revertMultimodalContent0[ as: KeyValuePattern[ "Content" -> content_List ], mode: "Preserve"|"Drop"|"Summary" ] := <|
+    as,
+    "Content" -> StringJoin @ Replace[
+        content,
+        {
+            s_String :> s,
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s,
+            KeyValuePattern @ { "Type" -> "Reasoning", "Data" -> s_String } /; mode === "Summary" && StringTrim @ s =!= "" :>
+                "<think>\n" <> s <> "\n</think>\n",
+            _ :> ""
+        },
+        { 1 }
+    ]
+|>;
 
-revertMultimodalContentPreservingReasoning // endDefinition;
+revertMultimodalContent0[ as: KeyValuePattern[ "Content" -> content_Association ], mode_ ] :=
+    revertMultimodalContent0[ <| as, "Content" -> { content } |>, mode ];
+
+revertMultimodalContent0[ as: KeyValuePattern[ "Content" -> _String ], "Preserve"|"Drop"|"Summary" ] :=
+    as;
+
+revertMultimodalContent0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
