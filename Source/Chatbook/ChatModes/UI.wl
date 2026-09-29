@@ -2560,7 +2560,7 @@ historyButton[ nbo_NotebookObject ] := Button[
     ],
     toggleOverlayMenu[ nbo, None, "History" ],
     Appearance -> "Suppressed",
-    BoxID      -> "NAHistoryToggle",
+    BoxID      -> "NAHistoryToggle"
 ];
 
 historyButton // endDefinition;
@@ -2578,7 +2578,7 @@ sourcesButton[ nbo_NotebookObject ] := Button[
     ],
     toggleOverlayMenu[ nbo, None, "Sources" ],
     Appearance -> "Suppressed",
-    BoxID      -> "NASourcesToggle",
+    BoxID      -> "NASourcesToggle"
 ];
 
 sourcesButton // endDefinition;
@@ -3728,7 +3728,7 @@ Button[
     clickAction;
     NotebookDelete[ Cells[ EvaluationNotebook[ ], AttachedCell -> True, CellTags -> "CustomActionMenu" ] ],
     Appearance -> "Suppressed",
-    BoxID      -> "NAActionMenuItem" <> Replace[ Hold[ clickAction ], { Hold[ ChatbookAction[ s_String, ___ ] ] :> s, "" } ],
+    BoxID      -> "NAActionMenuItem" <> Replace[ Hold[ clickAction ], { Hold[ ChatbookAction[ s_String, ___ ] ] :> s, _ :> "" } ],
     Method     -> "Queued",
     ImageSize  -> Automatic ]
 
