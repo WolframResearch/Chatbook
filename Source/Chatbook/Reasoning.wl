@@ -33,10 +33,17 @@ $reasoningData = <| |>;
 (* The id of the reasoning summary that is currently being streamed (if any): *)
 $reasoningStreamID = None;
 
+(* Consecutive reasoning items are shown as a single summary, so this holds the completed items for the open summary: *)
+$reasoningItems = { };
+
+(* Whether any summary text has been streamed for the reasoning item that is currently in progress: *)
+$reasoningStreamed = False;
+
 (* When the model started working on the current reasoning item (see reasoningDuration): *)
 $reasoningStart = None;
 
-(* Keys that are stored for each reasoning item ("Duration" is in seconds): *)
+(* Keys that are stored for each summary ("Duration" is in seconds). If a summary combines several reasoning items,
+   "Signature" and "CallID" are lists with a value for each item: *)
 $reasoningDataKeys = { "Signature", "CallID", "Service", "Model", "Duration" };
 
 (* ::**************************************************************************************************************:: *)
@@ -149,20 +156,36 @@ newReasoningID // endDefinition;
 (*storeReasoningData*)
 storeReasoningData // beginDefinition;
 
-storeReasoningData[ settings_Association, id_String, part_Association ] :=
+(* The items are the completed reasoning items (with signatures) that are shown in the summary: *)
+storeReasoningData[ settings_Association, id_String, items_List ] :=
     $reasoningData[ id ] = DeleteMissing @ <|
-        "Signature" -> Replace[ Lookup[ part, "Signature" ], Except[ _? ByteArrayQ ] -> Missing[ "NotAvailable" ] ],
-        "CallID"    -> Lookup[ part, "CallID", Missing[ "NotAvailable" ] ],
+        "Signature" -> itemValues[ items, "Signature" ],
+        "CallID"    -> itemValues[ items, "CallID" ],
         "Service"   -> reasoningServiceName @ settings,
         "Model"     -> Replace[ toModelName @ settings, Except[ _String ] -> Missing[ "NotAvailable" ] ],
         "Duration"  -> reasoningDuration[ ]
     |>;
 
-(* A summary that was interrupted before the reasoning item was complete only has a duration: *)
-storeReasoningData[ id_String ] :=
-    $reasoningData[ id ] = DeleteMissing @ <| "Duration" -> reasoningDuration[ ] |>;
-
 storeReasoningData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*itemValues*)
+itemValues // beginDefinition;
+
+itemValues[ { }, key_String ] :=
+    Missing[ "NotAvailable" ];
+
+itemValues[ { item_Association }, key_String ] :=
+    Lookup[ item, key, Missing[ "NotAvailable" ] ];
+
+(* Values are only kept for multiple items if every item has one, so they can be matched up with each item: *)
+itemValues[ items: { __Association }, key_String ] :=
+    With[ { values = Lookup[ items, key, Missing[ "NotAvailable" ] ] },
+        If[ MemberQ[ values, _Missing ], Missing[ "NotAvailable" ], values ]
+    ];
+
+itemValues // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -212,16 +235,21 @@ reasoningMetadata // endDefinition;
 (* ::Subsection::Closed:: *)
 (*resetReasoningStream*)
 resetReasoningStream // beginDefinition;
-resetReasoningStream[ ] := ($reasoningStreamID = None; $reasoningStart = None);
+resetReasoningStream[ ] := (
+    $reasoningStreamID = None;
+    $reasoningItems    = { };
+    $reasoningStreamed = False;
+    $reasoningStart    = None;
+);
 resetReasoningStream // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*reasoningDuration*)
 
-(* Returns the number of seconds spent on the current reasoning item and restarts the timer for the next one. The timer
-   starts when the first chunk of a response is received, and restarts after any other output, since reasoning that
-   follows other output can't have started before it: *)
+(* Returns the number of seconds spent on the current summary and restarts the timer for the next one. The timer starts
+   when the first chunk of a response is received, and restarts after any other output, since reasoning that follows
+   other output can't have started before it: *)
 reasoningDuration // beginDefinition;
 
 reasoningDuration[ ] :=
@@ -240,7 +268,8 @@ reasoningDuration // endDefinition;
 
 (* Rewrites the reasoning chunks of a Responses API stream as content chunks that contain think tags, so that they can
    be handled the same way as any other streamed text. The summary is streamed as it arrives, and the signature arrives
-   in a "ResponseContent" chunk once the reasoning item is complete. *)
+   in a "ResponseContent" chunk once the reasoning item is complete. A response can contain several reasoning items in a
+   row, so the summary stays open until some other output arrives, and combines all of them. *)
 convertReasoningChunks // beginDefinition;
 
 convertReasoningChunks[ settings_Association, as: KeyValuePattern[ "BodyChunkProcessed" -> chunks_List ] ] := (
@@ -260,10 +289,13 @@ convertReasoningChunk // beginDefinition;
 
 convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ReasoningChunk" -> text_String ] ] := <|
     KeyDrop[ chunk, { "ReasoningChunk", "Type" } ],
-    "ContentChunk" -> If[ StringQ @ $reasoningStreamID,
-                          text,
-                          openSummaryTag[ $reasoningStreamID = newReasoningID[ ] ] <> StringDelete[ text, StartOfString ~~ WhitespaceCharacter.. ]
-                      ]
+    "ContentChunk" -> (
+        $reasoningStreamed = True;
+        If[ StringQ @ $reasoningStreamID,
+            text,
+            openReasoningStream[ ] <> StringDelete[ text, StartOfString ~~ WhitespaceCharacter.. ]
+        ]
+    )
 |>;
 
 convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ResponseContent" -> parts_List ] ] := <|
@@ -271,14 +303,9 @@ convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ResponseContent" -> p
     "ContentChunk" -> StringJoin[ reasoningPartString[ settings, # ] & /@ parts ]
 |>;
 
-(* Anything else that arrives while a summary is still open ends the summary: *)
+(* Any other output ends the summary: *)
 convertReasoningChunk[ settings_, chunk: KeyValuePattern[ ("ContentChunk"|"ToolRequestsChunk"|"FinishReason") -> _ ] ] :=
-    Module[ { close },
-        close = If[ StringQ @ $reasoningStreamID,
-                    storeReasoningData @ $reasoningStreamID;
-                    <| "ContentChunk" -> closeReasoningStream[ ] |>,
-                    Nothing
-                ];
+    With[ { close = If[ StringQ @ $reasoningStreamID, <| "ContentChunk" -> closeReasoningStream @ settings |>, Nothing ] },
         (* Reasoning that comes after this output can't have started before it: *)
         $reasoningStart = AbsoluteTime[ ];
         { close, chunk }
@@ -291,9 +318,24 @@ convertReasoningChunk // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*openReasoningStream*)
+openReasoningStream // beginDefinition;
+openReasoningStream[ ] := openSummaryTag[ $reasoningStreamID = newReasoningID[ ] ];
+openReasoningStream // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*closeReasoningStream*)
 closeReasoningStream // beginDefinition;
-closeReasoningStream[ ] := ($reasoningStreamID = None; "\n</think>\n");
+
+closeReasoningStream[ settings_Association ] := (
+    storeReasoningData[ settings, $reasoningStreamID, $reasoningItems ];
+    $reasoningStreamID = None;
+    $reasoningItems    = { };
+    $reasoningStreamed = False;
+    "\n</think>\n"
+);
+
 closeReasoningStream // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -301,19 +343,17 @@ closeReasoningStream // endDefinition;
 (*reasoningPartString*)
 reasoningPartString // beginDefinition;
 
-(* The summary for this item has already been streamed, so this just needs to store its data and close the tag: *)
-reasoningPartString[ settings_, part: KeyValuePattern[ "Type" -> "Reasoning" ] ] /; StringQ @ $reasoningStreamID := (
-    storeReasoningData[ settings, $reasoningStreamID, part ];
-    closeReasoningStream[ ]
-);
-
-(* Nothing was streamed for this item (e.g. an empty summary), so the complete summary string is created here: *)
+(* A reasoning item is complete. Its summary has usually been streamed already, but it's added here if not: *)
 reasoningPartString[ settings_, part: KeyValuePattern[ "Type" -> "Reasoning" ] ] :=
-    With[ { id = newReasoningID[ ], summary = Replace[ Lookup[ part, "Data" ], Except[ _String ] -> "" ] },
-        If[ ByteArrayQ @ Lookup[ part, "Signature" ] || StringTrim @ summary =!= "",
-            storeReasoningData[ settings, id, part ];
-            summaryString[ id, summary ],
-            ""
+    Module[ { summary, text },
+        summary = If[ TrueQ @ $reasoningStreamed, "", StringTrim @ Replace[ Lookup[ part, "Data" ], Except[ _String ] -> "" ] ];
+        $reasoningStreamed = False;
+        If[ ByteArrayQ @ Lookup[ part, "Signature" ], AppendTo[ $reasoningItems, KeyTake[ part, { "Signature", "CallID" } ] ] ];
+        text = Which[ summary === "", "", StringQ @ $reasoningStreamID, "\n\n" <> summary, True, summary ];
+        (* An item without a summary still needs a think tag to hold its signature: *)
+        If[ ! StringQ @ $reasoningStreamID && (text =!= "" || $reasoningItems =!= { }),
+            openReasoningStream[ ] <> text,
+            text
         ]
     ];
 
@@ -332,11 +372,13 @@ convertReasoningContent // beginDefinition;
 
 convertReasoningContent[ settings_Association, content_List ] := (
     resetReasoningStream[ ];
-    Replace[
-        content,
-        part: KeyValuePattern[ "Type" -> "Reasoning" ] :>
-            <| "Type" -> "Text", "Data" -> reasoningPartString[ settings, part ] |>,
-        { 1 }
+    Flatten[
+        Replace[
+            Split[ content, reasoningPartQ[ #1 ] && reasoningPartQ[ #2 ] & ],
+            parts: { __? reasoningPartQ } :> reasoningContentPart[ settings, parts ],
+            { 1 }
+        ],
+        1
     ]
 );
 
@@ -344,6 +386,31 @@ convertReasoningContent[ settings_Association, content_ ] :=
     content;
 
 convertReasoningContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningContentPart*)
+
+(* Consecutive reasoning items are combined into a single summary: *)
+reasoningContentPart // beginDefinition;
+
+reasoningContentPart[ settings_, parts_List ] :=
+    With[ { text = StringJoin[ reasoningPartString[ settings, # ] & /@ parts ] },
+        If[ StringQ @ $reasoningStreamID,
+            { <| "Type" -> "Text", "Data" -> text <> closeReasoningStream @ settings |> },
+            { }
+        ]
+    ];
+
+reasoningContentPart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningPartQ*)
+reasoningPartQ // beginDefinition;
+reasoningPartQ[ KeyValuePattern[ "Type" -> "Reasoning" ] ] := True;
+reasoningPartQ[ _ ] := False;
+reasoningPartQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -390,7 +457,7 @@ convertReasoningMessageContent[ service_, content_String ] /; StringFreeQ[ conte
 
 convertReasoningMessageContent[ service_, content_String ] :=
     Module[ { parts },
-        parts = splitReasoningSummaries[ service, content ];
+        parts = Flatten @ splitReasoningSummaries[ service, content ];
         If[ FreeQ[ parts, KeyValuePattern[ "Type" -> "Reasoning" ] ],
             StringTrim @ StringJoin @ Cases[ parts, _String ],
             Replace[
@@ -445,14 +512,41 @@ reasoningMessagePart // beginDefinition;
 reasoningMessagePart[ service_String, KeyValuePattern[ "id" -> id_String ] ] :=
     reasoningMessagePart[ service, Lookup[ $reasoningData, id ] ];
 
-(* Only the signature is sent, and only to the service that created it: *)
-reasoningMessagePart[ service_String, KeyValuePattern @ { "Signature" -> signature_? ByteArrayQ, "Service" -> service_ } ] :=
-    <| "Type" -> "Reasoning", "Signature" -> signature |>;
+(* Only the signatures are sent, and only to the service that created them: *)
+reasoningMessagePart[ service_String, data: KeyValuePattern @ { "Signature" -> signature_, "Service" -> service_ } ] :=
+    reasoningInputItems[ signature, Lookup[ data, "CallID", None ] ];
 
 reasoningMessagePart[ _, _ ] :=
     Nothing;
 
 reasoningMessagePart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningInputItems*)
+
+(* Recreates the reasoning items that a summary was created from: *)
+reasoningInputItems // beginDefinition;
+
+reasoningInputItems[ signature_? ByteArrayQ, id_ ] :=
+    { reasoningInputItem[ signature, id ] };
+
+reasoningInputItems[ signatures: { __? ByteArrayQ }, ids: { __String } ] /; Length @ signatures === Length @ ids :=
+    MapThread[ reasoningInputItem, { signatures, ids } ];
+
+reasoningInputItems[ signatures: { __? ByteArrayQ }, _ ] :=
+    reasoningInputItem[ #, None ] & /@ signatures;
+
+reasoningInputItems[ _, _ ] :=
+    { };
+
+reasoningInputItems // endDefinition;
+
+
+reasoningInputItem // beginDefinition;
+reasoningInputItem[ signature_, id_String ] := <| "Type" -> "Reasoning", "Signature" -> signature, "CallID" -> id |>;
+reasoningInputItem[ signature_, _ ] := <| "Type" -> "Reasoning", "Signature" -> signature |>;
+reasoningInputItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

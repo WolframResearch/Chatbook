@@ -204,7 +204,7 @@ VerificationTest[
             <|
                 "Role"    -> "Assistant",
                 "Content" -> {
-                    <| "Type" -> "Reasoning", "Signature" -> $signature |>,
+                    <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
                     <| "Type" -> "Text", "Data" -> "The answer is 391." |>
                 }
             |>
@@ -437,7 +437,7 @@ VerificationTest[
         <|
             "Role"    -> "Assistant",
             "Content" -> {
-                <| "Type" -> "Reasoning", "Signature" -> $signature |>,
+                <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
                 <| "Type" -> "Text", "Data" -> "The answer is 391." |>
             }
         |>
@@ -557,7 +557,7 @@ VerificationTest[
             Wolfram`Chatbook`Reasoning`Private`$reasoningStreamID
         }
     ],
-    { True, { <| "Duration" -> _Real? NonNegative |> }, None },
+    { True, { KeyValuePattern[ "Duration" -> _Real? NonNegative ]? (FreeQ[ #, "Signature" ] &) }, None },
     SameTest -> MatchQ,
     TestID   -> "Stream-Interrupted-Summary@@Tests/Reasoning.wlt:545,1-563,2"
 ]
@@ -596,8 +596,8 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Durations*)
 
-(* The time for the first reasoning item starts with the first chunk of the response, and the time for later items
-   starts after the output that precedes them: *)
+(* The time for the first summary starts with the first chunk of the response, and the time for later summaries starts
+   after the output that precedes them. Each ends when some other output arrives: *)
 VerificationTest[
     withReasoningData @ Module[ { part, string, durations },
         part = <| "Type" -> "Reasoning", "Signature" -> $signature |>;
@@ -607,20 +607,22 @@ VerificationTest[
             streamChunks[ $openAISettings, { { <| "ReasoningChunk" -> "First", "Type" -> "Reasoning" |> } } ],
             Pause[ 0.3 ];
             streamChunks[ $openAISettings, { { <| "ResponseContent" -> { part } |> } } ],
-            Pause[ 0.5 ];
+            Pause[ 0.3 ];
             streamChunks[ $openAISettings, { { <| "ContentChunk" -> "Let me check." |> } } ],
             Pause[ 0.2 ];
             streamChunks[ $openAISettings, { { <| "ReasoningChunk" -> "Second", "Type" -> "Reasoning" |> } } ],
             Pause[ 0.2 ];
-            streamChunks[ $openAISettings, { { <| "ResponseContent" -> { part } |> } } ]
+            streamChunks[ $openAISettings, { { <| "ResponseContent" -> { part } |> } } ],
+            Pause[ 0.1 ];
+            streamChunks[ $openAISettings, { { <| "FinishReason" -> "completed" |> } } ]
         };
         durations = Wolfram`Chatbook`Common`$reasoningData[ #, "Duration" ] & /@
             Wolfram`Chatbook`Common`reasoningIDs @ string;
-        { Length @ durations, 0.5 < durations[[ 1 ]] < 1.0, 0.3 < durations[[ 2 ]] < 0.7 }
+        { Length @ durations, 0.8 < durations[[ 1 ]] < 1.3, 0.4 < durations[[ 2 ]] < 0.8 }
     ],
     { 2, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Stream-Reasoning-Durations@@Tests/Reasoning.wlt:601,1-624,2"
+    TestID   -> "Stream-Reasoning-Durations@@Tests/Reasoning.wlt:601,1-626,2"
 ]
 
 (* The timer restarts for each request, e.g. when tool results are sent: *)
@@ -634,13 +636,152 @@ VerificationTest[
         string = StringJoin @ {
             streamChunks[ $openAISettings, { { <| "ResponseID" -> "resp_2", "Model" -> "gpt-5.4" |> } } ],
             Pause[ 0.2 ];
-            streamChunks[ $openAISettings, { { <| "ResponseContent" -> { part } |> } } ]
+            streamChunks[ $openAISettings, { { <| "ResponseContent" -> { part } |>, <| "ContentChunk" -> "391" |> } } ]
         };
         Wolfram`Chatbook`Common`$reasoningData[ First @ Wolfram`Chatbook`Common`reasoningIDs @ string, "Duration" ]
     ],
     _Real? (0.1 < # < 0.5 &),
     SameTest -> MatchQ,
-    TestID   -> "Stream-Reasoning-Duration-Reset@@Tests/Reasoning.wlt:627,1-644,2"
+    TestID   -> "Stream-Reasoning-Duration-Reset@@Tests/Reasoning.wlt:629,1-646,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Consecutive Reasoning Items*)
+
+(* A response can contain several reasoning items in a row (some without summaries), which are shown as one summary: *)
+VerificationTest[
+    withReasoningData @ Module[ { sigs, string, ids },
+        sigs = ByteArray /@ { { 1 }, { 2 }, { 3 } };
+        string = streamChunks[
+            $openAISettings,
+            {
+                { <| "ResponseID" -> "resp_1", "Model" -> "gpt-5.4" |> },
+                { <| "ResponseContent" -> { <| "Type" -> "Reasoning", "Signature" -> sigs[[ 1 ]], "CallID" -> "rs_1" |> } |> },
+                { <| "ReasoningChunk" -> "\n\n", "Type" -> "Reasoning" |>, <| "ReasoningChunk" -> "Planning", "Type" -> "Reasoning" |> },
+                {
+                    <|
+                        "ResponseContent" -> {
+                            <| "Type" -> "Reasoning", "Data" -> "Planning", "Signature" -> sigs[[ 2 ]], "CallID" -> "rs_2" |>
+                        }
+                    |>
+                },
+                { <| "ReasoningChunk" -> "\n\n", "Type" -> "Reasoning" |>, <| "ReasoningChunk" -> "Checking", "Type" -> "Reasoning" |> },
+                {
+                    <|
+                        "ResponseContent" -> {
+                            <| "Type" -> "Reasoning", "Data" -> "Checking", "Signature" -> sigs[[ 3 ]], "CallID" -> "rs_3" |>
+                        }
+                    |>
+                },
+                { <| "ContentChunk" -> "Done" |> }
+            }
+        ];
+        ids = Wolfram`Chatbook`Common`reasoningIDs @ string;
+        {
+            StringMatchQ[ string, $summaryPattern ~~ WhitespaceCharacter... ~~ "Planning\n\nChecking\n</think>\nDone" ],
+            Length @ ids,
+            KeyTake[ Wolfram`Chatbook`Common`$reasoningData[ First @ ids ], { "Signature", "CallID" } ],
+            Wolfram`Chatbook`Common`convertReasoningMessages[
+                $openAISettings,
+                { <| "Role" -> "Assistant", "Content" -> string |> }
+            ]
+        }
+    ],
+    {
+        True,
+        1,
+        <| "Signature" -> ByteArray /@ { { 1 }, { 2 }, { 3 } }, "CallID" -> { "rs_1", "rs_2", "rs_3" } |>,
+        {
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> {
+                    <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 1 }, "CallID" -> "rs_1" |>,
+                    <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 2 }, "CallID" -> "rs_2" |>,
+                    <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 3 }, "CallID" -> "rs_3" |>,
+                    <| "Type" -> "Text", "Data" -> "Done" |>
+                }
+            |>
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Stream-Consecutive-Reasoning-Items@@Tests/Reasoning.wlt:653,1-709,2"
+]
+
+(* Consecutive reasoning items without any summaries are also combined: *)
+VerificationTest[
+    withReasoningData @ Module[ { string },
+        string = streamChunks[
+            $openAISettings,
+            {
+                {
+                    <| "ResponseContent" -> { <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 1 } |> } |>,
+                    <| "ResponseContent" -> { <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 2 } |> } |>
+                },
+                { <| "ToolRequestsChunk" -> { } |> }
+            }
+        ];
+        {
+            string,
+            Values @ Wolfram`Chatbook`Common`$reasoningData[[ All, "Signature" ]]
+        }
+    ],
+    {
+        s_String /; StringMatchQ[ s, $summaryPattern ~~ "\n</think>\n" ],
+        { ByteArray /@ { { 1 }, { 2 } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Stream-Consecutive-Reasoning-Items-No-Summaries@@Tests/Reasoning.wlt:712,1-735,2"
+]
+
+VerificationTest[
+    withReasoningData @ Module[ { content },
+        content = Wolfram`Chatbook`Common`convertReasoningContent[
+            $openAISettings,
+            {
+                <| "Type" -> "Reasoning", "Data" -> "First", "Signature" -> ByteArray @ { 1 }, "CallID" -> "rs_1" |>,
+                <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 2 }, "CallID" -> "rs_2" |>,
+                <| "Type" -> "Reasoning", "Data" -> "Second", "Signature" -> ByteArray @ { 3 }, "CallID" -> "rs_3" |>,
+                <| "Type" -> "Text", "Data" -> "391" |>
+            }
+        ];
+        {
+            content,
+            Values @ Wolfram`Chatbook`Common`$reasoningData[[ All, { "Signature", "CallID" } ]]
+        }
+    ],
+    {
+        {
+            <| "Type" -> "Text", "Data" -> s_String /; StringMatchQ[ s, $summaryPattern ~~ "First\n\nSecond\n</think>\n" ] |>,
+            <| "Type" -> "Text", "Data" -> "391" |>
+        },
+        { <| "Signature" -> ByteArray /@ { { 1 }, { 2 }, { 3 } }, "CallID" -> { "rs_1", "rs_2", "rs_3" } |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Synchronous-Response-Consecutive-Reasoning-Items@@Tests/Reasoning.wlt:737,1-762,2"
+]
+
+(* Call IDs are only included when there's one for every signature: *)
+VerificationTest[
+    withReasoningData[
+        Wolfram`Chatbook`Common`convertReasoningMessages[
+            $openAISettings,
+            { <| "Role" -> "Assistant", "Content" -> "<think type='summary' id='abc'>\nThoughts\n</think>\n391" |> }
+        ],
+        <| "abc" -> <| "Signature" -> ByteArray /@ { { 1 }, { 2 } }, "Service" -> "OpenAI" |> |>
+    ],
+    {
+        <|
+            "Role"    -> "Assistant",
+            "Content" -> {
+                <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 1 } |>,
+                <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 2 } |>,
+                <| "Type" -> "Text", "Data" -> "391" |>
+            }
+        |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Messages-Multiple-Signatures-Without-Call-IDs@@Tests/Reasoning.wlt:765,1-785,2"
 ]
 
 VerificationTest[
@@ -662,7 +803,7 @@ VerificationTest[
     ],
     { True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "Synchronous-Response-Content@@Tests/Reasoning.wlt:646,1-666,2"
+    TestID   -> "Synchronous-Response-Content@@Tests/Reasoning.wlt:787,1-807,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -677,7 +818,7 @@ VerificationTest[
     },
     { __Association },
     SameTest -> MatchQ,
-    TestID   -> "Messages-Definition@@Tests/Reasoning.wlt:671,1-681,2"
+    TestID   -> "Messages-Definition@@Tests/Reasoning.wlt:812,1-822,2"
 ]
 
 VerificationTest[
@@ -688,14 +829,14 @@ VerificationTest[
         <|
             "Role"    -> "Assistant",
             "Content" -> {
-                <| "Type" -> "Reasoning", "Signature" -> $signature |>,
+                <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
                 <| "Type" -> "Text", "Data" -> "391" |>
             }
         |>,
         $messages[[ 4 ]]
     },
     SameTest -> MatchQ,
-    TestID   -> "Messages-Responses-Sends-Signature@@Tests/Reasoning.wlt:683,1-699,2"
+    TestID   -> "Messages-Responses-Sends-Signature@@Tests/Reasoning.wlt:824,1-840,2"
 ]
 
 VerificationTest[
@@ -708,7 +849,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "Messages-Responses-No-Summary-Text@@Tests/Reasoning.wlt:701,1-712,2"
+    TestID   -> "Messages-Responses-No-Summary-Text@@Tests/Reasoning.wlt:842,1-853,2"
 ]
 
 VerificationTest[
@@ -721,7 +862,7 @@ VerificationTest[
     ],
     <| "Role" -> "Assistant", "Content" -> "391" |>,
     SameTest -> MatchQ,
-    TestID   -> "Messages-ChatCompletions-Removes-Summary@@Tests/Reasoning.wlt:714,1-725,2"
+    TestID   -> "Messages-ChatCompletions-Removes-Summary@@Tests/Reasoning.wlt:855,1-866,2"
 ]
 
 (* Signatures can only be used with the service that created them: *)
@@ -732,14 +873,14 @@ VerificationTest[
     ],
     <| "Role" -> "Assistant", "Content" -> "391" |>,
     SameTest -> MatchQ,
-    TestID   -> "Messages-Responses-Different-Service@@Tests/Reasoning.wlt:728,1-736,2"
+    TestID   -> "Messages-Responses-Different-Service@@Tests/Reasoning.wlt:869,1-877,2"
 ]
 
 VerificationTest[
     withReasoningData[ Wolfram`Chatbook`Common`convertReasoningMessages[ $openAISettings, $messages ][[ 3 ]] ],
     <| "Role" -> "Assistant", "Content" -> "391" |>,
     SameTest -> MatchQ,
-    TestID   -> "Messages-Responses-Unknown-ID@@Tests/Reasoning.wlt:738,1-743,2"
+    TestID   -> "Messages-Responses-Unknown-ID@@Tests/Reasoning.wlt:879,1-884,2"
 ]
 
 VerificationTest[
@@ -758,7 +899,7 @@ VerificationTest[
         <| "Role" -> "Assistant", "Content" -> "<think>\nLiteral thoughts\n</think>\nAnswer" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Messages-Other-Content-Unchanged@@Tests/Reasoning.wlt:745,1-762,2"
+    TestID   -> "Messages-Other-Content-Unchanged@@Tests/Reasoning.wlt:886,1-903,2"
 ]
 
 VerificationTest[
@@ -784,7 +925,7 @@ VerificationTest[
         <|
             "Role"    -> "Assistant",
             "Content" -> {
-                <| "Type" -> "Reasoning", "Signature" -> $signature |>,
+                <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
                 <| "Type" -> "Text", "Data" -> "Let me check." |>,
                 <| "Type" -> "Reasoning", "Signature" -> ByteArray @ { 1, 2, 3 } |>,
                 <| "Type" -> "Text", "Data" -> "391" |>
@@ -792,7 +933,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Messages-Multiple-Summaries@@Tests/Reasoning.wlt:764,1-796,2"
+    TestID   -> "Messages-Multiple-Summaries@@Tests/Reasoning.wlt:905,1-937,2"
 ]
 
 VerificationTest[
@@ -812,12 +953,12 @@ VerificationTest[
     {
         <|
             "Role"         -> "Assistant",
-            "Content"      -> { <| "Type" -> "Reasoning", "Signature" -> $signature |> },
+            "Content"      -> { <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |> },
             "ToolRequests" -> { "request" }
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Messages-Tool-Request@@Tests/Reasoning.wlt:798,1-821,2"
+    TestID   -> "Messages-Tool-Request@@Tests/Reasoning.wlt:939,1-962,2"
 ]
 
 VerificationTest[
@@ -839,11 +980,11 @@ VerificationTest[
     {
         <|
             "Role"    -> "Assistant",
-            "Content" -> { <| "Type" -> "Reasoning", "Signature" -> $signature |>, <| "Type" -> "Text", "Data" -> "391" |> }
+            "Content" -> { <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>, <| "Type" -> "Text", "Data" -> "391" |> }
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Messages-List-Content@@Tests/Reasoning.wlt:823,1-847,2"
+    TestID   -> "Messages-List-Content@@Tests/Reasoning.wlt:964,1-988,2"
 ]
 
 (* Submitted messages are used for estimating token usage: *)
@@ -854,7 +995,7 @@ VerificationTest[
     ],
     { "The", "answer", "is", "391." },
     SameTest -> MatchQ,
-    TestID   -> "Tokenizer-Ignores-Reasoning@@Tests/Reasoning.wlt:850,1-858,2"
+    TestID   -> "Tokenizer-Ignores-Reasoning@@Tests/Reasoning.wlt:991,1-999,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -869,7 +1010,7 @@ VerificationTest[
     },
     { "Responses", "ChatCompletions", "ChatCompletions", "ChatCompletions" },
     SameTest -> MatchQ,
-    TestID   -> "RequestMethod@@Tests/Reasoning.wlt:863,1-873,2"
+    TestID   -> "RequestMethod@@Tests/Reasoning.wlt:1004,1-1014,2"
 ]
 
 VerificationTest[
@@ -877,7 +1018,7 @@ VerificationTest[
     "ChatCompletions",
     { Chatbook::InvalidRequestMethod },
     SameTest -> MatchQ,
-    TestID   -> "RequestMethod-Invalid@@Tests/Reasoning.wlt:875,1-881,2"
+    TestID   -> "RequestMethod-Invalid@@Tests/Reasoning.wlt:1016,1-1022,2"
 ]
 
 VerificationTest[
@@ -887,7 +1028,7 @@ VerificationTest[
     Failure[ "Chatbook::ResponsesAPIUnavailable", _ ],
     { Chatbook::ResponsesAPIUnavailable },
     SameTest -> MatchQ,
-    TestID   -> "RequestMethod-Unavailable@@Tests/Reasoning.wlt:883,1-891,2"
+    TestID   -> "RequestMethod-Unavailable@@Tests/Reasoning.wlt:1024,1-1032,2"
 ]
 
 VerificationTest[
@@ -906,7 +1047,7 @@ VerificationTest[
         <| "RequestMethod" -> "ChatCompletions", "Reasoning" -> "High" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "RequestReasoningSummaries@@Tests/Reasoning.wlt:893,1-910,2"
+    TestID   -> "RequestReasoningSummaries@@Tests/Reasoning.wlt:1034,1-1051,2"
 ]
 
 VerificationTest[
@@ -931,7 +1072,7 @@ VerificationTest[
     ],
     { "Responses", "Responses", "Responses", Sequence @@ ConstantArray[ "ChatCompletions", 6 ] },
     SameTest -> MatchQ,
-    TestID   -> "ResolveAutoSetting-RequestMethod@@Tests/Reasoning.wlt:912,1-935,2"
+    TestID   -> "ResolveAutoSetting-RequestMethod@@Tests/Reasoning.wlt:1053,1-1076,2"
 ]
 
 VerificationTest[
@@ -943,14 +1084,14 @@ VerificationTest[
     ],
     "ChatCompletions",
     SameTest -> MatchQ,
-    TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable@@Tests/Reasoning.wlt:937,1-947,2"
+    TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable@@Tests/Reasoning.wlt:1078,1-1088,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Settings`Private`autoStopTokens @ <| "RequestMethod" -> "Responses", "ToolMethod" -> "Simple" |>,
     Missing[ "NotSupported" ],
     SameTest -> MatchQ,
-    TestID   -> "AutoStopTokens-Responses@@Tests/Reasoning.wlt:949,1-954,2"
+    TestID   -> "AutoStopTokens-Responses@@Tests/Reasoning.wlt:1090,1-1095,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -963,21 +1104,21 @@ VerificationTest[
     ],
     $storedReasoning,
     SameTest -> MatchQ,
-    TestID   -> "GetAttachments-Reasoning@@Tests/Reasoning.wlt:959,1-967,2"
+    TestID   -> "GetAttachments-Reasoning@@Tests/Reasoning.wlt:1100,1-1108,2"
 ]
 
 VerificationTest[
     withReasoningData[ KeyTake[ GetAttachments[ $messages ], "Reasoning" ], $storedReasoning ],
     <| "Reasoning" -> $storedReasoning |>,
     SameTest -> MatchQ,
-    TestID   -> "GetAttachments-All-Includes-Reasoning@@Tests/Reasoning.wlt:969,1-974,2"
+    TestID   -> "GetAttachments-All-Includes-Reasoning@@Tests/Reasoning.wlt:1110,1-1115,2"
 ]
 
 VerificationTest[
     withReasoningData[ LoadAttachments[ "Reasoning", $storedReasoning ]; Wolfram`Chatbook`Common`$reasoningData ],
     $storedReasoning,
     SameTest -> MatchQ,
-    TestID   -> "LoadAttachments-Reasoning@@Tests/Reasoning.wlt:976,1-981,2"
+    TestID   -> "LoadAttachments-Reasoning@@Tests/Reasoning.wlt:1117,1-1122,2"
 ]
 
 VerificationTest[
@@ -1002,7 +1143,7 @@ VerificationTest[
     ],
     { _Success, $storedReasoning, $storedReasoning },
     SameTest -> MatchQ,
-    TestID   -> "SaveChat-LoadChat-Reasoning@@Tests/Reasoning.wlt:983,1-1006,2"
+    TestID   -> "SaveChat-LoadChat-Reasoning@@Tests/Reasoning.wlt:1124,1-1147,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
