@@ -1927,7 +1927,7 @@ boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
 (* Reasoning Text *)
-boxToString[ TemplateBox[ { thoughts_, _, meta_Association }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
+boxToString[ TemplateBox[ { thoughts_, _, meta_Association }, "ThinkingOpener"|"ThoughtsOpener"|"EmptyThoughts", ___ ] ] :=
     With[ { string = thoughtsToString @ thoughts },
         reasoningBoxToString[ string, meta ] /; StringQ @ string
     ];

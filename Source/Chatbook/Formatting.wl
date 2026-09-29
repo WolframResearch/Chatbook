@@ -385,14 +385,18 @@ makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
 makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
     makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
 
-makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] := {
-    Cell[
-        BoxData @ templateBox[ { formatThoughts @ thoughts, ToBoxes @ thoughtsLabel @ meta, meta }, "ThoughtsOpener" ],
-        "ThoughtsOpener",
-        Background -> None
-    ],
-    "\n"
-};
+makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
+    Module[ { label, box },
+        label = ToBoxes @ thoughtsLabel @ meta;
+        box = If[ StringTrim @ thoughts === "",
+                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+              ];
+        {
+            Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],
+            "\n"
+        }
+    ];
 
 makeResultCell0[ speechCell[ speech_String ] ] :=
     formatSpeechInput @ speech;
