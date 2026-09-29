@@ -876,39 +876,39 @@ VerificationTest[
 
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
-        Table[
-            Wolfram`Chatbook`Settings`Private`$modelAutoSettings[ service, family, "RequestMethod" ],
-            { service, { "OpenAI", "LLMKit" } },
-            { family, { "GPT5", "GPT51", "GPT52", "GPT53", "GPT53Chat", "GPT54Plus" } }
-        ]
+        Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ #1, "RequestMethod" ] & /@ {
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5-responses-test" |> |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4-responses-test" |> |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.6-responses-test" |> |>,
+            (* Older OpenAI models: *)
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-responses-test" |> |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-responses-test" |> |>,
+            (* LLMKit does not support the responses endpoint yet: *)
+            <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-5.4-responses-test" |> |>,
+            <|
+                "Model"          -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4-responses-test" |>,
+                "Authentication" -> "LLMKit"
+            |>,
+            (* Other services: *)
+            <| "Model" -> <| "Service" -> "AzureOpenAI", "Name" -> "gpt-5.4-responses-test" |> |>,
+            <| "Model" -> <| "Service" -> "Anthropic", "Name" -> "claude-opus-4-7-responses-test" |> |>
+        }
     ],
-    ConstantArray[ "Responses", { 2, 6 } ],
+    { "Responses", "Responses", "Responses", Sequence @@ ConstantArray[ "ChatCompletions", 6 ] },
     SameTest -> MatchQ,
-    TestID   -> "ModelAutoSettings-Responses@@Tests/Reasoning.wlt:877,1-888,2"
+    TestID   -> "ResolveAutoSetting-RequestMethod@@Tests/Reasoning.wlt:877,1-900,2"
 ]
 
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
-        Wolfram`Chatbook`Settings`Private`$modelAutoSettings[ "OpenAI", "GPT54Plus", "RequestMethod" ]
+        Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4-responses-test" |> |>,
+            "RequestMethod"
+        ]
     ],
     "ChatCompletions",
     SameTest -> MatchQ,
-    TestID   -> "ModelAutoSettings-Responses-Unavailable@@Tests/Reasoning.wlt:890,1-897,2"
-]
-
-VerificationTest[
-    Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
-        Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ <| "Model" -> #1 |>, "RequestMethod" ] & /@ {
-            <| "Service" -> "OpenAI", "Name" -> "gpt-5.4-responses-test" |>,
-            <| "Service" -> "LLMKit", "Name" -> "gpt-5.6-responses-test" |>,
-            <| "Service" -> "OpenAI", "Name" -> "gpt-4.1-responses-test" |>,
-            <| "Service" -> "AzureOpenAI", "Name" -> "gpt-5.4-responses-test" |>,
-            <| "Service" -> "Anthropic", "Name" -> "claude-opus-4-7-responses-test" |>
-        }
-    ],
-    { "Responses", "Responses", "ChatCompletions", "ChatCompletions", "ChatCompletions" },
-    SameTest -> MatchQ,
-    TestID   -> "ResolveAutoSetting-RequestMethod@@Tests/Reasoning.wlt:899,1-912,2"
+    TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable@@Tests/Reasoning.wlt:902,1-912,2"
 ]
 
 VerificationTest[

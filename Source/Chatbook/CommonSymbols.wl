@@ -310,6 +310,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `openerView;
 `openPreferencesPage;
 `optionsAssociation;
+`pacletVersionAtLeastQ;
 `parentCell;
 `parentNotebook;
 `parseInlineReferences;

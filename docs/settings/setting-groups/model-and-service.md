@@ -74,7 +74,7 @@ Selects the API endpoint used for chat requests.
 
 - **`"ChatCompletions"`**: Requests use `LLMServices`ChatSubmit` (or `LLMServices`Chat` when `"ForceSynchronous"` is `True`).
 - **`"Responses"`**: Requests use `LLMServices`ResponseSubmit` (or `LLMServices`Response`). This endpoint returns reasoning summaries along with an encrypted copy of the model's reasoning (a signature), which is sent back to the model in later requests. Requires `Wolfram/LLMFunctions` 2.4.0+ and `LLMConnections` 1.1.0+; if they are not installed, an explicit `"Responses"` setting fails with a `Chatbook::ResponsesAPIUnavailable` message.
-- **`Automatic`**: Resolved from `$modelAutoSettings`. GPT-5 and later models (`"GPT5"`, `"GPT51"`, `"GPT52"`, `"GPT53"`, `"GPT53Chat"`, and `"GPT54Plus"` families) resolve to `"Responses"` for the `"OpenAI"` and `"LLMKit"` services when the required paclets are available (`$responsesAPIAvailable`). Everything else resolves to `"ChatCompletions"`.
+- **`Automatic`**: Resolved by `chooseRequestMethod` (`Settings.wl`). Models with `"EnableResponses" -> True` in `$modelAutoSettings` (set for the `"GPT5"` family and inherited by later GPT models) resolve to `"Responses"` for the `"OpenAI"` service when the required paclets are available (`$responsesAPIAvailable`). Everything else resolves to `"ChatCompletions"`, including LLMKit (either as the model's service or through `"Authentication" -> "LLMKit"`), since its server does not support the responses endpoint yet.
 
 Invalid values produce a `Chatbook::InvalidRequestMethod` message and fall back to `"ChatCompletions"`.
 
@@ -90,7 +90,7 @@ Invalid values produce a `Chatbook::InvalidRequestMethod` message and fall back 
 
 ### Dependencies
 
-Depends on `"Model"`. `"StopTokens"` depends on this setting.
+Depends on `"Authentication"` and `"Model"`. `"StopTokens"` depends on this setting.
 
 ## `"EnableLLMServices"`
 
