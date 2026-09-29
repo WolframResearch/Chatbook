@@ -85,8 +85,9 @@ messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
 
         delimiter = ConfirmMatch[ OptionValue[ "MessageDelimiter" ], _String, "Delimiter" ];
 
+        (* Plain text is wanted here, so reasoning parts are dropped rather than preserved: *)
         reverted = ConfirmMatch[
-            revertMultimodalContent @ messages,
+            revertMultimodalContent[ messages, "ReasoningContent" -> "Drop" ],
             { KeyValuePattern[ "Content" -> _String ].. },
             "Reverted"
         ];

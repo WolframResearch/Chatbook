@@ -594,7 +594,7 @@ getAttachmentsForSaving // endDefinition;
 prepareMessagesForSaving // beginDefinition;
 
 prepareMessagesForSaving[ messages_, settings_ ] :=
-    revertMultimodalContentPreservingReasoning @
+    revertMultimodalContent @
         If[ TrueQ @ settings[ "SaveSystemMessage" ],
             messages,
             dropSystemMessage @ dropTemporaryMessages @ messages

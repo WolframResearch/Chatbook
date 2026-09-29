@@ -344,7 +344,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `responsesEndpointQ;
 `responsesServiceQ;
 `revertMultimodalContent;
-`revertMultimodalContentPreservingReasoning;
 `rootEvaluationCell;
 `sandboxEvaluate;
 `sandboxFormatter;
