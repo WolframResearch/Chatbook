@@ -195,13 +195,63 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 
 ### Model-Specific Overrides
 
-- **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
-- **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
-- No other model families define a `"Reasoning"` override.
+Several families override this setting, and they do not all spell "off" the same way.
+
+| Family | Resolved value |
+| ------ | -------------- |
+| GPT-5 | `"Minimal"` if `$gpt5Reasoning`, otherwise `Missing["NotSupported"]` |
+| GPT-5.1 (inherited by GPT-5.2 and GPT-5.3) | `"None"` under the same condition |
+| GPT-5.3 Chat | `"Medium"` under the same condition |
+| GPT-5.4+ | `"Medium"` if `$responsesEndpointAvailable`, otherwise `Missing["NotSupported"]` |
+| xAI Grok-3 | `False` |
+| xAI Grok-4 (inherited by Grok-4.2) | `Missing["NotSupported"]` |
+| OpenRouter DeepSeek Flash | `<\| "effort" -> "none" \|>` |
+| OpenRouter Kimi K2.5 | `<\| "effort" -> "none" \|>` |
+
+Two different paclet version floors are in play, and they are not interchangeable. `$gpt5Reasoning` requires `Wolfram/LLMFunctions` newer than `2.2.4`. The GPT-5.4+ family instead gates on `$responsesEndpointAvailable`, which requires `2.4` or newer, because those models request reasoning together with tools and that combination is only accepted on the Responses endpoint — see [`"Endpoint"`](model-and-service.md#endpoint).
+
+### Supported Effort Levels
+
+The GPT-5 families also declare which levels they accept, through a `"ReasoningEfforts"` entry in `$modelAutoSettings`. This is a model auto setting only; it is deliberately not a chat setting, so it is not settable through `CurrentChatSettings`.
+
+| Family or model | Declared levels |
+| --------------- | --------------- |
+| GPT-5 | `"Minimal"`, `"Low"`, `"Medium"`, `"High"` |
+| GPT-5.1 (inherited by GPT-5.2 and GPT-5.3) | `"None"`, `"Low"`, `"Medium"`, `"High"` |
+| GPT-5.3 Chat | `"Low"`, `"Medium"`, `"High"` |
+| GPT-5.4 and GPT-5.5 | `"None"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"` |
+| GPT-5.6+ — the 5.6 line, and any later 5.x with no class of its own | `"None"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"`, `"Max"` |
+
+The classifier (`chooseModelFamily0`, `Models.wl`) pins gpt-5.4 and gpt-5.5 to `GPT54Plus`, gives the 5.6 line its own family, and aims the forward catch-all at that latest generation, so an unreleased `gpt-5.<digit>` inherits the newest known levels — including `"Max"` — and the endpoint opt-in, rather than a conservative subset; a future generation that ships with less would need an explicit family entry of its own. Every snapshot of the 5.6 line (`sol`, `terra`, `luna`, `cyber`) inherits the `GPT56Plus` declaration without per-model alias lines. A new family must also be added to `$responsesEndpointFamilies` (`SendChat.wl`), which is what opts it into the Responses endpoint; `ModelFamilies-GenerationClasses` and the decision table in `Tests/ResponsesEndpoint.wlt` pin both halves. A delta that belongs to a single model rather than a generation stays on its `BaseID` — `GPT56Cyber` overrides only the context window.
+
+Within a generation that declares its levels, an unsupported request clamps instead of failing: asking for `"Max"` on gpt-5.4 or gpt-5.5 yields `"XHigh"`, where sending `max` verbatim would have produced an HTTP 400. The forward catch-all is the deliberate exception to that safety — it assumes a new `gpt-5.<digit>` is at least as capable as the 5.6 line, so a future model that *drops* `"Max"` would be sent it and rejected until it gets a family of its own. That is the cost of having new models work on arrival; `Scripts/CheckReasoningEfforts.wls` is what turns it back into a caught error.
+
+`resolveReasoningEffort` (`Settings.wl`) validates the setting against that list on the way into the request, rather than during auto-resolution, because only `Automatic`-valued settings reach `resolveAutoSetting0` — a value the user set explicitly never passes through it. The rules:
+
+- A level the family accepts is used as-is, matched case-insensitively.
+- Off — `False`, `None`, `"Off"` or `"None"` — becomes the family's weakest declared level when the family has no `"None"`. It is clamped rather than dropped, because dropping the parameter would fall back to the vendor default, which for GPT-5.x is `medium`; a request to turn reasoning off must not silently become medium effort.
+- Any other recognized level is clamped to the nearest declared level, with ties resolving upward, so `"Minimal"` on a family offering `"None"` and `"Low"` becomes `"Low"` rather than turning reasoning off.
+- A spelling that is not on the `$reasoningEffortScale` (`"None"`, `"Minimal"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"`, `"Max"`) is passed through unchanged, so a typo still reaches the service and still reports an error instead of silently becoming the default. Every level any family declares must also appear on the scale, because `clampReasoningEffort` only considers levels that have an index on it — `ReasoningEfforts-ScaleCoversEveryDeclaredLevel` in `Tests/ResponsesEndpoint.wlt` enforces that.
+- A family with no `"ReasoningEfforts"` entry — every service other than the GPT-5 families — is left exactly as it was.
+
+The list is only ever read to validate a value, never to supply one, so it cannot switch reasoning on for a family whose resolved value is off.
+
+#### Re-verifying the levels
+
+The lists above are provider facts and go stale when OpenAI ships a model. `Scripts/CheckReasoningEfforts.wls` re-derives them from the API and diffs them against the table, and should be run whenever a GPT-5.x model is added.
+
+Note that it does *not* probe with a nonsense value. A value the request schema rejects outright, such as `"__probe__"`, produces the same model-independent union for every model — `none, minimal, low, medium, high, xhigh, max` — which is not the per-model answer and will silently overstate what a model accepts. The script instead sends a level that is schema-valid but that the model is likely to lack (`"minimal"` for anything after gpt-5.0), because that rejection names the model and enumerates its own supported values.
 
 ### Implementation
 
 Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLMConfiguration` to the LLM service. `Missing` values are stripped by `DeleteMissing` in `makeLLMConfiguration`, and unsupported parameters are dropped by `dropModelUnsupportedParameters`. Not used in the legacy HTTP request path.
+
+The value that goes on the wire depends on the resolved endpoint, because `makeLLMConfiguration` builds this key through `makeReasoningParameter` (`SendChat.wl`):
+
+- On the **Responses** endpoint the effort level is sent as an association that also requests a summary, for example `<| "effort" -> "medium", "summary" -> "auto" |>`. The summary has to be asked for explicitly: without it the endpoint returns an encrypted reasoning blob and no readable text, and nothing is displayed. A summary is still not guaranteed even when requested — a turn that emits a tool call, or one where the model did little thinking, commonly returns none.
+- On the **chat completions** endpoint the plain effort string is sent unchanged. That path does not accept the association form.
+- An association the user supplied is passed through as they wrote it, except that `"summary"` is merged in when it names no summary of its own. Reasoning that is switched off — an `"enabled" -> False`, or an effort of `"none"` — is never given a summary request.
+
 
 ### Integration Points
 

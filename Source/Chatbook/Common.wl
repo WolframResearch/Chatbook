@@ -213,7 +213,11 @@ $$image    = HoldPattern[ _Image? image2DQ ];
 (* ::Subsection::Closed:: *)
 (*Chat Messages*)
 $$messageRole         = "System"|"Assistant"|"User"|"Tool";
-$$messageContentData  = KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> _ } | $$string | $$graphics;
+$$messageContentData  =
+    KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> _ } |
+    KeyValuePattern[ "Type" -> "Reasoning" ] |
+    $$string |
+    $$graphics;
 $$messageContent      = $$messageContentData | { $$messageContentData... };
 $$chatMessage         = KeyValuePattern @ { "Role" -> $$messageRole, "Content" -> $$messageContent };
 $$chatMessages        = { $$chatMessage... };

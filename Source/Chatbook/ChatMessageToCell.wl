@@ -42,9 +42,35 @@ chatMessagesToCells[ messages_, None|Automatic ] :=
     chatMessagesToCells[ messages, "Default" ];
 
 chatMessagesToCells[ messages_, format_ ] :=
-    chatMessageToCell[ #, format ] & /@ revertMultimodalContent @ mergeToolCallMessages @ messages;
+    chatMessageToCell[ #, format ] & /@ chatMessagesToCellData @ messages;
 
 chatMessagesToCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatMessagesToCellData*)
+chatMessagesToCellData // beginDefinition;
+
+chatMessagesToCellData[ messages_List ] := Map[
+    Function[ message, Replace[ message, as_Association :> chatCellMessage[ as, { as } ] ] ],
+    SequenceReplace[
+        DeleteCases[ messages, _? temporaryMessageQ ],
+        {
+            group: {
+                KeyValuePattern[ "ToolRequest" -> True ],
+                _,
+                msg: KeyValuePattern[ "Role" -> "Assistant" ]
+            } :> chatCellMessage[ msg, group ],
+            group: {
+                KeyValuePattern[ "Metadata" -> KeyValuePattern[ "ToolRequest" -> True ] ],
+                _,
+                msg: KeyValuePattern[ "Role" -> "Assistant" ]
+            } :> chatCellMessage[ msg, group ]
+        }
+    ]
+];
+
+chatMessagesToCellData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -54,8 +80,17 @@ chatMessageToCell // beginDefinition;
 chatMessageToCell[ _? toolMessageQ     , _ ] := Nothing;
 chatMessageToCell[ _? temporaryMessageQ, _ ] := Nothing;
 
+chatMessageToCell[ chatCellMessage[ message_Association, messages_List ], format_ ] :=
+    appendCanonicalMessages[
+        chatMessageToCell[ message[ "Role" ], messageDisplayContent @ message[ "Content" ], format ],
+        messages
+    ];
+
 chatMessageToCell[ message_Association, format_ ] :=
-    chatMessageToCell[ message[ "Role" ], message[ "Content" ], format ];
+    appendCanonicalMessages[
+        chatMessageToCell[ message[ "Role" ], messageDisplayContent @ message[ "Content" ], format ],
+        { message }
+    ];
 
 chatMessageToCell[ role_String, content_, format_ ] := Enclose[
     Module[ { formatted },
@@ -66,6 +101,47 @@ chatMessageToCell[ role_String, content_, format_ ] := Enclose[
 ];
 
 chatMessageToCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageDisplayContent*)
+messageDisplayContent // beginDefinition;
+
+messageDisplayContent[ content_List ] := StringJoin @ Cases[
+    Replace[
+        content,
+        {
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s,
+            KeyValuePattern @ { "Type" -> "Reasoning", "Data" -> s_String } :> "<think>" <> s <> "</think>"
+        },
+        { 1 }
+    ],
+    _String
+];
+
+messageDisplayContent[ content_ ] := content;
+
+messageDisplayContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendCanonicalMessages*)
+appendCanonicalMessages // beginDefinition;
+
+appendCanonicalMessages[ cell_Cell, messages: { __Association } ] :=
+    Replace[
+        cell,
+        {
+            Cell[ args___, TaggingRules -> tags_, rest___ ] :>
+                Cell[ args, TaggingRules -> <| Association @ tags, "ChatMessages" -> messages |>, rest ],
+            Cell[ args___ ] :>
+                Cell[ args, TaggingRules -> <| "ChatMessages" -> messages |> ]
+        }
+    ];
+
+appendCanonicalMessages[ other_, _ ] := other;
+
+appendCanonicalMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

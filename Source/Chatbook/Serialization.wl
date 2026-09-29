@@ -1926,9 +1926,9 @@ boxToString[ TemplateBox[ _, "TabularReferenceWrapper", ___ ] ] :=
 boxToString[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
     inputFormString @ Unevaluated @ tabular;
 
-(* Reasoning Text *)
-boxToString[ TemplateBox[ { thoughts_String, _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
-    "<think>\n" <> thoughts <> "\n</think>\n";
+(* Reasoning Summary Text *)
+boxToString[ TemplateBox[ { TextData[ thoughts_ ], _ }, "ThinkingOpener"|"ThoughtsOpener", ___ ] ] :=
+    "<think>\n" <> boxToString @ thoughts <> "\n</think>\n";
 
 (* System Modeler Boxes *)
 boxToString[ TemplateBox[ KeyValuePattern[ "model" -> Hold[ model_ ] ], "IOModel"|"SystemsModel", ___ ] ] :=

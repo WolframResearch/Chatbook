@@ -359,7 +359,7 @@ saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
         cellObjects = ConfirmMatch[ Cells @ cellsContainer, { ___CellObject }, "CellObjects" ];
         If[ cellObjects === { }, Throw @ Missing[ "NoCells" ] ];
         cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
-        messages = ConfirmMatch[ CellToChatMessage[ #, settings ] & /@ cells, $$chatMessages, "Messages" ];
+        messages = ConfirmMatch[ Flatten[ CellToChatMessage[ #, settings ] & /@ cells ], $$chatMessages, "Messages" ];
         ConfirmMatch[ saveChat[ messages, settings, autoTitle, auto ], _Success | Missing[ "Skipped" ], "SaveChat" ]
     ],
     throwInternalFailure

@@ -328,7 +328,7 @@ extractBodyChunks // beginDefinition;
 extractBodyChunks[ data_ ] := Enclose[
     Catch[
         ConfirmMatch[
-            DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ],
+            reasoningEnvelope @ DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ],
             { (_String|_LLMToolRequest)... },
             "Result"
         ],
@@ -360,6 +360,18 @@ extractBodyChunks0[ KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_ ]
 extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] :=
     extractBodyChunks0 @ content;
 
+(* Streaming reasoning delta; `reasoningEnvelope` adds the markers: *)
+extractBodyChunks0[ KeyValuePattern[ "ReasoningChunk" -> content: Except[ "", _String ] ] ] :=
+    reasoningText @ content;
+
+(* A synchronous response arrives whole, so its envelope needs no state: *)
+extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Reasoning", "Data" -> content: Except[ "", _String ] } ] :=
+    { "<think>", content, "</think>" };
+
+(* Nothing else closes the envelope if a response ends while reasoning is still open: *)
+extractBodyChunks0[ KeyValuePattern[ "FinishReason" -> _ ] ] :=
+    closeReasoningEnvelope[ ];
+
 extractBodyChunks0[ KeyValuePattern @ { } ] :=
     { };
 
@@ -389,6 +401,42 @@ extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
     ] := { };
 
 extractBodyChunks0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningEnvelope*)
+
+(* The reasoning UI is driven by `<think>` markers in the response text, but reasoning arrives as structured chunks,
+   so the markers are inserted here. Streaming delivers one delta per call, hence the `$reasoningOpen` latch. *)
+
+reasoningEnvelope // beginDefinition;
+
+reasoningEnvelope[ items_List ] :=
+    Flatten[ reasoningEnvelope0 /@ items ];
+
+reasoningEnvelope // endDefinition;
+
+
+reasoningEnvelope0 // beginDefinition;
+
+reasoningEnvelope0[ reasoningText[ text_String ] ] :=
+    If[ TrueQ @ $reasoningOpen, text, $reasoningOpen = True; "<think>" <> text ];
+
+(* Any other content ends the reasoning, including a tool request: *)
+reasoningEnvelope0[ item_ ] :=
+    If[ TrueQ @ $reasoningOpen, $reasoningOpen = False; { "</think>", item }, item ];
+
+reasoningEnvelope0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*closeReasoningEnvelope*)
+closeReasoningEnvelope // beginDefinition;
+
+closeReasoningEnvelope[ ] :=
+    If[ TrueQ @ $reasoningOpen, $reasoningOpen = False; "</think>", { } ];
+
+closeReasoningEnvelope // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -38,6 +38,7 @@ $defaultChatSettings = <|
     "EnableChatGroupSettings"        -> False,
     "EnabledBasePrompts"             -> Automatic,
     "EnableLLMServices"              -> Automatic,
+    "Endpoint"                       -> Automatic,
     "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
@@ -130,6 +131,35 @@ $modelInheritedLists = {
     "ExcludedBasePrompts"
 };
 
+(* Check both the version of LLMFunctions that starts to support Responses endpoint and if the necessary endpoint
+   functions exist: *)
+$responsesEndpointAvailable := $responsesEndpointAvailable = (
+    Quiet @ Needs[ "LLMServices`" -> None ];
+    TrueQ @ And[
+        ! Quiet @ PacletNewerQ[ "2.4", PacletObject[ "Wolfram/LLMFunctions" ] ],
+        ContainsAll[
+            SymbolName /@ Cases[ Flatten @ { LLMServices`$LLMServicesEndpoints }, _Symbol ],
+            { "Response", "ResponseSubmit" }
+        ]
+    ]
+);
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesServiceQ*)
+responsesServiceQ // beginDefinition;
+
+(* Whether the installed LLMFunctions can serve the Responses endpoint for the given service: *)
+responsesServiceQ[ service_String ] := And[
+    TrueQ @ $responsesEndpointAvailable,
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
+];
+
+responsesServiceQ[ service_ ] := False;
+
+responsesServiceQ // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -137,6 +167,7 @@ $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
 $$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
+$$endpointSetting       = Automatic | "Responses" | "ChatCompletions";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -260,9 +291,16 @@ $modelAutoSettings[ "OpenAI", "GPT35" ] = <|
 |>;
 
 $modelAutoSettings[ "OpenAI", Automatic ] = <|
+    (* Images are only accepted in user messages, on both endpoints: *)
+    "MultimodalRoles"            -> { "User" },
     "ToolMethod"                 -> "Service",
     "ToolCallExamplePromptStyle" -> "Basic"
 |>;
+
+(* Families that prefer the Responses endpoint on OpenAI. This is only a preference: chooseEndpoint still falls back to
+   chat completions when the installed LLMFunctions cannot provide the endpoint for the service. *)
+$modelAutoSettings[ "OpenAI", "GPT54Plus" ] = <| "Endpoint" -> "Responses" |>;
+$modelAutoSettings[ "OpenAI", "GPT56Plus" ] = <| "Endpoint" -> "Responses" |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -400,6 +438,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "Minimal", "Low", "Medium", "High" }, (* No "None" *)
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -410,7 +449,8 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning"        :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High" } (* "None" replaces "Minimal" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
@@ -425,8 +465,9 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
-    "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "MaxContextTokens"  -> 128000,
+    "Reasoning"         :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"  -> { "Low", "Medium", "High" } (* No "None" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
@@ -434,12 +475,23 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
-    "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
+    (* Reasoning and tools only coexist on the Responses endpoint: *)
+    "Reasoning"                  :> If[ TrueQ @ $responsesEndpointAvailable, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
+    "MaxContextTokens" -> 400000
+|>;
+
+$modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
+|>;
+
+$modelAutoSettings[ Automatic, "GPT56Cyber" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
@@ -658,6 +710,76 @@ modelUnsupportedParameters[ as_, config_Association ] :=
     modelUnsupportedParameters[ as, Keys @ config ];
 
 modelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveReasoningEffort*)
+
+(* Ordered weakest-to-strongest; a family's "ReasoningEfforts" is a subset of this: *)
+$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "Max" };
+
+resolveReasoningEffort // beginDefinition;
+
+resolveReasoningEffort[ settings_Association ] :=
+    resolveReasoningEffort[ settings[ "Reasoning" ], autoModelSetting[ settings, "ReasoningEfforts" ] ];
+
+(* Families that declare no effort levels are left exactly as they were: *)
+resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
+
+(* Off, however the family spells it: *)
+resolveReasoningEffort[ False | None, levels: { __String } ] := clampReasoningEffort[ "None", levels ];
+
+resolveReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ If[ StringMatchQ[ effort, "Off", IgnoreCase -> True ], "None", effort ], levels ];
+
+(* Automatic, Inherited, Missing[ ... ], an explicit association, Quantity[ n, "Tokens" ]: *)
+resolveReasoningEffort[ value_, levels_ ] := value;
+
+resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clampReasoningEffort*)
+clampReasoningEffort // beginDefinition;
+
+(* The family accepts the level as spelled, so use the family's own spelling: *)
+clampReasoningEffort[ effort_String, levels: { __String } ] /;
+    AnyTrue[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ] :=
+    SelectFirst[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ];
+
+(* Dropping the parameter would fall back to the vendor default, so clamp instead of dropping: *)
+clampReasoningEffort[ "None", levels: { __String } ] := First @ SortBy[ levels, reasoningEffortIndex ];
+
+clampReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ reasoningEffortIndex @ effort, effort, levels ];
+
+(* Not a level this scale knows about, so leave it alone: *)
+clampReasoningEffort[ _Missing, effort_String, levels_ ] := effort;
+
+(* The nearest supported level, ties resolving upward: *)
+clampReasoningEffort[ want_Integer, effort_String, levels: { __String } ] :=
+    With[ { known = Select[ levels, IntegerQ @ reasoningEffortIndex @ # & ] },
+        If[ known === { },
+            effort,
+            First @ MinimalBy[ known, { Abs[ reasoningEffortIndex @ # - want ], -reasoningEffortIndex @ # } & ]
+        ]
+    ];
+
+clampReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningEffortIndex*)
+reasoningEffortIndex // beginDefinition;
+
+reasoningEffortIndex[ effort_String ] :=
+    SelectFirst[
+        Range @ Length @ $reasoningEffortScale,
+        StringMatchQ[ effort, $reasoningEffortScale[[ # ]], IgnoreCase -> True ] &,
+        Missing[ ]
+    ];
+
+reasoningEffortIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -953,6 +1075,10 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 
+(* A model's "Endpoint" setting is only a preference, so it goes through the support check rather than being used
+   directly like other model-specific defaults: *)
+resolveAutoSetting0[ as_, "Endpoint" ] := chooseEndpoint @ as;
+
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
@@ -1004,6 +1130,7 @@ $autoSettingKeyDependencies = <|
     "Authentication"             -> "Model",
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "BypassResponseChecking"     -> "ForceSynchronous",
+    "Endpoint"                   -> "Model",
     "ExperimentalFeatures"       -> { "WolframAlphaCAGEnabled", "WebSearchRAGMethod", "PromptGenerators" },
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
@@ -1042,6 +1169,43 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseEndpoint*)
+chooseEndpoint // beginDefinition;
+
+(* Resolved here rather than at submit time, so the endpoint that will actually be used is visible in
+   AbsoluteCurrentChatSettings and $ChatHandlerData. A model family prefers Responses by declaring it in
+   $modelAutoSettings; anything short of a fully resolved model spec uses chat completions: *)
+chooseEndpoint[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] ] :=
+    If[ And[
+            autoModelSetting[ toBaseServiceName @ service, model[ "Name" ], model[ "BaseID" ], family, "Endpoint" ] === "Responses",
+            responsesServiceQ @ service
+        ],
+        "Responses",
+        "ChatCompletions"
+    ];
+
+chooseEndpoint[ _ ] := "ChatCompletions";
+
+chooseEndpoint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesEndpointQ*)
+responsesEndpointQ // beginDefinition;
+
+(* Whether a request with these settings goes to the Responses endpoint. An explicit "Responses" still needs a
+   supporting service; unresolved settings are resolved on the spot: *)
+responsesEndpointQ[ settings: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> _String, "Family" -> _String } ] ] :=
+    With[ { endpoint = Replace[ Lookup[ settings, "Endpoint", Automatic ], Automatic :> chooseEndpoint @ settings ] },
+        endpoint === "Responses" && responsesServiceQ @ model[ "Service" ]
+    ];
+
+responsesEndpointQ[ _ ] := False;
+
+responsesEndpointQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

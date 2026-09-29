@@ -757,6 +757,80 @@ makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeReasoningParameter*)
+makeReasoningParameter // beginDefinition;
+
+makeReasoningParameter[ settings_Association ] :=
+    With[ { effort = resolveReasoningEffort @ settings },
+        If[ TrueQ @ responsesEndpointQ @ settings, requestReasoningSummary @ effort, effort ]
+    ];
+
+makeReasoningParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestReasoningSummary*)
+
+(* The Responses endpoint returns an encrypted reasoning blob and no readable summary unless one is
+   requested: *)
+requestReasoningSummary // beginDefinition;
+
+(* Reasoning is off, so there is nothing to summarize: *)
+requestReasoningSummary[ effort_String ] /; StringMatchQ[ effort, "None", IgnoreCase -> True ] := effort;
+
+requestReasoningSummary[ effort_String ] := <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |>;
+
+(* The setting already spells out a summary, or turns reasoning off: *)
+requestReasoningSummary[ as_Association ] /;
+    reasoningSummaryRequestedQ @ as || reasoningDisabledQ @ as := as;
+
+requestReasoningSummary[ as_Association ] := Append[ as, "summary" -> "auto" ];
+
+(* Automatic, Inherited, None, False, Missing[ ... ], Quantity[ n, "Tokens" ]: *)
+requestReasoningSummary[ other_ ] := other;
+
+requestReasoningSummary // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningSummaryRequestedQ*)
+reasoningSummaryRequestedQ // beginDefinition;
+reasoningSummaryRequestedQ[ as_Association ] := ! MissingQ @ reasoningParameterValue[ as, "summary" ];
+reasoningSummaryRequestedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningDisabledQ*)
+reasoningDisabledQ // beginDefinition;
+
+reasoningDisabledQ[ as_Association ] :=
+    Or[
+        reasoningParameterValue[ as, "enabled" ] === False,
+        With[ { effort = reasoningParameterValue[ as, "effort" ] },
+            StringQ @ effort && StringMatchQ[ effort, "None", IgnoreCase -> True ]
+        ]
+    ];
+
+reasoningDisabledQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningParameterValue*)
+
+(* The Responses endpoint lowercases parameter keys on the way to the wire, so "Summary" and
+   "summary" name the same thing here: *)
+reasoningParameterValue // beginDefinition;
+
+reasoningParameterValue[ as_Association, key_String ] :=
+    First[
+        Values @ KeySelect[ as, StringQ @ # && StringMatchQ[ #, key, IgnoreCase -> True ] & ],
+        Missing[ ]
+    ];
+
+reasoningParameterValue // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatIndicatorSymbol*)
 chatIndicatorSymbol // beginDefinition;
 chatIndicatorSymbol[ settings_Association ] := chatIndicatorSymbol @ settings[ "ChatInputIndicator" ];
@@ -911,6 +985,9 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
+    $reasoningOpen         = False;
+    $responseContent       = { };
+    $responseTextChunks    = { };
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
     rasterizeBlock @ chatSubmit0 @ args,
@@ -941,26 +1018,30 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result, chunks, content },
+    Module[ { auth, endpoint, stop, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
+        endpoint = ConfirmMatch[ resolveChatEndpoint[ settings ][ "Synchronous" ], _Symbol, "Endpoint" ];
         stop = makeStopTokens @ settings;
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
-                LLMServices`Chat[
+                endpoint[
                     standardizeMessageKeys @ messages,
                     makeLLMConfiguration @ settings,
                     Authentication -> auth
                 ],
-                { LLMServices`Chat::unsupported }
+                { General::llmunsupported }
             ],
             _Association | _Failure,
             "ChatResult"
         ];
 
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
+
+        $responseContent = responseContentParts @ Lookup[ result, "Content", { } ];
+        $responseTextChunks = responseTextParts @ Lookup[ result, "Content", { } ];
 
         chunks = <|
             "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
@@ -989,28 +1070,30 @@ chatSubmit0[
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
-    $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+    With[ { endpoint = resolveChatEndpoint[ settings ][ "Streaming" ] },
+        $lastChatSubmitResult = ReleaseHold[
+            $lastChatSubmit = HoldForm @ applyProcessingFunction[
+                settings,
+                "ChatSubmit",
+                HoldComplete[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ settings,
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    "TestConnection"     -> False
+                ],
+                <|
+                    "Container"             :> container,
+                    "Messages"              -> messages,
+                    "CellObject"            -> cellObject,
+                    "DefaultSubmitFunction" -> endpoint
+                |>,
+                endpoint
+            ]
         ]
     ],
-    { LLMServices`ChatSubmit::unsupported }
+    { General::llmunsupported }
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1039,6 +1122,23 @@ chatSubmit0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*resolveChatEndpoint*)
+
+(* The LLMServices functions for each endpoint. Which endpoint a request uses is decided by the "Endpoint" setting,
+   resolved in resolveAutoSettings (see responsesEndpointQ in Settings.wl); this only maps that decision onto the
+   synchronous and streaming functions, so a chat cannot mix endpoints: *)
+$completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
+$responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
+
+resolveChatEndpoint // beginDefinition;
+
+resolveChatEndpoint[ settings_Association ] :=
+    If[ TrueQ @ responsesEndpointQ @ settings, $responsesEndpoint, $completionsEndpoint ];
+
+resolveChatEndpoint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
@@ -1055,6 +1155,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
@@ -1066,6 +1167,7 @@ makeLLMConfiguration0[ as_Association ] :=
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> makeReasoningParameter @ as,
             "StopTokens" -> makeStopTokens @ as
         ] // dropModelUnsupportedParameters[ as ]
     ];
@@ -1109,6 +1211,11 @@ registerParameter // beginDefinition;
 registerParameter[ service_String, param_String ] := (
     registerParameter[ service, param, LLMServices`Chat       ];
     registerParameter[ service, param, LLMServices`ChatSubmit ];
+    (* Only registered services have a registry entry to patch: *)
+    If[ responsesServiceQ @ service,
+        registerParameter[ service, param, LLMServices`Response       ];
+        registerParameter[ service, param, LLMServices`ResponseSubmit ];
+    ];
 );
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -1194,6 +1301,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                                 ]
                             },
                             bodyChunkHandler[ as ];
+                            collectResponseContent @ as;
+                            collectResponseText @ as;
                             Internal`StuffBag[ $debugLog, $lastStatus = as ];
                             checkFinishReason[ as ];
                             writeChunk[ as, Dynamic @ container, cellObject ];
@@ -1241,6 +1350,115 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*collectResponseContent*)
+collectResponseContent // beginDefinition;
+
+collectResponseContent[ data_ ] :=
+    With[ { parts = Cases[ { data }, KeyValuePattern[ "ResponseContent" -> content_ ] :> content, Infinity ] },
+        If[ parts =!= { }, $responseContent = Join[ $responseContent, responseContentParts @ parts ] ]
+    ];
+
+collectResponseContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responseContentParts*)
+responseContentParts // beginDefinition;
+
+responseContentParts[ content_ ] := DeleteDuplicates @
+    Cases[
+        Flatten @ { content },
+        part: KeyValuePattern[ "Type" -> "Reasoning" ] /;
+            ! MissingQ @ Lookup[ part, "Signature", Missing[ ] ] ||
+            ! MissingQ @ Lookup[ part, "CallID", Missing[ ] ]
+    ];
+
+responseContentParts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responseTextParts*)
+responseTextParts // beginDefinition;
+
+responseTextParts[ content_ ] := Cases[
+    Flatten @ { content },
+    s_String :> s,
+    KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
+];
+
+responseTextParts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*collectResponseText*)
+collectResponseText // beginDefinition;
+
+collectResponseText[ data_ ] :=
+    With[
+        {
+            chunks = Cases[
+                { data },
+                KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_String ] :> content,
+                Infinity
+            ]
+        },
+        If[ chunks =!= { }, $responseTextChunks = Join[ $responseTextChunks, chunks ] ]
+    ];
+
+collectResponseText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*completeResponseMessages*)
+completeResponseMessages // beginDefinition;
+
+completeResponseMessages[ extra_: <| |> ] := (
+    With[ { completed = Association[ makeAssistantMessage[ $responseContent, StringJoin @ $responseTextChunks ], extra ] },
+        If[
+            ($responseContent =!= { } || $responseTextChunks =!= { } || extra =!= <| |>) &&
+                ! SameQ[ Last[ $responseMessages, Missing[ ] ], completed ],
+            AppendTo[ $responseMessages, completed ]
+        ]
+    ];
+    $responseContent = { };
+    $responseTextChunks = { };
+);
+
+completeResponseMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeAssistantMessage*)
+makeAssistantMessage // beginDefinition;
+
+makeAssistantMessage[ message_String ] := makeAssistantMessage[ { }, message ];
+
+makeAssistantMessage[ content_, message_String ] :=
+    With[ { reasoning = responseContentParts @ content },
+        <|
+            "Role" -> "Assistant",
+            "Content" -> Which[
+                reasoning === { }, message,
+                message === "", reasoning,
+                True, Append[ reasoning, <| "Type" -> "Text", "Data" -> message |> ]
+            ]
+        |>
+    ];
+
+makeAssistantMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*storedAssistantMessages*)
+storedAssistantMessages // beginDefinition;
+
+storedAssistantMessages[ message_String ] :=
+    If[ $responseMessages === { }, { makeAssistantMessage @ message }, $responseMessages ];
+
+storedAssistantMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1735,6 +1953,7 @@ writeResult // beginDefinition;
 
 writeResult[ settings_, container_, cell_, as_ ] /; $headlessChat := (
     appendCitations[ Unevaluated @ container, settings ];
+    completeResponseMessages[ ];
     Null
 );
 
@@ -1742,6 +1961,7 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
     Catch @ Module[ { log, processed, body, data },
 
         appendCitations[ Unevaluated @ container, settings ];
+        completeResponseMessages[ ];
 
         If[ TrueQ @ $AutomaticAssistance,
             NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
@@ -1921,12 +2141,13 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
-            messages, roles, response, newMessages, req, toolID, task
+            messages, roles, response, newMessages, req, toolID, task, step
         },
 
         $toolCallCount = If[ IntegerQ @ $toolCallCount, $toolCallCount + 1, 1 ];
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
+        step   = ConfirmBy[ toolCallStepContent @ string, StringQ, "StepContent" ];
 
         simple = settings[ "ToolMethod" ] === "Simple";
         parser = If[ simple, simpleToolRequestParser, toolRequestParser ];
@@ -1952,7 +2173,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         toolID = tinyHash[ toolResponse, 9 ];
-        toolCall = insertToolID[ toolCall, toolID ];
+        If[ ! TrueQ @ responsesEndpointQ @ settings, toolCall = insertToolID[ toolCall, toolID ] ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
@@ -1978,16 +2199,32 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 ToString @ output
             ];
 
+        (* The tool call message below carries this step's text, so only keep the reasoning here: *)
+        $responseTextChunks = { };
+        completeResponseMessages[ ];
+
         newMessages = Flatten @ {
             messages,
+            $responseMessages,
             <|
                 "Role"         -> "Assistant",
-                "Content"      -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "Content"      -> appendToolCallEndToken[ settings, step ],
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
             makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
         };
+
+        $responseMessages = Join[ $responseMessages, {
+            <|
+                "Role"         -> "Assistant",
+                "Content"      -> appendToolCallEndToken[ settings, step ],
+                "ToolRequest"  -> True,
+                "ToolRequests" -> { toolCall }
+            |>,
+            Splice @ makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
+        }
+        ];
 
         $finishReason = None;
 
@@ -2228,6 +2465,21 @@ appendToolCallEndToken // beginDefinition;
 appendToolCallEndToken[ settings_, string_String ] /; settings[ "ToolMethod" ] === "Simple" := string <> "\n/exec";
 appendToolCallEndToken[ settings_, string_String ] := string <> "\nENDTOOLCALL";
 appendToolCallEndToken // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallStepContent*)
+toolCallStepContent // beginDefinition;
+
+(* The output cell's content accumulates every tool call and result of the turn, but each step's message should only
+   contain what was generated since the previous tool result: *)
+toolCallStepContent[ string_String ] := StringTrim @ Last @ StringSplit[
+    string,
+    "\nENDRESULT(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")\n",
+    All
+];
+
+toolCallStepContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3462,10 +3714,8 @@ makeCompactChatData[
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
-                    "Messages" -> revertMultimodalContent @ Append[
-                        messages,
-                        <| "Role" -> "Assistant", "Content" -> message |>
-                    ]
+                    "Messages"         -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ],
+                    "ResponseMessages" -> storedAssistantMessages @ message
                 ]
             ],
             Inherited
