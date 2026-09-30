@@ -86,12 +86,12 @@ Invalid values produce a `Chatbook::InvalidRequestMethod` message and fall back 
 - A response can contain several reasoning items in a row (e.g. with high reasoning effort). These are combined into a single summary that stays open until some other output arrives, and its `"Signature"` and `"CallID"` are lists with a value for each item. When building messages, each item is recreated as a separate `<| "Type" -> "Reasoning", "Signature" -> ..., "CallID" -> ... |>` content part.
 - Summaries are displayed with the `"ThinkingOpener"`/`"ThoughtsOpener"` template boxes (or `"EmptyThoughts"`, which only shows the label, when there is no summary text). Their first argument is the markdown-formatted text (as `TextData`, formatted without tool call or think tag rules), and their third argument holds metadata such as `<| "Type" -> "Summary", "ID" -> ..., "Signature" -> ... |>` (or `<| "Type" -> "Literal" |>` for literal `<think>` text). This metadata determines how the box is serialized, and allows the signature to be restored when constructing messages from a notebook in a new kernel session.
 - The time spent on each summary is stored as `"Duration"` (in seconds) with its data and shown in the opener label. The timer starts when the first chunk of a response is received (so it resets for each request, including requests that send tool results), restarts after any non-reasoning output, and stops when the summary ends. Literal `<think>` tags still use the older display-based timing.
-- When constructing messages, summary text is never sent. With the Responses endpoint, each summary is replaced by a `<| "Type" -> "Reasoning", "Signature" -> ... |>` content part, but only if the signature was produced by the same service (signatures can't be decrypted by other services, e.g. OpenAI vs. LLMKit). Otherwise, summaries are removed.
+- When constructing messages, summary text is never sent. With the Responses endpoint, each summary is replaced by its reasoning items (`<| "Type" -> "Reasoning", "Signature" -> ..., "CallID" -> ... |>` content parts), but only if the signatures were produced by the same service (signatures can't be decrypted by other services, e.g. OpenAI vs. LLMKit). Otherwise, summaries are removed.
 - `SaveChat` stores the reasoning data referenced by a conversation as `"Reasoning"` attachments (alongside `"Expressions"` and `"ToolCalls"`), and `LoadChat` restores them.
 
 ### Dependencies
 
-Depends on `"Authentication"` and `"Model"`. `"StopTokens"` depends on this setting.
+Depends on `"Authentication"` and `"Model"`. `"StopTokens"` and `"ToolResponseRole"` depend on this setting.
 
 ## `"EnableLLMServices"`
 

@@ -225,7 +225,6 @@ These are the fallback values from `$modelAutoSettings[Automatic, Automatic]` wh
 | `"ShowProgressText"` | `True` |
 | `"SplitToolResponseMessages"` | `False` |
 | `"Temperature"` | `0.7` |
-| `"ToolResponseRole"` | `"System"` |
 
 ### Non-Inherited Persona Values
 

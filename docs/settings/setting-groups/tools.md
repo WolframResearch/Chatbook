@@ -505,7 +505,7 @@ The message role assigned to tool response messages sent back to the LLM.
 
 ### Resolution
 
-When `Automatic`, resolved to `"System"` via the persona default in `$modelAutoSettings[Automatic, Automatic]`. When `ToolMethod` is `"Service"`, the role is forced to `"Tool"` regardless of this setting's value.
+When `Automatic`, model-specific overrides in `$modelAutoSettings` are used first. Otherwise, `chooseToolResponseRole` (`Settings.wl`) resolves it to `"User"` when `"RequestMethod"` is `"Responses"`, and to `"System"` for other request methods. When `ToolMethod` is `"Service"`, it stays `Automatic`, since the role is forced to `"Tool"` regardless of this setting's value.
 
 ### Implementation
 
@@ -521,7 +521,7 @@ Used by `makeToolResponseMessage` (`SendChat.wl`) to set the `"Role"` key. The r
 
 ### Integration Points
 
-- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Dependencies**: `"RequestMethod"` and `"ToolMethod"` in `$autoSettingKeyDependencies`.
 - **Model-specific overrides**: As listed above.
 - **LLM passthrough**: Not in `$llmConfigPassedKeys` (used internally for tool response message construction).
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.

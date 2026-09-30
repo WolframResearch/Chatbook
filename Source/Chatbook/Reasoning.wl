@@ -18,15 +18,14 @@ Needs[ "Wolfram`Chatbook`Common`" ];
         </think>
 
     The id refers to an entry in `$reasoningData`, which holds the signature and some metadata. This data is also kept in
-    the third argument of the "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts" template boxes (which are serialized when constructing
-    chat messages from cells) and in the attachments of saved chats, so it can be restored in a new kernel session.
+    the third argument of the "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts" template boxes (which are serialized when
+    constructing chat messages from cells) and in the attachments of saved chats, so it can be restored in a new kernel
+    session.
 *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$requestMethods = { "ChatCompletions", "Responses" };
-
 (* Reasoning data received from the Responses API, keyed by the ids used in think tags: *)
 $reasoningData = <| |>;
 
@@ -39,7 +38,7 @@ $reasoningItems = { };
 (* Whether any summary text has been streamed for the reasoning item that is currently in progress: *)
 $reasoningStreamed = False;
 
-(* When the model started working on the current reasoning item (see reasoningDuration): *)
+(* When the model started working on the current summary (see reasoningDuration): *)
 $reasoningStart = None;
 
 (* Keys that are stored for each summary ("Duration" is in seconds). If a summary combines several reasoning items,
