@@ -76,6 +76,7 @@
 "FormattingToolUsingLoading" -> "\:30c4\:30fc\:30eb\:3092\:4f7f\:7528\:3057\:3066\:3044\:307e\:3059\[Ellipsis]",
 "FormattingThinkingActive" -> "\:8003\:3048\:3066\:3044\:307e\:3059\[Ellipsis]",
 "FormattingThinkingComplete" -> "`time`\:79d2\:9593\:8003\:3048\:307e\:3057\:305f",
+"FormattingThinkingCompleteSingular" -> "Thought for a second",
 "FormattingThinkingCompleteFallback" -> "\:8003\:3048\:307e\:3057\:305f",
 "FormattingHide" -> "\:96a0\:3059",
 

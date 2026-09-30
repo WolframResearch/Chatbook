@@ -358,26 +358,42 @@ makeResultCell // endDefinition;
 
 makeResultCell0 // beginDefinition;
 
-makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
+(* The third template box argument holds metadata that determines how the box is serialized, e.g.
+   <| "Type" -> "Literal" |> for literal <think> tags, or <| "Type" -> "Summary", "ID" -> ..., "Signature" -> ... |>
+   for reasoning summaries (see Reasoning.wl) *)
+makeResultCell0[ thinkingOpener[ thoughts_String ] ] :=
+    makeResultCell0 @ thinkingOpener[ thoughts, <| "Type" -> "Literal" |> ];
+
+makeResultCell0[ thinkingOpener[ thoughts_String, attributes_String ] ] :=
+    makeResultCell0 @ thinkingOpener[ thoughts, reasoningMetadata @ attributes ];
+
+makeResultCell0[ thinkingOpener[ thoughts_String, meta_Association ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
+        BoxData @ templateBox[
+            { formatThoughts @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive", meta },
+            "ThinkingOpener"
+        ],
         "ThinkingOpener",
         Background -> None
     ]
 );
 
 makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
-    Module[ { seconds, label },
-        If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
+    makeResultCell0 @ thoughtsOpener[ thoughts, <| "Type" -> "Literal" |> ];
+
+makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
+    makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
+
+makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
+    Module[ { label, box },
+        label = ToBoxes @ thoughtsLabel @ meta;
+        box = If[ StringTrim @ thoughts === "",
+                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+              ];
         {
-            Cell[
-                BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
-                "ThoughtsOpener",
-                Background -> None
-            ],
+            Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],
             "\n"
         }
     ];
@@ -489,6 +505,60 @@ makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
 ];
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*thoughtsLabel*)
+thoughtsLabel // beginDefinition;
+
+(* Reasoning summaries store the time spent on each reasoning item: *)
+thoughtsLabel[ KeyValuePattern @ { "Type" -> "Summary", "Duration" -> seconds_? NumberQ } ] :=
+    thoughtsLabel @ Max[ 1, Round @ seconds ];
+
+thoughtsLabel[ KeyValuePattern[ "Type" -> "Summary" ] ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+(* Literal think tags are timed from when they're first displayed: *)
+thoughtsLabel[ _Association ] := (
+    If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
+    thoughtsLabel @ If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd,
+                        Max[ 1, Round[ $thinkingEnd - $thinkingStart ] ],
+                        None
+                    ]
+);
+
+thoughtsLabel[ 1 ] :=
+    tr[ "FormattingThinkingCompleteSingular" ];
+
+thoughtsLabel[ seconds_Integer ] :=
+    trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
+
+thoughtsLabel[ None ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+thoughtsLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatThoughts*)
+formatThoughts // beginDefinition;
+
+formatThoughts[ thoughts_String ] :=
+    formatThoughts[ thoughts, StringTrim @ thoughts ];
+
+formatThoughts[ thoughts_, "" ] :=
+    "";
+
+formatThoughts[ thoughts_, trimmed_String ] :=
+    Block[
+        {
+            $textDataFormatRules                   = $thoughtsFormatRules,
+            $textDataFormatRulesNoMarkdownUnescape = $thoughtsFormatRulesNoMarkdownUnescape
+        },
+        TextData @ reformatTextData @ trimmed
+    ];
+
+formatThoughts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1519,8 +1589,12 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
 $textDataFormatRulesNoMarkdownUnescape = {
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
+        thoughtsOpener[ thoughts, attributes ],
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
+        thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
@@ -1540,8 +1614,12 @@ $textDataFormatRulesNoMarkdownUnescape = {
 };
 
 $textDataFormatRules = {
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
+        thoughtsOpener[ thoughts, attributes ],
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
+        thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
@@ -1597,6 +1675,20 @@ $textDataFormatRules = {
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$thoughtsFormatRules*)
+
+(* Markdown in the contents of think tags is formatted, but anything that looks like a tool call or another think tag is
+   left as plain text: *)
+$$thoughtsExcludedRule = HoldPattern @ RuleDelayed[
+    _,
+    _thoughtsOpener | _thinkingOpener | _inlineToolCallCell | $discardPreviousToolCall
+];
+
+$thoughtsFormatRules                   = DeleteCases[ $textDataFormatRules                  , $$thoughtsExcludedRule ];
+$thoughtsFormatRulesNoMarkdownUnescape = DeleteCases[ $textDataFormatRulesNoMarkdownUnescape, $$thoughtsExcludedRule ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1659,19 +1751,21 @@ $dynamicSplitRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
+
+(* Underscores only mark emphasis at word boundaries, so names like `snake_case_name` are left as-is: *)
 $stringFormatRules = {
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
 
     "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
 
-    "___" ~~ text: Except[ "_" ].. ~~ "___" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "___" ~~ text: Except[ "_" ].. ~~ "___" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
 
     "**" ~~ text: Except[ "*" ].. ~~ "**" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
-    "__" ~~ text: Except[ "_" ].. ~~ "__" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "__" ~~ text: Except[ "_" ].. ~~ "__" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
     "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
@@ -1689,7 +1783,7 @@ $stringFormatRules = {
     "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
-    "_" ~~ text: Except[ "_" ].. ~~ "_" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "_" ~~ text: Except[ "_" ].. ~~ "_" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
     "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :>

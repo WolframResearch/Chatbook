@@ -55,6 +55,7 @@ System`HoldCompleteForm;
 `$$messageContent;
 `$$chatMessage;
 `$$chatMessages;
+`$$thinkTagAttributes;
 `wordsPattern;
 
 `tr;
@@ -220,6 +221,13 @@ $$chatMessages        = { $$chatMessage... };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Reasoning*)
+
+(* Attributes in an opening think tag, e.g. the " type='summary' id='...'" in <think type='summary' id='...'>: *)
+$$thinkTagAttributes = WhitespaceCharacter ~~ Except[ ">" | "<" ]...;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Misc*)
 wordsPattern[ words_ ] := _String? (containsWordsQ @ words);
 
@@ -250,6 +258,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidOptionValue"              -> "Invalid value for `1` option: `2`.",
     "InvalidPromptGeneratorPosition"  -> "Invalid position spec for prompt generator messages: `1`.",
     "InvalidPromptGeneratorRole"      -> "Invalid role for prompt generator messages: `1`. Valid values are: \"System\", \"Assistant\", or \"User\".",
+    "InvalidRequestMethod"            -> "Invalid setting for RequestMethod: `1`; using \"ChatCompletions\" instead.",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidRootSettings"             -> "The value `1` is not valid for root chat settings.",
@@ -266,6 +275,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
+    "ResponsesAPIUnavailable"         -> "The \"Responses\" request method requires newer versions of the Wolfram/LLMFunctions and LLMConnections paclets.",
     "ServerMessageHeader"             -> "The server responded with the following message: \n\n",
     "ServerMessageTemplate"           -> "The server responded with the following message: \n\n`1`",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",

@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.7.18.3999061706"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.7.23.3999695873"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4547,6 +4547,37 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["EmptyThoughts"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      StyleBox[
+       PaneBox[
+        PaneBox[
+         StyleBox[#2, FontSlant -> "Italic"],
+         BaseStyle -> {
+          FontColor ->
+           LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
+          FontFamily -> "Source Sans Pro",
+          FontSize -> 13.5
+         },
+         ImageSize -> Automatic,
+         FrameMargins -> 0
+        ],
+        Alignment -> Automatic,
+        ImageSize -> Automatic,
+        ImageMargins -> {{0, 0}, {10, 10}},
+        BaseStyle -> { },
+        DefaultBaseStyle -> "OpenerView",
+        BaselinePosition -> Baseline
+       ],
+       Deployed -> False,
+       StripOnInput -> False
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["ThinkingContent"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -5077,7 +5108,7 @@ Notebook[
    StyleData[
     "NotebookAssistant`Sidebar`StyleSheetInformation"
    ],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3990249013"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.7.23.3999695680"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Sidebar`ToolbarButtonLabel"],

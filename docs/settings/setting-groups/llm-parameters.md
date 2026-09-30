@@ -199,6 +199,8 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 - **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
 - No other model families define a `"Reasoning"` override.
 
+When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
+
 ### Implementation
 
 Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLMConfiguration` to the LLM service. `Missing` values are stripped by `DeleteMissing` in `makeLLMConfiguration`, and unsupported parameters are dropped by `dropModelUnsupportedParameters`. Not used in the legacy HTTP request path.
