@@ -753,7 +753,8 @@ convertSystemRoleToUser // endDefinition;
 makeStopTokens // beginDefinition;
 makeStopTokens[ settings_Association ] := makeStopTokens[ settings, settings[ "StopTokens" ] ];
 makeStopTokens[ settings_, None | { } | _Missing ] := Missing[ ];
-makeStopTokens[ settings_, tokens: { __String } ] := tokens;
+(* Explicitly given stop tokens are emulated instead if they aren't supported (see `emulatedStopTokens`): *)
+makeStopTokens[ settings_, tokens: { __String } ] := If[ stopTokensSupportedQ @ settings, tokens, Missing[ ] ];
 makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -943,10 +944,11 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, chat, result, chunks, content },
+    Module[ { auth, stop, emulatedStop, chat, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
         stop = makeStopTokens @ settings;
+        emulatedStop = emulatedStopTokens @ settings;
         chat = ConfirmMatch[ chatFunction @ settings, LLMServices`Chat | LLMServices`Response, "ChatFunction" ];
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
@@ -973,8 +975,8 @@ chatSubmit0[
         content = extractBodyChunks @ chunks;
 
         (* There's no streaming here, so the whole response is checked for an emulated stop token at once: *)
-        If[ emulateStopTokensQ @ settings && MatchQ[ content, { __String } ],
-            content = { emulatedStopTokenTrim[ container, StringJoin @ content ] }
+        If[ MatchQ[ emulatedStop, { __String } ] && MatchQ[ content, { __String } ],
+            content = { emulatedStopTokenTrim[ container, StringJoin @ content, emulatedStop ] }
         ];
 
         writeChunk[ <| "ExtractedBodyChunks" -> content |>, Dynamic @ container, cellObject ];
@@ -1203,12 +1205,13 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             useTasks      = feTaskQ @ settings,
             toolFormatter = getToolFormatter @ settings,
             stop          = makeStopTokens @ settings,
-            stopEmulation = emulateStopTokensQ @ settings,
+            emulatedStop  = emulatedStopTokens @ settings,
             responses     = settings[ "RequestMethod" ] === "Responses"
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
-            taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ]
+            taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ],
+            stopEmulation       = MatchQ[ emulatedStop, { __String } ]
         },
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
@@ -1232,7 +1235,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                             {
                                 as = applyEmulatedStopTokens[
                                     container,
-                                    stopEmulation,
+                                    emulatedStop,
                                     addExtractedBodyChunks @ If[ responses, convertReasoningChunks[ settings, # ], # ]
                                 ]
                             },
@@ -1313,26 +1316,33 @@ trimStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*emulateStopTokensQ*)
+(*emulatedStopTokens*)
 
-(* Models that do not support stop tokens (e.g. gpt-5 and later) cannot be stopped server-side when they write the
-   tool call end token, so the end token needs to be detected client-side as content arrives instead. Without this,
-   a model that keeps writing after "/exec" would bury its tool call in extra text (typically hallucinating the tool
-   result), and even a model that correctly ends its response after writing "/exec" would leave a trailing "/exec"
-   that prevents `simpleToolRequestParser` from identifying the tool call. *)
+(* Models and endpoints that do not support stop tokens (e.g. gpt-5 and later, or the responses endpoint) cannot be
+   stopped server-side when they write a tool call end token (e.g. "\n/exec" or "ENDTOOLCALL"), so the stop tokens
+   that would have been used need to be detected client-side as content arrives instead. Without this, a model that
+   keeps writing after the end token would bury its tool call in extra text (typically hallucinating the tool result),
+   and even a model that correctly ends its response after writing the end token would leave it trailing, which
+   prevents the tool request parser from identifying the tool call. Gives `None` when there's nothing to emulate. *)
 
-emulateStopTokensQ // beginDefinition;
+emulatedStopTokens // beginDefinition;
 
-emulateStopTokensQ[ settings_Association ] := TrueQ @ And[
-    settings[ "ToolMethod" ] === "Simple",
-    TrueQ @ settings[ "ToolsEnabled" ],
-    ! MatchQ[ makeStopTokens @ settings, { __String } ]
-];
+emulatedStopTokens[ settings_Association ] :=
+    emulatedStopTokens[ settings, settings[ "StopTokens" ] ];
 
-emulateStopTokensQ // endDefinition;
+(* Automatic stop tokens resolve to `Missing[ "NotSupported" ]` when the model does not support them: *)
+emulatedStopTokens[ settings_, _Missing ] :=
+    Replace[ chooseStopTokens @ settings, Except[ { __String } ] -> None ];
 
+(* Explicitly given stop tokens are kept in the settings even if they aren't supported: *)
+emulatedStopTokens[ settings_, stop: { __String } ] :=
+    If[ stopTokensSupportedQ @ settings, None, stop ];
 
-$emulatedStopTokens = { "\n/exec" };
+(* Otherwise there are no stop tokens to use: *)
+emulatedStopTokens[ settings_, _ ] :=
+    None;
+
+emulatedStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1340,13 +1350,16 @@ $emulatedStopTokens = { "\n/exec" };
 applyEmulatedStopTokens // beginDefinition;
 applyEmulatedStopTokens // Attributes = { HoldFirst };
 
-applyEmulatedStopTokens[ container_, False, as_Association ] :=
+applyEmulatedStopTokens[ container_, None, as_Association ] :=
     as;
 
-applyEmulatedStopTokens[ container_, True, as: KeyValuePattern[ "ExtractedBodyChunks" -> strings: { __String } ] ] :=
-    <| as, "ExtractedBodyChunks" -> { emulatedStopTokenTrim[ container, StringJoin @ strings ] } |>;
+applyEmulatedStopTokens[
+    container_,
+    stop: { __String },
+    as: KeyValuePattern[ "ExtractedBodyChunks" -> strings: { __String } ]
+] := <| as, "ExtractedBodyChunks" -> { emulatedStopTokenTrim[ container, StringJoin @ strings, stop ] } |>;
 
-applyEmulatedStopTokens[ container_, True, as_Association ] :=
+applyEmulatedStopTokens[ container_, { __String }, as_Association ] :=
     as;
 
 applyEmulatedStopTokens // endDefinition;
@@ -1365,12 +1378,12 @@ applyEmulatedStopTokens // endDefinition;
 emulatedStopTokenTrim // beginDefinition;
 emulatedStopTokenTrim // Attributes = { HoldFirst };
 
-emulatedStopTokenTrim[ container_, text_String ] := Enclose[
+emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
     Module[ { previous, buffer, positions, start },
 
         previous  = ConfirmBy[ $emulatedStopBuffer, StringQ, "Buffer" ];
         buffer    = $emulatedStopBuffer = previous <> text;
-        positions = StringPosition[ buffer, $emulatedStopTokens ];
+        positions = dropReasoningPositions[ buffer, StringPosition[ buffer, stop ] ];
 
         If[ positions === { },
             (* No stop token appears in the response so far, so continue streaming normally: *)
@@ -1396,6 +1409,35 @@ emulatedStopTokenTrim[ container_, text_String ] := Enclose[
 ];
 
 emulatedStopTokenTrim // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropReasoningPositions*)
+
+(* Removes stop token positions that fall within reasoning text, since server-side stop tokens wouldn't apply to it.
+   This includes reasoning summaries from the responses endpoint, which are streamed as think tags (see
+   `convertReasoningChunks`). A think tag that hasn't been closed yet extends to the end of the string. *)
+
+dropReasoningPositions // beginDefinition;
+
+dropReasoningPositions[ string_String, { } ] :=
+    { };
+
+dropReasoningPositions[ string_String, positions: { { _Integer, _Integer }.. } ] :=
+    With[ { spans = StringPosition[ string, $$reasoningSpan, Overlaps -> False ] },
+        Select[ positions, Function[ pos, NoneTrue[ spans, #[[ 1 ]] <= First @ pos <= #[[ 2 ]] & ] ] ]
+    ];
+
+dropReasoningPositions // endDefinition;
+
+
+$$reasoningSpan = Shortest[
+    StringExpression[
+        Alternatives[ "<think" ~~ $$thinkTagAttributes ~~ ">", "<think>", "<thinking>" ],
+        ___,
+        Alternatives[ "</think>", "</thinking>", EndOfString ]
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

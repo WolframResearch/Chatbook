@@ -221,11 +221,19 @@ Stop sequences that signal the LLM to stop generating.
 
 ### Resolution
 
-When `Automatic`, resolved by `autoStopTokens` (`Settings.wl`), which computes the stop token list based on `"ToolMethod"`, `"ToolCallExamplePromptStyle"`, and `$AutomaticAssistance`. Resolution has three branches:
+When `Automatic`, resolved by `autoStopTokens` (`Settings.wl`), which computes the stop token list based on `"ToolMethod"`, `"ToolCallExamplePromptStyle"`, and `$AutomaticAssistance`. This happens at the end of `resolveAutoSettings0`, after `"ToolMethod"` is resolved. Explicitly given values (e.g. `{ "STOP" }` or `None`) are kept as-is and replace the automatic stop tokens entirely.
 
-1. If already set to `Missing["NotSupported"]` (from model-specific settings), returns `Missing["NotSupported"]`.
-2. If `"ToolsEnabled"` is `False`, returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True`, otherwise `None`.
-3. Otherwise, combines results from `methodStopTokens` and `styleStopTokens`, plus `"[INFO]"` if `$AutomaticAssistance` is enabled, deduplicating and returning `None` if empty.
+`autoStopTokens` returns `Missing["NotSupported"]` if `stopTokensSupportedQ` (`Settings.wl`) gives `False`, which is the case when:
+
+1. The value is already `Missing["NotSupported"]` (from model-specific settings).
+2. `"RequestMethod"` is `"Responses"` (the responses endpoint does not support stop tokens).
+3. The model's auto settings mark `"StopTokens"` as `Missing["NotSupported"]` (checked directly, since explicitly given values are kept in the settings).
+
+Otherwise, it returns the stop tokens computed by `chooseStopTokens`:
+   - If `"ToolsEnabled"` is `False`, returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True`, otherwise `None`.
+   - Otherwise, combines results from `methodStopTokens` and `styleStopTokens`, plus `"[INFO]"` if `$AutomaticAssistance` is enabled, deduplicating and returning `None` if empty.
+
+`chooseStopTokens` gives the stop tokens the settings call for regardless of model support, so it is also used to determine which stop tokens to emulate client-side (see [Client-Side Emulation](#client-side-emulation)).
 
 **`methodStopTokens`** dispatches on `"ToolMethod"`:
 
@@ -259,11 +267,27 @@ Non-string values like `None` are filtered out via `Select[..., StringQ]`.
 
 ### Implementation
 
-**LLMServices path:** `makeStopTokens` is called explicitly and passed as `"StopTokens"` in the `LLMConfiguration`. `Missing` values are removed by `DeleteMissing`. Note: `"StopTokens"` is **not** in `$llmConfigPassedKeys` — it is handled separately via explicit `makeStopTokens` calls in both `makeLLMConfiguration` branches.
+**LLMServices path:** `makeStopTokens` is called explicitly and passed as `"StopTokens"` in the `LLMConfiguration`. It gives `Missing[]` for explicitly given stop tokens when `stopTokensSupportedQ` is `False`, so they're never sent to a model or endpoint that doesn't support them (they are emulated instead). `Missing` values are removed by `DeleteMissing`. Note: `"StopTokens"` is **not** in `$llmConfigPassedKeys` — it is handled separately via explicit `makeStopTokens` calls in both `makeLLMConfiguration` branches.
 
 **Legacy path:** In `makeHTTPRequest` (`SendChat.wl`), `makeStopTokens` converts the resolved value to an API-ready format: `None|{ }|_Missing` -> `Missing[]` (stripped from request), `{ __String }` -> passed as-is to the `"stop"` field.
 
 **Post-response cleanup:** `trimStopTokens` (`SendChat.wl`) removes any stop token found at the end of the response text from both `"FullContent"` and `"DynamicContent"` via `StringDelete[..., stop ~~ EndOfString]`.
+
+### Client-Side Emulation
+
+When stop tokens are not supported, `emulatedStopTokens` (`SendChat.wl`) gives the stop tokens to detect client-side, or `None` if there are none:
+
+- If the resolved value is `Missing[...]` (automatic stop tokens that aren't supported), the stop tokens that `chooseStopTokens` computes for the settings (e.g. `{ "\n/exec" }` for `"Simple"`, `{ "ENDTOOLCALL" }` for `"Textual"`/`"JSON"`, or `{ <EndToken> }` for `"Service"`).
+- If the value is an explicitly given list and `stopTokensSupportedQ` is `False`, that list.
+
+These are then detected client-side:
+
+- **Streaming**: The `"BodyChunkReceived"` handler (`chatHandlers`) passes each chunk through `applyEmulatedStopTokens`, which accumulates the current round's text in `$emulatedStopBuffer` and checks it with `emulatedStopTokenTrim`. When a stop token is found, the text from the first stop token onward is discarded (including any part of it that was already written to the container when it arrived split across chunks), the streaming task is removed, and the response is processed as if the task had finished normally.
+- **`"ForceSynchronous"`**: The complete response is checked with `emulatedStopTokenTrim` before response checking.
+
+Matches within reasoning text are ignored by `dropReasoningPositions`, since server-side stop tokens wouldn't apply to it. This covers think tags (`<think ...>`, `<think>`, `<thinking>`), including reasoning summaries from the responses endpoint, which are streamed as `<think type='summary' id='...'>` text. A think tag that hasn't been closed yet (reasoning that's still streaming) extends to the end of the text.
+
+Without emulation, a model that keeps writing after a tool call end token would bury its tool call in extra text (typically hallucinating the tool result), and a trailing end token would prevent the tool request parser from identifying the tool call.
 
 ### Integration Points
 
