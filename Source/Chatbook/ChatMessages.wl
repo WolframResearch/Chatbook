@@ -41,7 +41,10 @@ $$inlineModifierCell = Alternatives[
 
 $$promptArgumentToken = Alternatives[ ">", "^", "^^" ];
 
-$promptTemplate = StringTemplate[ "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%\n\n%%Post%%", Delimiters -> "%%" ];
+$promptTemplate = StringTemplate[
+    "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%\n\n%%Skills%%\n\n%%Post%%",
+    Delimiters -> "%%"
+];
 
 $cellRole = Automatic;
 
@@ -789,6 +792,8 @@ applyTokenizer // beginDefinition;
 applyTokenizer[ tokenizer_, content_String ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_? graphicsQ ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
+(* Reasoning is encrypted, so it can't be counted locally: *)
+applyTokenizer[ tokenizer_, KeyValuePattern[ "Type" -> "Reasoning" ] ] := { };
 applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := applyTokenizer0[ tokenizer, data ];
 applyTokenizer // endDefinition;
 
@@ -871,7 +876,7 @@ makeCurrentRole[ as_, base_, name_String ] :=
 makeCurrentRole[ as_, base_, persona_Association ] := (
     needsBasePrompt @ base;
     needsBasePrompt @ persona;
-    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Tools" } ] ] |>
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Skills", "Tools" } ] ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
@@ -891,11 +896,12 @@ buildSystemPrompt[ as_Association ] := StringReplace[
         $promptTemplate,
         Select[
             <|
-                "Pre"   -> getPrePrompt @ as,
-                "Post"  -> getPostPrompt @ as,
-                "Tools" -> getToolPrompt @ as,
-                "Group" -> getGroupPrompt @ as,
-                "Base"  -> "<base-prompt></base-prompt>"
+                "Pre"    -> getPrePrompt @ as,
+                "Post"   -> getPostPrompt @ as,
+                "Tools"  -> getToolPrompt @ as,
+                "Skills" -> getSkillsPrompt @ as,
+                "Group"  -> getGroupPrompt @ as,
+                "Base"   -> "<base-prompt></base-prompt>"
             |>,
             StringQ
         ]

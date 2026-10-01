@@ -142,6 +142,18 @@ $ResetButtonPressed      = LightDarkSwitched[ RGBColor[ "#0E7FB1" ], RGBColor[ "
 $TransparentBackground   = Transparent;
 
 
+stringResName[ text_ ] :=
+Replace[
+    text,
+    {
+        Dynamic[ FEPrivate`FrontEndResource[ "ChatbookStrings", s_String ] ] :> s,
+        Dynamic[ else_ ] :> ToString[ else ],
+        s_String :> s,
+        _ :> ""
+    }
+]
+
+
 (* ::**************************************************************************************************************:: *)
 backButtonAppearanceBasic // beginDefinition;
 
@@ -230,6 +242,7 @@ Overlay[
                         action,
                         Appearance       -> "Suppressed",
                         BaselinePosition -> Baseline,
+                        BoxID            -> "NALinkTrail" <> stringResName[ text ],
                         ImageSize        -> Automatic,
                         Method           -> "Queued"
                     ],
@@ -323,6 +336,7 @@ PaneSelector[
                     action; forceUpdate = RandomReal[ ],
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
+                    BoxID            -> "NAChatbookMenuItemResetButton",
                     ImageSize        -> Automatic,
                     Method           -> "Queued"
                 ],
@@ -401,6 +415,7 @@ Module[ { icon, label },
             chatMenuItemAppearance[ icon, label ],
             eval,
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItem" <> stringResName[ label ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
@@ -520,6 +535,7 @@ Module[ { label },
         chatMenuItemAppearance[ "", label ],
         generatedMenu = start; generatedMenu = end,
         Appearance -> $suppressButtonAppearance,
+        BoxID      -> "NASidebarMenuItemRefresh" <> stringResName[ label ],
         Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
         ImageSize  -> Automatic,
         Method     -> Lookup[ spec, "Method", "Queued" ]
@@ -549,6 +565,7 @@ Module[ { icon, label },
                 aiPane = "ModelNames";
                 modelPaneLabel = tag),
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItemSubmenuGenerator" <> stringResName[ label ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
@@ -567,6 +584,7 @@ Module[ { icon, label },
             chatMenuItemAppearance[ icon, label, True ],
             aiPane = tag,
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItemSubmenuGenerator" <> stringResName[ label ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
@@ -594,6 +612,7 @@ Module[ { icon, label },
             chatMenuItemAppearance[ icon, label ],
             eval,
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItemSetter" <> stringResName[ label ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             ImageSize  -> Automatic,
             Method     -> Lookup[ spec, "Method", "Queued" ]
@@ -863,8 +882,9 @@ menuItemDelayed // endDefinition
 menuRefresh // beginDefinition
 
 menuRefresh[ Dynamic[ rootMenuCell_ ], Dynamic[ subMenuCell_ ], Dynamic[ displayDMVariable_ ], spec : KeyValuePattern[ { "InitialMenu" :> start_, "FinalMenu" :> end_ } ], menuWidth_ ] :=
-Module[ { label },
-    label = lineWrap[ Lookup[ spec, "Label", "" ], menuWidth ];
+Module[ { label, rawLabel },
+    rawLabel = Lookup[ spec, "Label", "" ];
+    label = lineWrap[ rawLabel, menuWidth ];
         
     Button[
         RawBoxes @ TemplateBox[ { ToBoxes @ Spacer[0], ToBoxes @ label }, "ChatMenuItem" ],
@@ -879,6 +899,7 @@ Module[ { label },
                 end
             ],
         Appearance -> $suppressButtonAppearance,
+        BoxID      -> "NASidebarMenuRefresh" <> stringResName[ rawLabel ],
         Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
         Method     -> Lookup[ spec, "Method", "Queued" ]
     ]
@@ -922,8 +943,9 @@ menuSectionHeader // endDefinition
 menuItemSetter // beginDefinition
 
 menuItemSetter[ Dynamic[ rootMenuCell_ ], Dynamic[ subMenuCell_ ], spec : KeyValuePattern[ "Action" :> eval_ ], menuWidth_ ] :=
-Module[ { icon, label },
-    label = lineWrap[ Lookup[ spec, "Label", "" ], menuWidth - 60 ];
+Module[ { icon, label, rawLabel },
+    rawLabel = Lookup[ spec, "Label", "" ];
+    label = lineWrap[ rawLabel, menuWidth - 60 ];
     icon = menuItemIcon @ spec;
     
     addSubmenuHandler[
@@ -931,6 +953,7 @@ Module[ { icon, label },
             RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
             NotebookDelete @ rootMenuCell; eval,
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItemSetter" <> rawLabel,
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ],
@@ -946,8 +969,9 @@ menuItemSetter // endDefinition
 menuItemButton // beginDefinition
 
 menuItemButton[ Dynamic[ rootMenuCell_ ], Dynamic[ subMenuCell_ ], spec : KeyValuePattern[ "Action" :> eval_ ], menuWidth_ ] :=
-Module[ { icon, label },
-    label = lineWrap[ Lookup[ spec, "Label", "" ], menuWidth ];
+Module[ { icon, label, rawLabel },
+    rawLabel = Lookup[ spec, "Label", "" ];
+    label = lineWrap[ rawLabel, menuWidth ];
     icon = menuItemIcon @ spec;
     
     addSubmenuHandler[
@@ -955,6 +979,7 @@ Module[ { icon, label },
             RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
             NotebookDelete @ rootMenuCell; eval,
             Appearance -> $suppressButtonAppearance,
+            BoxID      -> "NASidebarMenuItemButton" <> stringResName[ rawLabel ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ],
@@ -971,8 +996,9 @@ menuItemSubmenuGenerator // beginDefinition
 
 menuItemSubmenuGenerator[ Dynamic[ rootMenuCell_ ], Dynamic[ subMenuCell_ ], spec : KeyValuePattern[ "Menu" :> action_ ], menuWidth_ ] :=
 With[
+    { rawLabel = Lookup[ spec, "Label", "" ] },
     {
-        label = submenuLabel @ Lookup[ spec, "Label", "" ],
+        label = submenuLabel @ rawLabel,
         icon = menuItemIcon @ spec,
         newMenuSize = { Lookup[ spec, "Width", menuWidth ], UpTo[ 450 ] },
         menuTag = Lookup[ spec, "MenuTag", "None", Replace[ #, Except[ _String ] -> "None" ]& ] (* FIXME: Throw error if there's no menu tag? *)
@@ -1002,6 +1028,7 @@ With[
                 ]
             )
         },
+        BoxID  -> "NASidebarMenuItemSubmenuGenerator" <> rawLabel,
         Method -> "Queued"
     ]
 ]

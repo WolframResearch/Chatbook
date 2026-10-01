@@ -636,7 +636,7 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
                 (* will we ever need to do this with the sidebar chat...? *)
                 If[ TrueQ @ evaluate,
                     MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
-                        MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
+                        MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "NASidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
         ]
     ],
     throwInternalFailure

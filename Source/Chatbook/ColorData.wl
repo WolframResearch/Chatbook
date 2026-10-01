@@ -2488,6 +2488,27 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "They're positioned over the notebook's background color"
 	|>,
+	"ToolIconFileReader_1" -> <|
+		 "Light"  -> RGBColor[0.3254901, 0.3843137, 0.4, 1.],
+		 "Dark"   -> RGBColor[0.7068935, 0.8064968, 0.8283573, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ToolIconFileReader_2" -> <|
+		 "Light"  -> RGBColor[0.5490196, 0.6470588, 0.6666666, 1.],
+		 "Dark"   -> RGBColor[0.5691903, 0.6697178, 0.6897078, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
+	"ToolIconFileReader_3" -> <|
+		 "Light"  -> RGBColor[1., 1., 1., 1.],
+		 "Dark"   -> RGBColor[0.2325145, 0.2325145, 0.2325145, 1.],
+		 "Method" -> "Feature",
+		 "DC"     -> "White",
+		 "Notes"  -> ""
+	|>,
 	"UserMessageBoxBackground" -> <|
 		 "Light"  -> GrayLevel[1.],
 		 "Dark"   -> GrayLevel[0.0980392],

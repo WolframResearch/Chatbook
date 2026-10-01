@@ -72,10 +72,12 @@ $defaultChatSettings = <|
     "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
+    "RequestMethod"                  -> Automatic,
     "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
     "ShowProgressText"               -> Automatic,
+    "Skills"                         -> Automatic,
     "SplitToolResponseMessages"      -> Automatic,
     "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
@@ -394,6 +396,7 @@ $modelAutoSettings[ Automatic, "GPT41" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*gpt-5*)
 $modelAutoSettings[ Automatic, "GPT5" ] = <|
+    "EnableResponses"            -> True,
     "HybridToolMethod"           -> False,
     "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
@@ -436,13 +439,18 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
+    (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. However, there are still
+       some blocking issues preventing us from switching yet:
+           * LLMTool outputs always get converted to text, even when model supports images
+           * Custom tools aren't yet supported, so code-based inputs perform poorly due to JSON attention overhead
+    *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
-$gpt5Reasoning := $gpt5Reasoning = PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "2.2.4" ];
+$gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -554,8 +562,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
     "SplitToolResponseMessages" -> False,
-    "Temperature"               -> 0.7,
-    "ToolResponseRole"          -> "System"
+    "Temperature"               -> 0.7
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -843,12 +850,17 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
             If[ override[ "SidebarChat"   ], $SidebarChat         = True ];
         ];
-        result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
+        (* Skills are resolved first, since they determine whether the skill tool is included: *)
+        result = ConfirmBy[ resolveSkills @ KeySort @ override, AssociationQ, "ResolveSkills" ];
+        result = ConfirmBy[ resolveTools @ result, AssociationQ, "ResolveTools" ];
         result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
-        result[ "StopTokens" ] = autoStopTokens @ result;
+        (* Stop tokens depend on the tool method, so they are resolved last unless they were given explicitly: *)
+        If[ MatchQ[ settings[ "StopTokens" ], $$unspecified ],
+            result[ "StopTokens" ] = autoStopTokens @ result
+        ];
 
         ConfirmBy[ inheritModelSettings @ result, AssociationQ, "Result" ]
     ],
@@ -981,6 +993,7 @@ resolveAutoSetting0[ as_, "OpenToolCallBoxes"              ] := openToolCallBoxe
 resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
 resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
+resolveAutoSetting0[ as_, "RequestMethod"                  ] := chooseRequestMethod @ as;
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "TabbedOutput"                   ] := ! $cloudNotebooks;
@@ -991,6 +1004,7 @@ resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle"     ] := chooseToolExampl
 resolveAutoSetting0[ as_, "ToolCallFrequency"              ] := Automatic;
 resolveAutoSetting0[ as_, "ToolCallRetryMessage"           ] := toolCallRetryMessageQ @ as;
 resolveAutoSetting0[ as_, "ToolExamplePrompt"              ] := chooseToolExamplePromptSpec @ as;
+resolveAutoSetting0[ as_, "ToolResponseRole"               ] := chooseToolResponseRole @ as;
 resolveAutoSetting0[ as_, "ToolsEnabled"                   ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"       ] := scrollOutputQ @ as;
 resolveAutoSetting0[ as_, key_String                       ] := Automatic;
@@ -1011,11 +1025,13 @@ $autoSettingKeyDependencies = <|
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
     "OpenToolCallBoxes"          -> "SendToolResponse",
+    "RequestMethod"              -> { "Authentication", "Model" },
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
     "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
     "ToolCallRetryMessage"       -> { "Authentication", "Model" },
     "ToolExamplePrompt"          -> "Model",
+    "ToolResponseRole"           -> { "RequestMethod", "ToolMethod" },
     "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
 |>;
@@ -1039,6 +1055,33 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseRequestMethod*)
+(* TODO: This should also choose "Responses" for the "LLMKit" service as soon as the server supports it. *)
+chooseRequestMethod // beginDefinition;
+
+(* LLMKit is also used for OpenAI models when authenticating with LLMKit: *)
+chooseRequestMethod[ as_Association? llmKitQ ] := "ChatCompletions";
+
+chooseRequestMethod[ as_Association ] :=
+    chooseRequestMethod[ as, serviceName @ as, TrueQ @ autoModelSetting[ as, "EnableResponses" ] ];
+
+(* Models that support the responses endpoint set "EnableResponses" in $modelAutoSettings: *)
+chooseRequestMethod[ as_, "OpenAI", True ] :=
+    If[ TrueQ @ $responsesAPIAvailable, "Responses", "ChatCompletions" ];
+
+chooseRequestMethod[ as_, service_, enabled_ ] := "ChatCompletions";
+
+chooseRequestMethod // endDefinition;
+
+
+(* The responses endpoint requires LLMFunctions 2.4.0+ and LLMConnections 1.1.0+: *)
+$responsesAPIAvailable := $responsesAPIAvailable = TrueQ @ And[
+    pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.4.0" ],
+    pacletVersionAtLeastQ[ "LLMConnections", "1.1.0" ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1127,6 +1170,8 @@ chooseToolMethod // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*simpleToolQ*)
 simpleToolQ // beginDefinition;
+(* The skill tool is built for each chat, so it's not in $DefaultTools, but its parameters are simple strings: *)
+simpleToolQ[ tool_? skillToolQ ] := True;
 simpleToolQ[ tool_ ] := simpleToolQ[ tool, $DefaultTools ];
 simpleToolQ[ name_String, default_Association ] := KeyExistsQ[ default, name ];
 simpleToolQ[ tool: HoldPattern[ _LLMTool ], default_Association ] := MemberQ[ default, tool ];
@@ -1193,16 +1238,57 @@ autoToolExamplePromptStyle0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*chooseToolResponseRole*)
+chooseToolResponseRole // beginDefinition;
+chooseToolResponseRole[ as_Association ] := chooseToolResponseRole[ as[ "RequestMethod" ], as[ "ToolMethod" ] ];
+chooseToolResponseRole[ _, "Service" ] := Automatic;
+chooseToolResponseRole[ "Responses", _ ] := "User";
+chooseToolResponseRole[ _, _ ] := "System";
+chooseToolResponseRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*autoStopTokens*)
 autoStopTokens // beginDefinition;
 
-autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
-    Missing[ "NotSupported" ];
+autoStopTokens[ as_Association ] :=
+    If[ stopTokensSupportedQ @ as, chooseStopTokens @ as, Missing[ "NotSupported" ] ];
 
-autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
+autoStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stopTokensSupportedQ*)
+stopTokensSupportedQ // beginDefinition;
+
+stopTokensSupportedQ[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    False;
+
+(* The responses endpoint does not support stop tokens: *)
+stopTokensSupportedQ[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] :=
+    False;
+
+(* Explicitly given stop tokens are kept in the settings, so the model needs to be checked too: *)
+stopTokensSupportedQ[ KeyValuePattern[ "Model" -> model_Association ] ] :=
+    autoModelSetting[ model, "StopTokens" ] =!= Missing[ "NotSupported" ];
+
+stopTokensSupportedQ[ _Association ] :=
+    True;
+
+stopTokensSupportedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*chooseStopTokens*)
+
+(* The stop tokens needed for the given settings, regardless of whether the model supports them. When it doesn't,
+   these are detected client-side instead (see `emulatedStopTokens` in SendChat.wl). *)
+chooseStopTokens // beginDefinition;
+
+chooseStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
     If[ TrueQ @ $AutomaticAssistance, { "[INFO]" }, None ];
 
-autoStopTokens[ as_Association ] := Replace[
+chooseStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
         methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
@@ -1211,7 +1297,7 @@ autoStopTokens[ as_Association ] := Replace[
     { } -> None
 ];
 
-autoStopTokens // endDefinition;
+chooseStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

@@ -14,7 +14,7 @@ $$expressionScheme = Alternatives @@ $expressionSchemes;
 
 $$expressionURIKey := "content-" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ];
 
-$attachmentTypes     = { "Expressions", "ToolCalls" };
+$attachmentTypes     = { "Expressions", "ToolCalls", "Reasoning" };
 $$attachmentProperty = Alternatives @@ $attachmentTypes;
 
 $attachments = <| |>;
@@ -361,7 +361,7 @@ GetAttachments // endExportedDefinition;
 getAttachments // beginDefinition;
 
 getAttachments[ messages_List, All ] := Enclose[
-    Catch @ Module[ { allExprKeys, allToolKeys, string, exprKeys, toolKeys, exprs, toolCalls },
+    Catch @ Module[ { allExprKeys, allToolKeys, string, exprKeys, toolKeys, exprs, toolCalls, reasoning },
         allExprKeys = ConfirmMatch[ Keys @ $attachments, { ___String }, "ExpressionKeys" ];
         allToolKeys = ConfirmMatch[ Keys @ $toolEvaluationResults, { ___String }, "ToolKeys" ];
         string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
@@ -369,7 +369,8 @@ getAttachments[ messages_List, All ] := Enclose[
         toolKeys = DeleteDuplicates @ StringCases[ string, "ENDRESULT("~~key:allToolKeys~~")" :> key ];
         exprs = ConfirmBy[ KeyTake[ $attachments, exprKeys ], AssociationQ, "Expressions" ];
         toolCalls = ConfirmBy[ KeyTake[ $toolEvaluationResults, toolKeys ], AssociationQ, "ToolCalls" ];
-        <| "Expressions" -> exprs, "ToolCalls" -> toolCalls |>
+        reasoning = ConfirmBy[ KeyTake[ $reasoningData, reasoningIDs @ string ], AssociationQ, "Reasoning" ];
+        <| "Expressions" -> exprs, "ToolCalls" -> toolCalls, "Reasoning" -> reasoning |>
     ],
     throwInternalFailure
 ];
@@ -377,7 +378,8 @@ getAttachments[ messages_List, All ] := Enclose[
 getAttachments[ None, All ] := Enclose[
     <|
         "Expressions" -> ConfirmBy[ $attachments, AssociationQ, "Expressions" ],
-        "ToolCalls"   -> ConfirmBy[ $toolEvaluationResults, AssociationQ, "ToolCalls" ]
+        "ToolCalls"   -> ConfirmBy[ $toolEvaluationResults, AssociationQ, "ToolCalls" ],
+        "Reasoning"   -> ConfirmBy[ $reasoningData, AssociationQ, "Reasoning" ]
     |>,
     throwInternalFailure
 ];
@@ -394,7 +396,7 @@ getAttachments // endDefinition;
 (*LoadAttachments*)
 LoadAttachments // beginDefinition;
 LoadAttachments[ as_Association ] := catchMine @ LoadAttachments[ "Expressions", as ];
-LoadAttachments[ type: "Expressions"|"ToolCalls", as_Association ] := catchMine @ loadAttachments[ type, as ];
+LoadAttachments[ type: $$attachmentProperty, as_Association ] := catchMine @ loadAttachments[ type, as ];
 LoadAttachments // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -409,6 +411,11 @@ loadAttachments[ "Expressions", expressions_Association ] := Enclose[
 
 loadAttachments[ "ToolCalls", toolCalls_Association ] := Enclose[
     $toolEvaluationResults = ConfirmBy[ <| $toolEvaluationResults, toolCalls |>, AssociationQ, "ToolCalls" ],
+    throwInternalFailure
+];
+
+loadAttachments[ "Reasoning", reasoning_Association ] := Enclose[
+    $reasoningData = ConfirmBy[ <| $reasoningData, reasoning |>, AssociationQ, "Reasoning" ],
     throwInternalFailure
 ];
 
