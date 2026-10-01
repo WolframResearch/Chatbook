@@ -217,7 +217,8 @@ currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookO
         SetSelectedNotebook @ nbo,
         Appearance       -> "Suppressed",
         BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
-        BaselinePosition -> Baseline
+        BaselinePosition -> Baseline,
+        BoxID            -> "NAFocusMenuGoToNotebook" <> If[ StringQ @ title, title, "" ]
     ];
 
 currentNotebookButton // endDefinition;
