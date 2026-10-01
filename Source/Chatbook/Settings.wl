@@ -857,7 +857,10 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
-        result[ "StopTokens" ] = autoStopTokens @ result;
+        (* Stop tokens depend on the tool method, so they are resolved last unless they were given explicitly: *)
+        If[ MatchQ[ settings[ "StopTokens" ], $$unspecified ],
+            result[ "StopTokens" ] = autoStopTokens @ result
+        ];
 
         ConfirmBy[ inheritModelSettings @ result, AssociationQ, "Result" ]
     ],
@@ -1248,17 +1251,44 @@ chooseToolResponseRole // endDefinition;
 (*autoStopTokens*)
 autoStopTokens // beginDefinition;
 
-autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
-    Missing[ "NotSupported" ];
+autoStopTokens[ as_Association ] :=
+    If[ stopTokensSupportedQ @ as, chooseStopTokens @ as, Missing[ "NotSupported" ] ];
+
+autoStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stopTokensSupportedQ*)
+stopTokensSupportedQ // beginDefinition;
+
+stopTokensSupportedQ[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    False;
 
 (* The responses endpoint does not support stop tokens: *)
-autoStopTokens[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] :=
-    Missing[ "NotSupported" ];
+stopTokensSupportedQ[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] :=
+    False;
 
-autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
+(* Explicitly given stop tokens are kept in the settings, so the model needs to be checked too: *)
+stopTokensSupportedQ[ KeyValuePattern[ "Model" -> model_Association ] ] :=
+    autoModelSetting[ model, "StopTokens" ] =!= Missing[ "NotSupported" ];
+
+stopTokensSupportedQ[ _Association ] :=
+    True;
+
+stopTokensSupportedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*chooseStopTokens*)
+
+(* The stop tokens needed for the given settings, regardless of whether the model supports them. When it doesn't,
+   these are detected client-side instead (see `emulatedStopTokens` in SendChat.wl). *)
+chooseStopTokens // beginDefinition;
+
+chooseStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
     If[ TrueQ @ $AutomaticAssistance, { "[INFO]" }, None ];
 
-autoStopTokens[ as_Association ] := Replace[
+chooseStopTokens[ as_Association ] := Replace[
     DeleteDuplicates @ Flatten @ {
         methodStopTokens[ as[ "ToolMethod" ], as[ "EndToken" ] ],
         styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
@@ -1267,7 +1297,7 @@ autoStopTokens[ as_Association ] := Replace[
     { } -> None
 ];
 
-autoStopTokens // endDefinition;
+chooseStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

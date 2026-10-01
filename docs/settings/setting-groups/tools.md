@@ -168,7 +168,7 @@ When `Automatic`, resolved per model via `toolsEnabledQ` (`Settings.wl`):
 - **Tool prompt**: `getToolPrompt` (`ChatMessages.wl`) returns `""` when `False`, suppressing tool instructions in the system prompt.
 - **Discourage extra tool calls**: `discourageExtraToolCallsQ` returns `False` when `ToolsEnabled` is `False`.
 - **Response handling**: `checkResponse` (`SendChat.wl`) has a special pattern for `ToolsEnabled -> False` that either writes the result directly or defers it based on `$AutomaticAssistance`.
-- **Stop tokens**: `autoStopTokens` returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True` and `ToolsEnabled` is `False`, otherwise `None`.
+- **Stop tokens**: `chooseStopTokens` (used by `autoStopTokens`) returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True` and `ToolsEnabled` is `False`, otherwise `None`.
 - **Hybrid tool method**: `hybridToolMethodQ` returns `False` when `ToolsEnabled` is `False`.
 - **Tool example prompt style**: `chooseToolExamplePromptStyle` returns `None` when `ToolsEnabled` is `False`.
 - **Tool Manager warning**: `toolModelWarning` (`ToolManager.wl`) displays `$toolsDisabledWarning` when `False`.
@@ -657,7 +657,7 @@ Used in three ways:
 
 3. **Tool call example templates**: `Tools/Examples.wl` uses `$endTokenString` (which prepends `"\n"` to `$endToken`) in assistant message templates across all example styles to show the LLM how to end its turn.
 
-When `None` or empty, the end token is omitted from prompts, stop sequences, and example templates. After receiving a response, `trimStopTokens` in `SendChat.wl` removes stop tokens (including the end token) from the output.
+When `None` or empty, the end token is omitted from prompts, stop sequences, and example templates. After receiving a response, `trimStopTokens` in `SendChat.wl` removes stop tokens (including the end token) from the output. For models that don't support stop tokens, these stop sequences (including the end token) are emulated client-side instead (see `"StopTokens"` in [LLM Parameter Settings](llm-parameters.md)).
 
 ### Model-Specific Overrides
 
