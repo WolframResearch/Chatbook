@@ -17,6 +17,7 @@ Run "fe.py <command> -h" for details on each command.
 """
 
 import argparse
+import contextlib
 import getpass
 import json
 import os
@@ -85,29 +86,59 @@ def pid_alive(pid):
         return False
 
 
-# Expected command lines of the processes fe.py may signal, so that a reused PID is never killed by mistake:
-PROCESS_KINDS = {
-    "kernel": ("WolframKernel", "MathKernel", "wolfram"),
-    "frontend": ("WolframNB", "Mathematica"),
-    "xvfb": ("Xvfb",),
-    "wm": ("xfwm4", "openbox"),
+# Executables of the processes fe.py may signal. Together with the process start time, this makes sure a PID that was
+# reused by an unrelated process is never signalled.
+PROCESS_NAMES = {
+    "kernel": {"WolframKernel", "MathKernel"},
+    "frontend": {"WolframNB", "Mathematica"},
+    "xvfb": {"Xvfb"},
+    "wm": {"xfwm4", "openbox"},
 }
+SHELLS = {"sh", "bash", "dash", "zsh"}  # the WolframNB launcher is a shell script
 
 
-def pid_is(pid, kind):
-    """Whether `pid` is alive and its command line looks like the given kind of process."""
-    if not pid_alive(pid):
-        return False
+def process_info(pid):
+    """(argv, start time as a Unix time) of a process, or None if they cannot be determined."""
+    pid = int(pid)
     try:
-        with open(f"/proc/{int(pid)}/cmdline", "rb") as f:
-            cmdline = f.read().replace(b"\0", b" ").decode("utf-8", "replace")
-    except OSError:
-        return not os.path.isdir("/proc")  # no procfs (e.g. macOS): fall back to the liveness check
-    return any(needle.lower() in cmdline.lower() for needle in PROCESS_KINDS[kind])
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            argv = [a.decode("utf-8", "replace") for a in f.read().split(b"\0") if a]
+        with open(f"/proc/{pid}/stat") as f:
+            ticks = int(f.read().rsplit(")", 1)[1].split()[19])  # field 22: start time after boot, in clock ticks
+        with open("/proc/stat") as f:
+            boot = next(int(line.split()[1]) for line in f if line.startswith("btime "))
+        return argv, boot + ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError, StopIteration):
+        pass
+    if os.path.isdir("/proc"):
+        return None
+    try:  # no procfs (e.g. macOS)
+        out = subprocess.run(["ps", "-o", "lstart=", "-o", "args=", "-p", str(pid)], capture_output=True, text=True,
+                             timeout=5).stdout.split()
+        return out[5:], time.mktime(time.strptime(" ".join(out[:5]), "%a %b %d %H:%M:%S %Y"))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
 
 
-def kill_pid(pid, kind, sig=signal.SIGTERM):
-    if pid_is(pid, kind):
+def pid_is(pid, kind, started=(None, None)):
+    """Whether `pid` is a live process of the given kind that started within `started` (Unix times; None = open).
+    False whenever this cannot be established."""
+    if not pid or not pid_alive(pid):
+        return False
+    info = process_info(pid)
+    if not info or not info[0]:
+        return False
+    argv, start = info
+    names = PROCESS_NAMES[kind]
+    exe = os.path.basename(argv[0])
+    if exe not in names and not (exe in SHELLS and len(argv) > 1 and os.path.basename(argv[1]) in names):
+        return False
+    earliest, latest = started
+    return (earliest is None or start >= earliest - 2) and (latest is None or start <= latest + 2)
+
+
+def kill_pid(pid, kind, sig=signal.SIGTERM, started=(None, None)):
+    if pid_is(pid, kind, started):
         try:
             os.kill(int(pid), sig)
         except OSError:
@@ -138,9 +169,20 @@ def registry_entries():
         # A launch record only belongs to this server if it was written for the same token (records can be left
         # behind, and an unrelated server may later get the same port):
         info["_launch"] = launch if launch_belongs_to(launch, info) else None
-        info["_alive"] = pid_is(info.get("KernelPID"), "kernel")
+        info["_alive"] = pid_is(info.get("KernelPID"), "kernel", server_started(info))
         entries.append(info)
     return entries
+
+
+def server_started(info):
+    """Start-time bounds for a server's kernel and front end: both started before the server registered itself."""
+    return None, info.get("StartTime")
+
+
+def launch_started(launch):
+    """Start-time bounds for the processes `launch` started (Xvfb, window manager, the front end's launcher)."""
+    start = (launch or {}).get("startTime")
+    return (start, start + 600) if start else (None, None)
 
 
 def launch_belongs_to(launch, info):
@@ -447,7 +489,7 @@ def cmd_servers(args):
     for e in entries:
         status = "running" if e["_alive"] else "dead"
         if args.prune and not e["_alive"]:
-            kill_launched(e.get("_launch"))
+            kill_launched(e.get("_launch"), e if e.get("_launch") else None)
             remove_registry(e["Port"])
             status = "removed"
         rows.append({"port": e["Port"], "name": e.get("Name"), "display": e.get("Display"), "status": status,
@@ -482,25 +524,44 @@ def prune_orphans(live_ports):
             os.remove(path)
 
 
-def kill_launched(launch, front_end_pid=None, kernel_pid=None):
+def kill_launched(launch, info=None):
     """Stop the processes of a launch record (front end, its kernel, window manager, Xvfb), checking each PID's
     identity first so that a reused PID is never signalled."""
-    launch = launch or {}
-    for pid, kind in ((front_end_pid, "frontend"), (launch.get("launcherPID"), "frontend"), (kernel_pid, "kernel")):
-        kill_pid(pid, kind, signal.SIGKILL)
-    kill_pid(launch.get("wmPID"), "wm")
-    kill_pid(launch.get("xvfbPID"), "xvfb")
+    launch, info = launch or {}, info or {}
+    kill_pid(info.get("FrontEndPID"), "frontend", signal.SIGKILL, server_started(info))
+    kill_pid(launch.get("launcherPID"), "frontend", signal.SIGKILL, launch_started(launch))
+    kill_pid(info.get("KernelPID"), "kernel", signal.SIGKILL, server_started(info))
+    kill_pid(launch.get("wmPID"), "wm", started=launch_started(launch))
+    kill_pid(launch.get("xvfbPID"), "xvfb", started=launch_started(launch))
+
+
+@contextlib.contextmanager
+def registry_lock():
+    """Serialize registry updates between concurrent fe.py processes."""
+    os.makedirs(registry_dir(), exist_ok=True)
+    with open(os.path.join(registry_dir(), ".lock"), "a") as f:
+        try:
+            import fcntl
+            fcntl.flock(f, fcntl.LOCK_EX)
+        except ImportError:  # Windows
+            import msvcrt
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+        yield  # released when the file is closed
 
 
 def reserve_port(requested, token):
-    """Pick a port and atomically claim it by creating its launch record, so that concurrent launches can't collide."""
+    """Pick a port and claim it by creating its launch record, so that concurrent launches can't collide."""
+    with registry_lock():
+        return reserve_port_locked(requested, token)
+
+
+def reserve_port_locked(requested, token):
     live = {e["Port"] for e in registry_entries() if e["_alive"]}
     records = launch_records()
-    os.makedirs(registry_dir(), exist_ok=True)
-    for port in ([requested] if requested else range(*PORT_RANGE)):
+    for port in ([requested] if requested else range(PORT_RANGE[0], PORT_RANGE[1] + 1)):
         record = records.get(port)
         busy = port in live or (record and (time.time() - record.get("startTime", 0) < 300
-                                            or pid_is(record.get("launcherPID"), "frontend")))
+                                            or pid_is(record.get("launcherPID"), "frontend", launch_started(record))))
         if busy:
             if requested:
                 raise CLIError(f"Port {port} is already used by another front end server")
@@ -514,11 +575,12 @@ def reserve_port(requested, token):
                 continue
         path = os.path.join(registry_dir(), f"{port}.launch.json")
         if record:
-            os.remove(path)  # a stale record from an old launch
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(path)  # a stale record from an old launch
         try:
             fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError:
-            continue  # claimed by a concurrent launch
+            continue  # claimed by a launch that does not take the lock (an older fe.py)
         with os.fdopen(fd, "w") as f:
             json.dump({"port": port, "token": token, "startTime": time.time()}, f)
         return port
@@ -599,6 +661,9 @@ MIN_FREE_MEMORY_MB = 2000
 
 
 def cmd_launch(args):
+    chatbook = os.path.realpath(args.chatbook) if args.chatbook else None
+    if chatbook and not os.path.isfile(os.path.join(chatbook, "PacletInfo.wl")):
+        raise CLIError(f"Not a paclet directory (no PacletInfo.wl): {chatbook}")
     free = available_memory_mb()
     if free is not None and free < MIN_FREE_MEMORY_MB and not args.force:
         raise CLIError(f"Only {free} MB of memory available; a front end needs about 1 GB and starting one now could "
@@ -635,8 +700,8 @@ def cmd_launch(args):
         env["CHATBOOK_FE_SERVER_TOKEN"] = token
         env["CHATBOOK_FE_SERVER_NAME"] = args.name or f"fe-{port}"
         env["CHATBOOK_FE_SERVER_REGISTRY"] = registry_dir()
-        if args.chatbook:
-            env["CHATBOOK_FE_SERVER_CHATBOOK"] = os.path.abspath(args.chatbook)
+        if chatbook:
+            env["CHATBOOK_FE_SERVER_CHATBOOK"] = chatbook
         else:
             env.pop("CHATBOOK_FE_SERVER_CHATBOOK", None)
 
@@ -664,6 +729,11 @@ def cmd_launch(args):
             if time.time() > deadline:
                 raise CLIError(f"Timed out waiting for the front end connection on port {port}; see {log_path}")
             time.sleep(0.5)
+        if chatbook:
+            # Init.wl loads it quietly; make sure tests really run against this Chatbook:
+            loaded = server.request("info").get("ChatbookLocation")
+            if not isinstance(loaded, str) or os.path.realpath(loaded) != chatbook:
+                raise CLIError(f"The front end loaded Chatbook from {loaded!r} instead of {chatbook}")
         if not args.keep_welcome:
             close_startup_windows(server, private_display=bool(xvfb))
     except BaseException:
@@ -745,9 +815,9 @@ def cmd_stop(args):
         except (CLIError, ServerError):
             pass
         deadline = time.time() + 10
-        while time.time() < deadline and pid_is(server.info.get("FrontEndPID"), "frontend"):
+        while time.time() < deadline and pid_is(server.info.get("FrontEndPID"), "frontend", server_started(server.info)):
             time.sleep(0.25)
-    kill_launched(launch, server.info.get("FrontEndPID"), server.info.get("KernelPID"))
+    kill_launched(launch, server.info)
     remove_registry(server.port)
     bootstrap = launch.get("bootstrap")
     if bootstrap and os.path.exists(bootstrap):
@@ -1011,8 +1081,12 @@ def cmd_screenshot(args):
             label = nb.get("title") or "notebook"
         if args.pad and not args.cell:
             x, y, w, h = x - args.pad, y - args.pad, w + 2 * args.pad, h + 2 * args.pad
+        # Clip to the screen, keeping the right and bottom edges where they are:
+        x1, y1 = min(x + w, d.width), min(y + h, d.height)
         x, y = max(0, x), max(0, y)
-        w, h = min(w, d.width - x), min(h, d.height - y)
+        w, h = x1 - x, y1 - y
+        if w <= 0 or h <= 0:
+            raise CLIError("The requested region is outside the screen")
         path = args.output or default_screenshot_path(server, label)
         shot = d.screenshot(path, x, y, w, h, scale=args.scale)
 
@@ -1310,6 +1384,11 @@ def cmd_type(args):
     print(f"typed {len(text)} characters")
 
 
+def cell_ref(cell):
+    """A reference that identifies a listed cell uniquely (attached cells can share ids across notebooks)."""
+    return cell.get("ref") or cell["id"]
+
+
 def chat_outputs(server, notebook, sidebar=False):
     cells = server.request("cells", {"notebook": notebook, "maxCharacters": 1000000, "sidebar": sidebar or None})
     return [c for c in cells if "ChatOutput" in style_name(c.get("style")) or "AssistantOutput" in style_name(c.get("style"))]
@@ -1320,7 +1399,7 @@ def cmd_ask(args):
     server = Server(select_server(args.server))
     sidebar = args.sidebar is not None
     notebook = args.sidebar or args.notebook
-    before = {c["id"] for c in chat_outputs(server, notebook, sidebar)}
+    before = {cell_ref(c) for c in chat_outputs(server, notebook, sidebar)}
     target = argparse.Namespace(image=None, box="AttachedChatInputField", text=None, cell=None, notebook=notebook,
                                 occurrence=None, at=None, within="sidebar" if sidebar else None)
     with server.x_display() as d:
@@ -1355,9 +1434,9 @@ def cmd_ask(args):
         # Queued requests wait while the chat's evaluation is running:
         idle = server.request("evaluate", {"code": "Wolfram`Chatbook`$ChatEvaluationCell === None"},
                               timeout=max(5.0, remaining))
-        new = [c for c in chat_outputs(server, notebook, sidebar) if c["id"] not in before]
+        new = [c for c in chat_outputs(server, notebook, sidebar) if cell_ref(c) not in before]
         if idle.get("result") == "True" and new:
-            reply = server.request("readCell", {"cell": new[-1]["id"], "format": args.format})
+            reply = server.request("readCell", {"cell": cell_ref(new[-1]), "format": args.format})
             return emit(args, reply, reply["text"])
         if time.time() - start > args.timeout:
             raise CLIError(f"No reply after {args.timeout}s (take a screenshot to see what happened)")

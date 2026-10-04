@@ -6,6 +6,7 @@ All coordinates are X11 root-window pixels unless stated otherwise.
 
 import ctypes
 import ctypes.util
+import math
 import os
 import struct
 import time
@@ -191,8 +192,16 @@ def scale_rgb(width, height, rgb, factor):
     Returns (width, height, rgb)."""
     if factor >= 1:
         return width, height, rgb
+    halvings = math.log2(1 / factor)
+    if abs(halvings - round(halvings)) < 1e-9:
+        # Powers of 1/2 only need the fast 2x2 box filter (odd sizes round up, so no edge pixels are lost):
+        for _ in range(round(halvings)):
+            if width == 1 and height == 1:
+                break
+            width, height, rgb = _halve(width, height, rgb)
+        return width, height, rgb
     nw, nh = max(1, int(round(width * factor))), max(1, int(round(height * factor)))
-    # Exact 2x2 box filtering is fast; use it as long as the target is at most half the size:
+    # Halve quickly while the target is at most half the size, then average the rest exactly:
     while width >= 2 * nw and height >= 2 * nh and width >= 2 and height >= 2:
         width, height, rgb = _halve(width, height, rgb)
     if (width, height) != (nw, nh):
@@ -201,6 +210,17 @@ def scale_rgb(width, height, rgb, factor):
 
 
 def _halve(width, height, rgb):
+    """2x2 box filter. An odd last row/column is repeated, so that it still contributes to the result."""
+    if width % 2 or height % 2:
+        stride = width * 3
+        rows = [bytes(rgb[y * stride:(y + 1) * stride]) for y in range(height)]
+        if width % 2:
+            rows = [row + row[-3:] for row in rows]
+            width += 1
+        if height % 2:
+            rows.append(rows[-1])
+            height += 1
+        rgb = b"".join(rows)
     nw, nh = width // 2, height // 2
     out = bytearray(nw * nh * 3)
     stride = width * 3

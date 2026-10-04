@@ -11,6 +11,7 @@ Needs Xvfb and a licensed Wolfram installation. Takes about a minute.
 import argparse
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -70,6 +71,38 @@ def expect(actual, expected):
         raise AssertionError(f"expected {expected!r}, got {actual!r}")
 
 
+def duplicate_titles(r):
+    nb = r.eval('CreateDocument[{}, WindowTitle -> "FE Server Test"][[1]]', "--form", "String")
+    try:
+        expect("AmbiguousNotebook" in r.fails("cells", "FE Server Test"), True)
+    finally:
+        r.fe("close", nb)
+
+
+def oversized_request(r):
+    """Send more than the server's per-request limit without a newline; it must answer with an error and hang up."""
+    sys.path.insert(0, HERE)
+    import fe
+    info = fe.select_server(str(r.server) if r.server else None)
+    with socket.create_connection(("127.0.0.1", info["Port"]), timeout=60) as sock:
+        chunk = b"x" * (1 << 20)
+        try:
+            for _ in range(80):
+                sock.sendall(chunk)
+        except OSError:
+            pass  # the server may close the connection while we are still sending
+        data = b""
+        try:
+            while not data.endswith(b"\n"):
+                part = sock.recv(65536)
+                if not part:
+                    break
+                data += part
+        except OSError:
+            pass
+    return json.loads(data.decode().split("\n")[0])["errorType"]
+
+
 def run_tests(r):
     r.test("ping and info", lambda: json.loads(r.fe("--json", "info"))["Port"])
     r.test("evaluate", lambda: expect(r.eval("1 + 1"), "2"))
@@ -122,6 +155,12 @@ def run_tests(r):
     r.test("type into a cell", lambda: (
         r.fe("type", " more", "--cell", json.loads(r.fe("--json", "cells", "FE Server Test"))[3]["id"]),
         expect(r.fe("cells", "FE Server Test").splitlines()[3].endswith("Some searchable text more"), True)))
+    r.test("docked cells are listed", lambda: expect(
+        any(c["style"] == "DockedCell" for c in json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))), True))
+    r.test("duplicate titles are ambiguous", lambda: duplicate_titles(r))
+    r.test("region clipped to the screen", lambda: expect(
+        json.loads(r.fe("--json", "screenshot", "--region", "-10,0,100,100"))["width"], 90))
+    r.test("oversized request is refused", lambda: expect(oversized_request(r), "RequestTooLarge"))
     r.test("read an attached cell", lambda: r.fe(
         "read", json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))[0]["ref"]))
     r.test("click image point", lambda: (r.fe("screenshot", "FE Server Test"), r.fe("click", "--image", "10,10")))

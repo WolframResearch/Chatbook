@@ -272,7 +272,12 @@ handleLine[ ___ ] := Null;
    one (even in the middle of a UTF-8 sequence). Complete lines are split off at newline bytes (UTF-8 continuation
    bytes are never 10) and the rest is buffered per client socket. *)
 If[ ! AssociationQ @ $buffers, $buffers = <| |> ];
-$maxRequestBytes = 512 * 1024^2;
+
+(* Partial requests are buffered before they can be authenticated, so bound the memory any local client can make the
+   kernel hold: per request (far above what the client sends; a 20 MB request takes seconds to evaluate anyway) and in
+   total across clients. A client that exceeds either is disconnected. *)
+$maxRequestBytes  = 64 * 1024^2;
+$maxBufferedBytes = 128 * 1024^2;
 
 takeLines[ socket_, bytes_ByteArray ] := Module[ { newlines, lines = { }, start = 1 },
     newlines = Pick[ Range @ Length @ bytes, Normal @ bytes, 10 ];
@@ -288,11 +293,14 @@ takeLines[ socket_, bytes_ByteArray ] := Module[ { newlines, lines = { }, start 
 appendBuffered[ socket_, bytes_ByteArray ] := (
     If[ ! KeyExistsQ[ $buffers, socket ], purgeBuffers[ ] ];
     $buffers[ socket ] = Append[ Lookup[ $buffers, socket, { } ], bytes ];
-    If[ Total[ Length /@ $buffers[ socket ] ] > $maxRequestBytes,
+    If[ Total[ Length /@ $buffers[ socket ] ] > $maxRequestBytes || bufferedBytes[ ] > $maxBufferedBytes,
         KeyDropFrom[ $buffers, socket ];
-        sendResponse[ socket, errorResponse[ Null, "RequestTooLarge", "The request exceeds the maximum size." ] ]
+        sendResponse[ socket, errorResponse[ Null, "RequestTooLarge", "The request exceeds the maximum size; closing the connection." ] ];
+        Quiet @ Close @ socket
     ]
 );
+
+bufferedBytes[ ] := Total[ Flatten[ Map[ Length, Values @ $buffers, { 2 } ] ] ];
 
 joinBuffered[ socket_, tail_ ] := Module[ { parts = Lookup[ $buffers, socket, { } ] },
     KeyDropFrom[ $buffers, socket ];
@@ -861,7 +869,12 @@ findNotebook[ ref_String ] := Module[ { nbs = userNotebooks[ ], byID, titles },
     If[ MatchQ[ byID, _NotebookObject ], Return @ byID ];
     titles = { #, ToString @ Quiet @ AbsoluteCurrentValue[ #, WindowTitle ] } & /@ nbs;
     Replace[ Cases[ titles, { nb_, title_ } /; title === ref :> nb ], {
-        { nb_, ___ } :> nb,
+        { nb_ } :> nb,
+        many: { _, __ } :> commandError[
+            "AmbiguousNotebook",
+            "Several notebooks are titled " <> ToString[ ref, InputForm ] <> "; use one of their ids.",
+            <| "IDs" -> ( #[[ 1 ]] & /@ many ) |>
+        ],
         { } :> Replace[ Cases[ titles, { nb_, title_ } /; StringContainsQ[ title, ref, IgnoreCase -> True ] :> { nb, title } ], {
             { } -> Missing[ ],
             { { nb_, _ } } :> nb,
@@ -892,7 +905,7 @@ $commands[ "cells" ] = Function[ args,
         max   = intArg[ args, "maxCharacters", 200 ];
         cells = Which[
             boolArg[ args, "sidebar", False ], sidebarCells @ nb,
-            boolArg[ args, "attached", False ], allAttachedCells @ nb,
+            boolArg[ args, "attached", False ], DeleteDuplicates @ Join[ dockedCells @ nb, allAttachedCells @ nb ],
             True, Cells @ nb
         ];
         If[ StringQ @ Lookup[ args, "style", None ], cells = Select[ cells, cellStyle[ # ] === args[ "style" ] & ] ];
@@ -966,7 +979,9 @@ resolveCell[ _ ] := commandError[ "InvalidArgument", "Cell references must be st
 
 (* All cells of all user notebooks, including docked and attached cells (and the cells inside them): *)
 allCells[ ] := Flatten[ notebookCells /@ userNotebooks[ ] ];
-notebookCells[ nb_NotebookObject ] := Join[ Replace[ Quiet @ Cells @ nb, Except[ _List ] -> { } ], allAttachedCells @ nb ];
+notebookCells[ nb_NotebookObject ] := DeleteDuplicates @ Join[ Replace[ Quiet @ Cells @ nb, Except[ _List ] -> { } ], dockedCells @ nb, allAttachedCells @ nb ];
+
+dockedCells[ nb_NotebookObject ] := Replace[ Quiet @ Cells[ nb, DockedCell -> True ], Except[ _List ] -> { } ];
 
 
 $commands[ "readCell" ] = Function[ args,
