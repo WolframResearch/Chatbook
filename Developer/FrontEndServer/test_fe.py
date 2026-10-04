@@ -71,6 +71,19 @@ def expect(actual, expected):
         raise AssertionError(f"expected {expected!r}, got {actual!r}")
 
 
+def click_covered(r):
+    """A notebook in front of the target must not receive the click: the target's window is raised first."""
+    cover = r.eval('CreateDocument[{}, WindowTitle -> "FE Cover", WindowMargins -> {{100, Automatic}, {Automatic, 60}}, '
+                   'WindowSize -> {520, 420}][[1]]', "--form", "String")
+    try:
+        time.sleep(0.5)
+        r.fe("click", "--box", "fetestButton", "--notebook", "FE Server Test")
+        time.sleep(0.8)
+        expect(r.eval("Global`fetestPressed"), "13")
+    finally:
+        r.fe("close", cover)
+
+
 def duplicate_titles(r):
     nb = r.eval('CreateDocument[{}, WindowTitle -> "FE Server Test"][[1]]', "--form", "String")
     try:
@@ -147,6 +160,7 @@ def run_tests(r):
                                  expect(r.eval("Global`fetestPressed"), "2")))
     r.test("click docked box", lambda: (r.fe("click", "--box", "fetestDocked", "--notebook", "FE Server Test"),
                                         time.sleep(0.8), expect(r.eval("Global`fetestPressed"), "12")))
+    r.test("click a box in a covered window", lambda: click_covered(r))
     r.test("type into field", lambda: (
         r.fe("click", "--box", "fetestField", "--notebook", "FE Server Test"), r.fe("key", "ctrl+a"),
         r.fe("type", 'Hello, World! {"q"} ~`@#$%^&*()_+'), r.fe("key", "Return"), time.sleep(0.8),

@@ -512,13 +512,27 @@ class Display:
                             byref(wy), byref(mask))
         return rx.value, ry.value
 
-    def move(self, x, y):
-        _xtst.XTestFakeMotionEvent(self.dpy, -1, int(round(x)), int(round(y)), 0)
+    def _require_xtest(self):
+        """Synthetic input needs the XTEST extension; without it the fake events would silently do nothing."""
+        if getattr(self, "_xtest", None) is None:
+            event, error, major, minor = c_int(), c_int(), c_int(), c_int()
+            self._xtest = bool(_xtst.XTestQueryExtension(self.dpy, byref(event), byref(error), byref(major),
+                                                         byref(minor)))
+        if not self._xtest:
+            raise X11Error(f"The X display {self.name} does not support the XTEST extension (no synthetic input)")
+
+    def _fake(self, result, what):
         _xlib.XSync(self.dpy, False)
+        if not result:
+            raise X11Error(f"The X server rejected the synthetic {what} event")
+
+    def move(self, x, y):
+        self._require_xtest()
+        self._fake(_xtst.XTestFakeMotionEvent(self.dpy, -1, int(round(x)), int(round(y)), 0), "pointer motion")
 
     def button(self, button, press):
-        _xtst.XTestFakeButtonEvent(self.dpy, button, bool(press), 0)
-        _xlib.XSync(self.dpy, False)
+        self._require_xtest()
+        self._fake(_xtst.XTestFakeButtonEvent(self.dpy, button, bool(press), 0), "button")
 
     def click(self, x, y, button=1, count=1, modifiers=(), delay=0.05):
         self.move(x, y)
@@ -527,8 +541,10 @@ class Display:
         try:
             for i in range(count):
                 self.button(button, True)
-                time.sleep(0.01)
-                self.button(button, False)
+                try:
+                    time.sleep(0.01)
+                finally:
+                    self.button(button, False)  # never leave the button held (e.g. on Ctrl-C)
                 time.sleep(0.06 if count > 1 else delay)
         finally:
             self._release_modifiers(held)
@@ -537,10 +553,12 @@ class Display:
         self.move(x0, y0)
         time.sleep(delay)
         self.button(button, True)
-        for i in range(1, steps + 1):
-            self.move(x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps)
-            time.sleep(delay)
-        self.button(button, False)
+        try:
+            for i in range(1, steps + 1):
+                self.move(x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps)
+                time.sleep(delay)
+        finally:
+            self.button(button, False)
 
     def scroll(self, x, y, clicks=3, horizontal=False):
         """Scroll at (x, y). Positive clicks scroll down/right, negative up/left."""
@@ -651,8 +669,8 @@ class Display:
         free_codes.append(code)
 
     def _key_event(self, code, press):
-        _xtst.XTestFakeKeyEvent(self.dpy, code, bool(press), 0)
-        _xlib.XSync(self.dpy, False)
+        self._require_xtest()
+        self._fake(_xtst.XTestFakeKeyEvent(self.dpy, code, bool(press), 0), "key")
 
     def _press_modifiers(self, modifiers):
         """Press modifier keys; returns [(keycode, temporary)] for _release_modifiers."""
@@ -683,8 +701,10 @@ class Display:
             extra = self._press_modifiers(["shift"]) if shift and not shift_held else []
             try:
                 self._key_event(code, True)
-                time.sleep(0.005)
-                self._key_event(code, False)
+                try:
+                    time.sleep(0.005)
+                finally:
+                    self._key_event(code, False)  # never leave the key held (e.g. on Ctrl-C)
             finally:
                 self._release_modifiers(extra)
         finally:

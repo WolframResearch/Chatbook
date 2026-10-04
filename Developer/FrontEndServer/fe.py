@@ -75,6 +75,22 @@ def screenshot_dir():
 def pid_alive(pid):
     if not pid:
         return False
+    if sys.platform.startswith("win"):
+        # os.kill(pid, 0) would terminate the process on Windows; ask the process table instead.
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+        kernel32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+        handle = kernel32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
     try:
         os.kill(int(pid), 0)
         return True
@@ -110,7 +126,7 @@ def process_info(pid):
         return argv, boot + ticks / os.sysconf("SC_CLK_TCK")
     except (OSError, ValueError, IndexError, StopIteration):
         pass
-    if os.path.isdir("/proc"):
+    if os.path.isdir("/proc") or sys.platform.startswith("win"):
         return None
     try:  # no procfs (e.g. macOS)
         out = subprocess.run(["ps", "-o", "lstart=", "-o", "args=", "-p", str(pid)], capture_output=True, text=True,
@@ -169,9 +185,32 @@ def registry_entries():
         # A launch record only belongs to this server if it was written for the same token (records can be left
         # behind, and an unrelated server may later get the same port):
         info["_launch"] = launch if launch_belongs_to(launch, info) else None
-        info["_alive"] = pid_is(info.get("KernelPID"), "kernel", server_started(info))
+        info["_alive"] = server_alive(info)
         entries.append(info)
     return entries
+
+
+def server_alive(info):
+    """Whether a registered server is running: its kernel process when that can be identified (strict identity checks
+    are needed before signalling anyway), otherwise (e.g. on Windows) whether it answers an authenticated ping."""
+    pid = info.get("KernelPID")
+    if not pid_alive(pid):
+        return False
+    if process_info(pid) is not None:
+        return pid_is(pid, "kernel", server_started(info))
+    try:
+        with socket.create_connection((info.get("Host", "127.0.0.1"), info["Port"]), timeout=1) as sock:
+            sock.settimeout(2)
+            sock.sendall((json.dumps({"id": 0, "token": info.get("Token"), "command": "ping"}) + "\n").encode())
+            data = b""
+            while not data.endswith(b"\n"):
+                chunk = sock.recv(65536)
+                if not chunk:
+                    break
+                data += chunk
+            return json.loads(data.decode("utf-8").split("\n")[0]).get("ok") is True
+    except (OSError, KeyError, ValueError):
+        return False
 
 
 def server_started(info):
@@ -1229,7 +1268,12 @@ def resolve_point(server, d, args):
         scale = state.get("scale") or 1.0
         return state["x"] + u / scale, state["y"] + v / scale
     if getattr(args, "box", None) or getattr(args, "text", None) or getattr(args, "cell", None):
-        rects = pixel_rects(server, d, server.request("locate", locate_args(args)))
+        located = server.request("locate", locate_args(args))
+        # Bring the target's window to the front first, so that the pointer doesn't land on another window that
+        # covers it; then locate again, since activating can scroll or move things.
+        if raise_notebook(server, d, located["notebook"]):
+            located = server.request("locate", locate_args(args))
+        rects = pixel_rects(server, d, located)
         if not rects:
             raise CLIError("Target was found but has no on-screen rectangle (is it scrolled out of view?)")
         r = rects[0]
@@ -1239,10 +1283,24 @@ def resolve_point(server, d, args):
         x, y = parse_point(args.point)
         if getattr(args, "window", None):
             nb = server.request("notebook", {"notebook": args.window})
+            raise_notebook(server, d, nb["id"])
             window = server.match_window(d, nb)
             return window["x"] + x, window["y"] + y
         return x, y
     raise CLIError("Give a point (x,y), --image u,v, --box ID, --text TEXT, or --cell ID")
+
+
+def raise_notebook(server, d, notebook):
+    """Select a notebook and raise its window unless it is already focused; returns whether anything changed."""
+    nb = server.request("notebook", {"notebook": notebook})
+    window = server.match_window(d, nb)
+    focused = d.focused_window()
+    if focused > 1 and d.toplevel_frame(focused) == d.toplevel_frame(window["id"]):
+        return False
+    server.request("select", {"notebook": nb["id"]})
+    d.activate(window["id"])
+    time.sleep(0.3)
+    return True
 
 
 def locate_args(args):
@@ -1389,9 +1447,16 @@ def cell_ref(cell):
     return cell.get("ref") or cell["id"]
 
 
+# A failed chat replaces its reply with a generated Text cell (e.g. a service error) or an AssistantOutputError cell:
+CHAT_FAILURE_STYLES = {"Text", "AssistantOutputError"}
+
+
 def chat_outputs(server, notebook, sidebar=False):
+    """Chat replies, and the generated cells that replace a reply when the chat fails (e.g. a service error)."""
     cells = server.request("cells", {"notebook": notebook, "maxCharacters": 1000000, "sidebar": sidebar or None})
-    return [c for c in cells if "ChatOutput" in style_name(c.get("style")) or "AssistantOutput" in style_name(c.get("style"))]
+    return [c for c in cells
+            if "ChatOutput" in style_name(c.get("style")) or "AssistantOutput" in style_name(c.get("style"))
+            or (c.get("generated") and style_name(c.get("style")) in CHAT_FAILURE_STYLES)]
 
 
 def cmd_ask(args):
@@ -1437,6 +1502,8 @@ def cmd_ask(args):
         new = [c for c in chat_outputs(server, notebook, sidebar) if cell_ref(c) not in before]
         if idle.get("result") == "True" and new:
             reply = server.request("readCell", {"cell": cell_ref(new[-1]), "format": args.format})
+            if style_name(new[-1].get("style")) in CHAT_FAILURE_STYLES:
+                raise CLIError("The chat failed: " + reply["text"])
             return emit(args, reply, reply["text"])
         if time.time() - start > args.timeout:
             raise CLIError(f"No reply after {args.timeout}s (take a screenshot to see what happened)")
