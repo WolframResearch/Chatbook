@@ -1588,7 +1588,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1628,7 +1628,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1677,7 +1677,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1756,7 +1756,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1796,7 +1796,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1845,7 +1845,7 @@ Cell[
                                                 BaseStyle -> { FontColor -> font1, FontFamily -> "Source Sans Pro", FontSize -> 13.5 },
                                                 ImageSize -> Automatic,
                                                 FrameMargins -> 0
-                                            ], 
+                                            ],
                                             MouseAppearanceTag[ "Arrow" ]
                                         ],
                                         EventHandlerTag @ {
@@ -1881,6 +1881,39 @@ Cell[
     }
 ]
 
+]
+
+
+With[ { font1 = color[ "ThinkingOpenerFont" ] },
+    Cell[
+        StyleData[ "EmptyThoughts" ],
+        TemplateBoxOptions -> {
+            DisplayFunction -> Function[
+                StyleBox[
+                    PaneBox[
+                        PaneBox[
+                            StyleBox[ #2, FontSlant -> "Italic" ],
+                            BaseStyle -> {
+                                FontColor -> font1,
+                                FontFamily -> "Source Sans Pro",
+                                FontSize -> 13.5
+                            },
+                            ImageSize -> Automatic,
+                            FrameMargins -> 0
+                        ],
+                        Alignment -> Automatic,
+                        ImageSize -> Automatic,
+                        ImageMargins -> { { 0, 0 }, { 10, 10 } },
+                        BaseStyle -> { },
+                        DefaultBaseStyle -> "OpenerView",
+                        BaselinePosition -> Baseline
+                    ],
+                    Deployed -> False,
+                    StripOnInput -> False
+                ]
+            ]
+        }
+    ]
 ]
 
 

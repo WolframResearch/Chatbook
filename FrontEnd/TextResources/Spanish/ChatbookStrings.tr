@@ -76,6 +76,7 @@
 "FormattingToolUsingLoading" -> "Utilizando herramienta\[Ellipsis]",
 "FormattingThinkingActive" -> "Pensando\[Ellipsis]",
 "FormattingThinkingComplete" -> "Se pens\[OAcute] durante `time`segundos",
+"FormattingThinkingCompleteSingular" -> "Thought for a second",
 "FormattingThinkingCompleteFallback" -> "Pensado",
 "FormattingHide" -> "Ocultar",
 

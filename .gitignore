@@ -17,3 +17,6 @@ Source/Chatbook/64Bit/Chatbook.mx
 
 # Eclipse project metadata
 .project
+
+# Python bytecode
+__pycache__/
