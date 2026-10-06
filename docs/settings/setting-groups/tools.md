@@ -168,7 +168,7 @@ When `Automatic`, resolved per model via `toolsEnabledQ` (`Settings.wl`):
 - **Tool prompt**: `getToolPrompt` (`ChatMessages.wl`) returns `""` when `False`, suppressing tool instructions in the system prompt.
 - **Discourage extra tool calls**: `discourageExtraToolCallsQ` returns `False` when `ToolsEnabled` is `False`.
 - **Response handling**: `checkResponse` (`SendChat.wl`) has a special pattern for `ToolsEnabled -> False` that either writes the result directly or defers it based on `$AutomaticAssistance`.
-- **Stop tokens**: `autoStopTokens` returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True` and `ToolsEnabled` is `False`, otherwise `None`.
+- **Stop tokens**: `chooseStopTokens` (used by `autoStopTokens`) returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True` and `ToolsEnabled` is `False`, otherwise `None`.
 - **Hybrid tool method**: `hybridToolMethodQ` returns `False` when `ToolsEnabled` is `False`.
 - **Tool example prompt style**: `chooseToolExamplePromptStyle` returns `None` when `ToolsEnabled` is `False`.
 - **Tool Manager warning**: `toolModelWarning` (`ToolManager.wl`) displays `$toolsDisabledWarning` when `False`.
@@ -505,7 +505,7 @@ The message role assigned to tool response messages sent back to the LLM.
 
 ### Resolution
 
-When `Automatic`, resolved to `"System"` via the persona default in `$modelAutoSettings[Automatic, Automatic]`. When `ToolMethod` is `"Service"`, the role is forced to `"Tool"` regardless of this setting's value.
+When `Automatic`, model-specific overrides in `$modelAutoSettings` are used first. Otherwise, `chooseToolResponseRole` (`Settings.wl`) resolves it to `"User"` when `"RequestMethod"` is `"Responses"`, and to `"System"` for other request methods. When `ToolMethod` is `"Service"`, it stays `Automatic`, since the role is forced to `"Tool"` regardless of this setting's value.
 
 ### Implementation
 
@@ -521,7 +521,7 @@ Used by `makeToolResponseMessage` (`SendChat.wl`) to set the `"Role"` key. The r
 
 ### Integration Points
 
-- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Dependencies**: `"RequestMethod"` and `"ToolMethod"` in `$autoSettingKeyDependencies`.
 - **Model-specific overrides**: As listed above.
 - **LLM passthrough**: Not in `$llmConfigPassedKeys` (used internally for tool response message construction).
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
@@ -657,7 +657,7 @@ Used in three ways:
 
 3. **Tool call example templates**: `Tools/Examples.wl` uses `$endTokenString` (which prepends `"\n"` to `$endToken`) in assistant message templates across all example styles to show the LLM how to end its turn.
 
-When `None` or empty, the end token is omitted from prompts, stop sequences, and example templates. After receiving a response, `trimStopTokens` in `SendChat.wl` removes stop tokens (including the end token) from the output.
+When `None` or empty, the end token is omitted from prompts, stop sequences, and example templates. After receiving a response, `trimStopTokens` in `SendChat.wl` removes stop tokens (including the end token) from the output. For models that don't support stop tokens, these stop sequences (including the end token) are emulated client-side instead (see `"StopTokens"` in [LLM Parameter Settings](llm-parameters.md)).
 
 ### Model-Specific Overrides
 

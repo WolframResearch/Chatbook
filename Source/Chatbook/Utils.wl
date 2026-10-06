@@ -502,7 +502,7 @@ basicProgressPanel[ expr_, p_ ] := Module[ { rawString = None, progressStyle },
         StringQ @ rawString,
             Row @ { progressStyle @ rawString, chatbookIcon[ "PercolateProgressAnimation", False ] },
         (* ELSE normal case with progress bar *)
-        True, 
+        True,
             Grid[
                 {
                     {
@@ -1112,6 +1112,18 @@ taskWaitYield // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*pacletVersionAtLeastQ*)
+pacletVersionAtLeastQ // beginDefinition;
+
+pacletVersionAtLeastQ[ name_String, version_String ] :=
+    With[ { paclet = Quiet @ PacletObject @ name },
+        TrueQ[ PacletObjectQ @ paclet && ! PacletNewerQ[ version, paclet ] ]
+    ];
+
+pacletVersionAtLeastQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

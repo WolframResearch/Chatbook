@@ -73,6 +73,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"ToolsEnabled"` | Boolean | Whether the model supports tool/function calling |
 | `"ForceSynchronous"` | Boolean | Force non-streaming (synchronous) API calls |
 | `"Reasoning"` | `"Minimal"` / `"None"` / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
+| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); currently only honored for the `"OpenAI"` service |
 
 **Tool configuration:**
 
@@ -386,12 +387,17 @@ resolveAutoSetting0[ as_, name_String ] :=
     ];
 ```
 
-This means `Missing["NotSupported"]` propagates through the resolved settings as-is. For example, `autoStopTokens` checks for it explicitly and preserves it rather than computing stop tokens:
+This means `Missing["NotSupported"]` propagates through the resolved settings as-is. For example, `autoStopTokens` preserves it rather than computing stop tokens, since `stopTokensSupportedQ` checks for it explicitly:
 
 ```wl
-autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
-    Missing[ "NotSupported" ];
+autoStopTokens[ as_Association ] :=
+    If[ stopTokensSupportedQ @ as, chooseStopTokens @ as, Missing[ "NotSupported" ] ];
+
+stopTokensSupportedQ[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    False;
 ```
+
+For stop tokens, the tokens that would otherwise have been used (from `chooseStopTokens`, or an explicitly given list) are then detected client-side instead (see `emulatedStopTokens` in `SendChat.wl` and `"StopTokens"` in [LLM Parameter Settings](settings/setting-groups/llm-parameters.md#client-side-emulation)).
 
 #### 2. Parameters are stripped before reaching the API
 
