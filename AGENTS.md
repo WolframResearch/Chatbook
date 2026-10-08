@@ -56,6 +56,11 @@ wolframscript -f Scripts/UnformatFiles.wls
 
 # Check paclet integrity
 wolframscript -f Scripts/CheckPaclet.wls
+
+# Regenerate vector database/snippet download metadata (run after bumping a vector DB or snippet version)
+wolframscript -f Scripts/UpdateDownloadMetadata.wls
+# Check only (no downloads; non-zero exit if out of date). Use -c in Windows PowerShell, which drops "--" arguments.
+wolframscript -f Scripts/UpdateDownloadMetadata.wls --check
 ```
 
 ## Architecture
