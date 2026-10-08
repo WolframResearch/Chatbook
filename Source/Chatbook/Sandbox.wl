@@ -51,8 +51,8 @@ $toolOutputPageWidth       = 100;
 $kernelQuit                = False;
 $verifiedResult            = True;
 $propagateMessages         = False;
-$segmentLine               = None;
-$requestedLine             = None;
+$segmentLine               = Missing[ "NotAvailable" ];
+$requestedLine             = Automatic;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -207,7 +207,8 @@ validCodeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validPropertyQ*)
-(* "Line" is the line number for the next input, which can be given as the "Line" option for the next evaluation: *)
+(* "Line" is the line number for the next input, which can be given as the "Line" option for the next evaluation.
+   The "Line" option can also be None to evaluate without using a line number or recording In/Out history. *)
 $$propertyName = "Packets"|"Result"|"SessionMX"|"String"|"Hints"|"Line";
 
 validPropertyQ // beginDefinition;
@@ -241,8 +242,8 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
             $writePaths               = getOption[ "AllowedWritePaths"    , opts ],
             $Line                     = getOption[ "Line"                 , opts ],
-            (* Only an explicitly given line number is applied to the evaluator kernel for the "Local" method: *)
-            $requestedLine            = Replace[ Lookup[ opts, "Line" ], Except[ _Integer ] :> None ]
+            (* An explicitly given line number (or None) is also applied to the evaluator kernel: *)
+            $requestedLine            = Replace[ Lookup[ opts, "Line" ], Except[ _Integer|None ] :> Automatic ]
         },
         getProperty[ sandboxEvaluate @ preprocessCodeForTool @ code, property ]
     ],
@@ -296,6 +297,7 @@ getOption[ "TimeConstraint", time_ ] := throwFailure[ "InvalidOptionValue", "Tim
 
 getOption[ "Line", $$unspecified ] := $Line;
 getOption[ "Line", line_Integer? Positive ] := line;
+getOption[ "Line", None ] := $Line;
 getOption[ "Line", line_ ] := throwFailure[ "InvalidOptionValue", "Line", line ];
 
 getOption[ "IncludeDefinitions", $$unspecified ] := $includeDefinitions;
@@ -1037,7 +1039,7 @@ evaluateSegments[ segments: { __Association }, opts_Association, evaluator_ ] :=
 
         deadline       = evaluationDeadline[ ];
         initialization = Lookup[ opts, "Initialization", HoldComplete @ Null ];
-        line           = Lookup[ opts, "Line", None ];
+        line           = Lookup[ opts, "Line", Automatic ];
         records        = Internal`Bag[ ];
 
         Catch[
@@ -1060,7 +1062,7 @@ evaluateSegments[ segments: { __Association }, opts_Association, evaluator_ ] :=
                         ];
                         (* Only the first segment needs to include initializations and set the line number: *)
                         initialization = HoldComplete @ Null;
-                        line           = None;
+                        If[ IntegerQ @ line, line = Automatic ];
                         record = ConfirmBy[ evaluator @ program, AssociationQ, "Record" ];
                         Internal`StuffBag[ records, record ];
                         If[ stopSegmentsQ @ record, Throw[ Null, $stopSegments ] ]
@@ -1335,6 +1337,7 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
                 #,
                 <|
                     "History"         -> "Output",
+                    "Line"            -> Replace[ $requestedLine, _Integer :> Automatic ],
                     "MessagePrePrint" -> True,
                     "TimeConstraint"  -> timeConstraintSeconds @ $sandboxEvaluationTimeout
                 |>
@@ -1373,7 +1376,7 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         If[ FailureQ @ response, Throw @ response ];
 
         records = ConfirmMatch[ cloudSegmentRecords @ response, { __Association }, "Records" ];
-        $cloudLineNumber = line + Length @ records;
+        If[ $requestedLine =!= None, $cloudLineNumber = line + Length @ records ];
 
         result = ConfirmBy[ sandboxResultData @ records, AssociationQ, "Result" ];
 
@@ -1600,7 +1603,11 @@ sessionEvaluate[ input: $$sandboxInput ] := Enclose[
         $lastSandboxEvaluation = input;
 
         records = ConfirmMatch[
-            evaluateSegments[ input[ "Segments" ], <| "History" -> "Output" |>, sessionSegmentEvaluate ],
+            evaluateSegments[
+                input[ "Segments" ],
+                <| "History" -> "Output", "Line" -> $requestedLine |>,
+                sessionSegmentEvaluate
+            ],
             { __Association },
             "Records"
         ];
@@ -1629,7 +1636,7 @@ sessionSegmentEvaluate // beginDefinition;
 sessionSegmentEvaluate[ program_HoldComplete ] := Enclose[
     Module[ { response, result },
         response = ConfirmBy[
-            Block[ { $segmentLine = None },
+            Block[ { $segmentLine = Missing[ "NotAvailable" ] },
                 With[ { held = program }, evaluationData[ HoldComplete @@ { ReleaseHold @ held } ] ]
             ],
             AssociationQ,
@@ -2473,7 +2480,10 @@ evaluationPrintHandler // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makePrintText*)
 makePrintText // beginDefinition;
-makePrintText[ out_ ] := makePrintText[ Replace[ $Line, Except[ _Integer ] :> 1 ], out ];
+makePrintText[ out_ ] :=
+    makePrintText[ Replace[ $segmentLine, _Missing :> Replace[ $Line, Except[ _Integer ] :> 1 ] ], out ];
+
+makePrintText[ None, out_ ] := makePrintText[ "", out ];
 makePrintText[ n_Integer, out_ ] := makePrintText[ "During evaluation of In[" <> ToString @ n <> "]:= ", out ];
 makePrintText[ lbl_String, HoldComplete[ out__ ] ] := StringJoin[ lbl, ToString @ Unevaluated @ SequenceForm @ out ];
 makePrintText[ lbl_, HoldComplete[ ] ] := "";
@@ -2943,7 +2953,7 @@ makeHeldResultAssociation[ e_ ] :=
 makeHeldResultAssociation[ e_, stop_ ] :=
     HoldComplete @@ {
         <|
-            "Line"        -> If[ IntegerQ @ $segmentLine, $segmentLine, $Line ],
+            "Line"        -> Replace[ $segmentLine, _Missing :> $Line ],
             "Result"      -> HoldComplete @ e,
             "Initialized" -> { },
             "Suppressed"  -> False,
@@ -3117,8 +3127,8 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                 values    = ConfirmMatch[ Lookup[ segment, "MacroValues", HoldComplete[ ] ], _HoldComplete, "Values" ],
                 messages  = ConfirmMatch[ Lookup[ segment, "MacroMessages", { } ], { ___String }, "MacroMessages" ],
                 init      = ConfirmMatch[ Lookup[ opts, "Initialization", HoldComplete[ ] ], _HoldComplete, "Init" ],
-                start     = Replace[ Lookup[ opts, "Line", None ], Except[ _Integer ] :> None ],
-                history   = ConfirmMatch[ Lookup[ opts, "History", None ], "Full"|"Output"|None, "History" ],
+                start     = Replace[ Lookup[ opts, "Line", Automatic ], Except[ _Integer|None ] :> Automatic ],
+                history   = ConfirmMatch[ historyOption @ opts, "Full"|"Output"|None, "History" ],
                 time      = Lookup[ opts, "TimeConstraint", Infinity ],
                 fail      = ConfirmMatch[ timeConstraintFailure @ $sandboxEvaluationTimeout, _Failure, "Failure" ],
                 evaluate  = ConfirmMatch[ segmentEvaluation[ ], _Function, "Evaluation" ],
@@ -3130,8 +3140,8 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
 
                 If[ IntegerQ @ start, $Line = start ];
 
-                (* $segmentLine is used to label results that escape the program in session evaluations: *)
-                segmentLine       = $segmentLine = $Line;
+                (* $segmentLine is used to label prints and escaped results in session evaluations: *)
+                segmentLine       = $segmentLine = If[ start === None, None, $Line ];
                 segmentSuppressed = False;
                 segmentStop       = None;
 
@@ -3177,10 +3187,10 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
 
                         segmentSuppressed = MatchQ[ segmentHeld, HoldComplete @ CompoundExpression[ ___, Null ] ];
 
-                        If[ history === "Full" && StringQ @ input,
+                        If[ history === "Full",
                             Quiet[
                                 Unprotect[ In, InString ];
-                                InString[ segmentLine ] = string;
+                                If[ StringQ @ string, InString[ segmentLine ] = string ];
                                 Replace[ segmentHeld, HoldComplete[ e_ ] :> (In[ segmentLine ] := e) ];
                                 Protect[ In, InString ]
                             ]
@@ -3203,7 +3213,7 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                         segmentResult = HoldComplete @ $Failed
                     ];
 
-                    If[ history =!= None && StringQ @ input,
+                    If[ history =!= None,
                         Quiet[
                             Unprotect @ Out;
                             Replace[
@@ -3220,21 +3230,21 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                     <|
                         "Line"        -> segmentLine,
                         (* $Line is incremented after this, and might have been changed by the evaluation: *)
-                        "NextLine"    -> $Line + 1,
+                        "NextLine"    -> If[ start === None, $Line, $Line + 1 ],
                         "Result"      -> segmentResult,
                         "Initialized" -> Position[ segmentResult, _? initQ, Heads -> True ],
                         "Suppressed"  -> segmentSuppressed,
                         "Stop"        -> segmentStop
                     |>
                     ,
-                    If[ history === "Full" && StringQ @ input,
+                    If[ history === "Full",
                         Quiet[
                             Unprotect @ MessageList;
                             MessageList[ segmentLine ] = $MessageList;
                             Protect @ MessageList
                         ]
                     ];
-                    $Line++
+                    If[ start =!= None, $Line++ ]
                 ]
             ]
         ];
@@ -3249,6 +3259,17 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
 ];
 
 makeSegmentProgram // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyOption*)
+historyOption // beginDefinition;
+
+(* Evaluations with "Line" -> None do not use a line number, so they also don't record In/Out history: *)
+historyOption[ KeyValuePattern[ "Line" -> None ] ] := None;
+historyOption[ opts_Association ] := Lookup[ opts, "History", None ];
+
+historyOption // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
