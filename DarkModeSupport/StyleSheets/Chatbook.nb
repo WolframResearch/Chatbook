@@ -55,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.6.0.3990249013"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.7.24.3999841273"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -411,13 +411,21 @@ Notebook[
                  BoxData[
                   ToBoxes[
                    Tooltip[
-                    Pane[
-                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
-                      Wolfram`Chatbook`UI`Private`persona$
+                    If[ Wolfram`Chatbook`Common`$cloudNotebooks,
+                     Wolfram`Chatbook`Common`cloudShrinkToFit[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      {25, 25}
                      ],
-                     Alignment -> {Center, Center},
-                     ImageSize -> {25, 25},
-                     ImageSizeAction -> "ShrinkToFit"
+                     Pane[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      Alignment -> {Center, Center},
+                      ImageSize -> {25, 25},
+                      ImageSizeAction -> "ShrinkToFit"
+                     ]
                     ],
                     Wolfram`Chatbook`Common`personaDisplayName[
                      Wolfram`Chatbook`UI`Private`persona$
@@ -1479,13 +1487,21 @@ Notebook[
                  BoxData[
                   ToBoxes[
                    Tooltip[
-                    Pane[
-                     Wolfram`Chatbook`Common`getPersonaMenuIcon[
-                      Wolfram`Chatbook`UI`Private`persona$
+                    If[ Wolfram`Chatbook`Common`$cloudNotebooks,
+                     Wolfram`Chatbook`Common`cloudShrinkToFit[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      {25, 25}
                      ],
-                     Alignment -> {Center, Center},
-                     ImageSize -> {25, 25},
-                     ImageSizeAction -> "ShrinkToFit"
+                     Pane[
+                      Wolfram`Chatbook`Common`getPersonaMenuIcon[
+                       Wolfram`Chatbook`UI`Private`persona$
+                      ],
+                      Alignment -> {Center, Center},
+                      ImageSize -> {25, 25},
+                      ImageSizeAction -> "ShrinkToFit"
+                     ]
                     ],
                     Wolfram`Chatbook`Common`personaDisplayName[
                      Wolfram`Chatbook`UI`Private`persona$
@@ -3020,6 +3036,20 @@ Notebook[
        FEPrivate`FrontEndResource[
         "ChatbookExpressions",
         "ToolIconDocumentationSearcher"
+       ]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ToolIconFileReader"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+        "ChatbookExpressions",
+        "ToolIconFileReader"
        ]
       ]
      ])
@@ -4629,6 +4659,37 @@ Notebook[
         StripOnInput -> False
        ],
        DynamicModuleValues -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["EmptyThoughts"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      StyleBox[
+       PaneBox[
+        PaneBox[
+         StyleBox[#2, FontSlant -> "Italic"],
+         BaseStyle -> {
+          FontColor ->
+           LightDarkSwitched[GrayLevel[0.4666], GrayLevel[0.779743]],
+          FontFamily -> "Source Sans Pro",
+          FontSize -> 13.5
+         },
+         ImageSize -> Automatic,
+         FrameMargins -> 0
+        ],
+        Alignment -> Automatic,
+        ImageSize -> Automatic,
+        ImageMargins -> {{0, 0}, {10, 10}},
+        BaseStyle -> { },
+        DefaultBaseStyle -> "OpenerView",
+        BaselinePosition -> Baseline
+       ],
+       Deployed -> False,
+       StripOnInput -> False
       ]
      ])
    }

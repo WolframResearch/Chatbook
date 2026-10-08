@@ -25,6 +25,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
 `$DefaultModel;
+`$DefaultSkills;
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
@@ -180,6 +181,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`PreferencesUtils`",
     "Wolfram`Chatbook`PromptGenerators`",
     "Wolfram`Chatbook`Prompting`",
+    "Wolfram`Chatbook`Reasoning`",
     "Wolfram`Chatbook`ResourceInstaller`",
     "Wolfram`Chatbook`Sandbox`",
     "Wolfram`Chatbook`Search`",
@@ -187,6 +189,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
     "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`Skills`",
     "Wolfram`Chatbook`SpeechInput`",
     "Wolfram`Chatbook`Storage`",
     "Wolfram`Chatbook`TeXBoxes`",
@@ -220,6 +223,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$DefaultChatHandlerFunctions",
     "$DefaultChatProcessingFunctions",
     "$DefaultModel",
+    "$DefaultSkills",
     "$DefaultToolOptions",
     "$DefaultTools",
     "$InlineChat",

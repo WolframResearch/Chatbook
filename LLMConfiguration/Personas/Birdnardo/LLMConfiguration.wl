@@ -10,6 +10,7 @@
 		"WebSearcher",
 		"WebFetcher",
 		"WebImageSearcher",
+		"FileReader",
 		ParentList
 	},
 	"Icon" -> <|

@@ -15,6 +15,7 @@ Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`CreateNotebook`"           ]
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationLookup`"      ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationSearcher`"    ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`NotebookEditor`"           ];
+Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`FileReader`"               ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`WebFetcher`"               ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`WebImageSearcher`"         ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`WebSearcher`"              ];

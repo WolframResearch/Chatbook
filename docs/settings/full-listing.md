@@ -52,6 +52,7 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"Authentication"` | `Automatic` | Authentication method for the LLM service. |
 | `"EnableLLMServices"` | `Automatic` | Whether Chatbook uses the `LLMServices` framework for LLM communication. |
 | `"Multimodal"` | `Automatic` | Whether multimodal (image) input is supported, controlling whether graphics and images in notebook cells are encoded and included in messages sent to the LLM. |
+| `"RequestMethod"` | `Automatic` | Which API endpoint is used for chat requests: `"ChatCompletions"` or `"Responses"`. |
 
 See additional details in [Model and Service Settings](setting-groups/model-and-service.md).
 
@@ -111,6 +112,7 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"Tools"` | `Automatic` | Tool definitions available to the LLM, resolved as a list of `LLMTool` objects. |
+| `"Skills"` | `Automatic` | Agent skills available to the LLM, resolved as a list of `LLMSkill` objects. Skills are listed in the system prompt and loaded with the `ActivateSkill` tool. |
 | `"ToolsEnabled"` | `Automatic` | Whether tools are enabled for the current chat. |
 | `"ToolMethod"` | `Automatic` | Mechanism for tool calling (`"Service"`, `"Simple"`, `"Textual"`, `"JSON"`, or `Automatic`). |
 | `"HybridToolMethod"` | `Automatic` | Whether to combine service-level and prompt-based tool calling. |
@@ -223,7 +225,6 @@ These are the fallback values from `$modelAutoSettings[Automatic, Automatic]` wh
 | `"ShowProgressText"` | `True` |
 | `"SplitToolResponseMessages"` | `False` |
 | `"Temperature"` | `0.7` |
-| `"ToolResponseRole"` | `"System"` |
 
 ### Non-Inherited Persona Values
 

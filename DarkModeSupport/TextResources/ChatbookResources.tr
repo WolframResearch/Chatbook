@@ -3048,28 +3048,31 @@ qvmGcPth+lHdh3A/ADVIfz0=
 
 "StopChatButtonLabel" -> (TagBox[
   FrameBox[
-   OverlayBox[{
-     DynamicBox[
-      FEPrivate`FrontEndResource[
-      "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
-       LightDarkSwitched[
-        RGBColor[0.9411764, 0.9411764, 0.9411764], 
-        GrayLevel[0.2]], 
-       LightDarkSwitched[
-        RGBColor[0.4588235, 0.7607843, 0.9215686], 
-        RGBColor[0.3992061, 0.6126511, 0.7399585]]]], 
-     GraphicsBox[{#, 
-       RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
-      1.1]}, Alignment -> {Center, Center}, BaselinePosition -> Baseline], 
-   Alignment -> {Center, Center}, Background -> ThemeColor["Background"], 
-   BaselinePosition -> Baseline, FrameMargins -> 0, FrameStyle -> Dynamic[
+   GraphicsBox[{
+     Thickness[0.09090909090909091], 
+     FaceForm[
+      LightDarkSwitched[
+       RGBColor[0.0705882, 0.55686275, 0.8196078, 1.], 
+       RGBColor[0.49803922, 0.78039216, 0.9843137]]], 
+     FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{9., 0.}, {2., 0.}, {
+      0.8949995040893555, 0.}, {0., 0.8949999809265137}, {0., 2.}, {0., 9.}, {
+      0., 10.105000495910645`}, {0.8949995040893555, 11.}, {2., 11.}, {9., 
+      11.}, {10.105000019073486`, 11.}, {11., 10.105000495910645`}, {11., 
+      9.}, {11., 2.}, {11., 0.8949999809265137}, {10.105000019073486`, 0.}, {
+      9., 0.}}}]}, ImageSize -> 0.7 #3, 
+    PlotRange -> {{-0.5, 11.5}, {-0.5, 11.5}}], Alignment -> {Center, Center},
+    Background -> Dynamic[
      If[
       CurrentValue["MouseOver"], 
       LightDarkSwitched[
-       RGBColor[0.6941176, 0.8352941, 0.9098039], 
-       RGBColor[0.3764705, 0.490196, 0.5607843]], 
-      ThemeColor["Background"]]], ImageSize -> #2, RoundingRadius -> 4, 
-   StripOnInput -> False], 
+       RGBColor[0.071, 0.557, 0.82, 0.08], 
+       RGBColor[0.498, 0.78, 0.984, 0.22]], 
+      GrayLevel[0, 0]]], BaselinePosition -> Baseline, FrameMargins -> 0, 
+   FrameStyle -> LightDarkSwitched[
+     RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+     RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]], 
+   ImageSize -> #2, RoundingRadius -> 4, StripOnInput -> False], 
   MouseAppearanceTag["LinkHand"]]& ),
 
 "ToolIconWolframAlpha" -> GraphicsBox[
@@ -6596,7 +6599,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
+      ImageSizeCache->{4.5, {2.252197265625, 6.126708984375}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9671,7 +9674,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"bff69828-16ae-4c47-a99f-70c87c27322c"], Cell[BoxData[
+    ExpressionUUID->"9826a824-c8cd-e94c-9bd0-d981f854375d"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -9694,16 +9697,16 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                     
                     ImageSizeCache->{
-                    13.132499999999999`, {1.8897624999999996`, 10.0484875}}], 
-                    
+                    9.849374999999998, {1.4173218750000007`, 
+                    7.536365624999998}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
                     StandardForm],
                     
                     ImageSizeCache->{
-                    47.402998208999634`, {0.13799999713897737`, 
-                    8.118999831676483}}]}
+                    35.449198722839355`, {0.10319999694824222`, 
+                    6.0715998204549155`}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -9842,6 +9845,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarNewChat",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -9884,15 +9888,16 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                     
                     ImageSizeCache->{
-                    10.497499999999999`, {1.1693874999999991`, 9.3281125}}], 
+                    7.873124999999999, {0.8770406250000002, 
+                    6.996084374999999}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
                     StandardForm],
                     
                     ImageSizeCache->{
-                    39.36449933052063, {0.13799999713897737`, 
-                    7.658999841213227}}]}
+                    29.437799135843914`, {0.10319999694824222`, 
+                    5.727599830627442}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10031,6 +10036,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarSourcesToggle",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10055,15 +10061,18 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     LightDarkSwitched[
                     RGBColor[0.0705882, 0.5568627, 0.8196078], 
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
-                    ImageSizeCache->{9.5455, {0.6933875, 8.8521125}}], 
+                    
+                    ImageSizeCache->{
+                    7.1591249999999995`, {0.5200406250000009, 
+                    6.639084374999999}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
                     StandardForm],
                     
                     ImageSizeCache->{
-                    36.04099881649017, {2.3229999518394466`, 
-                    8.141999831199646}}]}
+                    26.952399571736652`, {1.737199948628744, 
+                    6.088799819946289}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10115,7 +10124,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                    
                    GridBoxAlignment->{
                     "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-                   
                    GridBoxItemSize->{
                     "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                    GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
@@ -10202,6 +10210,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarHistoryToggle",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10224,7 +10233,9 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                    LightDarkSwitched[
                     RGBColor[0.0705882, 0.5568627, 0.8196078], 
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
-                  ImageSizeCache->{9.5625, {1.26171875, 8.30078125}}],
+                  
+                  ImageSizeCache->{
+                   7.171874999999999, {0.9462890624999991, 6.2255859375}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10321,6 +10332,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarOpenAsAssistantWindowButton",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10452,8 +10464,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                   
                   ImageSizeCache->{
-                   7.6499999999999995`, {0.3054687500000002, 
-                    7.344531249999999}}],
+                   5.7375, {0.22910156249999947`, 5.5083984375}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10544,6 +10555,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarClose",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10598,7 +10610,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "2be37515-ab67-7c48-8640-2fff8cc85115"], Cell[BoxData[
+    "cd2c4084-528a-e645-8ceb-d478f3bddba1"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10649,6 +10661,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                   ImageSize->{
                     Scaled[1], 
                     UpTo[100]},
+                  ScrollPosition->{0., 0.},
                   Scrollbars->{False, Automatic}], 
                  PaneSelectorBox[{False->
                   ButtonBox[
@@ -10688,6 +10701,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RoundingRadius->4,
                     StripOnInput->False], "Down"->
                     FrameBox[
+                    
                     DynamicBox[FEPrivate`FrontEndResource[
                     "ChatbookExpressions", "SendChatArrow"][
                     LightDarkSwitched[
@@ -10718,7 +10732,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]],
                     DynamicModuleValues:>{}],
-                   BoxID -> "SidebarChatInputCellSendButton",
+                   BoxID -> "NASidebarChatInputCellSendButton",
                    
                    Appearance->FEPrivate`FrontEndResource[
                     "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10792,6 +10806,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]],
                     DynamicModuleValues:>{}],
+                   BoxID -> "NASidebarChatInputCellStopButton",
                    
                    Appearance->FEPrivate`FrontEndResource[
                     "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10860,9 +10875,8 @@ workspaceChatInitialized]],
               If[Head[Typeset`chatEvalCell$$] === CellObject, 
                 Wolfram`Chatbook`ChatCellEvaluate[
                 Typeset`chatEvalCell$$, Typeset`nbo$$]]],
-            
             ImageSizeCache->{
-             982.9375, {11.733218453089135`, 11.931631546910864`}},
+             911.4947916666667, {8.80818105643955, 8.940456443560448}},
             SynchronousUpdating->False,
             TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
           {
@@ -10870,7 +10884,7 @@ workspaceChatInitialized]],
             DynamicBox[ToBoxes[Typeset`focusArea$$, StandardForm],
              
              ImageSizeCache->{
-              4.700830332934856, {0.09140625363215804, 0.32849122399056796`}}],
+              3.133886605501175, {0.06093749838570753, 0.21899413482363647`}}],
             Alignment->Left,
             StripOnInput->False], "\[SpanFromLeft]"}
          },
@@ -10907,7 +10921,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "6d5bc7f7-d4da-8d45-8881-0dfdc0982bb8"]}],
+    "1b58b4ea-5a16-d54f-8273-528c520f810a"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10923,8 +10937,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"1334b99c-f68d-654e-a188-\
-0b1f9779b0a8"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"a96fa3f8-6b04-914b-a115-\
+03b6b9c77e9d"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11043,8 +11057,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"86061cf4-d1c8-f44e-956a-\
-51cdaeec9241"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"1546439d-a335-f946-ae74-\
+4eb3c64af71f"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -12029,7 +12043,239 @@ YHkAxA1Ujw==
     CurveClosed->{0}]},
   AspectRatio->Automatic,
   ImageSize->{77., 23.},
-  PlotRange->{{-0.5, 75.80740356445312}, {-0.5, 21.523799896240234`}}]
+  PlotRange->{{-0.5, 75.80740356445312}, {-0.5, 21.523799896240234`}}],
+
+"ChatOutputCellDingbatActive" -> DynamicModuleBox[{Typeset`t$$ = 0.}, 
+  OverlayBox[{
+   AnimatorBox[Dynamic[Typeset`t$$], {0., 1.},
+    AnimationRunTime->0.,
+    AnimationRunning->True,
+    AppearanceElements->{},
+    DefaultDuration->1.882716863,
+    ImageSize->{1, 1}], 
+   GraphicsBox[
+    {LightDarkSwitched[
+      RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+      RGBColor[
+      0.20784313725490197`, 0.28627450980392155`, 0.3411764705882353]], 
+     Opacity[1.], EdgeForm[{LightDarkSwitched[
+      RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
+      RGBColor[
+      0.20784313725490197`, 0.28627450980392155`, 0.3411764705882353]], 
+     Opacity[1.], AbsoluteThickness[1.5], JoinForm["Miter"]}], 
+     GeometricTransformationBox[
+      GeometricTransformationBox[
+       FilledCurveBox[{
+        Line[{{-5.029, -5.126}, {-8.941, -5.126}}], 
+         BezierCurve[{{-8.941, -5.126}, {-9.249, -5.126}, {-9.5, -4.875}, \
+{-9.5, -4.568}}], Line[{{-9.5, -4.568}, {-9.5, 8.844}}], 
+         BezierCurve[{{-9.5, 8.844}, {-9.5, 9.152}, {-9.249, 9.403}, {-8.941, 
+          9.403}}], Line[{{-8.941, 9.403}, {8.942, 9.403}}], 
+         BezierCurve[{{8.942, 9.403}, {9.25, 9.403}, {9.5, 9.152}, {9.5, 
+          8.844}}], Line[{{9.5, 8.844}, {9.5, -4.569}}], 
+         BezierCurve[{{9.5, -4.569}, {9.5, -4.876}, {9.25, -5.126}, {
+          8.942, -5.126}}], 
+         Line[{{8.942, -5.126}, {
+          0.097, -5.126}, {-5.029, -9.403}, {-5.029, -5.126}}]}], {{{0.97, 
+        0.}, {0., 0.97}}, {0., 0.}}], {25.025, 15.114}], 
+     {EdgeForm[None], 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[
+        2. (Which[
+           Typeset`t$$ <= 0.576854550646, 1., Typeset`t$$ <= 0.594881352056, 
+            1. + 27.736479069583293` (Typeset`t$$ - 0.576854550646), 
+            Typeset`t$$ <= 0.666988557695, 1.5, Typeset`t$$ <= 0.685015359104,
+             1.5 - 27.736479071121884` (Typeset`t$$ - 0.666988557695), 
+            Typeset`t$$ <= 1., 1., True, 1.] - 1.)]], 
+       RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}]}, 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{24.135113227868022, 16.182113227868022}, \
+{25.914886772131975, 17.961886772131976}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[
+        2. (Which[
+           Typeset`t$$ <= 0.721068961924, 1., Typeset`t$$ <= 0.739095763334, 
+            1. + 27.736479069583464` (Typeset`t$$ - 0.721068961924), 
+            Typeset`t$$ <= 0.811202968972, 1.5, Typeset`t$$ <= 0.829229770382,
+             1.5 - 27.736479069583293` (Typeset`t$$ - 0.811202968972), 
+            Typeset`t$$ <= 1., 1., True, 1.] - 1.)]], 
+       RectangleBox[{24.135113227868022, 16.182113227868022}, \
+{25.914886772131975, 17.961886772131976}]}, 
+      {LightDarkSwitched[
+        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+        RGBColor[
+        0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]], 
+       RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}]}, 
+      {GrayLevel[1], Opacity[
+        Dynamic[
+        2. (Which[
+           Typeset`t$$ <= 0.865283373202, 1., Typeset`t$$ <= 0.883310174611, 
+            1. + 27.736479071121884` (Typeset`t$$ - 0.865283373202), 
+            Typeset`t$$ <= 0.955415833018, 1.5, Typeset`t$$ <= 0.973442634428,
+             1.5 - 27.736479069583293` (Typeset`t$$ - 0.955415833018), 
+            Typeset`t$$ <= 1., 1., True, 1.] - 1.)]], 
+       RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}]}}},
+    Background->None,
+    ImageSize->{19, 19},
+    PlotRange->{{15., 35.}, {5., 25.}}]},
+   BaseStyle->{CacheGraphics -> False},
+   ContentPadding->False],
+  DynamicModuleValues:>{}],
+
+"PercolateProgressAnimation" -> DynamicModuleBox[{Typeset`t$$ = 0., Typeset`v1$$ = 1., Typeset`v2$$ = 1., 
+  Typeset`v3$$ = 1.}, 
+  OverlayBox[{
+   AnimatorBox[Dynamic[Typeset`t$$, {
+      FEPrivate`Set[Typeset`t$$, #], 
+      FEPrivate`Set[Typeset`v1$$, 
+       FEPrivate`Which[
+        FEPrivate`LessEqual[#, 0.576854550646], 1., 
+        FEPrivate`LessEqual[#, 0.594881352056], 1. + 
+        27.7364790695833 (# - 0.576854550646), 
+        FEPrivate`LessEqual[#, 0.666988557695], 1.5, 
+        FEPrivate`LessEqual[#, 0.685015359104], 1.5 - 
+        27.7364790695833 (# - 0.666988557695), 
+        FEPrivate`LessEqual[#, 1.], 1., True, 1.]], 
+      FEPrivate`Set[Typeset`v2$$, 
+       FEPrivate`Which[
+        FEPrivate`LessEqual[#, 0.721068961924], 1., 
+        FEPrivate`LessEqual[#, 0.739095763334], 1. + 
+        27.7364790695833 (# - 0.721068961924), 
+        FEPrivate`LessEqual[#, 0.811202968972], 1.5, 
+        FEPrivate`LessEqual[#, 0.829229770382], 1.5 - 
+        27.7364790695833 (# - 0.811202968972), 
+        FEPrivate`LessEqual[#, 1.], 1., True, 1.]], 
+      FEPrivate`Set[Typeset`v3$$, 
+       FEPrivate`Which[
+        FEPrivate`LessEqual[#, 0.865283373202], 1., 
+        FEPrivate`LessEqual[#, 0.883310174611], 1. + 
+        27.7364790695833 (# - 0.865283373202), 
+        FEPrivate`LessEqual[#, 0.955415833018], 1.5, 
+        FEPrivate`LessEqual[#, 0.973442634428], 1.5 - 
+        27.7364790695833 (# - 0.955415833018), 
+        FEPrivate`LessEqual[#, 1.], 1., True, 1.]]}& ], {0., 1.},
+    AnimationRepetitions->DirectedInfinity[1],
+    AnimationRunTime->0.,
+    AnimationRunning->True,
+    AppearanceElements->{},
+    DefaultDuration->1.882716863,
+    ImageSize->{1, 1}], 
+   GraphicsBox[
+    {LightDarkSwitched[
+      RGBColor[0.7490196078431373, 0.7843137254901961, 0.8], 
+      RGBColor[0.49411764705882355`, 0.5215686274509804, 0.5333333333333333]],
+      EdgeForm[None], 
+     RectangleBox[{19.8015, 16.1965}, {21.5525, 17.947499999999998}], 
+     RectangleBox[{24.1495, 16.1965}, \
+{25.900499999999997, 17.947499999999998}], 
+     RectangleBox[{28.497500000000002, 16.1965}, \
+{30.2485, 17.947499999999998}], 
+     {LightDarkSwitched[
+       RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784], 
+       RGBColor[0.7215686274509804, 0.7803921568627451, 0.8117647058823529]], 
+      
+      DynamicBox[{
+        Opacity[2. (Typeset`v1$$ - 1.)], 
+        RectangleBox[{
+         20.677 - 0.8755 Typeset`v1$$, 17.072 - 0.8755 Typeset`v1$$}, {
+         20.677 + 0.8755 Typeset`v1$$, 17.072 + 0.8755 Typeset`v1$$}]}], 
+      DynamicBox[{
+        Opacity[2. (Typeset`v2$$ - 1.)], 
+        RectangleBox[{
+         25.025 - 0.8755 Typeset`v2$$, 17.072 - 0.8755 Typeset`v2$$}, {
+         25.025 + 0.8755 Typeset`v2$$, 17.072 + 0.8755 Typeset`v2$$}]}], 
+      DynamicBox[{
+        Opacity[2. (Typeset`v3$$ - 1.)], 
+        RectangleBox[{
+         29.373 - 0.8755 Typeset`v3$$, 17.072 - 0.8755 Typeset`v3$$}, {
+         29.373 + 0.8755 Typeset`v3$$, 17.072 + 0.8755 Typeset`v3$$}]}]}},
+    Background->None,
+    ImageSize->{19, Automatic},
+    PlotRange->{{18., 32.}, {14.6, 19.6}}]},
+   BaseStyle->{CacheGraphics -> False},
+   ContentPadding->False],
+  DynamicModuleValues:>{}],
+
+"ToolIconFileReader" -> GraphicsBox[
+  {Thickness[0.07142857142857142], 
+   {Thickness[0.07142857142857142], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {
+     1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGJhIGZiAIPor+Y8DkDa4R+rNYje9qr5qz1WfhuUP/kX
+hN8D5Zv/B/PtpoL50V83MoLN2zcfyj/ODObbrYLyZ7NC5PdC+brsEPlbUP5O
+Doj8NyifkwviPnkbCF+cG8IPhfJVoe7vhvI/Qvh1V6H8Ul4I38gWSDes/aUr
+iJ2/x8QBOTzQ+aDwAABV5lK8
+     "]]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.], 
+     RGBColor[0.2325145, 0.2325145, 0.2325145, 1.]]], 
+    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{1.9229000806808472`, 1.375}, {
+     1.6209000647068024`, 1.375}, {1.3749000430107117`, 1.606000006198883}, {
+     1.3749000430107117`, 1.8920000195503235`}, {1.3749000430107117`, 
+     14.107999801635742`}, {1.3749000430107117`, 14.394000053405762`}, {
+     1.6209000647068024`, 14.625}, {1.9229000806808472`, 14.625}, {
+     9.39490020275116, 14.625}, {12.624899744987488`, 11.395000457763672`}, {
+     12.624899744987488`, 1.8920000195503235`}, {12.624899744987488`, 
+     1.606000006198883}, {12.379899859428406`, 1.375}, {12.076900362968445`, 
+     1.375}, {1.9229000806808472`, 1.375}}}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[0.3254901, 0.3843137, 0.4, 1.], 
+     RGBColor[0.7068935, 0.8064968, 0.8283573, 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+     1, 3, 3}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1,
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgAmJ+KA0EC2ZKKjtAmHpges6Rf/bI/GWzv6HwGRg+gPiu
+24x1kfm3zpnrIPMZOh1h5kD4vkkQcxDmQcQR9oH5E3LUNZDN8ejW0UTmczAw
+aDkgmQfnQ+2D8WfMlFR3wOI/m7gqJQi/AexeDoYGsH0WcVVqyHyEeVC+Lddf
+ED+gNxzmvj9o7v2D5h8If5rzXxQ+jIaaB+cjwusPWniC+UE74iB8uHkQ9yPs
+g/BR/AcAoKlYrg==
+     "]]}, 
+   {LightDarkSwitched[
+     RGBColor[0.5490196, 0.6470588, 0.6666666, 1.], 
+     RGBColor[0.5691903, 0.6697178, 0.6897078, 1.]], Thickness[
+    0.05357142857142857], CapForm["Butt"], JoinForm["Round"], 
+    JoinedCurveBox[{{{0, 2, 0}}}, {{{4., 8.5}, {10., 8.5}}},
+     CurveClosed->{0}]}, 
+   {LightDarkSwitched[
+     RGBColor[0.5490196, 0.6470588, 0.6666666, 1.], 
+     RGBColor[0.5691903, 0.6697178, 0.6897078, 1.]], Thickness[
+    0.05357142857142857], CapForm["Butt"], JoinForm["Round"], 
+    JoinedCurveBox[{{{0, 2, 0}}}, {{{4., 6.5}, {10., 6.5}}},
+     CurveClosed->{0}]}, 
+   {LightDarkSwitched[
+     RGBColor[0.5490196, 0.6470588, 0.6666666, 1.], 
+     RGBColor[0.5691903, 0.6697178, 0.6897078, 1.]], Thickness[
+    0.05357142857142857], CapForm["Butt"], JoinForm["Round"], 
+    JoinedCurveBox[{{{0, 2, 0}}}, {{{4., 4.5}, {8., 4.5}}},
+     CurveClosed->{0}]}, 
+   {FaceForm[LightDarkSwitched[
+     RGBColor[1., 1., 1., 1.], 
+     RGBColor[0.2325145, 0.2325145, 0.2325145, 1.]]], 
+    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}}}, {{{9.5, 
+     14.5}, {9.5, 12.}, {9.5, 11.723999977111816`}, {9.723999992012978, 
+     11.5}, {10., 11.5}, {12.5, 11.5}, {9.5, 14.5}}}]}, 
+   {LightDarkSwitched[
+     RGBColor[0.3254901, 0.3843137, 0.4, 1.], 
+     RGBColor[0.7068935, 0.8064968, 0.8283573, 1.]], Thickness[
+    0.05357142857142857], CapForm["Butt"], JoinForm["Bevel"], 
+    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}}}, {{{9.5, 
+     14.5}, {9.5, 12.}, {9.5, 11.723999977111816`}, {9.723999992012978, 
+     11.5}, {10., 11.5}, {12.5, 11.5}, {9.5, 14.5}}},
+     CurveClosed->{1}]}},
+  AspectRatio->Automatic,
+  ImageSize->{15., 17.},
+  PlotRange->{{-0.5, 14.5}, {-0.5, 16.5}}]
 }
 @|
 @|

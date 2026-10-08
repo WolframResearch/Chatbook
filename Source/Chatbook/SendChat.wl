@@ -466,7 +466,7 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase },
+    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
         newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
@@ -475,10 +475,11 @@ prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
         noSources     = ConfirmMatch[ removeSources @ stringResults, { ___Association }, "NoSources" ];
         cleanBase     = ConfirmMatch[ removeBasePromptTags @ noSources, { ___Association }, "CleanBase" ];
+        reasoning     = ConfirmMatch[ convertReasoningMessages[ settings, cleanBase ], { ___Association }, "Reasoning" ];
 
-        addHandlerArguments[ "SubmittedMessages" -> cleanBase ];
+        addHandlerArguments[ "SubmittedMessages" -> reasoning ];
 
-        cleanBase
+        reasoning
     ],
     throwInternalFailure
 ];
@@ -752,7 +753,8 @@ convertSystemRoleToUser // endDefinition;
 makeStopTokens // beginDefinition;
 makeStopTokens[ settings_Association ] := makeStopTokens[ settings, settings[ "StopTokens" ] ];
 makeStopTokens[ settings_, None | { } | _Missing ] := Missing[ ];
-makeStopTokens[ settings_, tokens: { __String } ] := tokens;
+(* Explicitly given stop tokens are emulated instead if they aren't supported (see `emulatedStopTokens`): *)
+makeStopTokens[ settings_, tokens: { __String } ] := If[ stopTokensSupportedQ @ settings, tokens, Missing[ ] ];
 makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -913,6 +915,7 @@ chatSubmit[ args__ ] := Quiet[
     $receivedToolCall      = False;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
+    resetReasoningStream[ ];
     rasterizeBlock @ chatSubmit0 @ args,
     {
         ServiceConnections`SavedConnections::wname,
@@ -941,20 +944,22 @@ chatSubmit0[
     cellObject_,
     settings_
 ] /; settings[ "ForceSynchronous" ] := Enclose[
-    Module[ { auth, stop, result, chunks, content },
+    Module[ { auth, stop, emulatedStop, chat, result, chunks, content },
         auth = settings[ "Authentication" ];
         If[ auth === "LLMKit", llmKitCheck[ ] ];
         stop = makeStopTokens @ settings;
+        emulatedStop = emulatedStopTokens @ settings;
+        chat = ConfirmMatch[ chatFunction @ settings, LLMServices`Chat | LLMServices`Response, "ChatFunction" ];
 
         setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
-                LLMServices`Chat[
+                chat[
                     standardizeMessageKeys @ messages,
-                    makeLLMConfiguration @ settings,
+                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
                     Authentication -> auth
                 ],
-                { LLMServices`Chat::unsupported }
+                { LLMServices`Chat::unsupported, LLMServices`Response::llmunsupported }
             ],
             _Association | _Failure,
             "ChatResult"
@@ -963,15 +968,15 @@ chatSubmit0[
         If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
 
         chunks = <|
-            "ContentChunk"      -> Lookup[ result, "Content"     , { } ],
+            "ContentChunk"      -> convertReasoningContent[ settings, Lookup[ result, "Content", { } ] ],
             "ToolRequestsChunk" -> Lookup[ result, "ToolRequests", { } ]
         |>;
 
         content = extractBodyChunks @ chunks;
 
         (* There's no streaming here, so the whole response is checked for an emulated stop token at once: *)
-        If[ emulateStopTokensQ @ settings && MatchQ[ content, { __String } ],
-            content = { emulatedStopTokenTrim[ container, StringJoin @ content ] }
+        If[ MatchQ[ emulatedStop, { __String } ] && MatchQ[ content, { __String } ],
+            content = { emulatedStopTokenTrim[ container, StringJoin @ content, emulatedStop ] }
         ];
 
         writeChunk[ <| "ExtractedBodyChunks" -> content |>, Dynamic @ container, cellObject ];
@@ -989,28 +994,30 @@ chatSubmit0[
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     If[ settings[ "Authentication" ] === "LLMKit", llmKitCheck[ ] ];
-    $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication       -> settings[ "Authentication" ],
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-                "TestConnection"     -> False
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+    With[ { submit = chatSubmitFunction @ settings },
+        $lastChatSubmitResult = ReleaseHold[
+            $lastChatSubmit = HoldForm @ applyProcessingFunction[
+                settings,
+                "ChatSubmit",
+                HoldComplete[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
+                    Authentication       -> settings[ "Authentication" ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                    "TestConnection"     -> False
+                ],
+                <|
+                    "Container"             :> container,
+                    "Messages"              -> messages,
+                    "CellObject"            -> cellObject,
+                    "DefaultSubmitFunction" -> submit
+                |>,
+                submit
+            ]
         ]
     ],
-    { LLMServices`ChatSubmit::unsupported }
+    { LLMServices`ChatSubmit::unsupported, LLMServices`ResponseSubmit::llmunsupported }
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1036,6 +1043,24 @@ chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings
 );
 
 chatSubmit0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatFunction*)
+chatFunction // beginDefinition;
+chatFunction[ settings_Association ] := chatFunction @ requestMethod @ settings;
+chatFunction[ "ChatCompletions" ] := LLMServices`Chat;
+chatFunction[ "Responses" ] := LLMServices`Response;
+chatFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatSubmitFunction*)
+chatSubmitFunction // beginDefinition;
+chatSubmitFunction[ settings_Association ] := chatSubmitFunction @ requestMethod @ settings;
+chatSubmitFunction[ "ChatCompletions" ] := LLMServices`ChatSubmit;
+chatSubmitFunction[ "Responses" ] := LLMServices`ResponseSubmit;
+chatSubmitFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1081,6 +1106,25 @@ $llmConfigPassedKeys = {
     "Reasoning",
     "Temperature"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestReasoningSummaries*)
+
+(* The responses endpoint only includes reasoning summaries when they're requested, so plain effort levels like "High"
+   are expanded to <| "effort" -> "high", "summary" -> "auto" |>. Associations are passed through as-is. *)
+requestReasoningSummaries // beginDefinition;
+
+requestReasoningSummaries[ as: KeyValuePattern @ { "RequestMethod" -> "Responses", "Reasoning" -> effort_String } ] :=
+    If[ ToLowerCase @ effort === "none",
+        as,
+        <| as, "Reasoning" -> <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |> |>
+    ];
+
+requestReasoningSummaries[ as_Association ] :=
+    as;
+
+requestReasoningSummaries // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1161,11 +1205,13 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             useTasks      = feTaskQ @ settings,
             toolFormatter = getToolFormatter @ settings,
             stop          = makeStopTokens @ settings,
-            stopEmulation = emulateStopTokensQ @ settings
+            emulatedStop  = emulatedStopTokens @ settings,
+            responses     = settings[ "RequestMethod" ] === "Responses"
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
-            taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ]
+            taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ],
+            stopEmulation       = MatchQ[ emulatedStop, { __String } ]
         },
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
@@ -1189,8 +1235,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                             {
                                 as = applyEmulatedStopTokens[
                                     container,
-                                    stopEmulation,
-                                    <| #, "ExtractedBodyChunks" -> extractBodyChunks @ # |>
+                                    emulatedStop,
+                                    addExtractedBodyChunks @ If[ responses, convertReasoningChunks[ settings, # ], # ]
                                 ]
                             },
                             bodyChunkHandler[ as ];
@@ -1244,6 +1290,13 @@ chatHandlers // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*addExtractedBodyChunks*)
+addExtractedBodyChunks // beginDefinition;
+addExtractedBodyChunks[ as_Association ] := <| as, "ExtractedBodyChunks" -> extractBodyChunks @ as |>;
+addExtractedBodyChunks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*trimStopTokens*)
 trimStopTokens // beginDefinition;
 trimStopTokens // Attributes = { HoldFirst };
@@ -1263,26 +1316,33 @@ trimStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*emulateStopTokensQ*)
+(*emulatedStopTokens*)
 
-(* Models that do not support stop tokens (e.g. gpt-5 and later) cannot be stopped server-side when they write the
-   tool call end token, so the end token needs to be detected client-side as content arrives instead. Without this,
-   a model that keeps writing after "/exec" would bury its tool call in extra text (typically hallucinating the tool
-   result), and even a model that correctly ends its response after writing "/exec" would leave a trailing "/exec"
-   that prevents `simpleToolRequestParser` from identifying the tool call. *)
+(* Models and endpoints that do not support stop tokens (e.g. gpt-5 and later, or the responses endpoint) cannot be
+   stopped server-side when they write a tool call end token (e.g. "\n/exec" or "ENDTOOLCALL"), so the stop tokens
+   that would have been used need to be detected client-side as content arrives instead. Without this, a model that
+   keeps writing after the end token would bury its tool call in extra text (typically hallucinating the tool result),
+   and even a model that correctly ends its response after writing the end token would leave it trailing, which
+   prevents the tool request parser from identifying the tool call. Gives `None` when there's nothing to emulate. *)
 
-emulateStopTokensQ // beginDefinition;
+emulatedStopTokens // beginDefinition;
 
-emulateStopTokensQ[ settings_Association ] := TrueQ @ And[
-    settings[ "ToolMethod" ] === "Simple",
-    TrueQ @ settings[ "ToolsEnabled" ],
-    ! MatchQ[ makeStopTokens @ settings, { __String } ]
-];
+emulatedStopTokens[ settings_Association ] :=
+    emulatedStopTokens[ settings, settings[ "StopTokens" ] ];
 
-emulateStopTokensQ // endDefinition;
+(* Automatic stop tokens resolve to `Missing[ "NotSupported" ]` when the model does not support them: *)
+emulatedStopTokens[ settings_, _Missing ] :=
+    Replace[ chooseStopTokens @ settings, Except[ { __String } ] -> None ];
 
+(* Explicitly given stop tokens are kept in the settings even if they aren't supported: *)
+emulatedStopTokens[ settings_, stop: { __String } ] :=
+    If[ stopTokensSupportedQ @ settings, None, stop ];
 
-$emulatedStopTokens = { "\n/exec" };
+(* Otherwise there are no stop tokens to use: *)
+emulatedStopTokens[ settings_, _ ] :=
+    None;
+
+emulatedStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1290,13 +1350,16 @@ $emulatedStopTokens = { "\n/exec" };
 applyEmulatedStopTokens // beginDefinition;
 applyEmulatedStopTokens // Attributes = { HoldFirst };
 
-applyEmulatedStopTokens[ container_, False, as_Association ] :=
+applyEmulatedStopTokens[ container_, None, as_Association ] :=
     as;
 
-applyEmulatedStopTokens[ container_, True, as: KeyValuePattern[ "ExtractedBodyChunks" -> strings: { __String } ] ] :=
-    <| as, "ExtractedBodyChunks" -> { emulatedStopTokenTrim[ container, StringJoin @ strings ] } |>;
+applyEmulatedStopTokens[
+    container_,
+    stop: { __String },
+    as: KeyValuePattern[ "ExtractedBodyChunks" -> strings: { __String } ]
+] := <| as, "ExtractedBodyChunks" -> { emulatedStopTokenTrim[ container, StringJoin @ strings, stop ] } |>;
 
-applyEmulatedStopTokens[ container_, True, as_Association ] :=
+applyEmulatedStopTokens[ container_, { __String }, as_Association ] :=
     as;
 
 applyEmulatedStopTokens // endDefinition;
@@ -1315,12 +1378,12 @@ applyEmulatedStopTokens // endDefinition;
 emulatedStopTokenTrim // beginDefinition;
 emulatedStopTokenTrim // Attributes = { HoldFirst };
 
-emulatedStopTokenTrim[ container_, text_String ] := Enclose[
+emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
     Module[ { previous, buffer, positions, start },
 
         previous  = ConfirmBy[ $emulatedStopBuffer, StringQ, "Buffer" ];
         buffer    = $emulatedStopBuffer = previous <> text;
-        positions = StringPosition[ buffer, $emulatedStopTokens ];
+        positions = dropReasoningPositions[ buffer, StringPosition[ buffer, stop ] ];
 
         If[ positions === { },
             (* No stop token appears in the response so far, so continue streaming normally: *)
@@ -1346,6 +1409,35 @@ emulatedStopTokenTrim[ container_, text_String ] := Enclose[
 ];
 
 emulatedStopTokenTrim // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropReasoningPositions*)
+
+(* Removes stop token positions that fall within reasoning text, since server-side stop tokens wouldn't apply to it.
+   This includes reasoning summaries from the responses endpoint, which are streamed as think tags (see
+   `convertReasoningChunks`). A think tag that hasn't been closed yet extends to the end of the string. *)
+
+dropReasoningPositions // beginDefinition;
+
+dropReasoningPositions[ string_String, { } ] :=
+    { };
+
+dropReasoningPositions[ string_String, positions: { { _Integer, _Integer }.. } ] :=
+    With[ { spans = StringPosition[ string, $$reasoningSpan, Overlaps -> False ] },
+        Select[ positions, Function[ pos, NoneTrue[ spans, #[[ 1 ]] <= First @ pos <= #[[ 2 ]] & ] ] ]
+    ];
+
+dropReasoningPositions // endDefinition;
+
+
+$$reasoningSpan = Shortest[
+    StringExpression[
+        Alternatives[ "<think" ~~ $$thinkTagAttributes ~~ ">", "<think>", "<thinking>" ],
+        ___,
+        Alternatives[ "</think>", "</thinking>", EndOfString ]
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2860,10 +2952,7 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            (* If[ TrueQ @ settings[ "SetCellDingbat" ],
-                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                Sequence @@ { }
-            ], *)
+            CellDingbat        -> ToBoxes @ chatbookIcon[ "ChatOutputCellDingbatActive", False ],
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -3008,16 +3097,17 @@ dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicCont
         Framed[ dynamicTextDisplay[ container, formatter, reformat ], FrameStyle -> Purple ]
     ];
 
-dynamicTextDisplay[ container_, formatter_, True ] := With[
-    {
-        data = <|
-            "Status"    -> If[ StringQ @ container[ "DynamicContent" ], "Streaming", "Waiting" ],
-            "Container" :> container,
-            $ChatHandlerData
-        |>
-    },
-    conformToExpression @ ReplaceAll[
-        formatter[ container[ "DynamicContent" ], data ],
+dynamicTextDisplay[ container_, _, _ ] /; AssociationQ @ container && container[ "DynamicContent" ] === None := "";
+
+dynamicTextDisplay[ container_, formatter_, True ] := Module[ { content, data, formatted },
+    content = container[ "DynamicContent" ];
+    data = <|
+        "Status"    -> If[ StringQ @ content, "Streaming", "Waiting" ],
+        "Container" :> container,
+        $ChatHandlerData
+    |>;
+    formatted = ReplaceAll[
+        formatter[ content, data ],
         {
             TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
                 If[ TrueQ @ $highlightDynamicContent,
@@ -3030,6 +3120,12 @@ dynamicTextDisplay[ container_, formatter_, True ] := With[
                     TemplateBox[ c, "ChatCodeBlockTemplateActive", rest ]
                 ]
         }
+    ];
+    conformToExpression @ If[
+        dynamicProgressIndicatorQ[ content, formatted ],
+        Grid[ { { formatted }, { Pane[ chatbookIcon[ "PercolateProgressAnimation", False ], Alignment -> Left, ImageSize -> Scaled[ 1 ] ] } }, Alignment -> Left ]
+        ,
+        formatted
     ]
 ];
 
@@ -3041,6 +3137,21 @@ dynamicTextDisplay[ _Symbol, _, _ ] := ProgressIndicator[ Appearance -> "Percola
 dynamicTextDisplay[ other_, _, _ ] := other;
 
 dynamicTextDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicProgressIndicatorQ*)
+dynamicProgressIndicatorQ // beginDefinition;
+
+dynamicProgressIndicatorQ[ content_String, formatted_ ] := TrueQ @ And[
+    content =!= "",
+    toolFreeQ[ $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ], content ],
+    FreeQ[ formatted, TagBox[ _, "ChatbookActiveToolProgress", ___ ] ]
+];
+
+dynamicProgressIndicatorQ[ _, _ ] := False;
+
+dynamicProgressIndicatorQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
