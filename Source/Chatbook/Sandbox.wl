@@ -6,8 +6,9 @@ Begin[ "`Private`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"           ];
+Needs[ "Wolfram`Chatbook`CodeCheck`" ];
+Needs[ "Wolfram`Chatbook`Common`"    ];
 
 $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 (* :!CodeAnalysis::Disable::UnexpectedLetterlikeCharacter:: *)
@@ -50,6 +51,7 @@ $toolOutputPageWidth       = 100;
 $kernelQuit                = False;
 $verifiedResult            = True;
 $propagateMessages         = False;
+$segmentLine               = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -204,7 +206,8 @@ validCodeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*validPropertyQ*)
-$$propertyName = "Packets"|"Result"|"SessionMX"|"String"|"Hints";
+(* "Line" is the line number for the next input, which can be given as the "Line" option for the next evaluation: *)
+$$propertyName = "Packets"|"Result"|"SessionMX"|"String"|"Hints"|"Line";
 
 validPropertyQ // beginDefinition;
 validPropertyQ[ $$propertyName ] := True;
@@ -965,6 +968,11 @@ $commentHintsTemplate = "`1`\n\n(* `2` *)";
 (* ::Section::Closed:: *)
 (*Evaluate*)
 
+(* Code is evaluated the way an interactive kernel session would evaluate it: each top-level expression is a separate
+   input that is parsed in the evaluator kernel right before it's evaluated, so earlier inputs can affect how later
+   ones are parsed (e.g. by loading packages or changing $Context). Each input gets its own line number and output. *)
+$$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitions" -> _ };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*sandboxEvaluate*)
@@ -986,89 +994,11 @@ sandboxEvaluate // endDefinition;
 sandboxEvaluate0 // beginDefinition;
 
 sandboxEvaluate0[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate0 @ code;
-sandboxEvaluate0[ code_String ] := sandboxEvaluate0 @ toSandboxExpression @ code // LogChatTiming[ "SandboxEvaluate" ];
-sandboxEvaluate0[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate0 @ HoldComplete @ CompoundExpression[ xs, x ];
-sandboxEvaluate0[ HoldComplete[ eval_ ] ] /; useCloudSandboxQ[ ] := cloudSandboxEvaluate @ HoldComplete @ eval;
-sandboxEvaluate0[ HoldComplete[ eval_ ] ] /; useSessionQ[ ] := sessionEvaluate @ HoldComplete @ eval;
-
-sandboxEvaluate0[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized, final },
-
-        $lastSandboxMethod = "Local";
-        $lastSandboxEvaluation = HoldComplete @ evaluation;
-        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
-
-        ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
-
-        { null, { packets } } = ConfirmMatch[
-            Reap[
-                Sow[ Nothing, $sandboxTag ];
-                TimeConstrained[
-                    Quiet[
-                        Check[
-                            While[
-                                ! MatchQ[
-                                    Sow[ deserializePacket @ LinkRead @ kernel, $sandboxTag ],
-                                    _LinkRead|_ReturnExpressionPacket|$Failed
-                                ]
-                            ],
-                            $kernelQuit,
-                            { LinkObject::linkd, LinkObject::linkn }
-                        ],
-                        { LinkObject::linkd, LinkObject::linkn }
-                    ],
-                    2 * $sandboxEvaluationTimeout,
-                    $timedOut
-                ],
-                $sandboxTag
-            ],
-            { _, { _List } },
-            "LinkRead"
-        ];
-
-        If[ null === $timedOut,
-            AppendTo[
-                packets,
-                With[ { fail = timeConstraintFailure @ $sandboxEvaluationTimeout },
-                    ReturnExpressionPacket @ HoldComplete @ fail
-                ]
-            ]
-        ];
-
-        If[ null === $kernelQuit,
-            AppendTo[
-                packets,
-                With[ { fail = kernelQuitFailure[ ] },
-                    ReturnExpressionPacket @ HoldComplete @ fail
-                ]
-            ]
-        ];
-
-        results = Cases[ packets, ReturnExpressionPacket[ expr_ ] :> expr ];
-
-        flat = Flatten[ HoldComplete @@ results, 1 ];
-
-        initialized = initializeExpressions @ flat;
-
-        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
-
-        final = $lastSandboxResult = ConfirmBy[
-            verifyResult @ <|
-                "String"  -> sandboxResultString[ initialized, packets ],
-                "Result"  -> sandboxResult @ initialized,
-                "Packets" -> packets
-            |>,
-            AssociationQ,
-            "Verified"
-        ];
-
-        If[ TrueQ @ $ChatNotebookEvaluation || TrueQ @ $returnFullResult,
-            final,
-            final[ "String" ]
-        ]
-    ],
-    throwInternalFailure
-];
+sandboxEvaluate0[ code_String ] := sandboxEvaluate0 @ toSandboxSegments @ code // LogChatTiming[ "SandboxEvaluate" ];
+sandboxEvaluate0[ held_HoldComplete ] := sandboxEvaluate0 @ heldSandboxSegments @ held;
+sandboxEvaluate0[ input: $$sandboxInput ] /; useCloudSandboxQ[ ] := cloudSandboxEvaluate @ input;
+sandboxEvaluate0[ input: $$sandboxInput ] /; useSessionQ[ ] := sessionEvaluate @ input;
+sandboxEvaluate0[ input: $$sandboxInput ] := localSandboxEvaluate @ input;
 
 sandboxEvaluate0 // endDefinition;
 
@@ -1093,34 +1023,318 @@ useSessionQ[ _ ] := False;
 useSessionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*evaluateSegments*)
+evaluateSegments // beginDefinition;
+
+(* Evaluates each segment in order using `evaluator`, which takes a segment program and returns a record association.
+   Evaluation stops early if a segment times out, is aborted, or quits the kernel. *)
+evaluateSegments[ segments: { __Association }, opts_Association, evaluator_ ] := Enclose[
+    Module[ { deadline, initialization, records },
+
+        deadline       = evaluationDeadline[ ];
+        initialization = Lookup[ opts, "Initialization", HoldComplete @ Null ];
+        records        = Internal`Bag[ ];
+
+        Catch[
+            Scan[
+                Function[
+                    segment,
+                    Module[ { program, record },
+                        program = ConfirmMatch[
+                            makeSegmentProgram[
+                                segment,
+                                <|
+                                    opts,
+                                    "Initialization" -> initialization,
+                                    "TimeConstraint" -> remainingTime @ deadline
+                                |>
+                            ],
+                            HoldComplete[ _ ],
+                            "Program"
+                        ];
+                        (* Only the first segment needs to include initializations: *)
+                        initialization = HoldComplete @ Null;
+                        record = ConfirmBy[ evaluator @ program, AssociationQ, "Record" ];
+                        Internal`StuffBag[ records, record ];
+                        If[ stopSegmentsQ @ record, Throw[ Null, $stopSegments ] ]
+                    ]
+                ],
+                segments
+            ],
+            $stopSegments
+        ];
+
+        Internal`BagPart[ records, All ]
+    ],
+    throwInternalFailure
+];
+
+evaluateSegments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*deserializePacket*)
-deserializePacket // beginDefinition;
+(*stopSegmentsQ*)
+stopSegmentsQ // beginDefinition;
+stopSegmentsQ[ _ ] /; TrueQ @ $kernelQuit := True;
+stopSegmentsQ[ KeyValuePattern[ "Result" -> HoldComplete[ KeyValuePattern[ "Stop" -> stop_ ] ] ] ] := StringQ @ stop;
+stopSegmentsQ[ _ ] := False;
+stopSegmentsQ // endDefinition;
 
-deserializePacket[ ReturnExpressionPacket[ b_ByteArray ] ] :=
-    ReturnExpressionPacket @ BinaryDeserialize[ b, HoldComplete ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluationDeadline*)
+evaluationDeadline // beginDefinition;
+evaluationDeadline[ ] := evaluationDeadline @ timeConstraintSeconds @ $sandboxEvaluationTimeout;
+evaluationDeadline[ Infinity ] := Infinity;
+evaluationDeadline[ seconds_? Positive ] := AbsoluteTime[ ] + seconds;
+evaluationDeadline // endDefinition;
 
-deserializePacket[ packet_ ] :=
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*remainingTime*)
+remainingTime // beginDefinition;
+remainingTime[ Infinity ] := Infinity;
+remainingTime[ deadline_? NumberQ ] := Max[ 0.01, deadline - AbsoluteTime[ ] ];
+remainingTime // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*timeConstraintSeconds*)
+timeConstraintSeconds // beginDefinition;
+timeConstraintSeconds[ t_? NumberQ ] := t;
+timeConstraintSeconds[ q: HoldPattern[ _Quantity ] ] := QuantityMagnitude @ UnitConvert[ q, "Seconds" ];
+timeConstraintSeconds[ _ ] := Infinity;
+timeConstraintSeconds // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Local*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localSandboxEvaluate*)
+localSandboxEvaluate // beginDefinition;
+
+localSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
+    Module[ { kernel, init, records, final },
+
+        $lastSandboxMethod     = "Local";
+        $lastSandboxEvaluation = input;
+
+        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
+        init   = ConfirmMatch[ includeDefinitions @ input[ "Definitions" ], HoldComplete[ _ ], "Definitions" ];
+
+        records = ConfirmMatch[
+            evaluateSegments[
+                input[ "Segments" ],
+                <| "History" -> "Full", "Initialization" -> init, "MessagePrePrint" -> True |>,
+                localSegmentEvaluate @ kernel
+            ],
+            { __Association },
+            "Records"
+        ];
+
+        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
+
+        final = $lastSandboxResult = ConfirmBy[
+            <| sandboxResultData @ records, "Line" -> nextLineNumber @ records |>,
+            AssociationQ,
+            "Result"
+        ];
+
+        If[ TrueQ @ $ChatNotebookEvaluation || TrueQ @ $returnFullResult,
+            final,
+            final[ "String" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+localSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localSegmentEvaluate*)
+localSegmentEvaluate // beginDefinition;
+
+localSegmentEvaluate[ kernel_LinkObject ] := localSegmentEvaluate[ kernel, # ] &;
+
+localSegmentEvaluate[ kernel_LinkObject, program_HoldComplete ] := Enclose[
+    Module[ { null, packets, $sandboxTag, $timedOut, $linkClosed, result, initialized },
+
+        ConfirmMatch[ linkWriteEvaluation[ kernel, program ], Null, "LinkWriteEvaluation" ];
+
+        { null, { packets } } = ConfirmMatch[
+            Reap[
+                Sow[ Nothing, $sandboxTag ];
+                TimeConstrained[
+                    Quiet[
+                        Check[
+                            While[ ! MatchQ[ Sow[ readSandboxPacket @ kernel, $sandboxTag ], _ReturnPacket|$Failed ] ],
+                            $linkClosed,
+                            { LinkObject::linkd, LinkObject::linkn }
+                        ],
+                        { LinkObject::linkd, LinkObject::linkn }
+                    ],
+                    2 * $sandboxEvaluationTimeout,
+                    $timedOut
+                ],
+                $sandboxTag
+            ],
+            { _, { _List } },
+            "LinkRead"
+        ];
+
+        result = Which[
+            null === $timedOut,
+                stoppedSegmentResult[ timeConstraintFailure @ $sandboxEvaluationTimeout, "TimedOut" ],
+            null === $linkClosed || MemberQ[ packets, $Failed ],
+                $kernelQuit = True;
+                stoppedSegmentResult[ kernelQuitFailure[ ], "KernelQuit" ],
+            True,
+                ConfirmMatch[ FirstCase[ packets, ReturnPacket[ h_HoldComplete ] :> h ], _HoldComplete, "Result" ]
+        ];
+
+        initialized = ConfirmMatch[ initializeExpressions @ result, HoldComplete[ _Association ], "Initialized" ];
+
+        <|
+            "Result"    -> initialized,
+            "OutputLog" -> ConfirmMatch[ localOutputLog[ packets, initialized ], { ___String }, "OutputLog" ],
+            "Packets"   -> DeleteCases[ packets, $Failed ]
+        |>
+    ],
+    throwInternalFailure
+];
+
+localSegmentEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nextLineNumber*)
+nextLineNumber // beginDefinition;
+
+(* The evaluator kernel's line number after the last input, unless the kernel quit or stopped responding: *)
+nextLineNumber[ { ___, KeyValuePattern[ "Result" -> HoldComplete @ KeyValuePattern[ "NextLine" -> n_Integer ] ] } ] :=
+    n;
+
+nextLineNumber[ _List ] :=
+    Missing[ "NotAvailable" ];
+
+nextLineNumber // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readSandboxPacket*)
+readSandboxPacket // beginDefinition;
+
+(* Packets are read in a held form so that returned expressions are not evaluated in this kernel: *)
+readSandboxPacket[ kernel_LinkObject ] :=
+    readSandboxPacket @ LinkRead[ kernel, HoldComplete ];
+
+readSandboxPacket[ HoldComplete[ ReturnPacket[ bytes_ByteArray ] ] ] :=
+    ReturnPacket @ BinaryDeserialize[ bytes, HoldComplete ];
+
+readSandboxPacket[ HoldComplete[ ReturnPacket[ result_ ] ] ] :=
+    ReturnPacket @ HoldComplete @ result;
+
+readSandboxPacket[ HoldComplete[ packet_ ] ] :=
     packet;
 
-deserializePacket // endDefinition;
+(* The link is no longer readable: *)
+readSandboxPacket[ _ ] :=
+    $Failed;
+
+readSandboxPacket // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stoppedSegmentResult*)
+stoppedSegmentResult // beginDefinition;
+
+stoppedSegmentResult[ failure_, stop_String ] :=
+    With[
+        {
+            as = <|
+                "Line"        -> None,
+                "NextLine"    -> None,
+                "Result"      -> HoldComplete @ failure,
+                "Initialized" -> { },
+                "Suppressed"  -> False,
+                "Stop"        -> stop
+            |>
+        },
+        HoldComplete @ as
+    ];
+
+stoppedSegmentResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localOutputLog*)
+localOutputLog // beginDefinition;
+
+(* Converts the text packets written by the evaluator kernel into the same form as the session output log: *)
+localOutputLog[ packets_List, HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Stop" -> stop_ } ] ] :=
+    Join[
+        Replace[
+            SequenceReplace[ packets, { _MessagePacket, TextPacket[ text_String ] } :> sandboxMessageText @ text ],
+            {
+                sandboxMessageText[ text_ ] :> StringTrim @ text,
+                TextPacket[ text_String ] :> sandboxPrintText[ line, StringTrim[ text, "\n".. ] ],
+                _ :> Nothing
+            },
+            { 1 }
+        ],
+        If[ stop === "KernelQuit", { "General::quit: " <> kernelQuitFailure[ ][ "Message" ] }, { } ]
+    ];
+
+localOutputLog // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sandboxPrintText*)
+sandboxPrintText // beginDefinition;
+sandboxPrintText[ line_Integer, text_String ] := "During evaluation of In[" <> ToString @ line <> "]:= " <> text;
+sandboxPrintText[ _, text_String ] := text;
+sandboxPrintText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cloud*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cloudSandboxEvaluate*)
 cloudSandboxEvaluate // beginDefinition;
 
-cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Catch @ Module[ { api, held, wxf, definitions, response, result, packets, initialized },
+cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
+    Catch @ Module[ { api, programs, held, wxf, definitions, response, records, result },
 
-        $lastSandboxMethod = "Cloud";
-        $lastSandboxEvaluation = HoldComplete @ evaluation;
+        $lastSandboxMethod     = "Cloud";
+        $lastSandboxEvaluation = input;
 
         api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
         If[ FailureQ @ api, Throw @ api ];
-        held = ConfirmMatch[ makeCloudEvaluation @ evaluation, HoldComplete[ _ ], "Evaluation" ];
+
+        (* The cloud evaluator runs all segments in a single request, since the kernel state does not persist between
+           requests. The cloud API applies the overall time constraint. *)
+        programs = ConfirmMatch[
+            makeSegmentProgram[
+                #,
+                <|
+                    "History"         -> "Output",
+                    "MessagePrePrint" -> True,
+                    "TimeConstraint"  -> timeConstraintSeconds @ $sandboxEvaluationTimeout
+                |>
+            ] & /@ input[ "Segments" ],
+            { HoldComplete[ _ ].. },
+            "Programs"
+        ];
+
+        held = ConfirmMatch[ makeCloudEvaluation @ programs, HoldComplete[ _ ], "Evaluation" ];
         wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
-        definitions = makeCloudDefinitionsWXF @ HoldComplete @ evaluation;
+        definitions = makeCloudDefinitionsWXF @ input[ "Definitions" ];
 
         (* TODO: figure out a way to handle kernel quitting like the desktop evaluator *)
         response = ConfirmMatch[
@@ -1146,17 +1360,13 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         If[ FailureQ @ response, Throw @ response ];
 
-        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
-        packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
-        initialized = initializeExpressions @ result;
+        records = ConfirmMatch[ cloudSegmentRecords @ response, { __Association }, "Records" ];
+        $cloudLineNumber += Length @ records;
+
+        result = ConfirmBy[ sandboxResultData @ records, AssociationQ, "Result" ];
 
         $lastSandboxResult = ConfirmBy[
-            verifyResult @ <|
-                "String"    -> sandboxResultString[ initialized, packets ],
-                "Result"    -> sandboxResult @ initialized,
-                "Packets"   -> packets,
-                "SessionMX" -> setCloudSessionString @ response
-            |>,
+            <| result, "Line" -> $cloudLineNumber, "SessionMX" -> setCloudSessionString @ response |>,
             AssociationQ,
             "Verified"
         ]
@@ -1165,6 +1375,49 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 ];
 
 cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudSegmentRecords*)
+cloudSegmentRecords // beginDefinition;
+
+cloudSegmentRecords[ response_Association ] :=
+    cloudSegmentRecords[ response, Lookup[ response, "Result" ] ];
+
+cloudSegmentRecords[ response_, (HoldComplete|Hold)[ results: { __Association } ] ] :=
+    cloudSegmentRecord /@ results;
+
+(* The evaluation failed as a whole (e.g. the cloud time constraint was exceeded): *)
+cloudSegmentRecords[ response_, (HoldComplete|Hold)[ failure_ ] ] :=
+    With[ { log = Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] } },
+        {
+            <|
+                "Result"    -> stoppedSegmentResult[ failure, "Failed" ],
+                "OutputLog" -> Select[ log, StringQ ],
+                "Packets"   -> TextPacket /@ Select[ log, StringQ ]
+            |>
+        }
+    ];
+
+cloudSegmentRecords // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudSegmentRecord*)
+cloudSegmentRecord // beginDefinition;
+
+cloudSegmentRecord[ KeyValuePattern @ { "Result" -> result_, "Prints" -> prints_, "Messages" -> messages_ } ] :=
+    Module[ { initialized, line, log },
+        initialized = initializeExpressions @ HoldComplete @ result;
+        line = Replace[ initialized, HoldComplete[ KeyValuePattern[ "Line" -> n_ ] ] :> n ];
+        log = Join[
+            sandboxPrintText[ line, # ] & /@ Select[ Flatten @ { prints }, StringQ ],
+            Select[ Flatten @ { messages }, StringQ ]
+        ];
+        <| "Result" -> initialized, "OutputLog" -> log, "Packets" -> TextPacket /@ log |>
+    ];
+
+cloudSegmentRecord // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1179,11 +1432,35 @@ setCloudSessionString // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeCloudEvaluation*)
 makeCloudEvaluation // beginDefinition;
-makeCloudEvaluation // Attributes = { HoldAllComplete };
 
-makeCloudEvaluation[ evaluation_ ] :=
-    With[ { line = $cloudLineNumber++ },
-        makeLinkWriteEvaluation[ $Line = line; evaluation ]
+makeCloudEvaluation[ programs: { HoldComplete[ _ ].. } ] :=
+    With[ { line = $cloudLineNumber },
+        HoldComplete[
+            $Line = line;
+            Module[ { cloudResults = { } },
+                Catch[
+                    Scan[
+                        Function[
+                            cloudProgram,
+                            With[ { data = EvaluationData @ ReleaseHold @ cloudProgram },
+                                AppendTo[
+                                    cloudResults,
+                                    <|
+                                        "Result"   -> data[ "Result" ],
+                                        "Prints"   -> data[ "OutputLog" ],
+                                        "Messages" -> data[ "MessagesText" ]
+                                    |>
+                                ];
+                                If[ StringQ @ Quiet @ data[ "Result" ][ "Stop" ], Throw[ Null, "StopSegments" ] ]
+                            ]
+                        ],
+                        programs
+                    ],
+                    "StopSegments"
+                ];
+                cloudResults
+            ]
+        ]
     ];
 
 makeCloudEvaluation // endDefinition;
@@ -1298,51 +1575,35 @@ deployCloudEvaluator[ target: $$cloudObject ] := With[ { messages = $messageOver
 deployCloudEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Session*)
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*sessionEvaluate*)
 sessionEvaluate // beginDefinition;
 
-sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
-    Module[ { response, eval, result, packets, initialized },
+sessionEvaluate[ input: $$sandboxInput ] := Enclose[
+    Module[ { records },
 
-        $lastSandboxMethod = "Session";
-        $lastSandboxEvaluation = HoldComplete @ eval0;
+        $lastSandboxMethod     = "Session";
+        $lastSandboxEvaluation = input;
 
-        response = $Failed;
-        eval = makeLinkWriteEvaluation @ eval0;
-
-        With[ { held = eval, tc = $sandboxEvaluationTimeout },
-            response = evaluationData[
-                HoldComplete @@ {
-                    TimeConstrained[
-                        ReleaseHold @ held,
-                        tc,
-                        Failure[
-                            "EvaluationTimeExceeded",
-                            <|
-                                "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
-                                "MessageParameters" -> { tc }
-                            |>
-                        ]
-                    ]
-                }
-            ]
+        records = ConfirmMatch[
+            evaluateSegments[ input[ "Segments" ], <| "History" -> "Output" |>, sessionSegmentEvaluate ],
+            { __Association },
+            "Records"
         ];
 
         If[ $WorkspaceChat, NotebookDelete @ Cells[ $evaluationNotebook, CellStyle -> "PrintTemporary" ] ];
 
-        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
-        packets = TextPacket /@ response[ "OutputLog" ];
-        initialized = result;
-
         $lastSandboxResult = ConfirmBy[
-            verifyResult @ <|
-                "String"  -> sandboxResultString[ initialized, packets ],
-                "Result"  -> sandboxResult @ initialized,
-                "Packets" -> packets
+            <|
+                sandboxResultData @ records,
+                "Line" -> Replace[ $Line, Except[ _Integer ] :> Missing[ "NotAvailable" ] ]
             |>,
             AssociationQ,
-            "Verified"
+            "Result"
         ]
     ],
     throwInternalFailure
@@ -1352,6 +1613,32 @@ sessionEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*sessionSegmentEvaluate*)
+sessionSegmentEvaluate // beginDefinition;
+
+sessionSegmentEvaluate[ program_HoldComplete ] := Enclose[
+    Module[ { response, result },
+        response = ConfirmBy[
+            Block[ { $segmentLine = None },
+                With[ { held = program }, evaluationData[ HoldComplete @@ { ReleaseHold @ held } ] ]
+            ],
+            AssociationQ,
+            "Response"
+        ];
+        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
+        <|
+            "Result"    -> ConfirmMatch[ result, HoldComplete[ _Association ], "Initialized" ],
+            "OutputLog" -> ConfirmMatch[ response[ "OutputLog" ], { ___String }, "OutputLog" ],
+            "Packets"   -> TextPacket /@ response[ "OutputLog" ]
+        |>
+    ],
+    throwInternalFailure
+];
+
+sessionSegmentEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*initializeExpressions*)
 initializeExpressions // beginDefinition;
 
@@ -1360,96 +1647,482 @@ initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequen
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
     ];
 
-initializeExpressions[ HoldComplete[ failure_ ] ] :=
-    With[ { as = <| "Line" -> $currentLineNumber-1, "Result" -> HoldComplete @ failure, "Initialized" -> { } |> },
-        HoldComplete @ as
+(* The evaluation did not return a result association, e.g. due to an uncaught Throw: *)
+initializeExpressions[ HoldComplete[ result_ ] ] :=
+    With[ { line = $currentLineNumber },
+        With[
+            {
+                as = <|
+                    "Line"        -> line - 1,
+                    "NextLine"    -> line,
+                    "Result"      -> HoldComplete @ result,
+                    "Initialized" -> { },
+                    "Suppressed"  -> False,
+                    "Stop"        -> None
+                |>
+            },
+            HoldComplete @ as
+        ]
     ];
-
-initializeExpressions[ failed: HoldComplete[ _Failure|$Failed|$Aborted ] ] :=
-    failed;
 
 initializeExpressions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toSandboxExpression*)
-toSandboxExpression // beginDefinition;
+(* ::Section::Closed:: *)
+(*Input Segments*)
 
-toSandboxExpression[ s_String ] := $lastSandboxExpression =
-    Block[ { $Context = $Context, $ContextPath = Prepend[ $ContextPath, "Wolfram`Chatbook`SandboxParsing`" ] },
-        $lastSandboxString = s;
-        toSandboxExpression[ s, toHeldExpression @ preprocessSandboxString @ s ]
-    ];
+(* Code strings are split into top-level inputs (segments) using CodeParser, without creating any symbols in this
+   kernel. Each segment's text is parsed later in the evaluator kernel. *)
 
-toSandboxExpression[ s_, expr_HoldComplete ] :=
-    expr;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toSandboxSegments*)
+toSandboxSegments // beginDefinition;
 
-toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
-    Module[ { new, held },
-        new = preprocessSandboxString @ StringReplace[ s, "'" -> "\"" ];
-        held = toHeldExpression @ new;
-        (
-            sandboxStringNormalize[ s ] = new;
-            held
-        ) /; MatchQ[ held, _HoldComplete ]
-    ];
+toSandboxSegments[ code_String ] := Enclose[
+    Module[ { string, tree, segments },
+        $lastSandboxString = code;
+        { string, tree } = ConfirmMatch[ repairSandboxCode @ preprocessSandboxString @ code, { _String, _ }, "Repair" ];
+        sandboxStringNormalize[ code ] = string;
+        segments = ConfirmMatch[ makeSandboxSegments[ string, tree ], { __Association }, "Segments" ];
+        $lastSandboxExpression = <| "Segments" -> segments, "Definitions" -> codeSymbolNames @ tree |>
+    ],
+    throwInternalFailure
+];
 
-toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, StartOfLine~~"// " ] :=
-    Module[ { new, held },
-        new = preprocessSandboxString @ StringReplace[
-            s,
-            StartOfLine ~~ "// " ~~ c: Except[ "\n" ].. ~~ "\n" :> "(*"<>c<>"*)\n"
-        ];
-        held = toHeldExpression @ new;
-        (
-            sandboxStringNormalize[ s ] = new;
-            held
-        ) /; MatchQ[ held, _HoldComplete ]
-    ];
+toSandboxSegments // endDefinition;
 
-toSandboxExpression[ s_String, $Failed ] :=
-    Module[ { openers, closers, new, held },
-        openers = StringCount[ s, "[" ];
-        closers = StringCount[ s, "]" ];
-        (
-            new = s <> StringRepeat[ "]", openers - closers ];
-            held = toHeldExpression @ new;
-            If[ MatchQ[ held, _HoldComplete ],
-                sandboxStringNormalize[ s ] = new;
-                held,
-                HoldComplete[ ToExpression[ s, InputForm ] ]
-            ]
-        ) /; openers > closers
-    ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*heldSandboxSegments*)
+heldSandboxSegments // beginDefinition;
 
-toSandboxExpression[ s_String, $Failed ] :=
-    HoldComplete @ ToExpression[ s, InputForm ];
+heldSandboxSegments[ HoldComplete[ ] ] :=
+    heldSandboxSegments @ HoldComplete @ Null;
 
-toSandboxExpression // endDefinition;
+heldSandboxSegments[ HoldComplete[ xs__, x_ ] ] :=
+    heldSandboxSegments @ HoldComplete @ CompoundExpression[ xs, x ];
+
+heldSandboxSegments[ held: HoldComplete[ _ ] ] := $lastSandboxExpression = <|
+    "Segments"    -> { <| "Input" -> held |> },
+    "Definitions" -> held
+|>;
+
+heldSandboxSegments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Parsing*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*toHeldExpression*)
-toHeldExpression // beginDefinition;
+(*parseSandboxCode*)
+parseSandboxCode // beginDefinition;
 
-toHeldExpression[ s_String ] :=
-    expandSandboxMacros @ Replace[
-        DeleteCases[ Quiet @ ToExpression[ s, InputForm, HoldComplete ], Null ],
-        {
-            HoldComplete[ xs__, CompoundExpression[ x_, Null ] ] :> Replace[
-                HoldComplete @ CompoundExpression[ xs, x, Null ],
-                HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
-                { 2 }
-            ],
-            HoldComplete[ xs__, x_ ] :> Replace[
-                HoldComplete @ CompoundExpression[ xs, x ],
-                HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
-                { 2 }
+parseSandboxCode[ code_String ] := (
+    (* CodeParser is not included in the MX build, so it needs to be loaded at runtime: *)
+    Needs[ "CodeParser`" -> None ];
+    CodeParser`Abstract`Aggregate @ CodeParser`CodeConcreteParse[ code, "SourceConvention" -> "SourceCharacterIndex" ]
+);
+
+parseSandboxCode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*syntaxErrorQ*)
+syntaxErrorQ // beginDefinition;
+
+(* Implicit Nulls (e.g. `f[x,]`) are represented by error nodes, but they are valid syntax: *)
+$$syntaxErrorNode = Alternatives[
+    CodeParser`ErrorNode[ Except[ Token`Error`InfixImplicitNull | Token`Error`PrefixImplicitNull ], _, _ ],
+    _CodeParser`AbstractSyntaxErrorNode,
+    _CodeParser`CallMissingCloserNode,
+    _CodeParser`GroupMissingCloserNode,
+    _CodeParser`GroupMissingOpenerNode,
+    _CodeParser`SyntaxErrorNode,
+    _CodeParser`UnterminatedGroupNeedsReparseNode,
+    _CodeParser`UnterminatedTokenErrorNeedsReparseNode
+];
+
+syntaxErrorQ[ tree_ ] := ! FreeQ[ tree, $$syntaxErrorNode ];
+
+syntaxErrorQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Repairs*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*repairSandboxCode*)
+repairSandboxCode // beginDefinition;
+
+repairSandboxCode[ code_String ] :=
+    repairSandboxCode[ code, parseSandboxCode @ code ];
+
+repairSandboxCode[ code_String, tree_ ] /; ! syntaxErrorQ @ tree :=
+    { code, tree };
+
+repairSandboxCode[ code_String, tree_ ] := Catch[
+    Scan[
+        Function[
+            repair,
+            With[ { fixed = repair @ code },
+                If[ StringQ @ fixed && fixed =!= code,
+                    With[ { fixedTree = parseSandboxCode @ fixed },
+                        If[ ! syntaxErrorQ @ fixedTree, Throw @ { fixed, fixedTree } ]
+                    ]
+                ]
             ]
-        }
+        ],
+        $sandboxCodeRepairs
+    ];
+    (* The syntax error could not be fixed, so the evaluator will report it: *)
+    { code, tree }
+];
+
+repairSandboxCode // endDefinition;
+
+
+(* Repairs are tried in order, and the first one that results in valid syntax is used: *)
+$sandboxCodeRepairs = {
+    fixSingleQuotes,
+    fixLineComments,
+    fixMissingClosers,
+    fixMissingClosers @* fixSingleQuotes,
+    fixMissingClosers @* fixLineComments,
+    fixLineComments @* fixSingleQuotes,
+    fixMissingClosers @* fixLineComments @* fixSingleQuotes,
+    codeCheckFix
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fixSingleQuotes*)
+(* Some models write string arguments with single quotes, e.g. when they're used to writing JSON: *)
+fixSingleQuotes // beginDefinition;
+fixSingleQuotes[ code_String ] := StringReplace[ code, "'" -> "\"" ];
+fixSingleQuotes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fixLineComments*)
+fixLineComments // beginDefinition;
+fixLineComments[ code_String ] :=
+    StringReplace[ code, StartOfLine ~~ "// " ~~ c: Except[ "\n" ].. :> "(*" <> c <> "*)" ];
+fixLineComments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fixMissingClosers*)
+(* Smaller models often lose track of closing brackets, so this adds any closers that are missing at the end: *)
+fixMissingClosers // beginDefinition;
+
+fixMissingClosers[ code_String ] := Catch @ Module[ { stack, closers, appended, tree, breaks },
+
+    (* Stack of { closer, opener position } for groups that are still open: *)
+    stack = { };
+    Scan[
+        Replace[
+            {
+                CodeParser`LeafNode[ token_? closerTokenQ, _, _ ] :>
+                    If[ stack =!= { } && stack[[ -1, 1 ]] === $closerTokens @ token,
+                        stack = Most @ stack,
+                        (* Mismatched closers can't be fixed by adding more: *)
+                        Throw @ code
+                    ],
+                CodeParser`LeafNode[ token_? openerTokenQ, _, KeyValuePattern[ CodeParser`Source -> { pos_, _ } ] ] :>
+                    AppendTo[ stack, { $groupCloser @ token, pos } ]
+            }
+        ],
+        CodeParser`CodeTokenize[ code, "SourceConvention" -> "SourceCharacterIndex" ]
     ];
 
-toHeldExpression // endDefinition;
+    If[ stack === { }, Throw @ code ];
+
+    closers  = StringJoin @ Reverse @ stack[[ All, 1 ]];
+    appended = code <> closers;
+    tree     = parseSandboxCode @ appended;
+
+    If[ syntaxErrorQ @ tree, Throw @ appended ];
+
+    (* If closing the groups at the end would join separate lines with implicit multiplication, the closers most
+       likely belong at the end of the line instead, e.g. "x = {1, 2, 3\nTotal[x]" -> "x = {1, 2, 3}\nTotal[x]": *)
+    breaks = Select[ implicitTimesLineBreaks[ appended, tree ], # > stack[[ 1, 2 ]] & ];
+
+    If[ breaks === { }, appended, StringInsert[ code, closers, Min @ breaks ] ]
+];
+
+fixMissingClosers // endDefinition;
+
+
+$groupCloser = <|
+    Token`ColonColonOpenSquare        -> "]",
+    Token`LessBar                     -> "|>",
+    Token`LongName`LeftAssociation    -> "\[RightAssociation]",
+    Token`LongName`LeftDoubleBracket  -> "\[RightDoubleBracket]",
+    Token`OpenCurly                   -> "}",
+    Token`OpenParen                   -> ")",
+    Token`OpenSquare                  -> "]"
+|>;
+
+$closerTokens = <|
+    Token`BarGreater                  -> "|>",
+    Token`CloseCurly                  -> "}",
+    Token`CloseParen                  -> ")",
+    Token`CloseSquare                 -> "]",
+    Token`LongName`RightAssociation   -> "\[RightAssociation]",
+    Token`LongName`RightDoubleBracket -> "\[RightDoubleBracket]"
+|>;
+
+openerTokenQ[ token_ ] := KeyExistsQ[ $groupCloser, token ];
+closerTokenQ[ token_ ] := KeyExistsQ[ $closerTokens, token ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*implicitTimesLineBreaks*)
+implicitTimesLineBreaks // beginDefinition;
+
+(* Positions of line breaks between the operands of implicit multiplications: *)
+implicitTimesLineBreaks[ code_String, tree_ ] := Flatten @ Cases[
+    tree,
+    CodeParser`InfixNode[ Times, children_List, _ ] :> implicitTimesLineBreaks[ code, children ],
+    { 0, Infinity }
+];
+
+implicitTimesLineBreaks[ code_String, children_List ] := Table[
+    If[ 1 < i < Length @ children && MatchQ[ children[[ i ]], CodeParser`LeafNode[ Token`Fake`ImplicitTimes, _, _ ] ],
+        lineBreakBetween[ code, children[[ i - 1 ]], children[[ i + 1 ]] ],
+        Nothing
+    ],
+    { i, Length @ children }
+];
+
+implicitTimesLineBreaks // endDefinition;
+
+
+lineBreakBetween // beginDefinition;
+
+lineBreakBetween[
+    code_String,
+    _[ _, _, KeyValuePattern[ CodeParser`Source -> { _, end_Integer } ] ],
+    _[ _, _, KeyValuePattern[ CodeParser`Source -> { start_Integer, _ } ] ]
+] := Replace[
+    StringPosition[ StringTake[ code, { end + 1, start - 1 } ], "\n", 1 ],
+    { { { pos_, _ } } :> end + pos, _ :> Nothing }
+];
+
+lineBreakBetween // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeCheckFix*)
+(* A more thorough (but slower) fix for problems like mismatched brackets: *)
+codeCheckFix // beginDefinition;
+
+codeCheckFix[ code_String ] := Replace[
+    Quiet @ catchAlways @ CodeCheckFix[ code, "Target" -> "Evaluator" ],
+    {
+        KeyValuePattern @ { "Success" -> True, "SafeToEvaluate" -> True, "FixedCode" -> fixed_String } :> fixed,
+        _ :> code
+    }
+];
+
+codeCheckFix // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Segments*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeSandboxSegments*)
+makeSandboxSegments // beginDefinition;
+
+(* The syntax error could not be repaired, so the entire input is passed to the evaluator kernel to report it: *)
+makeSandboxSegments[ code_String, tree_ ] /; syntaxErrorQ @ tree :=
+    { makeSandboxSegment[ code, tree, { 1, StringLength @ code } ] };
+
+(* Input only contains comments and whitespace: *)
+makeSandboxSegments[ code_String, CodeParser`ContainerNode[ _, { }, _ ] ] :=
+    { <| "Input" -> HoldComplete @ Null |> };
+
+makeSandboxSegments[ code_String, CodeParser`ContainerNode[ _, nodes_List, _ ] ] :=
+    makeSandboxSegment[ code, # ] & /@ nodes;
+
+makeSandboxSegments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeSandboxSegment*)
+makeSandboxSegment // beginDefinition;
+
+makeSandboxSegment[ code_String, node: _[ _, _, KeyValuePattern[ CodeParser`Source -> span: { _, _ } ] ] ] :=
+    makeSandboxSegment[ code, node, span ];
+
+makeSandboxSegment[ code_String, node_, span: { start_Integer, _Integer } ] := Enclose[
+    Module[ { string, messages, macros, keys, spans },
+        string   = StringTake[ code, span ];
+        messages = Internal`Bag[ ];
+        macros   = ConfirmMatch[ expandMacroNodes[ messages, code, node ], { ___Association }, "Macros" ];
+
+        If[ macros === { },
+            <| "Input" -> string, "InputString" -> string |>,
+            (* Each macro is replaced by a unique placeholder string, which the evaluator kernel replaces with the
+               expanded expression after parsing the input: *)
+            keys  = Table[ "Wolfram`Chatbook`Sandbox`Macro`" <> createUUID[ ], Length @ macros ];
+            spans = Lookup[ macros, "Span" ] - start + 1;
+            <|
+                "Input"         -> StringReplacePart[ string, "\"" <> # <> "\"" & /@ keys, spans ],
+                "InputString"   -> string,
+                "MacroKeys"     -> keys,
+                "MacroValues"   -> Flatten[ HoldComplete @@ Lookup[ macros, "Expression" ], 1 ],
+                "MacroMessages" -> ConfirmMatch[ Internal`BagPart[ messages, All ], { ___String }, "Messages" ]
+            |>
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeSandboxSegment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandMacroNodes*)
+expandMacroNodes // beginDefinition;
+
+expandMacroNodes[ messages_Internal`Bag, code_String, node_ ] :=
+    DeleteMissing[ expandMacroNode[ messages, code, # ] & /@ macroSpans @ node ];
+
+expandMacroNodes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*macroSpans*)
+macroSpans // beginDefinition;
+
+$$freeformPromptHead = CodeParser`LeafNode[ Symbol, "\[FreeformPrompt]" | "\\[FreeformPrompt]", _ ];
+$$inlinedExpressionHead = CodeParser`LeafNode[ Symbol, "InlinedExpression", _ ];
+
+(* Source spans of macro calls in the syntax tree, excluding any that are nested in other macro calls: *)
+macroSpans[ node_ ] :=
+    Module[ { spans },
+        spans = Cases[
+            node,
+            Alternatives[
+                CodeParser`CallNode[
+                    $$freeformPromptHead | { $$freeformPromptHead },
+                    _,
+                    KeyValuePattern[ CodeParser`Source -> span_ ]
+                ],
+                CodeParser`CallNode[
+                    $$inlinedExpressionHead | { $$inlinedExpressionHead },
+                    CodeParser`GroupNode[ CodeParser`GroupSquare, { _, CodeParser`LeafNode[ String, _, _ ], _ }, _ ],
+                    KeyValuePattern[ CodeParser`Source -> span_ ]
+                ]
+            ] :> span,
+            { 0, Infinity }
+        ];
+        Select[
+            spans,
+            Function[ span, NoneTrue[ spans, # =!= span && #[[ 1 ]] <= span[[ 1 ]] && span[[ 2 ]] <= #[[ 2 ]] & ] ]
+        ]
+    ];
+
+macroSpans // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandMacroNode*)
+expandMacroNode // beginDefinition;
+
+expandMacroNode[ messages_Internal`Bag, code_String, span: { _Integer, _Integer } ] :=
+    expandMacroNode[ messages, span, parseMacroString @ StringTake[ code, span ] ];
+
+expandMacroNode[ messages_Internal`Bag, span_, held: HoldComplete[ _ ] ] := <|
+    "Span"       -> span,
+    "Expression" -> expandSandboxMacros[ messages, held ]
+|>;
+
+expandMacroNode[ messages_, span_, _ ] := Missing[ "NotParsed" ];
+
+expandMacroNode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseMacroString*)
+parseMacroString // beginDefinition;
+
+(* Macro calls only contain strings and type specifications, so these are parsed in a private context to avoid
+   creating symbols in any contexts used by the evaluator: *)
+parseMacroString[ string_String ] :=
+    Block[
+        {
+            $Context     = "Wolfram`Chatbook`SandboxParsing`",
+            $ContextPath = { "Wolfram`Chatbook`SandboxParsing`", "System`" }
+        },
+        Quiet @ ToExpression[ string, InputForm, HoldComplete ]
+    ];
+
+parseMacroString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Definitions*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeSymbolNames*)
+codeSymbolNames // beginDefinition;
+codeSymbolNames[ tree_ ] :=
+    DeleteDuplicates @ Cases[ tree, CodeParser`LeafNode[ Symbol, name_String, _ ] :> name, Infinity ];
+codeSymbolNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*existingSymbols*)
+existingSymbols // beginDefinition;
+
+(* Finds the symbols in this kernel that the given names refer to, without creating new ones: *)
+existingSymbols[ names: { ___String } ] :=
+    Flatten[ HoldComplete @@ (existingSymbol /@ names), 1 ];
+
+existingSymbols // endDefinition;
+
+
+existingSymbol // beginDefinition;
+
+existingSymbol[ name_String ] :=
+    existingSymbol[ name, fullSymbolName @ name ];
+
+existingSymbol[ name_, full_String ] :=
+    Block[ { $ContextAliases = <| |> }, ToExpression[ full, InputForm, HoldComplete ] ];
+
+existingSymbol[ name_, None ] :=
+    Nothing;
+
+existingSymbol // endDefinition;
+
+
+fullSymbolName // beginDefinition;
+
+fullSymbolName[ name_String ] /; StringStartsQ[ name, "`" ] :=
+    fullSymbolName[ $Context <> StringDrop[ name, 1 ] ];
+
+fullSymbolName[ name_String ] /; StringContainsQ[ name, "`" ] :=
+    If[ StringFreeQ[ name, "*"|"@" ] && NameQ @ name, name, None ];
+
+fullSymbolName[ name_String ] /; StringFreeQ[ name, "*"|"@"|"\\" ] :=
+    SelectFirst[ # <> name & /@ DeleteDuplicates @ Prepend[ $ContextPath, $Context ], NameQ, None ];
+
+fullSymbolName[ _String ] :=
+    None;
+
+fullSymbolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Macros*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1497,34 +2170,21 @@ preprocessSandboxString // endDefinition;
 (*expandSandboxMacros*)
 expandSandboxMacros // beginDefinition;
 
-expandSandboxMacros[ expr_HoldComplete ] := Enclose[
-    Catch @ Module[ { msgBag, expanded },
-
-        msgBag = Internal`Bag[ ];
-
-        expanded = expr /. {
-            sp`\[FreeformPrompt][ a___ ] :>
-                With[ { e = ConfirmMatch[ parseControlEquals[ msgBag, HoldComplete @ a ], _$ConditionHold, "Parse" ] },
-                    RuleCondition[ e, True ]
-                ]
-            ,
-            sp`InlinedExpression[ uri_String ] :>
-                With[ { e = ConfirmMatch[ parseExpressionURI[ msgBag, uri ], _$ConditionHold, "ExpressionURI" ] },
-                    RuleCondition[ e, True ]
-                ]
-        };
-
-        With[ { messages = Internal`BagPart[ msgBag, All ] },
-            Replace[
-                expanded,
-                HoldComplete[ e___ ] :> HoldComplete[ Scan[ Print, messages ]; StackBegin @ Unevaluated @ e ]
+(* Messages about how the macros were expanded are collected in msgBag to be printed during evaluation: *)
+expandSandboxMacros[ msgBag_Internal`Bag, expr_HoldComplete ] := Enclose[
+    expr /. {
+        sp`\[FreeformPrompt][ a___ ] :>
+            With[ { e = ConfirmMatch[ parseControlEquals[ msgBag, HoldComplete @ a ], _$ConditionHold, "Parse" ] },
+                RuleCondition[ e, True ]
             ]
-        ]
-    ],
+        ,
+        sp`InlinedExpression[ uri_String ] :>
+            With[ { e = ConfirmMatch[ parseExpressionURI[ msgBag, uri ], _$ConditionHold, "ExpressionURI" ] },
+                RuleCondition[ e, True ]
+            ]
+    },
     throwInternalFailure
 ];
-
-expandSandboxMacros[ $Failed ] := $Failed;
 
 expandSandboxMacros // endDefinition;
 
@@ -1784,40 +2444,12 @@ evaluationData[ eval_ ] := Enclose[
             ]
         ];
         ConfirmAssert[ result =!= $fail, "EvaluationFailure" ];
-        setOutput @ result;
         ConfirmBy[ makeEvaluationResultData[ result, outputs ], AssociationQ, "ResultData" ]
     ],
     throwInternalFailure
 ];
 
 evaluationData // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*setOutput*)
-setOutput // beginDefinition;
-setOutput // Attributes = { SequenceHold };
-
-setOutput[ HoldComplete[ KeyValuePattern[ "Result" -> HoldComplete[ result___ ] ] ] ] :=
-    setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ result ];
-
-setOutput[ HoldComplete[ fail_Failure ] ] :=
-    setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ fail ];
-
-setOutput[ line_Integer, HoldComplete[ result_ ] ] :=
-    WithCleanup[
-        Unprotect @ Out,
-        Out[ line ] := result,
-        Protect @ Out;
-        $Line = line + 1
-    ];
-
-setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
-    setOutput[ line, HoldComplete @ Sequence @ result ];
-
-setOutput // endDefinition;
-
-(* TODO: Should probably also set things like In[], InString[], etc. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2137,7 +2769,7 @@ catchEverything0[ contained[ result___ ] ] :=
     result;
 
 catchEverything0[ $Aborted ] :=
-    makeHeldResultAssociation @ $Aborted;
+    makeHeldResultAssociation[ $Aborted, "Aborted" ];
 
 catchEverything0[ uncaughtThrow[ uncaught_, $untagged ] ] := (
     Message[ Throw::nocatch, HoldCompleteForm @ Throw @ uncaught ];
@@ -2147,7 +2779,7 @@ catchEverything0[ uncaughtThrow[ uncaught_, $untagged ] ] := (
 catchEverything0[ uncaughtThrow[ code_Integer, $kernelExitTag ] ] := (
     $kernelQuit = True;
     Message[ General::quit, code ];
-    makeHeldResultAssociation @ kernelExit @ code
+    makeHeldResultAssociation[ kernelExit @ code, "KernelQuit" ]
 );
 
 catchEverything0[ uncaughtThrow[ uncaught__ ] ] := (
@@ -2296,7 +2928,18 @@ makeHeldResultAssociation // beginDefinition;
 makeHeldResultAssociation // Attributes = { HoldAllComplete };
 
 makeHeldResultAssociation[ e_ ] :=
-    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ e, "Initialized" -> { } |> };
+    makeHeldResultAssociation[ e, None ];
+
+makeHeldResultAssociation[ e_, stop_ ] :=
+    HoldComplete @@ {
+        <|
+            "Line"        -> If[ IntegerQ @ $segmentLine, $segmentLine, $Line ],
+            "Result"      -> HoldComplete @ e,
+            "Initialized" -> { },
+            "Suppressed"  -> False,
+            "Stop"        -> stop
+        |>
+    };
 
 makeHeldResultAssociation // endDefinition;
 
@@ -2321,11 +2964,10 @@ makeEvaluationResultData // endDefinition;
 (* ::Subsection::Closed:: *)
 (*linkWriteEvaluation*)
 linkWriteEvaluation // beginDefinition;
-linkWriteEvaluation // Attributes = { HoldAllComplete };
 
-linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = toWXFEvaluation @ includeDefinitions @ makeLinkWriteEvaluation @ evaluation },
-        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ BinaryDeserialize[ eval, BinarySerialize ] ]
+linkWriteEvaluation[ kernel_LinkObject, program_HoldComplete ] :=
+    With[ { eval = toWXFEvaluation @ program },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ BinaryDeserialize[ eval, BinarySerialize ] ]
     ];
 
 linkWriteEvaluation // endDefinition;
@@ -2339,36 +2981,22 @@ toWXFEvaluation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makeLinkWriteEvaluation*)
-makeLinkWriteEvaluation // beginDefinition;
-makeLinkWriteEvaluation // Attributes = { HoldAllComplete };
-
-makeLinkWriteEvaluation[ evaluation_ ] := Enclose[
-    Module[ { eval, constrained },
-        eval = ConfirmMatch[ createEvaluationWithWarnings @ evaluation, HoldComplete[ _ ], "Warnings" ];
-        constrained = ConfirmMatch[ addTimeConstraint @ eval, HoldComplete[ _ ], "TimeConstraint" ];
-        ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ]
-    ],
-    throwInternalFailure
-];
-
-makeLinkWriteEvaluation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*includeDefinitions*)
 includeDefinitions // beginDefinition;
 
-includeDefinitions[ eval_HoldComplete ] :=
-    includeDefinitions[ eval, $includeDefinitions ];
+includeDefinitions[ spec_ ] :=
+    includeDefinitions[ spec, $includeDefinitions ];
 
-includeDefinitions[ h: HoldComplete[ eval___ ], True|$$unspecified ] :=
-    With[ { def = Language`ExtendedFullDefinition @ h },
-        HoldComplete[ Language`ExtendedFullDefinition[ ] = def; eval ] /; MatchQ[ def, _Language`DefinitionList ]
+includeDefinitions[ spec_, True|$$unspecified ] :=
+    With[ { def = sandboxDefinitions @ spec },
+        If[ MatchQ[ def, _Language`DefinitionList ] && Length @ def > 0,
+            HoldComplete[ Language`ExtendedFullDefinition[ ] = def ],
+            HoldComplete @ Null
+        ]
     ];
 
-includeDefinitions[ h_HoldComplete, _ ] :=
-    h;
+includeDefinitions[ spec_, _ ] :=
+    HoldComplete @ Null;
 
 includeDefinitions // endDefinition;
 
@@ -2377,55 +3005,42 @@ includeDefinitions // endDefinition;
 (*makeCloudDefinitionsWXF*)
 makeCloudDefinitionsWXF // beginDefinition;
 
-makeCloudDefinitionsWXF[ eval_HoldComplete ] :=
-    makeCloudDefinitionsWXF[ eval, $includeDefinitions ];
+makeCloudDefinitionsWXF[ spec_ ] :=
+    makeCloudDefinitionsWXF[ spec, $includeDefinitions ];
 
-makeCloudDefinitionsWXF[ h_HoldComplete, True|$$unspecified ] :=
-    With[ { def = Language`ExtendedFullDefinition @ h },
-        BinarySerialize[ def, PerformanceGoal -> "Size" ] /; MatchQ[ def, _Language`DefinitionList ]
+makeCloudDefinitionsWXF[ spec_, True|$$unspecified ] :=
+    With[ { def = sandboxDefinitions @ spec },
+        If[ MatchQ[ def, _Language`DefinitionList ] && Length @ def > 0,
+            BinarySerialize[ def, PerformanceGoal -> "Size" ],
+            None
+        ]
     ];
 
-makeCloudDefinitionsWXF[ h_HoldComplete, _ ] :=
+makeCloudDefinitionsWXF[ spec_, _ ] :=
     None;
 
 makeCloudDefinitionsWXF // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*addInitializations*)
-addInitializations // beginDefinition;
+(*sandboxDefinitions*)
+sandboxDefinitions // beginDefinition;
 
-addInitializations[ eval_HoldComplete ] := addInitializations[ eval, $initializationTest ];
+(* Definitions from this kernel for the symbols that appear in the input, so they're available to the evaluator: *)
+sandboxDefinitions[ names: { ___String } ] := sandboxDefinitions @ existingSymbols @ names;
+sandboxDefinitions[ HoldComplete[ ] ] := None;
+sandboxDefinitions[ held_HoldComplete ] := Language`ExtendedFullDefinition @ held;
 
-addInitializations[ HoldComplete[ eval_ ], initializedQ_ ] :=
-    HoldComplete @ With[
-        {
-            result = Replace[ HoldComplete @@ { eval }, HoldComplete[ ] :> HoldComplete @ Sequence[ ] ]
-        },
-        <|
-            "Line"        -> $Line,
-            "Result"      -> result,
-            "Initialized" -> Position[ result, _? initializedQ, Heads -> True ]
-        |>
-    ];
+sandboxDefinitions // endDefinition;
 
-addInitializations // endDefinition;
-
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$initializationTest*)
 $initializationTest := $initializationTest = Module[ { tests, slot, func },
     tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ slot[ 1 ] ] ];
     func = Replace[ tests, HoldComplete[ t___ ] :> Function[ Null, Quiet @ TrueQ @ Or @ t, HoldAllComplete ] ];
     func /. slot -> Slot
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*addTimeConstraint*)
-addTimeConstraint // beginDefinition;
-addTimeConstraint[ eval_HoldComplete ] := addTimeConstraint[ eval, $sandboxEvaluationTimeout ];
-addTimeConstraint[ eval_, t_ ] := addTimeConstraint[ eval, t, timeConstraintFailure @ t ];
-addTimeConstraint[ HoldComplete[ eval_ ], t_, fail_Failure ] := HoldComplete @ TimeConstrained[ eval, t, fail ];
-addTimeConstraint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2463,49 +3078,179 @@ kernelQuitFailure[ ] := Failure[
 kernelQuitFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Segment Programs*)
+
+(* A segment program is a self-contained held expression that parses and evaluates one input in the evaluator kernel.
+   The evaluator kernel might not have Chatbook loaded, so programs only use system functions and inlined values.
+
+   Each program:
+    - parses its input string using the evaluator's current $Context, $ContextPath, etc.
+    - replaces macro placeholders with their expanded expressions
+    - warns about undefined symbols
+    - evaluates the input with a time constraint
+    - records In/Out history and increments $Line
+    - returns an association describing the result *)
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*createEvaluationWithWarnings*)
-createEvaluationWithWarnings // beginDefinition;
-createEvaluationWithWarnings // Attributes = { HoldAllComplete };
+(*makeSegmentProgram*)
+makeSegmentProgram // beginDefinition;
 
-createEvaluationWithWarnings[ evaluation_ ] :=
-    Module[ { held, undefined },
-        held = Flatten @ HoldComplete @ Block[ { PrintTemporary = Print }, StackBegin @ Unevaluated @ evaluation ];
+makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
+    Module[ { program },
+        program = With[
+            {
+                input     = ConfirmMatch[ segment[ "Input" ], _String | HoldComplete[ _ ], "Input" ],
+                string    = Lookup[ segment, "InputString", None ],
+                keys      = ConfirmMatch[ Lookup[ segment, "MacroKeys", { } ], { ___String }, "MacroKeys" ],
+                values    = ConfirmMatch[ Lookup[ segment, "MacroValues", HoldComplete[ ] ], _HoldComplete, "Values" ],
+                messages  = ConfirmMatch[ Lookup[ segment, "MacroMessages", { } ], { ___String }, "MacroMessages" ],
+                init      = ConfirmMatch[ Lookup[ opts, "Initialization", HoldComplete[ ] ], _HoldComplete, "Init" ],
+                history   = ConfirmMatch[ Lookup[ opts, "History", None ], "Full"|"Output"|None, "History" ],
+                time      = Lookup[ opts, "TimeConstraint", Infinity ],
+                fail      = ConfirmMatch[ timeConstraintFailure @ $sandboxEvaluationTimeout, _Failure, "Failure" ],
+                evaluate  = ConfirmMatch[ segmentEvaluation[ ], _Function, "Evaluation" ],
+                undefined = $undefinedSymbolWarnings,
+                initQ     = $initializationTest
+            },
+            HoldComplete @ Module[
+                { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentResult },
 
-        undefined = Flatten[ HoldComplete @@ Cases[
-            Unevaluated @ evaluation,
-            s_Symbol? undefinedSymbolQ :> HoldComplete @ s,
-            Infinity,
-            Heads -> True
-        ] ];
+                (* $segmentLine is used to label results that escape the program in session evaluations: *)
+                segmentLine       = $segmentLine = $Line;
+                segmentSuppressed = False;
+                segmentStop       = None;
 
-        (* TODO: add other warnings *)
-        addWarnings[ held, <| "UndefinedSymbols" -> undefined |> ]
-    ];
+                WithCleanup[
+                    ReleaseHold @ init;
+                    If[ history === "Full",
+                        Quiet[ Unprotect @ $MessageList; $MessageList = { }; Protect @ $MessageList ]
+                    ];
 
-createEvaluationWithWarnings // endDefinition;
+                    (* Parse the input in the evaluator's current context: *)
+                    segmentHeld = If[ StringQ @ input, ToExpression[ input, InputForm, HoldComplete ], input ];
+
+                    If[ MatchQ[ segmentHeld, _HoldComplete ],
+
+                        (* Replace macro placeholders with their expanded expressions without evaluating them: *)
+                        If[ keys =!= { },
+                            segmentHeld = ReplaceAll[
+                                segmentHeld,
+                                key: Alternatives @@ keys :>
+                                    With[ { e = Extract[ values, FirstPosition[ keys, key ], $ConditionHold ] },
+                                        RuleCondition[ e, True ]
+                                    ]
+                            ]
+                        ];
+
+                        (* Multiple expressions are only possible here if the input could not be split: *)
+                        segmentHeld = Replace[
+                            DeleteCases[ segmentHeld, Null ],
+                            {
+                                HoldComplete[ ] :> HoldComplete @ Null,
+                                HoldComplete[ xs__, CompoundExpression[ x_, Null ] ] :> Replace[
+                                    HoldComplete @ CompoundExpression[ xs, x, Null ],
+                                    HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
+                                    { 2 }
+                                ],
+                                HoldComplete[ xs__, x_ ] :> Replace[
+                                    HoldComplete @ CompoundExpression[ xs, x ],
+                                    HoldPattern[ CompoundExpression[ y_, Null ] ] :> y,
+                                    { 2 }
+                                ]
+                            }
+                        ];
+
+                        segmentSuppressed = MatchQ[ segmentHeld, HoldComplete @ CompoundExpression[ ___, Null ] ];
+
+                        If[ history === "Full" && StringQ @ input,
+                            Quiet[
+                                Unprotect[ In, InString ];
+                                InString[ segmentLine ] = string;
+                                Replace[ segmentHeld, HoldComplete[ e_ ] :> (In[ segmentLine ] := e) ];
+                                Protect[ In, InString ]
+                            ]
+                        ];
+
+                        Scan[ Print, messages ];
+                        undefined @ segmentHeld;
+
+                        segmentResult = Replace[
+                            HoldComplete @@ {
+                                CheckAbort[
+                                    TimeConstrained[ evaluate @ segmentHeld, time, segmentStop = "TimedOut"; fail ],
+                                    segmentStop = "Aborted"; $Aborted
+                                ]
+                            },
+                            HoldComplete[ ] :> HoldComplete @ Sequence[ ]
+                        ],
+
+                        (* The input could not be parsed, and messages were already issued by ToExpression: *)
+                        segmentResult = HoldComplete @ $Failed
+                    ];
+
+                    If[ history =!= None && StringQ @ input,
+                        Quiet[
+                            Unprotect @ Out;
+                            Replace[
+                                segmentResult,
+                                {
+                                    HoldComplete[ r_ ] :> (Out[ segmentLine ] := r),
+                                    HoldComplete[ r___ ] :> (Out[ segmentLine ] := Sequence @ r)
+                                }
+                            ];
+                            Protect @ Out
+                        ]
+                    ];
+
+                    <|
+                        "Line"        -> segmentLine,
+                        (* $Line is incremented after this, and might have been changed by the evaluation: *)
+                        "NextLine"    -> $Line + 1,
+                        "Result"      -> segmentResult,
+                        "Initialized" -> Position[ segmentResult, _? initQ, Heads -> True ],
+                        "Suppressed"  -> segmentSuppressed,
+                        "Stop"        -> segmentStop
+                    |>
+                    ,
+                    If[ history === "Full" && StringQ @ input,
+                        Quiet[
+                            Unprotect @ MessageList;
+                            MessageList[ segmentLine ] = $MessageList;
+                            Protect @ MessageList
+                        ]
+                    ];
+                    $Line++
+                ]
+            ]
+        ];
+
+        ConfirmMatch[
+            If[ TrueQ @ opts[ "MessagePrePrint" ], addMessagePrePrint @ program, program ],
+            HoldComplete[ _ ],
+            "Program"
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeSegmentProgram // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*addWarnings*)
-addWarnings // beginDefinition;
+(*segmentEvaluation*)
+segmentEvaluation // beginDefinition;
 
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ ] ] ] :=
-    addWarnings[ HoldComplete[ eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
-
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s_Symbol ] ] ] :=
-    addWarnings[ HoldComplete[ Message[ Symbol::undefined, s ]; eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
-
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s__Symbol ] ] ] :=
-    addWarnings[
-        HoldComplete[ Message[ Symbol::undefined2, StringRiffle[ { s }, ", " ] ]; eval ],
-        KeyDrop[ as, "UndefinedSymbols" ]
+(* A function that evaluates a parsed input. It's constructed with Apply, since substituting the evaluation into a
+   Function in the segment program would rename the Function's variable. *)
+segmentEvaluation[ ] :=
+    Function @@ Join[
+        HoldComplete @ heldInput,
+        addMessageHandler @ HoldComplete @ Block[ { PrintTemporary = Print }, StackBegin @ ReleaseHold @ heldInput ]
     ];
 
-addWarnings[ HoldComplete[ eval_  ], _ ] := addMessageHandler @ HoldComplete @ eval;
-addWarnings[ HoldComplete[ eval__ ], _ ] := addMessageHandler @ HoldComplete @ CompoundExpression @ eval;
-
-addWarnings // endDefinition;
+segmentEvaluation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2537,19 +3282,80 @@ addMessageHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*undefinedSymbolQ*)
-undefinedSymbolQ // ClearAll;
-undefinedSymbolQ // Attributes = { HoldAllComplete };
+(*addMessagePrePrint*)
+addMessagePrePrint // beginDefinition;
 
-undefinedSymbolQ[ symbol_Symbol ] := TrueQ @ And[
-    AtomQ @ Unevaluated @ symbol,
-    Unevaluated @ symbol =!= Internal`$EFAIL,
-    Context @ Unevaluated @ symbol === "Global`",
-    StringStartsQ[ SymbolName @ Unevaluated @ symbol, _? UpperCaseQ ],
-    ! System`Private`HasAnyEvaluationsQ @ symbol
+(* Format message arguments in InputForm, like messages from the session evaluator: *)
+addMessagePrePrint[ HoldComplete[ program_ ] ] :=
+    With[ { mpp = $sandboxMessagePrePrint },
+        HoldComplete @ Block[ { $MessagePrePrint = mpp }, program ]
+    ];
+
+addMessagePrePrint // endDefinition;
+
+
+$sandboxMessagePrePrint = Function[
+    arg,
+    Module[ { string },
+        string = Replace[
+            Unevaluated @ arg,
+            {
+                (HoldForm|HoldCompleteForm)[ HoldPattern @ Power[ expr_, -1 ] ] :>
+                    ToString[ Unevaluated[ 1 / expr ], InputForm ],
+                (HoldForm|HoldCompleteForm)[ expr_ ] :> ToString[ Unevaluated @ expr, InputForm ],
+                expr_ :> ToString[ Unevaluated @ expr, InputForm ]
+            }
+        ];
+        If[ StringLength @ string > 105, StringTake[ string, 48 ] <> " ... " <> StringTake[ string, -47 ], string ]
+    ],
+    HoldAllComplete
 ];
 
-undefinedSymbolQ[ ___ ] := False;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$undefinedSymbolWarnings*)
+
+(* Issues warnings for symbols that are new in the current context and look like they were meant to be functions.
+   Symbols that are being defined or localized in the input are not considered undefined. *)
+$undefinedSymbolWarnings = Function[
+    held,
+    Module[ { bound, undefined },
+        bound = Cases[
+            Join[
+                Cases[ held, (Set|SetDelayed|UpSet|UpSetDelayed)[ lhs_, _ ] :> HoldComplete @ lhs, Infinity ],
+                Cases[ held, (TagSet|TagSetDelayed)[ tag_, lhs_, _ ] :> HoldComplete[ tag, lhs ], Infinity ],
+                Cases[ held, HoldPattern @ MessageName[ sym_, ___ ] :> HoldComplete @ sym, Infinity ],
+                Cases[ held, Verbatim[ Pattern ][ sym_, _ ] :> HoldComplete @ sym, Infinity ],
+                Cases[ held, (Module|Block|With|DynamicModule)[ vars_, __ ] :> HoldComplete @ vars, Infinity ],
+                Cases[ held, HoldPattern @ Function[ vars_, _, ___ ] :> HoldComplete @ vars, Infinity ]
+            ],
+            sym_Symbol :> HoldComplete @ sym,
+            Infinity,
+            Heads -> True
+        ];
+
+        undefined = DeleteDuplicates @ Cases[
+            held,
+            sym_Symbol /; And[
+                Context @ Unevaluated @ sym === $Context,
+                StringStartsQ[ SymbolName @ Unevaluated @ sym, _? UpperCaseQ ],
+                ! System`Private`HasAnyEvaluationsQ @ sym,
+                FreeQ[ bound, HoldComplete @ sym ]
+            ] :> HoldComplete @ sym,
+            Infinity,
+            Heads -> True
+        ];
+
+        Replace[
+            Flatten[ HoldComplete @@ undefined, 1 ],
+            {
+                HoldComplete[ ] :> Null,
+                HoldComplete[ sym_ ] :> Message[ Symbol::undefined, sym ],
+                HoldComplete[ syms__ ] :> Message[ Symbol::undefined2, { syms } ]
+            }
+        ]
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2624,36 +3430,140 @@ sandboxResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*sandboxResultString*)
-sandboxResultString // beginDefinition;
+(*sandboxResultData*)
+sandboxResultData // beginDefinition;
 
-sandboxResultString[ result_, packets_ ] :=
-    mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ sandboxResultString0[
-        preprocessForResultString @ result,
-        packets
+(* Combines the evaluation records for each input into the final result data. Like an interactive kernel session,
+   outputs are only shown for inputs that are not suppressed with a semicolon and do not evaluate to Null. *)
+sandboxResultData[ records: { __Association } ] := Enclose[
+    Module[ { results, shown, messages, strings, string },
+
+        results  = ConfirmMatch[ Lookup[ records, "Result" ], { HoldComplete[ _Association ].. }, "Results" ];
+        shown    = ConfirmMatch[ shownOutputs @ results, { ___Integer }, "Shown" ];
+        messages = ConfirmMatch[ outputLogMessages @ Lookup[ records, "OutputLog" ], { { ___String }.. }, "Messages" ];
+
+        strings = ConfirmMatch[
+            MapThread[
+                segmentResultString,
+                { results, messages, MemberQ[ shown, # ] & /@ Range @ Length @ records }
+            ],
+            { ___String },
+            "Strings"
+        ];
+
+        string = StringRiffle[ DeleteCases[ strings, "" ], "\n\n" ];
+
+        ConfirmBy[
+            verifyResult @ <|
+                "String"  -> mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ string,
+                "Result"  -> sandboxResult @ Last @ results,
+                "Packets" -> Flatten @ Lookup[ records, "Packets", { } ]
+            |>,
+            AssociationQ,
+            "Verified"
+        ]
+    ],
+    throwInternalFailure
+];
+
+sandboxResultData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shownOutputs*)
+shownOutputs // beginDefinition;
+
+(* Positions of the results that should be displayed as outputs. The last output is always shown if there would
+   otherwise be nothing to show, so there's always some indication that the evaluation finished. *)
+shownOutputs[ results_List ] :=
+    With[ { shown = Flatten @ Position[ shownOutputQ /@ results, True, { 1 }, Heads -> False ] },
+        If[ shown === { } && ! kernelQuitResultQ @ Last @ results,
+            { Length @ results },
+            shown
+        ]
     ];
 
-sandboxResultString // endDefinition;
+shownOutputs // endDefinition;
 
 
+shownOutputQ // beginDefinition;
+
+shownOutputQ[ HoldComplete[ as_Association ] ] := Which[
+    kernelQuitResultQ @ HoldComplete @ as        , False,
+    StringQ @ as[ "Stop" ]                       , True,
+    TrueQ @ as[ "Suppressed" ]                   , False,
+    MatchQ[ as[ "Result" ], HoldComplete[ Null ] ], False,
+    True                                         , True
+];
+
+shownOutputQ // endDefinition;
+
+
+kernelQuitResultQ // beginDefinition;
+kernelQuitResultQ[ HoldComplete[ KeyValuePattern[ "Stop" -> "KernelQuit" ] ] ] := True;
+kernelQuitResultQ[ HoldComplete[ KeyValuePattern[ "Result" -> HoldComplete[ _kernelExit ] ] ] ] := True;
+kernelQuitResultQ[ _ ] := False;
+kernelQuitResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*outputLogMessages*)
+outputLogMessages // beginDefinition;
+
+(* Prints and messages for each input. The General::messages hint is only added once after the first message. *)
+outputLogMessages[ logs: { { ___String }.. } ] := Enclose[
+    Module[ { flagged, messages, first },
+        flagged = Map[
+            Block[ { $appendGeneralMessage = False }, { makePacketMessage /@ #, $appendGeneralMessage } ] &,
+            logs
+        ];
+        messages = ConfirmMatch[ flagged[[ All, 1 ]], { { ___String }.. }, "Messages" ];
+        first = FirstPosition[ flagged[[ All, 2 ]], True, None, { 1 }, Heads -> False ];
+        If[ MatchQ[ first, { _Integer } ] && ! TrueQ @ $kernelQuit,
+            MapAt[ Append[ #, ConfirmBy[ $generalMessageText, StringQ, "GeneralMessage" ] ] &, messages, first ],
+            messages
+        ]
+    ],
+    throwInternalFailure
+];
+
+outputLogMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*segmentResultString*)
+segmentResultString // beginDefinition;
+
+segmentResultString[ result_HoldComplete, messages: { ___String }, show: True|False ] :=
+    StringTrim @ StringRiffle[
+        Flatten @ { messages, If[ show, segmentOutputString @ preprocessForResultString @ result, Nothing ] },
+        "\n"
+    ];
+
+segmentResultString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*segmentOutputString*)
+segmentOutputString // beginDefinition;
+
+segmentOutputString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ] ] :=
+    With[ { held = Flatten[ HoldComplete @ result, 1 ] },
+        appendURIInstructions[ outputLabel @ line <> sandboxResultString0 @ held, held ]
+    ];
+
+segmentOutputString // endDefinition;
+
+
+outputLabel // beginDefinition;
+outputLabel[ line_Integer ] := "\nOut[" <> ToString @ line <> "]= ";
+outputLabel[ _ ] := "\n";
+outputLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sandboxResultString0*)
 sandboxResultString0 // beginDefinition;
-
-sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
-
-sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
-    appendURIInstructions[
-        StringTrim @ StringRiffle[
-            Flatten @ {
-                makePacketMessages[ ToString @ line, packets ],
-                If[ MatchQ[ Unevaluated @ result, HoldComplete[ _kernelExit ] ],
-                    "",
-                    "\nOut[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
-                ]
-            },
-            "\n"
-        ],
-        Flatten @ HoldComplete @ result
-    ];
 
 sandboxResultString0[ expr_HoldComplete ] :=
     With[ { string = sandboxResultString1 @ expr },
@@ -2936,24 +3846,7 @@ fancyResultQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makePacketMessages*)
-makePacketMessages // beginDefinition;
-
-makePacketMessages[ line_, packets_List ] := Enclose[
-    Module[ { strings },
-        $appendGeneralMessage = False;
-        strings = ConfirmMatch[ makePacketMessage /@ packets, { ___String }, "Strings" ];
-        If[ ConfirmBy[ $appendGeneralMessage && ! $kernelQuit, BooleanQ, "AppendGeneralMessage" ],
-            Append[ strings, ConfirmBy[ $generalMessageText, StringQ, "GeneralMessage" ] ],
-            strings
-        ]
-    ],
-    throwInternalFailure
-];
-
-makePacketMessages // endDefinition;
-
-
+(*$generalMessageText*)
 $generalMessageText := Enclose[
     Module[ { string },
         string = ConfirmBy[ $messageOverrideTemplates[ HoldComplete[ General::messages ] ], StringQ, "String" ];
