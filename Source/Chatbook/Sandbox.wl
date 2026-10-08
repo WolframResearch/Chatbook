@@ -52,6 +52,7 @@ $kernelQuit                = False;
 $verifiedResult            = True;
 $propagateMessages         = False;
 $segmentLine               = None;
+$requestedLine             = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -239,7 +240,9 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
             $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
             $writePaths               = getOption[ "AllowedWritePaths"    , opts ],
-            $Line                     = getOption[ "Line"                 , opts ]
+            $Line                     = getOption[ "Line"                 , opts ],
+            (* Only an explicitly given line number is applied to the evaluator kernel for the "Local" method: *)
+            $requestedLine            = Replace[ Lookup[ opts, "Line" ], Except[ _Integer ] :> None ]
         },
         getProperty[ sandboxEvaluate @ preprocessCodeForTool @ code, property ]
     ],
@@ -1030,10 +1033,11 @@ evaluateSegments // beginDefinition;
 (* Evaluates each segment in order using `evaluator`, which takes a segment program and returns a record association.
    Evaluation stops early if a segment times out, is aborted, or quits the kernel. *)
 evaluateSegments[ segments: { __Association }, opts_Association, evaluator_ ] := Enclose[
-    Module[ { deadline, initialization, records },
+    Module[ { deadline, initialization, line, records },
 
         deadline       = evaluationDeadline[ ];
         initialization = Lookup[ opts, "Initialization", HoldComplete @ Null ];
+        line           = Lookup[ opts, "Line", None ];
         records        = Internal`Bag[ ];
 
         Catch[
@@ -1047,14 +1051,16 @@ evaluateSegments[ segments: { __Association }, opts_Association, evaluator_ ] :=
                                 <|
                                     opts,
                                     "Initialization" -> initialization,
+                                    "Line"           -> line,
                                     "TimeConstraint" -> remainingTime @ deadline
                                 |>
                             ],
                             HoldComplete[ _ ],
                             "Program"
                         ];
-                        (* Only the first segment needs to include initializations: *)
+                        (* Only the first segment needs to include initializations and set the line number: *)
                         initialization = HoldComplete @ Null;
+                        line           = None;
                         record = ConfirmBy[ evaluator @ program, AssociationQ, "Record" ];
                         Internal`StuffBag[ records, record ];
                         If[ stopSegmentsQ @ record, Throw[ Null, $stopSegments ] ]
@@ -1128,7 +1134,12 @@ localSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         records = ConfirmMatch[
             evaluateSegments[
                 input[ "Segments" ],
-                <| "History" -> "Full", "Initialization" -> init, "MessagePrePrint" -> True |>,
+                <|
+                    "History"         -> "Full",
+                    "Initialization"  -> init,
+                    "Line"            -> $requestedLine,
+                    "MessagePrePrint" -> True
+                |>,
                 localSegmentEvaluate @ kernel
             ],
             { __Association },
@@ -1309,7 +1320,7 @@ sandboxPrintText // endDefinition;
 cloudSandboxEvaluate // beginDefinition;
 
 cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
-    Catch @ Module[ { api, programs, held, wxf, definitions, response, records, result },
+    Catch @ Module[ { api, programs, line, held, wxf, definitions, response, records, result },
 
         $lastSandboxMethod     = "Cloud";
         $lastSandboxEvaluation = input;
@@ -1332,7 +1343,8 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
             "Programs"
         ];
 
-        held = ConfirmMatch[ makeCloudEvaluation @ programs, HoldComplete[ _ ], "Evaluation" ];
+        line = Replace[ $requestedLine, Except[ _Integer ] :> $cloudLineNumber ];
+        held = ConfirmMatch[ makeCloudEvaluation[ programs, line ], HoldComplete[ _ ], "Evaluation" ];
         wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
         definitions = makeCloudDefinitionsWXF @ input[ "Definitions" ];
 
@@ -1361,7 +1373,7 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         If[ FailureQ @ response, Throw @ response ];
 
         records = ConfirmMatch[ cloudSegmentRecords @ response, { __Association }, "Records" ];
-        $cloudLineNumber += Length @ records;
+        $cloudLineNumber = line + Length @ records;
 
         result = ConfirmBy[ sandboxResultData @ records, AssociationQ, "Result" ];
 
@@ -1433,33 +1445,31 @@ setCloudSessionString // endDefinition;
 (*makeCloudEvaluation*)
 makeCloudEvaluation // beginDefinition;
 
-makeCloudEvaluation[ programs: { HoldComplete[ _ ].. } ] :=
-    With[ { line = $cloudLineNumber },
-        HoldComplete[
-            $Line = line;
-            Module[ { cloudResults = { } },
-                Catch[
-                    Scan[
-                        Function[
-                            cloudProgram,
-                            With[ { data = EvaluationData @ ReleaseHold @ cloudProgram },
-                                AppendTo[
-                                    cloudResults,
-                                    <|
-                                        "Result"   -> data[ "Result" ],
-                                        "Prints"   -> data[ "OutputLog" ],
-                                        "Messages" -> data[ "MessagesText" ]
-                                    |>
-                                ];
-                                If[ StringQ @ Quiet @ data[ "Result" ][ "Stop" ], Throw[ Null, "StopSegments" ] ]
-                            ]
-                        ],
-                        programs
+makeCloudEvaluation[ programs: { HoldComplete[ _ ].. }, line_Integer ] :=
+    HoldComplete[
+        $Line = line;
+        Module[ { cloudResults = { } },
+            Catch[
+                Scan[
+                    Function[
+                        cloudProgram,
+                        With[ { data = EvaluationData @ ReleaseHold @ cloudProgram },
+                            AppendTo[
+                                cloudResults,
+                                <|
+                                    "Result"   -> data[ "Result" ],
+                                    "Prints"   -> data[ "OutputLog" ],
+                                    "Messages" -> data[ "MessagesText" ]
+                                |>
+                            ];
+                            If[ StringQ @ Quiet @ data[ "Result" ][ "Stop" ], Throw[ Null, "StopSegments" ] ]
+                        ]
                     ],
-                    "StopSegments"
-                ];
-                cloudResults
-            ]
+                    programs
+                ],
+                "StopSegments"
+            ];
+            cloudResults
         ]
     ];
 
@@ -3107,6 +3117,7 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                 values    = ConfirmMatch[ Lookup[ segment, "MacroValues", HoldComplete[ ] ], _HoldComplete, "Values" ],
                 messages  = ConfirmMatch[ Lookup[ segment, "MacroMessages", { } ], { ___String }, "MacroMessages" ],
                 init      = ConfirmMatch[ Lookup[ opts, "Initialization", HoldComplete[ ] ], _HoldComplete, "Init" ],
+                start     = Replace[ Lookup[ opts, "Line", None ], Except[ _Integer ] :> None ],
                 history   = ConfirmMatch[ Lookup[ opts, "History", None ], "Full"|"Output"|None, "History" ],
                 time      = Lookup[ opts, "TimeConstraint", Infinity ],
                 fail      = ConfirmMatch[ timeConstraintFailure @ $sandboxEvaluationTimeout, _Failure, "Failure" ],
@@ -3116,6 +3127,8 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
             },
             HoldComplete @ Module[
                 { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentResult },
+
+                If[ IntegerQ @ start, $Line = start ];
 
                 (* $segmentLine is used to label results that escape the program in session evaluations: *)
                 segmentLine       = $segmentLine = $Line;

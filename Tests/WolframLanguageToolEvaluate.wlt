@@ -1000,6 +1000,25 @@ If[ $localEvaluatorAvailable,
     ]
 ]
 
+(* An explicitly given line number is used by the evaluator kernel: *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        WolframLanguageToolEvaluate[ "1\n2", { "String", "Line" }, Method -> "Local", Line -> 50 ],
+        <| "String" -> "Out[50]= 1\n\nOut[51]= 2", "Line" -> 52 |>,
+        SameTest -> MatchQ,
+        TestID   -> "LocalEvaluator-LineNumbers-Option@@Tests/WolframLanguageToolEvaluate.wlt:1005,5-1010,6"
+    ]
+]
+
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        WolframLanguageToolEvaluate[ "3", "String", Method -> "Local" ],
+        "Out[52]= 3",
+        SameTest -> MatchQ,
+        TestID   -> "LocalEvaluator-LineNumbers-Option-Continued@@Tests/WolframLanguageToolEvaluate.wlt:1014,5-1019,6"
+    ]
+]
+
 (* Code is parsed using the evaluator kernel's context state rather than this kernel's (AgentTools#249): *)
 If[ $localEvaluatorAvailable,
     VerificationTest[
@@ -1015,7 +1034,7 @@ If[ $localEvaluatorAvailable,
         ],
         HoldCompleteForm @ { _String, { __String } },
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-Set-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1005,5-1019,6"
+        TestID   -> "LocalEvaluator-Context-Set-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1024,5-1038,6"
     ]
 ]
 
@@ -1024,7 +1043,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "sessionTestSymbol = 1;\nContext[sessionTestSymbol]", "Result", Method -> "Local" ],
         HoldCompleteForm[ "ChatbookTestSession`" ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1023,5-1028,6"
+        TestID   -> "LocalEvaluator-Context-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1042,5-1047,6"
     ]
 ]
 
@@ -1033,7 +1052,7 @@ If[ $localEvaluatorAvailable,
         Names[ "Global`sessionTestSymbol" ],
         { },
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-NoLocalSymbol-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1032,5-1037,6"
+        TestID   -> "LocalEvaluator-Context-NoLocalSymbol-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1051,5-1056,6"
     ]
 ]
 
@@ -1049,6 +1068,6 @@ If[ $localEvaluatorAvailable,
         ],
         HoldCompleteForm[ { __String } ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-Restore-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1041,5-1053,6"
+        TestID   -> "LocalEvaluator-Context-Restore-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1060,5-1072,6"
     ]
 ]
