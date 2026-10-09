@@ -2261,15 +2261,15 @@ With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
-        Style[ string, FontWeight -> "DemiBold", FontColor -> col ],
+        Style[ string, FontWeight -> "Plain", FontColor -> col ],
         activeToolProgressIndicator[ ]
     }
 ];
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ]
+    tr[ "FormattingToolUsed" ],
+    Style[ string, FontWeight -> "Plain" ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
