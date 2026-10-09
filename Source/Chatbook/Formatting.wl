@@ -238,10 +238,16 @@ reformatTextData // endDefinition;
 reformatTextData0 // beginDefinition;
 
 reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    reformatTextDataEscaped @ StringSplit[
-        importHTMLEntities @ string,
-        $textDataFormatRulesNoMarkdownUnescape,
-        IgnoreCase -> True
+    reformatTextDataEscaped @ discardBadToolCalls @ DeleteCases[
+        Quiet[
+            StringSplit[
+                importHTMLEntities @ string,
+                $textDataFormatRulesNoMarkdownUnescape,
+                IgnoreCase -> True
+            ],
+            RegularExpression::maxrec
+        ],
+        ""
     ];
 
 reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
@@ -264,7 +270,8 @@ reformatTextData0 // endDefinition;
 
 reformatTextDataEscaped // beginDefinition;
 
-reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ parts;
+reformatTextDataEscaped[ parts_List ] :=
+    joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ splitToolCallSpacing @ parts;
 
 reformatTextDataEscaped // endDefinition;
 
@@ -285,12 +292,78 @@ reformatTextDataEscaped0[ parts_List ] := Replace[
             formatTextString @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
             t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
         ],
+        toolCallSpacing[ s_String ] :> formatTextString @ s,
+        (* Text in discarded material still needs its escapes handled: *)
+        discardedMaterial[ stuff___ ] :> makeDiscardedMaterialCell0 @ reformatTextDataEscaped @ { stuff },
         other_ :> makeResultCell @ other
     },
     { 1 }
 ];
 
 reformatTextDataEscaped0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*splitToolCallSpacing*)
+splitToolCallSpacing // beginDefinition;
+
+(* Each part of the text between tool calls is formatted separately, which trims its whitespace. The whitespace next to
+   a tool call is split out here, so that tool calls keep the same line breaks as they do in text without escapes: *)
+splitToolCallSpacing[ { } ] := { };
+
+splitToolCallSpacing[ parts_List ] := Flatten @ MapThread[
+    splitToolCallSpacing0,
+    { parts, Prepend[ Most @ parts, None ], Append[ Rest @ parts, None ] }
+];
+
+splitToolCallSpacing // endDefinition;
+
+
+splitToolCallSpacing0 // beginDefinition;
+
+splitToolCallSpacing0[ text_String, previous_, next_ ] := splitToolCallSpacing1[
+    First @ StringCases[
+        text,
+        StringExpression[
+            StartOfString,
+            lead: WhitespaceCharacter...,
+            core: Shortest[ ___ ],
+            trail: WhitespaceCharacter...,
+            EndOfString
+        ] :> { lead, core, trail },
+        1
+    ],
+    toolCallPartQ @ previous,
+    toolCallPartQ @ next
+];
+
+splitToolCallSpacing0[ other_, _, _ ] := other;
+
+splitToolCallSpacing0 // endDefinition;
+
+
+splitToolCallSpacing1 // beginDefinition;
+
+(* Text that's only whitespace: *)
+splitToolCallSpacing1[ { ws_String, "", "" }, before_, after_ ] :=
+    If[ before || after, toolCallSpacing @ ws, ws ];
+
+splitToolCallSpacing1[ { lead_String, core_String, trail_String }, before_, after_ ] := DeleteCases[
+    {
+        If[ before, toolCallSpacing @ lead, Nothing ],
+        StringJoin[ If[ before, "", lead ], core, If[ after, "", trail ] ],
+        If[ after, toolCallSpacing @ trail, Nothing ]
+    },
+    toolCallSpacing[ "" ]
+];
+
+splitToolCallSpacing1 // endDefinition;
+
+
+toolCallPartQ // beginDefinition;
+toolCallPartQ[ _inlineToolCallCell | _discardedMaterial ] := True;
+toolCallPartQ[ _ ] := False;
+toolCallPartQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -619,12 +692,20 @@ sectionFontSize // endDefinition;
 (*makeDiscardedMaterialCell*)
 makeDiscardedMaterialCell // beginDefinition;
 
-makeDiscardedMaterialCell[ stuff___ ] := {
+makeDiscardedMaterialCell[ stuff___ ] :=
+    makeDiscardedMaterialCell0 @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ];
+
+makeDiscardedMaterialCell // endDefinition;
+
+
+makeDiscardedMaterialCell0 // beginDefinition;
+
+makeDiscardedMaterialCell0[ textData_List ] := {
     Cell[
         BoxData @ templateBox[
             {
                 ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
-                    TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
+                    TextData @ textData,
                     "Text",
                     Background  -> None,
                     FontOpacity -> 0.5
@@ -638,7 +719,7 @@ makeDiscardedMaterialCell[ stuff___ ] := {
     "\n"
 };
 
-makeDiscardedMaterialCell // endDefinition;
+makeDiscardedMaterialCell0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1587,7 +1668,30 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*$toolCallFormatRules*)
+
+(* These rules are shared by both sets of rules below, so that tool calls are recognized the same way in each: *)
+$toolCallFormatRules = {
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+    ] :> inlineToolCallCell @ tool
+    ,
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: $$simpleToolCall
+     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
+    ,
+    $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+
+(* Used when the text contains escaped markdown characters. Only the parts whose raw text has to be kept as is are split
+   out here, so that escapes are handled in the remaining text without changing code blocks or tool calls. Tool calls
+   have to be split out at this point too, since their results can contain code blocks: *)
 $textDataFormatRulesNoMarkdownUnescape = {
     Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
         thoughtsOpener[ thoughts, attributes ],
@@ -1611,6 +1715,8 @@ $textDataFormatRulesNoMarkdownUnescape = {
             tableCell @ code,
             codeBlockCell[ language, code ]
         ]
+    ,
+    Sequence @@ $toolCallFormatRules
 };
 
 $textDataFormatRules = {
@@ -1634,17 +1740,7 @@ $textDataFormatRules = {
             codeBlockCell[ language, code ]
         ]
     ,
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
-    ] :> inlineToolCallCell @ tool
-    ,
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: $$simpleToolCall
-     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
-    ,
-    $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    Sequence @@ $toolCallFormatRules
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
