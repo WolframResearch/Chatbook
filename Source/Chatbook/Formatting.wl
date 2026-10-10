@@ -950,7 +950,10 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
             {
                 checkTemplateBoxes @ Which[
                     TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
-                        codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
+                        If[ TrueQ @ CurrentChatSettings[ cellObj, "ACPWindow" ],
+                            codeBlockACPButtons[ lang, EvaluationCell[ ] ],
+                            codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ]
+                        ],
                     TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
@@ -1009,6 +1012,21 @@ codeBlockWorkspaceButtons[ lang_, target_, evaluate_ ] := {
 };
 
 codeBlockWorkspaceButtons // endDefinition;
+
+(* Code written by an external agent (ACP windows) can be copied, and Wolfram Language code can be inserted into the
+   user's notebook, but nothing is evaluated with a single click (e.g. shell commands would bypass the agent's permissions): *)
+codeBlockACPButtons // beginDefinition;
+
+codeBlockACPButtons[ lang_, target_ ] /; wolframLanguageQ @ lang := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ],
+    button[ $insertInputButtonLabelWorkspaceChat, insertCodeBelow[ target, False ] ]
+};
+
+codeBlockACPButtons[ lang_, target_ ] := {
+    button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ target ]
+};
+
+codeBlockACPButtons // endDefinition;
 
 plaintextLanguageQ // beginDefinition;
 plaintextLanguageQ[ language_String ] := MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ];

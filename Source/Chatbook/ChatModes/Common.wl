@@ -8,6 +8,8 @@ HoldComplete[
     `$inputFieldOptions,
     `$inputFieldOuterBackground,
     `$inputFieldPaneMargins,
+    `attachToLeft,
+    `clearOverlayMenus,
     `createWorkspaceChat,
     `evaluateAttachedInlineChat,
     `findCurrentWorkspaceChat,
@@ -18,12 +20,15 @@ HoldComplete[
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,
+    `restoreVerticalScrollbar,
     `scrollInlineChat,
     `sidebarCellObject,
     `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
-    `validInputStringQ
+    `validInputStringQ,
+    `withLoadingOverlay,
+    `workspaceAppName
 ];
 
 EndPackage[ ];

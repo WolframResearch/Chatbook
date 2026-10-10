@@ -1,0 +1,178 @@
+{
+ "Name": "exp6b_B_stop_permission",
+ "Source": "exp6b_cancel_tools.json",
+ "Prompt": "Use your shell tool to run `echo cancel-test`.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 6.485,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122ab2b53001iAH8Q6p43uwSgn",
+    "content": {
+     "type": "text",
+     "text": "I'll run the command using the shell tool.\n\n"
+    }
+   }
+  },
+  {
+   "t": 6.792,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "cc3cb7d2-5b7e-4b87-8780-a4a2a297b081",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 6.795,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "cc3cb7d2-5b7e-4b87-8780-a4a2a297b081",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "echo cancel-test",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "echo cancel-test",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 6.891,
+   "Type": "PermissionRequest",
+   "RequestID": 0,
+   "Params": {
+    "sessionId": "ses_edd54dc4effeZdQwOt3yUBKSpR",
+    "toolCall": {
+     "toolCallId": "cc3cb7d2-5b7e-4b87-8780-a4a2a297b081",
+     "name": "shell",
+     "title": "echo cancel-test",
+     "kind": "execute",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project"
+      }
+     ],
+     "rawInput": {
+      "command": "echo cancel-test",
+      "cwd": "/project"
+     }
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 7.913,
+   "Type": "ClientCancel",
+   "Kind": "Stop"
+  },
+  {
+   "t": 7.944,
+   "Type": "CancelRequest",
+   "RequestID": 0
+  },
+  {
+   "t": 7.995,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "cc3cb7d2-5b7e-4b87-8780-a4a2a297b081",
+    "status": "failed",
+    "kind": "execute",
+    "title": "echo cancel-test",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "echo cancel-test",
+     "cwd": "/project"
+    },
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "The user declined this tool call"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {},
+     "error": "The user declined this tool call"
+    }
+   }
+  },
+  {
+   "t": 7.996,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 6964,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 7.998,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "usage": {
+     "inputTokens": 5786,
+     "outputTokens": 32,
+     "totalTokens": 6964,
+     "thoughtTokens": 236,
+     "cachedReadTokens": 910
+    },
+    "_meta": {}
+   }
+  },
+  {
+   "t": 8.019,
+   "Type": "PermissionAnswer",
+   "RequestID": 0,
+   "OptionID": null
+  }
+ ]
+}

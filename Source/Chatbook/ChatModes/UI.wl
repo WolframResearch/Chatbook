@@ -2672,7 +2672,7 @@ attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose
         attached = ConfirmMatch[
             AttachCell[
                 nbo,
-                attachedWorkspaceChatInputCell[ If[ location === Top, "Top", "Bottom" ] ],
+                workspaceChatInputCell[ nbo, If[ location === Top, "Top", "Bottom" ] ],
                 location,
                 0,
                 location
@@ -2687,6 +2687,30 @@ attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose
 ];
 
 attachWorkspaceChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*workspaceChatInputCell*)
+
+(* Every workspace app attaches its own input cell. All helpers that (re)attach the input field (moveChatInputToTop,
+   moveChatInputToBottom, etc.) go through attachWorkspaceChatInput, so they work in every kind of workspace window. *)
+workspaceChatInputCell // beginDefinition;
+workspaceChatInputCell[ nbo_NotebookObject, location_String ] := workspaceChatInputCell[ nbo, location, workspaceAppName @ nbo ];
+workspaceChatInputCell[ nbo_NotebookObject, location_String, "ACP" ] := acpChatInputCell[ location, nbo ];
+workspaceChatInputCell[ nbo_NotebookObject, location_String, _ ] := attachedWorkspaceChatInputCell @ location;
+workspaceChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*workspaceAppName*)
+workspaceAppName // beginDefinition;
+
+workspaceAppName[ nbo_NotebookObject ] := Replace[
+    AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "AppName" } ],
+    Except[ _String? StringQ ] -> "NotebookAssistance"
+];
+
+workspaceAppName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (*workspaceInputField*)
@@ -3480,9 +3504,19 @@ attachAssistantMessageButtons // beginDefinition;
 attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
 
 attachAssistantMessageButtons[ cell_CellObject ] :=
-    attachAssistantMessageButtons[ cell, Or @@ Lookup[ CurrentChatSettings @ cell, { "WorkspaceChat", "SidebarChat" }, False, TrueQ ] ];
+    With[ { settings = CurrentChatSettings @ cell },
+        attachAssistantMessageButtons[
+            cell,
+            Or @@ Lookup[ settings, { "WorkspaceChat", "SidebarChat" }, False, TrueQ ],
+            (* Agent (ACP) messages cannot be regenerated and are not sent as feedback: *)
+            ! TrueQ @ Lookup[ settings, "ACPWindow", False ]
+        ]
+    ];
 
-attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
+attachAssistantMessageButtons[ cell_CellObject, workspaceQ_ ] :=
+    attachAssistantMessageButtons[ cell, workspaceQ, True ];
+
+attachAssistantMessageButtons[ cell0_CellObject, True, chatbookCellQ_ ] := Enclose[
     Catch @ Module[ { cell, includeFeedback, attached, sidebarCellQ },
 
         cell = topParentCell @ cell0;
@@ -3490,7 +3524,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         sidebarCellQ = cellTaggedQ[ cell, "SidebarTopCell" ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
-        includeFeedback = StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
+        includeFeedback = TrueQ @ chatbookCellQ && StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
 
         (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
@@ -3499,7 +3533,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         attached = AttachCell[
             cell,
             Cell[
-                BoxData @ assistantMessageButtons[ includeFeedback, sidebarCellQ ],
+                BoxData @ assistantMessageButtons[ includeFeedback, sidebarCellQ, TrueQ @ chatbookCellQ ],
                 "ChatOutputTrayButtons",
                 Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
             ],
@@ -3513,7 +3547,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
     throwInternalFailure
 ];
 
-attachAssistantMessageButtons[ cell_CellObject, _ ] :=
+attachAssistantMessageButtons[ cell_CellObject, _, _ ] :=
     Null;
 
 attachAssistantMessageButtons // endDefinition;
@@ -3524,21 +3558,27 @@ attachAssistantMessageButtons // endDefinition;
 assistantMessageButtons // beginDefinition;
 
 assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
+    assistantMessageButtons[ includeFeedback, sidebarCellQ, True ];
+
+assistantMessageButtons[ includeFeedback_, sidebarCellQ_, includeRegenerate_ ] :=
     ToBoxes @ DynamicModule[ { Typeset`cell },
         Grid[
             { {
                 Tooltip[ assistantCopyAsActionMenu[ Dynamic[ Typeset`cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
-                Button[
-                    Tooltip[
-                        blueHueButtonAppearance[ chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ], { 24, 24 } ],
-                        tr[ "WorkspaceOutputRaftRegenerateTooltip" ]
+                If[ TrueQ @ includeRegenerate,
+                    Button[
+                        Tooltip[
+                            blueHueButtonAppearance[ chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ], { 24, 24 } ],
+                            tr[ "WorkspaceOutputRaftRegenerateTooltip" ]
+                        ],
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]; (* in case kernel was quit *)
+                        ChatbookAction[ "RegenerateAssistantMessage", Typeset`cell, sidebarCellQ ],
+                        Appearance -> "Suppressed",
+                        BoxID      -> "NARegenerateAssistantMessageButton",
+                        Method     -> "Queued"
                     ],
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ]; (* in case kernel was quit *)
-                    ChatbookAction[ "RegenerateAssistantMessage", Typeset`cell, sidebarCellQ ],
-                    Appearance -> "Suppressed",
-                    BoxID      -> "NARegenerateAssistantMessageButton",
-                    Method     -> "Queued"
+                    Nothing
                 ],
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
                 (* Waiting for sharing functionality to be implemented: *)
@@ -3750,7 +3790,8 @@ popOutWorkspaceChatNB[ Dynamic[ cells_ ] ] :=
 
 popOutWorkspaceChatNB[ cells0: { ___Cell } ] := Enclose[
     Module[ { cells, settings, nbo },
-        NotebookClose @ findCurrentWorkspaceChat[ ];
+        (* Only replace the notebook assistance window (other workspace apps, e.g. agent windows, stay open): *)
+        NotebookClose @ findCurrentWorkspaceChat[ "NotebookAssistance" ];
 
         cells = cells0 //. $inlineToWorkspaceConversionRules;
 

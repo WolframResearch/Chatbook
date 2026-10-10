@@ -95,6 +95,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
 - **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
+- **ACP/** — The ACP window (`ShowNotebookAssistance[..., "ACPWindow"]`): a notebook-assistance-style window that drives an external coding agent (OpenCode) through the Agent Client Protocol via the ACPLink paclet. State.wl (stores, isolation, scheduling, ACPLink loading), Transcript.wl (pure turn model, titles, labels), Rendering.wl (live/final boxes, permission panel), Agents.wl (agent registry, OpenCode config), Connection.wl (connection/session lifecycle), UI.wl (window, toolbar, input cell, finalization). See [acp-window.md](docs/acp-window.md)
 
 ### Error Handling Pattern
 
@@ -152,6 +153,7 @@ Developer documentation lives in the `docs/` directory:
 - **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
 - **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
 - **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
+- **[acp-window.md](docs/acp-window.md)** — The ACP window (agent chats through OpenCode and ACPLink): architecture, state model, threading rules, settings, permissions, strings, preview tool
 - **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
 
 ## Special Considerations

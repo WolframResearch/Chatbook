@@ -1,0 +1,405 @@
+{
+ "Name": "exp4a_default_perms",
+ "Source": "exp4a_tools_default_perms.json",
+ "Prompt": "Create a file hello.txt containing 'hi', then list the files in the directory, then run `ls -la` in a shell.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.665,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12293fc4b001IzipVLirprO1YS:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "These are three steps. Let me use the write tool, then read directory /"
+    }
+   }
+  },
+  {
+   "t": 1.765,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12293fc4b001IzipVLirprO1YS:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " glob, then shell. But write and shell can't be parallel since shell"
+    }
+   }
+  },
+  {
+   "t": 1.917,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12293fc4b001IzipVLirprO1YS:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " needs file to exist? Actually listing directory needs file created. Let me do write first.\n\nActually the instructions say prefer"
+    }
+   }
+  },
+  {
+   "t": 2.119,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12293fc4b001IzipVLirprO1YS:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " parallelizing independent calls. But these have dependencies. Let me create file, then list, then shell.\n\nI'll just do it directly."
+    }
+   }
+  },
+  {
+   "t": 2.22,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12293fc4b001IzipVLirprO1YS",
+    "content": {
+     "type": "text",
+     "text": "I'll create the file first, then list the directory, then run `ls -la`."
+    }
+   }
+  },
+  {
+   "t": 2.221,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_djjnnn8wwiwjmvjip8re8rws",
+    "name": "write",
+    "title": "write",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 2.523,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_djjnnn8wwiwjmvjip8re8rws",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "write",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "rawInput": {
+     "path": "/project/hello.txt",
+     "content": "hi\n"
+    }
+   }
+  },
+  {
+   "t": 2.673,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_djjnnn8wwiwjmvjip8re8rws",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Created file successfully: hello.txt"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 3.63,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_1229405a4001175B42xlIT1wHE:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "Now list the directory via read tool, and run ls -la. These are dependent on write but independent"
+    }
+   }
+  },
+  {
+   "t": 3.68,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_1229405a4001175B42xlIT1wHE:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " of each other, so parallel."
+    }
+   }
+  },
+  {
+   "t": 3.681,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_okljsfr05vr146vfxlxhglkp",
+    "name": "read",
+    "title": "read",
+    "kind": "read",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 3.781,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_01_ge2sr4vng11viervb6aaezfq",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 4.033,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_okljsfr05vr146vfxlxhglkp",
+    "status": "in_progress",
+    "kind": "read",
+    "title": "read",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "path": "/project"
+    }
+   }
+  },
+  {
+   "t": 4.038,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_01_ge2sr4vng11viervb6aaezfq",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "ls -la",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "ls -la",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 4.043,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_okljsfr05vr146vfxlxhglkp",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Read directory /project, entries 1-1\nhello.txt"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 4.138,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_01_ge2sr4vng11viervb6aaezfq",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "ls -la",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "ls -la",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 4.235,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_01_ge2sr4vng11viervb6aaezfq",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "total 12\ndrwxrwxr-x  2 user user 4096 Oct  9 21:31 .\ndrwxr-x--- 49 user user 4096 Oct  9 21:22 ..\n-rw-rw-r--  1 user user    3 Oct  9 21:31 hello.txt\n"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "status": "completed",
+      "truncated": false,
+      "exit": 0
+     }
+    }
+   }
+  },
+  {
+   "t": 5.695,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": "All three steps are done:\n\n1. **Created** `/project/hello.txt` containing `hi`.\n2. **List"
+    }
+   }
+  },
+  {
+   "t": 5.845,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": "ed** the directory — it contains one entry"
+    }
+   }
+  },
+  {
+   "t": 5.946,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": ": `hello.txt`.\n3. **Ran `ls -la`** in the shell:\n   ```\n   total 12\n   drwx"
+    }
+   }
+  },
+  {
+   "t": 6.045,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": "rwxr-x  2 user user 4096 Oct  9 21:31 .\n   drwxr-x--- 49 user user "
+    }
+   }
+  },
+  {
+   "t": 6.147,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": "4096 Oct  9 21:22 ..\n   -rw-rw-r--  1 user user    3 Oct  9 21:31 hello.txt\n   ```\n\nThe file is 3 bytes (`hi` plus"
+    }
+   }
+  },
+  {
+   "t": 6.247,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122940bfc001PszbwH4LzOiLSb",
+    "content": {
+     "type": "text",
+     "text": " a trailing newline) and was created successfully."
+    }
+   }
+  },
+  {
+   "t": 6.297,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 8401,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 6.298,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 650,
+     "outputTokens": 336,
+     "totalTokens": 24520,
+     "thoughtTokens": 110,
+     "cachedReadTokens": 23424
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

@@ -71,6 +71,7 @@ ChatbookAction // endExportedDefinition;
 
 
 chatbookAction // beginDefinition;
+chatbookAction[ "ACP"                             , args___ ] := acpAction @ args;
 chatbookAction[ "AccentIncludedCells"             , args___ ] := accentIncludedCells @ args;
 chatbookAction[ "AIAutoAssist"                    , args___ ] := AIAutoAssist @ args;
 chatbookAction[ "Ask"                             , args___ ] := AskChat @ args;
@@ -93,6 +94,7 @@ chatbookAction[ "ExplodeDuplicate"                , args___ ] := ExplodeDuplicat
 chatbookAction[ "ExplodeInPlace"                  , args___ ] := ExplodeInPlace @ args;
 chatbookAction[ "InsertCodeBelow"                 , args___ ] := insertCodeBelow @ args;
 chatbookAction[ "InsertInlineReference"           , args___ ] := InsertInlineReference @ args;
+chatbookAction[ "MakeACPChatDockedCell"           , args___ ] := makeACPChatDockedCell @ args;
 chatbookAction[ "MakeChatbarChatInputCellContent" , args___ ] := makeChatbarChatInputCellContent @ args;
 chatbookAction[ "MakeSidebarChatDockedCell"       , args___ ] := makeSidebarChatDockedCell @ args;
 chatbookAction[ "MakeSidebarChatInputCell"        , args___ ] := makeSidebarChatInputCell @ args;

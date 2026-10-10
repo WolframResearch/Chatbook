@@ -147,6 +147,7 @@ relative[ path_String ] := StringReplace[
 (* The build reformats these in place; restore them from the index. *)
 $frontEndFiles = {
     "DarkModeSupport/StyleSheets/Chatbook.nb",
+    "DarkModeSupport/StyleSheets/Wolfram/ACPChat.nb",
     "DarkModeSupport/StyleSheets/Wolfram/WorkspaceChat.nb",
     "FrontEnd/Assets/Extensions/CoreExtensions.nb",
     "FrontEnd/StyleSheets/Chatbook.nb",

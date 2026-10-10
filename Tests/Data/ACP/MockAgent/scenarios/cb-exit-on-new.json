@@ -1,0 +1,20 @@
+{
+    "description": "Chatbook ACPConnection.wlt (process-wide scenario, from ACPLink's wp2-exit-on-new): the agent exits with code 4 when it is asked for session/new, without answering (agent death during the connection setup).",
+    "methods": {
+        "session/new": {
+            "steps": [
+                {
+                    "type": "exit",
+                    "code": 4,
+                    "delay": 0.2
+                }
+            ]
+        }
+    },
+    "steps": [
+        {
+            "type": "respond",
+            "stopReason": "end_turn"
+        }
+    ]
+}

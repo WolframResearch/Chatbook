@@ -188,6 +188,7 @@ ShowNotebookAssistance // Options = {
 (*Messages*)
 Chatbook::MissingNotebookAssistanceInput = "No code assistance input defined for key `1`.";
 Chatbook::InvalidExtraInstructions       = "Expected a string or None instead of `1` for ExtraInstructions.";
+Chatbook::InvalidACPWindowSettings       = "Invalid value `2` for the agent window setting \"`1`\".";
 
 GeneralUtilities`SetUsage[ ShowNotebookAssistance, "\
 ShowNotebookAssistance[] shows code assistance in a new or existing window.
@@ -247,7 +248,7 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Sidebar" | "SideBar", opts: 
                     Which[
                         TrueQ @ AbsoluteCurrentValue[ nbo, Deployed ],
                             CreateNotebook[ ],
-                        MatchQ[ CurrentValue[ nbo, StyleDefinitions ], "Chatbook.nb" | FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", ___ ] ],
+                        chatWindowNotebookQ @ nbo,
                             CreateNotebook[ ],
                         True,
                             nbo
@@ -283,6 +284,29 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Window"|Automatic, opts: Opt
             OptionValue[ "ChatNotebookSettings" ]
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ACPWindow*)
+
+(* An agent window (Agent Client Protocol, see Source/Chatbook/ACP) that looks like the notebook assistance window.
+   It does not use the Chatbook chat pipeline, so withChatState must not be used here. *)
+ShowNotebookAssistance[ "ACPWindow", opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowNotebookAssistance[ getUserNotebook[ ], "ACPWindow", opts ];
+
+ShowNotebookAssistance[ nbo: _NotebookObject|None, "ACPWindow", opts: OptionsPattern[ ] ] :=
+    catchMine @ showACPWindow[
+        nbo,
+        validateOptionInput @ OptionValue[ "Input" ],
+        TrueQ @ OptionValue[ "EvaluateInput" ],
+        TrueQ @ Replace[ OptionValue[ "NewChat" ], "Toggle" -> True ],
+        validateACPWindowSettings @ OptionValue[ "ChatNotebookSettings" ]
+    ];
+
+ShowNotebookAssistance[ cell_CellObject, "ACPWindow", opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    ShowNotebookAssistance[ ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ], "ACPWindow", opts ],
+    throwInternalFailure
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -532,6 +556,54 @@ validateOptionInput[ Key[ name_String ] ] :=
     ];
 
 validateOptionInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validateACPWindowSettings*)
+validateACPWindowSettings // beginDefinition;
+
+$$acpPathSetting = _String? StringQ | File[ _String? StringQ ];
+
+validateACPWindowSettings[ settings_Association ] := (
+    KeyValueMap[ validateACPWindowSetting, settings ];
+    settings
+);
+
+validateACPWindowSettings[ settings: { (_Rule|_RuleDelayed)... } ] :=
+    validateACPWindowSettings @ Association @ settings;
+
+validateACPWindowSettings[ other_ ] :=
+    throwFailure[ "InvalidACPWindowSettings", "ChatNotebookSettings", other ];
+
+validateACPWindowSettings // endDefinition;
+
+
+validateACPWindowSetting // beginDefinition;
+validateACPWindowSetting[ "ProjectDirectory"  , $$acpPathSetting | None | Automatic ] := Null;
+validateACPWindowSetting[ "ACPAgent"          , "OpenCode" | Automatic              ] := Null;
+validateACPWindowSetting[ "ACPAgentExecutable", $$acpPathSetting | Automatic        ] := Null;
+validateACPWindowSetting[ "ACPModel"          , _String? StringQ | Automatic        ] := Null;
+validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentExecutable"|"ACPModel", value_ ] :=
+    throwFailure[ "InvalidACPWindowSettings", key, value ];
+validateACPWindowSetting[ _, _ ] := Null;
+validateACPWindowSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatWindowNotebookQ*)
+
+(* Notebooks in which the sidebar assistant should not be opened (chat notebooks and dedicated chat windows) *)
+chatWindowNotebookQ // beginDefinition;
+
+chatWindowNotebookQ[ nbo_NotebookObject ] := TrueQ @ Or[
+    MatchQ[
+        CurrentValue[ nbo, StyleDefinitions ],
+        "Chatbook.nb" | FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb" | "ACPChat.nb", ___ ]
+    ],
+    TrueQ @ AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } ]
+];
+
+chatWindowNotebookQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

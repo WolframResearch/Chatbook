@@ -1,0 +1,258 @@
+{
+ "Name": "exp2_retries",
+ "Source": "exp2_models_modes.json",
+ "Prompt": "Say hello in one sentence.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 0.466,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 2,
+      "nextRetryAt": "2026-10-09T21:28:34.078Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 3.088,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 3.088,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 3,
+      "nextRetryAt": "2026-10-09T21:28:38.207Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 7.274,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 7.274,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 4,
+      "nextRetryAt": "2026-10-09T21:28:45.375Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 14.483,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 14.484,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 5,
+      "nextRetryAt": "2026-10-09T21:28:55.534Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 24.557,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 24.557,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 6,
+      "nextRetryAt": "2026-10-09T21:29:06.648Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 35.589,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 35.589,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": {
+      "attempt": 7,
+      "nextRetryAt": "2026-10-09T21:29:16.490Z",
+      "error": {
+       "type": "provider.rate-limit",
+       "message": "Upstream request failed: Endpoint is unavailable.",
+       "status": 429,
+       "response": {
+        "body": "{\"error\":{\"type\":\"server_error\",\"message\":\"Upstream request failed: Endpoint is unavailable.\"}}"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "t": 47.337,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "session_info_update",
+    "_meta": {
+     "opencode/retry": null
+    }
+   }
+  },
+  {
+   "t": 47.438,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12291520b001BBXy2x8mBzrB7G:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "The user is asking me to say hello in one sentence again. This is a"
+    }
+   }
+  },
+  {
+   "t": 47.591,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12291520b001BBXy2x8mBzrB7G:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " simple request. I should just respond with a one-sentence greeting."
+    }
+   }
+  },
+  {
+   "t": 47.641,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12291520b001BBXy2x8mBzrB7G",
+    "content": {
+     "type": "text",
+     "text": "Hello! How can I help you today?"
+    }
+   }
+  },
+  {
+   "t": 47.641,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 9360,
+    "size": 262144,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 47.642,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 7847,
+     "outputTokens": 7,
+     "totalTokens": 9360,
+     "thoughtTokens": 34,
+     "cachedReadTokens": 1472
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

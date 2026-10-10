@@ -1,0 +1,119 @@
+{
+ "Name": "exp2_thought_only",
+ "Source": "exp2_models_modes.json",
+ "Prompt": "Say hello in one sentence.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 0.952,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "The user"
+    }
+   }
+  },
+  {
+   "t": 1.305,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " is asking me to \"Say hello in one sentence.\" This is a very simple request"
+    }
+   }
+  },
+  {
+   "t": 1.76,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ". I just need to output a one-sentence greeting. The previous responses already did this"
+    }
+   }
+  },
+  {
+   "t": 1.962,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ", but the user is asking"
+    }
+   }
+  },
+  {
+   "t": 2.063,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " again. I'll just comply"
+    }
+   }
+  },
+  {
+   "t": 2.416,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " with the request."
+    }
+   }
+  },
+  {
+   "t": 2.516,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122920c200014ww6IRQ9atMT35",
+    "content": {
+     "type": "text",
+     "text": "Hello! How can I help you today?"
+    }
+   }
+  },
+  {
+   "t": 2.92,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 9549,
+    "size": 262144,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 2.92,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 9484,
+     "outputTokens": 5,
+     "totalTokens": 9549,
+     "thoughtTokens": 60
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

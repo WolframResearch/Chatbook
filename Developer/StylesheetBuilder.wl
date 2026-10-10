@@ -9,8 +9,10 @@ BeginPackage[ "Wolfram`ChatbookStylesheetBuilder`" ];
 ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
+$ACPStylesheet;
 $ChatbookStylesheet;
 $WorkspaceStylesheet;
+BuildACPStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
@@ -43,6 +45,7 @@ $iconDirectory              = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory         = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$acpStyleDataFile           = FileNameJoin @ { $assetLocation, "ACPStyles.wl" };
 $sidebarDataFile            = FileNameJoin @ { $assetLocation, "SidebarStyles.wl" };
 $pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
 $iconManifestFile           = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
@@ -53,6 +56,7 @@ $floatStyleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "St
 
 $darkStyleSheetTarget       = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Chatbook.nb" };
 $darkFloatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$darkACPStyleSheetTarget    = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Wolfram", "ACPChat.nb" };
 $darkDisplayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctionsDark.wxf" };
 
 
@@ -865,6 +869,9 @@ $styleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile,
 $workspaceStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
+$acpStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $acpStyleDataFile, _Cell ];
+
+
 (* ::Subsection::Closed:: *)
 (*$templateBoxDisplayFunctions*)
 
@@ -916,6 +923,21 @@ $WorkspaceStylesheet := Notebook[
 
 
 (* ::Section::Closed:: *)
+(*$ACPStylesheet*)
+
+
+(* Agent (ACP) windows: inherits WorkspaceChat.nb *)
+$ACPStylesheet := Notebook[
+    Flatten @ {
+        Cell @ StyleData[ StyleDefinitions -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ] ],
+        $acpStyleDataCells
+    },
+    StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+];
+
+
+
+(* ::Section::Closed:: *)
 (*BuildStylesheets*)
 
 
@@ -924,6 +946,7 @@ BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheet
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
 BuildStylesheets[ "WorkspaceChat"       ] := BuildWorkspaceStylesheet[ ];
+BuildStylesheets[ "ACPChat"             ] := BuildACPStylesheet[ ];
 BuildStylesheets[ "CoreExtensions"      ] := BuildCoreExtensionsStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
@@ -943,7 +966,7 @@ BuildStylesheets[ other___ ] := Failure[
 ];
 
 
-$validStylesheetNames = { "Chatbook", "CoreExtensions", "WorkspaceChat" };
+$validStylesheetNames = { "ACPChat", "Chatbook", "CoreExtensions", "WorkspaceChat" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)
@@ -1007,6 +1030,35 @@ BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
             exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
+            PacletInstall[ "Wolfram/PacletCICD" ];
+            Needs[ "Wolfram`PacletCICD`" -> None ];
+            SetOptions[
+                ResourceFunction[ "SaveReadableNotebook" ],
+                "RealAccuracy" -> 10,
+                "ExcludedNotebookOptions" -> {
+                    ExpressionUUID,
+                    FrontEndVersion,
+                    WindowMargins,
+                    WindowSize
+                }
+            ];
+            Wolfram`PacletCICD`FormatNotebooks @ exported;
+            exported
+        ]
+    ];
+
+
+(* ::Section::Closed:: *)
+(*BuildACPStylesheet*)
+
+
+(* Only built for the DarkModeSupport (15.0+) front end resources, since agent windows require 15.0+ *)
+BuildACPStylesheet[ ] := { BuildACPStylesheet @ $darkACPStyleSheetTarget };
+
+BuildACPStylesheet[ target_ ] :=
+    Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+        Module[ { exported },
+            exported = Export[ target, fixContexts @ $ACPStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[

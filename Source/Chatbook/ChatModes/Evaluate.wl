@@ -27,20 +27,34 @@ $$inlineMessagesOut = { $$inlineMessage..., $$inlineChatOutput };
 evaluateWorkspaceChat // beginDefinition;
 
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
-    Catch @ Module[ { text, uuid, cell, cellObject },
-
-        If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
-        text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
-
-        cell = Cell[
-            BoxData @ TemplateBox[
-                { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
-                "UserMessageBox"
-            ],
-            "ChatInput",
-            CellTags -> uuid
+    Catch @ Module[ { cellObject },
+        cellObject = ConfirmMatch[
+            writeWorkspaceChatInputCell[ nbo, Dynamic @ input ],
+            _CellObject | Missing[ "NoInput" ],
+            "CellObject"
         ];
+        If[ MissingQ @ cellObject, Throw @ Null ];
+        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+    ],
+    throwInternalFailure
+];
+
+evaluateWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatInputCell*)
+
+(* Writes the user message cell for the current input of a workspace window (and clears the input), moves the input field
+   to the bottom of the window, and returns the new cell. Shared by the notebook assistance window and agent windows. *)
+writeWorkspaceChatInputCell // beginDefinition;
+
+writeWorkspaceChatInputCell[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
+    Catch @ Module[ { uuid, cell, cellObject },
+
+        If[ ! validInputStringQ @ input, input = ""; Throw @ Missing[ "NoInput" ] ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
+        cell = ConfirmMatch[ workspaceChatInputCellExpr[ input, uuid ], _Cell, "Cell" ];
 
         input = "";
         SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
@@ -48,12 +62,31 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
         moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
         setCurrentValue[ cellObject, CellTags, { } ];
-        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+        cellObject
     ],
     throwInternalFailure
 ];
 
-evaluateWorkspaceChat // endDefinition;
+writeWorkspaceChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*workspaceChatInputCellExpr*)
+
+(* The user message cell for the input of a workspace window, tagged with uuid so it can be found after it is written.
+   Shared by writeWorkspaceChatInputCell and the addressed write of agent windows (ACP/UI.wl). *)
+workspaceChatInputCellExpr // beginDefinition;
+
+workspaceChatInputCellExpr[ input_, uuid_String ] := Cell[
+    BoxData @ TemplateBox[
+        { Cell[ makeBoxesInputMoreTextLike @ input, Background -> None, Selectable -> True, Editable -> True ] },
+        "UserMessageBox"
+    ],
+    "ChatInput",
+    CellTags -> uuid
+];
+
+workspaceChatInputCellExpr // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

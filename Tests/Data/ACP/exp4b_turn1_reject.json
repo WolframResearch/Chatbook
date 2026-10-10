@@ -1,0 +1,373 @@
+{
+ "Name": "exp4b_turn1_reject",
+ "Source": "exp4b_tools_ask_perms.json",
+ "Prompt": "Create a file hello.txt containing 'hi'. Then edit hello.txt so it says 'hello world'. Then run `ls -la` in a shell. Do these one at a time, in order.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 5.697,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "The user wants me to create a file hello.txt containing 'hi', then edit it to say 'hello"
+    }
+   }
+  },
+  {
+   "t": 5.847,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " world', then run `ls -la`. They want these done one at a time, in"
+    }
+   }
+  },
+  {
+   "t": 6.25,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " order.\n\nLet me do them"
+    }
+   }
+  },
+  {
+   "t": 8.617,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " sequentially as instructed."
+    }
+   }
+  },
+  {
+   "t": 8.718,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt",
+    "content": {
+     "type": "text",
+     "text": "I'll do these one at a time, in order."
+    }
+   }
+  },
+  {
+   "t": 8.869,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12295d053001xJ6Ys1TpoKOYYt",
+    "content": {
+     "type": "text",
+     "text": " First, creating the file:"
+    }
+   }
+  },
+  {
+   "t": 8.871,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_386ea1b3590c46e09ef62426",
+    "name": "write",
+    "title": "write",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 9.222,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_386ea1b3590c46e09ef62426",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "write",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "rawInput": {
+     "path": "hello.txt",
+     "content": "hi"
+    }
+   }
+  },
+  {
+   "t": 9.223,
+   "Type": "PermissionRequest",
+   "RequestID": 0,
+   "Params": {
+    "sessionId": "ses_edd6a3843ffeeg3JI1YanckQmN",
+    "toolCall": {
+     "toolCallId": "call_386ea1b3590c46e09ef62426",
+     "name": "write",
+     "title": "hello.txt",
+     "kind": "edit",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project/hello.txt"
+      }
+     ],
+     "rawInput": {
+      "path": "hello.txt",
+      "content": "hi"
+     },
+     "content": [
+      {
+       "type": "diff",
+       "path": "/project/hello.txt",
+       "oldText": null,
+       "newText": "hi"
+      }
+     ]
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 10.733,
+   "Type": "PermissionAnswer",
+   "RequestID": 0,
+   "OptionID": "once"
+  },
+  {
+   "t": 11.038,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_386ea1b3590c46e09ef62426",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Created file successfully: hello.txt"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 15.221,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12295fa29001OKkO4A0Gta0R2z",
+    "content": {
+     "type": "text",
+     "text": "Now editing it to say 'hello world'"
+    }
+   }
+  },
+  {
+   "t": 15.221,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_12295fa29001OKkO4A0Gta0R2z",
+    "content": {
+     "type": "text",
+     "text": ":"
+    }
+   }
+  },
+  {
+   "t": 15.222,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_e86fc73fd46e4384bd8e55ba",
+    "name": "edit",
+    "title": "edit",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 15.673,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_e86fc73fd46e4384bd8e55ba",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "edit",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "rawInput": {
+     "path": "hello.txt",
+     "oldString": "hi",
+     "newString": "hello world"
+    }
+   }
+  },
+  {
+   "t": 15.673,
+   "Type": "PermissionRequest",
+   "RequestID": 1,
+   "Params": {
+    "sessionId": "ses_edd6a3843ffeeg3JI1YanckQmN",
+    "toolCall": {
+     "toolCallId": "call_e86fc73fd46e4384bd8e55ba",
+     "name": "edit",
+     "title": "hello.txt",
+     "kind": "edit",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project/hello.txt"
+      }
+     ],
+     "rawInput": {
+      "path": "hello.txt",
+      "oldString": "hi",
+      "newString": "hello world"
+     },
+     "content": [
+      {
+       "type": "diff",
+       "path": "/project/hello.txt",
+       "oldText": "hi",
+       "newText": "hello world"
+      }
+     ]
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 17.208,
+   "Type": "PermissionAnswer",
+   "RequestID": 1,
+   "OptionID": "reject"
+  },
+  {
+   "t": 17.293,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_e86fc73fd46e4384bd8e55ba",
+    "status": "failed",
+    "kind": "edit",
+    "title": "edit",
+    "locations": [
+     {
+      "path": "/project/hello.txt"
+     }
+    ],
+    "rawInput": {
+     "path": "hello.txt",
+     "oldString": "hi",
+     "newString": "hello world"
+    },
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "The user declined this tool call"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {},
+     "error": "The user declined this tool call"
+    }
+   }
+  },
+  {
+   "t": 17.297,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 8197,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 17.301,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "usage": {
+     "inputTokens": 6855,
+     "outputTokens": 217,
+     "totalTokens": 16288,
+     "cachedReadTokens": 9216
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

@@ -1125,7 +1125,7 @@ $settings := Quiet @ Module[ { settings, styleInfo, assoc },
         <| |>
     ];
 
-    styleInfo = styleSheetInfo @ { "WorkspaceChatStylesheetInformation", "ChatStyleSheetInformation" };
+    styleInfo = styleSheetInfo @ { "WorkspaceChatStylesheetInformation", "ACPChatStyleSheetInformation", "ChatStyleSheetInformation" };
 
     assoc = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
     If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]

@@ -1,0 +1,11 @@
+{
+    "description": "Chatbook ACPConnection.wlt: sends available_commands_update with MCP prompts (Wolfram:Search), the sign that OpenCode's MCP servers are connected; then end_turn.",
+    "steps": [
+        {"type": "notify", "update": {"sessionUpdate": "available_commands_update", "availableCommands": [
+            {"name": "init", "description": "guided AGENTS.md setup"},
+            {"name": "compact", "description": "Compact the session"},
+            {"name": "Wolfram:Search", "description": "Searches Wolfram Language documentation for relevant information."}]}},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_5", "content": {"type": "text", "text": "MCP ready."}}},
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}
