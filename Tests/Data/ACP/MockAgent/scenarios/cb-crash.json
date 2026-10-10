@@ -1,0 +1,9 @@
+{
+    "description": "Chatbook ACPConnection.wlt: streams a chunk, writes a line to stderr and exits with code 3 without answering the prompt (agent death in the middle of a turn).",
+    "steps": [
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_6", "content": {"type": "text", "text": "Working on it..."}}},
+        {"type": "stderr_spam", "bytes": 1, "line": "mock agent: fatal error, exiting with code 3"},
+        {"type": "delay", "seconds": 0.3},
+        {"type": "exit", "code": 3}
+    ]
+}

@@ -1,0 +1,6 @@
+{
+    "description": "Chatbook ACPConnection.wlt: answers the prompt with OpenCode's error for a deprecated model (-32603, errorName provider.invalid-request).",
+    "steps": [
+        {"type": "respond_error", "code": -32603, "message": "Internal error: Model m2 has been deprecated.", "data": {"service": "session", "errorName": "provider.invalid-request"}}
+    ]
+}

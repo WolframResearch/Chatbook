@@ -7,6 +7,8 @@ HoldComplete[
     `$inputFieldOuterBackground,
     `$inputFieldPaneMargins,
     `$notebookAssistanceWorkspaceSettings,
+    `attachToLeft,
+    `clearOverlayMenus,
     `createWorkspaceChat,
     `findCurrentWorkspaceChat,
     `focusedNotebookDisplay,
@@ -17,10 +19,13 @@ HoldComplete[
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `resolveFocusedNotebook,
+    `restoreVerticalScrollbar,
     `saveWorkspaceChatInput,
     `sidebarCellObject,
     `toggleOverlayMenu,
     `validInputStringQ,
+    `withLoadingOverlay,
+    `workspaceAppName,
     `workspaceChatInput
 ];
 

@@ -1,0 +1,9 @@
+{
+    "description": "Streams a chunk, then works for up to 60 s. session/cancel ends the turn at once with stopReason cancelled; otherwise end_turn after 60 s.",
+    "steps": [
+        {"type": "on_cancel"},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "Working..."}}},
+        {"type": "delay", "seconds": 60},
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

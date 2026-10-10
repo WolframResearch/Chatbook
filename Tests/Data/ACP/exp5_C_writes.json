@@ -1,0 +1,1051 @@
+{
+ "Name": "exp5_C_writes",
+ "Source": "exp5_mcp_bash_plan.json",
+ "Prompt": "Plan and then carry out this multi-step task, tracking progress with your todo list tool: (1) create main.py that prints hello, (2) create README.md describing it in one line, (3) create test_main.py with one trivial test. Keep files tiny.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.295,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "The user asks me to plan and carry out a multi-step task, tracking progress with a todo list tool. But I don't have a todo list"
+    }
+   }
+  },
+  {
+   "t": 1.395,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " tool in my catalog. Available tools: Wolfram tools"
+    }
+   }
+  },
+  {
+   "t": 1.496,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ", opencode tools, and standard tools (edit, glob, grep, read, shell, write, etc.). There is no explicit \"todo list\" tool.\n\nThe"
+    }
+   }
+  },
+  {
+   "t": 1.646,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " user says \"tracking progress with your todo list tool\". I don't have one. I should note that I don't have a dedicated todo-list"
+    }
+   }
+  },
+  {
+   "t": 1.797,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " tool, but I can track progress inline in my response. Let me be honest about the tooling limitation rather"
+    }
+   }
+  },
+  {
+   "t": 1.949,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " than pretending.\n\nLet me just proceed and track progress via a checklist in my messages.\n\nLet me create the files. Keep them tiny.\n\nmain"
+    }
+   }
+  },
+  {
+   "t": 2.099,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ".py: prints hello\nREADME.md: one line describing it\ntest_main.py: one trivial test\n\nLet me plan and"
+    }
+   }
+  },
+  {
+   "t": 2.251,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " execute. I'll write the three files.\n\nFor test_main.py, a trivial test — using pytest or unittest. Let's use a"
+    }
+   }
+  },
+  {
+   "t": 2.4,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " simple test that imports main or just checks something. Keep tiny.\n\nmain.py:\n```python\nprint(\"hello\")\n```\n\nBut"
+    }
+   }
+  },
+  {
+   "t": 2.553,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " a test of a script that prints on import is awkward. Let's define a function"
+    }
+   }
+  },
+  {
+   "t": 2.705,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ".\n\nmain.py:\n```python\ndef greet():\n    return \"hello\"\n\n\nif __name__ == \"__main__\":\n    print(greet())\n```\n\ntest_main.py:\n```python\nfrom main import greet"
+    }
+   }
+  },
+  {
+   "t": 2.807,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "\n\n\ndef test_greet():\n    assert greet() == \"hello\"\n```\n\nREADME.md:\n```\n# project\n\nA tiny Python script that prints \"hello\".\n```\n\nLet me create"
+    }
+   }
+  },
+  {
+   "t": 3.008,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " them in parallel with write tool. Then verify by running the test.\n\nLet me be honest about no todo tool. Let me first state"
+    }
+   }
+  },
+  {
+   "t": 3.159,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " plan. I'll do it all in one go with parallel writes, then run.\n\nActually, the instruction says \"Plan and then carry out this"
+    }
+   }
+  },
+  {
+   "t": 3.31,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " multi-step task, tracking progress with your todo list tool\". I should mention I don't have a dedicated"
+    }
+   }
+  },
+  {
+   "t": 3.462,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " todo tool available, so I'll track inline. Let me do that briefly and proceed.\n\nLet me write files."
+    }
+   }
+  },
+  {
+   "t": 3.564,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt",
+    "content": {
+     "type": "text",
+     "text": "I don't have a dedicated todo-list tool available in this environment (my tools are file/shell/W"
+    }
+   }
+  },
+  {
+   "t": 3.664,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt",
+    "content": {
+     "type": "text",
+     "text": "olfram ones), so I'll track progress with an inline checklist instead.\n\n**Plan**\n- [ ] 1. Create `main.py"
+    }
+   }
+  },
+  {
+   "t": 3.916,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt",
+    "content": {
+     "type": "text",
+     "text": "` that prints hello\n- [ ] 2. Create `README.md` describing it in one line\n- [ ] 3. Create `test_main.py` with one trivial test\n- ["
+    }
+   }
+  },
+  {
+   "t": 4.067,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a659fa001yNa98MSVFlYnzt",
+    "content": {
+     "type": "text",
+     "text": " ] 4. Verify (run the test)\n\nCreating the three files now."
+    }
+   }
+  },
+  {
+   "t": 4.068,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_yrtqoymhaqurytxkbimvffbv",
+    "name": "write",
+    "title": "write",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 4.219,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_01_q68u8w1wktjsrcdkie6go91q",
+    "name": "write",
+    "title": "write",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 4.421,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_02_yzeo92fq08oj490x8g0ikbo6",
+    "name": "write",
+    "title": "write",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 4.624,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_yrtqoymhaqurytxkbimvffbv",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "write",
+    "locations": [
+     {
+      "path": "/project/main.py"
+     }
+    ],
+    "rawInput": {
+     "path": "/project/main.py",
+     "content": "def greet():\n    return \"hello\"\n\n\nif __name__ == \"__main__\":\n    print(greet())\n"
+    }
+   }
+  },
+  {
+   "t": 4.625,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_01_q68u8w1wktjsrcdkie6go91q",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "write",
+    "locations": [
+     {
+      "path": "/project/README.md"
+     }
+    ],
+    "rawInput": {
+     "path": "/project/README.md",
+     "content": "# project\n\n`main.py` prints \"hello\".\n"
+    }
+   }
+  },
+  {
+   "t": 4.672,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_02_yzeo92fq08oj490x8g0ikbo6",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "write",
+    "locations": [
+     {
+      "path": "/project/test_main.py"
+     }
+    ],
+    "rawInput": {
+     "path": "/project/test_main.py",
+     "content": "from main import greet\n\n\ndef test_greet():\n    assert greet() == \"hello\"\n"
+    }
+   }
+  },
+  {
+   "t": 4.672,
+   "Type": "PermissionRequest",
+   "RequestID": 2,
+   "Params": {
+    "sessionId": "ses_edd5a8be5ffe19PS1uG4FwqFFy",
+    "toolCall": {
+     "toolCallId": "call_00_yrtqoymhaqurytxkbimvffbv",
+     "name": "write",
+     "title": "/project/main.py",
+     "kind": "edit",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project/main.py"
+      }
+     ],
+     "rawInput": {
+      "path": "/project/main.py",
+      "content": "def greet():\n    return \"hello\"\n\n\nif __name__ == \"__main__\":\n    print(greet())\n"
+     },
+     "content": [
+      {
+       "type": "diff",
+       "path": "/project/main.py",
+       "oldText": null,
+       "newText": "def greet():\n    return \"hello\"\n\n\nif __name__ == \"__main__\":\n    print(greet())\n"
+      }
+     ]
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 5.685,
+   "Type": "PermissionAnswer",
+   "RequestID": 2,
+   "OptionID": "always"
+  },
+  {
+   "t": 5.73,
+   "Type": "PermissionRequest",
+   "RequestID": 3,
+   "Params": {
+    "sessionId": "ses_edd5a8be5ffe19PS1uG4FwqFFy",
+    "toolCall": {
+     "toolCallId": "call_01_q68u8w1wktjsrcdkie6go91q",
+     "name": "write",
+     "title": "/project/README.md",
+     "kind": "edit",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project/README.md"
+      }
+     ],
+     "rawInput": {
+      "path": "/project/README.md",
+      "content": "# project\n\n`main.py` prints \"hello\".\n"
+     },
+     "content": [
+      {
+       "type": "diff",
+       "path": "/project/README.md",
+       "oldText": null,
+       "newText": "# project\n\n`main.py` prints \"hello\".\n"
+      }
+     ]
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 5.734,
+   "Type": "CancelRequest",
+   "RequestID": 3
+  },
+  {
+   "t": 5.78,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_01_q68u8w1wktjsrcdkie6go91q",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project/README.md"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Created file successfully: README.md"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 5.78,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_yrtqoymhaqurytxkbimvffbv",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project/main.py"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Created file successfully: main.py"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 5.781,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_02_yzeo92fq08oj490x8g0ikbo6",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project/test_main.py"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Created file successfully: test_main.py"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 6.805,
+   "Type": "PermissionAnswer",
+   "RequestID": 3,
+   "OptionID": "always"
+  },
+  {
+   "t": 6.888,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a67032001mTqvzqcc7QMoCl:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "Now verify by running the test. Let me check pytest availability, or just run the script and the test."
+    }
+   }
+  },
+  {
+   "t": 6.94,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a67032001mTqvzqcc7QMoCl",
+    "content": {
+     "type": "text",
+     "text": "All three files created. Now verifying."
+    }
+   }
+  },
+  {
+   "t": 6.941,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_xkklgyu5x5fngwqzndo2olqe",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 7.141,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_xkklgyu5x5fngwqzndo2olqe",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "python3 main.py && python3 -m pytest test_main.py -q",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "python3 main.py && python3 -m pytest test_main.py -q",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 7.141,
+   "Type": "PermissionRequest",
+   "RequestID": 4,
+   "Params": {
+    "sessionId": "ses_edd5a8be5ffe19PS1uG4FwqFFy",
+    "toolCall": {
+     "toolCallId": "call_00_xkklgyu5x5fngwqzndo2olqe",
+     "name": "shell",
+     "title": "python3 main.py && python3 -m pytest test_main.py -q",
+     "kind": "execute",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project"
+      }
+     ],
+     "rawInput": {
+      "command": "python3 main.py && python3 -m pytest test_main.py -q",
+      "workdir": "/project"
+     }
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 8.23,
+   "Type": "PermissionAnswer",
+   "RequestID": 4,
+   "OptionID": "always"
+  },
+  {
+   "t": 8.299,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_xkklgyu5x5fngwqzndo2olqe",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "python3 main.py && python3 -m pytest test_main.py -q",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "python3 main.py && python3 -m pytest test_main.py -q",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 8.401,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_xkklgyu5x5fngwqzndo2olqe",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "hello\n/usr/bin/python3: No module named pytest\n"
+      }
+     },
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Exited with code 1"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "status": "completed",
+      "truncated": false,
+      "exit": 1
+     }
+    }
+   }
+  },
+  {
+   "t": 9.559,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "pytest not available. Let me verify the test another way: run the test function directly using"
+    }
+   }
+  },
+  {
+   "t": 9.711,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " python, or use unittest. The test file uses pytest style (bare assert, function)."
+    }
+   }
+  },
+  {
+   "t": 9.861,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " To verify without pytest, I can run:\n\npython3 -c \"from test_main import test_greet; test_greet(); print('test"
+    }
+   }
+  },
+  {
+   "t": 9.963,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " passed')\"\n\nThat works since it's just a function with an assert."
+    }
+   }
+  },
+  {
+   "t": 10.064,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF",
+    "content": {
+     "type": "text",
+     "text": "`pytest` isn't installed. The test is a plain"
+    }
+   }
+  },
+  {
+   "t": 10.115,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a67a4c001RGS4g23dvFWywF",
+    "content": {
+     "type": "text",
+     "text": " function, so I'll run it directly to verify it passes."
+    }
+   }
+  },
+  {
+   "t": 10.116,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_t3hhsu0u86p1q637ohavx9yq",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 10.317,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_t3hhsu0u86p1q637ohavx9yq",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "python3 -c \"from test_main import test_greet; test_greet(); print('test passed')\"",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "python3 -c \"from test_main import test_greet; test_greet(); print('test passed')\"",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 10.318,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_t3hhsu0u86p1q637ohavx9yq",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "python3 -c \"from test_main import test_greet; test_greet(); print('test passed')\"",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "python3 -c \"from test_main import test_greet; test_greet(); print('test passed')\"",
+     "workdir": "/project"
+    }
+   }
+  },
+  {
+   "t": 10.417,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_t3hhsu0u86p1q637ohavx9yq",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "test passed\n"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "status": "completed",
+      "truncated": false,
+      "exit": 0
+     }
+    }
+   }
+  },
+  {
+   "t": 11.425,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "Done. Let me give the final summary with checklist"
+    }
+   }
+  },
+  {
+   "t": 11.527,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": ".\n\nNote the caveat: no todo tool. Also note pytest isn't installed so I ran the test function directly.\n\nLet me list files"
+    }
+   }
+  },
+  {
+   "t": 11.577,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "."
+    }
+   }
+  },
+  {
+   "t": 11.678,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": "Done. Final status:\n\n- [x] 1. Created `main.py` — defines `greet()` returning `"
+    }
+   }
+  },
+  {
+   "t": 11.778,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": "\"hello\"` and prints it when run.\n- [x] 2"
+    }
+   }
+  },
+  {
+   "t": 11.879,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": ". Created `README.md` — one line describing it.\n- [x] 3. Created `test_main.py` — one trivial test asserting `greet() == \"hello\"`.\n- [x] 4."
+    }
+   }
+  },
+  {
+   "t": 12.031,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": " Verified — `python3 main.py` printed `hello`, and the test passed.\n\n**Files** (all in `/project`):\n- `main"
+    }
+   }
+  },
+  {
+   "t": 12.182,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": ".py`\n- `README.md`\n- `test_main.py`\n\n**Two notes:**\n- I don't have a todo-list tool in this environment, so the checklist"
+    }
+   }
+  },
+  {
+   "t": 12.333,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": " above is tracked inline in the conversation"
+    }
+   }
+  },
+  {
+   "t": 12.433,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": " rather than in a persistent tool.\n- `pytest` isn't installed here, so I verified the test by calling it directly (`from"
+    }
+   }
+  },
+  {
+   "t": 12.584,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": " test_main import test_greet; test_greet()` → `test passed`). It will also work as-is under `pytest` once installed"
+    }
+   }
+  },
+  {
+   "t": 12.685,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a6823c001Xkpw1Hk5AkF4nD",
+    "content": {
+     "type": "text",
+     "text": ". Want me to add a `requirements.txt` or a `pytest` install step?"
+    }
+   }
+  },
+  {
+   "t": 12.685,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 11955,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 12.686,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 1512,
+     "outputTokens": 747,
+     "totalTokens": 46346,
+     "thoughtTokens": 567,
+     "cachedReadTokens": 43520
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

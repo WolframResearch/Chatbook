@@ -147,6 +147,7 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 $ChatbookContexts = {
     "Wolfram`Chatbook`",
     "Wolfram`Chatbook`ColorData`",
+    "Wolfram`Chatbook`ACP`",
     "Wolfram`Chatbook`Actions`",
     "Wolfram`Chatbook`ChatbookFiles`",
     "Wolfram`Chatbook`ChatGroups`",

@@ -9,8 +9,10 @@ BeginPackage[ "Wolfram`ChatbookStylesheetBuilder`" ];
 ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
+$ACPStylesheet;
 $ChatbookStylesheet;
 $WorkspaceStylesheet;
+BuildACPStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
@@ -43,12 +45,14 @@ $iconDirectory              = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory         = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$acpStyleDataFile           = FileNameJoin @ { $assetLocation, "ACPStyles.wl" };
 $sidebarDataFile            = FileNameJoin @ { $assetLocation, "SidebarStyles.wl" };
 $pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
 $displayFunctionsFile       = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
 $coreExtensionsTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
 $styleSheetTarget           = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 $floatStyleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$acpStyleSheetTarget        = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "ACPChat.nb" };
 
 
 (* ::Subsection::Closed:: *)
@@ -738,6 +742,9 @@ $styleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile,
 $workspaceStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
+$acpStyleDataCells := inlineResources @ Cases[ Flatten @ ReadList @ $acpStyleDataFile, _Cell ];
+
+
 (* ::Subsection::Closed:: *)
 (*$templateBoxDisplayFunctions*)
 
@@ -789,6 +796,21 @@ $WorkspaceStylesheet := Notebook[
 
 
 (* ::Section::Closed:: *)
+(*$ACPStylesheet*)
+
+
+(* Agent (ACP) windows: inherits WorkspaceChat.nb *)
+$ACPStylesheet := Notebook[
+    Flatten @ {
+        Cell @ StyleData[ StyleDefinitions -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ] ],
+        $acpStyleDataCells
+    },
+    StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+];
+
+
+
+(* ::Section::Closed:: *)
 (*BuildStylesheets*)
 
 
@@ -797,6 +819,7 @@ BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheet
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
 BuildStylesheets[ "WorkspaceChat"       ] := BuildWorkspaceStylesheet[ ];
+BuildStylesheets[ "ACPChat"             ] := BuildACPStylesheet[ ];
 BuildStylesheets[ "CoreExtensions"      ] := BuildCoreExtensionsStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
@@ -818,7 +841,7 @@ BuildStylesheets[ other___ ] := Failure[
 
 (* CoreExtensions reads the sidebar styles from the built WorkspaceChat.nb (Resources/SidebarStyles.wl), so it has
    to be built after it: *)
-$validStylesheetNames = { "Chatbook", "WorkspaceChat", "CoreExtensions" };
+$validStylesheetNames = { "ACPChat", "Chatbook", "WorkspaceChat", "CoreExtensions" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)
@@ -870,6 +893,34 @@ BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
             exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
+            PacletInstall[ "Wolfram/PacletCICD" ];
+            Needs[ "Wolfram`PacletCICD`" -> None ];
+            SetOptions[
+                ResourceFunction[ "SaveReadableNotebook" ],
+                "RealAccuracy" -> 10,
+                "ExcludedNotebookOptions" -> {
+                    ExpressionUUID,
+                    FrontEndVersion,
+                    WindowMargins,
+                    WindowSize
+                }
+            ];
+            Wolfram`PacletCICD`FormatNotebooks @ exported;
+            exported
+        ]
+    ];
+
+
+(* ::Section::Closed:: *)
+(*BuildACPStylesheet*)
+
+
+BuildACPStylesheet[ ] := BuildACPStylesheet @ $acpStyleSheetTarget;
+
+BuildACPStylesheet[ target_ ] :=
+    Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+        Module[ { exported },
+            exported = Export[ target, fixContexts @ $ACPStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[

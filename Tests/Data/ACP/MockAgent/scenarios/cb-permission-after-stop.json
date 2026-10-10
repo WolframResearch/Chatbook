@@ -1,0 +1,12 @@
+{
+    "description": "Chatbook ACPConnection.wlt: streams a chunk and waits. On session/cancel it sends a (subagent-like) session/request_permission for the same session before it answers the prompt with stopReason cancelled, like OpenCode, whose subagents outlive a cancelled turn. The client must answer that request cancelled exactly once and must not keep it pending.",
+    "steps": [
+        {"type": "on_cancel", "cancel_requests": false, "steps": [
+            {"type": "request", "as": "late", "toolCallId": "ses_child:call_after_stop", "title": "Subagent: edit", "kind": "edit"},
+            {"type": "delay", "seconds": 0.3}
+        ]},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_9", "content": {"type": "text", "text": "Working on it..."}}},
+        {"type": "delay", "seconds": 30},
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

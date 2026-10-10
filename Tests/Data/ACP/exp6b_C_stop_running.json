@@ -1,0 +1,182 @@
+{
+ "Name": "exp6b_C_stop_running",
+ "Source": "exp6b_cancel_tools.json",
+ "Prompt": "Use your shell tool to run exactly this command and wait for it to finish: `sleep 30 && echo done`",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 3.551,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "18200bef-2242-40de-bab4-e0bf76dd7aad",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 3.553,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "18200bef-2242-40de-bab4-e0bf76dd7aad",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "sleep 30 && echo done",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "sleep 30 && echo done",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 3.553,
+   "Type": "PermissionRequest",
+   "RequestID": 1,
+   "Params": {
+    "sessionId": "ses_edd54dc4effeZdQwOt3yUBKSpR",
+    "toolCall": {
+     "toolCallId": "18200bef-2242-40de-bab4-e0bf76dd7aad",
+     "name": "shell",
+     "title": "sleep 30 && echo done",
+     "kind": "execute",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project"
+      }
+     ],
+     "rawInput": {
+      "command": "sleep 30 && echo done",
+      "cwd": "/project"
+     }
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 3.591,
+   "Type": "PermissionAnswer",
+   "RequestID": 1,
+   "OptionID": "once"
+  },
+  {
+   "t": 3.65,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "18200bef-2242-40de-bab4-e0bf76dd7aad",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "sleep 30 && echo done",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "sleep 30 && echo done",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 8.646,
+   "Type": "ClientCancel",
+   "Kind": "Stop"
+  },
+  {
+   "t": 8.696,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "18200bef-2242-40de-bab4-e0bf76dd7aad",
+    "status": "failed",
+    "kind": "execute",
+    "title": "sleep 30 && echo done",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "sleep 30 && echo done",
+     "cwd": "/project"
+    },
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Tool execution interrupted"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "shellID": "sh_122ab5614001MHX2aSeyo1IUMa"
+     },
+     "error": "Tool execution interrupted"
+    }
+   }
+  },
+  {
+   "t": 8.697,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 6799,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 8.698,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "usage": {
+     "inputTokens": 6709,
+     "outputTokens": 20,
+     "totalTokens": 6799,
+     "cachedReadTokens": 70
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

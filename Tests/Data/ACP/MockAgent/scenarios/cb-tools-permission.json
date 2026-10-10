@@ -1,0 +1,29 @@
+{
+    "description": "Chatbook ACPConnection.wlt: streams a thought and a message, announces a write tool call (pending -> in_progress), asks session/request_permission with a diff (like OpenCode), waits for the answer (60 s); once/always -> tool completed, a final message, usage_update, end_turn with usage; reject -> tool failed (declined), stopReason cancelled; cancelled answer -> stopReason cancelled. On session/cancel: $/cancel_request for unanswered requests, the tool fails (declined) and the turn ends with stopReason cancelled.",
+    "steps": [
+        {"type": "on_cancel", "steps": [
+            {"type": "notify", "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_write", "status": "failed", "content": [{"type": "content", "content": {"type": "text", "text": "The user declined this tool call"}}]}}
+        ]},
+        {"type": "notify", "update": {"sessionUpdate": "agent_thought_chunk", "messageId": "msg_1:reasoning:0", "content": {"type": "text", "text": "Planning the change. "}}},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_1", "content": {"type": "text", "text": "I'll write "}}},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_1", "content": {"type": "text", "text": "the file."}}},
+        {"type": "notify", "update": {"sessionUpdate": "tool_call", "toolCallId": "call_write", "name": "write", "title": "write", "kind": "edit", "status": "pending", "rawInput": {}}},
+        {"type": "notify", "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_write", "status": "in_progress", "rawInput": {"filePath": "${cwd}/hello.txt", "content": "hi"}, "locations": [{"path": "${cwd}/hello.txt"}]}},
+        {"type": "request", "as": "perm", "params": {
+            "sessionId": "${sessionId}",
+            "toolCall": {"toolCallId": "call_write", "name": "write", "title": "hello.txt", "kind": "edit", "status": "pending",
+                         "locations": [{"path": "${cwd}/hello.txt"}], "rawInput": {"filePath": "${cwd}/hello.txt", "content": "hi"},
+                         "content": [{"type": "diff", "path": "${cwd}/hello.txt", "oldText": null, "newText": "hi"}]},
+            "options": [{"optionId": "once", "kind": "allow_once", "name": "Allow once"},
+                        {"optionId": "always", "kind": "allow_always", "name": "Always allow"},
+                        {"optionId": "reject", "kind": "reject_once", "name": "Reject"}]}},
+        {"type": "wait_response", "request": "perm", "timeout": 60},
+        {"type": "respond", "stopReason": "cancelled", "when": {"request": "perm", "outcome": ["cancelled", "timeout", "error", "other"]}, "end": true},
+        {"type": "notify", "when": {"request": "perm", "optionId": "reject"}, "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_write", "status": "failed", "content": [{"type": "content", "content": {"type": "text", "text": "The user declined this tool call"}}]}},
+        {"type": "respond", "stopReason": "cancelled", "when": {"request": "perm", "optionId": "reject"}, "end": true},
+        {"type": "notify", "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_write", "status": "completed", "content": [{"type": "content", "content": {"type": "text", "text": "Wrote file successfully."}}]}},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_2", "content": {"type": "text", "text": "Done: hello.txt contains hi."}}},
+        {"type": "notify", "update": {"sessionUpdate": "usage_update", "used": 2048, "size": 200000, "cost": {"amount": 0, "currency": "USD"}}},
+        {"type": "respond", "result": {"stopReason": "end_turn", "usage": {"inputTokens": 100, "outputTokens": 20, "totalTokens": 120}}}
+    ]
+}

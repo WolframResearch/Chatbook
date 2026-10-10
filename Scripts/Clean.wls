@@ -148,6 +148,7 @@ relative[ path_String ] := StringReplace[
 $frontEndFiles = {
     "FrontEnd/Assets/Extensions/CoreExtensions.nb",
     "FrontEnd/StyleSheets/Chatbook.nb",
+    "FrontEnd/StyleSheets/Wolfram/ACPChat.nb",
     "FrontEnd/StyleSheets/Wolfram/WorkspaceChat.nb"
 };
 

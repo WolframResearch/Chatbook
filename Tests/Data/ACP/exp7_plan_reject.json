@@ -1,0 +1,277 @@
+{
+ "Name": "exp7_plan_reject",
+ "Source": "exp7_plan_mode_list.json",
+ "Prompt": "Make a step-by-step plan (use your todo/plan tools if you have any) for adding a Python CLI with tests and a README to this project. Do not implement it.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.193,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122adaf16001u14DsJ7UJJJIMT:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "Let me explore the project first to understand what's there. Then discuss the plan directly in conversation.\n\nLet me look"
+    }
+   }
+  },
+  {
+   "t": 1.242,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122adaf16001u14DsJ7UJJJIMT:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " at the working directory."
+    }
+   }
+  },
+  {
+   "t": 1.346,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122adaf16001u14DsJ7UJJJIMT",
+    "content": {
+     "type": "text",
+     "text": "I'll first look at the project to understand what we're working with"
+    }
+   }
+  },
+  {
+   "t": 1.394,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122adaf16001u14DsJ7UJJJIMT",
+    "content": {
+     "type": "text",
+     "text": ", then lay out a plan."
+    }
+   }
+  },
+  {
+   "t": 1.396,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_hseahh3aip0g1jaaafvd4c8j",
+    "name": "read",
+    "title": "read",
+    "kind": "read",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 1.55,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_hseahh3aip0g1jaaafvd4c8j",
+    "status": "in_progress",
+    "kind": "read",
+    "title": "read",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "path": "/project"
+    }
+   }
+  },
+  {
+   "t": 1.647,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_hseahh3aip0g1jaaafvd4c8j",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Read directory /project, 0 entries"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "truncated": false
+     }
+    }
+   }
+  },
+  {
+   "t": 2.554,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_122adb4ee001oul2BpWoCHpBoE:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "The directory is empty. Let me check hidden files and git status etc."
+    }
+   }
+  },
+  {
+   "t": 2.555,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_00_xpv27hd4llvlpuo8gx1i0oxb",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 2.808,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_xpv27hd4llvlpuo8gx1i0oxb",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 2.859,
+   "Type": "PermissionRequest",
+   "RequestID": 0,
+   "Params": {
+    "sessionId": "ses_edd527bb4ffe1C24DFjF37G04X",
+    "toolCall": {
+     "toolCallId": "call_00_xpv27hd4llvlpuo8gx1i0oxb",
+     "name": "shell",
+     "title": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+     "kind": "execute",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project"
+      }
+     ],
+     "rawInput": {
+      "command": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+      "cwd": "/project"
+     }
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 3.453,
+   "Type": "PermissionAnswer",
+   "RequestID": 0,
+   "OptionID": "reject"
+  },
+  {
+   "t": 3.513,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_00_xpv27hd4llvlpuo8gx1i0oxb",
+    "status": "failed",
+    "kind": "execute",
+    "title": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "ls -la /project; echo \"---\"; python3 --version; echo \"---\"; which pytest pip3 git 2>/dev/null",
+     "cwd": "/project"
+    },
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "The user declined this tool call"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {},
+     "error": "The user declined this tool call"
+    }
+   }
+  },
+  {
+   "t": 3.514,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 8323,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 3.514,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "usage": {
+     "inputTokens": 488,
+     "outputTokens": 133,
+     "totalTokens": 16536,
+     "thoughtTokens": 43,
+     "cachedReadTokens": 15872
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

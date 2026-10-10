@@ -1,0 +1,18 @@
+{
+ "Name": "exp3_error",
+ "Source": "exp3_prompt_async_attempt1.json",
+ "Prompt": "Reply with just the word OK.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 2.788,
+   "Type": "ErrorResponse",
+   "Code": -32603,
+   "Message": "Internal error: Model exo-free has been deprecated.",
+   "Data": {
+    "service": "session",
+    "errorName": "provider.invalid-request"
+   }
+  }
+ ]
+}

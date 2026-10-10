@@ -1,0 +1,10 @@
+{
+    "description": "Chatbook ACPConnection.wlt: ends the turn (end_turn), then 1.5 s later a (subagent-like) session/request_permission arrives although no turn is running; the client must answer it cancelled.",
+    "steps": [
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_4", "content": {"type": "text", "text": "Quick answer."}}},
+        {"type": "respond", "stopReason": "end_turn"},
+        {"type": "delay", "seconds": 1.5},
+        {"type": "request", "as": "late", "toolCallId": "ses_child:call_x", "title": "Subagent: edit", "kind": "edit"},
+        {"type": "wait_response", "request": "late", "timeout": 20}
+    ]
+}

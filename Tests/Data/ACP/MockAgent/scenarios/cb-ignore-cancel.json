@@ -1,0 +1,8 @@
+{
+    "description": "Chatbook ACPConnection.wlt: streams a chunk, then ignores session/cancel and only answers end_turn after 30 s (the client must end the turn locally after its Stop timeout).",
+    "steps": [
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_7", "content": {"type": "text", "text": "Thinking very slowly..."}}},
+        {"type": "delay", "seconds": 30},
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

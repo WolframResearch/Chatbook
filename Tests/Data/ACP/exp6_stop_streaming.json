@@ -1,0 +1,129 @@
+{
+ "Name": "exp6_stop_streaming",
+ "Source": "exp6_cancel.json",
+ "Prompt": "Write a 600-word essay about the history of the printing press.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 3.048,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": "# The History of the Printing Press\n\nThe"
+    }
+   }
+  },
+  {
+   "t": 3.199,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " printing press stands as one of the most revolutionary"
+    }
+   }
+  },
+  {
+   "t": 3.301,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " inventions in human history, fundamentally transforming"
+    }
+   }
+  },
+  {
+   "t": 3.453,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " how knowledge was disseminated and"
+    }
+   }
+  },
+  {
+   "t": 3.605,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " reshaping the course of civilization. While"
+    }
+   }
+  },
+  {
+   "t": 3.705,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " the concept of printing existed"
+    }
+   }
+  },
+  {
+   "t": 3.858,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " in parts of Asia"
+    }
+   }
+  },
+  {
+   "t": 3.958,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " centuries earlier, Johannes"
+    }
+   }
+  },
+  {
+   "t": 3.99,
+   "Type": "ClientCancel",
+   "Kind": "Stop"
+  },
+  {
+   "t": 4.063,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122a75e49001l8yTwI3D8pSD2o",
+    "content": {
+     "type": "text",
+     "text": " Gutenberg's movable"
+    }
+   }
+  },
+  {
+   "t": 4.064,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "_meta": {}
+   }
+  }
+ ]
+}

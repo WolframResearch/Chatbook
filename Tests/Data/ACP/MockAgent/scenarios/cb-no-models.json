@@ -1,0 +1,9 @@
+{
+    "description": "Chatbook ACPConnection.wlt (process-wide scenario): session/new fails like OpenCode without any provider (\"No models are available\").",
+    "methods": {
+        "session/new": {"error": {"code": -32603, "message": "Internal error: No models are available", "data": {"service": "session", "errorName": "CatalogNotReady"}}}
+    },
+    "steps": [
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

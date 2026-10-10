@@ -17,7 +17,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 evaluateWorkspaceChat // beginDefinition;
 
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
-    Catch @ Module[ { value, text, uuid, cell, cellObject, result },
+    Catch @ Module[ { value, cellObject, result },
 
         value = input;
 
@@ -27,24 +27,9 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
 
         (* $WorkspaceChatInput is a kernel-side copy of the input field text, so it is cleared along with the input: *)
         If[ ! validInputStringQ @ value, input = $WorkspaceChatInput = ""; Throw @ Null ];
-        text = makeBoxesInputMoreTextLike @ value;
-        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
+        $WorkspaceChatInput = "";
 
-        cell = Cell[
-            BoxData @ TemplateBox[
-                { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
-                "UserMessageBox"
-            ],
-            "ChatInput",
-            CellTags -> uuid
-        ];
-
-        input = $WorkspaceChatInput = "";
-        SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
-        NotebookWrite[ nbo, cell ];
-        moveChatInputToBottom @ nbo;
-        cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
-        setCurrentValue[ cellObject, CellTags, { } ];
+        cellObject = ConfirmMatch[ writeWorkspaceChatInputCell[ nbo, Dynamic @ input ], _CellObject, "CellObject" ];
         result = ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ];
 
         If[ unansweredChatInputQ[ cellObject, result ],
@@ -62,6 +47,53 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
 ];
 
 evaluateWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatInputCell*)
+
+(* Writes the user message cell for the current input of a workspace window (and clears the input), moves the input field
+   to the bottom of the window, and returns the new cell. Shared by the notebook assistance window and agent windows. *)
+writeWorkspaceChatInputCell // beginDefinition;
+
+writeWorkspaceChatInputCell[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
+    Catch @ Module[ { uuid, cell, cellObject },
+
+        If[ ! validInputStringQ @ input, input = ""; Throw @ Missing[ "NoInput" ] ];
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
+        cell = ConfirmMatch[ workspaceChatInputCellExpr[ input, uuid ], _Cell, "Cell" ];
+
+        input = "";
+        SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+        NotebookWrite[ nbo, cell ];
+        moveChatInputToBottom @ nbo;
+        cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
+        setCurrentValue[ cellObject, CellTags, { } ];
+        cellObject
+    ],
+    throwInternalFailure
+];
+
+writeWorkspaceChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*workspaceChatInputCellExpr*)
+
+(* The user message cell for the input of a workspace window, tagged with uuid so it can be found after it is written.
+   Shared by writeWorkspaceChatInputCell and the addressed write of agent windows (ACP/UI.wl). *)
+workspaceChatInputCellExpr // beginDefinition;
+
+workspaceChatInputCellExpr[ input_, uuid_String ] := Cell[
+    BoxData @ TemplateBox[
+        { Cell[ makeBoxesInputMoreTextLike @ input, Background -> None, Selectable -> True, Editable -> True ] },
+        "UserMessageBox"
+    ],
+    "ChatInput",
+    CellTags -> uuid
+];
+
+workspaceChatInputCellExpr // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

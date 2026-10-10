@@ -1,0 +1,47 @@
+{
+ "Name": "exp2_plain",
+ "Source": "exp2_models_modes.json",
+ "Prompt": "Say hello in one sentence.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.567,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122914bd4001aKpG3dRBMgXBuJ",
+    "content": {
+     "type": "text",
+     "text": "Hello! I'm ready to help you with your project in `/project` — just let me know what you'd like to do."
+    }
+   }
+  },
+  {
+   "t": 1.568,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 7990,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 1.569,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 5909,
+     "outputTokens": 33,
+     "totalTokens": 7990,
+     "cachedReadTokens": 2048
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

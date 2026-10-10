@@ -1,0 +1,9 @@
+{
+    "description": "Chatbook ACPConnection.wlt (process-wide scenario): session/resume fails (unknown session), so the client must fall back to session/new.",
+    "methods": {
+        "session/resume": {"error": {"code": -32602, "message": "Invalid params: session not found"}}
+    },
+    "steps": [
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

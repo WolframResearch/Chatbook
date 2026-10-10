@@ -1,0 +1,308 @@
+{
+ "Name": "synthetic_cancelled_tools",
+ "Source": "synthetic (several completed tool calls in a row, then a declined edit; no messages in between)",
+ "Prompt": "Look around the project and fix the typo in notes.md.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 0.5,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_look_1",
+    "content": {
+     "type": "text",
+     "text": "Let me look around first."
+    }
+   }
+  },
+  {
+   "t": 1.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_read_1",
+    "name": "read",
+    "title": "read",
+    "kind": "read",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 1.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_read_1",
+    "status": "in_progress",
+    "title": "read",
+    "locations": [],
+    "rawInput": {
+     "path": "/project/notes.md"
+    }
+   }
+  },
+  {
+   "t": 1.2,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_read_1",
+    "status": "completed",
+    "locations": [],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Read file notes.md, lines 1-1\n1: teh notes"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {}
+    }
+   }
+  },
+  {
+   "t": 2.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_glob_1",
+    "name": "glob",
+    "title": "glob",
+    "kind": "search",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 2.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_glob_1",
+    "status": "in_progress",
+    "title": "glob",
+    "locations": [],
+    "rawInput": {
+     "pattern": "**/*.md"
+    }
+   }
+  },
+  {
+   "t": 2.2,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_glob_1",
+    "status": "completed",
+    "locations": [],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "notes.md\nREADME.md"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {}
+    }
+   }
+  },
+  {
+   "t": 3.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_grep_1",
+    "name": "grep",
+    "title": "grep",
+    "kind": "search",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 3.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_grep_1",
+    "status": "in_progress",
+    "title": "grep",
+    "locations": [],
+    "rawInput": {
+     "pattern": "teh"
+    }
+   }
+  },
+  {
+   "t": 3.2,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_grep_1",
+    "status": "completed",
+    "locations": [],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "notes.md:1: teh notes"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {}
+    }
+   }
+  },
+  {
+   "t": 4.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_edit_1",
+    "name": "edit",
+    "title": "edit",
+    "kind": "edit",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 4.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_edit_1",
+    "status": "in_progress",
+    "kind": "edit",
+    "title": "edit",
+    "locations": [
+     {
+      "path": "/project/notes.md"
+     }
+    ],
+    "rawInput": {
+     "path": "notes.md",
+     "oldString": "teh",
+     "newString": "the"
+    }
+   }
+  },
+  {
+   "t": 4.1,
+   "Type": "PermissionRequest",
+   "RequestID": 7,
+   "Params": {
+    "sessionId": "ses_synthetic",
+    "toolCall": {
+     "toolCallId": "call_edit_1",
+     "name": "edit",
+     "title": "notes.md",
+     "kind": "edit",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project/notes.md"
+      }
+     ],
+     "rawInput": {
+      "path": "notes.md",
+      "oldString": "teh",
+      "newString": "the"
+     },
+     "content": [
+      {
+       "type": "diff",
+       "path": "/project/notes.md",
+       "oldText": "teh",
+       "newText": "the"
+      }
+     ]
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 6.0,
+   "Type": "PermissionAnswer",
+   "RequestID": 7,
+   "OptionID": "reject"
+  },
+  {
+   "t": 6.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_edit_1",
+    "status": "failed",
+    "kind": "edit",
+    "title": "edit",
+    "locations": [
+     {
+      "path": "/project/notes.md"
+     }
+    ],
+    "rawInput": {
+     "path": "notes.md",
+     "oldString": "teh",
+     "newString": "the"
+    },
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "The user declined this tool call"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {},
+     "error": "The user declined this tool call"
+    }
+   }
+  },
+  {
+   "t": 6.2,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "cancelled",
+    "usage": {
+     "inputTokens": 900,
+     "outputTokens": 80,
+     "totalTokens": 980
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

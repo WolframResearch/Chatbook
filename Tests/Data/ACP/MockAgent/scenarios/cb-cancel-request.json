@@ -1,0 +1,12 @@
+{
+    "description": "Chatbook ACPConnection.wlt: asks session/request_permission, then withdraws it with $/cancel_request after 1 s (as OpenCode does when an \"Always allow\" answer made another request moot); the tool call completes and the turn ends with end_turn.",
+    "steps": [
+        {"type": "notify", "update": {"sessionUpdate": "tool_call", "toolCallId": "call_w2", "title": "write", "kind": "edit", "status": "pending"}},
+        {"type": "request", "as": "perm", "toolCallId": "call_w2", "title": "z.txt", "kind": "edit"},
+        {"type": "delay", "seconds": 1.0},
+        {"type": "send", "message": {"jsonrpc": "2.0", "method": "$/cancel_request", "params": {"requestId": "${lastRequestId}"}}},
+        {"type": "notify", "update": {"sessionUpdate": "tool_call_update", "toolCallId": "call_w2", "status": "completed"}},
+        {"type": "notify", "update": {"sessionUpdate": "agent_message_chunk", "messageId": "msg_3", "content": {"type": "text", "text": "Done."}}},
+        {"type": "respond", "stopReason": "end_turn"}
+    ]
+}

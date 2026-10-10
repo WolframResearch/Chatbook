@@ -1,0 +1,197 @@
+{
+ "Name": "exp6b_D_after",
+ "Source": "exp6b_cancel_tools.json",
+ "Prompt": "Use your shell tool to run `echo after-cancel` and report the output.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.416,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "7a1d9c0c-551d-4117-83b4-6fc0ba5bee23",
+    "name": "shell",
+    "title": "shell",
+    "kind": "execute",
+    "status": "pending",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 1.417,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "7a1d9c0c-551d-4117-83b4-6fc0ba5bee23",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "echo after-cancel",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "echo after-cancel",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 1.418,
+   "Type": "PermissionRequest",
+   "RequestID": 2,
+   "Params": {
+    "sessionId": "ses_edd54dc4effeZdQwOt3yUBKSpR",
+    "toolCall": {
+     "toolCallId": "7a1d9c0c-551d-4117-83b4-6fc0ba5bee23",
+     "name": "shell",
+     "title": "echo after-cancel",
+     "kind": "execute",
+     "status": "pending",
+     "locations": [
+      {
+       "path": "/project"
+      }
+     ],
+     "rawInput": {
+      "command": "echo after-cancel",
+      "cwd": "/project"
+     }
+    },
+    "options": [
+     {
+      "optionId": "once",
+      "kind": "allow_once",
+      "name": "Allow once"
+     },
+     {
+      "optionId": "always",
+      "kind": "allow_always",
+      "name": "Always allow"
+     },
+     {
+      "optionId": "reject",
+      "kind": "reject_once",
+      "name": "Reject"
+     }
+    ]
+   }
+  },
+  {
+   "t": 1.933,
+   "Type": "PermissionAnswer",
+   "RequestID": 2,
+   "OptionID": "once"
+  },
+  {
+   "t": 1.968,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "7a1d9c0c-551d-4117-83b4-6fc0ba5bee23",
+    "status": "in_progress",
+    "kind": "execute",
+    "title": "echo after-cancel",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "rawInput": {
+     "command": "echo after-cancel",
+     "cwd": "/project"
+    }
+   }
+  },
+  {
+   "t": 2.169,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "7a1d9c0c-551d-4117-83b4-6fc0ba5bee23",
+    "status": "completed",
+    "locations": [
+     {
+      "path": "/project"
+     }
+    ],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "after-cancel\n"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {
+      "status": "completed",
+      "truncated": false,
+      "exit": 0
+     }
+    }
+   }
+  },
+  {
+   "t": 11.136,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122ab79f9001eP400NhD2hAfT5",
+    "content": {
+     "type": "text",
+     "text": "The output is:\nafter"
+    }
+   }
+  },
+  {
+   "t": 11.187,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_122ab79f9001eP400NhD2hAfT5",
+    "content": {
+     "type": "text",
+     "text": "-cancel"
+    }
+   }
+  },
+  {
+   "t": 11.188,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "usage_update",
+    "used": 7806,
+    "size": 200000,
+    "cost": {
+     "amount": 0,
+     "currency": "USD"
+    }
+   }
+  },
+  {
+   "t": 11.189,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 933,
+     "outputTokens": 32,
+     "totalTokens": 15544,
+     "thoughtTokens": 43,
+     "cachedReadTokens": 14536
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}
