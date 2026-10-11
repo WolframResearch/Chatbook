@@ -65,6 +65,7 @@ $acpUIStrings = <|
     "ModeMenuTooltip"                -> "How the agent works",
     "EffortMenuTooltip"              -> "Reasoning effort",
     "MenusDisabledTooltip"           -> "Settings can't be changed while the agent is working",
+    "MenusDisabledRestoring"         -> "Settings can't be changed while a session is loading",
     "ProjectDirectoryNone"           -> "No project folder",
     "ProjectDirectoryChange"         -> "Change\[Ellipsis]",
     "ProjectDirectoryChoose"         -> "Choose folder\[Ellipsis]",
@@ -75,6 +76,7 @@ $acpUIStrings = <|
     "ProjectDirectoryWarningMissing" -> "This folder does not exist.",
     "InputFieldHint"                 -> "Ask `agent` to do something\[Ellipsis]",
     "QueuedPrompt"                   -> "Queued, sent when the agent is done: `text`",
+    "QueuedPromptRestoring"          -> "Queued, sent when the session is loaded: `text`",
     "QueuedPromptCancel"             -> "Remove the queued message",
     "NoticeDismiss"                  -> "Dismiss",
     "PlanModeBadge"                  -> "Plan mode",
@@ -82,6 +84,7 @@ $acpUIStrings = <|
     "NoticeCannotSend"               -> "Can't send the message: `reason`",
     "NoticeNotConnected"             -> "the agent is not connected.",
     "NoticeDirectoryWhileRunning"    -> "The project folder can't be changed while the agent is working.",
+    "NoticeDirectoryWhileRestoring"  -> "The project folder can't be changed while a session is loading.",
     "NoticeChooseModel"              -> "Choose another model from the model menu above.",
     "NoticeSignIn"                   -> "Run \"opencode auth login\" in a terminal to sign in, then reconnect.",
     "NoticeLocateAgent"              -> "Install OpenCode (https://opencode.ai) or give its location with the \"ACPAgentExecutable\" setting, then reconnect.",
@@ -125,6 +128,19 @@ acpAction // endDefinition;
 (* Error view buttons (Rendering.wl) call ChatbookAction["ACP", action, nbo] directly *)
 $$errorAction = "ChooseModel" | "SignIn" | "LocateAgent" | "ChooseDirectory";
 
+(* Buttons of the Sessions window (Sessions.wl) *)
+$$sessionsWindowAction = Alternatives[
+    "SessionsCancelDelete",
+    "SessionsConfirmDelete",
+    "SessionsDelete",
+    "SessionsDismissNotice",
+    "SessionsNew",
+    "SessionsOpen",
+    "SessionsOpenFolder",
+    "SessionsShowMore",
+    "SessionsToggleProject"
+];
+
 acpAction0 // beginDefinition;
 acpAction0[ "Send"               , nbo_NotebookObject                  ] := evaluateACPChat @ nbo;
 acpAction0[ "Stop"               , nbo_NotebookObject                  ] := acpStopAction @ nbo;
@@ -145,6 +161,13 @@ acpAction0[ "ReviewChanges"      , nbo_NotebookObject                  ] := acpR
 acpAction0[ "ReviewRefresh"      , review_NotebookObject               ] := acpReviewRefresh @ review;
 acpAction0[ "ReviewOpenFile"     , path_String                         ] := acpReviewOpenFile @ path;
 acpAction0[ "ReviewDiffView"     , data_Association                    ] := acpReviewDiffView @ data;
+acpAction0[ "RestoreSession"     , nbo_NotebookObject, sid_String, cwd_String ] := acpRestoreSessionAction[ nbo, sid, cwd ];
+acpAction0[ "NewSessionIn"       , nbo_NotebookObject, cwd_String      ] := acpNewSessionInAction[ nbo, cwd ];
+acpAction0[ "DeleteSession"      , nbo_NotebookObject, sid_String      ] := acpDeleteSessionAction[ nbo, sid ];
+acpAction0[ "SessionsRefresh"    , nbo_NotebookObject                  ] := acpSessionsRefresh @ nbo;
+acpAction0[ "SessionsClosed"     , nbo_NotebookObject                  ] := acpSessionsClosed @ nbo;
+acpAction0[ "ToggleSessions"     , nbo_NotebookObject                  ] := acpToggleSessions @ nbo;
+acpAction0[ name: $$sessionsWindowAction, nbo_NotebookObject, args___ ] := acpSessionsWindowAction[ name, nbo, args ];
 acpAction0[ name_, args___ ] := (acpLog[ "UnknownAction", { name, args } ]; Missing[ "UnknownAction", name ]);
 acpAction0 // endDefinition;
 
@@ -153,24 +176,39 @@ $acpActionNames = {
     "CancelQueuedPrompt",
     "ChooseDirectory",
     "ChooseModel",
+    "DeleteSession",
     "DismissNotice",
     "ErrorAction",
     "InitializeWindow",
     "LocateAgent",
     "NewChat",
+    "NewSessionIn",
     "PermissionResponse",
     "Reconnect",
+    "RestoreSession",
     "ReviewChanges",
     "ReviewDiffView",
     "ReviewOpenFile",
     "ReviewRefresh",
     "Send",
+    "SessionsCancelDelete",
+    "SessionsClosed",
+    "SessionsConfirmDelete",
+    "SessionsDelete",
+    "SessionsDismissNotice",
+    "SessionsNew",
+    "SessionsOpen",
+    "SessionsOpenFolder",
+    "SessionsRefresh",
+    "SessionsShowMore",
+    "SessionsToggleProject",
     "SetAgentExecutable",
     "SetConfigOption",
     "SetProjectDirectory",
     "SignIn",
     "Stop",
     "ToggleOpen",
+    "ToggleSessions",
     "WindowClosed"
 };
 
@@ -417,7 +455,9 @@ acpInitialWindowRecord[ nbo_NotebookObject, dir_, agent_String, settings_Associa
     "Settings"           -> settings,
     "Notice"             -> None,
     "QueuedPrompt"       -> None,
-    "QueuedTurn"         -> None
+    "QueuedTurn"         -> None,
+    "Restore"            -> None,
+    "PendingRestore"     -> None
 |>;
 
 acpInitialWindowRecord // endDefinition;
@@ -492,7 +532,7 @@ acpEnsureWindowSymbols[ nbo_NotebookObject ] := (
 
 acpEnsureWindowSymbols // endDefinition;
 
-$acpDerivedViewNames = { "ConfigMenus", "DirectoryRow", "Footer", "InputArea" };
+$acpDerivedViewNames = { "ConfigMenus", "DirectoryRow", "Footer", "InputArea", "NewChat" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -512,10 +552,14 @@ acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
         (* An explicit project directory for an existing window is applied (unless the agent is busy) *)
         dirChanged = False;
         If[ StringQ @ dir && dir =!= Lookup[ window, "ProjectDirectory" ],
-            If[ acpRunningQ @ window,
-                acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRunning" ] ],
-                acpChangeProjectDirectory[ nbo, dir ];
-                dirChanged = True
+            Which[
+                acpRestoringQ @ window,
+                    acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRestoring" ] ],
+                acpRunningQ @ window,
+                    acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRunning" ] ],
+                True,
+                    acpChangeProjectDirectory[ nbo, dir ];
+                    dirChanged = True
             ]
         ];
 
@@ -583,7 +627,7 @@ acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Modul
         TrueQ @ dirChanged,
             acpEnsureConnected @ nbo,
         MemberQ[ changed, "ACPAgentExecutable" | "ACPAgent" ] || Lookup[ window, "Status" ] === "Error",
-            If[ acpRunningQ @ window,
+            If[ acpRunningQ @ window || acpRestoringQ @ window,
                 acpWindowSet[ nbo, "ReconnectRequested", True ];
                 acpSetNotice[ nbo, acpLabel[ "NoticeReconnectAfterTurn" ] ],
                 acpReconnect @ nbo
@@ -592,7 +636,7 @@ acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Modul
             model   = Lookup[ Lookup[ window, "Settings", <| |> ], "ACPModel", None ];
             modelID = Replace[ acpConfigOption[ window, "model" ], { o_Association :> Lookup[ o, "id", None ], _ -> None } ];
             If[ StringQ @ model && StringQ @ modelID && ! acpRunningQ @ window,
-                acpSetConfigOption[ nbo, modelID, model ]
+                acpSetConfigOption[ nbo, modelID, model ] (* deferred while a restored session loads *)
             ];
             acpEnsureConnected @ nbo,
         True,
@@ -638,6 +682,7 @@ acpCloseWindow // beginDefinition;
 
 acpCloseWindow[ nbo_NotebookObject ] := (
     acpIsolated @ acpDisconnect[ nbo, "WindowClosed" ];
+    acpIsolated @ acpSessionsCloseWindow @ nbo;
     Quiet @ NotebookClose @ nbo;
     acpForgetWindow @ nbo
 );
@@ -698,11 +743,12 @@ acpInitializeWindow // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpWindowClosed*)
 
-(* NotebookEventActions "WindowClose" (preemptive): only schedule the cleanup. *)
+(* NotebookEventActions "WindowClose" (preemptive): only schedule the cleanup (which also closes the window's Sessions
+   window). *)
 acpWindowClosed // beginDefinition;
 
 acpWindowClosed[ nbo_NotebookObject ] := (
-    acpSchedule[ acpDisconnect[ nbo, "WindowClosed" ]; acpForgetWindow @ nbo ];
+    acpSchedule[ acpDisconnect[ nbo, "WindowClosed" ]; acpForgetWindow @ nbo; acpSessionsCloseWindow @ nbo ];
     Null
 );
 
@@ -754,13 +800,14 @@ acpUpdateWindowTitle[ _, _Missing ] := Null;
 acpUpdateWindowTitle // endDefinition;
 
 
+(* The project folder can come from the agent (a session restored from the Sessions window): its name is neutralized *)
 acpWindowTitleString // beginDefinition;
 
 acpWindowTitleString[ dir_String, agent_, True ] :=
-    acpLabel[ "WindowTitleApproval", <| "project" -> FileNameTake @ dir, "agent" -> agent |> ];
+    acpLabel[ "WindowTitleApproval", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
 
 acpWindowTitleString[ dir_String, agent_, _ ] :=
-    acpLabel[ "WindowTitleProject", <| "project" -> FileNameTake @ dir, "agent" -> agent |> ];
+    acpLabel[ "WindowTitleProject", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
 
 acpWindowTitleString[ _, agent_, _ ] :=
     acpLabel[ "WindowTitleNoProject", <| "agent" -> agent |> ];
@@ -876,7 +923,8 @@ acpToolbarMainRow // beginDefinition;
 
 acpToolbarMainRow[ nbo_NotebookObject ] := Grid[
     { {
-        acpNewChatButton @ nbo,
+        acpWindowDerivedDynamic[ nbo, "NewChat", acpNewChatSignature, acpNewChatButton ],
+        acpSessionsButton @ nbo, (* Sessions.wl *)
         Item[ Spacer[ 0 ], ItemSize -> Fit ],
         acpWindowDerivedDynamic[ nbo, "ConfigMenus", acpConfigMenusSignature, acpConfigMenusView ]
     } },
@@ -889,16 +937,27 @@ acpToolbarMainRow // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*acpNewChatButton*)
+
+(* Disabled while a session is restored (Sessions.wl) *)
+acpNewChatSignature // beginDefinition;
+acpNewChatSignature[ window_Association ] := acpRestoringQ @ window;
+acpNewChatSignature[ _ ] := None;
+acpNewChatSignature // endDefinition;
+
+
 acpNewChatButton // beginDefinition;
 
-acpNewChatButton[ nbo_NotebookObject ] := acpActionButton[
+acpNewChatButton[ nbo_NotebookObject ] := acpNewChatButton[ nbo, acpWindowGet @ nbo ];
+
+acpNewChatButton[ nbo_NotebookObject, window_ ] := acpActionButton[
     blueHueButtonAppearance[
         acpToolbarButtonLabel[ "WorkspaceToolbarIconNew", acpLabel[ "NewChat" ], acpLabel[ "NewChatTooltip" ] ],
         { Automatic, 24 },
         { { 5, 5 }, { 0, 0 } }
     ],
     { "NewChat", nbo },
-    BoxID -> "ACPNewChatButton"
+    BoxID   -> "ACPNewChatButton",
+    Enabled -> ! acpRestoringQ @ window
 ];
 
 acpNewChatButton // endDefinition;
@@ -934,10 +993,9 @@ acpToolbarButtonLabel // endDefinition;
 (*acpConfigMenusSignature*)
 acpConfigMenusSignature // beginDefinition;
 
-acpConfigMenusSignature[ window_Association ] := Lookup[
-    window,
-    { "Status", "ConfigOptions", "PendingConfig", "FailedModels", "CurrentTurn", "Agent" },
-    None
+acpConfigMenusSignature[ window_Association ] := Append[
+    Lookup[ window, { "Status", "ConfigOptions", "PendingConfig", "FailedModels", "CurrentTurn", "Agent" }, None ],
+    acpRestoringQ @ window
 ];
 
 acpConfigMenusSignature[ _ ] := None;
@@ -952,7 +1010,7 @@ acpConfigMenusView // beginDefinition;
 acpConfigMenusView[ nbo_NotebookObject ] := acpConfigMenusView[ nbo, acpWindowGet @ nbo ];
 
 acpConfigMenusView[ nbo_NotebookObject, window_Association ] := Module[ { enabled, menus },
-    enabled = ! acpRunningQ @ window;
+    enabled = ! acpRunningQ @ window && ! acpRestoringQ @ window;
     menus = {
         acpModelMenu[ nbo, window, enabled ],
         acpModeMenu[ nbo, window, enabled ],
@@ -1060,7 +1118,7 @@ acpModelMenu[ nbo_, window_, enabled_, opt_Association ] := Module[
     acpMenu[
         acpModelShortName[ current, options ],
         items,
-        If[ TrueQ @ enabled, acpLabel[ "ModelMenuTooltip", <| "billing" -> billing |> ], acpLabel[ "MenusDisabledTooltip" ] ],
+        If[ TrueQ @ enabled, acpLabel[ "ModelMenuTooltip", <| "billing" -> billing |> ], acpMenusDisabledTooltip @ window ],
         enabled,
         "ACPModelMenu"
     ]
@@ -1172,7 +1230,7 @@ acpModeMenu[ nbo_, window_, enabled_, opt_Association ] := Module[ { id, current
                 FirstCase[ options, KeyValuePattern @ { "value" -> current, "description" -> d_String } :> d, None ],
                 None :> acpLabel[ "ModeMenuTooltip" ]
             ],
-            acpLabel[ "MenusDisabledTooltip" ]
+            acpMenusDisabledTooltip @ window
         ],
         enabled,
         "ACPModeMenu"
@@ -1209,7 +1267,7 @@ acpEffortMenu[ nbo_, window_, enabled_, opt_Association ] := Module[ { id, curre
         ] /@ options,
         If[ TrueQ @ enabled,
             Replace[ Lookup[ opt, "description", None ], Except[ _String ] :> acpLabel[ "EffortMenuTooltip" ] ],
-            acpLabel[ "MenusDisabledTooltip" ]
+            acpMenusDisabledTooltip @ window
         ],
         enabled,
         "ACPEffortMenu"
@@ -1241,6 +1299,11 @@ acpCheckedLabel[ label_, checked_, description_String ] := Tooltip[ acpCheckedLa
 acpCheckedLabel[ label_, checked_, _ ] := acpCheckedLabel[ label, checked ];
 
 acpCheckedLabel // endDefinition;
+
+
+acpMenusDisabledTooltip // beginDefinition;
+acpMenusDisabledTooltip[ window_ ] := If[ acpRestoringQ @ window, acpLabel[ "MenusDisabledRestoring" ], acpLabel[ "MenusDisabledTooltip" ] ];
+acpMenusDisabledTooltip // endDefinition;
 
 
 (* ActionMenu has no section headers, so headers are inert items *)
@@ -1340,7 +1403,7 @@ acpDirectoryRow // endDefinition;
 acpDirectoryRowSignature // beginDefinition;
 acpDirectoryRowSignature[ window_Association ] := {
     Lookup[ window, "ProjectDirectory", None ],
-    acpRunningQ @ window,
+    acpRunningQ @ window || acpRestoringQ @ window,
     acpReviewButtonSignature @ window
 };
 acpDirectoryRowSignature[ _ ] := None;
@@ -1353,18 +1416,19 @@ acpDirectoryRowView[ nbo_NotebookObject ] := acpDirectoryRowView[ nbo, acpWindow
 
 acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, running, warning, review, label },
     dir     = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ];
-    running = acpRunningQ @ window;
+    running = acpRunningQ @ window || acpRestoringQ @ window;
     warning = acpDirectoryWarning @ dir;
     review  = acpReviewButton[ nbo, window ];
+    (* the folder can come from the agent (a session restored from the Sessions window): neutralized *)
     label   = If[ StringQ @ dir,
         Tooltip[
             Style[
-                acpAbbreviatePath[ dir, If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ] ],
+                acpNeutralizeLinearSyntax @ acpAbbreviatePath[ dir, If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ] ],
                 "WorkspaceChatToolbarTitle",
                 FontSize        -> 12,
                 LineBreakWithin -> False
             ],
-            acpLabel[ "ProjectDirectoryTooltip", <| "path" -> dir |> ]
+            acpLabel[ "ProjectDirectoryTooltip", <| "path" -> acpNeutralizeLinearSyntax @ dir |> ]
         ],
         Style[ acpLabel[ "ProjectDirectoryNone" ], "WorkspaceChatToolbarTitle", FontSize -> 12, FontSlant -> Italic ]
     ];
@@ -1694,7 +1758,8 @@ acpInputAreaSignature // beginDefinition;
 acpInputAreaSignature[ window_Association ] := {
     Keys @ Replace[ Lookup[ window, "PendingPermissions", <| |> ], Except[ _Association ] -> <| |> ],
     Lookup[ window, "QueuedPrompt", None ],
-    Lookup[ window, "Notice", None ]
+    Lookup[ window, "Notice", None ],
+    acpRestoringQ @ window
 };
 
 acpInputAreaSignature[ _ ] := None;
@@ -1712,7 +1777,7 @@ acpInputAreaView[ nbo_NotebookObject, window_Association ] := Module[ { items },
             Pane[ acpPermissionPanel @ nbo, ImageMargins -> { { 0, 0 }, { 4, 0 } } ],
             Nothing
         ],
-        acpQueuedPromptView[ nbo, Lookup[ window, "QueuedPrompt", None ] ],
+        acpQueuedPromptView[ nbo, Lookup[ window, "QueuedPrompt", None ], acpRestoringQ @ window ],
         acpNoticeView[ nbo, Lookup[ window, "Notice", None ] ]
     };
     If[ items === { }, Spacer[ { 0, 0 } ], Column[ items, Spacings -> 0.3 ] ]
@@ -1725,13 +1790,17 @@ acpInputAreaView // endDefinition;
 
 acpQueuedPromptView // beginDefinition;
 
-acpQueuedPromptView[ nbo_, prompt_String ] := acpInputNote[
-    acpLabel[ "QueuedPrompt", <| "text" -> acpPreview @ prompt |> ],
+(* While a session is restored, a prompt waits for it (see evaluateACPChat) *)
+acpQueuedPromptView[ nbo_, prompt_String, restoring_ ] := acpInputNote[
+    If[ TrueQ @ restoring,
+        acpLabel[ "QueuedPromptRestoring", <| "text" -> acpPreview @ prompt |> ],
+        acpLabel[ "QueuedPrompt", <| "text" -> acpPreview @ prompt |> ]
+    ],
     acpActionButton[ $acpCloseGlyph, { "CancelQueuedPrompt", nbo }, BoxID -> "ACPCancelQueuedPrompt" ],
     acpLabel[ "QueuedPromptCancel" ]
 ];
 
-acpQueuedPromptView[ _, _ ] := Nothing;
+acpQueuedPromptView[ _, _, _ ] := Nothing;
 
 acpQueuedPromptView // endDefinition;
 
@@ -1940,7 +2009,9 @@ acpWindowKey // endDefinition;
 (*evaluateACPChat*)
 
 (* Send button / Return key (preemptive, fast): writes the user and active output cells and sends the prompt. While a
-   turn is running the prompt is queued; while connecting, the turn starts and is sent when the connection is ready. *)
+   turn is running the prompt is queued; while connecting, the turn starts and is sent when the connection is ready.
+   While a session is restored (Sessions.wl), the prompt is queued too: its user cell must come after the restored
+   transcript, which is written when the session has loaded. *)
 evaluateACPChat // beginDefinition;
 
 evaluateACPChat[ nbo_NotebookObject ] := Enclose[
@@ -1963,7 +2034,7 @@ evaluateACPChat[ nbo_NotebookObject ] := Enclose[
                 acpSetNotice[ nbo, acpLabel[ "NoticeCannotSend", <| "reason" -> acpErrorMessage @ window |> ] ];
                 Throw @ Null,
 
-            acpRunningQ @ window,
+            acpRunningQ @ window || acpRestoringQ @ window,
                 acpQueuePrompt[ nbo, prompt ];
                 Throw @ Null
         ];
@@ -2177,7 +2248,7 @@ acpSendQueuedPrompt[ nbo_NotebookObject, anchor_ ] := Catch @ Module[ { window, 
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Throw @ Null ];
     prompt = Lookup[ window, "QueuedPrompt", None ];
-    If[ ! StringQ @ prompt || acpRunningQ @ window || Lookup[ window, "Status" ] =!= "Ready", Throw @ Null ];
+    If[ ! StringQ @ prompt || acpRunningQ @ window || acpRestoringQ @ window || Lookup[ window, "Status" ] =!= "Ready", Throw @ Null ];
     If[ ! acpNotebookExistsQ @ nbo, Throw @ Null ];
 
     (* Claim the prompt so it is sent only once: *)
@@ -2185,7 +2256,7 @@ acpSendQueuedPrompt[ nbo_NotebookObject, anchor_ ] := Catch @ Module[ { window, 
     acpWindowUpdate[
         nbo,
         Function[ w,
-            If[ Lookup[ w, "QueuedPrompt" ] === prompt && ! acpRunningQ @ w,
+            If[ Lookup[ w, "QueuedPrompt" ] === prompt && ! acpRunningQ @ w && ! acpRestoringQ @ w,
                 claimed = True; <| w, "QueuedPrompt" -> None |>,
                 w
             ]
@@ -2478,7 +2549,9 @@ acpFinishTurnState[ turnID_String, nbo_NotebookObject ] := Module[ { pending, wi
         ];
         If[ pending =!= { }, acpUpdateWindowTitle @ nbo ];
         (* The turn may have changed files: check the project's uncommitted changes (Git.wl) *)
-        acpGitMarkStale @ nbo
+        acpGitMarkStale @ nbo;
+        (* The session moved to the top of the agent's list and may have a (new) title (Sessions.wl) *)
+        acpSessionsNoteTurnEnd @ nbo
     ];
     acpTurnDrop @ turnID;
     acpPublish[ ];
@@ -2546,12 +2619,14 @@ acpStopAction // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpNewChat*)
 
-(* New chat (preemptive): stop a running turn, clear the cells, move the input to the top, start a new session. *)
+(* New chat (preemptive): stop a running turn, clear the cells, move the input to the top, start a new session. Ignored
+   while a session is restored (the button is disabled then). *)
 acpNewChat // beginDefinition;
 
-acpNewChat[ nbo_NotebookObject ] := (
+acpNewChat[ nbo_NotebookObject ] := Catch[
     acpCheckSession @ nbo;
-    If[ acpRunningQ @ acpEnsureWindowRecord @ nbo, acpStopAction @ nbo ];
+    If[ acpRestoringQ @ acpEnsureWindowRecord @ nbo, Throw @ Null ];
+    If[ acpRunningQ @ acpWindowGet @ nbo, acpStopAction @ nbo ];
     acpWindowUpdate[ nbo, <| #, "QueuedPrompt" -> None, "Notice" -> None, "Turns" -> { } |> & ];
     NotebookDelete @ Cells @ nbo;
     CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "ConversationUUID" } ] = createUUID[ ];
@@ -2559,7 +2634,7 @@ acpNewChat[ nbo_NotebookObject ] := (
     acpNewSession @ nbo;
     acpPublish[ ];
     Null
-);
+];
 
 acpNewChat // endDefinition;
 
@@ -2585,7 +2660,7 @@ acpSetConfigOptionAction // beginDefinition;
 acpSetConfigOptionAction[ nbo_NotebookObject, id_String, value_ ] := Catch @ Module[ { window },
     acpCheckSession @ nbo;
     window = acpEnsureWindowRecord @ nbo;
-    If[ acpRunningQ @ window, Throw @ Null ];
+    If[ acpRunningQ @ window || acpRestoringQ @ window, Throw @ Null ];
     acpSetConfigOption[ nbo, id, value ];
     If[ StringQ @ value && Replace[ acpConfigOption[ window, "model" ], { o_Association :> Lookup[ o, "id" ], _ -> None } ] === id,
         acpRememberRecentModel[ Lookup[ window, "Agent", $acpDefaultAgent ], value ]
@@ -2605,6 +2680,10 @@ acpSetProjectDirectoryAction[ nbo_NotebookObject, dir0_ ] := Catch @ Module[ { w
     window = acpEnsureWindowRecord @ nbo;
     dir = acpNormalizeDirectory @ dir0;
     If[ ! acpValidProjectDirectoryQ @ dir || dir === Lookup[ window, "ProjectDirectory" ], Throw @ Null ];
+    If[ acpRestoringQ @ window,
+        acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRestoring" ] ];
+        Throw @ Null
+    ];
     If[ acpRunningQ @ window,
         acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRunning" ] ];
         Throw @ Null
@@ -2616,13 +2695,15 @@ acpSetProjectDirectoryAction // endDefinition;
 
 
 (* Connection.wl does the work (disconnect, clear the chat, persist, reconnect). The window title and the input field
-   location follow. *)
+   location follow. extra: see acpSetProjectDirectory (Sessions.wl restores a session of another folder this way). *)
 acpChangeProjectDirectory // beginDefinition;
 
-acpChangeProjectDirectory[ nbo_NotebookObject, dir_String ] := (
-    acpSetProjectDirectory[ nbo, dir ];
+acpChangeProjectDirectory[ nbo_NotebookObject, dir_String ] := acpChangeProjectDirectory[ nbo, dir, <| |> ];
+
+acpChangeProjectDirectory[ nbo_NotebookObject, dir_String, extra_Association ] := (
+    If[ extra === <| |>, acpSetProjectDirectory[ nbo, dir ], acpSetProjectDirectory[ nbo, dir, extra ] ];
     acpSetNotice[ nbo, None ];
-    If[ Cells @ nbo === { }, moveChatInputToTop @ nbo ];
+    If[ $FrontEnd =!= Null && Quiet @ Cells @ nbo === { }, moveChatInputToTop @ nbo ];
     acpUpdateWindowTitle @ nbo;
     acpPublish[ ];
     Null
@@ -2725,6 +2806,8 @@ acpRefreshWindowUI[ nbo_NotebookObject ] := Module[ { location },
     NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
     attachWorkspaceChatInput[ nbo, location ];
     acpRefreshToolbar @ nbo;
+    (* An open Sessions window is rebuilt too (Sessions.wl); scheduled, so the window record exists by then *)
+    acpSchedule @ acpSessionsRecover @ nbo;
     Null
 ];
 
@@ -2764,7 +2847,7 @@ acpWindowHousekeeping[ nbo_NotebookObject, window_Association ] := acpIsolated[
         acpSchedule @ acpSendQueuedPrompt @ nbo
     ];
     (* New agent settings given while a turn was running (acpApplyWindowSettings): *)
-    If[ TrueQ @ Lookup[ window, "ReconnectRequested", False ] && ! acpRunningQ @ window,
+    If[ TrueQ @ Lookup[ window, "ReconnectRequested", False ] && ! acpRunningQ @ window && ! acpRestoringQ @ window,
         acpWindowSet[ nbo, "ReconnectRequested", False ];
         acpReconnect @ nbo
     ];

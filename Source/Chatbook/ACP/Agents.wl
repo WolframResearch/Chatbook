@@ -85,6 +85,12 @@ $acpConnectionStrings = <|
     "NoticeBackgroundPermission"   -> "A background subagent asked for permission after the turn ended; the request was cancelled.",
     "NoticeSessionNotResumed"      -> "New session: `agent` doesn't remember the messages above.",
     "NoticeConfigOptionFailed"     -> "Couldn't change `option`: `message`",
+    "NoticeSessionLoadFailed"      -> "Couldn't open the session: `message`",
+    "NoticeSessionLoadUnsupported" -> "`agent` can't open saved sessions, so a new session was started.",
+
+    (* Sessions window (Sessions.wl) *)
+    "SessionsListFailed"           -> "Couldn't list the sessions: `message`",
+    "SessionsDeleteFailed"         -> "Couldn't delete the session: `message`",
 
     (* Billing labels for models *)
     "BillingLLMKit"                -> "Wolfram LLMKit",
