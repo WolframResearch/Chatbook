@@ -103,10 +103,10 @@ $kindLabelGroups = <|
 
 (* English defaults for every user-visible string produced by Transcript.wl and Rendering.wl.
    acpLabel[key] first tries the front end text resource "ChatbookStrings" -> "ACP" <> key and falls back to this table
-   (then to $acpUIStrings, defined in UI.wl, $acpConnectionStrings, defined in Agents.wl, and $acpReviewStrings, defined
-   in Review.wl). Every key of the four tables must also be in FrontEnd/TextResources/ChatbookStrings.tr and the
-   localized copies as "ACP" <> key, with the same English text (checked by Tests/ACPWindow.wlt). Templates use
-   StringTemplate slots: `name`. *)
+   (then to $acpUIStrings, defined in UI.wl, $acpConnectionStrings, defined in Agents.wl, $acpReviewStrings, defined
+   in Review.wl, and $acpSessionsStrings, defined in Sessions.wl). Every key of the five tables must also be in
+   FrontEnd/TextResources/ChatbookStrings.tr and the localized copies as "ACP" <> key, with the same English text
+   (checked by Tests/ACPWindow.wlt). Templates use StringTemplate slots: `name`. *)
 $acpStrings = <|
     (* Durations *)
     "DurationSeconds"              -> "`s`s",
@@ -123,6 +123,9 @@ $acpStrings = <|
     "ThoughtForSeconds"            -> "Thought for `n` seconds",
     "ThoughtForOneSecond"          -> "Thought for a second",
     "Thought"                      -> "Thought",
+    "WorkedReplayed"               -> "Worked",
+    "ThoughtReplayed"              -> "Thoughts",
+    "ReplayNoReply"                -> "No reply.",
     "SubagentHeader"               -> "Subagent: `title`",
     "TurnUnavailable"              -> "This response is no longer available (the kernel was restarted).",
     "DoneNoReply"                  -> "Done.",
@@ -373,6 +376,7 @@ $acpStrings = <|
     (* Toolbar status and usage *)
     "ToolbarNoDirectory"           -> "Choose a project folder to start",
     "ToolbarConnecting"            -> "Connecting to `agent`\[Ellipsis]",
+    "ToolbarRestoring"             -> "Loading the session\[Ellipsis]",
     "ToolbarReady"                 -> "`agent` `version`",
     "ToolbarDisconnected"          -> "Disconnected",
     "ToolbarError"                 -> "Error",
@@ -429,7 +433,7 @@ defaultLabel // beginDefinition;
 
 defaultLabel[ key_String ] := Replace[
     FirstCase[
-        { $acpStrings, $acpUIStrings, $acpConnectionStrings, $acpReviewStrings },
+        { $acpStrings, $acpUIStrings, $acpConnectionStrings, $acpReviewStrings, $acpSessionsStrings },
         table_Association /; StringQ @ table[ key ] :> table[ key ],
         Missing[ ]
     ],
@@ -1819,11 +1823,14 @@ acpWorkedForLabel // beginDefinition;
 
 acpWorkedForLabel[ turn_Association ] := acpWorkedForLabel[ turn, AbsoluteTime[ ] ];
 
+(* Replayed turns (restored sessions, see Sessions.wl) have no timing: just "Worked" *)
 acpWorkedForLabel[ turn_Association, now_? NumberQ ] := Module[ { total, waiting, work },
     total   = turnDuration[ turn, now ];
     waiting = waitingDuration[ turn, now ];
     work    = Max[ 0, total - waiting ];
     Which[
+        TrueQ @ Lookup[ turn, "Replayed", False ],
+            acpLabel[ "WorkedReplayed" ],
         turn[ "Error" ] =!= None,
             acpLabel[ "FailedAfter", <| "time" -> acpFormatDuration @ total |> ],
         stoppedQ @ turn,

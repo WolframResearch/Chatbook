@@ -31,6 +31,35 @@ session/delete, session/set_config_option, session/set_mode, session/prompt
 (runs a scenario), session/cancel (notification).  Unknown requests get -32601.
 Responses from the client to the mock's own requests are matched by id.
 
+Sessions (emulating OpenCode 2.0.26 where it matters for a session list UI):
+  session/new, session/fork  ids sess-1, sess-2, ...; "updatedAt" is the creation
+                 time (ISO 8601 UTC with milliseconds, strictly increasing); the
+                 title is agent.sessionTitle ("${createdAt}" substituted; OpenCode's
+                 is "New session - ${createdAt}"), or none (the default).
+  session/list   the sessions of this process plus agent.sessions (minus deleted
+                 ones), newest "updatedAt" first (rows without one last).  "cwd"
+                 filters by exact string match (a relative cwd is -32602);
+                 agent.listPageSize > 0 pages with an opaque "nextCursor" (a bad
+                 cursor is -32602); agent.listCursorOnLastPage makes a non-empty
+                 last page carry a nextCursor too (to an empty page), as OpenCode does.
+  session/load   replays agent.histories[sessionId], else agent.history (or what
+                 recordHistory recorded), as session/update notifications, then
+                 responds, then sends available_commands_update.  A session of
+                 agent.sessions keeps its listed cwd, title and updatedAt.
+  session/resume like load, without the replay.
+  session/delete removes the session from the list (unknown ids: {} as well).
+  agent.strictSessions: load/resume/fork of an unknown (or deleted) session is
+                 -32602 "session not found", and one whose cwd differs from the
+                 session's (trailing slashes ignored) is -32602 "does not belong
+                 to cwd", like OpenCode; otherwise any id is accepted.
+  agent.recordHistory: each prompt records a user_message_chunk and its session's
+                 message/thought chunks (merged per message) and tool calls (a
+                 tool_call plus one tool_call_update with the merged final state),
+                 which a later session/load replays instead of agent.history.
+  agent.titleFromPrompt: the first prompt of a session that has no title (or the
+                 sessionTitle one) sets the title to the prompt text (50 chars).
+  Prompts, session/set_config_option and session/set_mode update "updatedAt".
+
 Selecting a scenario for a prompt
 ---------------------------------
 If the first word of the first text block of a session/prompt is
@@ -43,7 +72,9 @@ Scenario file format
     {
       "description": "free text",
       "agent":   { ...overrides of DEFAULT_AGENT (initialize result, configOptions,
-                   modes, availableCommands, history, sessions)... },
+                   modes, availableCommands, history, histories, sessions,
+                   listPageSize, listCursorOnLastPage, sessionTitle,
+                   titleFromPrompt, recordHistory, strictSessions)... },
       "methods": { "<method>": {"result": {...}} | {"error": {"code": c, "message": m}}
                                | {"steps": [...]} },
       "steps":   [ step, ... ]
@@ -86,6 +117,9 @@ Step types (every step also accepts "when" and "end"; see below):
                  a child in the mock's process group (depth 2 adds a grandchild)
   spawn_detached same, but the child gets its own session (start_new_session=True)
   mark           {"label": s}       writes an event to the wire log
+  replay         {"interval"?: 0}   replays the session's history (as session/load
+                 does), "interval" seconds between the updates; for "methods"
+                 overrides of session/load (e.g. a slow replay, or one that fails)
   exit           {"code"?: 0, "delay"?: 0}
 
 "when" makes a step conditional:
@@ -111,7 +145,9 @@ Out records are written before the bytes go to stdout.
 """
 
 import argparse
+import base64
 import copy
+import datetime
 import json
 import os
 import queue
@@ -151,20 +187,83 @@ DEFAULT_AGENT = {
               "availableModes": [{"id": "build", "name": "Build"}, {"id": "plan", "name": "Plan"}]},
     "availableCommands": [{"name": "init", "description": "guided setup"},
                           {"name": "review", "description": "review changes", "input": {"hint": "[branch]"}}],
-    # replayed by session/load (as session/update notifications for the loaded session)
+    # replayed by session/load (as session/update notifications for the loaded session), in the shape OpenCode
+    # replays a stored session: one user_message_chunk per user message (with its messageId), a tool call as a
+    # pending tool_call (with rawInput) at once followed by one tool_call_update with its final state, one
+    # agent_message_chunk per text part (with its own messageId); nothing marks the end of a turn
     "history": [
-        {"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "old question"}},
-        {"sessionUpdate": "tool_call", "toolCallId": "call_old", "title": "Read a.txt", "kind": "read",
+        {"sessionUpdate": "user_message_chunk", "messageId": "msg_old_user_1",
+         "content": {"type": "text", "text": "old question"}},
+        {"sessionUpdate": "tool_call", "toolCallId": "call_old", "name": "read", "title": "Read a.txt", "kind": "read",
          "status": "pending", "locations": [{"path": "/tmp/a.txt"}], "rawInput": {"path": "/tmp/a.txt"}},
         {"sessionUpdate": "tool_call_update", "toolCallId": "call_old", "status": "completed",
+         "locations": [{"path": "/tmp/a.txt"}],
          "content": [{"type": "content", "content": {"type": "text", "text": "old file contents"}}],
          "rawOutput": {"output": "old file contents"}},
-        {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "old answer"}},
+        {"sessionUpdate": "agent_message_chunk", "messageId": "msg_old_agent_1",
+         "content": {"type": "text", "text": "old answer"}},
     ],
+    # per-session replays, {sessionId: [update, ...]}; sessions without an entry replay "history"
+    "histories": {},
     # listed by session/list in addition to the sessions created in this process
     "sessions": [{"sessionId": "old-1", "cwd": "/tmp", "title": "Old session",
                   "updatedAt": "2026-01-01T00:00:00Z"}],
+    "listPageSize": 0,              # session/list page size; 0: everything on one page
+    "listCursorOnLastPage": False,  # a non-empty last page has a nextCursor too (OpenCode)
+    "sessionTitle": None,           # title of created sessions; "${createdAt}" is substituted
+    "titleFromPrompt": False,       # the first prompt titles an untitled session
+    "recordHistory": False,         # prompts record what session/load replays
+    "strictSessions": False,        # load/resume/fork check the session and its cwd (OpenCode)
 }
+
+# session/update kinds that recordHistory records (OpenCode replays only messages, thoughts and tool calls)
+RECORDED_UPDATES = ("user_message_chunk", "agent_message_chunk", "agent_thought_chunk", "tool_call", "tool_call_update")
+
+
+def iso_utc(ms):
+    """ISO 8601 UTC with milliseconds, like OpenCode's updatedAt: 2026-10-11T05:05:38.554Z."""
+    t = datetime.datetime.fromtimestamp(ms / 1000.0, tz=datetime.timezone.utc)
+    return t.strftime("%Y-%m-%dT%H:%M:%S.") + "%03dZ" % (ms % 1000)
+
+
+def iso_to_seconds(s):
+    """Seconds since the epoch of an ISO 8601 string, or None."""
+    if not isinstance(s, str):
+        return None
+    try:
+        t = datetime.datetime.fromisoformat(s[:-1] + "+00:00" if s.endswith("Z") else s)
+    except ValueError:
+        return None
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=datetime.timezone.utc)
+    return t.timestamp()
+
+
+def encode_cursor(offset):
+    """An opaque cursor (base64url JSON, like OpenCode's)."""
+    raw = json.dumps({"offset": offset}, separators=(",", ":")).encode("utf-8")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def decode_cursor(cursor):
+    """The offset of a cursor made by encode_cursor, or None."""
+    if not isinstance(cursor, str) or not cursor:
+        return None
+    try:
+        data = json.loads(base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4)).decode("utf-8"))
+    except Exception:
+        return None
+    offset = data.get("offset") if isinstance(data, dict) else None
+    if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+        return None
+    return offset
+
+
+def same_directory(a, b):
+    """cwd comparison of session/load: exact, except for trailing slashes (OpenCode normalizes them)."""
+    def norm(d):
+        return (d.rstrip("/") or "/") if isinstance(d, str) else d
+    return norm(a) == norm(b)
 
 
 def idkey(rid):
@@ -214,8 +313,11 @@ class Agent(object):
         self.requests = queue.Queue()
         self.next_request_id = 0
         self.pending = {}           # idkey -> {"id", "method", "response", "cancel_requested"}
-        self.sessions = {}          # sid -> {"cwd", "configOptions", "modes", "closed", "title"}
+        self.sessions = {}          # sid -> {"cwd", "configOptions", "modes", "closed", "title", "updatedAt", ...}
+        self.deleted = set()        # ids deleted with session/delete (no longer listed, not found when strict)
         self.session_counter = 0
+        self.message_counter = 0    # messageIds that recordHistory makes up
+        self.last_ms = 0            # the last updatedAt handed out (they strictly increase)
         self.cancel_counts = {}     # sid -> number of session/cancel notifications received
         self.last_activity = time.time()
         self.started = time.time()
@@ -281,7 +383,9 @@ class Agent(object):
             err["data"] = data
         self.send({"jsonrpc": "2.0", "id": rid, "error": err})
 
-    def notify_update(self, sid, update):
+    def notify_update(self, sid, update, record=True):
+        if record:
+            self.record_update(sid, update)
         self.send({"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": sid, "update": update}})
 
     # ------------------------------------------------------------ scenarios
@@ -398,12 +502,195 @@ class Agent(object):
                 self.respond_error(m.get("id"), -32603, "Internal error: " + repr(e))
 
     # ------------------------------------------------------------- methods
-    def new_session_record(self, sid, cwd):
-        rec = {"cwd": cwd, "configOptions": copy.deepcopy(self.agent_config.get("configOptions") or []),
-               "modes": copy.deepcopy(self.agent_config.get("modes")), "closed": False, "title": None}
+    def now_iso(self):
+        """The current time for "updatedAt", strictly later than the one handed out before."""
+        with self.cond:
+            ms = max(int(time.time() * 1000), self.last_ms + 1)
+            self.last_ms = ms
+        return iso_utc(ms)
+
+    def new_session_record(self, sid, cwd, listed=None):
+        """A session of this process; listed: its agent.sessions entry (keeps its cwd, title and updatedAt)."""
+        cfg = self.agent_config
+        rec = {"cwd": cwd, "configOptions": copy.deepcopy(cfg.get("configOptions") or []),
+               "modes": copy.deepcopy(cfg.get("modes")), "closed": False, "title": None,
+               "updatedAt": None, "additionalDirectories": None, "fallbackTitle": None,
+               "history": None, "prompted": False}
+        if listed is not None:
+            rec["cwd"] = listed.get("cwd", cwd)
+            rec["title"] = listed.get("title")
+            rec["updatedAt"] = listed.get("updatedAt")
+            rec["additionalDirectories"] = listed.get("additionalDirectories")
+        else:
+            rec["updatedAt"] = self.now_iso()
+            title = cfg.get("sessionTitle")
+            if isinstance(title, str):
+                rec["title"] = rec["fallbackTitle"] = title.replace("${createdAt}", rec["updatedAt"])
+            if cfg.get("recordHistory"):
+                rec["history"] = []
         with self.cond:
             self.sessions[sid] = rec
+            self.deleted.discard(sid)
         return rec
+
+    def listed_session(self, sid):
+        """The agent.sessions entry of sid, unless it was deleted."""
+        with self.cond:
+            if sid in self.deleted:
+                return None
+        return next((copy.deepcopy(e) for e in (self.agent_config.get("sessions") or [])
+                     if isinstance(e, dict) and e.get("sessionId") == sid), None)
+
+    def touch_session(self, rec):
+        rec["updatedAt"] = self.now_iso()
+
+    def session_for_load(self, rid, method, params):
+        """The record of the session that session/load|resume|fork names, or None after an error response."""
+        sid = params.get("sessionId")
+        cwd = params.get("cwd")
+        strict = self.agent_config.get("strictSessions")
+        with self.cond:
+            rec = self.sessions.get(sid)
+        if rec is None:
+            listed = self.listed_session(sid)
+            if strict and listed is None:
+                self.respond_error(rid, -32602, "Invalid params: session not found: %s" % sid, {"sessionId": sid})
+                return None
+            if strict and not same_directory(listed.get("cwd"), cwd):
+                self.respond_error(rid, -32602, "Invalid params: session %s does not belong to cwd: %s" % (sid, cwd),
+                                   {"sessionId": sid, "cwd": cwd})
+                return None
+            if method == "session/fork":
+                return listed or {"cwd": cwd}
+            return self.new_session_record(sid, cwd, listed)
+        if strict and not same_directory(rec.get("cwd"), cwd):
+            self.respond_error(rid, -32602, "Invalid params: session %s does not belong to cwd: %s" % (sid, cwd),
+                               {"sessionId": sid, "cwd": cwd})
+            return None
+        return rec
+
+    def history_of(self, sid, rec):
+        """The updates session/load replays for sid (rec: its record, or None)."""
+        cfg = self.agent_config
+        with self.cond:
+            if rec is not None and rec.get("history") is not None:
+                return copy.deepcopy(rec["history"])
+            hist = (cfg.get("histories") or {}).get(sid)
+            if hist is None:
+                hist = cfg.get("history") or []
+            hist = copy.deepcopy(hist)
+            if rec is not None and cfg.get("recordHistory"):
+                rec["history"] = copy.deepcopy(hist)  # later prompts add to it
+            return hist
+
+    def replay(self, sid, interval=0.0):
+        """Replay a session's history (session/load)."""
+        with self.cond:
+            rec = self.sessions.get(sid)
+        for update in self.history_of(sid, rec):
+            if update.get("_unfinished"):
+                continue  # a recorded tool call without a tool_call_update yet
+            self.notify_update(sid, update, record=False)
+            if interval > 0:
+                time.sleep(interval)
+
+    def new_message_id(self):
+        with self.cond:
+            self.message_counter += 1
+            return "msg_mock_%d" % self.message_counter
+
+    def record_prompt(self, sid, rec, prompt):
+        """recordHistory: the user message of a session/prompt."""
+        if rec.get("history") is None:
+            if not self.agent_config.get("recordHistory"):
+                return
+            self.history_of(sid, rec)  # starts from what a load would have replayed
+        mid = self.new_message_id()
+        with self.cond:
+            for block in prompt or []:
+                if isinstance(block, dict):
+                    rec["history"].append({"sessionUpdate": "user_message_chunk", "messageId": mid,
+                                           "content": copy.deepcopy(block)})
+
+    def record_update(self, sid, update):
+        """recordHistory: a session/update the mock sends, stored the way OpenCode replays it."""
+        if not isinstance(update, dict) or update.get("sessionUpdate") not in RECORDED_UPDATES:
+            return
+        with self.cond:
+            rec = self.sessions.get(sid)
+            hist = rec.get("history") if rec is not None else None
+            if hist is None:
+                return
+            kind = update["sessionUpdate"]
+            content = update.get("content")
+            last = hist[-1] if hist else None
+            if kind == "tool_call":
+                hist.append(copy.deepcopy(update))
+                hist.append({"sessionUpdate": "tool_call_update", "toolCallId": update.get("toolCallId"),
+                             "_unfinished": True})
+            elif kind == "tool_call_update":
+                final = next((u for u in reversed(hist) if u.get("sessionUpdate") == "tool_call_update"
+                              and u.get("toolCallId") == update.get("toolCallId")), None)
+                if final is None:
+                    hist.append(copy.deepcopy(update))
+                else:
+                    final.pop("_unfinished", None)
+                    final.update(copy.deepcopy(update))
+            elif (kind in ("agent_message_chunk", "agent_thought_chunk") and last is not None
+                  and last.get("sessionUpdate") == kind
+                  and update.get("messageId") in (None, last.get("messageId"))
+                  and isinstance(content, dict) and content.get("type") == "text"
+                  and isinstance(last.get("content"), dict) and last["content"].get("type") == "text"):
+                last["content"]["text"] = last["content"].get("text", "") + content.get("text", "")
+            else:
+                entry = copy.deepcopy(update)
+                if kind != "user_message_chunk" and "messageId" not in entry:
+                    entry["messageId"] = "msg_mock_%d" % (self.message_counter + 1)
+                    self.message_counter += 1
+                hist.append(entry)
+
+    def list_sessions(self, rid, params):
+        cfg = self.agent_config
+        cwd = params.get("cwd")
+        if cwd is not None and not (isinstance(cwd, str) and os.path.isabs(cwd)):
+            self.respond_error(rid, -32602, "Invalid params: cwd must be an absolute path: %s" % (cwd,),
+                               {"field": "cwd"})
+            return
+        cursor = params.get("cursor")
+        offset = 0
+        if cursor is not None:
+            offset = decode_cursor(cursor)
+            if offset is None:
+                self.respond_error(rid, -32602, "Invalid params: Invalid cursor", {"field": "cursor"})
+                return
+        with self.cond:
+            rows = []
+            for sid, rec in self.sessions.items():
+                row = {"sessionId": sid, "cwd": rec["cwd"] or "/"}
+                if rec.get("title") is not None:
+                    row["title"] = rec["title"]
+                if rec.get("updatedAt") is not None:
+                    row["updatedAt"] = rec["updatedAt"]
+                if rec.get("additionalDirectories"):
+                    row["additionalDirectories"] = list(rec["additionalDirectories"])
+                rows.append(row)
+            known = set(self.sessions) | self.deleted
+        rows += [copy.deepcopy(e) for e in (cfg.get("sessions") or [])
+                 if isinstance(e, dict) and e.get("sessionId") not in known]
+        if cwd is not None:
+            rows = [r for r in rows if r.get("cwd") == cwd]
+
+        def newest_first(row):
+            t = iso_to_seconds(row.get("updatedAt"))
+            return (1, 0) if t is None else (0, -t)
+        rows.sort(key=newest_first)
+        size = cfg.get("listPageSize") or 0
+        page = rows[offset:offset + size] if size > 0 else rows[offset:]
+        result = {"sessions": page}
+        end = offset + len(page)
+        if end < len(rows) or (page and cfg.get("listCursorOnLastPage")):
+            result["nextCursor"] = encode_cursor(end)
+        self.respond(rid, result)
 
     def session_state_result(self, sid, rec):
         res = {}
@@ -447,34 +734,35 @@ class Agent(object):
         elif method == "authenticate":
             self.respond(rid, {})
         elif method in ("session/new", "session/fork"):
+            source = None
+            if method == "session/fork":
+                source = self.session_for_load(rid, method, params)
+                if source is None:
+                    return
             with self.cond:
                 self.session_counter += 1
                 sid = "sess-%d" % self.session_counter
             rec = self.new_session_record(sid, params.get("cwd"))
+            if params.get("additionalDirectories"):
+                rec["additionalDirectories"] = list(params["additionalDirectories"])
+            if source is not None and rec.get("history") is not None:
+                rec["history"] = self.history_of(params.get("sessionId"), source)  # a fork copies the messages
             self.respond(rid, self.session_state_result(sid, rec))
             self.send_available_commands(sid)
         elif method in ("session/load", "session/resume"):
             sid = params.get("sessionId")
-            with self.cond:
-                rec = self.sessions.get(sid)
+            rec = self.session_for_load(rid, method, params)
             if rec is None:
-                rec = self.new_session_record(sid, params.get("cwd"))
+                return
             rec["closed"] = False
+            if params.get("additionalDirectories"):
+                rec["additionalDirectories"] = list(params["additionalDirectories"])
             if method == "session/load":
-                for update in cfg.get("history") or []:
-                    self.notify_update(sid, update)
+                self.replay(sid)
             self.respond(rid, self.session_state_result(None, rec))
             self.send_available_commands(sid)
         elif method == "session/list":
-            with self.cond:
-                mine = [{"sessionId": sid, "cwd": rec["cwd"] or "/", "title": rec["title"]}
-                        for sid, rec in self.sessions.items()]
-            for s in mine:
-                if s["title"] is None:
-                    del s["title"]
-            known = set(s["sessionId"] for s in mine)
-            extra = [s for s in (cfg.get("sessions") or []) if s.get("sessionId") not in known]
-            self.respond(rid, {"sessions": mine + extra})
+            self.list_sessions(rid, params)
         elif method == "session/close":
             with self.cond:
                 rec = self.sessions.get(params.get("sessionId"))
@@ -484,6 +772,7 @@ class Agent(object):
         elif method == "session/delete":
             with self.cond:
                 self.sessions.pop(params.get("sessionId"), None)
+                self.deleted.add(params.get("sessionId"))
             self.respond(rid, {})
         elif method == "session/set_config_option":
             self.set_config_option(rid, params)
@@ -498,6 +787,7 @@ class Agent(object):
             for opt in rec["configOptions"]:
                 if opt.get("category") == "mode":
                     opt["currentValue"] = params.get("modeId")
+            self.touch_session(rec)
             self.respond(rid, {})
         elif method == "session/prompt":
             self.start_prompt(m)
@@ -521,14 +811,15 @@ class Agent(object):
         opt["currentValue"] = value
         if opt.get("category") == "mode" and rec.get("modes"):
             rec["modes"]["currentModeId"] = value
+        self.touch_session(rec)  # OpenCode bumps updatedAt even if the value does not change
         self.respond(rid, {"configOptions": rec["configOptions"]})
 
     def start_prompt(self, m):
         params = m.get("params") or {}
         sid = params.get("sessionId")
         with self.cond:
-            known = sid in self.sessions
-        if not known:
+            rec = self.sessions.get(sid)
+        if rec is None:
             self.respond_error(m["id"], -32602, "Unknown session: %s" % sid)
             return
         text = ""
@@ -537,6 +828,13 @@ class Agent(object):
                 text = block.get("text", "")
                 break
         words = text.split()
+        self.touch_session(rec)
+        self.record_prompt(sid, rec, params.get("prompt"))
+        if (self.agent_config.get("titleFromPrompt") and not rec.get("prompted")
+                and rec.get("title") in (None, rec.get("fallbackTitle"))):
+            title = " ".join(words[1:] if words and words[0].startswith("scenario:") else words)
+            rec["title"] = title[:50] or "Untitled"
+        rec["prompted"] = True
         scenario = self.global_scenario
         if words and words[0].startswith("scenario:"):
             name = words[0][len("scenario:"):]
@@ -836,6 +1134,9 @@ class Run(object):
 
     def step_mark(self, s):
         self.agent.log.event("mark", label=s.get("label"))
+
+    def step_replay(self, s):
+        self.agent.replay(self.sid, float(s.get("interval", 0)))
 
     def step_exit(self, s):
         time.sleep(float(s.get("delay", 0)))

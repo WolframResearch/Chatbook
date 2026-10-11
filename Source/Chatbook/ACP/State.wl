@@ -439,7 +439,7 @@ publisherNeededQ[ ] := Or[
 ];
 
 publisherNeededQ[ window_Association ] := Or[
-    MemberQ[ { "Connecting", "Running" }, Lookup[ window, "Status" ] ],
+    MemberQ[ { "Connecting", "Running", "Restoring" }, Lookup[ window, "Status" ] ],
     ! MatchQ[ Lookup[ window, "Connection", None ], None | _Missing ]
 ];
 

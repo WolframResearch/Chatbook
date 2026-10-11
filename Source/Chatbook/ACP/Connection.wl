@@ -33,6 +33,10 @@ $acpStopTimeout        = 10;  (* seconds after Stop without a prompt response be
 $acpRescheduleAfter    = 15;  (* seconds after which a connection attempt that never started is scheduled again *)
 $acpMaxConnectAttempts = 3;
 $acpMCPReadyTimeout    = 90;  (* seconds after the session started after which MCP servers are assumed to be ready *)
+$acpSessionListTimeout = 30;  (* seconds to wait for a session/list page *)
+$acpSessionLoadTimeout = 60;  (* seconds to wait for the session/load response after the last replayed update *)
+$acpSessionDeleteTimeout = 30; (* seconds to wait for a session/delete response *)
+$acpAbandonedLoadExpiry = 600; (* seconds a session/load that timed out still waits for its late response *)
 $acpMaxDetailLength    = 1500;
 $acpStderrLines        = 12;
 $acpClientName         = "wolfram-chatbook";
@@ -304,10 +308,19 @@ connectionFailedRecord[ w_Association, error_ ] := <|
     "SessionID"          -> None,
     "Requests"           -> <| |>,
     "PendingPermissions" -> <| |>,
-    "MCPReady"           -> False
+    "MCPReady"           -> False,
+    "Restore"            -> loadingDropped @ w,
+    "PendingRestore"     -> None
 |>;
 
 connectionFailedRecord // endDefinition;
+
+
+(* A restore whose session is still loading ends with the connection; one that is being written is finished (the
+   replay is complete) *)
+loadingDropped // beginDefinition;
+loadingDropped[ w_Association ] := Replace[ Lookup[ w, "Restore", None ], { r_Association /; r[ "Stage" ] === "Writing" :> r, _ -> None } ];
+loadingDropped // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -447,6 +460,7 @@ onSessionUpdate // beginDefinition;
 onSessionUpdate[ nbo_, window_, params_, time_ ] := Module[ { sid, update, own },
     sid    = Lookup[ params, "sessionId", None ];
     update = Replace[ Lookup[ params, "update", <| |> ], Except[ _Association ] -> <| |> ];
+    If[ StringQ @ sid && sid === loadingSessionID @ window, Return[ onReplayUpdate[ nbo, window, update, time ], Module ] ];
     own    = StringQ @ sid && sid === Lookup[ window, "SessionID", None ];
     Switch[ Lookup[ update, "sessionUpdate", None ],
         "available_commands_update",
@@ -464,6 +478,37 @@ onSessionUpdate[ nbo_, window_, params_, time_ ] := Module[ { sid, update, own }
 ];
 
 onSessionUpdate // endDefinition;
+
+
+(* The session whose session/load is outstanding (its replay is collected, see Sessions.wl), or None *)
+loadingSessionID // beginDefinition;
+
+loadingSessionID[ window_Association ] := Replace[
+    Lookup[ window, "Restore", None ],
+    { KeyValuePattern @ { "Stage" -> "Loading", "SessionID" -> sid_String } :> sid, _ -> None }
+];
+
+loadingSessionID[ _ ] := None;
+
+loadingSessionID // endDefinition;
+
+
+(* An update of the session that is being loaded: the replayed history goes to the restore's accumulator (Sessions.wl).
+   OpenCode sends the window-level updates (commands, config options) only after the load response; commands that
+   arrive earlier are applied like the window's own, config option, mode and usage updates are left to the load
+   response. *)
+onReplayUpdate // beginDefinition;
+
+onReplayUpdate[ nbo_, window_, update_Association, time_ ] := Switch[ Lookup[ update, "sessionUpdate", None ],
+    "available_commands_update",
+        setCommands[ nbo, Lookup[ update, "availableCommands", { } ] ],
+    "config_option_update" | "current_mode_update" | "usage_update",
+        acpLog[ "ReplayUpdateIgnored", Lookup[ update, "sessionUpdate", None ] ],
+    _,
+        acpRestoreAppendUpdate[ nbo, window[ "Restore", "Token" ], update, time ]
+];
+
+onReplayUpdate // endDefinition;
 
 
 (* Updates go to the window's current turn if it belongs to that session (and is not being finalized). A tool call that
@@ -731,6 +776,19 @@ onRequestResponse[ "SetConfig", nbo_, _, info_, resp_, _ ] :=
 onRequestResponse[ "Prompt", nbo_, _, info_, resp_, time_ ] :=
     onPromptResponse[ nbo, info[ "Data", "TurnID" ], resp, time ];
 
+(* Sessions (Sessions.wl) *)
+onRequestResponse[ "SessionLoad", nbo_, conn_, info_, resp_, time_ ] :=
+    onSessionLoadResponse[ nbo, conn, info[ "Data" ], resp, time ];
+
+onRequestResponse[ "SessionList", nbo_, _, info_, resp_, time_ ] :=
+    acpSessionsOnListResponse[ nbo, info[ "Data" ], resp, time ];
+
+onRequestResponse[ "SessionDelete", nbo_, _, info_, resp_, _ ] :=
+    acpSessionsOnDeleteResponse[ nbo, info[ "Data" ], resp ];
+
+onRequestResponse[ "AbandonedLoad", nbo_, conn_, info_, resp_, _ ] :=
+    onAbandonedLoadResponse[ nbo, conn, info[ "Data" ], resp ];
+
 onRequestResponse[ "Ignore", ___ ] := Null;
 
 onRequestResponse[ kind_, ___ ] := acpLog[ "UnknownRequestKind", kind ];
@@ -742,11 +800,24 @@ onRequestResponse // endDefinition;
 (*Sessions*)
 startSession // beginDefinition;
 
-startSession[ nbo_NotebookObject, conn_ ] := Module[ { window, dir, resumeID, resumeDir, sent },
+(* session/load of a pending restore (Sessions.wl: a session of another folder, or of a window that was not connected), or
+   session/resume of the window's session, or session/new. *)
+startSession[ nbo_NotebookObject, conn_ ] := Module[ { window, dir, resumeID, resumeDir, pending, sent },
     window    = acpWindowGet @ nbo;
     dir       = Lookup[ window, "ConnectDirectory", None ];
     resumeID  = Lookup[ window, "ResumableSessionID", None ];
     resumeDir = Replace[ Lookup[ window, "ResumableDirectory", None ], Except[ _String ] -> dir ];
+    pending   = Lookup[ window, "PendingRestore", None ];
+    If[ MatchQ[ pending, KeyValuePattern @ { "SessionID" -> _String, "Cwd" -> _String } ] && ! TrueQ @ Lookup[ window, "NewSessionRequested", False ],
+        If[ acpSessionsCapabilities[ window ][ "Load" ],
+            Return[ sendSessionLoad[ nbo, conn, pending[ "SessionID" ], pending[ "Cwd" ], "Setup", None ], Module ],
+            windowUpdate[
+                nbo,
+                <| #, "PendingRestore" -> None, "Notice" -> acpConnectionLabel[ "NoticeSessionLoadUnsupported", <| "agent" -> agentDisplayName @ window |> ] |> &
+            ]
+        ]
+    ];
+    If[ AssociationQ @ pending, windowUpdate[ nbo, <| #, "PendingRestore" -> None |> & ] ];
     sent = If[ StringQ @ resumeID && resumeDir === dir && resumeCapableQ @ window && ! TrueQ @ Lookup[ window, "NewSessionRequested", False ],
         sendRequest[
             nbo,
@@ -797,7 +868,8 @@ closeCapableQ[ _ ] := False;
 closeCapableQ // endDefinition;
 
 
-(* The session exists: remember it (also in the notebook, for resuming after a kernel restart) and apply config options *)
+(* The session exists: remember it (also in the notebook, for resuming after a kernel restart) and apply config options.
+   how: "New", "Resumed" or "Loaded" (a restored session, Sessions.wl). *)
 sessionEstablished // beginDefinition;
 
 sessionEstablished[ nbo_NotebookObject, conn_, sid_String, options_, how_String, time_ ] := (
@@ -815,7 +887,8 @@ sessionEstablished[ nbo_NotebookObject, conn_, sid_String, options_, how_String,
                     "SessionStartedAt"    -> time,
                     "PendingPermissions"  -> <| |>,
                     "NewSessionRequested" -> False,
-                    "Usage"               -> If[ how === "New", None, Lookup[ w, "Usage", None ] ],
+                    "Usage"               -> If[ how === "Resumed", Lookup[ w, "Usage", None ], None ],
+                    "SessionOrigin"       -> how,
                     "ConfigAttempts"      -> <| |>
                 |>
             ]
@@ -849,7 +922,7 @@ continueConfiguration[ nbo_NotebookObject, conn_ ] := Module[ { window, step, se
             "session/set_config_option",
             <| "sessionId" -> Lookup[ window, "SessionID", None ], "configId" -> step[[ 1 ]], "value" -> step[[ 2 ]] |>,
             "Config",
-            <| "ConfigID" -> step[[ 1 ]], "Value" -> step[[ 2 ]], "Origin" -> step[[ 3 ]] |>
+            <| "ConfigID" -> step[[ 1 ]], "Value" -> step[[ 2 ]], "Origin" -> step[[ 3 ]], "SessionID" -> Lookup[ window, "SessionID", None ] |>
         ];
         If[ FailureQ @ sent, continueConfiguration[ nbo, conn ] ],
         becomeReady[ nbo, conn ]
@@ -859,30 +932,36 @@ continueConfiguration[ nbo_NotebookObject, conn_ ] := Module[ { window, step, se
 continueConfiguration // endDefinition;
 
 
-(* { configId, value, origin } or None *)
+(* { configId, value, origin } or None. A new session gets the preferred model and effort; a loaded (restored) or resumed
+   session keeps its own (set_config_option would also move it to the top of the agent's session list): only choices
+   the user made while it was being set up are applied. *)
 nextConfigStep // beginDefinition;
 
-nextConfigStep[ window_Association ] := Module[ { options, pending, attempts, prefs, settings, requested, steps },
+nextConfigStep[ window_Association ] := Module[ { options, pending, attempts, prefs, settings, requested, own, steps },
     options   = configOptionsOf @ window;
     pending   = pendingConfigOf @ window;
     attempts  = Replace[ Lookup[ window, "ConfigAttempts", <| |> ], Except[ _Association ] -> <| |> ];
     prefs     = Replace[ Lookup[ window, "AgentPreferences", <| |> ], Except[ _Association ] -> <| |> ];
     settings  = settingsOf @ window;
     requested = Replace[ Lookup[ window, "UserModel", None ], Except[ _String ] :> Lookup[ settings, "ACPModel", None ] ];
+    own       = MemberQ[ { "Loaded", "Resumed" }, Lookup[ window, "SessionOrigin", None ] ];
     steps = {
         configTarget[
             acpFindConfigOption[ options, "model" ],
             pending,
-            acpPreferredModel[
-                options,
-                <|
-                    "Requested"    -> requested,
-                    "LastUsed"     -> Lookup[ prefs, "LastModel", None ],
-                    "FailedModels" -> failedModelsOf @ window
-                |>
+            If[ own,
+                None,
+                acpPreferredModel[
+                    options,
+                    <|
+                        "Requested"    -> requested,
+                        "LastUsed"     -> Lookup[ prefs, "LastModel", None ],
+                        "FailedModels" -> failedModelsOf @ window
+                    |>
+                ]
             ]
         ],
-        configTarget[ acpFindConfigOption[ options, "thought_level" ], pending, Lookup[ prefs, "LastEffort", None ] ],
+        configTarget[ acpFindConfigOption[ options, "thought_level" ], pending, If[ own, None, Lookup[ prefs, "LastEffort", None ] ] ],
         configTarget[ acpFindConfigOption[ options, "mode" ], pending, None ]
     };
     FirstCase[ steps, step: { id_String, value_, _ } /; Lookup[ attempts, id, Missing[ ] ] =!= value :> step, None ]
@@ -917,22 +996,26 @@ offeredQ // endDefinition;
 
 becomeReady // beginDefinition;
 
-becomeReady[ nbo_NotebookObject, conn_ ] := windowUpdate[
-    nbo,
-    Function[ w,
-        If[ Lookup[ w, "Connection", None ] =!= conn,
-            w,
-            <|
+(* A restored session stays "Restoring" until its turns are written (Sessions.wl's acpRestoreWriteStep) *)
+becomeReady[ nbo_NotebookObject, conn_ ] := (
+    windowUpdate[
+        nbo,
+        Function[ w,
+            If[ Lookup[ w, "Connection", None ] =!= conn,
                 w,
-                "Status"          -> If[ runningTurnQ @ w, "Running", "Ready" ],
-                "ConnectToken"    -> None,
-                "ConnectAttempts" -> 0,
-                "PendingConfig"   -> <| |>,
-                "Error"           -> None
-            |>
+                <|
+                    w,
+                    "Status"          -> Which[ AssociationQ @ Lookup[ w, "Restore", None ], "Restoring", runningTurnQ @ w, "Running", True, "Ready" ],
+                    "ConnectToken"    -> None,
+                    "ConnectAttempts" -> 0,
+                    "PendingConfig"   -> <| |>,
+                    "Error"           -> None
+                |>
+            ]
         ]
-    ]
-];
+    ];
+    acpSessionsMarkStale @ nbo
+);
 
 becomeReady // endDefinition;
 
@@ -941,33 +1024,39 @@ becomeReady // endDefinition;
 (*Config option responses*)
 
 (* Updates the config options from a session/set_config_option response. A value the user chose is persisted per
-   agent (model and effort; not mode). A failed model is marked as failed for this session. *)
+   agent (model and effort; not mode). A failed model is marked as failed for this session. The response to a request
+   for a session the window has left meanwhile (a session restored on the same connection, Sessions.wl) only records
+   the user's choice as a preference: the window's options, pending values and notice are the new session's. *)
 applyConfigResponse // beginDefinition;
 
-applyConfigResponse[ nbo_NotebookObject, data_Association, resp_Association ] := Module[ { window, id, value, user, category },
+applyConfigResponse[ nbo_NotebookObject, data_Association, resp_Association ] := Module[ { window, id, value, user, own, category },
     window   = acpWindowGet @ nbo;
     id       = Lookup[ data, "ConfigID", None ];
     value    = Lookup[ data, "Value", None ];
     user     = Lookup[ data, "Origin", None ] === "User";
+    own      = currentSessionRequestQ[ window, data ];
     category = Lookup[ Replace[ SelectFirst[ configOptionsOf @ window, Lookup[ #, "id", None ] === id &, <| |> ], Except[ _Association ] -> <| |> ], "category", None ];
+    If[ ! own, acpLog[ "StaleConfigResponse", <| "ConfigID" -> id, "SessionID" -> Lookup[ data, "SessionID", None ] |> ] ];
 
     If[ TrueQ @ resp[ "Error" ],
         If[ category === "model" && StringQ @ value, markModelFailed[ nbo, value ] ];
         acpLog[ "ConfigOptionFailed", <| "ConfigID" -> id, "Value" -> value, "Message" -> resp[ "Message" ] |> ];
-        windowUpdate[
-            nbo,
-            Function[ w,
-                <|
-                    w,
-                    "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, id, value ],
-                    If[ user,
-                        "Notice" -> acpConnectionLabel[
-                            "NoticeConfigOptionFailed",
-                            <| "option" -> configOptionName[ w, id ], "message" -> Replace[ resp[ "Message" ], Except[ _String ] -> "" ] |>
-                        ],
-                        Nothing
-                    ]
-                |>
+        If[ own,
+            windowUpdate[
+                nbo,
+                Function[ w,
+                    <|
+                        w,
+                        "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, id, value ],
+                        If[ user,
+                            "Notice" -> acpConnectionLabel[
+                                "NoticeConfigOptionFailed",
+                                <| "option" -> configOptionName[ w, id ], "message" -> Replace[ resp[ "Message" ], Except[ _String ] -> "" ] |>
+                            ],
+                            Nothing
+                        ]
+                    |>
+                ]
             ]
         ],
 
@@ -976,14 +1065,17 @@ applyConfigResponse[ nbo_NotebookObject, data_Association, resp_Association ] :=
             Function[ w,
                 <|
                     w,
-                    "ConfigOptions" -> Replace[
-                        Lookup[ resp[ "Result" ], "configOptions", None ],
-                        {
-                            o_List :> Select[ o, AssociationQ ],
-                            _ :> setOptionValue[ configOptionsOf @ w, id, value ]
-                        }
+                    If[ own,
+                        "ConfigOptions" -> Replace[
+                            Lookup[ resp[ "Result" ], "configOptions", None ],
+                            {
+                                o_List :> Select[ o, AssociationQ ],
+                                _ :> setOptionValue[ configOptionsOf @ w, id, value ]
+                            }
+                        ],
+                        Nothing
                     ],
-                    "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, id, value ],
+                    If[ own, "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, id, value ], Nothing ],
                     If[ user && category === "model", "UserModel" -> value, Nothing ],
                     (* a model the user picks again gets another chance *)
                     If[ user && category === "model" && StringQ @ value, "FailedModels" -> DeleteCases[ failedModelsOf @ w, value ], Nothing ],
@@ -1001,6 +1093,13 @@ applyConfigResponse // endDefinition;
 dropPendingValue // beginDefinition;
 dropPendingValue[ pending_Association, id_, value_ ] := If[ Lookup[ pending, id, Missing[ ] ] === value, KeyDrop[ pending, { id } ], pending ];
 dropPendingValue // endDefinition;
+
+
+(* Whether a config request was for the window's current session (requests without a session are) *)
+currentSessionRequestQ // beginDefinition;
+currentSessionRequestQ[ window_Association, data_Association ] := ! StringQ @ Lookup[ data, "SessionID", None ] || data[ "SessionID" ] === Lookup[ window, "SessionID", None ];
+currentSessionRequestQ[ _, _ ] := True;
+currentSessionRequestQ // endDefinition;
 
 
 setOptionValue // beginDefinition;
@@ -1190,7 +1289,9 @@ onAgentExited[ nbo_NotebookObject, conn_, failure_ ] := Module[ { window, info, 
                     "SessionID"          -> None,
                     "Requests"           -> <| |>,
                     "PendingPermissions" -> <| |>,
-                    "MCPReady"           -> False
+                    "MCPReady"           -> False,
+                    "Restore"            -> loadingDropped @ w,
+                    "PendingRestore"     -> None
                 |>
             ]
         ]
@@ -1571,6 +1672,217 @@ acpNewSession // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Restoring sessions*)
+
+(* session/load for Sessions.wl's acpRestoreSession: the window's connection loads another session of the same folder
+   (mode "SameConnection"; startSession sends it in mode "Setup" instead of a new session). The window is "Restoring"
+   while the replay arrives (onReplayUpdate collects it) and while the turns are written; the session it showed stays
+   attached until the load succeeds. *)
+acpLoadSession // beginDefinition;
+
+acpLoadSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Module[ { window, conn, previous },
+    window   = acpWindowGet @ nbo;
+    conn     = Lookup[ window, "Connection", None ];
+    previous = Lookup[ window, "SessionID", None ];
+    If[ ! acpConnectionQ @ conn || ! StringQ @ previous, Throw @ Failure[ "NotConnected", <| |> ] ];
+    sendSessionLoad[ nbo, conn, sid, cwd, "SameConnection", previous ]
+];
+
+acpLoadSession // endDefinition;
+
+
+(* Sends session/load with the session's own listed cwd (unchanged: OpenCode requires its exact directory) and the same
+   MCP servers as session/new. Safe in reader handlers (startSession). *)
+sendSessionLoad // beginDefinition;
+
+sendSessionLoad[ nbo_NotebookObject, conn_, sid_String, cwd_String, mode_String, previous_ ] := Module[ { token, data, sent },
+    token = CreateUUID[ "restore-" ];
+    data  = <| "SessionID" -> sid, "Token" -> token, "Mode" -> mode |>;
+    windowUpdate[
+        nbo,
+        <|
+            #,
+            "Status"         -> "Restoring",
+            "PendingRestore" -> None,
+            "Notice"         -> None,
+            (* On the window's connection the pending config values are changes of the session that is left (sent, not
+               answered yet): they must not be applied to the loaded session (nextConfigStep). Values chosen while it
+               loads are applied to it. *)
+            If[ mode === "SameConnection", "PendingConfig" -> <| |>, Nothing ],
+            "Restore"        -> acpNewRestore @ <|
+                "SessionID"         -> sid,
+                "Cwd"               -> cwd,
+                "Token"             -> token,
+                "Mode"              -> mode,
+                "PreviousSessionID" -> previous
+            |>
+        |> &
+    ];
+    sent = sendRequest[ nbo, conn, "session/load", <| "sessionId" -> sid, "cwd" -> cwd, "mcpServers" -> { } |>, "SessionLoad", data ];
+    If[ FailureQ @ sent,
+        sessionLoadFailed[ nbo, conn, data, acpErrorInfo[ "SendFailed", None, None, <| "Agent" -> agentDisplayName @ acpWindowGet @ nbo |> ] ]
+    ];
+    sent
+];
+
+sendSessionLoad // endDefinition;
+
+
+(* The load response: the replay is complete (OpenCode sends it before the response) *)
+onSessionLoadResponse // beginDefinition;
+
+onSessionLoadResponse[ nbo_NotebookObject, conn_, data_Association, resp_Association, time_ ] := Module[ { window, restore, sid },
+    window  = acpWindowGet @ nbo;
+    restore = Lookup[ window, "Restore", None ];
+    sid     = Lookup[ data, "SessionID", None ];
+    Which[
+        ! AssociationQ @ restore || restore[ "Token" ] =!= data[ "Token" ],
+            (* the restore was given up meanwhile: the session must not stay attached *)
+            acpLog[ "StaleSessionLoad", <| "SessionID" -> sid |> ];
+            If[ ! TrueQ @ resp[ "Error" ] && StringQ @ sid && sid =!= Lookup[ window, "SessionID", None ] && closeCapableQ @ window,
+                sendWithoutContinuation[ conn, "session/close", <| "sessionId" -> sid |> ]
+            ],
+        TrueQ @ resp[ "Error" ],
+            sessionLoadFailed[ nbo, conn, data, responseError[ window, resp, "SessionFailed" ] ],
+        True,
+            sessionLoaded[ nbo, conn, data, restore, resp[ "Result" ], time ]
+    ]
+];
+
+onSessionLoadResponse // endDefinition;
+
+
+(* The late response of a load that timed out (checkRequestTimeouts): the agent attached the session after all, so it is
+   closed again (unless the window shows or loads it by now) *)
+onAbandonedLoadResponse // beginDefinition;
+
+onAbandonedLoadResponse[ nbo_NotebookObject, conn_, data_Association, resp_Association ] := Module[ { window, sid },
+    window = acpWindowGet @ nbo;
+    sid    = Lookup[ data, "SessionID", None ];
+    acpLog[ "AbandonedLoadResponse", <| "SessionID" -> sid, "Error" -> TrueQ @ resp[ "Error" ] |> ];
+    If[ And[
+            ! TrueQ @ resp[ "Error" ],
+            StringQ @ sid,
+            ! MemberQ[ { Lookup[ window, "SessionID", None ], loadingSessionID @ window }, sid ],
+            closeCapableQ @ window
+        ],
+        sendWithoutContinuation[ conn, "session/close", <| "sessionId" -> sid |> ]
+    ];
+    Null
+];
+
+onAbandonedLoadResponse // endDefinition;
+
+
+(* The session is the window's now (with the config options of the load response: nothing is re-applied, see
+   nextConfigStep); the session that was left is closed; the turns are written by the pump (Sessions.wl). *)
+sessionLoaded // beginDefinition;
+
+sessionLoaded[ nbo_NotebookObject, conn_, data_Association, restore_Association, result_Association, time_ ] := Module[ { window, previous },
+    window = acpWindowGet @ nbo;
+    windowUpdate[
+        nbo,
+        Function[ w,
+            If[ AssociationQ @ Lookup[ w, "Restore", None ] && w[ "Restore", "Token" ] === data[ "Token" ],
+                <| w, "Restore" -> <| w[ "Restore" ], "Stage" -> "Writing", "LoadedAt" -> time, "StepAt" -> time |>, "Turns" -> { } |>,
+                w
+            ]
+        ]
+    ];
+    sessionEstablished[ nbo, conn, data[ "SessionID" ], Lookup[ result, "configOptions", None ], "Loaded", time ];
+    previous = restore[ "PreviousSessionID" ];
+    If[ data[ "Mode" ] === "SameConnection" && StringQ @ previous && previous =!= data[ "SessionID" ] && closeCapableQ @ window,
+        sendWithoutContinuation[ conn, "session/close", <| "sessionId" -> previous |> ]
+    ];
+    With[ { token = data[ "Token" ] }, acpSchedule @ acpRestoreWriteStep[ nbo, token ] ];
+    acpSessionsMarkStale @ nbo
+];
+
+sessionLoaded // endDefinition;
+
+
+(* The load failed (error response, timeout, write failure). On the window's connection, the window goes back to the
+   session it showed (the transcript was not touched) and shows the error; while connecting, it continues with the
+   session it would have used without the restore (resume, or a new session) and shows the error. error is an
+   acpErrorInfo record. *)
+sessionLoadFailed // beginDefinition;
+
+sessionLoadFailed[ nbo_NotebookObject, conn_, data_Association, error_ ] := Module[ { window, restore, notice, current = False },
+    window  = acpWindowGet @ nbo;
+    restore = Lookup[ window, "Restore", None ];
+    If[ ! AssociationQ @ restore || restore[ "Token" ] =!= data[ "Token" ], Return[ Null, Module ] ];
+    notice = acpConnectionLabel[ "NoticeSessionLoadFailed", <| "message" -> loadErrorMessage @ error |> ];
+    acpLog[ "SessionLoadFailed", <| "Code" -> Lookup[ Replace[ error, Except[ _Association ] -> <| |> ], "Code", None ], "Mode" -> data[ "Mode" ] |> ];
+    windowUpdate[
+        nbo,
+        Function[ w,
+            If[ AssociationQ @ Lookup[ w, "Restore", None ] && w[ "Restore", "Token" ] === data[ "Token" ],
+                current = True;
+                <|
+                    w,
+                    "Restore" -> None,
+                    "Notice"  -> notice,
+                    "Status"  -> Which[
+                        data[ "Mode" ] =!= "SameConnection", "Connecting",
+                        ! acpConnectionQ @ Lookup[ w, "Connection", None ], w[ "Status" ],
+                        runningTurnQ @ w, "Running",
+                        True, "Ready"
+                    ]
+                |>,
+                w
+            ]
+        ]
+    ];
+    If[ current && data[ "Mode" ] =!= "SameConnection" && acpConnectionQ @ conn && acpWindowGet[ nbo, "Connection", None ] === conn,
+        startSession[ nbo, conn ]
+    ];
+    acpSessionsMarkStale @ nbo
+];
+
+sessionLoadFailed // endDefinition;
+
+
+(* The agent's own message if there is one (e.g. "session not found"), else the friendly one; neutralized *)
+loadErrorMessage // beginDefinition;
+
+loadErrorMessage[ error_Association ] := acpNeutralizeLinearSyntax @ StringTake[
+    SelectFirst[ Lookup[ error, { "Detail", "Message" }, None ], StringQ[ # ] && StringLength[ # ] > 0 &, "" ],
+    UpTo[ 500 ]
+];
+
+loadErrorMessage[ _ ] := "";
+
+loadErrorMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Listing and deleting sessions*)
+
+(* session/list (all folders: no cwd; cursor for later pages) and session/delete for Sessions.wl; the responses go to
+   acpSessionsOnListResponse / acpSessionsOnDeleteResponse. Give the request ID or a Failure. *)
+acpSendSessionList // beginDefinition;
+
+acpSendSessionList[ nbo_NotebookObject, conn_, token_String, cursor_, page_Integer ] := sendRequest[
+    nbo,
+    conn,
+    "session/list",
+    If[ StringQ @ cursor, <| "cursor" -> cursor |>, <| |> ],
+    "SessionList",
+    <| "Token" -> token, "Page" -> page |>
+];
+
+acpSendSessionList // endDefinition;
+
+
+acpSendSessionDelete // beginDefinition;
+
+acpSendSessionDelete[ nbo_NotebookObject, conn_, sid_String ] :=
+    sendRequest[ nbo, conn, "session/delete", <| "sessionId" -> sid |>, "SessionDelete", <| "SessionID" -> sid |> ];
+
+acpSendSessionDelete // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*acpSetConfigOption*)
 
 (* Model/mode/effort menus (preemptive): the value is recorded in "PendingConfig" (the menus show it at once) and sent
@@ -1584,7 +1896,9 @@ acpSetConfigOption[ nbo_NotebookObject, configID_String, value_ ] := Catch @ Mod
     windowUpdate[ nbo, Function[ w, <| w, "PendingConfig" -> Append[ pendingConfigOf @ w, configID -> value ] |> ] ];
     conn = Lookup[ window, "Connection", None ];
     sid  = Lookup[ window, "SessionID", None ];
-    If[ ! acpConnectionQ @ conn || ! StringQ @ sid || StringQ @ Lookup[ window, "ConnectToken", None ],
+    (* Applied when the session is set up, or loaded: while a restored session loads, the session the window shows is
+       about to be replaced; once it is loaded (its turns are being written) it is the window's session *)
+    If[ ! acpConnectionQ @ conn || ! StringQ @ sid || StringQ @ Lookup[ window, "ConnectToken", None ] || restoreLoadingQ[ window, sid ],
         Throw @ "Pending"
     ];
     sent = sendRequest[
@@ -1593,7 +1907,7 @@ acpSetConfigOption[ nbo_NotebookObject, configID_String, value_ ] := Catch @ Mod
         "session/set_config_option",
         <| "sessionId" -> sid, "configId" -> configID, "value" -> value |>,
         "SetConfig",
-        <| "ConfigID" -> configID, "Value" -> value, "Origin" -> "User" |>
+        <| "ConfigID" -> configID, "Value" -> value, "Origin" -> "User", "SessionID" -> sid |>
     ];
     If[ FailureQ @ sent,
         windowUpdate[ nbo, Function[ w, <| w, "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, configID, value ] |> ] ];
@@ -1604,18 +1918,27 @@ acpSetConfigOption[ nbo_NotebookObject, configID_String, value_ ] := Catch @ Mod
 
 acpSetConfigOption // endDefinition;
 
+
+restoreLoadingQ // beginDefinition;
+restoreLoadingQ[ window_Association, sid_ ] := MatchQ[ Lookup[ window, "Restore", None ], r_Association /; r[ "Stage" ] =!= "Writing" || r[ "SessionID" ] =!= sid ];
+restoreLoadingQ // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*acpSetProjectDirectory*)
 
 (* Changing the project directory (preemptive UI action) is a new chat in the new directory: disconnect, clear the
    transcript, store the directory (window record, notebook TaggingRules, persisted last directory) and reconnect.
-   Refused while a turn is running (the UI disables the chooser). *)
+   Refused while a turn is running (the UI disables the chooser). extra: keys for the reset window record, e.g. the
+   "PendingRestore" of a session restored from another folder (Sessions.wl), which the new connection then loads
+   instead of creating a new session. *)
 acpSetProjectDirectory // beginDefinition;
 
-acpSetProjectDirectory[ nbo_NotebookObject, File[ dir_String ] ] := acpSetProjectDirectory[ nbo, dir ];
+acpSetProjectDirectory[ nbo_NotebookObject, dir_ ] := acpSetProjectDirectory[ nbo, dir, <| |> ];
 
-acpSetProjectDirectory[ nbo_NotebookObject, dir0_ ] := Catch @ Module[ { window, dir },
+acpSetProjectDirectory[ nbo_NotebookObject, File[ dir_String ], extra_Association ] := acpSetProjectDirectory[ nbo, dir, extra ];
+
+acpSetProjectDirectory[ nbo_NotebookObject, dir0_, extra_Association ] := Catch @ Module[ { window, dir },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
     dir = If[ StringQ @ dir0, Quiet @ ExpandFileName @ StringTrim @ dir0, None ];
@@ -1641,7 +1964,10 @@ acpSetProjectDirectory[ nbo_NotebookObject, dir0_ ] := Catch @ Module[ { window,
                 "ResumableDirectory" -> None,
                 "Usage"              -> None,
                 "ConfigOptions"      -> { },
-                "PendingConfig"      -> <| |>
+                "PendingConfig"      -> <| |>,
+                "Restore"            -> None,
+                "PendingRestore"     -> None,
+                extra
             |>
         ]
     ];
@@ -1719,7 +2045,8 @@ acpDisconnect[ nbo_NotebookObject, reason_ ] := Catch @ Module[ { window, conn, 
                 "SessionID"          -> None,
                 "Requests"           -> <| |>,
                 "PendingPermissions" -> <| |>,
-                "MCPReady"           -> False
+                "MCPReady"           -> False,
+                "Restore"            -> loadingDropped @ w
             |>
         ]
     ];
@@ -1879,24 +2206,97 @@ checkStopTimeout // endDefinition;
 
 checkRequestTimeouts // beginDefinition;
 
-checkRequestTimeouts[ nbo_, window_, now_ ] := Module[ { requests, conn, setupLate, configLate },
+checkRequestTimeouts[ nbo_, window_, now_ ] := Module[
+    { requests, conn, setupLate, configLate, loadLate, listLate, deleteLate, abandoned, timeout },
     requests   = requestsOf @ window;
     conn       = Lookup[ window, "Connection", None ];
     setupLate  = Select[ requests, MatchQ[ #[ "Kind" ], $$setupRequestKind ] && now - #[ "SentAt" ] > $acpConnectTimeout & ];
     configLate = Select[ requests, #[ "Kind" ] === "SetConfig" && now - #[ "SentAt" ] > $acpConfigTimeout & ];
+    (* a long replay arrives over many reader ticks: the load times out after its last replayed update *)
+    loadLate   = Select[ requests, #[ "Kind" ] === "SessionLoad" && now - Max[ #[ "SentAt" ], replayActivity[ window, #[ "Data" ] ] ] > $acpSessionLoadTimeout & ];
+    listLate   = Select[ requests, #[ "Kind" ] === "SessionList" && now - #[ "SentAt" ] > $acpSessionListTimeout & ];
+    deleteLate = Select[ requests, #[ "Kind" ] === "SessionDelete" && now - #[ "SentAt" ] > $acpSessionDeleteTimeout & ];
+    abandoned  = Select[ requests, #[ "Kind" ] === "AbandonedLoad" && now - #[ "SentAt" ] > $acpAbandonedLoadExpiry & ];
+    timeout    = acpErrorInfo[ "Timeout", None, None, <| "Agent" -> agentDisplayName @ window |> ];
     If[ Length @ setupLate > 0 && acpConnectionQ @ conn,
-        failConnection[ nbo, conn, acpErrorInfo[ "Timeout", None, None, <| "Agent" -> agentDisplayName @ window |> ] ]
+        failConnection[ nbo, conn, timeout ]
     ];
     KeyValueMap[
         Function[ { id, info },
             dropRequest[ nbo, id ];
-            windowUpdate[ nbo, Function[ w, <| w, "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, info[ "Data", "ConfigID" ], info[ "Data", "Value" ] ] |> ] ]
+            windowUpdate[
+                nbo,
+                Function[ w,
+                    If[ currentSessionRequestQ[ w, info[ "Data" ] ],
+                        <| w, "PendingConfig" -> dropPendingValue[ pendingConfigOf @ w, info[ "Data", "ConfigID" ], info[ "Data", "Value" ] ] |>,
+                        w
+                    ]
+                ]
+            ]
         ],
         configLate
+    ];
+    (* A load that times out fails like one with an error response (sessionLoadFailed): on the window's connection the
+       window goes back to the session it showed; during the connection setup it continues with the session it would
+       have used without the restore (whose own setup timeout still catches an agent that hangs). The request is kept
+       as "AbandonedLoad", so that a late successful response closes the session it attached. *)
+    KeyValueMap[
+        Function[ { id, info },
+            abandonLoadRequest[ nbo, id, now ];
+            acpLog[ "SessionLoadTimeout", <| "Mode" -> info[ "Data", "Mode" ] |> ];
+            sessionLoadFailed[ nbo, conn, info[ "Data" ], timeout ]
+        ],
+        loadLate
+    ];
+    KeyValueMap[ dropRequest[ nbo, #1 ] &, abandoned ];
+    KeyValueMap[
+        Function[ { id, info },
+            dropRequest[ nbo, id ];
+            acpSessionsListFailed[ nbo, info[ "Data", "Token" ], <| "Code" -> "Timeout", "Message" -> timeout[ "Message" ] |> ]
+        ],
+        listLate
+    ];
+    KeyValueMap[
+        Function[ { id, info },
+            dropRequest[ nbo, id ];
+            acpSessionsDeleteFailed[ nbo, info[ "Data", "SessionID" ], acpConnectionLabel[ "SessionsDeleteFailed", <| "message" -> timeout[ "Message" ] |> ] ]
+        ],
+        deleteLate
     ]
 ];
 
 checkRequestTimeouts // endDefinition;
+
+
+(* The record of a load request that timed out stays (kind "AbandonedLoad", counted from now for its expiry) *)
+abandonLoadRequest // beginDefinition;
+
+abandonLoadRequest[ nbo_NotebookObject, id_, now_ ] := windowUpdate[
+    nbo,
+    Function[ w,
+        With[ { requests = requestsOf @ w },
+            If[ KeyExistsQ[ requests, id ],
+                <| w, "Requests" -> <| requests, id -> <| requests[ id ], "Kind" -> "AbandonedLoad", "SentAt" -> now |> |> |>,
+                w
+            ]
+        ]
+    ]
+];
+
+abandonLoadRequest // endDefinition;
+
+
+(* When the restore of a load request last made progress (its last replayed update) *)
+replayActivity // beginDefinition;
+
+replayActivity[ window_Association, data_Association ] := Replace[
+    Lookup[ window, "Restore", None ],
+    { r: KeyValuePattern @ { "Token" -> t_, "LastUpdateAt" -> time_? NumberQ } /; t === Lookup[ data, "Token", None ] :> time, _ -> 0 }
+];
+
+replayActivity[ _, _ ] := 0;
+
+replayActivity // endDefinition;
 
 
 checkStuckConnect // beginDefinition;
@@ -2319,14 +2719,21 @@ agentDisplayName[ _ ] := "OpenCode";
 agentDisplayName // endDefinition;
 
 
+(* The agent's name and version from its initialize response: text the agent chose, shown in labels, the toolbar and
+   error messages, so it is neutralized here, once (acpNeutralizeLinearSyntax) *)
 agentInfoOf // beginDefinition;
 
 agentInfoOf[ info_Association, window_ ] := <|
-    "Name"    -> Replace[ Lookup[ info, "title", None ], Except[ _String ] :> Replace[ Lookup[ info, "name", None ], Except[ _String ] :> agentDisplayName @ window ] ],
-    "Version" -> Replace[ Lookup[ info, "version", "" ], Except[ _String ] -> "" ]
+    "Name"    -> agentText @ Replace[ Lookup[ info, "title", None ], Except[ _String ] :> Replace[ Lookup[ info, "name", None ], Except[ _String ] :> agentDisplayName @ window ] ],
+    "Version" -> agentText @ Replace[ Lookup[ info, "version", "" ], Except[ _String ] -> "" ]
 |>;
 
 agentInfoOf // endDefinition;
+
+
+agentText // beginDefinition;
+agentText[ s_String ] := acpNeutralizeLinearSyntax @ StringTake[ s, UpTo[ 200 ] ];
+agentText // endDefinition;
 
 
 (* The association inside ACPNotification[...], ACPRequest[...], ACPResponse[...] or JSONRPCProcessRequest[...] *)

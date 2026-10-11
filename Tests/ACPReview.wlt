@@ -418,12 +418,15 @@ VerificationTest[
         (* no "+" menu, no visible insertion line (drawn in the background color), no horizontal scroll bar *)
         nbOption[ $nb, CellInsertionPointCell ],
         nbOption[ $nb, CellInsertionPointColor ] === FirstCase[ nbOption[ $nb, StyleDefinitions ], Cell[ StyleData[ "Notebook" ], ___, Background -> bg_, ___ ] :> bg, None, Infinity ],
-        nbOption[ $nb, WindowElements ]
+        nbOption[ $nb, WindowElements ],
+        (* deployed and not a user notebook for the Notebook Assistant; the text of the cells stays selectable *)
+        nbOption[ $nb, Deployed ],
+        FirstCase[ nbOption[ $nb, StyleDefinitions ], Cell[ StyleData[ "ACPReviewBase" ], ___, Deployed -> d_, ___ ] :> d, None, Infinity ]
     },
     {
         Notebook,
         "Changes \[LongDash] repo",
-        <| "ACPReview" -> <| "Owner" -> $owner, "Directory" -> "/repo" |> |>,
+        <| "ACPReview" -> <| "Owner" -> $owner, "Directory" -> "/repo" |>, "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |> |>,
         { False, False, False, Manual, False, _String },
         { _Integer, _Integer },
         False,
@@ -431,10 +434,12 @@ VerificationTest[
         True,
         None,
         True,
-        { "VerticalScrollBar", "MagnificationPopUp" }
+        { "VerticalScrollBar", "MagnificationPopUp" },
+        True,
+        False
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Options@@Tests/ACPReview.wlt:408,1-438,2"
+    TestID   -> "Notebook-Options@@Tests/ACPReview.wlt:408,1-443,2"
 ]
 
 VerificationTest[
@@ -457,7 +462,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Cells@@Tests/ACPReview.wlt:440,1-461,2"
+    TestID   -> "Notebook-Cells@@Tests/ACPReview.wlt:445,1-466,2"
 ]
 
 (* Every icon TemplateBox has its style in the private stylesheet, which holds the icon boxes *)
@@ -469,7 +474,7 @@ VerificationTest[
     ],
     { { }, { }, { "ACPReviewIconDirectory", "ACPReviewIconExtBIN", "ACPReviewIconTXT" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-IconStyles@@Tests/ACPReview.wlt:464,1-473,2"
+    TestID   -> "Notebook-IconStyles@@Tests/ACPReview.wlt:469,1-478,2"
 ]
 
 (* The file list: a jump link per file (run by the front end) to the file's cell *)
@@ -484,7 +489,7 @@ VerificationTest[
     ],
     { Table[ "ACPReviewFile-" <> ToString @ i, { i, 15 } ], True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileList@@Tests/ACPReview.wlt:476,1-488,2"
+    TestID   -> "Notebook-FileList@@Tests/ACPReview.wlt:481,1-493,2"
 ]
 
 (* The jump links: a tooltip, and underlined under the mouse like the Open links. The Mouseover is outside the buttons
@@ -505,7 +510,7 @@ VerificationTest[
     ],
     { 15, { 1 }, { True }, True, 15, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileListLinks@@Tests/ACPReview.wlt:492,1-509,2"
+    TestID   -> "Notebook-FileListLinks@@Tests/ACPReview.wlt:497,1-514,2"
 ]
 
 (* The line counts in the list are spaced like in the cards (a Row with a " " separator showed "+1\[Minus]1") *)
@@ -528,7 +533,7 @@ VerificationTest[
         { { "Columns" -> { { 0.5 } }, "Rows" -> { { 0 } } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileListCounts@@Tests/ACPReview.wlt:512,1-532,2"
+    TestID   -> "Notebook-FileListCounts@@Tests/ACPReview.wlt:517,1-537,2"
 ]
 
 (* Files are listed in natural path order in the list and in the cards: folder by folder, ignoring case, numbers by
@@ -556,7 +561,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileOrder@@Tests/ACPReview.wlt:536,1-560,2"
+    TestID   -> "Notebook-FileOrder@@Tests/ACPReview.wlt:541,1-565,2"
 ]
 
 (* Status badges and notes *)
@@ -596,7 +601,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-StatusesAndNotes@@Tests/ACPReview.wlt:563,1-600,2"
+    TestID   -> "Notebook-StatusesAndNotes@@Tests/ACPReview.wlt:568,1-605,2"
 ]
 
 (* Diffs: git's hunks, where a removed "-- comment" line ("--- ..." in the patch) is content; untracked text files as
@@ -615,7 +620,7 @@ VerificationTest[
     ],
     { True, True, False, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Diffs@@Tests/ACPReview.wlt:604,1-619,2"
+    TestID   -> "Notebook-Diffs@@Tests/ACPReview.wlt:609,1-624,2"
 ]
 
 (* Diffs in the cards fill the card's width and have line numbers from the hunk headers; deleted files have only old
@@ -638,7 +643,7 @@ VerificationTest[
         { Full }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-DiffLineNumbers@@Tests/ACPReview.wlt:623,1-642,2"
+    TestID   -> "Notebook-DiffLineNumbers@@Tests/ACPReview.wlt:628,1-647,2"
 ]
 
 (* Open links for every file but deleted ones; WL files open in the front end, others in their application or folder *)
@@ -654,7 +659,7 @@ VerificationTest[
     ],
     { 14, { FileNameJoin @ { "/repo", "gone.txt" } }, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenLinks@@Tests/ACPReview.wlt:645,1-658,2"
+    TestID   -> "Notebook-OpenLinks@@Tests/ACPReview.wlt:650,1-663,2"
 ]
 
 (* Cards start open, except binary files *)
@@ -665,7 +670,7 @@ VerificationTest[
     },
     { 15, { "data.bin", "img.bin" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenersSmall@@Tests/ACPReview.wlt:661,1-669,2"
+    TestID   -> "Notebook-OpenersSmall@@Tests/ACPReview.wlt:666,1-674,2"
 ]
 
 (* A long diff starts closed and is rendered when it is first opened (lazily, from data stored in the cell) *)
@@ -699,7 +704,7 @@ VerificationTest[
         { 400, { "399" }, { Full }, True }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-LazyDiff@@Tests/ACPReview.wlt:672,1-703,2"
+    TestID   -> "Notebook-LazyDiff@@Tests/ACPReview.wlt:677,1-708,2"
 ]
 
 (* Many files: all cards start closed *)
@@ -721,7 +726,7 @@ VerificationTest[
     ],
     { 31, { False }, 31 },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenersManyFiles@@Tests/ACPReview.wlt:706,1-725,2"
+    TestID   -> "Notebook-OpenersManyFiles@@Tests/ACPReview.wlt:711,1-730,2"
 ]
 
 (* Files that are not listed, and incomplete git output *)
@@ -744,7 +749,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Truncation@@Tests/ACPReview.wlt:728,1-748,2"
+    TestID   -> "Notebook-Truncation@@Tests/ACPReview.wlt:733,1-753,2"
 ]
 
 (* The diff text kept in a window is bounded: later diffs are not shown *)
@@ -757,7 +762,7 @@ VerificationTest[
     ],
     { "src/a.txt", "tc.txt", "vendor/lib" },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-TextBudget@@Tests/ACPReview.wlt:751,1-761,2"
+    TestID   -> "Notebook-TextBudget@@Tests/ACPReview.wlt:756,1-766,2"
 ]
 
 (* The header: folder, branch, counts, time and a Refresh button that finds its window with EvaluationNotebook[] *)
@@ -774,7 +779,7 @@ VerificationTest[
     ],
     { True, { "On branch main", "15 files changed", "+6", "\[Minus]4" }, True, { { "ReviewRefresh", "EvaluationNotebook[]" } }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Header@@Tests/ACPReview.wlt:764,1-778,2"
+    TestID   -> "Notebook-Header@@Tests/ACPReview.wlt:769,1-783,2"
 ]
 
 VerificationTest[
@@ -784,7 +789,7 @@ VerificationTest[
     },
     { { "HEAD detached at 4b5a6b8" }, { "On branch main", "No commits yet" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-HeaderBranch@@Tests/ACPReview.wlt:780,1-788,2"
+    TestID   -> "Notebook-HeaderBranch@@Tests/ACPReview.wlt:785,1-793,2"
 ]
 
 (* Loading, clean, and the states where nothing can be listed *)
@@ -818,7 +823,7 @@ VerificationTest[
         { 1, "ACPReviewMessage", { "The check was cancelled." } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-States@@Tests/ACPReview.wlt:791,1-822,2"
+    TestID   -> "Notebook-States@@Tests/ACPReview.wlt:796,1-827,2"
 ]
 
 VerificationTest[
@@ -828,7 +833,7 @@ VerificationTest[
     },
     { "Changes", { "No project folder" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-NoFolder@@Tests/ACPReview.wlt:824,1-832,2"
+    TestID   -> "Notebook-NoFolder@@Tests/ACPReview.wlt:829,1-837,2"
 ]
 
 (* A project folder in a subdirectory of the repository: paths relative to it, original paths outside of it *)
@@ -851,7 +856,7 @@ VerificationTest[
     ],
     { "Changes \[LongDash] src", True, True, { { "ReviewOpenFile", FileNameJoin @ { "/repo", "src", "x.txt" } } } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Subdirectory@@Tests/ACPReview.wlt:835,1-855,2"
+    TestID   -> "Notebook-Subdirectory@@Tests/ACPReview.wlt:840,1-860,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -872,7 +877,7 @@ VerificationTest[
     ],
     { False, True, True, True, "", { { "", "" }, { "1", "" }, { "", "1" } }, { Full } },
     SameTest -> MatchQ,
-    TestID   -> "Action-DiffView@@Tests/ACPReview.wlt:860,1-876,2"
+    TestID   -> "Action-DiffView@@Tests/ACPReview.wlt:865,1-881,2"
 ]
 
 (* Open: WL files in the front end, documents in their application, anything else (e.g. scripts) in its folder *)
@@ -896,7 +901,7 @@ VerificationTest[
         { "SystemOpen", "DIR" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-OpenFile@@Tests/ACPReview.wlt:879,1-900,2"
+    TestID   -> "Action-OpenFile@@Tests/ACPReview.wlt:884,1-905,2"
 ]
 
 (* Open never passes a folder with an extension (on macOS, an app bundle would be launched) or a link to one to
@@ -959,7 +964,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-OpenFileBundles@@Tests/ACPReview.wlt:904,1-963,2"
+    TestID   -> "Action-OpenFileBundles@@Tests/ACPReview.wlt:909,1-968,2"
 ]
 
 (* The button opens a window that shows "Loading changes..." and starts a request, or raises the open one *)
@@ -1002,7 +1007,7 @@ VerificationTest[
         { $review, { { $review, None, ExpandFileName @ $TemporaryDirectory } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-ReviewChanges@@Tests/ACPReview.wlt:966,1-1006,2"
+    TestID   -> "Action-ReviewChanges@@Tests/ACPReview.wlt:971,1-1011,2"
 ]
 
 (* Requests: with the owner window's record, with the folder only, or neither *)
@@ -1039,7 +1044,7 @@ VerificationTest[
         { $review }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-Requests@@Tests/ACPReview.wlt:1009,1-1043,2"
+    TestID   -> "Action-Requests@@Tests/ACPReview.wlt:1014,1-1048,2"
 ]
 
 (* Results: only the window's latest request is shown (then the window is scrolled to the top: NotebookPut would leave it
@@ -1091,7 +1096,7 @@ VerificationTest[
         { { }, <| |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-Results@@Tests/ACPReview.wlt:1048,1-1095,2"
+    TestID   -> "Action-Results@@Tests/ACPReview.wlt:1053,1-1100,2"
 ]
 
 (* A large result is shown in steps that each do little work: the rows of the file list, then the notebook with the list
@@ -1137,7 +1142,7 @@ VerificationTest[
     ],
     { 30, 1, 14, { { System`NotebookLocationSpecifier[ CellObject[ "last" ], "After" ], None, AutoScroll -> False } }, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Action-ResultSteps@@Tests/ACPReview.wlt:1100,1-1141,2"
+    TestID   -> "Action-ResultSteps@@Tests/ACPReview.wlt:1105,1-1146,2"
 ]
 
 (* While the next request runs, the header keeps the branch and counts of the changes shown *)
@@ -1162,7 +1167,7 @@ VerificationTest[
     ],
     { False, "t2", "t2", { "On branch main", "15 files changed", "Loading changes\[Ellipsis]" } },
     SameTest -> MatchQ,
-    TestID   -> "Action-RefreshKeepsHeader@@Tests/ACPReview.wlt:1144,1-1166,2"
+    TestID   -> "Action-RefreshKeepsHeader@@Tests/ACPReview.wlt:1149,1-1171,2"
 ]
 
 (* Text from the repository never becomes boxes: the private-use characters of the front end's linear syntax are
@@ -1198,7 +1203,7 @@ VerificationTest[
     ],
     { 2, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-LinearSyntax@@Tests/ACPReview.wlt:1172,1-1202,2"
+    TestID   -> "Notebook-LinearSyntax@@Tests/ACPReview.wlt:1177,1-1207,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1208,7 +1213,7 @@ VerificationTest[
     Select[ $acpReviewStrings, ! StringQ @ # || StringLength @ # === 0 & ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Strings-NonEmpty@@Tests/ACPReview.wlt:1207,1-1212,2"
+    TestID   -> "Strings-NonEmpty@@Tests/ACPReview.wlt:1212,1-1217,2"
 ]
 
 (* Every label key used in Review.wl, also the ones made from statuses and notes, has an English default (string
@@ -1231,7 +1236,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Strings-Coverage@@Tests/ACPReview.wlt:1216,1-1235,2"
+    TestID   -> "Strings-Coverage@@Tests/ACPReview.wlt:1221,1-1240,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1299,7 +1304,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { $review, "Changes \[LongDash] repo", 3, True, True, True, { "On branch main", "3 files changed" } },
     SameTest -> MatchQ,
-    TestID   -> "Git-ReviewRequest@@Tests/ACPReview.wlt:1243,1-1303,2"
+    TestID   -> "Git-ReviewRequest@@Tests/ACPReview.wlt:1248,1-1308,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1313,7 +1318,7 @@ VerificationTest[
     },
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-Cleanup@@Tests/ACPReview.wlt:1308,1-1317,2"
+    TestID   -> "ACPReview-Cleanup@@Tests/ACPReview.wlt:1313,1-1322,2"
 ]
 
 (* Isolated code swallows messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -1324,7 +1329,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-DebugLog@@Tests/ACPReview.wlt:1320,1-1328,2"
+    TestID   -> "ACPReview-DebugLog@@Tests/ACPReview.wlt:1325,1-1333,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

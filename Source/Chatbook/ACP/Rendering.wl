@@ -419,8 +419,9 @@ activeEntityQ[ key_, turn_Association ] := runningTurnQ @ turn && ! acpTurnEnded
 activeEntityQ // endDefinition;
 
 
-$renderMode = "Live";
-$turnID     = None;
+$renderMode   = "Live";
+$turnID       = None;
+$replayedTurn = False; (* True while the final cell of a replayed turn (a restored session) is rendered *)
 
 
 (* Live views show code blocks with the "Active" templates (no scroll pane capturing the mouse wheel, no buttons): *)
@@ -749,9 +750,11 @@ thoughtsOpenerCell // endDefinition;
 
 thoughtLabel // beginDefinition;
 
+(* Replayed turns (restored sessions) have no timing: their thoughts are just "Thoughts" (note that None - None is 0) *)
 thoughtLabel[ entity_Association ] := Module[ { secs },
     secs = Lookup[ entity, "LastTime", 0 ] - Lookup[ entity, "FirstTime", 0 ];
     Which[
+        TrueQ @ $replayedTurn, acpLabel[ "ThoughtReplayed" ],
         ! NumberQ @ secs, acpLabel[ "Thought" ],
         Round @ secs <= 1, acpLabel[ "ThoughtForOneSecond" ],
         True, acpLabel[ "ThoughtForSeconds", <| "n" -> Round @ secs |> ]
@@ -1896,7 +1899,12 @@ validFinalCellQ // endDefinition;
 finalCell // beginDefinition;
 
 finalCell[ turn_Association, noFE_ ] := Block[
-    { $renderMode = "Final", $turnID = Lookup[ turn, "ID", None ], $acpNoFrontEndFormatting = TrueQ @ noFE || $acpNoFrontEndFormatting },
+    {
+        $renderMode              = "Final",
+        $turnID                  = Lookup[ turn, "ID", None ],
+        $replayedTurn            = TrueQ @ Lookup[ turn, "Replayed", False ],
+        $acpNoFrontEndFormatting = TrueQ @ noFE || $acpNoFrontEndFormatting
+    },
     Module[ { split, entities, items, status, answer },
         split    = acpTurnSplit @ turn;
         entities = turn[ "Entities" ];
@@ -1926,7 +1934,17 @@ finalCell[ turn_Association, noFE_ ] := Block[
             StringQ @ status,
                 items = Join[ items, { boxCell @ statusLineView[ turn, status ] } ],
             answer === "" && split[ "Tail" ] === { },
-                items = Join[ items, { boxCell @ Style[ acpLabel[ "DoneNoReply" ], FontColor -> $mutedColor, FontSlant -> Italic ] } ]
+                items = Join[
+                    items,
+                    {
+                        boxCell @ Style[
+                            (* a replayed turn without any output was cancelled (or its output was compacted) *)
+                            acpLabel @ If[ TrueQ @ $replayedTurn && turn[ "Order" ] === { }, "ReplayNoReply", "DoneNoReply" ],
+                            FontColor -> $mutedColor,
+                            FontSlant -> Italic
+                        ]
+                    }
+                ]
         ];
 
         Cell[
@@ -2058,6 +2076,7 @@ compactTurnData[ turn_Association ] := <|
     "Version"      -> 1,
     "ID"           -> Lookup[ turn, "ID", None ],
     "SessionID"    -> Lookup[ turn, "SessionID", None ],
+    If[ TrueQ @ Lookup[ turn, "Replayed", False ], "Replayed" -> True, Nothing ],
     "Prompt"       -> Replace[ Lookup[ turn, "Prompt", "" ], s_String /; StringLength @ s > 2000 :> StringTake[ s, 2000 ] ],
     "StartTime"    -> Lookup[ turn, "StartTime", None ],
     "EndTime"      -> Lookup[ turn, "EndTime", None ],
@@ -2176,12 +2195,13 @@ permissionCard[ nbo_, window_Association, reqID_, info_Association, i_Integer, n
     tool     = permissionTool[ info, toolCall ];
     agent    = windowAgentName @ window;
     project  = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> "" ];
-    headline = permissionHeadline[ tool, toolCall, agent, project ];
+    (* the labels contain the project folder and paths, which can come from the agent: neutralized *)
+    headline = acpNeutralizeLinearSyntax @ permissionHeadline[ tool, toolCall, agent, project ];
     preview  = permissionPreview[ tool, project ];
     options  = Replace[ Lookup[ params, "options", { } ], Except[ _List ] -> { } ];
     armAt    = AbsoluteTime[ ] + $permissionArmDelay;
     buttons  = permissionButton[ nbo, reqID, #, armAt, tool, agent, project ] & /@ options;
-    scope    = If[ MemberQ[ options, KeyValuePattern[ "kind" -> "allow_always" ] ], alwaysScopeText[ tool, agent, project ], None ];
+    scope    = If[ MemberQ[ options, KeyValuePattern[ "kind" -> "allow_always" ] ], acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project ], None ];
 
     Framed[
         Column[
@@ -2351,7 +2371,7 @@ permissionButton[ nbo_, reqID_, option_Association, armAt_, tool_, agent_, proje
             Method     -> "Preemptive",
             BaseStyle  -> { "Text", FontSize -> 13 }
         ]
-    ] // If[ kind === "allow_always", Tooltip[ #, alwaysScopeText[ tool, agent, project ] ], # ] &
+    ] // If[ kind === "allow_always", Tooltip[ #, acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project ] ], # ] &
 ];
 
 permissionButton[ ___ ] := Nothing;
@@ -2670,6 +2690,8 @@ statusContent0[ nbo_NotebookObject ] := Module[ { window, agent, version, view }
             Style[ acpLabel[ "ToolbarNoDirectory" ], FontColor -> $mutedColor ],
         "Connecting",
             Row @ { chatbookIcon[ "PercolateProgressAnimation", False ], " ", Style[ acpLabel[ "ToolbarConnecting", <| "agent" -> agent |> ], FontColor -> $mutedColor ] },
+        "Restoring",
+            Row @ { chatbookIcon[ "PercolateProgressAnimation", False ], " ", Style[ acpLabel[ "ToolbarRestoring" ], FontColor -> $mutedColor ] },
         "Ready" | "Running",
             Style[ StringTrim @ acpLabel[ "ToolbarReady", <| "agent" -> agent, "version" -> version |> ], FontColor -> $mutedColor ],
         "Disconnected",

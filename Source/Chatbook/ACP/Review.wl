@@ -687,7 +687,11 @@ reviewNotebook[ changes_Association, owner_, new_, cells_List ] := Module[ { dir
         Sequence @@ {
             DockedCells             -> { acpReviewDockedCell[ changes, False ] },
             StyleDefinitions        -> reviewStyleSheet @ icons,
-            TaggingRules            -> <| "ACPReview" -> <| "Owner" -> owner, "Directory" -> dir |> |>,
+            (* not a user notebook: the Notebook Assistant neither reads it nor attaches to it *)
+            TaggingRules            -> <|
+                "ACPReview"            -> <| "Owner" -> owner, "Directory" -> dir |>,
+                "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |>
+            |>,
             WindowTitle             -> reviewWindowTitle @ dir,
             Evaluator               -> reviewEvaluator @ owner,
             If[ TrueQ @ new, WindowSize -> $reviewWindowSize, Nothing ],
@@ -697,6 +701,8 @@ reviewNotebook[ changes_Association, owner_, new_, cells_List ] := Module[ { dir
             CellInsertionPointCell  -> None,
             CellInsertionPointColor -> $reviewBackground,
             ClosingAutoSave         -> False,
+            (* deployed (no Notebook Assistant sidebar in it); the cells are not (see "ACPReviewBase") *)
+            Deployed                -> True,
             Editable                -> False,
             Saveable                -> False,
             ShowCellBracket         -> False,
@@ -1433,8 +1439,10 @@ reviewStyleSheet[ icons_List ] := Notebook[
             StyleData[ "Notebook" ],
             Background -> $reviewBackground
         ],
+        (* Deployed -> False: the text of the cells stays selectable in the deployed notebook *)
         Cell[
             StyleData[ "ACPReviewBase" ],
+            Deployed             -> False,
             FontFamily           -> $reviewTextFont,
             FontSize             -> 13,
             FontColor            -> LightDarkSwitched[ GrayLevel[ 0.15 ], GrayLevel[ 0.88 ] ],
