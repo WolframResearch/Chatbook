@@ -64,6 +64,7 @@ HoldComplete[
     `acpLabel,
     `acpLineDiff,
     `acpNewTurn,
+    `acpPatchRows,
     `acpPreprocessAnswer,
     `acpStripToolOutput,
     `acpToolAction,
@@ -78,12 +79,15 @@ HoldComplete[
 
     (* ::**************************************************************************************************************:: *)
     (* Rendering.wl *)
+    `acpBadge,
+    `acpColor,
     `acpDiffView,
     `acpDropRenderCache,
     `acpEntityView,
     `acpErrorView,
     `acpFinalCell,
     `acpLiveView,
+    `acpNeutralizeLinearSyntax,
     `acpPermissionPanel,
     `acpToolbarStatusView,
     `acpUsageMeterView,
@@ -96,6 +100,7 @@ HoldComplete[
     `acpAgentSpec,
     `acpBillingLabel,
     `acpConnectionLabel,
+    `acpExecutableFileQ,
     `acpFindConfigOption,
     `acpFindLLMKitKey,
     `acpFindOpenCode,
@@ -103,6 +108,7 @@ HoldComplete[
     `acpOpenCodeConfigJSON,
     `acpOpenCodeEnvironment,
     `acpOptionValues,
+    `acpPathDirectories,
     `acpPersistedSetting,
     `acpPreferredModel,
     `acpSetPersistedSetting,
@@ -129,8 +135,48 @@ HoldComplete[
     `acpWindowAliveQ,
 
     (* ::**************************************************************************************************************:: *)
+    (* Git.wl *)
+    `$acpGitEnabled,
+    `$acpGitMaxFiles,
+    `acpFindGit,
+    `acpGitBuildChangeSet,
+    `acpGitChanges,
+    `acpGitCheck,
+    `acpGitDecode,
+    `acpGitMarkStale,
+    `acpGitNoteSessionUpdate,
+    `acpGitParseFilterDrivers,
+    `acpGitParseNumstat,
+    `acpGitParseRevParse,
+    `acpGitParseStatus,
+    `acpGitParseVersion,
+    `acpGitRun,
+    `acpGitSplitPatch,
+    `acpGitSummary,
+    `acpGitUnquotePath,
+    `acpGitWorkTreeRoot,
+
+    (* ::**************************************************************************************************************:: *)
+    (* Review.wl *)
+    `$acpReviewStrings,
+    `acpFileIcon,
+    `acpFileIconName,
+    `acpReviewButton,
+    `acpReviewButtonSignature,
+    `acpReviewCells,
+    `acpReviewChanges,
+    `acpReviewDiffView,
+    `acpReviewDockedCell,
+    `acpReviewNotebook,
+    `acpReviewOpenFile,
+    `acpReviewRefresh,
+
+    (* ::**************************************************************************************************************:: *)
     (* UI.wl *)
     `$acpUIStrings,
+    `acpAbbreviatePath,
+    `acpActionButton,
+    `acpActionCode,
     `acpEnsureWindowRecord,
     `acpFinalizeTurn,
     `acpMarkOrphanCells,

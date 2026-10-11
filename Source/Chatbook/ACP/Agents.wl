@@ -234,7 +234,7 @@ acpFindOpenCode[ settings_Association, env_Association ] := Catch @ Module[ { ex
     explicit = explicitExecutable @ settings;
     Which[
         StringQ @ explicit,
-            Throw @ If[ executableFileQ @ explicit,
+            Throw @ If[ acpExecutableFileQ @ explicit,
                 Quiet @ ExpandFileName @ explicit,
                 agentNotFound[ "OpenCode", explicit, $openCodeInstallURL ]
             ],
@@ -244,7 +244,7 @@ acpFindOpenCode[ settings_Association, env_Association ] := Catch @ Module[ { ex
 
     windowsQ = Lookup[ env, "OperatingSystem", $OperatingSystem ] === "Windows";
     names    = If[ windowsQ, { "opencode.exe", "opencode.cmd", "opencode" }, { "opencode" } ];
-    dirs     = pathDirectories[ Lookup[ env, "PATH", None ], windowsQ ];
+    dirs     = acpPathDirectories[ Lookup[ env, "PATH", None ], windowsQ ];
     home     = Lookup[ env, "HomeDirectory", None ];
     If[ StringQ @ home,
         dirs = Join[ dirs, FileNameJoin @ Prepend[ #, home ] & /@ If[ windowsQ, { { ".opencode", "bin" } }, $openCodeHomeDirectories ] ]
@@ -252,7 +252,7 @@ acpFindOpenCode[ settings_Association, env_Association ] := Catch @ Module[ { ex
     If[ ! windowsQ, dirs = Join[ dirs, Select[ Replace[ Lookup[ env, "SystemDirectories", { } ], Except[ _List ] -> { } ], StringQ ] ] ];
 
     Replace[
-        SelectFirst[ Flatten @ Outer[ FileNameJoin @ { #1, #2 } &, dirs, names ], executableFileQ, None ],
+        SelectFirst[ Flatten @ Outer[ FileNameJoin @ { #1, #2 } &, dirs, names ], acpExecutableFileQ, None ],
         None :> agentNotFound[ "OpenCode", None, $openCodeInstallURL ]
     ]
 ];
@@ -266,22 +266,22 @@ $openCodeHomeDirectories = { { ".opencode", "bin" }, { ".local", "bin" }, { ".bu
 $openCodeSystemDirectories = { "/opt/homebrew/bin", "/usr/local/bin" };
 
 
-pathDirectories // beginDefinition;
+acpPathDirectories // beginDefinition;
 
-pathDirectories[ path_String, windowsQ_ ] := Select[
+acpPathDirectories[ path_String, windowsQ_ ] := Select[
     StringTrim[ #, "\"" ] & /@ StringSplit[ path, If[ TrueQ @ windowsQ, ";", ":" ] ],
     StringLength[ # ] > 0 &
 ];
 
-pathDirectories[ _, _ ] := { };
+acpPathDirectories[ _, _ ] := { };
 
-pathDirectories // endDefinition;
+acpPathDirectories // endDefinition;
 
 
-executableFileQ // beginDefinition;
-executableFileQ[ file_String ] := TrueQ @ Quiet @ FileExistsQ @ file && ! TrueQ @ Quiet @ DirectoryQ @ file;
-executableFileQ[ _ ] := False;
-executableFileQ // endDefinition;
+acpExecutableFileQ // beginDefinition;
+acpExecutableFileQ[ file_String ] := TrueQ @ Quiet @ FileExistsQ @ file && ! TrueQ @ Quiet @ DirectoryQ @ file;
+acpExecutableFileQ[ _ ] := False;
+acpExecutableFileQ // endDefinition;
 
 
 agentNotFound // beginDefinition;
