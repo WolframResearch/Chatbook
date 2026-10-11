@@ -534,6 +534,159 @@ VerificationTest[
     TestID   -> "ACPRendering-DiffView-ContentsWritten@@Tests/ACPRendering.wlt:528,1-535,2"
 ]
 
+(* Inside hunks every line is content: a removed "-- comment" line is "--- comment" in the patch. File headers are
+   dropped before the first hunk and after an "Index: " or "diff --git " line (patches of several files). *)
+VerificationTest[
+    {
+        acpPatchRows @ StringRiffle[
+            {
+                "Index: a.sql", "===", "--- a/a.sql", "+++ b/a.sql",
+                "@@ -1,3 +1,3 @@ select", "--- comment", "+++ counter", " keep", "\\ No newline at end of file",
+                "diff --git a/b.txt b/b.txt", "index 1..2 100644", "--- a/b.txt", "+++ b/b.txt",
+                "@@ -1 +1 @@", "-x", "+y",
+                "Index: c.txt", "===", "--- c.txt", "+++ c.txt", "@@ -1 +1 @@", "-p", "+q"
+            },
+            "\n"
+        ],
+        acpDiffStats @ <| "Patch" -> "--- a/a.sql\n+++ b/a.sql\n@@ -1,2 +1,2 @@\n--- old comment\n+++ new counter\n same" |>,
+        acpPatchRows @ "+only\n-lines",
+        acpPatchRows @ None
+    },
+    {
+        {
+            { "@", "@@ -1,3 +1,3 @@ select" }, { "-", "-- comment" }, { "+", "++ counter" }, { "=", "keep" },
+            { "@", "@@ -1 +1 @@" }, { "-", "x" }, { "+", "y" },
+            { "@", "@@ -1 +1 @@" }, { "-", "p" }, { "+", "q" }
+        },
+        { 1, 1 },
+        { { "+", "only" }, { "-", "lines" } },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-DiffView-PatchRows@@Tests/ACPRendering.wlt:539,1-567,2"
+]
+
+(* "Header" -> False leaves out the path line; "Omitted" lines are added to the "more lines" note *)
+VerificationTest[
+    Module[ { diff = <| "Path" -> "src/a.py", "Patch" -> "@@ -1,3 +1,3 @@\n-a\n+b\n c" |>, plain, bare, cut },
+        plain = ToBoxes @ acpDiffView @ diff;
+        bare  = ToBoxes @ acpDiffView[ diff, <| "Header" -> False |> ];
+        cut   = ToBoxes @ acpDiffView[ diff, <| "Header" -> False, "MaxLines" -> 2, "Omitted" -> 10 |> ];
+        {
+            acpContainsTextQ[ plain, "src/a.py" ],
+            acpContainsTextQ[ bare, "src/a.py" ],
+            acpContainsTextQ[ bare, "b" ],
+            acpContainsTextQ[ cut, "12 more lines" ],
+            acpContainsTextQ[ ToBoxes @ acpDiffView[ diff, <| "Omitted" -> 5 |> ], "5 more lines" ]
+        }
+    ],
+    { True, False, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-DiffView-HeaderAndOmitted@@Tests/ACPRendering.wlt:570,1-586,2"
+]
+
+(* The chat's diff views: natural width, no line numbers *)
+VerificationTest[
+    Module[ { boxes = ToBoxes @ acpDiffView @ <| "Path" -> "src/a.py", "Patch" -> "@@ -1,3 +1,3 @@\n-a\n+b\n c" |> },
+        {
+            Cases[ boxes, FrameBox[ _, opts___ ] /; MemberQ[ { opts }, RoundingRadius -> 4 ] :> Lookup[ { opts }, ImageSize, Automatic ], { 0, Infinity } ],
+            Union @ Cases[ boxes, GridBox[ rows_, ___, GridBoxBackground -> _, ___ ] :> Length /@ rows, Infinity ],
+            FreeQ[ boxes, GridBoxItemSize -> { "Columns" -> { ___, Fit }, ___ } ]
+        }
+    ],
+    { { Automatic }, { { 2, 2, 2, 2 } }, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-DiffView-ChatLayout@@Tests/ACPRendering.wlt:589,1-600,2"
+]
+
+(* "LineNumbers": old and new line numbers from the hunk headers of patches, counted through line diffs (also across
+   collapsed context), new numbers for contents written *)
+VerificationTest[
+    Module[ { rows, old, new },
+        rows[ diff_ ] := Wolfram`Chatbook`ACP`Rendering`Private`diffRows[ diff, 3, True ];
+        old = StringRiffle[ ToString /@ Range[ 20 ], "\n" ];
+        new = StringReplace[ old, "\n10\n" -> "\nten\n" ];
+        {
+            rows @ <| "Path" -> "x", "Patch" -> "diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -3,4 +3,5 @@ f\n a\n-b\n+B\n+C\n c\n d\n@@ -20 +21 @@\n-y\n+z" |>,
+            rows @ <| "Path" -> "x", "OldText" -> old, "NewText" -> new |>,
+            rows @ <| "Path" -> "x", "OldText" -> None, "NewText" -> "p\nq\n" |>,
+            rows @ <| "Path" -> "x", "NewText" -> "p\nq", "Write" -> True |>,
+            rows @ <| "Path" -> "x", "Patch" -> "+only\n-lines\n@@ bad header @@\n same" |>
+        }
+    ],
+    {
+        {
+            { "@", "@@ -3,4 +3,5 @@ f", None, None },
+            { "=", "a", 3, 3 }, { "-", "b", 4, None }, { "+", "B", None, 4 }, { "+", "C", None, 5 }, { "=", "c", 5, 6 }, { "=", "d", 6, 7 },
+            { "@", "@@ -20 +21 @@", None, None }, { "-", "y", 20, None }, { "+", "z", None, 21 }
+        },
+        {
+            { "@", "\:22ef", None, None },
+            { "=", "7", 7, 7 }, { "=", "8", 8, 8 }, { "=", "9", 9, 9 }, { "-", "10", 10, None }, { "+", "ten", None, 10 },
+            { "=", "11", 11, 11 }, { "=", "12", 12, 12 }, { "=", "13", 13, 13 },
+            { "@", "\:22ef", None, None }
+        },
+        { { "+", "p", None, 1 }, { "+", "q", None, 2 } },
+        { { "=", "p", None, 1 }, { "=", "q", None, 2 } },
+        { { "+", "only", None, None }, { "-", "lines", None, None }, { "@", "@@ bad header @@", None, None }, { "=", "same", None, None } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-DiffView-LineNumberRows@@Tests/ACPRendering.wlt:604,1-635,2"
+]
+
+(* The number columns: narrow, muted, right-aligned, blank where a side has no line; a column without numbers is left
+   out. "FullWidth": the frame fills the available width and the line column takes the rest of it. The line cap still
+   applies. *)
+VerificationTest[
+    Module[ { numbers, frameSize, patch, both, newOnly, none, capped },
+        (* { columns per row, number column texts } of the diff grid *)
+        numbers[ boxes_ ] := FirstCase[
+            boxes,
+            GridBox[ rows_, opts___ ] /; MemberQ[ { opts }, GridBoxBackground -> _ ] :> {
+                Union[ Length /@ rows ],
+                Replace[ Drop[ #, -2 ], { StyleBox[ n_String, ___ ] :> StringTrim[ n, "\"" ], n_String :> StringTrim[ n, "\"" ] }, { 1 } ] & /@ rows,
+                Lookup[ { opts }, GridBoxAlignment ],
+                Lookup[ { opts }, GridBoxItemSize ]
+            },
+            None,
+            Infinity
+        ];
+        frameSize[ boxes_ ] := FirstCase[ boxes, FrameBox[ _, opts___ ] /; MemberQ[ { opts }, RoundingRadius -> 4 ] :> Lookup[ { opts }, ImageSize, Automatic ], None, { 0, Infinity } ];
+        patch   = <| "Path" -> "x", "Patch" -> "@@ -9,2 +9,2 @@\n-a\n+b\n c" |>;
+        both    = ToBoxes @ acpDiffView[ patch, <| "LineNumbers" -> True, "FullWidth" -> True, "Header" -> False |> ];
+        newOnly = ToBoxes @ acpDiffView[ <| "Path" -> "n", "OldText" -> None, "NewText" -> "p\nq" |>, <| "LineNumbers" -> True |> ];
+        none    = ToBoxes @ acpDiffView[ <| "Path" -> "x", "Patch" -> "+only" |>, <| "LineNumbers" -> True, "FullWidth" -> True |> ];
+        capped  = ToBoxes @ acpDiffView[ patch, <| "LineNumbers" -> True, "MaxLines" -> 2 |> ];
+        {
+            numbers @ both,
+            frameSize @ both,
+            numbers @ newOnly,
+            frameSize @ newOnly,
+            numbers @ none,
+            numbers[ capped ][[ 2 ]],
+            acpContainsTextQ[ capped, "2 more lines" ],
+            FirstCase[ both, StyleBox[ "\"10\"", opts___ ] :> Lookup[ { opts }, FontColor ], None, Infinity ] === Wolfram`Chatbook`ACP`Rendering`Private`$mutedColor
+        }
+    ],
+    {
+        {
+            { 4 },
+            { { "", "" }, { "9", "" }, { "", "9" }, { "10", "10" } },
+            { "Columns" -> { Right, Right, Left, Left }, "Rows" -> { { Baseline } } },
+            { "Columns" -> { Automatic, Automatic, Automatic, Fit }, "Rows" -> { { Automatic } } }
+        },
+        Full,
+        { { 3 }, { { "1" }, { "2" } }, { "Columns" -> { Right, Left, Left }, "Rows" -> { { Baseline } } }, _ },
+        Automatic,
+        { { 2 }, { { } }, _, { "Columns" -> { Automatic, Fit }, "Rows" -> { { Automatic } } } },
+        { { "", "" }, { "9", "" } },
+        True,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-DiffView-LineNumbersAndFullWidth@@Tests/ACPRendering.wlt:640,1-688,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Final Cell*)
@@ -552,7 +705,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:540,1-556,2"
+    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:693,1-709,2"
 ]
 
 VerificationTest[
@@ -569,7 +722,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:558,1-573,2"
+    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:711,1-726,2"
 ]
 
 VerificationTest[
@@ -582,7 +735,7 @@ VerificationTest[
     },
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:575,1-586,2"
+    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:728,1-739,2"
 ]
 
 VerificationTest[
@@ -591,7 +744,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:588,1-595,2"
+    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:741,1-748,2"
 ]
 
 VerificationTest[
@@ -607,7 +760,7 @@ VerificationTest[
     ],
     { True, True, True, _String? (StringContainsQ[ "_You declined" ]) },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:597,1-611,2"
+    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:750,1-764,2"
 ]
 
 VerificationTest[
@@ -616,7 +769,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:613,1-620,2"
+    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:766,1-773,2"
 ]
 
 VerificationTest[
@@ -625,7 +778,7 @@ VerificationTest[
     ],
     { True, <| "Code" -> -32603, "Message" -> "Internal error: Model exo-free has been deprecated." |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:622,1-629,2"
+    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:775,1-782,2"
 ]
 
 VerificationTest[
@@ -634,7 +787,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:631,1-638,2"
+    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:784,1-791,2"
 ]
 
 VerificationTest[
@@ -647,7 +800,7 @@ VerificationTest[
         Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:640,1-651,2"
+    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:793,1-804,2"
 ]
 
 VerificationTest[
@@ -656,7 +809,7 @@ VerificationTest[
     ],
     Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:653,1-660,2"
+    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:806,1-813,2"
 ]
 
 (* FE-only: with a front end, answers are formatted with FormatChatOutput "Finished" (skipped without a front end).
@@ -687,7 +840,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { }, True, True, Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:665,1-691,2"
+    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:818,1-844,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -714,7 +867,7 @@ VerificationTest[
     ],
     { True, { }, False, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:698,1-718,2"
+    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:851,1-871,2"
 ]
 
 VerificationTest[
@@ -750,7 +903,7 @@ VerificationTest[
     ],
     { { "make", "compiling a.c" }, { "File not found: /project/missing.txt" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:720,1-754,2"
+    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:873,1-907,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -776,7 +929,7 @@ VerificationTest[
     ],
     { True, True, 6, 1, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:759,1-780,2"
+    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:912,1-933,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -793,7 +946,7 @@ VerificationTest[
     },
     { { 1, 1 }, { 12, 8 }, { 480, 300 }, { 144, 360 }, { 480, 360 }, { 480, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:785,1-797,2"
+    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:938,1-950,2"
 ]
 
 (* Small images are shown at their natural size (not stretched), large ones are scaled down *)
@@ -808,7 +961,7 @@ VerificationTest[
     ],
     { { { 12, 8 }, { 320, 200 } }, { { 12, 8 }, { 480, 300 } }, { { 1, 1 } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:800,1-812,2"
+    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:953,1-965,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -834,7 +987,7 @@ VerificationTest[
     ],
     { { }, { }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:817,1-838,2"
+    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:970,1-991,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -848,7 +1001,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:843,1-852,2"
+    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:996,1-1005,2"
 ]
 
 VerificationTest[
@@ -873,7 +1026,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:854,1-877,2"
+    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:1007,1-1030,2"
 ]
 
 VerificationTest[
@@ -889,7 +1042,7 @@ VerificationTest[
         RawBoxes[ StyleBox[ _, "Text", ___ ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:879,1-893,2"
+    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:1032,1-1046,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -905,7 +1058,7 @@ VerificationTest[
     MatchQ[ acpPermissionPanel @ acpFakeNotebook, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:898,1-909,2"
+    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:1051,1-1062,2"
 ]
 
 VerificationTest[
@@ -931,7 +1084,7 @@ VerificationTest[
     ],
     { True, True, True, 3, True, { { acpFakeNotebook, 2, "once" }, { acpFakeNotebook, 2, "always" }, { acpFakeNotebook, 2, "reject" } }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:911,1-935,2"
+    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:1064,1-1088,2"
 ]
 
 VerificationTest[
@@ -954,7 +1107,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:937,1-958,2"
+    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:1090,1-1111,2"
 ]
 
 VerificationTest[
@@ -963,7 +1116,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:960,1-967,2"
+    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:1113,1-1120,2"
 ]
 
 (* What "Always allow" saves, as OpenCode derives it (patterns per subcommand, directories outside the project) *)
@@ -997,7 +1150,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:970,1-1001,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:1123,1-1154,2"
 ]
 
 VerificationTest[
@@ -1013,7 +1166,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:1003,1-1017,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:1156,1-1170,2"
 ]
 
 VerificationTest[
@@ -1024,7 +1177,7 @@ VerificationTest[
     },
     { RawBoxes[ "" ], RawBoxes[ "" ], None },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:1019,1-1028,2"
+    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:1172,1-1181,2"
 ]
 
 VerificationTest[
@@ -1042,7 +1195,7 @@ VerificationTest[
     ],
     { True, True, True, True, { "Reconnect" }, { "ChooseModel", "Reconnect" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1030,1-1046,2"
+    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1183,1-1199,2"
 ]
 
 (* MCP readiness changes don't re-render the status view *)
@@ -1055,7 +1208,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1049,1-1059,2"
+    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1202,1-1212,2"
 ]
 
 VerificationTest[
@@ -1071,7 +1224,7 @@ VerificationTest[
     ],
     { True, True, True, True, "" | "\"\"" },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1061,1-1075,2"
+    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1214,1-1228,2"
 ]
 
 VerificationTest[
@@ -1085,7 +1238,7 @@ VerificationTest[
     ],
     { True, True, { "SignIn" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1077,1-1089,2"
+    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1230,1-1242,2"
 ]
 
 (* "Locate OpenCode..." is a file chooser run by the front end; the chosen file goes to the SetAgentExecutable action *)
@@ -1100,14 +1253,14 @@ VerificationTest[
     ],
     { 1, True, { "Reconnect" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1092,1-1104,2"
+    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1245,1-1257,2"
 ]
 
 VerificationTest[
     MatchQ[ #, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ] & /@ { acpToolbarStatusView @ acpFakeNotebook, acpUsageMeterView @ acpFakeNotebook },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1106,1-1111,2"
+    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1259,1-1264,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1122,7 +1275,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:1118,1-1126,2"
+    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:1271,1-1279,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

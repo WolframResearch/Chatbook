@@ -103,9 +103,10 @@ $kindLabelGroups = <|
 
 (* English defaults for every user-visible string produced by Transcript.wl and Rendering.wl.
    acpLabel[key] first tries the front end text resource "ChatbookStrings" -> "ACP" <> key and falls back to this table
-   (then to $acpUIStrings, defined in UI.wl, and $acpConnectionStrings, defined in Agents.wl). Every key of the three
-   tables must also be in FrontEnd/TextResources/ChatbookStrings.tr and the localized copies as "ACP" <> key, with the
-   same English text (checked by Tests/ACPWindow.wlt). Templates use StringTemplate slots: `name`. *)
+   (then to $acpUIStrings, defined in UI.wl, $acpConnectionStrings, defined in Agents.wl, and $acpReviewStrings, defined
+   in Review.wl). Every key of the four tables must also be in FrontEnd/TextResources/ChatbookStrings.tr and the
+   localized copies as "ACP" <> key, with the same English text (checked by Tests/ACPWindow.wlt). Templates use
+   StringTemplate slots: `name`. *)
 $acpStrings = <|
     (* Durations *)
     "DurationSeconds"              -> "`s`s",
@@ -428,7 +429,7 @@ defaultLabel // beginDefinition;
 
 defaultLabel[ key_String ] := Replace[
     FirstCase[
-        { $acpStrings, $acpUIStrings, $acpConnectionStrings },
+        { $acpStrings, $acpUIStrings, $acpConnectionStrings, $acpReviewStrings },
         table_Association /; StringQ @ table[ key ] :> table[ key ],
         Missing[ ]
     ],
@@ -2560,10 +2561,9 @@ toolOutputTexts // endDefinition;
 (* { additions, deletions } for a normalized diff item: *)
 acpDiffStats // beginDefinition;
 
-acpDiffStats[ KeyValuePattern @ { "Patch" -> patch_String } ] := {
-    Count[ StringSplit[ patch, "\n" ], l_ /; StringStartsQ[ l, "+" ] && ! StringStartsQ[ l, "+++" ] ],
-    Count[ StringSplit[ patch, "\n" ], l_ /; StringStartsQ[ l, "-" ] && ! StringStartsQ[ l, "---" ] ]
-};
+acpDiffStats[ KeyValuePattern @ { "Patch" -> patch_String } ] := With[ { rows = acpPatchRows @ patch },
+    { Count[ rows, { "+", _ } ], Count[ rows, { "-", _ } ] }
+];
 
 acpDiffStats[ KeyValuePattern @ { "OldText" -> old_, "NewText" -> new_ } ] := Module[ { ops },
     ops = acpLineDiff[ Replace[ old, Except[ _String ] -> "" ], Replace[ new, Except[ _String ] -> "" ] ];
@@ -2573,6 +2573,50 @@ acpDiffStats[ KeyValuePattern @ { "OldText" -> old_, "NewText" -> new_ } ] := Mo
 acpDiffStats[ _ ] := { 0, 0 };
 
 acpDiffStats // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpPatchRows*)
+
+(* The lines of a unified diff as { op, line } with op "+", "-", "=" (context) or "@" (hunk header, the whole line).
+   File headers (before the first hunk, and from an "Index: " or "diff --git " line to the next hunk: "Index:", "===",
+   "---", "+++" and git's extended header lines) and "\ No newline at end of file" lines are dropped. Inside hunks every
+   line is content: a removed line "-- comment" appears as "--- comment" in the patch. *)
+acpPatchRows // beginDefinition;
+
+acpPatchRows[ patch_String ] := Module[ { header = True, rows = Internal`Bag[ ] },
+    Do[
+        Which[
+            StringStartsQ[ l, "@@" ],
+                header = False;
+                Internal`StuffBag[ rows, { "@", l } ],
+            StringStartsQ[ l, "\\" ],
+                Null,
+            header && StringStartsQ[ l, $patchHeaderLine ],
+                Null,
+            ! header && StringStartsQ[ l, "Index: " | "diff --git " ],
+                header = True,
+            StringStartsQ[ l, "+" ],
+                Internal`StuffBag[ rows, { "+", StringDrop[ l, 1 ] } ],
+            StringStartsQ[ l, "-" ],
+                Internal`StuffBag[ rows, { "-", StringDrop[ l, 1 ] } ],
+            True,
+                Internal`StuffBag[ rows, { "=", StringDrop[ l, Min[ 1, StringLength @ l ] ] } ]
+        ],
+        { l, StringSplit[ patch, "\n" ] }
+    ];
+    Internal`BagPart[ rows, All ]
+];
+
+acpPatchRows[ _ ] := { };
+
+acpPatchRows // endDefinition;
+
+$patchHeaderLine = Alternatives[
+    "Index:", "===", "---", "+++", "diff --git ", "index ", "new file mode ", "deleted file mode ", "old mode ", "new mode ",
+    "similarity index ", "dissimilarity index ", "rename from ", "rename to ", "copy from ", "copy to "
+];
 
 
 (* Line diff: list of { op, line } with op "=", "-" or "+": *)

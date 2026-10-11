@@ -31,6 +31,7 @@ $acpFinalizeTimeout   = 30;   (* seconds after which housekeeping finishes a tur
 $acpMaxRecentModels   = 3;
 $acpPreferencesPath   = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "ACP" };
 $acpMaxPathLength     = 42;
+$acpMaxPathLengthReview = 20; (* when the "Review" button is shown in the project folder row *)
 $acpQueuedPreviewSize = 80;
 
 (* UI-owned keys in window records (in addition to the ones described in docs/acp-window.md, "State model"):
@@ -140,6 +141,10 @@ acpAction0[ "InitializeWindow"   , nbo_NotebookObject                  ] := acpI
 acpAction0[ "DismissNotice"      , nbo_NotebookObject                  ] := acpSetNotice[ nbo, None ];
 acpAction0[ "CancelQueuedPrompt" , nbo_NotebookObject                  ] := acpCancelQueuedPrompt @ nbo;
 acpAction0[ "SetAgentExecutable" , nbo_NotebookObject, path_           ] := acpSetAgentExecutableAction[ nbo, path ];
+acpAction0[ "ReviewChanges"      , nbo_NotebookObject                  ] := acpReviewChanges @ nbo;
+acpAction0[ "ReviewRefresh"      , review_NotebookObject               ] := acpReviewRefresh @ review;
+acpAction0[ "ReviewOpenFile"     , path_String                         ] := acpReviewOpenFile @ path;
+acpAction0[ "ReviewDiffView"     , data_Association                    ] := acpReviewDiffView @ data;
 acpAction0[ name_, args___ ] := (acpLog[ "UnknownAction", { name, args } ]; Missing[ "UnknownAction", name ]);
 acpAction0 // endDefinition;
 
@@ -155,6 +160,10 @@ $acpActionNames = {
     "NewChat",
     "PermissionResponse",
     "Reconnect",
+    "ReviewChanges",
+    "ReviewDiffView",
+    "ReviewOpenFile",
+    "ReviewRefresh",
     "Send",
     "SetAgentExecutable",
     "SetConfigOption",
@@ -1317,8 +1326,9 @@ acpSetPreference // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpDirectoryRow*)
 
-(* Folder icon + abbreviated project directory + "Change..." (FE-native directory dialog; the setter runs the
-   "SetProjectDirectory" action). Disabled while a turn is running. *)
+(* Folder icon + abbreviated project directory + "Review" (Review.wl; only while the project folder has uncommitted
+   changes) + "Change..." (FE-native directory dialog; the setter runs the "SetProjectDirectory" action, disabled while a
+   turn is running). *)
 acpDirectoryRow // beginDefinition;
 
 acpDirectoryRow[ nbo_NotebookObject ] :=
@@ -1328,7 +1338,11 @@ acpDirectoryRow // endDefinition;
 
 
 acpDirectoryRowSignature // beginDefinition;
-acpDirectoryRowSignature[ window_Association ] := { Lookup[ window, "ProjectDirectory", None ], acpRunningQ @ window };
+acpDirectoryRowSignature[ window_Association ] := {
+    Lookup[ window, "ProjectDirectory", None ],
+    acpRunningQ @ window,
+    acpReviewButtonSignature @ window
+};
 acpDirectoryRowSignature[ _ ] := None;
 acpDirectoryRowSignature // endDefinition;
 
@@ -1337,13 +1351,19 @@ acpDirectoryRowView // beginDefinition;
 
 acpDirectoryRowView[ nbo_NotebookObject ] := acpDirectoryRowView[ nbo, acpWindowGet @ nbo ];
 
-acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, running, warning, label },
+acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, running, warning, review, label },
     dir     = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ];
     running = acpRunningQ @ window;
     warning = acpDirectoryWarning @ dir;
+    review  = acpReviewButton[ nbo, window ];
     label   = If[ StringQ @ dir,
         Tooltip[
-            Style[ acpAbbreviatePath @ dir, "WorkspaceChatToolbarTitle", FontSize -> 12, LineBreakWithin -> False ],
+            Style[
+                acpAbbreviatePath[ dir, If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ] ],
+                "WorkspaceChatToolbarTitle",
+                FontSize        -> 12,
+                LineBreakWithin -> False
+            ],
             acpLabel[ "ProjectDirectoryTooltip", <| "path" -> dir |> ]
         ],
         Style[ acpLabel[ "ProjectDirectoryNone" ], "WorkspaceChatToolbarTitle", FontSize -> 12, FontSlant -> Italic ]
@@ -1354,6 +1374,7 @@ acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, 
             label,
             If[ StringQ @ warning, Tooltip[ $acpWarningIcon, warning ], Nothing ],
             Item[ Spacer[ 0 ], ItemSize -> Fit ],
+            review,
             acpDirectorySetter[ nbo, dir, running ]
         } },
         Alignment -> { Left, Center },
@@ -1424,18 +1445,36 @@ acpRootDirectoryQ[ dir_String ] := StringMatchQ[ ExpandFileName @ dir, ("/" | (L
 acpRootDirectoryQ // endDefinition;
 
 
-(* "/home/user/projects/x" -> "~/projects/x"; long paths keep their end *)
+(* "/home/user/projects/x" -> "~/projects/x"; long paths keep their end (no limit for max = None) *)
 acpAbbreviatePath // beginDefinition;
 
-acpAbbreviatePath[ dir_String ] := Module[ { path },
-    path = If[ StringStartsQ[ dir, $HomeDirectory ], "~" <> StringDrop[ dir, StringLength @ $HomeDirectory ], dir ];
-    If[ StringLength @ path > $acpMaxPathLength,
-        "\[Ellipsis]" <> StringTake[ path, -($acpMaxPathLength - 1) ],
+acpAbbreviatePath[ dir_String ] := acpAbbreviatePath[ dir, $acpMaxPathLength ];
+
+acpAbbreviatePath[ dir_String, max_ ] := Module[ { path },
+    path = homeAbbreviation @ dir;
+    If[ IntegerQ @ max && StringLength @ path > max,
+        "\[Ellipsis]" <> StringTake[ path, -(max - 1) ],
         path
     ]
 ];
 
 acpAbbreviatePath // endDefinition;
+
+
+(* "~" for the home folder and "~/..." (or "~\...") for paths in it; not for /home/user2 when the home folder is
+   /home/user *)
+homeAbbreviation // beginDefinition;
+
+homeAbbreviation[ dir_String ] := With[ { home = StringDelete[ $HomeDirectory, ("/" | "\\") ~~ EndOfString ] },
+    Which[
+        StringLength @ home < 2               , dir,
+        dir === home                          , "~",
+        StringStartsQ[ dir, home ~~ ("/" | "\\") ], "~" <> StringDrop[ dir, StringLength @ home ],
+        True                                  , dir
+    ]
+];
+
+homeAbbreviation // endDefinition;
 
 
 $acpFolderIcon := $acpFolderIcon = Graphics[
@@ -2437,7 +2476,9 @@ acpFinishTurnState[ turnID_String, nbo_NotebookObject ] := Module[ { pending, wi
             acpFESet[ nbo, "Busy", False ];
             acpSchedule[ settleBusyFlag @ nbo, Quantity[ 500, "Milliseconds" ] ]
         ];
-        If[ pending =!= { }, acpUpdateWindowTitle @ nbo ]
+        If[ pending =!= { }, acpUpdateWindowTitle @ nbo ];
+        (* The turn may have changed files: check the project's uncommitted changes (Git.wl) *)
+        acpGitMarkStale @ nbo
     ];
     acpTurnDrop @ turnID;
     acpPublish[ ];

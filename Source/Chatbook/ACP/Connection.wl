@@ -466,14 +466,16 @@ onSessionUpdate[ nbo_, window_, params_, time_ ] := Module[ { sid, update, own }
 onSessionUpdate // endDefinition;
 
 
-(* Updates go to the window's current turn if it belongs to that session (and is not being finalized). *)
+(* Updates go to the window's current turn if it belongs to that session (and is not being finalized). A tool call that
+   completed and may have changed files marks the window's git summary stale (Git.wl). *)
 applyToTurn // beginDefinition;
 
-applyToTurn[ _, window_, sid_, update_Association, time_ ] := Module[ { turnID, turn },
+applyToTurn[ nbo_, window_, sid_, update_Association, time_ ] := Module[ { turnID, turn },
     turnID = Lookup[ window, "CurrentTurn", None ];
     turn   = If[ StringQ @ turnID, acpTurnGet @ turnID, None ];
     If[ AssociationQ @ turn && Lookup[ turn, "SessionID", None ] === sid && ! TrueQ @ Lookup[ turn, "FinalizeClaimed", False ],
-        acpTurnUpdate[ turnID, acpApplyUpdate[ #, update, time ] & ],
+        acpTurnUpdate[ turnID, acpApplyUpdate[ #, update, time ] & ];
+        acpGitNoteSessionUpdate[ nbo, turnID, update ],
         acpLog[ "UpdateWithoutTurn", <| "Kind" -> Lookup[ update, "sessionUpdate", None ], "SessionID" -> sid |> ]
     ]
 ];

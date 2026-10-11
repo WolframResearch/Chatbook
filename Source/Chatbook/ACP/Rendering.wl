@@ -71,6 +71,46 @@ $secondaryButton   := LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.22 ] ];
 $secondaryButtonHover := LightDarkSwitched[ GrayLevel[ 0.94 ], GrayLevel[ 0.30 ] ];
 $secondaryButtonFrame := LightDarkSwitched[ GrayLevel[ 0.75 ], GrayLevel[ 0.45 ] ];
 
+(* Colors for other files (Review.wl), so that all ACP views use the same palette *)
+acpColor // beginDefinition;
+acpColor[ "Muted"           ] := $mutedColor;
+acpColor[ "GreenText"       ] := $greenText;
+acpColor[ "RedText"         ] := $redText;
+acpColor[ "AmberText"       ] := $amberText;
+acpColor[ "ToolLabel"       ] := $toolLabelColor;
+acpColor[ "CardFrame"       ] := $cardFrame;
+acpColor[ "CardBackground"  ] := $cardBackground;
+acpColor[ "AmberBackground" ] := $amberBackground;
+acpColor[ "AmberFrame"      ] := $amberFrame;
+acpColor[ "AmberFont"       ] := $amberFont;
+acpColor[ "ErrorBackground" ] := $errorBackground;
+acpColor[ "ErrorFrame"      ] := $errorFrame;
+acpColor[ "ErrorFont"       ] := $errorFont;
+acpColor // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpNeutralizeLinearSyntax*)
+
+(* Text from the agent or the repository (diff lines, file names and contents, git's messages) is shown as strings in
+   boxes. The private-use characters U+F7C0 to U+F7CD of the front end's linear syntax would make the front end turn
+   such a string into boxes chosen by whoever wrote the text (styles that hide text, or dynamic content that evaluates
+   code), so they are replaced with U+FFFD. Typed backslashes are escaped by ToBoxes and need nothing. *)
+acpNeutralizeLinearSyntax // beginDefinition;
+
+(* A search for each character as a literal string is fast (megabytes of patch text are checked in milliseconds); a
+   pattern of alternatives would be much slower. *)
+acpNeutralizeLinearSyntax[ s_String ] := If[ AnyTrue[ $linearSyntaxCharacters, StringContainsQ[ s, # ] & ],
+    StringReplace[ s, Alternatives @@ $linearSyntaxCharacters -> "\:fffd" ],
+    s
+];
+
+acpNeutralizeLinearSyntax[ other_ ] := other;
+
+acpNeutralizeLinearSyntax // endDefinition;
+
+$linearSyntaxCharacters = Characters @ FromCharacterCode @ Range[ 63424, 63437 ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*withRenderContext*)
@@ -987,11 +1027,12 @@ badgeView[ tool_Association ] := Module[ { outcome },
 badgeView // endDefinition;
 
 
+(* style: "Amber" | "Red" | "Green" | anything else (neutral) *)
 badge // beginDefinition;
 
 badge[ text_String, style_String ] := Framed[
-    Style[ text, FontSize -> 11, FontColor -> Switch[ style, "Amber", $amberText, "Red", $redText, _, $mutedColor ] ],
-    Background     -> Switch[ style, "Amber", $amberBackground, "Red", $errorBackground, _, $badgeBackground ],
+    Style[ text, FontSize -> 11, FontColor -> Switch[ style, "Amber", $amberText, "Red", $redText, "Green", $greenText, _, $mutedColor ] ],
+    Background     -> Switch[ style, "Amber", $amberBackground, "Red", $errorBackground, "Green", $addedBackground, _, $badgeBackground ],
     FrameStyle     -> Switch[ style, "Amber", $amberFrame, "Red", $errorFrame, _, None ],
     FrameMargins   -> { { 4, 4 }, { 0, 1 } },
     RoundingRadius -> 3,
@@ -999,6 +1040,11 @@ badge[ text_String, style_String ] := Framed[
 ];
 
 badge // endDefinition;
+
+(* The badge for other files (Review.wl) *)
+acpBadge // beginDefinition;
+acpBadge[ text_String, style_String ] := badge[ text, style ];
+acpBadge // endDefinition;
 
 
 statusGlyph // beginDefinition;
@@ -1448,7 +1494,11 @@ truncateLine // endDefinition;
 (* acpDiffView[ diff, opts ] renders a normalized diff item (see Transcript.wl) or a raw ACP diff
    (<| "type" -> "diff", "path", "oldText", "newText" |>) as a line diff: header "path (+a -d)" with a "new file" /
    "contents written" badge, and red/green tinted lines with unchanged runs collapsed to a few lines of context.
-   opts: "MaxLines" (default Infinity), "Context" (3), "ProjectDirectory" (for relative paths). *)
+   opts: "MaxLines" (default Infinity), "Context" (3), "ProjectDirectory" (for relative paths), "Header" (False: no
+   header line, e.g. when the caller shows the path itself), "Omitted" (lines the caller already left out of the diff,
+   added to the "n more lines" note), "FullWidth" (True: the frame and the line backgrounds fill the available width;
+   long lines still wrap), "LineNumbers" (True: columns with the old and new line numbers, from the hunk headers of
+   patches; a column without numbers, e.g. the old one of a new file, is left out). The chat's views use neither. *)
 acpDiffView // beginDefinition;
 
 acpDiffView[ diff_Association ] := acpDiffView[ diff, <| |> ];
@@ -1465,19 +1515,23 @@ acpDiffView[ diff_Association, opts_Association ] /; KeyExistsQ[ diff, "type" ] 
         opts
     ];
 
-acpDiffView[ diff_Association, opts_Association ] := Module[ { stats, rows, maxLines, shown, omitted, header },
-    stats    = acpDiffStats @ diff;
-    rows     = diffRows[ diff, Lookup[ opts, "Context", $diffContextLines ] ];
+acpDiffView[ diff_Association, opts_Association ] := Module[ { full, rows, maxLines, shown, omitted, header },
+    full     = TrueQ @ Lookup[ opts, "FullWidth", False ];
+    rows     = diffRows[ diff, Lookup[ opts, "Context", $diffContextLines ], TrueQ @ Lookup[ opts, "LineNumbers", False ] ];
     maxLines = Replace[ Lookup[ opts, "MaxLines", Infinity ], Except[ _Integer? Positive ] -> Infinity ];
     omitted  = If[ maxLines === Infinity, 0, Max[ 0, Length @ rows - maxLines ] ];
     shown    = If[ omitted > 0, Take[ rows, maxLines ], rows ];
-    header   = diffHeader[ diff, stats, Lookup[ opts, "ProjectDirectory", None ] ];
+    omitted  = omitted + Replace[ Lookup[ opts, "Omitted", 0 ], Except[ _Integer? NonNegative ] -> 0 ];
+    header   = If[ Lookup[ opts, "Header", True ] === False,
+        Nothing,
+        diffHeader[ diff, acpDiffStats @ diff, Lookup[ opts, "ProjectDirectory", None ] ]
+    ];
     Framed[
         Column[
             DeleteCases[
                 {
                     header,
-                    If[ shown === { }, Nothing, diffGrid @ shown ],
+                    If[ shown === { }, Nothing, diffGrid[ shown, full, lineNumberColumns @ rows ] ],
                     If[ omitted > 0, Style[ acpLabel[ "TruncatedMoreLines", <| "n" -> omitted |> ], FontColor -> $mutedColor, FontSize -> 11 ], Nothing ]
                 },
                 Nothing
@@ -1487,7 +1541,8 @@ acpDiffView[ diff_Association, opts_Association ] := Module[ { stats, rows, maxL
         Background     -> LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.16 ] ],
         FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], $cardFrame ],
         FrameMargins   -> { { 6, 6 }, { 4, 4 } },
-        RoundingRadius -> 4
+        RoundingRadius -> 4,
+        If[ full, ImageSize -> Full, Sequence @@ { } ]
     ]
 ];
 
@@ -1523,45 +1578,102 @@ relativePath[ _, _ ] := "";
 relativePath // endDefinition;
 
 
-(* Rows: { "+"|"-"|"="|"@", line } *)
+(* Rows: { "+"|"-"|"="|"@", line }, or with line numbers (numbers True) { op, line, old, new }: the line's numbers in the
+   old and the new file, or None *)
 diffRows // beginDefinition;
 
-diffRows[ KeyValuePattern[ "Patch" -> patch_String ], _ ] := Replace[
-    StringSplit[ patch, "\n" ],
-    {
-        l_String /; StringStartsQ[ l, "Index:" | "===" | "---" | "+++" | "\\" ] :> Nothing,
-        l_String /; StringStartsQ[ l, "@@" ] :> { "@", l },
-        l_String /; StringStartsQ[ l, "+" ] :> { "+", StringDrop[ l, 1 ] },
-        l_String /; StringStartsQ[ l, "-" ] :> { "-", StringDrop[ l, 1 ] },
-        l_String :> { "=", StringDrop[ l, Min[ 1, StringLength @ l ] ] }
-    },
-    { 1 }
+diffRows[ diff_Association, context_ ] := diffRows[ diff, context, False ];
+
+diffRows[ KeyValuePattern[ "Patch" -> patch_String ], _, numbers_ ] :=
+    If[ TrueQ @ numbers, numberPatchRows @ acpPatchRows @ patch, acpPatchRows @ patch ];
+
+(* Synthesized "contents written" diffs show the content without marking every line as added (with new line numbers): *)
+diffRows[ diff: KeyValuePattern[ "Write" -> True ], _, numbers_ ] := With[
+    { lines = StringSplit[ StringDelete[ Replace[ diff[ "NewText" ], Except[ _String ] -> "" ], "\n" ~~ EndOfString ], "\n", All ] },
+    If[ TrueQ @ numbers, MapIndexed[ { "=", #1, None, First @ #2 } &, lines ], { "=", # } & /@ lines ]
 ];
 
-(* Synthesized "contents written" diffs show the content without marking every line as added: *)
-diffRows[ diff: KeyValuePattern[ "Write" -> True ], _ ] := { "=", # } & /@ StringSplit[ StringDelete[ Replace[ diff[ "NewText" ], Except[ _String ] -> "" ], "\n" ~~ EndOfString ], "\n", All ];
-
-diffRows[ diff_Association, context_Integer ] := collapseContext[
-    acpLineDiff[ Replace[ diff[ "OldText" ], Except[ _String ] -> "" ], Replace[ diff[ "NewText" ], Except[ _String ] -> "" ] ],
-    context
+diffRows[ diff_Association, context_Integer, numbers_ ] := With[
+    { ops = acpLineDiff[ Replace[ diff[ "OldText" ], Except[ _String ] -> "" ], Replace[ diff[ "NewText" ], Except[ _String ] -> "" ] ] },
+    collapseContext[ If[ TrueQ @ numbers, numberLineOps @ ops, ops ], context ]
 ];
 
-diffRows[ diff_Association, _ ] := diffRows[ diff, $diffContextLines ];
+diffRows[ diff_Association, _, numbers_ ] := diffRows[ diff, $diffContextLines, numbers ];
 
 diffRows // endDefinition;
+
+
+(* Line numbers for a line diff: unchanged lines have both, removed lines the old and added lines the new one *)
+numberLineOps // beginDefinition;
+
+numberLineOps[ ops_List ] := Module[ { old = 0, new = 0 },
+    Replace[
+        #,
+        {
+            { "=", l_ } :> { "=", l, ++old, ++new },
+            { "-", l_ } :> { "-", l, ++old, None },
+            { "+", l_ } :> { "+", l, None, ++new },
+            { op_, l_ } :> { op, l, None, None }
+        }
+    ] & /@ ops
+];
+
+numberLineOps // endDefinition;
+
+
+(* Line numbers for the rows of a patch, counted from the start lines in the hunk headers ("@@ -a,b +c,d @@"). Rows
+   before the first hunk header, or after one that can't be read, have none. *)
+numberPatchRows // beginDefinition;
+
+numberPatchRows[ rows_List ] := Module[ { old = None, new = None },
+    Function[ row,
+        Switch[ First @ row,
+            "@", { old, new } = hunkStart @ row[[ 2 ]]; { "@", row[[ 2 ]], None, None },
+            "=", With[ { r = { "=", row[[ 2 ]], old, new } }, old = nextLineNumber @ old; new = nextLineNumber @ new; r ],
+            "-", With[ { r = { "-", row[[ 2 ]], old, None } }, old = nextLineNumber @ old; r ],
+            "+", With[ { r = { "+", row[[ 2 ]], None, new } }, new = nextLineNumber @ new; r ],
+            _  , { First @ row, row[[ 2 ]], None, None }
+        ]
+    ] /@ rows
+];
+
+numberPatchRows // endDefinition;
+
+
+(* { old start, new start } of a hunk header, or { None, None } *)
+hunkStart // beginDefinition;
+
+hunkStart[ header_String ] := Replace[
+    StringCases[
+        header,
+        StartOfString ~~ "@@ -" ~~ a: DigitCharacter.. ~~ (("," ~~ DigitCharacter..) | "") ~~ " +" ~~ c: DigitCharacter.. :>
+            { FromDigits @ a, FromDigits @ c },
+        1
+    ],
+    { { start_ } :> start, _ -> { None, None } }
+];
+
+hunkStart // endDefinition;
+
+
+nextLineNumber // beginDefinition;
+nextLineNumber[ n_Integer ] := n + 1;
+nextLineNumber[ _ ] := None;
+nextLineNumber // endDefinition;
 
 
 (* Keeps `context` unchanged lines around each change; longer unchanged runs become an ellipsis row: *)
 collapseContext // beginDefinition;
 
 collapseContext[ ops_List, context_Integer ] := Module[ { changed, keep, rows = { }, skipping = False },
-    changed = Flatten @ Position[ ops, { "+" | "-", _ }, { 1 } ];
+    changed = Flatten @ Position[ ops, { "+" | "-", __ }, { 1 } ];
     If[ changed === { }, Return[ ops, Module ] ];
     keep = Union @ Flatten[ Range[ Max[ 1, # - context ], Min[ Length @ ops, # + context ] ] & /@ changed ];
     Do[
         If[ MemberQ[ keep, i ],
             AppendTo[ rows, ops[[ i ]] ]; skipping = False,
-            If[ ! skipping, AppendTo[ rows, { "@", "\:22ef" } ]; skipping = True ]
+            (* the ellipsis row has no line numbers: *)
+            If[ ! skipping, AppendTo[ rows, PadRight[ { "@", "\:22ef" }, Length @ ops[[ i ]], None ] ]; skipping = True ]
         ],
         { i, Length @ ops }
     ];
@@ -1571,30 +1683,67 @@ collapseContext[ ops_List, context_Integer ] := Module[ { changed, keep, rows = 
 collapseContext // endDefinition;
 
 
+(* The diff lines. With full width, the line column takes the rest of the available width (so the line backgrounds
+   span it, and long lines wrap at its edge). numbers: the positions of the line numbers in the rows that get a column
+   (narrow and right-aligned, in front of the lines). *)
 diffGrid // beginDefinition;
 
-diffGrid[ rows_List ] := Grid[
-    Replace[
-        rows,
-        {
-            { "+", l_ } :> { Style[ "+", FontColor -> $greenText ], diffLineText @ l },
-            { "-", l_ } :> { Style[ "\[Minus]", FontColor -> $redText ], diffLineText @ l },
-            { "@", l_ } :> { "", Style[ l, FontColor -> $mutedColor ] },
-            { _, l_ }   :> { "", diffLineText @ l }
-        },
-        { 1 }
-    ],
+diffGrid[ rows: { { _, _ }... }, False, _ ] := Grid[
+    diffRowItems /@ rows,
     Alignment  -> { Left, Baseline },
     Spacings   -> { 0.4, 0.1 },
-    Background -> { None, Replace[ rows[[ All, 1 ]], { "+" -> $addedBackground, "-" -> $removedBackground, "@" -> $hunkBackground, _ -> None }, { 1 } ] },
+    Background -> diffRowBackgrounds @ rows,
     BaseStyle  -> { FontFamily -> $codeFont, FontSize -> 12, LineBreakWithin -> Automatic }
+];
+
+diffGrid[ rows_List, full_, numbers_List ] := With[ { n = Length @ numbers },
+    Grid[
+        Join[ lineNumberItem /@ #[[ numbers ]], diffRowItems @ #[[ ;; 2 ]] ] & /@ rows,
+        Alignment  -> { Join[ ConstantArray[ Right, n ], { Left, Left } ], Baseline },
+        Spacings   -> { Join[ { 0.4 }, ConstantArray[ 0.7, n ], { 0.4, 0.4 } ], 0.1 },
+        ItemSize   -> If[ TrueQ @ full, { Append[ ConstantArray[ Automatic, n + 1 ], Fit ], Automatic }, Automatic ],
+        Background -> diffRowBackgrounds @ rows,
+        BaseStyle  -> { FontFamily -> $codeFont, FontSize -> 12, LineBreakWithin -> Automatic }
+    ]
 ];
 
 diffGrid // endDefinition;
 
 
+(* The positions of the old (3) and new (4) line numbers in numbered rows that have a column: those with a number in some
+   row (of all rows, so a diff cut at MaxLines keeps its columns). The old column of a new file and the new one of a
+   deleted file are left out. *)
+lineNumberColumns // beginDefinition;
+lineNumberColumns[ rows_List ] := Select[ { 3, 4 }, Function[ i, AnyTrue[ rows, Length @ # >= i && IntegerQ @ #[[ i ]] & ] ] ];
+lineNumberColumns // endDefinition;
+
+
+diffRowItems // beginDefinition;
+diffRowItems[ { "+", l_ } ] := { Style[ "+", FontColor -> $greenText ], diffLineText @ l };
+diffRowItems[ { "-", l_ } ] := { Style[ "\[Minus]", FontColor -> $redText ], diffLineText @ l };
+diffRowItems[ { "@", l_ } ] := { "", Style[ l, FontColor -> $mutedColor ] };
+diffRowItems[ { _, l_ }   ] := { "", diffLineText @ l };
+diffRowItems // endDefinition;
+
+
+diffRowBackgrounds // beginDefinition;
+
+diffRowBackgrounds[ rows_List ] := {
+    None,
+    Replace[ rows[[ All, 1 ]], { "+" -> $addedBackground, "-" -> $removedBackground, "@" -> $hunkBackground, _ -> None }, { 1 } ]
+};
+
+diffRowBackgrounds // endDefinition;
+
+
+lineNumberItem // beginDefinition;
+lineNumberItem[ n_Integer ] := Style[ IntegerString @ n, FontColor -> $mutedColor, FontSize -> 10 ];
+lineNumberItem[ _ ] := "";
+lineNumberItem // endDefinition;
+
+
 diffLineText // beginDefinition;
-diffLineText[ l_String ] := Style[ If[ l === "", " ", truncateLine @ l ], ShowStringCharacters -> False ];
+diffLineText[ l_String ] := Style[ If[ l === "", " ", truncateLine @ acpNeutralizeLinearSyntax @ l ], ShowStringCharacters -> False ];
 diffLineText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
