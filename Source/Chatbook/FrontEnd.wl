@@ -1062,18 +1062,18 @@ openerView0[ { label_, content_ }, initialState_, ___ ] := openerView1[ { label,
 openerView0 // endDefinition;
 
 openerDown[ color_ ] := Graphics[
-    { color, CapForm[ "Round" ], Thickness[ 0.25` ], Line[ { { -1, 0 }, { 0, -1 }, { 1, 0 } } ] },
-    AspectRatio -> Full, ImageSize -> { 9, 9 }, ImagePadding -> { { 1, 1 }, { 2, 3 } },  BaselinePosition -> Center -> Center
+    { color, CapForm[ "Round" ], Thickness[ 0.3` ], Line[ { { -1, 0 }, { 0, -1 }, { 1, 0 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 1, 1 }, { 2, 3 } },  BaselinePosition -> Center -> Center
 ]
 
 openerUp[ color_ ] := Graphics[ 
-    { color, CapForm[ "Round" ], Thickness[ 0.25` ], Line[ { { -1, 0 }, { 0, 1 }, { 1, 0 } } ] },
-    AspectRatio -> Full, ImageSize -> { 9, 9 }, ImagePadding -> { { 1, 1 }, { 2, 3 } }, BaselinePosition -> Center -> Center
+    { color, CapForm[ "Round" ], Thickness[ 0.3` ], Line[ { { -1, 0 }, { 0, 1 }, { 1, 0 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 1, 1 }, { 2, 3 } }, BaselinePosition -> Center -> Center
 ]
 
 openerRight[ color_ ] := Graphics[ 
-    { color, CapForm[ "Round" ], Thickness[ 0.4` ], Line[ { { 0, -1 }, { 1, 0 }, { 0, 1 } } ] },
-    AspectRatio -> Full, ImageSize -> { 9, 9 }, ImagePadding -> { { 3, 2 }, { 1, 1 } }, BaselinePosition -> Center -> Center
+    { color, CapForm[ "Round" ], Thickness[ 0.6` ], Line[ { { 0, -1 }, { 1, 0 }, { 0, 1 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 3, 2 }, { 1, 1 } }, BaselinePosition -> Center -> Center
 ]
 
 openerView1[ { label_, content_ }, initialState_ ] :=
@@ -1101,7 +1101,7 @@ DynamicModule[ { Typeset`var = TrueQ @ initialState },
                                         ],
                                         "LinkHand"
                                     ],
-                                    ItemMargins -> { { 3, 0 }, { 0, 0 } }
+                                    ItemMargins -> { { 3.5, 0 }, { 0, 0 } }
                                 ],
                                 content
                             },
