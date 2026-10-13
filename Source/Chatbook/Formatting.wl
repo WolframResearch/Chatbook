@@ -713,18 +713,20 @@ makeDiscardedMaterialCell // endDefinition;
 
 makeDiscardedMaterialCell0 // beginDefinition;
 
+makeDiscardedMaterialCell0[ _List ] /; $dynamicText := {
+    Cell[
+        BoxData @ ToBoxes @ fakeOpenerView[ tr @ "FormattingDiscardedMaterial", True ],
+        "DiscardedMaterial",
+        Background -> None
+    ],
+    "\n"
+};
+
 makeDiscardedMaterialCell0[ textData_List ] := {
     Cell[
-        BoxData @ templateBox[
-            {
-                ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
-                    TextData @ textData,
-                    "Text",
-                    Background  -> None,
-                    FontOpacity -> 0.5
-                ]
-            },
-            "DiscardedMaterialOpener"
+        BoxData @ ToBoxes @ openerView[
+            { tr @ "FormattingDiscardedMaterial", compressUntilViewed @ discardedMaterialColumn @ textData },
+            False
         ],
         "DiscardedMaterial",
         Background -> None
@@ -733,6 +735,42 @@ makeDiscardedMaterialCell0[ textData_List ] := {
 };
 
 makeDiscardedMaterialCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*discardedMaterialColumn*)
+$$discardedToolCallCell = Cell[ _, "InlineToolCall" | "FailedToolCall", ___ ];
+
+discardedMaterialColumn // beginDefinition;
+
+discardedMaterialColumn[ textData_List ] := Column[
+    discardedMaterialRow /@ discardedMaterialGroups @ textData,
+    Spacings -> 0.5
+];
+
+discardedMaterialColumn // endDefinition;
+
+
+discardedMaterialRow // beginDefinition;
+
+discardedMaterialRow[ group_List ] := RawBoxes @ Cell[
+    TextData @ group,
+    "Text",
+    Background  -> None,
+    FontOpacity -> 0.5
+];
+
+discardedMaterialRow // endDefinition;
+
+
+discardedMaterialGroups // beginDefinition;
+
+discardedMaterialGroups[ textData_List ] := DeleteCases[
+    Split[ textData, ! MatchQ[ #2, $$discardedToolCallCell ] & ],
+    { ___String? (StringMatchQ[ WhitespaceCharacter... ]) }
+];
+
+discardedMaterialGroups // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
