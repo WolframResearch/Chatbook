@@ -1115,7 +1115,13 @@ DynamicModule[ { Typeset`var = TrueQ @ initialState },
     Style[
         PaneSelector[
             {
-                False -> clickableOpenerRow[ Dynamic[ Typeset`var ], label, Right, type ],
+                False ->
+                    Grid[(* This inert Grid is needed to prevent opener shifting downward when opened *)
+                        {{ clickableOpenerRow[ Dynamic[ Typeset`var ], label, Right, type ] }},
+                        Alignment        -> { Left, Baseline },
+                        BaselinePosition -> { 1, 1 },
+                        BaseStyle        -> { ShowStringCharacters -> False }
+                    ],
                 True ->
                     Grid[
                         {
@@ -1169,9 +1175,10 @@ MouseAppearance[
             clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, colors[ "Pressed" ] ]
         ],
         FEPrivate`Set[ Typeset`var, Not[ Typeset`var ] ],
-        Alignment  -> Left,
-        Appearance -> "Suppressed",
-        ImageSize  -> Scaled[ 1 ]
+        Alignment        -> Left,
+        Appearance       -> "Suppressed",
+        BaselinePosition -> Baseline,
+        ImageSize        -> Scaled[ 1 ]
     ],
     "LinkHand"
 ]
@@ -1191,7 +1198,7 @@ Grid[
     },
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
-    BaseStyle        -> { FontColor -> color, FontSize -> 13, ShowStringCharacters -> False },
+    BaseStyle        -> { FontColor -> color, FontSize -> 12, ShowStringCharacters -> False },
     Spacings         -> { { Automatic, 0.5, { 0.2 } }, { } }
 ]
 

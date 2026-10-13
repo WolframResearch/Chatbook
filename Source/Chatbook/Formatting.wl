@@ -2330,7 +2330,7 @@ toolCallIconPane // beginDefinition;
 
 toolCallIconPane[ icon_ ] := Pane[
     toolCallIconPane0 @ icon,
-    BaselinePosition -> Scaled[ 0.2 ],
+    BaselinePosition -> Scaled[ 0.27 ],
     ContentPadding   -> False,
     FrameMargins     -> { { 0, 0 }, { 0, 0 } }
 ];
@@ -2346,8 +2346,8 @@ toolCallIconPane0[ $$unspecified ] :=
 toolCallIconPane0[ icon_ ] :=
     Dynamic[
         If[ TrueQ @ $CloudEvaluation,
-            cloudShrinkToFit[ #1, { 16, 16 } ],
-            Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
+            cloudShrinkToFit[ #1, { 20, 20 } ],
+            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
         ] &[ icon ],
         SingleEvaluation -> True,
         TrackedSymbols   :> { }
