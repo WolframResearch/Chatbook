@@ -76,7 +76,7 @@
 "FormattingToolUsingLoading" -> "Utilizando herramienta\[Ellipsis]",
 "FormattingThinkingActive" -> "Pensando\[Ellipsis]",
 "FormattingThinkingComplete" -> "Se pens\[OAcute] durante `time`segundos",
-"FormattingThinkingCompleteSingular" -> "Thought for a second",
+"FormattingThinkingCompleteSingular" -> "Pensado por un segundo",
 "FormattingThinkingCompleteFallback" -> "Pensado",
 "FormattingHide" -> "Ocultar",
 
@@ -231,6 +231,7 @@
 
 "ChatbarOptionsTitle" -> "AI Access:",
 "ChatbarOptionsMonthlyUsage" -> "Uso este mes:",
+"ChatbarOptionsAccessFailedUsage" -> "Los detalles de uso no est\[AAcute]n disponibles en este momento. Vuelva a intentarlo m\[AAcute]s tarde.",
 "ChatbarOptionsLimit" -> "L\[IAcute]mite de uso alcanzado",
 "ChatbarOptionsLimitReset" -> "(se restablece en `1` d\[IAcute]as)",
 "ChatbarOptionsUpgradeTemplate" -> "Actualizar a `1`",
