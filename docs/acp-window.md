@@ -20,7 +20,7 @@ ShowNotebookAssistance[
 ]
 ```
 
-There is at most one ACP window (found by `findCurrentWorkspaceChat["ACP"]`). Calling `ShowNotebookAssistance` again reuses it; an explicit `"ProjectDirectory"` that differs from the window's directory switches the window to it (starting a new session), unless a turn is running. Explicit `"ACPAgent"`, `"ACPAgentExecutable"` and `"ACPModel"` settings are applied to the open window too: a new agent or executable reconnects (after the running turn, if there is one), a new model is selected in the current session, and a window in `"Error"` (e.g. OpenCode was not found) reconnects.
+There is at most one ACP window (found by `findCurrentWorkspaceChat["ACP"]`). Calling `ShowNotebookAssistance` again reuses it; an explicit `"ProjectDirectory"` that differs from the window's directory switches the window to it (starting a new session), unless a turn is running. Explicit `"ACPAgent"`, `"ACPAgentCommandLine"` and `"ACPModel"` settings are applied to the open window too: a new agent or command line reconnects (after the running turn, if there is one), a new model is selected in the current session, and a window in `"Error"` (e.g. OpenCode was not found) reconnects.
 
 ### Settings
 
@@ -30,14 +30,16 @@ There is at most one ACP window (found by `findCurrentWorkspaceChat["ACP"]`). Ca
 |---|---|---|
 | `"ProjectDirectory"` | directory (string or `File`), `None`, `Automatic` | `Automatic`: the last project folder used, else the source notebook's folder, else none (the window asks for one) |
 | `"ACPAgent"` | `"OpenCode"`, `Automatic` | `"OpenCode"` |
-| `"ACPAgentExecutable"` | path to the `opencode` executable, `Automatic` | `Automatic`: search `PATH`, then `~/.opencode/bin`, `~/.local/bin`, `~/.bun/bin`, `~/.npm-global/bin`, then `/opt/homebrew/bin` and `/usr/local/bin` (a front end started from the macOS Dock gives the kernel a minimal `PATH`) |
+| `"ACPAgentCommandLine"` | `Automatic`; a program (string or `File`: a path, or a command name looked up like the default), run with the agent's arguments (`acp`); or the whole command line `{program, args...}`, as in `RunProcess` (the agent's arguments are not added) | `Automatic`: `opencode acp`, with `opencode` found by searching `PATH`, then `~/.opencode/bin`, `~/.local/bin`, `~/.bun/bin`, `~/.npm-global/bin`, then `/opt/homebrew/bin` and `/usr/local/bin` (a front end started from the macOS Dock gives the kernel a minimal `PATH`) |
 | `"ACPModel"` | model value such as `"openai/gpt-6.1-sol"`, `Automatic` | the last model chosen for this agent, else `llmkit/gpt-5.4` (if offered), else `openai/gpt-6.1-sol` (if offered), else the agent's default |
 
 User choices are persisted in `CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "ACP", ...}]`: `"LastProjectDirectory"`, `{"LastModel", agent}`, `{"LastEffort", agent}` and `{"RecentModels", agent}` (the mode is not persisted).
 
-The window's notebook-level state lives in its `TaggingRules`: `"ChatNotebookSettings"` (with `"AppName" -> "ACP"`, `"ACPWindow" -> True`, `"WorkspaceChat" -> True`) and `"ACP"` (`"ProjectDirectory"`, `"Agent"`, `"Settings"` (the explicit `"ACPAgent"`, `"ACPAgentExecutable"` and `"ACPModel"` settings, so a window rebuilt after a kernel restart connects the same way), `"Input"`, `"Busy"`, `"KernelSessionID"`, `"ResumableSessionID"`).
+The window's notebook-level state lives in its `TaggingRules`: `"ChatNotebookSettings"` (with `"AppName" -> "ACP"`, `"ACPWindow" -> True`, `"WorkspaceChat" -> True`) and `"ACP"` (`"ProjectDirectory"`, `"Agent"`, `"Settings"` (the explicit `"ACPAgent"`, `"ACPAgentCommandLine"` and `"ACPModel"` settings, so a window rebuilt after a kernel restart connects the same way), `"Input"`, `"Busy"`, `"KernelSessionID"`, `"ResumableSessionID"`).
 
-When OpenCode is not found, the error's "Locate OpenCode..." button opens a file chooser (run by the front end); the chosen file becomes the window's `"ACPAgentExecutable"` setting and the window reconnects.
+When OpenCode is not found, the error's "Locate OpenCode..." button opens a file chooser (run by the front end); the chosen file becomes the program of the window's `"ACPAgentCommandLine"` setting and the window reconnects.
+
+The program of a command line (`acpFindProgram`) is a path (with a directory part, or starting with `~`), which must exist, or a command name, looked up like `opencode` (on Windows a name without an extension also matches `.exe` and `.cmd`); a program that is not found gives the "not found" error with its name. The process gets the window's environment (`OPENCODE_CONFIG_CONTENT`, which makes OpenCode ask before edits and shell commands, and the LLMKit key). A command line that runs the agent somewhere else, such as `{"ssh", host, "~/.opencode/bin/opencode", "acp"}` or a container, does not pass that environment on (ssh forwards no variables by default): the agent there uses its own configuration, and OpenCode's default is to edit files and run commands without asking. See [Known limitations](#known-limitations).
 
 ## Files
 
@@ -48,7 +50,7 @@ When OpenCode is not found, the error's "Locate OpenCode..." button opens a file
 | `ACP/State.wl` | Window and turn stores, change symbols and the pump task (scheduled evaluations, publication, housekeeping), opener state, `acpIsolated`, `acpSchedule`, ACPLink loading, front end flags, kernel-restart detection |
 | `ACP/Transcript.wl` | The pure turn model: the reducer for ACP session updates and permission events, the final-answer split, tool titles and summaries, activity/duration labels, markdown export and answer preprocessing, and the English strings (`$acpStrings`, `acpLabel`) |
 | `ACP/Rendering.wl` | Boxes: the live view, entity views and tool cards, diff view, the final output cell, the permission panel, the toolbar status view, the usage meter and error views |
-| `ACP/Agents.wl` | The agent registry, finding the OpenCode executable, the OpenCode config JSON and environment, the LLMKit key lookup, model preference, billing labels, persisted settings, `$acpConnectionStrings` |
+| `ACP/Agents.wl` | The agent registry, the agent's command line (`acpAgentSpec`, the `"ACPAgentCommandLine"` setting, finding programs with `acpFindProgram`), the OpenCode config JSON and environment, the LLMKit key lookup, model preference, billing labels, persisted settings, `$acpConnectionStrings` |
 | `ACP/Git.wl` | The git backend of "Review changes": finding git (`acpFindGit`), the asynchronous runner (`acpGitRun`), parsers for git's output, change sets (`acpGitChanges`, `acpGitBuildChangeSet`), and the window's git summary (`acpGitSummary`, `acpGitCheck`, `acpGitMarkStale`) with its triggers and housekeeping. See [Reviewing changes](#reviewing-changes) |
 | `ACP/Review.wl` | "Review changes": the toolbar button (`acpReviewButton`), the review window (`acpReviewChanges`, `acpReviewNotebook`, `acpReviewRefresh`), opening files, the file icons (`acpFileIcon`) and `$acpReviewStrings`. See [Reviewing changes](#reviewing-changes) |
 | `ACP/Sessions.wl` | Sessions: the sessions store of a window (`acpSessionsOf`, listing with `acpSessionsList`, grouping with `acpSessionsProjects`), restoring a session with its history (`acpRestoreSession`, the replay accumulator, `acpReplayTurn`, the write job `acpRestoreWriteStep`), new session in a folder (`acpNewSessionIn`), delete (`acpDeleteSession`), the Sessions window (toolbar button `acpSessionsButton`, `acpToggleSessions`, placement `acpSessionsPlacement`/`acpSessionsGeometry`, `acpSessionsNotebook`, the content cell `acpSessionsCell` and its views, the window's actions `acpSessionsWindowAction`, `acpShortRelativeTime`), `$acpSessionsStrings`. See [Sessions](#sessions) |
@@ -255,6 +257,8 @@ The `exp*` fixtures are sanitized recordings (paths replaced by `/project` and `
 ## Known limitations
 
 * Only OpenCode is supported as an agent (the registry in `Agents.wl` has room for more).
+* The agent runs on the kernel's machine. A command line that runs it on another machine (`ssh`) gets as far as a session, but the window is not made for it: the project folder must exist locally (it is checked with `DirectoryQ`, is the agent process's working directory, and is sent as the session's folder), "Review changes" and the Sessions window's folder checks and "open folder" use the local disk, the window's environment (the "ask" permissions and the LLMKit key) does not reach the remote agent, and the remote processes are only stopped by the end of the connection (ACPLink stops the local process tree).
+* When the agent exits while connecting (a wrong command line, an ssh login failure), the toolbar shows "OpenCode stopped unexpectedly." without the agent's error output (it is kept in the error's `"Detail"`, which the compact toolbar error view does not show).
 * The conversation is not forwarded from other notebooks, and notebook context is not attached to prompts.
 * There is no "MCP servers starting" indicator in the toolbar: OpenCode often never reports the MCP server's prompts (the listing can time out) even though its tools work. While a turn waits more than 5 s for the first event, the Working header says "Waiting for OpenCode... (MCP servers may still be starting)".
 * The model menu uses native `ActionMenu` submenus; long model lists are long menus.

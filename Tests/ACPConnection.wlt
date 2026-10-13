@@ -520,35 +520,41 @@ VerificationTest[
     $homeExe = FileNameJoin @ { $fakeHome, ".opencode", "bin", "opencode" };
     Export[ $pathExe, "#!/bin/sh\n", "Text" ];
     Export[ $homeExe, "#!/bin/sh\n", "Text" ];
+    Export[ FileNameJoin @ { $pathDir2, "myagent" }, "#!/bin/sh\n", "Text" ];
     FileExistsQ /@ { $pathExe, $homeExe },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FindOpenCode-Setup@@Tests/ACPConnection.wlt:512,1-527,2"
+    TestID   -> "FindProgram-Setup@@Tests/ACPConnection.wlt:512,1-528,2"
 ]
 
 VerificationTest[
     {
-        acpFindOpenCode[ <| |>, <| "PATH" -> StringRiffle[ { $pathDir1, $pathDir2 }, ":" ], "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
-        acpFindOpenCode[ <| |>, <| "PATH" -> $pathDir1, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
-        acpFindOpenCode[ <| "ACPAgentExecutable" -> $homeExe |>, <| "PATH" -> $pathDir2, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
-        acpFindOpenCode[ <| "ACPAgentExecutable" -> File @ $pathExe |>, <| "PATH" -> "", "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |> ]
+        (* the first match in PATH (a directory named opencode is not a program) *)
+        acpFindProgram[ "opencode", <| "PATH" -> StringRiffle[ { $pathDir1, $pathDir2 }, ":" ], "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
+        (* then the install directories in the home directory *)
+        acpFindProgram[ "opencode", <| "PATH" -> $pathDir1, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
+        (* a path is used as given *)
+        acpFindProgram[ $homeExe, <| "PATH" -> $pathDir2, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
+        acpFindProgram[ $pathExe, <| "PATH" -> "", "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |> ],
+        (* any command name, also from the system directories *)
+        acpFindProgram[ "myagent", <| "PATH" -> $pathDir1, "HomeDirectory" -> None, "OperatingSystem" -> "Unix", "SystemDirectories" -> { $pathDir2 } |> ]
     },
-    { $pathExe, $homeExe, $homeExe, $pathExe },
+    { $pathExe, $homeExe, $homeExe, $pathExe, FileNameJoin @ { $pathDir2, "myagent" } },
     SameTest -> MatchQ,
-    TestID   -> "FindOpenCode-Found@@Tests/ACPConnection.wlt:529,1-539,2"
+    TestID   -> "FindProgram-Found@@Tests/ACPConnection.wlt:530,1-545,2"
 ]
 
 VerificationTest[
     {
-        acpFindOpenCode[ <| |>, <| "PATH" -> $pathDir1, "HomeDirectory" -> $exeRoot, "OperatingSystem" -> "Unix" |> ],
-        acpFindOpenCode[ <| "ACPAgentExecutable" -> FileNameJoin @ { $exeRoot, "missing" } |>, <| "PATH" -> $pathDir2, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ]
+        acpFindProgram[ "opencode", <| "PATH" -> $pathDir1, "HomeDirectory" -> $exeRoot, "OperatingSystem" -> "Unix" |> ],
+        acpFindProgram[ FileNameJoin @ { $exeRoot, "missing" }, <| "PATH" -> $pathDir2, "HomeDirectory" -> $fakeHome, "OperatingSystem" -> "Unix" |> ],
+        (* a path to a directory *)
+        acpFindProgram[ FileNameJoin @ { $pathDir1, "opencode" }, <| "PATH" -> $pathDir2, "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |> ],
+        acpFindProgram[ "myagent", <| "PATH" -> $pathDir1, "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |> ]
     },
-    {
-        Failure[ "AgentNotFound", KeyValuePattern @ { "Agent" -> "OpenCode", "Path" -> None, "InstallURL" -> "https://opencode.ai" } ],
-        Failure[ "AgentNotFound", KeyValuePattern @ { "Path" -> FileNameJoin @ { $exeRoot, "missing" } } ]
-    },
+    { None, None, None, None },
     SameTest -> MatchQ,
-    TestID   -> "FindOpenCode-NotFound@@Tests/ACPConnection.wlt:541,1-552,2"
+    TestID   -> "FindProgram-NotFound@@Tests/ACPConnection.wlt:547,1-558,2"
 ]
 
 VerificationTest[
@@ -556,21 +562,75 @@ VerificationTest[
         winDir = CreateDirectory @ FileNameJoin @ { $exeRoot, "win" };
         exe = FileNameJoin @ { winDir, "opencode.exe" };
         Export[ exe, "", "Text" ];
-        acpFindOpenCode[ <| |>, <| "PATH" -> "\"" <> $pathDir1 <> "\";" <> winDir, "HomeDirectory" -> None, "OperatingSystem" -> "Windows" |> ] === exe
+        {
+            acpFindProgram[ "opencode", <| "PATH" -> "\"" <> $pathDir1 <> "\";" <> winDir, "HomeDirectory" -> None, "OperatingSystem" -> "Windows" |> ] === exe,
+            acpFindProgram[ "opencode.exe", <| "PATH" -> winDir, "HomeDirectory" -> None, "OperatingSystem" -> "Windows" |> ] === exe
+        }
     ],
-    True,
+    { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FindOpenCode-Windows@@Tests/ACPConnection.wlt:554,1-564,2"
+    TestID   -> "FindProgram-Windows@@Tests/ACPConnection.wlt:560,1-573,2"
+]
+
+(* The "ACPAgentCommandLine" setting: a program gets the agent's arguments, a list is the whole command line *)
+VerificationTest[
+    Module[ { env, missing, command },
+        env     = <| "PATH" -> $pathDir2, "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |>;
+        missing = FileNameJoin @ { $exeRoot, "missing" };
+        command = acpAgentSpec[ "OpenCode", <| "ACPAgentCommandLine" -> # |>, env ][ "Command" ] &;
+        {
+            acpAgentSpec[ "OpenCode", <| |>, env ][ "Command" ],
+            command @ Automatic,
+            command @ "  ",
+            command @ $homeExe,
+            command @ File @ $homeExe,
+            command @ "opencode",
+            command @ { "opencode", "acp", "--print-logs" },
+            command @ { File @ $homeExe, "acp" },
+            command @ { $homeExe },
+            acpAgentSpec[ "OpenCode", <| "ACPAgentCommandLine" -> { "no-such-program", "acp" } |>, env ],
+            acpAgentSpec[ "OpenCode", <| "ACPAgentCommandLine" -> missing |>, env ],
+            acpAgentSpec[ "OpenCode", <| |>, <| "PATH" -> $pathDir1, "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |> ]
+        }
+    ],
+    {
+        { $pathExe, "acp" },
+        { $pathExe, "acp" },
+        { $pathExe, "acp" },
+        { $homeExe, "acp" },
+        { $homeExe, "acp" },
+        { $pathExe, "acp" },
+        { $pathExe, "acp", "--print-logs" },
+        { $homeExe, "acp" },
+        { $homeExe },
+        Failure[ "AgentNotFound", KeyValuePattern @ { "Agent" -> "OpenCode", "Path" -> "no-such-program" } ],
+        Failure[ "AgentNotFound", KeyValuePattern @ { "Path" -> FileNameJoin @ { $exeRoot, "missing" } } ],
+        (* not found without an explicit command line: no path, the install URL *)
+        Failure[ "AgentNotFound", KeyValuePattern @ { "Agent" -> "OpenCode", "Path" -> None, "InstallURL" -> "https://opencode.ai" } ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AgentSpec-CommandLine@@Tests/ACPConnection.wlt:576,1-613,2"
 ]
 
 VerificationTest[
-    Module[ { spec, mock, custom },
-        spec   = acpAgentSpec[ "OpenCode", <| "ACPAgentExecutable" -> $pathExe |> ];
-        custom = Block[ { $acpAgents = <| $acpAgents, "Custom" -> <| "Name" -> "Custom Agent", "Executable" -> "/opt/agent", "Arguments" -> { "--acp" } |> |> },
+    Module[ { env, spec, custom },
+        env    = <| "PATH" -> $pathDir2, "HomeDirectory" -> None, "OperatingSystem" -> "Unix" |>;
+        spec   = acpAgentSpec[ "OpenCode", <| "ACPAgentCommandLine" -> $pathExe |>, env ];
+        custom = Block[
             {
-                acpAgentSpec[ "Custom", <| |> ][ "Command" ],
-                acpAgentSpec[ "Custom", <| "ACPAgentExecutable" -> { "/usr/bin/env", "agent" } |> ][ "Command" ],
-                acpAgentSpec[ "Custom", <| |> ][ "Environment" ]
+                $acpAgents = <|
+                    $acpAgents,
+                    "Custom"   -> <| "Name" -> "Custom Agent", "Executable" -> "myagent", "Arguments" -> { "--acp" } |>,
+                    "Function" -> <| "Name" -> "Function Agent", "Executable" -> (FileNameJoin @ { $pathDir2, "myagent" } &) |>,
+                    "Missing"  -> <| "Name" -> "Missing Agent", "Executable" -> "/no/such/agent", "Arguments" -> { "--acp" } |>
+                |>
+            },
+            {
+                acpAgentSpec[ "Custom", <| |>, env ][ "Command" ],
+                acpAgentSpec[ "Custom", <| "ACPAgentCommandLine" -> { $homeExe, "agent" } |>, env ][ "Command" ],
+                acpAgentSpec[ "Custom", <| |>, env ][ "Environment" ],
+                acpAgentSpec[ "Function", <| |>, env ][ "Command" ],
+                acpAgentSpec[ "Missing", <| |>, env ]
             }
         ];
         {
@@ -580,8 +640,7 @@ VerificationTest[
             MatchQ[ Normal @ spec, { ___, "Environment" :> _, ___ } ],
             KeyExistsQ[ spec[ "Environment" ], "OPENCODE_CONFIG_CONTENT" ],
             custom,
-            acpAgentSpec[ "NoSuchAgent", <| |> ],
-            acpAgentSpec[ "OpenCode", <| "ACPAgentExecutable" -> FileNameJoin @ { $exeRoot, "missing" } |> ]
+            acpAgentSpec[ "NoSuchAgent", <| |> ]
         }
     ],
     {
@@ -589,12 +648,44 @@ VerificationTest[
         { $pathExe, "acp" },
         True,
         True,
-        { { "/opt/agent", "--acp" }, { "/usr/bin/env", "agent", "--acp" }, Inherited },
-        Failure[ "UnknownAgent", KeyValuePattern[ "Agent" -> "NoSuchAgent" ] ],
-        Failure[ "AgentNotFound", _ ]
+        {
+            { FileNameJoin @ { $pathDir2, "myagent" }, "--acp" },
+            { $homeExe, "agent" },
+            Inherited,
+            { FileNameJoin @ { $pathDir2, "myagent" } },
+            Failure[ "AgentNotFound", KeyValuePattern @ { "Agent" -> "Missing Agent", "Path" -> None } ]
+        },
+        Failure[ "UnknownAgent", KeyValuePattern[ "Agent" -> "NoSuchAgent" ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "AgentSpec@@Tests/ACPConnection.wlt:566,1-598,2"
+    TestID   -> "AgentSpec@@Tests/ACPConnection.wlt:615,1-662,2"
+]
+
+VerificationTest[
+    {
+        acpCommandLineSetting @ <| |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> Automatic |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> " /opt/oc " |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> File[ "/opt/oc" ] |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> { "ssh", "host", "opencode acp" } |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> { File[ "/opt/oc" ], "acp" } |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> { } |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> { " ", "acp" } |>,
+        acpCommandLineSetting @ <| "ACPAgentCommandLine" -> { "a", 1 } |>
+    },
+    {
+        None,
+        None,
+        { "Program", "/opt/oc" },
+        { "Program", "/opt/oc" },
+        { "CommandLine", { "ssh", "host", "opencode acp" } },
+        { "CommandLine", { "/opt/oc", "acp" } },
+        None,
+        None,
+        None
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CommandLineSetting@@Tests/ACPConnection.wlt:664,1-689,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -611,7 +702,7 @@ VerificationTest[
     },
     { Missing[ "NotSet" ], "m2", "m2", None, Inherited, "default" },
     SameTest -> MatchQ,
-    TestID   -> "PersistedSettings-Headless@@Tests/ACPConnection.wlt:603,1-615,2"
+    TestID   -> "PersistedSettings-Headless@@Tests/ACPConnection.wlt:694,1-706,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -627,7 +718,7 @@ VerificationTest[
         "Data"    -> KeyValuePattern[ "ErrorCode" -> -32603 ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-ModelUnavailable@@Tests/ACPConnection.wlt:620,1-631,2"
+    TestID   -> "ErrorInfo-ModelUnavailable@@Tests/ACPConnection.wlt:711,1-722,2"
 ]
 
 VerificationTest[
@@ -651,7 +742,7 @@ VerificationTest[
         { "NotConnected", { "Reconnect" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-Table@@Tests/ACPConnection.wlt:633,1-655,2"
+    TestID   -> "ErrorInfo-Table@@Tests/ACPConnection.wlt:724,1-746,2"
 ]
 
 VerificationTest[
@@ -668,7 +759,7 @@ VerificationTest[
         KeyValuePattern @ { "Code" -> "UnknownAgent", "Message" -> "Unknown agent: X.", "Detail" -> None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-Failures@@Tests/ACPConnection.wlt:657,1-672,2"
+    TestID   -> "ErrorInfo-Failures@@Tests/ACPConnection.wlt:748,1-763,2"
 ]
 
 VerificationTest[
@@ -696,7 +787,7 @@ VerificationTest[
         "ModelUnavailable"
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-ProviderErrorsAreNotModelErrors@@Tests/ACPConnection.wlt:674,1-700,2"
+    TestID   -> "ErrorInfo-ProviderErrorsAreNotModelErrors@@Tests/ACPConnection.wlt:765,1-791,2"
 ]
 
 VerificationTest[
@@ -712,7 +803,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "MessageData@@Tests/ACPConnection.wlt:702,1-716,2"
+    TestID   -> "MessageData@@Tests/ACPConnection.wlt:793,1-807,2"
 ]
 
 VerificationTest[
@@ -726,7 +817,7 @@ VerificationTest[
     },
     { False, False, False, Missing[ "NotFound" ], True },
     SameTest -> MatchQ,
-    TestID   -> "ConnectionUtilities@@Tests/ACPConnection.wlt:718,1-730,2"
+    TestID   -> "ConnectionUtilities@@Tests/ACPConnection.wlt:809,1-821,2"
 ]
 
 VerificationTest[
@@ -738,7 +829,7 @@ VerificationTest[
     },
     { None, None, "m1" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentModel-NoConfigOptions@@Tests/ACPConnection.wlt:732,1-742,2"
+    TestID   -> "CurrentModel-NoConfigOptions@@Tests/ACPConnection.wlt:823,1-833,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -751,12 +842,12 @@ VerificationTest[
     ],
     { "NoDirectory", "NoDirectory", None },
     SameTest -> MatchQ,
-    TestID   -> "Connect-NoDirectory@@Tests/ACPConnection.wlt:747,1-755,2"
+    TestID   -> "Connect-NoDirectory@@Tests/ACPConnection.wlt:838,1-846,2"
 ]
 
 VerificationTest[
     ifConnTests @ Module[ { nbo },
-        nbo = newWindow[ $project1, <| "ACPAgentExecutable" -> FileNameJoin @ { $scratch, "no-such-opencode" } |>, "OpenCode" ];
+        nbo = newWindow[ $project1, <| "ACPAgentCommandLine" -> FileNameJoin @ { $scratch, "no-such-opencode" } |>, "OpenCode" ];
         acpEnsureConnected @ nbo;
         waitUntil[ acpWindowGet[ nbo, "Status" ] === "Error" ];
         { acpWindowGet[ nbo, "Status" ], acpWindowGet[ nbo, "Error" ], acpWindowGet[ nbo, "Connection" ] }
@@ -767,7 +858,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "Connect-AgentNotFound@@Tests/ACPConnection.wlt:757,1-771,2"
+    TestID   -> "Connect-AgentNotFound@@Tests/ACPConnection.wlt:848,1-862,2"
 ]
 
 VerificationTest[
@@ -779,7 +870,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Error", "UnknownAgent" },
     SameTest -> MatchQ,
-    TestID   -> "Connect-UnknownAgent@@Tests/ACPConnection.wlt:773,1-783,2"
+    TestID   -> "Connect-UnknownAgent@@Tests/ACPConnection.wlt:864,1-874,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -792,7 +883,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Connecting", True },
     SameTest -> MatchQ,
-    TestID   -> "Connect-Ready@@Tests/ACPConnection.wlt:788,1-796,2"
+    TestID   -> "Connect-Ready@@Tests/ACPConnection.wlt:879,1-887,2"
 ]
 
 VerificationTest[
@@ -811,7 +902,7 @@ VerificationTest[
         "Error"              -> None
     |>,
     SameTest -> MatchQ,
-    TestID   -> "Connect-WindowRecord@@Tests/ACPConnection.wlt:798,1-815,2"
+    TestID   -> "Connect-WindowRecord@@Tests/ACPConnection.wlt:889,1-906,2"
 ]
 
 VerificationTest[
@@ -822,7 +913,7 @@ VerificationTest[
     } ],
     Missing[ "TestSkipped" ] | { "m2", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Connect-PreferredModelApplied@@Tests/ACPConnection.wlt:817,1-826,2"
+    TestID   -> "Connect-PreferredModelApplied@@Tests/ACPConnection.wlt:908,1-917,2"
 ]
 
 VerificationTest[
@@ -836,7 +927,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Ready", 1, 1, 1 },
     SameTest -> MatchQ,
-    TestID   -> "Connect-Idempotent@@Tests/ACPConnection.wlt:828,1-840,2"
+    TestID   -> "Connect-Idempotent@@Tests/ACPConnection.wlt:919,1-931,2"
 ]
 
 VerificationTest[
@@ -864,7 +955,7 @@ VerificationTest[
         { KeyValuePattern @ { "configId" -> "model", "sessionId" -> "sess-1", "value" -> "m2" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Connect-WireLog@@Tests/ACPConnection.wlt:842,1-868,2"
+    TestID   -> "Connect-WireLog@@Tests/ACPConnection.wlt:933,1-959,2"
 ]
 
 VerificationTest[
@@ -872,7 +963,7 @@ VerificationTest[
         SubsetQ[ Keys @ Wolfram`Chatbook`ACP`State`Private`$housekeeping, { "ACPConnection", "ACPConnectionSweep" } ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Connect-HousekeepingRegistered@@Tests/ACPConnection.wlt:870,1-876,2"
+    TestID   -> "Connect-HousekeepingRegistered@@Tests/ACPConnection.wlt:961,1-967,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -897,7 +988,7 @@ VerificationTest[
         KeyValuePattern @ { "Name" -> "write", "Permission" -> KeyValuePattern @ { "RequestID" -> $perm1, "Outcome" -> None }, "Diffs" -> { __ } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-StreamingAndPermissionRequest@@Tests/ACPConnection.wlt:881,1-901,2"
+    TestID   -> "Prompt-StreamingAndPermissionRequest@@Tests/ACPConnection.wlt:972,1-992,2"
 ]
 
 VerificationTest[
@@ -907,7 +998,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-AnswerPermissionLater@@Tests/ACPConnection.wlt:903,1-911,2"
+    TestID   -> "Prompt-AnswerPermissionLater@@Tests/ACPConnection.wlt:994,1-1002,2"
 ]
 
 VerificationTest[
@@ -926,7 +1017,7 @@ VerificationTest[
         { "I'll write the file.", "Done: hello.txt contains hi." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-FinalTurn@@Tests/ACPConnection.wlt:913,1-930,2"
+    TestID   -> "Prompt-FinalTurn@@Tests/ACPConnection.wlt:1004,1-1021,2"
 ]
 
 VerificationTest[
@@ -943,14 +1034,14 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-WindowAfterTurn@@Tests/ACPConnection.wlt:932,1-947,2"
+    TestID   -> "Prompt-WindowAfterTurn@@Tests/ACPConnection.wlt:1023,1-1038,2"
 ]
 
 VerificationTest[
     ifConnTests @ acpAnswerPermission[ $w1, 999, "once" ],
     Missing[ "TestSkipped" ] | Missing[ "NotPending", 999 ],
     SameTest -> MatchQ,
-    TestID   -> "Prompt-AnswerUnknownPermission@@Tests/ACPConnection.wlt:949,1-954,2"
+    TestID   -> "Prompt-AnswerUnknownPermission@@Tests/ACPConnection.wlt:1040,1-1045,2"
 ]
 
 VerificationTest[
@@ -973,7 +1064,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, "end_turn", "withdrawn", "completed", { <| "outcome" -> <| "outcome" -> "cancelled" |> |> } },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-CancelRequest@@Tests/ACPConnection.wlt:956,1-977,2"
+    TestID   -> "Prompt-CancelRequest@@Tests/ACPConnection.wlt:1047,1-1068,2"
 ]
 
 VerificationTest[
@@ -1005,7 +1096,7 @@ VerificationTest[
         "Ready"
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-StopWithPendingPermission@@Tests/ACPConnection.wlt:979,1-1009,2"
+    TestID   -> "Prompt-StopWithPendingPermission@@Tests/ACPConnection.wlt:1070,1-1100,2"
 ]
 
 VerificationTest[
@@ -1026,7 +1117,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "end_turn", { <| "outcome" -> <| "outcome" -> "cancelled" |> |> }, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-BackgroundPermissionCancelled@@Tests/ACPConnection.wlt:1011,1-1030,2"
+    TestID   -> "Prompt-BackgroundPermissionCancelled@@Tests/ACPConnection.wlt:1102,1-1121,2"
 ]
 
 VerificationTest[
@@ -1053,7 +1144,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "cancelled", { }, { <| "outcome" -> <| "outcome" -> "cancelled" |> |> }, "Ready", None },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-PermissionAfterStop@@Tests/ACPConnection.wlt:1032,1-1057,2"
+    TestID   -> "Prompt-PermissionAfterStop@@Tests/ACPConnection.wlt:1123,1-1148,2"
 ]
 
 VerificationTest[
@@ -1069,7 +1160,7 @@ VerificationTest[
         "Ready"
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-ModelUnavailable@@Tests/ACPConnection.wlt:1059,1-1073,2"
+    TestID   -> "Prompt-ModelUnavailable@@Tests/ACPConnection.wlt:1150,1-1164,2"
 ]
 
 VerificationTest[
@@ -1081,7 +1172,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-MCPReadyDetection@@Tests/ACPConnection.wlt:1075,1-1085,2"
+    TestID   -> "Prompt-MCPReadyDetection@@Tests/ACPConnection.wlt:1166,1-1176,2"
 ]
 
 VerificationTest[
@@ -1097,7 +1188,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { Null, Null, Null, Null, Null, Null, "Ready" },
     SameTest -> MatchQ,
-    TestID   -> "Handlers-Isolated@@Tests/ACPConnection.wlt:1087,1-1101,2"
+    TestID   -> "Handlers-Isolated@@Tests/ACPConnection.wlt:1178,1-1192,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1112,7 +1203,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-Mode@@Tests/ACPConnection.wlt:1106,1-1116,2"
+    TestID   -> "ConfigOption-Mode@@Tests/ACPConnection.wlt:1197,1-1207,2"
 ]
 
 VerificationTest[
@@ -1126,7 +1217,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True, _String? (StringStartsQ[ "Couldn't change Session Mode" ]), "plan" },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-Error@@Tests/ACPConnection.wlt:1118,1-1130,2"
+    TestID   -> "ConfigOption-Error@@Tests/ACPConnection.wlt:1209,1-1221,2"
 ]
 
 VerificationTest[
@@ -1141,7 +1232,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True, "m1", "m1" },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-ModelPersisted@@Tests/ACPConnection.wlt:1132,1-1145,2"
+    TestID   -> "ConfigOption-ModelPersisted@@Tests/ACPConnection.wlt:1223,1-1236,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1163,7 +1254,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Connecting", True, "sess-2", "sess-2", { <| "sessionId" -> "sess-1" |> }, 2, "m1", "build" },
     SameTest -> MatchQ,
-    TestID   -> "Session-New@@Tests/ACPConnection.wlt:1150,1-1167,2"
+    TestID   -> "Session-New@@Tests/ACPConnection.wlt:1241,1-1258,2"
 ]
 
 VerificationTest[
@@ -1183,7 +1274,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Session-Disconnect@@Tests/ACPConnection.wlt:1169,1-1187,2"
+    TestID   -> "Session-Disconnect@@Tests/ACPConnection.wlt:1260,1-1278,2"
 ]
 
 (* A resumed session keeps its own config: the window's preferred model (here m2, the session's is m1; m2 is no longer
@@ -1211,7 +1302,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 2, { KeyValuePattern @ { "sessionId" -> "sess-2", "cwd" -> ExpandFileName @ $project1, "mcpServers" -> { } } }, { }, "sess-2", None, { }, "m1", "Resumed" },
     SameTest -> MatchQ,
-    TestID   -> "Session-Resume@@Tests/ACPConnection.wlt:1192,1-1215,2"
+    TestID   -> "Session-Resume@@Tests/ACPConnection.wlt:1283,1-1306,2"
 ]
 
 VerificationTest[
@@ -1232,7 +1323,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 1, 1, "sess-1", True },
     SameTest -> MatchQ,
-    TestID   -> "Session-ResumeFallsBackToNew@@Tests/ACPConnection.wlt:1217,1-1236,2"
+    TestID   -> "Session-ResumeFallsBackToNew@@Tests/ACPConnection.wlt:1308,1-1327,2"
 ]
 
 VerificationTest[
@@ -1254,7 +1345,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { <| "StopReason" -> "cancelled", "ClientCancel" -> "Stop", "Error" -> None |>, "Disconnected", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Session-DisconnectRunningTurn@@Tests/ACPConnection.wlt:1238,1-1258,2"
+    TestID   -> "Session-DisconnectRunningTurn@@Tests/ACPConnection.wlt:1329,1-1349,2"
 ]
 
 VerificationTest[
@@ -1276,7 +1367,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, <| "StopReason" -> "cancelled", "ClientCancel" -> "Stop" |>, <| |>, "Ready" },
     SameTest -> MatchQ,
-    TestID   -> "Session-StopTimeout@@Tests/ACPConnection.wlt:1260,1-1280,2"
+    TestID   -> "Session-StopTimeout@@Tests/ACPConnection.wlt:1351,1-1371,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1301,7 +1392,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "AgentDeath-DuringTurn@@Tests/ACPConnection.wlt:1285,1-1305,2"
+    TestID   -> "AgentDeath-DuringTurn@@Tests/ACPConnection.wlt:1376,1-1396,2"
 ]
 
 VerificationTest[
@@ -1317,7 +1408,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Error", "AgentExited", None },
     SameTest -> MatchQ,
-    TestID   -> "AgentDeath-DuringSetup@@Tests/ACPConnection.wlt:1307,1-1321,2"
+    TestID   -> "AgentDeath-DuringSetup@@Tests/ACPConnection.wlt:1398,1-1412,2"
 ]
 
 VerificationTest[
@@ -1339,7 +1430,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { KeyValuePattern @ { "Code" -> "NoModels", "Actions" -> { "SignIn", "Reconnect" } }, None, True, "Error" },
     SameTest -> MatchQ,
-    TestID   -> "SessionError-NoModels@@Tests/ACPConnection.wlt:1323,1-1343,2"
+    TestID   -> "SessionError-NoModels@@Tests/ACPConnection.wlt:1414,1-1434,2"
 ]
 
 VerificationTest[
@@ -1349,24 +1440,24 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, None },
     SameTest -> MatchQ,
-    TestID   -> "Reconnect-ClearsError@@Tests/ACPConnection.wlt:1345,1-1353,2"
+    TestID   -> "Reconnect-ClearsError@@Tests/ACPConnection.wlt:1436,1-1444,2"
 ]
 
 VerificationTest[
-    (* A window whose agent could not be started connects once it is given a valid executable (UI.wl applies an
-       "ACPAgentExecutable" given to ShowNotebookAssistance for the open window, or chosen with "Locate OpenCode...") *)
+    (* A window whose agent could not be started connects once it is given a valid command line (UI.wl applies an
+       "ACPAgentCommandLine" given to ShowNotebookAssistance for the open window, or chosen with "Locate OpenCode...") *)
     ifConnTests @ Module[ { nbo, result, conn },
-        nbo = newWindow[ $project1, <| "ACPAgentExecutable" -> FileNameJoin @ { $scratch, "no-such-agent" } |> ];
+        nbo = newWindow[ $project1, <| "ACPAgentCommandLine" -> FileNameJoin @ { $scratch, "no-such-agent" } |> ];
         acpEnsureConnected @ nbo;
         waitUntil[ acpWindowGet[ nbo, "Status" ] === "Error" ];
         Wolfram`Chatbook`ACP`UI`Private`acpApplyWindowSettings[
             nbo,
-            Wolfram`Chatbook`ACP`UI`Private`acpMergeWindowSettings[ nbo, <| "ACPAgentExecutable" -> $python |> ],
+            Wolfram`Chatbook`ACP`UI`Private`acpMergeWindowSettings[ nbo, <| "ACPAgentCommandLine" -> $python |> ],
             False
         ];
         result = {
             waitUntil[ acpWindowGet[ nbo, "Status" ] === "Ready" ],
-            acpWindowGet[ nbo, "Settings" ][ "ACPAgentExecutable" ] === $python,
+            acpWindowGet[ nbo, "Settings" ][ "ACPAgentCommandLine" ] === $python,
             acpWindowGet[ nbo, "Error" ]
         };
         conn = acpWindowGet[ nbo, "Connection" ];
@@ -1375,7 +1466,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, None, True },
     SameTest -> MatchQ,
-    TestID   -> "Reconnect-AfterAgentExecutableSet@@Tests/ACPConnection.wlt:1355,1-1379,2"
+    TestID   -> "Reconnect-AfterCommandLineSet@@Tests/ACPConnection.wlt:1446,1-1470,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1388,7 +1479,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { Failure[ "InvalidDirectory", _ ], Null },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-Invalid@@Tests/ACPConnection.wlt:1384,1-1392,2"
+    TestID   -> "ProjectDirectory-Invalid@@Tests/ACPConnection.wlt:1475,1-1483,2"
 ]
 
 VerificationTest[
@@ -1411,7 +1502,7 @@ VerificationTest[
         ExpandFileName @ $project2
     },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-Change@@Tests/ACPConnection.wlt:1394,1-1415,2"
+    TestID   -> "ProjectDirectory-Change@@Tests/ACPConnection.wlt:1485,1-1506,2"
 ]
 
 VerificationTest[
@@ -1424,7 +1515,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { Failure[ "Running", _ ], ExpandFileName @ $project2, "cancelled" },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-RefusedWhileRunning@@Tests/ACPConnection.wlt:1417,1-1428,2"
+    TestID   -> "ProjectDirectory-RefusedWhileRunning@@Tests/ACPConnection.wlt:1508,1-1519,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1466,7 +1557,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "m2", "plan", { "model", "effort", "mode" } },
     SameTest -> MatchQ,
-    TestID   -> "WindowUpdates-ConfigAndMode@@Tests/ACPConnection.wlt:1433,1-1470,2"
+    TestID   -> "WindowUpdates-ConfigAndMode@@Tests/ACPConnection.wlt:1524,1-1561,2"
 ]
 
 VerificationTest[
@@ -1483,7 +1574,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { None, True, { }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "Session-NewWhileDisconnected@@Tests/ACPConnection.wlt:1472,1-1487,2"
+    TestID   -> "Session-NewWhileDisconnected@@Tests/ACPConnection.wlt:1563,1-1578,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1498,7 +1589,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, None, 0 },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-StuckConnect@@Tests/ACPConnection.wlt:1492,1-1502,2"
+    TestID   -> "Housekeeping-StuckConnect@@Tests/ACPConnection.wlt:1583,1-1593,2"
 ]
 
 VerificationTest[
@@ -1508,7 +1599,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-MCPReadyTimeout@@Tests/ACPConnection.wlt:1504,1-1512,2"
+    TestID   -> "Housekeeping-MCPReadyTimeout@@Tests/ACPConnection.wlt:1595,1-1603,2"
 ]
 
 VerificationTest[
@@ -1528,7 +1619,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Timeout", None, True },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-SetupTimeout@@Tests/ACPConnection.wlt:1514,1-1532,2"
+    TestID   -> "Housekeeping-SetupTimeout@@Tests/ACPConnection.wlt:1605,1-1623,2"
 ]
 
 VerificationTest[
@@ -1545,7 +1636,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "AgentExited", None, "s-dead" },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-DeadConnection@@Tests/ACPConnection.wlt:1534,1-1549,2"
+    TestID   -> "Housekeeping-DeadConnection@@Tests/ACPConnection.wlt:1625,1-1640,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1561,7 +1652,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-OrphanConnectionSweep@@Tests/ACPConnection.wlt:1554,1-1565,2"
+    TestID   -> "Cleanup-OrphanConnectionSweep@@Tests/ACPConnection.wlt:1645,1-1656,2"
 ]
 
 VerificationTest[
@@ -1586,7 +1677,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, { }, <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-NoLeftoverProcessesOrTasks@@Tests/ACPConnection.wlt:1567,1-1590,2"
+    TestID   -> "Cleanup-NoLeftoverProcessesOrTasks@@Tests/ACPConnection.wlt:1658,1-1681,2"
 ]
 
 (* Isolated handlers and tasks swallow messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -1600,7 +1691,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-DebugLog@@Tests/ACPConnection.wlt:1593,1-1604,2"
+    TestID   -> "Cleanup-DebugLog@@Tests/ACPConnection.wlt:1684,1-1695,2"
 ]
 
 VerificationTest[
@@ -1621,7 +1712,7 @@ VerificationTest[
     },
     { False, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-Restore@@Tests/ACPConnection.wlt:1606,1-1625,2"
+    TestID   -> "Cleanup-Restore@@Tests/ACPConnection.wlt:1697,1-1716,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

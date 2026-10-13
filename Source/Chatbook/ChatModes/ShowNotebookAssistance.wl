@@ -564,6 +564,10 @@ validateACPWindowSettings // beginDefinition;
 
 $$acpPathSetting = _String? StringQ | File[ _String? StringQ ];
 
+(* "ACPAgentCommandLine": a program (path or command name; the agent's arguments are added), or the whole command line
+   { program, args... } as in RunProcess *)
+$$acpCommandLineSetting = $$acpPathSetting | { $$acpPathSetting, ___String? StringQ };
+
 validateACPWindowSettings[ settings_Association ] := (
     KeyValueMap[ validateACPWindowSetting, settings ];
     settings
@@ -579,11 +583,11 @@ validateACPWindowSettings // endDefinition;
 
 
 validateACPWindowSetting // beginDefinition;
-validateACPWindowSetting[ "ProjectDirectory"  , $$acpPathSetting | None | Automatic ] := Null;
-validateACPWindowSetting[ "ACPAgent"          , "OpenCode" | Automatic              ] := Null;
-validateACPWindowSetting[ "ACPAgentExecutable", $$acpPathSetting | Automatic        ] := Null;
-validateACPWindowSetting[ "ACPModel"          , _String? StringQ | Automatic        ] := Null;
-validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentExecutable"|"ACPModel", value_ ] :=
+validateACPWindowSetting[ "ProjectDirectory"   , $$acpPathSetting | None | Automatic   ] := Null;
+validateACPWindowSetting[ "ACPAgent"           , "OpenCode" | Automatic                ] := Null;
+validateACPWindowSetting[ "ACPAgentCommandLine", $$acpCommandLineSetting | Automatic   ] := Null;
+validateACPWindowSetting[ "ACPModel"           , _String? StringQ | Automatic          ] := Null;
+validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentCommandLine"|"ACPModel", value_ ] :=
     throwFailure[ "InvalidACPWindowSettings", key, value ];
 validateACPWindowSetting[ _, _ ] := Null;
 validateACPWindowSetting // endDefinition;
