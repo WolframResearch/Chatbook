@@ -79,6 +79,7 @@
 "FormattingThinkingCompleteSingular" -> "Pensado por un segundo",
 "FormattingThinkingCompleteFallback" -> "Pensado",
 "FormattingHide" -> "Ocultar",
+"FormattingDiscardedMaterial" -> "Discarded material",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insertar:",
