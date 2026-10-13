@@ -2836,7 +2836,7 @@ acpErrorView // endDefinition;
 actionButton // beginDefinition;
 
 (* "Locate OpenCode...": a file chooser (the dialog is run by the front end, so no kernel evaluation waits for it); the
-   chosen file becomes the window's "ACPAgentExecutable" setting. *)
+   chosen file becomes the program of the window's "ACPAgentCommandLine" setting. *)
 actionButton[ nbo_NotebookObject, "LocateAgent", agent_ ] := With[
     {
         setter = Function[

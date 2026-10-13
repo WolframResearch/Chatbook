@@ -465,6 +465,41 @@ VerificationTest[
     TestID   -> "ShowNotebookAssistance-ACPWindow-InvalidModel@@Tests/ACPWindow.wlt:458,1-466,2"
 ]
 
+(* "ACPAgentCommandLine": a program (string or File) or a command line { program, args... }, as in RunProcess *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`showACPWindow = ({ ## } &) },
+        {
+            ! FailureQ @ ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <| "ACPAgentCommandLine" -> # |> ] & /@ {
+                Automatic,
+                "/opt/opencode/bin/opencode",
+                File[ "/opt/opencode/bin/opencode" ],
+                "opencode",
+                { "ssh", "host", "~/.opencode/bin/opencode", "acp" },
+                { File[ "/opt/opencode/bin/opencode" ], "acp" }
+            },
+            Quiet[ FailureQ @ ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <| "ACPAgentCommandLine" -> # |> ] & /@ {
+                { },
+                { "ssh", 22 },
+                42,
+                None
+            } ]
+        }
+    ],
+    { { True, True, True, True, True, True }, { True, True, True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "ShowNotebookAssistance-ACPWindow-CommandLine@@Tests/ACPWindow.wlt:469,1-491,2"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`showACPWindow = ({ ## } &) },
+        ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <| "ACPAgentCommandLine" -> { "ssh", 22 } |> ]
+    ],
+    _Failure,
+    { ShowNotebookAssistance::InvalidACPWindowSettings },
+    SameTest -> MatchQ,
+    TestID   -> "ShowNotebookAssistance-ACPWindow-InvalidCommandLine@@Tests/ACPWindow.wlt:493,1-501,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Actions*)
@@ -485,7 +520,7 @@ VerificationTest[
     ],
     Sort @ Wolfram`Chatbook`ACP`UI`Private`$acpActionNames,
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Names@@Tests/ACPWindow.wlt:473,1-489,2"
+    TestID   -> "ACPAction-Names@@Tests/ACPWindow.wlt:508,1-524,2"
 ]
 
 VerificationTest[
@@ -531,7 +566,7 @@ VerificationTest[
     Sort[ #[[ 1, 1 ]] & /@ $acpActionDispatch ] === Sort @ Wolfram`Chatbook`ACP`UI`Private`$acpActionNames,
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-DispatchTable@@Tests/ACPWindow.wlt:491,1-535,2"
+    TestID   -> "ACPAction-DispatchTable@@Tests/ACPWindow.wlt:526,1-570,2"
 ]
 
 VerificationTest[
@@ -546,7 +581,7 @@ VerificationTest[
     ] @@@ $acpActionDispatch,
     { True .. },
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Dispatch@@Tests/ACPWindow.wlt:537,1-550,2"
+    TestID   -> "ACPAction-Dispatch@@Tests/ACPWindow.wlt:572,1-585,2"
 ]
 
 VerificationTest[
@@ -558,14 +593,14 @@ VerificationTest[
     ],
     { { "Notice", $testNB, None } },
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-ChatbookAction@@Tests/ACPWindow.wlt:552,1-562,2"
+    TestID   -> "ACPAction-ChatbookAction@@Tests/ACPWindow.wlt:587,1-597,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`acpAction[ "NotAnAction", 1, 2 ],
     Missing[ "UnknownAction", "NotAnAction" ],
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Unknown@@Tests/ACPWindow.wlt:564,1-569,2"
+    TestID   -> "ACPAction-Unknown@@Tests/ACPWindow.wlt:599,1-604,2"
 ]
 
 (* Failures in actions never escape (they may run preemptively inside a Notebook Assistant chat) *)
@@ -575,7 +610,7 @@ VerificationTest[
     ],
     Failure[ "ACPInternal", _ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Isolated-Throw@@Tests/ACPWindow.wlt:572,1-579,2"
+    TestID   -> "ACPAction-Isolated-Throw@@Tests/ACPWindow.wlt:607,1-614,2"
 ]
 
 VerificationTest[
@@ -588,7 +623,7 @@ VerificationTest[
     ],
     Failure[ "ACPInternal", _ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Isolated-InternalFailure@@Tests/ACPWindow.wlt:581,1-592,2"
+    TestID   -> "ACPAction-Isolated-InternalFailure@@Tests/ACPWindow.wlt:616,1-627,2"
 ]
 
 VerificationTest[
@@ -597,7 +632,7 @@ VerificationTest[
     ],
     ComplexInfinity,
     SameTest -> MatchQ,
-    TestID   -> "ACPAction-Isolated-Messages@@Tests/ACPWindow.wlt:594,1-601,2"
+    TestID   -> "ACPAction-Isolated-Messages@@Tests/ACPWindow.wlt:629,1-636,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -650,7 +685,7 @@ VerificationTest[
         { "Fix the bug", $userCell, $outCell, $testNB }
     },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-Ready@@Tests/ACPWindow.wlt:606,1-654,2"
+    TestID   -> "EvaluateACPChat-Ready@@Tests/ACPWindow.wlt:641,1-689,2"
 ]
 
 VerificationTest[
@@ -667,7 +702,7 @@ VerificationTest[
     ],
     { "Connecting", True, False, False },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-Connecting@@Tests/ACPWindow.wlt:656,1-671,2"
+    TestID   -> "EvaluateACPChat-Connecting@@Tests/ACPWindow.wlt:691,1-706,2"
 ]
 
 VerificationTest[
@@ -684,7 +719,7 @@ VerificationTest[
     ],
     { True, { { $testNB } } },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-Disconnected@@Tests/ACPWindow.wlt:673,1-688,2"
+    TestID   -> "EvaluateACPChat-Disconnected@@Tests/ACPWindow.wlt:708,1-723,2"
 ]
 
 VerificationTest[
@@ -703,7 +738,7 @@ VerificationTest[
     ],
     { Null, _String, None, False, "Hello" },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-NoDirectory@@Tests/ACPWindow.wlt:690,1-707,2"
+    TestID   -> "EvaluateACPChat-NoDirectory@@Tests/ACPWindow.wlt:725,1-742,2"
 ]
 
 VerificationTest[
@@ -722,7 +757,7 @@ VerificationTest[
     ],
     { "Also do this", "", 0 },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-QueuePrompt@@Tests/ACPWindow.wlt:709,1-726,2"
+    TestID   -> "EvaluateACPChat-QueuePrompt@@Tests/ACPWindow.wlt:744,1-761,2"
 ]
 
 VerificationTest[
@@ -735,7 +770,7 @@ VerificationTest[
     ],
     { Null, { } },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateACPChat-NoInput@@Tests/ACPWindow.wlt:728,1-739,2"
+    TestID   -> "EvaluateACPChat-NoInput@@Tests/ACPWindow.wlt:763,1-774,2"
 ]
 
 (* A turn waiting for the connection is sent by housekeeping when the window becomes ready *)
@@ -759,7 +794,7 @@ VerificationTest[
     ],
     { True, "Running", None, "ses_1" },
     SameTest -> MatchQ,
-    TestID   -> "QueuedTurn-SentWhenReady@@Tests/ACPWindow.wlt:742,1-763,2"
+    TestID   -> "QueuedTurn-SentWhenReady@@Tests/ACPWindow.wlt:777,1-798,2"
 ]
 
 VerificationTest[
@@ -782,7 +817,7 @@ VerificationTest[
     ],
     { False, None, KeyValuePattern[ "Code" -> "NotConnected" ], { { HoldForm[ _Wolfram`Chatbook`ACP`Common`acpFinalizeTurn ] } } },
     SameTest -> MatchQ,
-    TestID   -> "QueuedTurn-FailsOnError@@Tests/ACPWindow.wlt:765,1-786,2"
+    TestID   -> "QueuedTurn-FailsOnError@@Tests/ACPWindow.wlt:800,1-821,2"
 ]
 
 VerificationTest[
@@ -803,7 +838,7 @@ VerificationTest[
     ],
     { False, { "Stop", "cancelled" }, None },
     SameTest -> MatchQ,
-    TestID   -> "QueuedTurn-StopLocally@@Tests/ACPWindow.wlt:788,1-807,2"
+    TestID   -> "QueuedTurn-StopLocally@@Tests/ACPWindow.wlt:823,1-842,2"
 ]
 
 VerificationTest[
@@ -818,7 +853,7 @@ VerificationTest[
     ],
     { { { $testNB } }, True },
     SameTest -> MatchQ,
-    TestID   -> "Stop-Running@@Tests/ACPWindow.wlt:809,1-822,2"
+    TestID   -> "Stop-Running@@Tests/ACPWindow.wlt:844,1-857,2"
 ]
 
 VerificationTest[
@@ -832,7 +867,7 @@ VerificationTest[
     ],
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "Stop-NothingRunning@@Tests/ACPWindow.wlt:824,1-836,2"
+    TestID   -> "Stop-NothingRunning@@Tests/ACPWindow.wlt:859,1-871,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -873,7 +908,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn@@Tests/ACPWindow.wlt:841,1-877,2"
+    TestID   -> "FinalizeTurn@@Tests/ACPWindow.wlt:876,1-912,2"
 ]
 
 VerificationTest[
@@ -887,7 +922,7 @@ VerificationTest[
     ],
     { False, { { HoldForm[ _Wolfram`Chatbook`ACP`Common`acpFinalizeTurn ], Quantity[ _, "Milliseconds" ] } }, _Missing },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-Debounce@@Tests/ACPWindow.wlt:879,1-891,2"
+    TestID   -> "FinalizeTurn-Debounce@@Tests/ACPWindow.wlt:914,1-926,2"
 ]
 
 VerificationTest[
@@ -907,7 +942,7 @@ VerificationTest[
     ],
     { False, False, None },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-CellGone@@Tests/ACPWindow.wlt:893,1-911,2"
+    TestID   -> "FinalizeTurn-CellGone@@Tests/ACPWindow.wlt:928,1-946,2"
 ]
 
 VerificationTest[
@@ -935,7 +970,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-Fallback@@Tests/ACPWindow.wlt:913,1-939,2"
+    TestID   -> "FinalizeTurn-Fallback@@Tests/ACPWindow.wlt:948,1-974,2"
 ]
 
 (* A prompt queued while the turn was running is sent after finalization. This runs in a scheduled task while the user
@@ -982,7 +1017,7 @@ VerificationTest[
         { None, "Running" }
     },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-SendsQueuedPrompt@@Tests/ACPWindow.wlt:944,1-986,2"
+    TestID   -> "FinalizeTurn-SendsQueuedPrompt@@Tests/ACPWindow.wlt:979,1-1021,2"
 ]
 
 (* The user cell for the queued prompt cannot be written: the prompt goes back to the input field (not lost) *)
@@ -1008,7 +1043,7 @@ VerificationTest[
     ],
     { 0, { None, None, "Ready" }, "Next\n\ntyped" },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-QueuedPromptWriteFails@@Tests/ACPWindow.wlt:989,1-1012,2"
+    TestID   -> "FinalizeTurn-QueuedPromptWriteFails@@Tests/ACPWindow.wlt:1024,1-1047,2"
 ]
 
 (* Once claimed, a turn always finishes, even if rendering and writing throw (untagged): otherwise the window would stay
@@ -1037,7 +1072,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-UntaggedThrow@@Tests/ACPWindow.wlt:1016,1-1041,2"
+    TestID   -> "FinalizeTurn-UntaggedThrow@@Tests/ACPWindow.wlt:1051,1-1076,2"
 ]
 
 VerificationTest[
@@ -1063,7 +1098,7 @@ VerificationTest[
     ],
     { Null, { "Ready", None }, False, False },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-EverythingThrows@@Tests/ACPWindow.wlt:1043,1-1067,2"
+    TestID   -> "FinalizeTurn-EverythingThrows@@Tests/ACPWindow.wlt:1078,1-1102,2"
 ]
 
 (* The front end can miss the reset of the busy flag (the Stop button stays): a scheduled second change, False -> None,
@@ -1098,7 +1133,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-SettleBusyFlag@@Tests/ACPWindow.wlt:1071,1-1102,2"
+    TestID   -> "FinalizeTurn-SettleBusyFlag@@Tests/ACPWindow.wlt:1106,1-1137,2"
 ]
 
 (* Permission requests of the finished turn that are still pending (e.g. one that arrived after Stop) are answered
@@ -1119,7 +1154,7 @@ VerificationTest[
     ],
     { { { $testNB, 7, None } }, { 8 }, { _String? (StringStartsQ[ "Approval needed" ]) } },
     SameTest -> MatchQ,
-    TestID   -> "FinalizeTurn-CancelsPendingPermissions@@Tests/ACPWindow.wlt:1106,1-1123,2"
+    TestID   -> "FinalizeTurn-CancelsPendingPermissions@@Tests/ACPWindow.wlt:1141,1-1158,2"
 ]
 
 (* Housekeeping finalizes turns that ended but were not finalized *)
@@ -1134,7 +1169,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-FinalizeFallback@@Tests/ACPWindow.wlt:1126,1-1138,2"
+    TestID   -> "Housekeeping-FinalizeFallback@@Tests/ACPWindow.wlt:1161,1-1173,2"
 ]
 
 (* ... and finishes turns whose finalization was claimed but never completed (after $acpFinalizeTimeout seconds) *)
@@ -1165,7 +1200,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-FinalizeTimeout@@Tests/ACPWindow.wlt:1141,1-1169,2"
+    TestID   -> "Housekeeping-FinalizeTimeout@@Tests/ACPWindow.wlt:1176,1-1204,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1183,7 +1218,7 @@ VerificationTest[
     ],
     { <| "value" -> "a", "name" -> "A" |>, <| "value" -> "b", "name" -> "B" |> },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOptionValues@@Tests/ACPWindow.wlt:1174,1-1187,2"
+    TestID   -> "ConfigOptionValues@@Tests/ACPWindow.wlt:1209,1-1222,2"
 ]
 
 VerificationTest[
@@ -1199,7 +1234,7 @@ VerificationTest[
         _
     ],
     SameTest -> MatchQ,
-    TestID   -> "ConfigMenus-Structure@@Tests/ACPWindow.wlt:1189,1-1203,2"
+    TestID   -> "ConfigMenus-Structure@@Tests/ACPWindow.wlt:1224,1-1238,2"
 ]
 
 VerificationTest[
@@ -1228,7 +1263,7 @@ VerificationTest[
         }
     } ],
     SameTest -> MatchQ,
-    TestID   -> "ConfigMenus-ModelItems@@Tests/ACPWindow.wlt:1205,1-1232,2"
+    TestID   -> "ConfigMenus-ModelItems@@Tests/ACPWindow.wlt:1240,1-1267,2"
 ]
 
 VerificationTest[
@@ -1241,7 +1276,7 @@ VerificationTest[
     ],
     { False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "ConfigMenus-DisabledWhileRunning@@Tests/ACPWindow.wlt:1234,1-1245,2"
+    TestID   -> "ConfigMenus-DisabledWhileRunning@@Tests/ACPWindow.wlt:1269,1-1280,2"
 ]
 
 VerificationTest[
@@ -1257,7 +1292,7 @@ VerificationTest[
     ],
     { "ACPModelMenu", "ACPModeMenu" },
     SameTest -> MatchQ,
-    TestID   -> "ConfigMenus-EffortHidden@@Tests/ACPWindow.wlt:1247,1-1261,2"
+    TestID   -> "ConfigMenus-EffortHidden@@Tests/ACPWindow.wlt:1282,1-1296,2"
 ]
 
 VerificationTest[
@@ -1266,7 +1301,7 @@ VerificationTest[
     ],
     Spacer[ 0 ],
     SameTest -> MatchQ,
-    TestID   -> "ConfigMenus-NoOptions@@Tests/ACPWindow.wlt:1263,1-1270,2"
+    TestID   -> "ConfigMenus-NoOptions@@Tests/ACPWindow.wlt:1298,1-1305,2"
 ]
 
 (* The selected model is remembered *)
@@ -1280,7 +1315,7 @@ VerificationTest[
     ],
     { { { $testNB, "model", "opencode/big-pickle" } }, { "opencode/big-pickle" } },
     SameTest -> MatchQ,
-    TestID   -> "SetConfigOption-RecentModels@@Tests/ACPWindow.wlt:1273,1-1284,2"
+    TestID   -> "SetConfigOption-RecentModels@@Tests/ACPWindow.wlt:1308,1-1319,2"
 ]
 
 VerificationTest[
@@ -1291,7 +1326,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "SetConfigOption-IgnoredWhileRunning@@Tests/ACPWindow.wlt:1286,1-1295,2"
+    TestID   -> "SetConfigOption-IgnoredWhileRunning@@Tests/ACPWindow.wlt:1321,1-1330,2"
 ]
 
 VerificationTest[
@@ -1303,7 +1338,7 @@ VerificationTest[
     },
     { "GPT-6.1 Sol", "unknown", "opencode", "" },
     SameTest -> MatchQ,
-    TestID   -> "ModelNames@@Tests/ACPWindow.wlt:1297,1-1307,2"
+    TestID   -> "ModelNames@@Tests/ACPWindow.wlt:1332,1-1342,2"
 ]
 
 (* Provider submenu labels: the billing label once (not "openai  openai"), or the provider's name if its models are
@@ -1324,7 +1359,7 @@ VerificationTest[
     },
     { "OpenAI (your account)", "OpenCode (free)", "OpenCode", { "mistral", "Other" } },
     SameTest -> MatchQ,
-    TestID   -> "ModelMenu-ProviderLabels@@Tests/ACPWindow.wlt:1311,1-1328,2"
+    TestID   -> "ModelMenu-ProviderLabels@@Tests/ACPWindow.wlt:1346,1-1363,2"
 ]
 
 VerificationTest[
@@ -1352,7 +1387,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectoryHelpers@@Tests/ACPWindow.wlt:1330,1-1356,2"
+    TestID   -> "ProjectDirectoryHelpers@@Tests/ACPWindow.wlt:1365,1-1391,2"
 ]
 
 VerificationTest[
@@ -1363,7 +1398,7 @@ VerificationTest[
     },
     { "TestProject \[LongDash] OpenCode", "Approval needed \[LongDash] TestProject", "OpenCode" },
     SameTest -> MatchQ,
-    TestID   -> "WindowTitle@@Tests/ACPWindow.wlt:1358,1-1367,2"
+    TestID   -> "WindowTitle@@Tests/ACPWindow.wlt:1393,1-1402,2"
 ]
 
 VerificationTest[
@@ -1377,7 +1412,7 @@ VerificationTest[
     ],
     { { $testNB, WindowTitle -> _String? (StringStartsQ[ "Approval needed" ]) } },
     SameTest -> MatchQ,
-    TestID   -> "WindowTitle-Update@@Tests/ACPWindow.wlt:1369,1-1381,2"
+    TestID   -> "WindowTitle-Update@@Tests/ACPWindow.wlt:1404,1-1416,2"
 ]
 
 VerificationTest[
@@ -1395,7 +1430,7 @@ VerificationTest[
         FreeQ[ #, _Failure ]
     ] &),
     SameTest -> MatchQ,
-    TestID   -> "ToolbarStructure@@Tests/ACPWindow.wlt:1383,1-1399,2"
+    TestID   -> "ToolbarStructure@@Tests/ACPWindow.wlt:1418,1-1434,2"
 ]
 
 (* The toolbar is built by a preemptive front end evaluation that may interrupt a Notebook Assistant chat (inside its
@@ -1419,7 +1454,7 @@ VerificationTest[
     ],
     _DynamicModule? (! FreeQ[ #, "InitializeWindow" ] &),
     SameTest -> MatchQ,
-    TestID   -> "ToolbarIsolated@@Tests/ACPWindow.wlt:1403,1-1423,2"
+    TestID   -> "ToolbarIsolated@@Tests/ACPWindow.wlt:1438,1-1458,2"
 ]
 
 VerificationTest[
@@ -1432,7 +1467,7 @@ VerificationTest[
     ],
     { { True }, True },
     SameTest -> MatchQ,
-    TestID   -> "DirectoryRow@@Tests/ACPWindow.wlt:1425,1-1436,2"
+    TestID   -> "DirectoryRow@@Tests/ACPWindow.wlt:1460,1-1471,2"
 ]
 
 VerificationTest[
@@ -1443,7 +1478,7 @@ VerificationTest[
     ],
     { { $testNB, ExpandFileName @ $TemporaryDirectory } },
     SameTest -> MatchQ,
-    TestID   -> "SetProjectDirectory@@Tests/ACPWindow.wlt:1438,1-1447,2"
+    TestID   -> "SetProjectDirectory@@Tests/ACPWindow.wlt:1473,1-1482,2"
 ]
 
 VerificationTest[
@@ -1454,7 +1489,7 @@ VerificationTest[
     ],
     { False, "The project folder can't be changed while the agent is working." },
     SameTest -> MatchQ,
-    TestID   -> "SetProjectDirectory-WhileRunning@@Tests/ACPWindow.wlt:1449,1-1458,2"
+    TestID   -> "SetProjectDirectory-WhileRunning@@Tests/ACPWindow.wlt:1484,1-1493,2"
 ]
 
 (* An existing window is reused; an explicit different project directory is applied unless the agent is busy *)
@@ -1477,7 +1512,7 @@ VerificationTest[
     ],
     { $testNB, { { $testNB, _String } }, { { $testNB2, $testNB } }, True },
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-ChangeDirectory@@Tests/ACPWindow.wlt:1461,1-1481,2"
+    TestID   -> "ReuseWindow-ChangeDirectory@@Tests/ACPWindow.wlt:1496,1-1516,2"
 ]
 
 VerificationTest[
@@ -1498,7 +1533,7 @@ VerificationTest[
     ],
     { $testNB, False, _String, { { $testNB } } },
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-Running@@Tests/ACPWindow.wlt:1483,1-1502,2"
+    TestID   -> "ReuseWindow-Running@@Tests/ACPWindow.wlt:1518,1-1537,2"
 ]
 
 VerificationTest[
@@ -1515,7 +1550,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-SameDirectory@@Tests/ACPWindow.wlt:1504,1-1519,2"
+    TestID   -> "ReuseWindow-SameDirectory@@Tests/ACPWindow.wlt:1539,1-1554,2"
 ]
 
 (* Explicit agent settings apply to an open window: a window in "Error" (e.g. OpenCode not found) gets the executable
@@ -1526,7 +1561,7 @@ VerificationTest[
             Wolfram`Chatbook`ACP`UI`Private`acpReuseWindow[
                 None,
                 $testNB,
-                <| "ACPAgentExecutable" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>
+                <| "ACPAgentCommandLine" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>
             ];
             {
                 Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, "Settings" ],
@@ -1538,13 +1573,13 @@ VerificationTest[
         <| "Windows" -> <| $testNB -> testWindow[ $testNB, "Status" -> "Error", "Error" -> <| "Code" -> "AgentNotFound" |> ] |> |>
     ],
     {
-        <| "ACPAgentExecutable" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>,
-        <| "ACPAgentExecutable" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>,
+        <| "ACPAgentCommandLine" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>,
+        <| "ACPAgentCommandLine" -> "/opt/opencode/bin/opencode", "ACPModel" -> "openai/gpt-6-luna" |>,
         { { $testNB } },
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-Settings-ErrorReconnects@@Tests/ACPWindow.wlt:1523,1-1548,2"
+    TestID   -> "ReuseWindow-Settings-ErrorReconnects@@Tests/ACPWindow.wlt:1558,1-1583,2"
 ]
 
 (* A new model is selected in the current session (and replaces a model chosen in the menu for the next connection) *)
@@ -1563,7 +1598,7 @@ VerificationTest[
     ],
     { { <| "ACPModel" -> "openai/gpt-6-luna" |>, None }, { { $testNB, "model", "openai/gpt-6-luna" } }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-Settings-Model@@Tests/ACPWindow.wlt:1551,1-1567,2"
+    TestID   -> "ReuseWindow-Settings-Model@@Tests/ACPWindow.wlt:1586,1-1602,2"
 ]
 
 (* While a turn runs, a new executable is applied after the turn (housekeeping reconnects) *)
@@ -1571,7 +1606,7 @@ VerificationTest[
     withACPMocks[
         Block[ { Wolfram`Chatbook`Common`moveToChatInputField = Null &, SetSelectedNotebook = Null & },
             Module[ { during },
-                Wolfram`Chatbook`ACP`UI`Private`acpReuseWindow[ None, $testNB, <| "ACPAgentExecutable" -> "/opt/oc" |> ];
+                Wolfram`Chatbook`ACP`UI`Private`acpReuseWindow[ None, $testNB, <| "ACPAgentCommandLine" -> "/opt/oc" |> ];
                 during = { calledQ[ "Reconnect" ], Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, { "ReconnectRequested", "Notice" } ] };
                 Wolfram`Chatbook`ACP`UI`Private`acpUIHousekeeping[ ];
                 Wolfram`Chatbook`ACP`Common`acpWindowSet[ $testNB, <| "CurrentTurn" -> None, "Status" -> "Ready" |> ];
@@ -1583,7 +1618,7 @@ VerificationTest[
     ],
     { { False, { True, _String } }, { { $testNB } }, False },
     SameTest -> MatchQ,
-    TestID   -> "ReuseWindow-Settings-WhileRunning@@Tests/ACPWindow.wlt:1570,1-1587,2"
+    TestID   -> "ReuseWindow-Settings-WhileRunning@@Tests/ACPWindow.wlt:1605,1-1622,2"
 ]
 
 (* "Locate OpenCode..." (file chooser): the chosen file becomes the window's executable and the window reconnects *)
@@ -1595,8 +1630,8 @@ VerificationTest[
                 StringQ @ Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, "Notice" ],
                 calledQ[ "Reconnect" ],
                 Wolfram`Chatbook`Common`acpAction[ "SetAgentExecutable", $testNB, File @ file ] === file,
-                Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, { "Settings", "Notice" } ] === { <| "ACPAgentExecutable" -> file |>, None },
-                $feFlags[ { $testNB, "Settings" } ] === <| "ACPAgentExecutable" -> file |>,
+                Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, { "Settings", "Notice" } ] === { <| "ACPAgentCommandLine" -> file |>, None },
+                $feFlags[ { $testNB, "Settings" } ] === <| "ACPAgentCommandLine" -> file |>,
                 calls[ "Reconnect" ]
             };
             DeleteFile @ file;
@@ -1606,7 +1641,7 @@ VerificationTest[
     ],
     { Null, True, False, True, True, True, { { $testNB } } },
     SameTest -> MatchQ,
-    TestID   -> "SetAgentExecutable@@Tests/ACPWindow.wlt:1590,1-1610,2"
+    TestID   -> "SetAgentExecutable@@Tests/ACPWindow.wlt:1625,1-1645,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1619,7 +1654,7 @@ VerificationTest[
     ],
     Cell[ _BoxData, "ChatInputField", ___, CellTags -> "Bottom", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "InputCell-Structure@@Tests/ACPWindow.wlt:1615,1-1623,2"
+    TestID   -> "InputCell-Structure@@Tests/ACPWindow.wlt:1650,1-1658,2"
 ]
 
 VerificationTest[
@@ -1636,7 +1671,7 @@ VerificationTest[
     } ],
     { True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "InputCell-Contents@@Tests/ACPWindow.wlt:1625,1-1640,2"
+    TestID   -> "InputCell-Contents@@Tests/ACPWindow.wlt:1660,1-1675,2"
 ]
 
 VerificationTest[
@@ -1646,7 +1681,7 @@ VerificationTest[
     ],
     Cell[ _BoxData, "ChatInputField", ___, CellTags -> "Top", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "InputCell-Top@@Tests/ACPWindow.wlt:1642,1-1650,2"
+    TestID   -> "InputCell-Top@@Tests/ACPWindow.wlt:1677,1-1685,2"
 ]
 
 VerificationTest[
@@ -1664,7 +1699,7 @@ VerificationTest[
         Column[ { _Framed, _Framed }, ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "InputArea@@Tests/ACPWindow.wlt:1652,1-1668,2"
+    TestID   -> "InputArea@@Tests/ACPWindow.wlt:1687,1-1703,2"
 ]
 
 VerificationTest[
@@ -1686,7 +1721,7 @@ VerificationTest[
         Pane[ Row @ { usageMeter[ $testNB ], Row[ { _Dynamic, _Dynamic } ] }, ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "InputFooter@@Tests/ACPWindow.wlt:1670,1-1690,2"
+    TestID   -> "InputFooter@@Tests/ACPWindow.wlt:1705,1-1725,2"
 ]
 
 (* Views that contain widgets only re-render when their part of the window state changes *)
@@ -1710,7 +1745,7 @@ VerificationTest[
     ],
     { 1, 1, 2 },
     SameTest -> MatchQ,
-    TestID   -> "DerivedViews@@Tests/ACPWindow.wlt:1693,1-1714,2"
+    TestID   -> "DerivedViews@@Tests/ACPWindow.wlt:1728,1-1749,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1730,7 +1765,7 @@ VerificationTest[
     ],
     { { True, True, True, False }, { None, None, { } }, True },
     SameTest -> MatchQ,
-    TestID   -> "NewChat@@Tests/ACPWindow.wlt:1719,1-1734,2"
+    TestID   -> "NewChat@@Tests/ACPWindow.wlt:1754,1-1769,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1749,7 +1784,7 @@ VerificationTest[
         "Agent"              -> "OpenCode"
     },
     SameTest -> MatchQ,
-    TestID   -> "EnsureWindowRecord-Rebuild@@Tests/ACPWindow.wlt:1739,1-1753,2"
+    TestID   -> "EnsureWindowRecord-Rebuild@@Tests/ACPWindow.wlt:1774,1-1788,2"
 ]
 
 (* The explicit agent settings are restored from the TaggingRules *)
@@ -1758,12 +1793,12 @@ VerificationTest[
         Wolfram`Chatbook`ACP`Common`acpEnsureWindowRecord[ $testNB ][ "Settings" ],
         <| "FE" -> <|
             { $testNB, "ProjectDirectory" } -> $TemporaryDirectory,
-            { $testNB, "Settings" } -> <| "ACPAgentExecutable" -> "/opt/oc", "ACPModel" -> "a/b", "Other" -> 1 |>
+            { $testNB, "Settings" } -> <| "ACPAgentCommandLine" -> "/opt/oc", "ACPModel" -> "a/b", "Other" -> 1 |>
         |> |>
     ],
-    <| "ACPAgentExecutable" -> "/opt/oc", "ACPModel" -> "a/b" |>,
+    <| "ACPAgentCommandLine" -> "/opt/oc", "ACPModel" -> "a/b" |>,
     SameTest -> MatchQ,
-    TestID   -> "EnsureWindowRecord-RebuildSettings@@Tests/ACPWindow.wlt:1756,1-1767,2"
+    TestID   -> "EnsureWindowRecord-RebuildSettings@@Tests/ACPWindow.wlt:1791,1-1802,2"
 ]
 
 (* A partial record (no "Status") is rebuilt too *)
@@ -1777,7 +1812,7 @@ VerificationTest[
     ],
     KeyValuePattern @ { "Status" -> "Disconnected", "ProjectDirectory" -> _String, "Agent" -> "OpenCode" },
     SameTest -> MatchQ,
-    TestID   -> "EnsureWindowRecord-RebuildPartial@@Tests/ACPWindow.wlt:1770,1-1781,2"
+    TestID   -> "EnsureWindowRecord-RebuildPartial@@Tests/ACPWindow.wlt:1805,1-1816,2"
 ]
 
 (* After a kernel restart, the queued prompt's x button (CancelQueuedPrompt) must not create a partial record that
@@ -1790,7 +1825,7 @@ VerificationTest[
     ],
     KeyValuePattern @ { "Status" -> "Disconnected", "ProjectDirectory" -> _String, "QueuedPrompt" -> None },
     SameTest -> MatchQ,
-    TestID   -> "CancelQueuedPrompt-NoRecord@@Tests/ACPWindow.wlt:1785,1-1794,2"
+    TestID   -> "CancelQueuedPrompt-NoRecord@@Tests/ACPWindow.wlt:1820,1-1829,2"
 ]
 
 VerificationTest[
@@ -1809,7 +1844,7 @@ VerificationTest[
         { { $testNB } }
     },
     SameTest -> MatchQ,
-    TestID   -> "MarkOrphanCells@@Tests/ACPWindow.wlt:1796,1-1813,2"
+    TestID   -> "MarkOrphanCells@@Tests/ACPWindow.wlt:1831,1-1848,2"
 ]
 
 (* A window whose input text was never set (e.g. a notebook given the ACPChat stylesheet by hand) gets an empty input,
@@ -1844,7 +1879,7 @@ VerificationTest[
     },
     { "", "draft" },
     SameTest -> MatchQ,
-    TestID   -> "InitializeWindow-InputInitialized@@Tests/ACPWindow.wlt:1817,1-1848,2"
+    TestID   -> "InitializeWindow-InputInitialized@@Tests/ACPWindow.wlt:1852,1-1883,2"
 ]
 
 (* After a kernel restart the toolbar is set again even if the rebuilt cell is the same expression: the front end must
@@ -1864,7 +1899,7 @@ VerificationTest[
     ],
     { { $testNB, DockedCells -> { Cell[ "other" ], Cell[ "toolbar", CellTags -> "ACPToolbar" ] } } },
     SameTest -> MatchQ,
-    TestID   -> "RefreshToolbar-AlwaysSet@@Tests/ACPWindow.wlt:1852,1-1868,2"
+    TestID   -> "RefreshToolbar-AlwaysSet@@Tests/ACPWindow.wlt:1887,1-1903,2"
 ]
 
 VerificationTest[
@@ -1875,7 +1910,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "RefreshToolbar-NoToolbar@@Tests/ACPWindow.wlt:1870,1-1879,2"
+    TestID   -> "RefreshToolbar-NoToolbar@@Tests/ACPWindow.wlt:1905,1-1914,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1885,7 +1920,7 @@ VerificationTest[
     Select[ Wolfram`Chatbook`ACP`Common`$acpUIStrings, ! StringQ @ # || StringLength @ # === 0 & ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "UIStrings@@Tests/ACPWindow.wlt:1884,1-1889,2"
+    TestID   -> "UIStrings@@Tests/ACPWindow.wlt:1919,1-1924,2"
 ]
 
 (* All ACP label keys used in UI.wl have English defaults *)
@@ -1899,7 +1934,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "UIStrings-Coverage@@Tests/ACPWindow.wlt:1892,1-1903,2"
+    TestID   -> "UIStrings-Coverage@@Tests/ACPWindow.wlt:1927,1-1938,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1934,14 +1969,14 @@ VerificationTest[
     { Length @ $acpTextResourceFiles, AllTrue[ $acpTextResources, AssociationQ[ # ] && AllTrue[ #, StringQ ] & ] },
     { 7, True },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-Parse@@Tests/ACPWindow.wlt:1912,1-1938,2"
+    TestID   -> "TextResources-Parse@@Tests/ACPWindow.wlt:1947,1-1973,2"
 ]
 
 VerificationTest[
     DeleteCases[ Complement[ $acpResourceKeys, Keys @ # ] & /@ $acpTextResources, { } ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "TextResources-KeyParity@@Tests/ACPWindow.wlt:1940,1-1945,2"
+    TestID   -> "TextResources-KeyParity@@Tests/ACPWindow.wlt:1975,1-1980,2"
 ]
 
 (* No leftover resources for keys that no longer exist *)
@@ -1949,7 +1984,7 @@ VerificationTest[
     DeleteCases[ Complement[ Select[ Keys @ #, StringStartsQ[ "ACP" ] ], $acpResourceKeys ] & /@ $acpTextResources, { } ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "TextResources-NoStaleKeys@@Tests/ACPWindow.wlt:1948,1-1953,2"
+    TestID   -> "TextResources-NoStaleKeys@@Tests/ACPWindow.wlt:1983,1-1988,2"
 ]
 
 (* The English resources are the table text, so labels are the same with and without a front end *)
@@ -1966,7 +2001,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-EnglishText@@Tests/ACPWindow.wlt:1956,1-1970,2"
+    TestID   -> "TextResources-EnglishText@@Tests/ACPWindow.wlt:1991,1-2005,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1984,7 +2019,7 @@ VerificationTest[
     ],
     _NotebookObject | Missing[ "TestSkipped" ],
     SameTest -> MatchQ,
-    TestID   -> "FrontEnd-CreateWindow@@Tests/ACPWindow.wlt:1977,1-1988,2"
+    TestID   -> "FrontEnd-CreateWindow@@Tests/ACPWindow.wlt:2012,1-2023,2"
 ]
 
 VerificationTest[
@@ -2014,7 +2049,7 @@ VerificationTest[
         _String
     },
     SameTest -> MatchQ,
-    TestID   -> "FrontEnd-WindowSettings@@Tests/ACPWindow.wlt:1990,1-2018,2"
+    TestID   -> "FrontEnd-WindowSettings@@Tests/ACPWindow.wlt:2025,1-2053,2"
 ]
 
 VerificationTest[
@@ -2035,7 +2070,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "FrontEnd-NewChatReplacesWindow@@Tests/ACPWindow.wlt:2020,1-2039,2"
+    TestID   -> "FrontEnd-NewChatReplacesWindow@@Tests/ACPWindow.wlt:2055,1-2074,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2054,7 +2089,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Window-DebugLog@@Tests/ACPWindow.wlt:2046,1-2058,2"
+    TestID   -> "Window-DebugLog@@Tests/ACPWindow.wlt:2081,1-2093,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

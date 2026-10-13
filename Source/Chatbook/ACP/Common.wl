@@ -99,11 +99,12 @@ HoldComplete[
     `$acpLLMKitEnabled,
     `acpAgentSpec,
     `acpBillingLabel,
+    `acpCommandLineSetting,
     `acpConnectionLabel,
     `acpExecutableFileQ,
     `acpFindConfigOption,
     `acpFindLLMKitKey,
-    `acpFindOpenCode,
+    `acpFindProgram,
     `acpLLMKitAPIKey,
     `acpOpenCodeConfigJSON,
     `acpOpenCodeEnvironment,
@@ -111,6 +112,7 @@ HoldComplete[
     `acpPathDirectories,
     `acpPersistedSetting,
     `acpPreferredModel,
+    `acpProgramEnvironment,
     `acpSetPersistedSetting,
 
     (* ::**************************************************************************************************************:: *)

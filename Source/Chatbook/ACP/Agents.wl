@@ -63,8 +63,8 @@ $acpConnectionStrings = <|
     "ErrorACPLinkTooOld"           -> "The installed ACPLink paclet is too old for agent chats. Please update it.",
     "ErrorUnknownAgent"            -> "Unknown agent: `agent`.",
     "ErrorAgentNotFound"           -> "`agent` was not found on this computer.",
-    "ErrorAgentNotFoundDetail"     -> "Install it from `url`, or give its location with the \"ACPAgentExecutable\" setting.",
-    "ErrorAgentNotFoundPath"       -> "The file `path` does not exist.",
+    "ErrorAgentNotFoundDetail"     -> "Install it from `url`, or give its command line with the \"ACPAgentCommandLine\" setting.",
+    "ErrorAgentNotFoundPath"       -> "`path` was not found.",
     "ErrorConnectFailed"           -> "Couldn't start `agent`.",
     "ErrorInitFailed"              -> "`agent` didn't accept the connection.",
     "ErrorTimeout"                 -> "`agent` didn't respond in time.",
@@ -123,18 +123,19 @@ acpConnectionLabel // endDefinition;
 
 (* An agent is described by:
      "Name"        -> display name
-     "Executable"  -> a path, a command list {exe, args...}, or a function of the window settings that returns a path
-                      (or a Failure["AgentNotFound", ...])
-     "Arguments"   -> extra command line arguments (may be a RuleDelayed)
+     "Executable"  -> its program: a path or a command name (found by acpFindProgram), a command list {program, args...},
+                      or a function of the window settings that gives a path (or a Failure["AgentNotFound", ...])
+     "Arguments"   -> its command line arguments
      "Environment" -> process environment: Inherited or an association (may be a RuleDelayed; evaluated only right
                       before the agent is started)
      "BillingLabel"-> a function of the model value giving the billing label
-   The window setting "ACPAgentExecutable" overrides "Executable" (for OpenCode it is validated by acpFindOpenCode). *)
+   The window setting "ACPAgentCommandLine" (see acpCommandLineSetting) replaces the program (the agent's "Arguments"
+   are kept) or the whole command line. *)
 If[ ! AssociationQ @ $acpAgents, $acpAgents = <| |> ];
 
 $acpAgents[ "OpenCode" ] = <|
     "Name"         -> "OpenCode",
-    "Executable"   -> acpFindOpenCode,
+    "Executable"   -> "opencode",
     "Arguments"    -> { "acp" },
     "Environment"  :> acpOpenCodeEnvironment[ ],
     "BillingLabel" -> acpBillingLabel,
@@ -145,14 +146,17 @@ $acpAgents[ "OpenCode" ] = <|
 (* ::Subsection::Closed:: *)
 (*acpAgentSpec*)
 
-(* acpAgentSpec[name, settings] gives <| "Name", "Command" -> {exe, args...}, "Environment" :> env |> or a Failure
-   ("UnknownAgent", "AgentNotFound"). The environment is left unevaluated (RuleDelayed): it may contain secrets and is
-   only evaluated by the code that starts the agent. *)
+(* acpAgentSpec[name, settings] gives <| "Name", "Command" -> {program, args...}, "Environment" :> env |> or a Failure
+   ("UnknownAgent", "AgentNotFound"). The program is an absolute path (acpFindProgram). The environment is left
+   unevaluated (RuleDelayed): it may contain secrets and is only evaluated by the code that starts the agent.
+   acpAgentSpec[name, settings, env] looks programs up in env (see acpFindProgram; used by tests). *)
 acpAgentSpec // beginDefinition;
 
 acpAgentSpec[ name_String ] := acpAgentSpec[ name, <| |> ];
 
-acpAgentSpec[ name_String, settings_Association ] := Catch @ Module[ { agent, exe, args, command },
+acpAgentSpec[ name_String, settings_Association ] := acpAgentSpec[ name, settings, acpProgramEnvironment[ ] ];
+
+acpAgentSpec[ name_String, settings_Association, env_Association ] := Catch @ Module[ { agent, display, command },
     agent = Lookup[ $acpAgents, name, Missing[ "UnknownAgent" ] ];
     If[ ! AssociationQ @ agent,
         Throw @ Failure[ "UnknownAgent", <|
@@ -161,16 +165,20 @@ acpAgentSpec[ name_String, settings_Association ] := Catch @ Module[ { agent, ex
             "Agent"             -> name
         |> ]
     ];
-    exe = agentExecutable[ name, agent, settings ];
-    If[ FailureQ @ exe, Throw @ exe ];
-    args    = Replace[ Lookup[ agent, "Arguments", { } ], Except[ _List ] -> { } ];
-    command = Flatten @ { exe, args };
-    If[ ! MatchQ[ command, { __String } ],
-        Throw @ agentNotFound[ Lookup[ agent, "Name", name ], None, Lookup[ agent, "InstallURL", None ] ]
+    display = Replace[ Lookup[ agent, "Name", name ], Except[ _String ] -> name ];
+    command = Replace[
+        acpCommandLineSetting @ settings,
+        {
+            { "Program", program_ }                   :> extendCommand[ programCommand[ program, agent, display, env ], agentArguments @ agent ],
+            { "CommandLine", { program_, rest___ } } :> extendCommand[ programCommand[ program, agent, display, env ], { rest } ],
+            _                                         :> extendCommand[ agentCommand[ agent, display, settings, env ], agentArguments @ agent ]
+        }
     ];
+    If[ FailureQ @ command, Throw @ command ];
+    If[ ! MatchQ[ command, { __String } ], Throw @ agentNotFound[ display, None, Lookup[ agent, "InstallURL", None ] ] ];
     With[ { a = agent },
         <|
-            "Name"        -> Replace[ Lookup[ agent, "Name", name ], Except[ _String ] -> name ],
+            "Name"        -> display,
             "Command"     -> command,
             "Environment" :> Lookup[ a, "Environment", Inherited ]
         |>
@@ -180,96 +188,152 @@ acpAgentSpec[ name_String, settings_Association ] := Catch @ Module[ { agent, ex
 acpAgentSpec // endDefinition;
 
 
-agentExecutable // beginDefinition;
+(* A command followed by more arguments (evaluated only if the command is not a Failure) *)
+extendCommand // beginDefinition;
+extendCommand // Attributes = { HoldRest };
+extendCommand[ failure_? FailureQ, _ ] := failure;
+extendCommand[ command_List, args_ ] := Join[ command, Replace[ args, Except[ _List ] -> { } ] ];
+extendCommand // endDefinition;
 
-(* OpenCode validates the explicit setting itself: *)
-agentExecutable[ "OpenCode", _, settings_ ] :=
-    acpFindOpenCode @ settings;
 
-agentExecutable[ name_, agent_Association, settings_Association ] :=
-    Replace[
-        explicitExecutable @ settings,
-        None :> Replace[
-            Lookup[ agent, "Executable", None ],
+(* The registry's "Arguments" of an agent (evaluated only when they are used: they may be a RuleDelayed) *)
+agentArguments // beginDefinition;
+agentArguments[ agent_Association ] := Replace[ Lookup[ agent, "Arguments", { } ], Except[ { ___String } ] -> { } ];
+agentArguments // endDefinition;
+
+
+(* The start of the agent's own command line (without its "Arguments"), from the registry's "Executable", or a
+   Failure["AgentNotFound", ...] *)
+agentCommand // beginDefinition;
+
+agentCommand[ agent_Association, display_, settings_, env_ ] := Replace[
+    Lookup[ agent, "Executable", None ],
+    {
+        program: _String | File[ _String ] :> programCommand[ program, agent, display, env ],
+        { program_String, rest___String }  :> extendCommand[ programCommand[ program, agent, display, env ], { rest } ],
+        None                               :> agentNotFound[ display, None, Lookup[ agent, "InstallURL", None ] ],
+        f_                                 :> Replace[
+            f @ settings,
             {
-                exe: _String | { __String } :> exe,
-                File[ exe_String ] :> exe,
-                None :> agentNotFound[ Lookup[ agent, "Name", name ], None, Lookup[ agent, "InstallURL", None ] ],
-                f_ :> f @ settings
+                path_String        :> { path },
+                failure_? FailureQ :> failure,
+                _                  :> agentNotFound[ display, None, Lookup[ agent, "InstallURL", None ] ]
             }
         ]
-    ];
+    }
+];
 
-agentExecutable // endDefinition;
+agentCommand // endDefinition;
 
 
-explicitExecutable // beginDefinition;
-explicitExecutable[ settings_Association ] := explicitExecutable @ Lookup[ settings, "ACPAgentExecutable", Automatic ];
-explicitExecutable[ File[ path_String ] ] := explicitExecutable @ path;
-explicitExecutable[ path_String ] /; StringLength @ StringTrim @ path > 0 := StringTrim @ path;
-explicitExecutable[ command: { __String } ] := command;
-explicitExecutable[ _ ] := None;
-explicitExecutable // endDefinition;
+(* { absolute path of the program }, or a Failure["AgentNotFound", ...]. A program given explicitly (by
+   "ACPAgentCommandLine") is named in the error; the registry's default program is not (the error then suggests
+   installing the agent). *)
+programCommand // beginDefinition;
+
+programCommand[ File[ program_String ], rest___ ] := programCommand[ program, rest ];
+
+programCommand[ program_String, agent_Association, display_, env_Association ] := Replace[
+    acpFindProgram[ program, env ],
+    {
+        path_String :> { path },
+        None        :> agentNotFound[
+            display,
+            If[ program === Lookup[ agent, "Executable", None ], None, program ],
+            Lookup[ agent, "InstallURL", None ]
+        ]
+    }
+];
+
+programCommand // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*acpFindOpenCode*)
+(*acpCommandLineSetting*)
 
-(* acpFindOpenCode[settings] finds the opencode executable: the "ACPAgentExecutable" setting (if given; it must exist),
-   then the directories in Environment["PATH"], then the usual install directories in the home directory (the
-   installer's ~/.opencode/bin, then ~/.local/bin, ~/.bun/bin, ~/.npm-global/bin), then the usual system directories
-   (Homebrew, /usr/local/bin: a front end started from the macOS Dock gives the kernel a minimal PATH without them).
-   No RunProcess (RunProcess can hang while an ACP reader is active).
-   acpFindOpenCode[settings, <| "PATH" -> _, "HomeDirectory" -> _, "OperatingSystem" -> _, "SystemDirectories" -> _ |>]
-   is used by tests ("SystemDirectories" defaults to none there). *)
-acpFindOpenCode // beginDefinition;
+(* The "ACPAgentCommandLine" window setting:
+     Automatic                            -> None: the agent's own command line;
+     "program" or File["program"]         -> { "Program", program }: that program, with the agent's arguments (a string
+                                             is a program, as in RunProcess, not a command line to split; and the agent's
+                                             arguments are kept, so that the "Locate OpenCode..." file or a path to
+                                             opencode just works);
+     { program, args... }                 -> { "CommandLine", { program, args... } }: exactly this command line, as in
+                                             RunProcess (the agent's arguments are not added).
+   A program is a path or a command name (see acpFindProgram). Anything else counts as Automatic
+   (ShowNotebookAssistance rejects it). *)
+acpCommandLineSetting // beginDefinition;
 
-acpFindOpenCode[ ] := acpFindOpenCode @ <| |>;
+acpCommandLineSetting[ settings_Association ] := acpCommandLineSetting @ Lookup[ settings, "ACPAgentCommandLine", Automatic ];
+acpCommandLineSetting[ File[ program_String ] ] := acpCommandLineSetting @ program;
+acpCommandLineSetting[ program_String ] /; StringLength @ StringTrim @ program > 0 := { "Program", StringTrim @ program };
+acpCommandLineSetting[ { File[ program_String ], args___String } ] := acpCommandLineSetting @ { program, args };
+acpCommandLineSetting[ { program_String, args___String } ] /; StringLength @ StringTrim @ program > 0 :=
+    { "CommandLine", { StringTrim @ program, args } };
+acpCommandLineSetting[ _ ] := None;
 
-acpFindOpenCode[ settings_Association ] := acpFindOpenCode[
-    settings,
-    <|
-        "PATH"              -> Environment[ "PATH" ],
-        "HomeDirectory"     -> $HomeDirectory,
-        "OperatingSystem"   -> $OperatingSystem,
-        "SystemDirectories" -> $openCodeSystemDirectories
-    |>
-];
+acpCommandLineSetting // endDefinition;
 
-acpFindOpenCode[ settings_Association, env_Association ] := Catch @ Module[ { explicit, windowsQ, names, dirs, home },
-    explicit = explicitExecutable @ settings;
-    Which[
-        StringQ @ explicit,
-            Throw @ If[ acpExecutableFileQ @ explicit,
-                Quiet @ ExpandFileName @ explicit,
-                agentNotFound[ "OpenCode", explicit, $openCodeInstallURL ]
-            ],
-        MatchQ[ explicit, { __String } ],
-            Throw @ explicit
-    ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpFindProgram*)
 
+(* acpFindProgram[program, env] gives the absolute path of a program, or None:
+     * a path (with a directory part, or starting with ~): that file, if it exists (relative paths are relative to the
+       kernel's current directory);
+     * a command name: the first match in the directories of env["PATH"], then in the usual install directories in the
+       home directory (the OpenCode installer's ~/.opencode/bin, then ~/.local/bin, ~/.bun/bin, ~/.npm-global/bin), then
+       in the usual system directories (Homebrew, /usr/local/bin: a front end started from the macOS Dock gives the
+       kernel a minimal PATH without them). On Windows a name without an extension also matches name.exe and name.cmd.
+   env: <| "PATH", "HomeDirectory", "OperatingSystem", "SystemDirectories" |>, acpProgramEnvironment[ ] for the kernel's
+   (tests pass their own; "SystemDirectories" defaults to none there). No RunProcess (RunProcess can hang while an ACP
+   reader is active). *)
+acpFindProgram // beginDefinition;
+
+acpFindProgram[ program_String ] := acpFindProgram[ program, acpProgramEnvironment[ ] ];
+
+acpFindProgram[ program_String, env_Association ] := Module[ { windowsQ, names, dirs, home },
     windowsQ = Lookup[ env, "OperatingSystem", $OperatingSystem ] === "Windows";
-    names    = If[ windowsQ, { "opencode.exe", "opencode.cmd", "opencode" }, { "opencode" } ];
-    dirs     = acpPathDirectories[ Lookup[ env, "PATH", None ], windowsQ ];
-    home     = Lookup[ env, "HomeDirectory", None ];
+    If[ programPathQ[ program, windowsQ ],
+        Return[ With[ { path = Quiet @ ExpandFileName @ program }, If[ acpExecutableFileQ @ path, path, None ] ], Module ]
+    ];
+    names = If[ windowsQ && FileExtension @ program === "", { program <> ".exe", program <> ".cmd", program }, { program } ];
+    dirs  = acpPathDirectories[ Lookup[ env, "PATH", None ], windowsQ ];
+    home  = Lookup[ env, "HomeDirectory", None ];
     If[ StringQ @ home,
-        dirs = Join[ dirs, FileNameJoin @ Prepend[ #, home ] & /@ If[ windowsQ, { { ".opencode", "bin" } }, $openCodeHomeDirectories ] ]
+        dirs = Join[ dirs, FileNameJoin @ Prepend[ #, home ] & /@ If[ windowsQ, { { ".opencode", "bin" } }, $acpProgramHomeDirectories ] ]
     ];
     If[ ! windowsQ, dirs = Join[ dirs, Select[ Replace[ Lookup[ env, "SystemDirectories", { } ], Except[ _List ] -> { } ], StringQ ] ] ];
-
-    Replace[
-        SelectFirst[ Flatten @ Outer[ FileNameJoin @ { #1, #2 } &, dirs, names ], acpExecutableFileQ, None ],
-        None :> agentNotFound[ "OpenCode", None, $openCodeInstallURL ]
-    ]
+    SelectFirst[ Flatten @ Outer[ FileNameJoin @ { #1, #2 } &, dirs, names ], acpExecutableFileQ, None ]
 ];
 
-acpFindOpenCode // endDefinition;
+acpFindProgram[ _, _ ] := None;
+
+acpFindProgram // endDefinition;
+
+
+(* Whether a program is given as a path rather than as a command name to look up *)
+programPathQ // beginDefinition;
+programPathQ[ program_String, windowsQ_ ] := StringContainsQ[ program, If[ TrueQ @ windowsQ, "/" | "\\", "/" ] ] || StringStartsQ[ program, "~" ];
+programPathQ // endDefinition;
+
+
+(* The kernel's PATH, home directory and operating system for acpFindProgram *)
+acpProgramEnvironment // beginDefinition;
+
+acpProgramEnvironment[ ] := <|
+    "PATH"              -> Environment[ "PATH" ],
+    "HomeDirectory"     -> $HomeDirectory,
+    "OperatingSystem"   -> $OperatingSystem,
+    "SystemDirectories" -> $acpProgramSystemDirectories
+|>;
+
+acpProgramEnvironment // endDefinition;
 
 (* Install directories relative to the home directory (the OpenCode installer, pipx/uv style, bun, npm prefix) *)
-$openCodeHomeDirectories = { { ".opencode", "bin" }, { ".local", "bin" }, { ".bun", "bin" }, { ".npm-global", "bin" } };
+$acpProgramHomeDirectories = { { ".opencode", "bin" }, { ".local", "bin" }, { ".bun", "bin" }, { ".npm-global", "bin" } };
 
 (* Directories that a GUI-started kernel's PATH may lack (macOS: Homebrew on Apple silicon and Intel) *)
-$openCodeSystemDirectories = { "/opt/homebrew/bin", "/usr/local/bin" };
+$acpProgramSystemDirectories = { "/opt/homebrew/bin", "/usr/local/bin" };
 
 
 acpPathDirectories // beginDefinition;

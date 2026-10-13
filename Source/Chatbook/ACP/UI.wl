@@ -35,7 +35,7 @@ $acpMaxPathLengthReview = 20; (* when the "Review" button is shown in the projec
 $acpQueuedPreviewSize = 80;
 
 (* UI-owned keys in window records (in addition to the ones described in docs/acp-window.md, "State model"):
-     "Settings"     -> explicit ShowNotebookAssistance settings ("ACPAgent", "ACPAgentExecutable", "ACPModel", ...)
+     "Settings"     -> explicit ShowNotebookAssistance settings ("ACPAgent", "ACPAgentCommandLine", "ACPModel", ...)
      "Notice"       -> None | String: a transient message shown above the input field
      "QueuedPrompt" -> None | String: a prompt typed while a turn was running; sent after the turn is finalized
      "QueuedTurn"   -> None | turnID: a turn that was started before the connection was ready
@@ -87,7 +87,7 @@ $acpUIStrings = <|
     "NoticeDirectoryWhileRestoring"  -> "The project folder can't be changed while a session is loading.",
     "NoticeChooseModel"              -> "Choose another model from the model menu above.",
     "NoticeSignIn"                   -> "Run \"opencode auth login\" in a terminal to sign in, then reconnect.",
-    "NoticeLocateAgent"              -> "Install OpenCode (https://opencode.ai) or give its location with the \"ACPAgentExecutable\" setting, then reconnect.",
+    "NoticeLocateAgent"              -> "Install OpenCode (https://opencode.ai) or give its command line with the \"ACPAgentCommandLine\" setting, then reconnect.",
     "NoticeAgentExecutableMissing"   -> "The file `path` does not exist.",
     "NoticeReconnectAfterTurn"       -> "The new agent settings are applied when the agent is done.",
     "InterruptedKernelRestart"       -> "Interrupted \[LongDash] the kernel was restarted.",
@@ -506,8 +506,8 @@ acpRebuildWindowRecord // endDefinition;
 (*acpPersistedWindowSettings*)
 
 (* The explicit agent settings of a window. They are also stored in the notebook's TaggingRules ({"ACP", "Settings"}),
-   so a window rebuilt after a kernel restart connects with the same executable and model. *)
-$acpPersistedSettingNames = { "ACPAgent", "ACPAgentExecutable", "ACPModel" };
+   so a window rebuilt after a kernel restart connects with the same command line and model. *)
+$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPModel" };
 
 acpPersistedWindowSettings // beginDefinition;
 acpPersistedWindowSettings[ settings_Association ] := KeyTake[ settings, $acpPersistedSettingNames ];
@@ -626,7 +626,7 @@ acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Modul
             Null,
         TrueQ @ dirChanged,
             acpEnsureConnected @ nbo,
-        MemberQ[ changed, "ACPAgentExecutable" | "ACPAgent" ] || Lookup[ window, "Status" ] === "Error",
+        MemberQ[ changed, "ACPAgentCommandLine" | "ACPAgent" ] || Lookup[ window, "Status" ] === "Error",
             If[ acpRunningQ @ window || acpRestoringQ @ window,
                 acpWindowSet[ nbo, "ReconnectRequested", True ];
                 acpSetNotice[ nbo, acpLabel[ "NoticeReconnectAfterTurn" ] ],
@@ -652,8 +652,8 @@ acpApplyWindowSettings // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpSetAgentExecutableAction*)
 
-(* The "Locate OpenCode..." file chooser of AgentNotFound errors: the chosen file becomes the window's
-   "ACPAgentExecutable" setting (kept across kernel restarts) and the window reconnects. *)
+(* The "Locate OpenCode..." file chooser of AgentNotFound errors: the chosen file becomes the program of the window's
+   "ACPAgentCommandLine" setting (with the agent's arguments; kept across kernel restarts) and the window reconnects. *)
 acpSetAgentExecutableAction // beginDefinition;
 
 acpSetAgentExecutableAction[ nbo_NotebookObject, path0_ ] := Catch @ Module[ { path },
@@ -666,7 +666,7 @@ acpSetAgentExecutableAction[ nbo_NotebookObject, path0_ ] := Catch @ Module[ { p
         Throw @ Null
     ];
     acpSetNotice[ nbo, None ];
-    acpApplyWindowSettings[ nbo, acpMergeWindowSettings[ nbo, <| "ACPAgentExecutable" -> path |> ], False ];
+    acpApplyWindowSettings[ nbo, acpMergeWindowSettings[ nbo, <| "ACPAgentCommandLine" -> path |> ], False ];
     path
 ];
 
