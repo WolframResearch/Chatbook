@@ -725,7 +725,7 @@ makeDiscardedMaterialCell0[ _List ] /; $dynamicText := {
 makeDiscardedMaterialCell0[ textData_List ] := {
     Cell[
         BoxData @ ToBoxes @ openerView[
-            { tr @ "FormattingDiscardedMaterial", compressUntilViewed @ discardedMaterialColumn @ textData },
+            { tr @ "FormattingDiscardedMaterial", compressUntilViewed @ discardedMaterialColumn @ textData, "Discarded" },
             False
         ],
         "DiscardedMaterial",
@@ -2283,7 +2283,8 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     2,
                     ImageSize  -> Automatic,
                     LabelStyle -> { FontSize -> 12 }
-                ]
+                ],
+                "Tool"
             },
             TrueQ @ as0[ "Open" ]
         ]

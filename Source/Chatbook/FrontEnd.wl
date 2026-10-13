@@ -1057,9 +1057,42 @@ compressRasterBoxes // endDefinition;
 openerView[ args___ ] := Verbatim[ openerView[ args ] ] = openerView0[ args ];
 
 openerView0 // beginDefinition;
-openerView0[ { label_, content_ }, initialState_, ___ ] /; ByteCount @ content > 50000 := openerView1[ { label, compressUntilViewed @ content }, initialState ];
-openerView0[ { label_, content_ }, initialState_, ___ ] := openerView1[ { label, content }, initialState ];
+openerView0[ { label_, content_ }, initialState_, rest___ ] := openerView0[ { label, content, "Tool" }, initialState, rest ];
+openerView0[ { label_, content_, type_ }, initialState_, ___ ] /; ByteCount @ content > 50000 := openerView1[ { label, compressUntilViewed @ content, type }, initialState ];
+openerView0[ { label_, content_, type_ }, initialState_, ___ ] := openerView1[ { label, content, type }, initialState ];
 openerView0 // endDefinition;
+
+openerViewColors // beginDefinition;
+
+openerViewColors[ "Tool" ] := <|
+    "Default" -> LightDarkSwitched[ RGBColor[ 0.404, 0.545, 0.624 ], RGBColor[ 0.545, 0.639, 0.706 ] ],
+    "Hover"   -> LightDarkSwitched[ RGBColor[ 0.537, 0.784, 0.91  ], RGBColor[ 0.702, 0.878, 0.98  ] ],
+    "Pressed" -> LightDarkSwitched[ RGBColor[ 0.38,  0.651, 0.788 ], RGBColor[ 0.545, 0.784, 0.91  ] ]
+|>;
+
+openerViewColors[ "Discarded" ] := <|
+    "Default" -> LightDarkSwitched[ GrayLevel[ 0.51 ], GrayLevel[ 0.62 ] ],
+    "Hover"   -> LightDarkSwitched[ GrayLevel[ 0.72 ], GrayLevel[ 0.84 ] ],
+    "Pressed" -> LightDarkSwitched[ GrayLevel[ 0.59 ], GrayLevel[ 0.73 ] ]
+|>;
+
+openerViewColors // endDefinition;
+
+openerViewDividerAppearance // beginDefinition;
+
+openerViewDividerAppearance[ "Tool" ] := {
+    "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolDefault.9.png" ],
+    "Hover"   -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolHover.9.png" ],
+    "Pressed" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolPressed.9.png" ]
+};
+
+openerViewDividerAppearance[ "Discarded" ] := {
+    "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedDefault.9.png" ],
+    "Hover"   -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedHover.9.png" ],
+    "Pressed" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedPressed.9.png" ]
+};
+
+openerViewDividerAppearance // endDefinition;
 
 openerDown[ color_ ] := Graphics[
     { color, CapForm[ "Round" ], Thickness[ 0.3` ], Line[ { { -1, 0 }, { 0, -1 }, { 1, 0 } } ] },
@@ -1076,29 +1109,24 @@ openerRight[ color_ ] := Graphics[
     AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 3, 2 }, { 1, 1 } }, BaselinePosition -> Center -> Center
 ]
 
-openerView1[ { label_, content_ }, initialState_ ] :=
+openerView1[ { label_, content_, type_ }, initialState_ ] :=
+With[ { appearance = openerViewDividerAppearance @ type },
 DynamicModule[ { Typeset`var = TrueQ @ initialState },
     Style[
         PaneSelector[
             {
-                False -> clickableOpenerRow[ Dynamic[ Typeset`var ], label, Right ],
+                False -> clickableOpenerRow[ Dynamic[ Typeset`var ], label, Right, type ],
                 True ->
                     Grid[
                         {
                             {
-                                clickableOpenerRow[ Dynamic[ Typeset`var ], label, Down ],
+                                clickableOpenerRow[ Dynamic[ Typeset`var ], label, Down, type ],
                                 SpanFromLeft
                             },
                             {
                                 Item[
                                     MouseAppearance[
-                                        Button[ "", Typeset`var = False,
-                                            Appearance -> {
-                                                "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolDefault.9.png" ],
-                                                "Hover"   -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolHover.9.png" ],
-                                                "Pressed" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolPressed.9.png" ]
-                                            }
-                                        ],
+                                        Button[ "", Typeset`var = False, Appearance -> appearance ],
                                         "LinkHand"
                                     ],
                                     ItemMargins -> { { 3.5, 0 }, { 0, 0 } }
@@ -1106,7 +1134,7 @@ DynamicModule[ { Typeset`var = TrueQ @ initialState },
                                 content
                             },
                             {
-                                clickableOpenerRow[ Dynamic[ Typeset`var ], "Hide", Up ],
+                                clickableOpenerRow[ Dynamic[ Typeset`var ], "Hide", Up, type ],
                                 SpanFromLeft
                             }
                         },
@@ -1126,14 +1154,19 @@ DynamicModule[ { Typeset`var = TrueQ @ initialState },
         StripOnInput -> False
     ]
 ]
+]
 
 clickableOpenerRow[ Dynamic[ var_ ], label_, direction_ ] :=
+    clickableOpenerRow[ Dynamic[ var ], label, direction, "Tool" ];
+
+clickableOpenerRow[ Dynamic[ var_ ], label_, direction_, type_ ] :=
+With[ { colors = openerViewColors @ type },
 MouseAppearance[
     Button[
         mouseDown[
-            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, LightDarkSwitched[ RGBColor[ 0.404, 0.545, 0.624 ], RGBColor[ 0.545, 0.639, 0.706 ] ] ],
-            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, LightDarkSwitched[ RGBColor[ 0.537, 0.784, 0.91  ], RGBColor[ 0.702, 0.878, 0.98  ] ] ],
-            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, LightDarkSwitched[ RGBColor[ 0.38,  0.651, 0.788 ], RGBColor[ 0.545, 0.784, 0.91  ] ] ]
+            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, colors[ "Default" ] ],
+            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, colors[ "Hover"   ] ],
+            clickableOpenerRow0[ Dynamic[ Typeset`var ], label, direction, colors[ "Pressed" ] ]
         ],
         FEPrivate`Set[ Typeset`var, Not[ Typeset`var ] ],
         Alignment  -> Left,
@@ -1141,6 +1174,7 @@ MouseAppearance[
         ImageSize  -> Scaled[ 1 ]
     ],
     "LinkHand"
+]
 ]
 
 clickableOpenerRow0[ Dynamic[ var_ ], label_, direction_, color_ ] :=
