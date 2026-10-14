@@ -1,0 +1,4 @@
+debug1: OpenSSH_10.2p1, OpenSSL 3.5.5 27 Jan 2026
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: Connecting to 127.0.0.1 [127.0.0.1] port 2223.
+ubuntu@127.0.0.1: Permission denied (publickey).

@@ -1,0 +1,5 @@
+chatbook-acp-ready
+chatbook-acp:0123456789abcdef:home:/home/ubuntu
+chatbook-acp:0123456789abcdef:cwd:/home/ubuntu/projects/app
+chatbook-acp:0123456789abcdef:agent:/home/ubuntu/.opencode/bin/opencode
+Timeout, server 127.0.0.1 not responding.

@@ -95,7 +95,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
 - **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
-- **ACP/** — The ACP window (`ShowNotebookAssistance[..., "ACPWindow"]`): a notebook-assistance-style window that drives an external coding agent (OpenCode) through the Agent Client Protocol via the ACPLink paclet. State.wl (stores, isolation, scheduling, ACPLink loading), Transcript.wl (pure turn model, titles, labels), Rendering.wl (live/final boxes, permission panel), Agents.wl (agent registry, OpenCode config), Connection.wl (connection/session lifecycle), Git.wl (git backend of "Review changes": async git runner, change sets, the window's git summary), Review.wl ("Review changes": the toolbar button, the review window listing the uncommitted changes with their diffs, file icons), Sessions.wl (the agent's saved sessions: listing, restoring a session with its history, new session in a folder, delete; the Sessions window), UI.wl (window, toolbar, input cell, finalization). See [acp-window.md](docs/acp-window.md)
+- **ACP/** — The ACP window (`ShowNotebookAssistance[..., "ACPWindow"]`): a notebook-assistance-style window that drives an external coding agent (OpenCode) through the Agent Client Protocol via the ACPLink paclet, on this computer or on another one over ssh (the `"SSHSettings"` setting, "remote mode"). State.wl (stores, isolation, scheduling, ACPLink loading), Transcript.wl (pure turn model, titles, labels), Rendering.wl (live/final boxes, permission panel, error view), Agents.wl (agent registry, OpenCode config, the remote agent's ssh command), SSH.wl (remote mode's pure contracts: the `"SSHSettings"` setting and its accessors, host identity, the ssh command, remote path helpers, the agent's launch script and markers, classification of ssh's errors), Connection.wl (connection/session lifecycle, the remote launch), Git.wl (git backend of "Review changes": async process runner, change sets, the window's git summary, git over ssh), Remote.wl (one-shot remote operations: one ssh connection and one sh script per operation, the READY handshake, the ACPR1 framed output, folder listings, the host failure latch), Review.wl ("Review changes": the toolbar button, the review window listing the uncommitted changes with their diffs, file icons), Sessions.wl (the agent's saved sessions: listing, restoring a session with its history, new session in a folder, delete; the Sessions window), FolderPicker.wl (the remote folder picker of remote windows), UI.wl (window, toolbar, input cell, finalization, host switches). See [acp-window.md](docs/acp-window.md)
 
 ### Error Handling Pattern
 
@@ -124,6 +124,7 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - `Assets/Tokenizers/` — Token counting resources
 - `Assets/AIAssistant/` — AI assistant configurations
 - `Assets/Skills/` — Built-in agent skills (`<name>/SKILL.md` plus supporting files), declared as the `"Skills"` asset in PacletInfo.wl
+- `Assets/RemoteScripts/` — The sh scripts that the ACP window's remote mode runs on the remote machine (`prelude.sh`, `git.sh`, `list.sh`), declared as the `"RemoteScripts"` asset in PacletInfo.wl; `.gitattributes` keeps them LF (dash rejects CRLF)
 
 ## Code Conventions
 
@@ -153,7 +154,7 @@ Developer documentation lives in the `docs/` directory:
 - **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
 - **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
 - **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
-- **[acp-window.md](docs/acp-window.md)** — The ACP window (agent chats through OpenCode and ACPLink): architecture, state model, threading rules, settings, permissions, strings, preview tool
+- **[acp-window.md](docs/acp-window.md)** — The ACP window (agent chats through OpenCode and ACPLink): architecture, state model, threading rules, settings, remote mode over SSH, permissions, strings, preview tool
 - **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
 
 ## Special Considerations

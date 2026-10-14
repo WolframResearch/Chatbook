@@ -1,0 +1,3 @@
+chatbook-acp-ready
+chatbook-acp:0123456789abcdef:home:/home/ubuntu
+Timeout, server ec2-203-0-113-100.compute-1.amazonaws.com not responding.

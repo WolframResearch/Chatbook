@@ -31,12 +31,13 @@ $acpFinalizeTimeout   = 30;   (* seconds after which housekeeping finishes a tur
 $acpMaxRecentModels   = 3;
 $acpPreferencesPath   = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "ACP" };
 $acpMaxPathLength     = 42;
-$acpMaxPathLengthReview = 20; (* when the "Review" button is shown in the project folder row *)
+$acpMaxPathLengthReview = 30; (* when the "Review" button is shown in the project folder row *)
 $acpQueuedPreviewSize = 80;
 
 (* UI-owned keys in window records (in addition to the ones described in docs/acp-window.md, "State model"):
      "Settings"     -> explicit ShowNotebookAssistance settings ("ACPAgent", "ACPAgentCommandLine", "ACPModel", ...)
-     "Notice"       -> None | String: a transient message shown above the input field
+     "Notice"       -> None | String: a transient message shown above the input field; or <| "Text", "Command" |>: a
+                       message with a terminal command below it (shown as typed, with "Copy command"; see acpNoticeView)
      "QueuedPrompt" -> None | String: a prompt typed while a turn was running; sent after the turn is finalized
      "QueuedTurn"   -> None | turnID: a turn that was started before the connection was ready
    UI-owned keys in turn records:
@@ -55,6 +56,8 @@ $acpUIStrings = <|
     "WindowTitleNoProject"           -> "`agent`",
     "WindowTitleProject"             -> "`project` \[LongDash] `agent`",
     "WindowTitleApproval"            -> "Approval needed \[LongDash] `project`",
+    "WindowTitleProjectRemote"       -> "`project` on `host` \[LongDash] `agent`",
+    "WindowTitleApprovalRemote"      -> "Approval needed \[LongDash] `project` on `host`",
     "NewChat"                        -> "New",
     "NewChatTooltip"                 -> "Start a new chat",
     "ModelMenuDefault"               -> "Model",
@@ -74,6 +77,11 @@ $acpUIStrings = <|
     "ProjectDirectoryWarningHome"    -> "This is your home folder: the agent can read and change everything in it.",
     "ProjectDirectoryWarningRoot"    -> "This is a filesystem root: the agent can read and change everything in it.",
     "ProjectDirectoryWarningMissing" -> "This folder does not exist.",
+    "ProjectDirectoryTooltipRemote"  -> "Project folder on `host`: `path`",
+    "ProjectDirectoryNoneRemote"     -> "No project folder on `host`",
+    "ProjectDirectoryWarningHomeRemote"    -> "This is your home folder on `host`: the agent can read and change everything in it.",
+    "ProjectDirectoryWarningRootRemote"    -> "This is the root folder of `host`: the agent can read and change everything on it.",
+    "ProjectDirectoryWarningMissingRemote" -> "This folder doesn't exist on `host`.",
     "InputFieldHint"                 -> "Ask `agent` to do something\[Ellipsis]",
     "QueuedPrompt"                   -> "Queued, sent when the agent is done: `text`",
     "QueuedPromptRestoring"          -> "Queued, sent when the session is loaded: `text`",
@@ -87,9 +95,18 @@ $acpUIStrings = <|
     "NoticeDirectoryWhileRestoring"  -> "The project folder can't be changed while a session is loading.",
     "NoticeChooseModel"              -> "Choose another model from the model menu above.",
     "NoticeSignIn"                   -> "Run \"opencode auth login\" in a terminal to sign in, then reconnect.",
+    "NoticeSignInRemote"             -> "The sign-in runs on `host`: connect with this command in a terminal, run \"opencode auth login\" there, then reconnect.",
+    "NoticeCopyCommand"              -> "Copy command",
+    "NoticeCopyCommandTooltip"       -> "Copy the command to run in a terminal",
     "NoticeLocateAgent"              -> "Install OpenCode (https://opencode.ai) or give its command line with the \"ACPAgentCommandLine\" setting, then reconnect.",
     "NoticeAgentExecutableMissing"   -> "The file `path` does not exist.",
     "NoticeReconnectAfterTurn"       -> "The new agent settings are applied when the agent is done.",
+    "NoticeHostWhileRunning"         -> "The SSH settings can't be changed while the agent is working.",
+    "NoticeHostWhileRestoring"       -> "The SSH settings can't be changed while a session is loading.",
+    "NoticeInvalidRemoteDirectory"   -> "`path` is not a folder path on `host`: it must start with / or ~/.",
+    "NoticeDirectoryMissing"         -> "The folder `path` doesn't exist.",
+    "NoticeLocateAgentRemote"        -> "Install OpenCode on `host` (https://opencode.ai), or give its command line on `host` with the \"ACPAgentCommandLine\" setting, then reconnect.",
+    "NoticeCommandLineReset"         -> "The \"ACPAgentCommandLine\" setting was for another computer, so it is no longer used.",
     "InterruptedKernelRestart"       -> "Interrupted \[LongDash] the kernel was restarted.",
     "FinalCellUnavailable"           -> "This response could not be displayed.",
     "QueuedTurnFailed"               -> "The message was not sent because `agent` is not connected."
@@ -141,6 +158,22 @@ $$sessionsWindowAction = Alternatives[
     "SessionsToggleProject"
 ];
 
+(* Buttons and keys of the remote folder picker (FolderPicker.wl) *)
+$$folderPickerAction = Alternatives[
+    "FolderPickerCancel",
+    "FolderPickerChoose",
+    "FolderPickerClosed",
+    "FolderPickerCopyCommand",
+    "FolderPickerCopyError",
+    "FolderPickerEnter",
+    "FolderPickerGo",
+    "FolderPickerHome",
+    "FolderPickerRefresh",
+    "FolderPickerShowMore",
+    "FolderPickerToggleHidden",
+    "FolderPickerUp"
+];
+
 acpAction0 // beginDefinition;
 acpAction0[ "Send"               , nbo_NotebookObject                  ] := evaluateACPChat @ nbo;
 acpAction0[ "Stop"               , nbo_NotebookObject                  ] := acpStopAction @ nbo;
@@ -152,6 +185,9 @@ acpAction0[ "SetProjectDirectory", nbo_NotebookObject, dir_            ] := acpS
 acpAction0[ "Reconnect"          , nbo_NotebookObject                  ] := acpReconnectAction @ nbo;
 acpAction0[ "ErrorAction"        , nbo_NotebookObject, action_         ] := acpErrorAction[ nbo, action ];
 acpAction0[ action: $$errorAction  , nbo_NotebookObject                  ] := acpErrorAction[ nbo, action ];
+acpAction0[ "ToggleErrorDetail"  , nbo_NotebookObject                  ] := acpToggleErrorDetail @ nbo;
+acpAction0[ "CopyErrorDetail"    , nbo_NotebookObject                  ] := acpCopyErrorDetail @ nbo;
+acpAction0[ "CopyNoticeCommand"  , nbo_NotebookObject                  ] := acpCopyNoticeCommand @ nbo;
 acpAction0[ "WindowClosed"       , nbo_NotebookObject                  ] := acpWindowClosed @ nbo;
 acpAction0[ "InitializeWindow"   , nbo_NotebookObject                  ] := acpInitializeWindowAction @ nbo;
 acpAction0[ "DismissNotice"      , nbo_NotebookObject                  ] := acpSetNotice[ nbo, None ];
@@ -168,6 +204,7 @@ acpAction0[ "SessionsRefresh"    , nbo_NotebookObject                  ] := acpS
 acpAction0[ "SessionsClosed"     , nbo_NotebookObject                  ] := acpSessionsClosed @ nbo;
 acpAction0[ "ToggleSessions"     , nbo_NotebookObject                  ] := acpToggleSessions @ nbo;
 acpAction0[ name: $$sessionsWindowAction, nbo_NotebookObject, args___ ] := acpSessionsWindowAction[ name, nbo, args ];
+acpAction0[ name: $$folderPickerAction, nbo_NotebookObject, args___ ] := acpFolderPickerAction[ name, nbo, args ];
 acpAction0[ name_, args___ ] := (acpLog[ "UnknownAction", { name, args } ]; Missing[ "UnknownAction", name ]);
 acpAction0 // endDefinition;
 
@@ -176,9 +213,23 @@ $acpActionNames = {
     "CancelQueuedPrompt",
     "ChooseDirectory",
     "ChooseModel",
+    "CopyErrorDetail",
+    "CopyNoticeCommand",
     "DeleteSession",
     "DismissNotice",
     "ErrorAction",
+    "FolderPickerCancel",
+    "FolderPickerChoose",
+    "FolderPickerClosed",
+    "FolderPickerCopyCommand",
+    "FolderPickerCopyError",
+    "FolderPickerEnter",
+    "FolderPickerGo",
+    "FolderPickerHome",
+    "FolderPickerRefresh",
+    "FolderPickerShowMore",
+    "FolderPickerToggleHidden",
+    "FolderPickerUp",
     "InitializeWindow",
     "LocateAgent",
     "NewChat",
@@ -207,6 +258,7 @@ $acpActionNames = {
     "SetProjectDirectory",
     "SignIn",
     "Stop",
+    "ToggleErrorDetail",
     "ToggleOpen",
     "ToggleSessions",
     "WindowClosed"
@@ -314,6 +366,8 @@ acpCreateWindow[ source_, settings_Association ] := Enclose[
 
         acpUpdateWindowTitle @ nbo;
         acpEnsureConnected @ nbo;
+        (* A remote window without a folder opens its folder picker (FolderPicker.wl), once *)
+        acpFolderPickerAutoOpen @ nbo;
         nbo
     ],
     throwInternalFailure
@@ -351,7 +405,7 @@ acpNotebookOptions[ dir_, agent_String, settings_Association ] := Sequence[
         |>,
         "ConversationTitle" -> ""
     |>,
-    WindowTitle -> acpWindowTitleString[ dir, agent, False ]
+    WindowTitle -> acpWindowTitleString[ dir, agent, False, acpSettingsSSH @ settings ]
 ];
 
 acpNotebookOptions // endDefinition;
@@ -381,11 +435,18 @@ acpSettingsAgent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*acpDefaultProjectDirectory*)
 
-(* Explicit setting -> last used directory -> directory of the (saved) source notebook -> None *)
+(* Explicit setting -> last used directory -> directory of the (saved) source notebook -> None.
+   With "SSHSettings" (remote): the explicit folder (a ~ folder as given: the launch resolves it with the remote $HOME,
+   while the home persisted for the host name may be another machine's), or the host's persisted last folder, else
+   None; never the source notebook's folder and never a check on this computer. *)
 acpDefaultProjectDirectory // beginDefinition;
 
-acpDefaultProjectDirectory[ source_, settings_Association ] :=
-    acpDefaultProjectDirectory[ source, Lookup[ settings, "ProjectDirectory", Automatic ] ];
+acpDefaultProjectDirectory[ source_, settings_Association ] := With[ { ssh = acpSettingsSSH @ settings },
+    If[ ssh === None,
+        acpDefaultProjectDirectory[ source, Lookup[ settings, "ProjectDirectory", Automatic ] ],
+        acpRemoteDefaultProjectDirectory[ ssh, Lookup[ settings, "ProjectDirectory", Automatic ] ]
+    ]
+];
 
 acpDefaultProjectDirectory[ _, None ] := None;
 
@@ -401,6 +462,22 @@ acpDefaultProjectDirectory[ source_, Automatic ] := FirstCase[
 ];
 
 acpDefaultProjectDirectory // endDefinition;
+
+
+acpRemoteDefaultProjectDirectory // beginDefinition;
+
+acpRemoteDefaultProjectDirectory[ _, None ] := None;
+
+acpRemoteDefaultProjectDirectory[ _, dir: _String | File[ _String ] ] :=
+    acpRemoteNormalizeDirectory[ dir, None ];
+
+acpRemoteDefaultProjectDirectory[ ssh_, Automatic ] := With[ { key = acpLastProjectDirectoryKey @ ssh },
+    If[ ListQ @ key, Replace[ acpPersistedSetting[ key, None ], Except[ _String? acpRemoteProjectDirectoryQ ] -> None ], None ]
+];
+
+acpRemoteDefaultProjectDirectory[ _, _ ] := None;
+
+acpRemoteDefaultProjectDirectory // endDefinition;
 
 
 acpNormalizeDirectory // beginDefinition;
@@ -430,11 +507,15 @@ acpRegisterWindow // endDefinition;
 
 acpInitialWindowRecord // beginDefinition;
 
+(* A remote window's record also gets the host's persisted home folder ("RemoteHome") and "RemoteVerified" -> False
+   (True once a launch reached the host, Connection.wl) *)
 acpInitialWindowRecord[ nbo_NotebookObject, dir_, agent_String, settings_Association ] := <|
     "Notebook"           -> nbo,
     "Agent"              -> agent,
     "ProjectDirectory"   -> dir,
-    "Status"             -> If[ acpValidProjectDirectoryQ @ dir, "Connecting", "NoDirectory" ],
+    "Status"             -> If[ acpValidProjectDirectoryQ[ dir, acpSettingsSSH @ settings ], "Connecting", "NoDirectory" ],
+    "RemoteHome"         -> acpPersistedRemoteHome @ acpSettingsSSH @ settings,
+    "RemoteVerified"     -> False,
     "Error"              -> None,
     "Connection"         -> None,
     "Session"            -> None,
@@ -463,9 +544,9 @@ acpInitialWindowRecord[ nbo_NotebookObject, dir_, agent_String, settings_Associa
 acpInitialWindowRecord // endDefinition;
 
 
+(* ssh: the window's SSH settings (acpSettingsSSH): a local folder must exist, a remote one is a path (SSH.wl) *)
 acpValidProjectDirectoryQ // beginDefinition;
-acpValidProjectDirectoryQ[ dir_String? StringQ ] := TrueQ @ Quiet @ DirectoryQ @ dir;
-acpValidProjectDirectoryQ[ _ ] := False;
+acpValidProjectDirectoryQ[ dir_, ssh_ ] := acpProjectDirectoryQ[ dir, ssh ];
 acpValidProjectDirectoryQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -488,12 +569,19 @@ acpEnsureWindowRecord // endDefinition;
 
 acpRebuildWindowRecord // beginDefinition;
 
-acpRebuildWindowRecord[ nbo_NotebookObject ] := Module[ { dir, agent, settings, record },
-    dir      = acpNormalizeDirectory @ acpFE[ nbo, "ProjectDirectory", None ];
-    agent    = Replace[ acpFE[ nbo, "Agent", $acpDefaultAgent ], Except[ _String ] -> $acpDefaultAgent ];
+(* The settings come first: a remote window's folder is a remote path, stored already normalized, so it is taken as it
+   is ("Raw": a folder name may end in a space), and a ~ folder (the launch never reached it) stays one (see
+   acpDefaultProjectDirectory) *)
+acpRebuildWindowRecord[ nbo_NotebookObject ] := Module[ { settings, ssh, dir, agent, record },
     settings = acpPersistedWindowSettings @ acpFE[ nbo, "Settings", <| |> ];
+    ssh      = acpSettingsSSH @ settings;
+    dir      = If[ ssh === None,
+        acpNormalizeProjectDirectory[ acpFE[ nbo, "ProjectDirectory", None ], None, None ],
+        acpRemoteNormalizeDirectory[ acpFE[ nbo, "ProjectDirectory", None ], None, "Raw" -> True ]
+    ];
+    agent    = Replace[ acpFE[ nbo, "Agent", $acpDefaultAgent ], Except[ _String ] -> $acpDefaultAgent ];
     record   = acpInitialWindowRecord[ nbo, dir, agent, settings ];
-    record[ "Status" ] = If[ acpValidProjectDirectoryQ @ dir, "Disconnected", "NoDirectory" ];
+    record[ "Status" ] = If[ acpValidProjectDirectoryQ[ dir, ssh ], "Disconnected", "NoDirectory" ];
     record[ "ResumableSessionID" ] = Replace[ acpFE[ nbo, "ResumableSessionID", None ], Except[ _String ] -> None ];
     acpEnsureWindowSymbols @ nbo;
     acpWindowUpdate[ nbo, Function[ old, If[ KeyExistsQ[ old, "Status" ], old, Join[ old, record ] ] ] ]
@@ -506,8 +594,9 @@ acpRebuildWindowRecord // endDefinition;
 (*acpPersistedWindowSettings*)
 
 (* The explicit agent settings of a window. They are also stored in the notebook's TaggingRules ({"ACP", "Settings"}),
-   so a window rebuilt after a kernel restart connects with the same command line and model. *)
-$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPModel" };
+   so a window rebuilt after a kernel restart connects with the same command line, model and host ("SSHSettings", in
+   its canonical form: it holds no secrets, at most the path of a key file). *)
+$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPModel", "SSHSettings" };
 
 acpPersistedWindowSettings // beginDefinition;
 acpPersistedWindowSettings[ settings_Association ] := KeyTake[ settings, $acpPersistedSettingNames ];
@@ -540,28 +629,39 @@ $acpDerivedViewNames = { "ConfigMenus", "DirectoryRow", "Footer", "InputArea", "
 acpReuseWindow // beginDefinition;
 
 acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
-    Module[ { window, dir, dirChanged, changed },
+    Module[ { window, plan, dir, notices, dirChanged, changed, result },
         acpCheckSession @ nbo;
-        window = ConfirmBy[ acpEnsureWindowRecord @ nbo, AssociationQ, "Window" ];
-        dir = acpNormalizeDirectory @ Lookup[ settings, "ProjectDirectory", None ];
+        window  = ConfirmBy[ acpEnsureWindowRecord @ nbo, AssociationQ, "Window" ];
+        plan    = ConfirmBy[ acpReusePlan[ source, window, settings ], AssociationQ, "Plan" ];
+        dir     = plan[ "Directory" ];
+        notices = plan[ "Notices" ];
 
-        (* Explicit agent settings (executable, model) are stored first, so a reconnect below (or the one done by a
+        (* Explicit agent settings (executable, model, host) are stored first, so a reconnect below (or the one done by a
            directory change) uses them: *)
-        changed = acpMergeWindowSettings[ nbo, settings ];
+        changed = acpMergeWindowSettings[ nbo, plan[ "Settings" ] ];
 
-        (* An explicit project directory for an existing window is applied (unless the agent is busy) *)
+        (* Another host is a new chat in the new host's folder (or without a folder); an explicit project directory for
+           an existing window is applied (unless the agent is busy) *)
         dirChanged = False;
-        If[ StringQ @ dir && dir =!= Lookup[ window, "ProjectDirectory" ],
-            Which[
-                acpRestoringQ @ window,
-                    acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRestoring" ] ],
-                acpRunningQ @ window,
-                    acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRunning" ] ],
-                True,
-                    acpChangeProjectDirectory[ nbo, dir ];
-                    dirChanged = True
-            ]
+        Which[
+            TrueQ @ plan[ "Switch" ],
+                acpResetProjectDirectory[ nbo, dir ];
+                acpDirectoryChanged @ nbo;
+                (* a remote host without a folder: its folder picker opens (FolderPicker.wl) *)
+                acpFolderPickerAutoOpen @ nbo;
+                dirChanged = True,
+            StringQ @ dir && dir =!= Lookup[ window, "ProjectDirectory" ],
+                Which[
+                    acpRestoringQ @ window,
+                        AppendTo[ notices, acpLabel[ "NoticeDirectoryWhileRestoring" ] ],
+                    acpRunningQ @ window,
+                        AppendTo[ notices, acpLabel[ "NoticeDirectoryWhileRunning" ] ],
+                    True,
+                        result     = acpChangeProjectDirectory[ nbo, dir ];
+                        dirChanged = StringQ @ result
+                ]
         ];
+        If[ notices =!= { }, acpSetNotice[ nbo, StringRiffle[ notices, " " ] ] ];
 
         If[ MatchQ[ source, _NotebookObject ],
             ConfirmMatch[ attachToLeft[ source, nbo ], _NotebookObject, "Attached" ],
@@ -578,17 +678,139 @@ acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
 acpReuseWindow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpReusePlan*)
+
+(* What reusing the window with the settings of a ShowNotebookAssistance call does (acpReuseWindow), decided without
+   changing anything (it reads preferences: the new host's last folder):
+     "Settings"  -> the settings to merge;
+     "Switch"    -> True if the window moves to another host ("SSHSettings" with another host key; local is a host
+                    too). Refused while the agent works or a session loads: then "SSHSettings", "ProjectDirectory" and
+                    "ACPAgentCommandLine" are dropped, with a notice. A switch resets "ACPAgentCommandLine" (a path on
+                    the machine that runs the agent) to Automatic unless the call gives one, with a notice if a value
+                    was dropped;
+     "Directory" -> the call's folder normalized for the window's (new) host (a remote ~ folder: expanded with the
+                    window's home on the same host, kept for another host), or None. With a switch: the call's
+                    folder, else the window's folder if the old host was never reached (a typo in the user name or port
+                    must not lose it), else the new host's default (acpDefaultProjectDirectory), which may be None;
+     "Notices"   -> notices to show, e.g. for a folder that can't be used (it is ignored). *)
+acpReusePlan // beginDefinition;
+
+acpReusePlan[ source_, window_Association, settings0_Association ] := Module[
+    { settings, oldSSH, newSSH, switchQ, busy, notices, home, dir },
+
+    settings = settings0;
+    oldSSH   = acpWindowSSH @ window;
+    newSSH   = If[ KeyExistsQ[ settings, "SSHSettings" ], acpSSHSettings @ settings[ "SSHSettings" ], oldSSH ];
+    switchQ  = reuseHostKey @ oldSSH =!= reuseHostKey @ newSSH;
+    notices  = { };
+
+    busy = Which[ acpRestoringQ @ window, "NoticeHostWhileRestoring", acpRunningQ @ window, "NoticeHostWhileRunning", True, None ];
+    If[ switchQ && StringQ @ busy,
+        AppendTo[ notices, acpLabel @ busy ];
+        settings = KeyDrop[ settings, { "SSHSettings", "ProjectDirectory", "ACPAgentCommandLine" } ];
+        newSSH   = oldSSH;
+        switchQ  = False
+    ];
+
+    If[ switchQ && ! KeyExistsQ[ settings, "ACPAgentCommandLine" ],
+        If[ Lookup[ Replace[ Lookup[ window, "Settings", <| |> ], Except[ _Association ] -> <| |> ], "ACPAgentCommandLine", Automatic ] =!= Automatic,
+            AppendTo[ notices, acpLabel[ "NoticeCommandLineReset" ] ]
+        ];
+        settings = <| settings, "ACPAgentCommandLine" -> Automatic |>
+    ];
+
+    (* A remote ~ folder is expanded only with the window's own home (for the same host), so that ~/x and the window's
+       /home/u/x are the same folder; for another host it is kept: the launch resolves it (acpDefaultProjectDirectory) *)
+    home = If[ switchQ, None, acpWindowRemoteHome @ window ];
+    dir  = Replace[
+        Lookup[ settings, "ProjectDirectory", None ],
+        { d: _String | File[ _String ] :> acpNormalizeProjectDirectory[ d, newSSH, home ], _ -> None }
+    ];
+    If[ StringQ @ dir && ! acpProjectDirectoryQ[ dir, newSSH ],
+        AppendTo[ notices, unusableDirectoryNotice[ dir, newSSH ] ];
+        dir = None
+    ];
+    (* the window's own ~ folder (not resolved yet) given again is no change either *)
+    If[ ! switchQ && newSSH =!= None && StringQ @ dir && sameRemoteFolderQ[ dir, Lookup[ window, "ProjectDirectory", None ], home ],
+        dir = window[ "ProjectDirectory" ]
+    ];
+
+    If[ switchQ,
+        dir = Which[
+            StringQ @ dir,
+                dir,
+            keepFolderQ[ window, oldSSH, newSSH ],
+                window[ "ProjectDirectory" ],
+            True,
+                acpDefaultProjectDirectory[ source, <| "SSHSettings" -> newSSH, "ProjectDirectory" -> Automatic |> ]
+        ]
+    ];
+
+    <| "Settings" -> settings, "Switch" -> switchQ, "Directory" -> dir, "Notices" -> notices |>
+];
+
+acpReusePlan // endDefinition;
+
+
+(* Whether a remote folder (normalized, ~ expanded with home if known) is the window's folder, which may still be a ~
+   folder *)
+sameRemoteFolderQ // beginDefinition;
+sameRemoteFolderQ[ dir_String, current_String, home_ ] := acpRemoteNormalizeDirectory[ current, home, "Raw" -> True ] === dir;
+sameRemoteFolderQ[ _, _, _ ] := False;
+sameRemoteFolderQ // endDefinition;
+
+
+(* The host of SSH settings for host switches: None (local), "?" (invalid settings) or the host key *)
+reuseHostKey // beginDefinition;
+reuseHostKey[ None ] := None;
+reuseHostKey[ _Failure ] := "?";
+reuseHostKey[ ssh_ ] := acpSSHHostKey @ ssh;
+reuseHostKey // endDefinition;
+
+
+(* A remote window's folder is kept for another host when the old host was never reached (RemoteVerified) *)
+keepFolderQ // beginDefinition;
+
+keepFolderQ[ window_Association, oldSSH_, newSSH_ ] := And[
+    oldSSH =!= None,
+    newSSH =!= None,
+    ! TrueQ @ Lookup[ window, "RemoteVerified", False ],
+    acpRemoteProjectDirectoryQ @ Lookup[ window, "ProjectDirectory", None ]
+];
+
+keepFolderQ // endDefinition;
+
+
+(* The notice for an explicit folder that can't be used: a local folder that doesn't exist, or a remote one that is not
+   an absolute or ~/ path *)
+unusableDirectoryNotice // beginDefinition;
+
+unusableDirectoryNotice[ dir_String, None ] :=
+    acpLabel[ "NoticeDirectoryMissing", <| "path" -> acpNeutralizeLinearSyntax @ acpAbbreviatePath[ dir, None ] |> ];
+
+unusableDirectoryNotice[ dir_String, ssh_ ] := acpLabel[
+    "NoticeInvalidRemoteDirectory",
+    <| "path" -> acpRemoteDisplayName @ dir, "host" -> Replace[ acpSSHHostLabel @ ssh, Except[ _String ] -> "?" ] |>
+];
+
+unusableDirectoryNotice // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Window Settings*)
 
 (* Merges explicit agent settings into the window record and its TaggingRules. Gives the names of the settings that
-   changed. A new "ACPModel" replaces a model chosen in the menu for the next connection. *)
+   changed: values are compared in their normal form (settingNormal), so that e.g. "u@h" and the canonical
+   <| "MachineName" -> "h", "Username" -> "u", ... |>, or None and a missing "SSHSettings", are the same. "SSHSettings"
+   is stored in its canonical form. A new "ACPModel" replaces a model chosen in the menu for the next connection. *)
 acpMergeWindowSettings // beginDefinition;
 
 acpMergeWindowSettings[ nbo_NotebookObject, settings_Association ] := Module[ { new, old, changed, merged },
     new     = acpPersistedWindowSettings @ settings;
+    If[ KeyExistsQ[ new, "SSHSettings" ], new[ "SSHSettings" ] = settingNormal[ "SSHSettings", new[ "SSHSettings" ] ] ];
     old     = Replace[ acpWindowGet[ nbo, "Settings", <| |> ], Except[ _Association ] -> <| |> ];
-    changed = Select[ Keys @ new, Lookup[ old, #, Automatic ] =!= new[ # ] & ];
+    changed = Select[ Keys @ new, settingNormal[ #, Lookup[ old, #, Automatic ] ] =!= settingNormal[ #, new[ # ] ] & ];
     If[ changed === { }, Return[ { }, Module ] ];
     merged = <| old, new |>;
     acpWindowUpdate[
@@ -613,20 +835,32 @@ acpMergeWindowSettings[ nbo_NotebookObject, settings_Association ] := Module[ { 
 acpMergeWindowSettings // endDefinition;
 
 
-(* Applies changed settings (see acpMergeWindowSettings): a new agent or executable (or a window in "Error", e.g. after
-   AgentNotFound) reconnects, after the running turn if there is one; a new model is selected in the current session.
-   Otherwise the window just makes sure it is connected. dirChanged: the window is already reconnecting for a new
-   project directory. *)
+(* A setting's value for comparisons: SSH settings in their canonical form (an invalid value stays as it is) *)
+settingNormal // beginDefinition;
+settingNormal[ "SSHSettings", value_ ] := Replace[ acpSSHSettings @ value, _Failure -> value ];
+settingNormal[ _, value_ ] := value;
+settingNormal // endDefinition;
+
+
+(* Applies changed settings (see acpMergeWindowSettings): a new agent, executable or SSH setting of the same host (or a
+   window in "Error", e.g. after AgentNotFound) reconnects, after the running turn if there is one (the folder, the
+   transcript and the resumable session stay); a new model is selected in the current session. Otherwise the window
+   just makes sure it is connected. dirChanged: the window is already reconnecting for a new project directory (or a
+   new host). New SSH settings are a user action: they clear the host's failure latch (Remote.wl), typically the fix of
+   the failure that latched it. *)
 acpApplyWindowSettings // beginDefinition;
 
 acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Module[ { window, modelID, model },
     window = acpWindowGet @ nbo;
+    If[ MemberQ[ changed, "SSHSettings" ] && StringQ @ acpWindowHostKey @ window,
+        acpRemoteClearHostError @ acpWindowHostKey @ window
+    ];
     Which[
         ! AssociationQ @ window,
             Null,
         TrueQ @ dirChanged,
             acpEnsureConnected @ nbo,
-        MemberQ[ changed, "ACPAgentCommandLine" | "ACPAgent" ] || Lookup[ window, "Status" ] === "Error",
+        MemberQ[ changed, "ACPAgentCommandLine" | "ACPAgent" | "SSHSettings" ] || Lookup[ window, "Status" ] === "Error",
             If[ acpRunningQ @ window || acpRestoringQ @ window,
                 acpWindowSet[ nbo, "ReconnectRequested", True ];
                 acpSetNotice[ nbo, acpLabel[ "NoticeReconnectAfterTurn" ] ],
@@ -653,12 +887,14 @@ acpApplyWindowSettings // endDefinition;
 (*acpSetAgentExecutableAction*)
 
 (* The "Locate OpenCode..." file chooser of AgentNotFound errors: the chosen file becomes the program of the window's
-   "ACPAgentCommandLine" setting (with the agent's arguments; kept across kernel restarts) and the window reconnects. *)
+   "ACPAgentCommandLine" setting (with the agent's arguments; kept across kernel restarts) and the window reconnects.
+   Refused for a remote window: a local file is no program on the remote machine. *)
 acpSetAgentExecutableAction // beginDefinition;
 
-acpSetAgentExecutableAction[ nbo_NotebookObject, path0_ ] := Catch @ Module[ { path },
+acpSetAgentExecutableAction[ nbo_NotebookObject, path0_ ] := Catch @ Module[ { window, path },
     acpCheckSession @ nbo;
-    acpEnsureWindowRecord @ nbo;
+    window = acpEnsureWindowRecord @ nbo;
+    If[ acpRemoteQ @ window, acpSetNotice[ nbo, locateAgentRemoteNotice @ window ]; Throw @ Null ];
     path = Replace[ path0, { File[ p_String ] :> p, p_String :> StringTrim @ p, _ :> Throw @ Null } ];
     If[ path === "", Throw @ Null ];
     If[ ! TrueQ @ Quiet @ FileExistsQ @ path || TrueQ @ Quiet @ DirectoryQ @ path,
@@ -683,6 +919,7 @@ acpCloseWindow // beginDefinition;
 acpCloseWindow[ nbo_NotebookObject ] := (
     acpIsolated @ acpDisconnect[ nbo, "WindowClosed" ];
     acpIsolated @ acpSessionsCloseWindow @ nbo;
+    acpIsolated @ acpFolderPickerCloseWindow @ nbo;
     Quiet @ NotebookClose @ nbo;
     acpForgetWindow @ nbo
 );
@@ -725,6 +962,9 @@ acpInitializeWindow[ nbo_NotebookObject ] := Catch @ Module[ { cell },
     If[ ! acpNotebookExistsQ @ nbo, Throw @ Null ];
     acpCheckSession @ nbo;
     acpEnsureWindowRecord @ nbo;
+    (* A placeholder toolbar that acpCheckSession did not replace (no kernel restart, e.g. a window whose record was
+       forgotten) is replaced now that the record and its symbols exist *)
+    If[ KeyExistsQ[ $placeholderToolbars, nbo ], acpRefreshToolbar @ nbo ];
     (* e.g. a notebook given the ACPChat stylesheet by hand: the input field would show Inherited *)
     If[ acpFE[ nbo, "Input", Inherited ] === Inherited, acpFESet[ nbo, "Input", "" ] ];
     If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ] === { },
@@ -744,11 +984,16 @@ acpInitializeWindow // endDefinition;
 (*acpWindowClosed*)
 
 (* NotebookEventActions "WindowClose" (preemptive): only schedule the cleanup (which also closes the window's Sessions
-   window). *)
+   window and folder picker). *)
 acpWindowClosed // beginDefinition;
 
 acpWindowClosed[ nbo_NotebookObject ] := (
-    acpSchedule[ acpDisconnect[ nbo, "WindowClosed" ]; acpForgetWindow @ nbo; acpSessionsCloseWindow @ nbo ];
+    acpSchedule[
+        acpDisconnect[ nbo, "WindowClosed" ];
+        acpForgetWindow @ nbo;
+        acpSessionsCloseWindow @ nbo;
+        acpFolderPickerCloseWindow @ nbo
+    ];
     Null
 );
 
@@ -764,6 +1009,7 @@ acpForgetWindow[ nbo_NotebookObject ] := Module[ { turns },
     acpWindowDrop @ nbo;
     $derivedSignatures = KeySelect[ $derivedSignatures, First @ # =!= nbo & ];
     KeyDropFrom[ $windowTitles, Key @ nbo ];
+    KeyDropFrom[ $placeholderToolbars, Key @ nbo ];
     Null
 ];
 
@@ -783,11 +1029,7 @@ acpUpdateWindowTitle // beginDefinition;
 acpUpdateWindowTitle[ nbo_NotebookObject ] := acpUpdateWindowTitle[ nbo, acpWindowGet @ nbo ];
 
 acpUpdateWindowTitle[ nbo_NotebookObject, window_Association ] := Module[ { title },
-    title = acpWindowTitleString[
-        Lookup[ window, "ProjectDirectory", None ],
-        Lookup[ window, "Agent", $acpDefaultAgent ],
-        Length @ Lookup[ window, "PendingPermissions", <| |> ] > 0
-    ];
+    title = acpWindowTitleString @ window;
     If[ Lookup[ $windowTitles, Key @ nbo ] =!= title,
         $windowTitles[ nbo ] = title;
         Quiet @ SetOptions[ nbo, WindowTitle -> title ]
@@ -800,16 +1042,36 @@ acpUpdateWindowTitle[ _, _Missing ] := Null;
 acpUpdateWindowTitle // endDefinition;
 
 
-(* The project folder can come from the agent (a session restored from the Sessions window): its name is neutralized *)
+(* The project folder can come from the agent (a session restored from the Sessions window): its name is neutralized.
+   A remote window's title names the host (short form); its folder is a POSIX path on that host, whose name is taken
+   with string operations (FileNameTake would read it as a path of this computer). *)
 acpWindowTitleString // beginDefinition;
 
-acpWindowTitleString[ dir_String, agent_, True ] :=
+acpWindowTitleString[ window_Association ] := acpWindowTitleString[
+    Lookup[ window, "ProjectDirectory", None ],
+    Lookup[ window, "Agent", $acpDefaultAgent ],
+    Length @ Replace[ Lookup[ window, "PendingPermissions", <| |> ], Except[ _Association ] -> <| |> ] > 0,
+    acpWindowSSH @ window
+];
+
+acpWindowTitleString[ dir_, agent_, approval_ ] := acpWindowTitleString[ dir, agent, approval, None ];
+
+acpWindowTitleString[ dir_String, agent_, approval_, ssh: Except[ None ] ] := acpLabel[
+    If[ TrueQ @ approval, "WindowTitleApprovalRemote", "WindowTitleProjectRemote" ],
+    <|
+        "project" -> acpRemoteDisplayName @ acpRemotePathName @ dir,
+        "host"    -> acpRemoteDisplayName @ Replace[ acpSSHShortHost @ ssh, Except[ _String ] -> "?" ],
+        "agent"   -> agent
+    |>
+];
+
+acpWindowTitleString[ dir_String, agent_, True, None ] :=
     acpLabel[ "WindowTitleApproval", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
 
-acpWindowTitleString[ dir_String, agent_, _ ] :=
+acpWindowTitleString[ dir_String, agent_, _, None ] :=
     acpLabel[ "WindowTitleProject", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
 
-acpWindowTitleString[ _, agent_, _ ] :=
+acpWindowTitleString[ _, agent_, _, _ ] :=
     acpLabel[ "WindowTitleNoProject", <| "agent" -> agent |> ];
 
 acpWindowTitleString // endDefinition;
@@ -828,10 +1090,16 @@ acpWindowTitleString // endDefinition;
 makeACPChatDockedCell // beginDefinition;
 
 (* The front end entry point (a preemptive evaluation that may interrupt a Notebook Assistant chat) is isolated (rule
-   R3). If building the toolbar fails, a minimal toolbar still initializes the window (input field and connection). *)
+   R3). If building the toolbar fails, a minimal toolbar still initializes the window (input field and connection).
+   The front end does not track symbols created while it evaluates this DynamicBox, so the toolbar is built here only
+   for a window that has a record in this kernel (and so its change symbols, see acpEnsureWindowSymbols). After a
+   kernel restart the box is evaluated again in the new kernel, which knows nothing of the window yet: then a
+   placeholder is shown, and its Initialization runs acpInitializeWindow in the pump, which rebuilds the record (with
+   the symbols) before the toolbar (acpCheckSession, or acpRefreshToolbar for a placeholder it did not replace).
+   Nothing else happens in this Dynamic: no front end reads, no loading of ACPLink, no connecting (rule R1). *)
 makeACPChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
     Replace[
-        acpIsolated @ makeACPChatDockedCell @ nbo,
+        acpIsolated @ If[ knownWindowQ @ nbo, makeACPChatDockedCell @ nbo, acpPlaceholderDockedCell @ nbo ],
         Except[ _Framed ] :> acpFallbackDockedCell @ nbo
     ]
 ];
@@ -882,6 +1150,44 @@ acpFallbackDockedCell[ _ ] := Spacer[ { 0, 0 } ];
 
 acpFallbackDockedCell // endDefinition;
 
+
+(* Whether this kernel has the window's state: a record made by acpRegisterWindow or acpRebuildWindowRecord, which
+   create the change symbols too (a record without "Status" is a partial one, see acpEnsureWindowRecord) *)
+knownWindowQ // beginDefinition;
+knownWindowQ[ nbo_NotebookObject ] := KeyExistsQ[ Replace[ acpWindowGet @ nbo, Except[ _Association ] -> <| |> ], "Status" ];
+knownWindowQ // endDefinition;
+
+
+(* The toolbar of a window this kernel does not know yet (makeACPChatDockedCell): the toolbar's frame without views,
+   whose Initialization starts acpInitializeWindow. The window is noted, so acpInitializeWindow replaces it with the
+   toolbar once the record exists. *)
+If[ ! AssociationQ @ $placeholderToolbars, $placeholderToolbars = <| |> ];
+
+acpPlaceholderDockedCell // beginDefinition;
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
+acpPlaceholderDockedCell[ nbo_NotebookObject ] := (
+    $placeholderToolbars[ nbo ] = True;
+    Framed[
+        DynamicModule[ { },
+            Spacer[ { 0, 24 } ],
+            Initialization :> (
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ACP", "InitializeWindow", nbo ]
+            )
+        ],
+        Background   -> color @ "NA_Toolbar",
+        FrameStyle   -> color @ "NA_Toolbar",
+        FrameMargins -> { { 2, 4 }, { 1, 1 } },
+        ImageMargins -> 0,
+        ImageSize    -> Scaled[ 1 ]
+    ]
+);
+(* :!CodeAnalysis::EndBlock:: *)
+
+acpPlaceholderDockedCell // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*acpToolbarDockedCell*)
@@ -905,16 +1211,30 @@ acpToolbarDockedCell // endDefinition;
 acpRefreshToolbar // beginDefinition;
 
 (* Always sets DockedCells, even if the new toolbar is the same expression: the front end must rebuild the toolbar so
-   its Dynamics are evaluated (and track symbols) in this kernel and its DynamicModule state is reset. *)
+   its Dynamics are evaluated (and track symbols) in this kernel and its DynamicModule state is reset. A window whose
+   toolbar is not found (e.g. a notebook given the ACPChat stylesheet and other docked cells by hand) keeps its docked
+   cells; this is logged, since after a kernel restart that toolbar stays as the old kernel left it. *)
 acpRefreshToolbar[ nbo_NotebookObject ] := Catch @ Module[ { docked, new },
-    docked = AbsoluteCurrentValue[ nbo, DockedCells ];
-    If[ ! MatchQ[ docked, { ___Cell } ], Throw @ Null ];
-    If[ ! MemberQ[ docked, Cell[ ___, CellTags -> "ACPToolbar", ___ ] ], Throw @ Null ];
-    new = Replace[ docked, Cell[ ___, CellTags -> "ACPToolbar", ___ ] :> acpToolbarDockedCell @ nbo, { 1 } ];
+    docked = Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], cell_Cell :> { cell } ];
+    If[ ! MatchQ[ docked, { ___Cell } ] || ! MemberQ[ docked, $$acpToolbarCell ],
+        acpLog[ "ToolbarNotFound", <| "Notebook" -> nbo, "DockedCells" -> dockedCellsSummary @ docked |> ];
+        Throw @ Null
+    ];
+    new = Replace[ docked, $$acpToolbarCell :> acpToolbarDockedCell @ nbo, { 1 } ];
+    KeyDropFrom[ $placeholderToolbars, Key @ nbo ];
     contextBlock @ SetOptions[ nbo, DockedCells -> new ]
 ];
 
 acpRefreshToolbar // endDefinition;
+
+(* The toolbar cell (ACPStyles.wl, acpToolbarDockedCell); the front end may give its tag in a list *)
+$$acpToolbarCell = Cell[ ___, CellTags -> ("ACPToolbar" | { ___, "ACPToolbar", ___ }), ___ ];
+
+(* What a window's docked cells are, for the debug log: the number of cells and their tags, or the head *)
+dockedCellsSummary // beginDefinition;
+dockedCellsSummary[ cells: { ___Cell } ] := { Length @ cells, Cases[ cells, Cell[ ___, CellTags -> tags_, ___ ] :> tags ] };
+dockedCellsSummary[ other_ ] := Head @ other;
+dockedCellsSummary // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1391,7 +1711,10 @@ acpSetPreference // endDefinition;
 
 (* Folder icon + abbreviated project directory + "Review" (Review.wl; only while the project folder has uncommitted
    changes) + "Change..." (FE-native directory dialog; the setter runs the "SetProjectDirectory" action, disabled while a
-   turn is running). *)
+   turn is running). The folder takes the room the buttons leave (a Fit column), and a folder that is still too wide
+   for it (wide letters, a narrow window) is drawn smaller: it never pushes "Change..." out of the window, and its own
+   name stays visible (cutting it off at the right edge would lose the name first). A warning about the folder sits
+   in its own column before it, so it is never shrunk or cut. *)
 acpDirectoryRow // beginDefinition;
 
 acpDirectoryRow[ nbo_NotebookObject ] :=
@@ -1401,10 +1724,15 @@ acpDirectoryRow // endDefinition;
 
 
 acpDirectoryRowSignature // beginDefinition;
+(* A remote window's row also shows its host and its home folder (paths are abbreviated with it), and warns about a
+   missing folder from the window's error *)
 acpDirectoryRowSignature[ window_Association ] := {
     Lookup[ window, "ProjectDirectory", None ],
     acpRunningQ @ window || acpRestoringQ @ window,
-    acpReviewButtonSignature @ window
+    acpReviewButtonSignature @ window,
+    acpWindowHostKey @ window,
+    acpWindowRemoteHome @ window,
+    windowErrorCode @ window
 };
 acpDirectoryRowSignature[ _ ] := None;
 acpDirectoryRowSignature // endDefinition;
@@ -1414,32 +1742,28 @@ acpDirectoryRowView // beginDefinition;
 
 acpDirectoryRowView[ nbo_NotebookObject ] := acpDirectoryRowView[ nbo, acpWindowGet @ nbo ];
 
-acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, running, warning, review, label },
+acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { ssh, dir, running, warning, review, max, label },
+    ssh     = acpWindowSSH @ window;
     dir     = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ];
     running = acpRunningQ @ window || acpRestoringQ @ window;
-    warning = acpDirectoryWarning @ dir;
+    warning = acpDirectoryWarning[ dir, window ];
     review  = acpReviewButton[ nbo, window ];
-    (* the folder can come from the agent (a session restored from the Sessions window): neutralized *)
-    label   = If[ StringQ @ dir,
-        Tooltip[
-            Style[
-                acpNeutralizeLinearSyntax @ acpAbbreviatePath[ dir, If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ] ],
-                "WorkspaceChatToolbarTitle",
-                FontSize        -> 12,
-                LineBreakWithin -> False
-            ],
-            acpLabel[ "ProjectDirectoryTooltip", <| "path" -> acpNeutralizeLinearSyntax @ dir |> ]
-        ],
-        Style[ acpLabel[ "ProjectDirectoryNone" ], "WorkspaceChatToolbarTitle", FontSize -> 12, FontSlant -> Italic ]
+    max     = If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ];
+    label   = If[ ssh === None,
+        localDirectoryLabel[ dir, max ],
+        remoteDirectoryLabel[ dir, ssh, acpWindowRemoteHome @ window, max ]
     ];
     Grid[
         { {
             Pane[ $acpFolderIcon, ImageMargins -> { { 6, 2 }, { 0, 0 } } ],
-            label,
             If[ StringQ @ warning, Tooltip[ $acpWarningIcon, warning ], Nothing ],
-            Item[ Spacer[ 0 ], ItemSize -> Fit ],
+            Item[
+                Pane[ label, ImageSize -> { Full, Automatic }, ImageSizeAction -> "ShrinkToFit" ],
+                ItemSize -> Fit
+            ],
             review,
-            acpDirectorySetter[ nbo, dir, running ]
+            (* invalid stored SSH settings: no folder can be chosen until the settings are fixed *)
+            If[ FailureQ @ ssh, Nothing, acpDirectorySetter[ nbo, dir, running, ssh =!= None ] ]
         } },
         Alignment -> { Left, Center },
         Spacings  -> { 0.25, 0 }
@@ -1451,9 +1775,83 @@ acpDirectoryRowView[ _, _ ] := Spacer[ 0 ];
 acpDirectoryRowView // endDefinition;
 
 
+(* The folder can come from the agent (a session restored from the Sessions window): display-safe, as remote folders
+   and the review window show it (a bidi control or another invisible character as a visible marker). Paths are shown
+   as they are typed ($pathTextOptions: no operator substitution, which draws "-" as a long minus sign). *)
+localDirectoryLabel // beginDefinition;
+
+localDirectoryLabel[ dir_String, max_ ] := Tooltip[
+    Style[ acpRemoteDisplayName @ acpAbbreviatePath[ dir, max ], "WorkspaceChatToolbarTitle", FontSize -> 12, $pathTextOptions ],
+    acpLabel[ "ProjectDirectoryTooltip", <| "path" -> acpRemoteDisplayName @ dir |> ]
+];
+
+localDirectoryLabel[ _, _ ] := Style[ acpLabel[ "ProjectDirectoryNone" ], "WorkspaceChatToolbarTitle", FontSize -> 12, FontSlant -> Italic ];
+
+localDirectoryLabel // endDefinition;
+
+
+(* host:path, e.g. "ec2-203-0-113-100:~/projects/app" (the host in its short form, muted; the path abbreviated with the
+   remote home and kept from its end), with the host and the whole path in the tooltip. Remote text only reaches boxes
+   through acpRemoteDisplayName. Invalid stored settings show the host "?". *)
+remoteDirectoryLabel // beginDefinition;
+
+remoteDirectoryLabel[ dir_String, ssh_, home_, max_ ] := Module[ { host, path },
+    { host, path } = acpRemoteFolderLabel[ remoteShortHost @ ssh, dir, home, Replace[ max, Except[ _Integer ] -> $acpMaxPathLength ] ];
+    Tooltip[
+        Row @ {
+            Style[ acpRemoteDisplayName @ host <> ":", "WorkspaceChatToolbarTitle", FontSize -> 12, FontColor -> acpColor[ "Muted" ], $pathTextOptions ],
+            Style[ path, "WorkspaceChatToolbarTitle", FontSize -> 12, $pathTextOptions ]
+        },
+        acpLabel[ "ProjectDirectoryTooltipRemote", <| "host" -> acpRemoteDisplayName @ remoteHostLabel @ ssh, "path" -> acpRemoteDisplayName @ dir |> ]
+    ]
+];
+
+remoteDirectoryLabel[ _, ssh_, _, _ ] := Style[
+    acpLabel[ "ProjectDirectoryNoneRemote", <| "host" -> acpRemoteDisplayName @ remoteShortHost @ ssh |> ],
+    "WorkspaceChatToolbarTitle",
+    FontSize  -> 12,
+    FontSlant -> Italic
+];
+
+remoteDirectoryLabel // endDefinition;
+
+
+$pathTextOptions := Sequence[ LineBreakWithin -> False, PrivateFontOptions -> { "OperatorSubstitution" -> False } ];
+
+
+remoteShortHost // beginDefinition;
+remoteShortHost[ ssh_Association ] := Replace[ acpSSHShortHost @ ssh, Except[ _String ] -> "?" ];
+remoteShortHost[ _ ] := "?";
+remoteShortHost // endDefinition;
+
+remoteHostLabel // beginDefinition;
+remoteHostLabel[ ssh_Association ] := Replace[ acpSSHHostLabel @ ssh, Except[ _String ] -> "?" ];
+remoteHostLabel[ _ ] := "?";
+remoteHostLabel // endDefinition;
+
+
+(* The code of the window's error, or None *)
+windowErrorCode // beginDefinition;
+windowErrorCode[ window_Association ] := Lookup[ Replace[ Lookup[ window, "Error", None ], Except[ _Association ] -> <| |> ], "Code", None ];
+windowErrorCode[ _ ] := None;
+windowErrorCode // endDefinition;
+
+
+(* "Change..." / "Choose folder...": a local window's folder is chosen with the front end's directory dialog (the setter
+   runs the "SetProjectDirectory" action); a remote window's folder in the remote folder picker ("ChooseDirectory"
+   action, FolderPicker.wl). Disabled while a turn runs or a session loads. *)
 acpDirectorySetter // beginDefinition;
 
-acpDirectorySetter[ nbo_NotebookObject, dir_, running_ ] := With[
+acpDirectorySetter[ nbo_NotebookObject, dir_, running_ ] := acpDirectorySetter[ nbo, dir, running, False ];
+
+acpDirectorySetter[ nbo_NotebookObject, dir_, running_, True ] := acpActionButton[
+    directorySetterLabel[ dir, running ],
+    { "ChooseDirectory", nbo },
+    BoxID   -> "ACPChooseDirectory",
+    Enabled -> ! TrueQ @ running
+];
+
+acpDirectorySetter[ nbo_NotebookObject, dir_, running_, _ ] := With[
     {
         setter = Function[
             Needs[ "Wolfram`Chatbook`" -> None ];
@@ -1463,15 +1861,7 @@ acpDirectorySetter[ nbo_NotebookObject, dir_, running_ ] := With[
     FileNameSetter[
         Dynamic[ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ACP", "ProjectDirectory" } ], setter ],
         "Directory",
-        Appearance -> blueHueButtonAppearance[
-            Style[
-                acpLabel @ If[ StringQ @ dir, "ProjectDirectoryChange", "ProjectDirectoryChoose" ],
-                "NotebookAssistant`Sidebar`ToolbarButtonLabel",
-                FontColor -> If[ TrueQ @ running, GrayLevel[ 0.6 ], Inherited ]
-            ],
-            { Automatic, 22 },
-            { { 5, 5 }, { 0, 0 } }
-        ],
+        Appearance  -> directorySetterLabel[ dir, running ],
         Enabled     -> ! TrueQ @ running,
         WindowTitle -> acpLabel[ "ProjectDirectoryDialogTitle" ]
     ]
@@ -1480,8 +1870,44 @@ acpDirectorySetter[ nbo_NotebookObject, dir_, running_ ] := With[
 acpDirectorySetter // endDefinition;
 
 
-(* None | warning text *)
+directorySetterLabel // beginDefinition;
+
+directorySetterLabel[ dir_, running_ ] := blueHueButtonAppearance[
+    Style[
+        acpLabel @ If[ StringQ @ dir, "ProjectDirectoryChange", "ProjectDirectoryChoose" ],
+        "NotebookAssistant`Sidebar`ToolbarButtonLabel",
+        FontColor -> If[ TrueQ @ running, GrayLevel[ 0.6 ], Inherited ]
+    ],
+    { Automatic, 22 },
+    { { 5, 5 }, { 0, 0 } }
+];
+
+directorySetterLabel // endDefinition;
+
+
+(* None | warning text. A remote window's folder is never looked at on this computer: it is the remote home folder (or
+   ~), the root, or missing (the launch said so: the window's error is RemoteFolderMissing). *)
 acpDirectoryWarning // beginDefinition;
+
+acpDirectoryWarning[ dir_String, window_Association ] /; acpRemoteQ @ window := With[
+    {
+        home = acpWindowRemoteHome @ window,
+        host = acpRemoteDisplayName @ Replace[ acpWindowShortHost @ window, Except[ _String ] -> "?" ],
+        path = acpRemoteLexicalPath @ dir
+    },
+    Which[
+        windowErrorCode @ window === "RemoteFolderMissing",
+            acpLabel[ "ProjectDirectoryWarningMissingRemote", <| "host" -> host |> ],
+        dir === "~" || StringQ @ home && path === acpRemoteLexicalPath @ home,
+            acpLabel[ "ProjectDirectoryWarningHomeRemote", <| "host" -> host |> ],
+        path === "/",
+            acpLabel[ "ProjectDirectoryWarningRootRemote", <| "host" -> host |> ],
+        True,
+            None
+    ]
+];
+
+acpDirectoryWarning[ dir_, _ ] := acpDirectoryWarning @ dir;
 
 acpDirectoryWarning[ dir_String ] := Which[
     ! TrueQ @ Quiet @ DirectoryQ @ dir,
@@ -1566,13 +1992,18 @@ $acpToolbarTextStyle = {
 (* ::Subsection::Closed:: *)
 (*acpStatusRow*)
 
-(* Connection status / errors: Rendering.wl's acpToolbarStatusView is a self-contained view that tracks the window *)
+(* Connection status / errors: Rendering.wl's acpToolbarStatusView is a self-contained view that tracks the window. The
+   pane has the toolbar's width, so a long error wraps instead of widening the toolbar column (which would push the
+   model/mode/effort menus of the main row past the window's edge); its margins are inside (FrameMargins), since margins
+   outside a full-width pane overflow. The toolbar is a docked cell, whose "DockedCell" style turns line breaking off, so
+   the pane turns it on again (wrapped lines start at the left edge: LineIndent -> 0). *)
 acpStatusRow // beginDefinition;
 
 acpStatusRow[ nbo_NotebookObject ] := Pane[
     acpToolbarStatusView @ nbo,
-    BaseStyle    -> $acpToolbarTextStyle,
-    ImageMargins -> { { 6, 2 }, { 0, 0 } }
+    BaseStyle    -> { $acpToolbarTextStyle, LineBreakWithin -> Automatic, LineIndent -> 0 },
+    FrameMargins -> { { 6, 2 }, { 0, 0 } },
+    ImageSize    -> { Full, Automatic }
 ];
 
 acpStatusRow // endDefinition;
@@ -1808,7 +2239,31 @@ acpQueuedPromptView // endDefinition;
 acpNoticeView // beginDefinition;
 
 acpNoticeView[ nbo_, notice_String ] := acpInputNote[
-    notice,
+    acpNeutralizeLinearSyntax @ notice,
+    acpActionButton[ $acpCloseGlyph, { "DismissNotice", nbo }, BoxID -> "ACPDismissNotice" ],
+    acpLabel[ "NoticeDismiss" ]
+];
+
+(* A notice with a terminal command (e.g. the sign-in of a remote agent): the text, the command as it must be typed (code
+   font, wrapped anywhere) and "Copy command", whose button carries no text: the action copies the command of the
+   window's notice *)
+acpNoticeView[ nbo_, KeyValuePattern @ { "Text" -> text_String, "Command" -> command_String } ] := acpInputNote[
+    Column[
+        {
+            acpNeutralizeLinearSyntax @ text,
+            Style[ acpNeutralizeLinearSyntax @ command, FontFamily -> "Source Code Pro", FontSize -> 11 ],
+            Tooltip[
+                acpActionButton[
+                    sessionsButtonLabel[ acpLabel[ "NoticeCopyCommand" ], "Secondary" ],
+                    { "CopyNoticeCommand", nbo },
+                    BoxID -> "ACPCopyNoticeCommand"
+                ],
+                acpLabel[ "NoticeCopyCommandTooltip" ]
+            ]
+        },
+        Alignment -> Left,
+        Spacings  -> 0.4
+    ],
     acpActionButton[ $acpCloseGlyph, { "DismissNotice", nbo }, BoxID -> "ACPDismissNotice" ],
     acpLabel[ "NoticeDismiss" ]
 ];
@@ -1818,11 +2273,23 @@ acpNoticeView[ _, _ ] := Nothing;
 acpNoticeView // endDefinition;
 
 
+(* Notices show commands and paths as typed: without operator substitution, which draws "-" as a long minus sign *)
 acpInputNote // beginDefinition;
 
 acpInputNote[ text_, button_, tooltip_ ] := Framed[
     Grid[
-        { { Style[ text, "Text", FontSize -> 12, FontColor -> LightDarkSwitched @ RGBColor[ "#555555" ] ], Tooltip[ button, tooltip ] } },
+        {
+            {
+                Style[
+                    text,
+                    "Text",
+                    FontSize           -> 12,
+                    FontColor          -> LightDarkSwitched @ RGBColor[ "#555555" ],
+                    PrivateFontOptions -> { "OperatorSubstitution" -> False }
+                ],
+                Tooltip[ button, tooltip ]
+            }
+        },
         Alignment -> { { Left, Right }, Center },
         ItemSize  -> { { Fit, Automatic } },
         Spacings  -> { 0.5, 0 }
@@ -2078,6 +2545,7 @@ acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anc
                 "Prompt"     -> prompt,
                 "InputCell"  -> userCell,
                 "OutputCell" -> None,
+                "Remote"     -> acpTurnRemote @ window,
                 "StartTime"  -> AbsoluteTime[ ]
             |>,
             AssociationQ,
@@ -2675,11 +3143,13 @@ acpSetConfigOptionAction // endDefinition;
 (*acpSetProjectDirectoryAction*)
 acpSetProjectDirectoryAction // beginDefinition;
 
+(* The local folder chooser (FileNameSetter); a remote window's folder is only set by the remote folder picker *)
 acpSetProjectDirectoryAction[ nbo_NotebookObject, dir0_ ] := Catch @ Module[ { window, dir },
     acpCheckSession @ nbo;
     window = acpEnsureWindowRecord @ nbo;
+    If[ acpRemoteQ @ window, Throw @ Null ];
     dir = acpNormalizeDirectory @ dir0;
-    If[ ! acpValidProjectDirectoryQ @ dir || dir === Lookup[ window, "ProjectDirectory" ], Throw @ Null ];
+    If[ ! acpValidProjectDirectoryQ[ dir, None ] || dir === Lookup[ window, "ProjectDirectory" ], Throw @ Null ];
     If[ acpRestoringQ @ window,
         acpSetNotice[ nbo, acpLabel[ "NoticeDirectoryWhileRestoring" ] ];
         Throw @ Null
@@ -2695,21 +3165,34 @@ acpSetProjectDirectoryAction // endDefinition;
 
 
 (* Connection.wl does the work (disconnect, clear the chat, persist, reconnect). The window title and the input field
-   location follow. extra: see acpSetProjectDirectory (Sessions.wl restores a session of another folder this way). *)
+   location follow. extra: see acpSetProjectDirectory (Sessions.wl restores a session of another folder this way).
+   Gives acpSetProjectDirectory's result: the new folder, Null (unchanged) or a Failure (e.g. a folder that doesn't
+   exist). *)
 acpChangeProjectDirectory // beginDefinition;
 
 acpChangeProjectDirectory[ nbo_NotebookObject, dir_String ] := acpChangeProjectDirectory[ nbo, dir, <| |> ];
 
-acpChangeProjectDirectory[ nbo_NotebookObject, dir_String, extra_Association ] := (
-    If[ extra === <| |>, acpSetProjectDirectory[ nbo, dir ], acpSetProjectDirectory[ nbo, dir, extra ] ];
+acpChangeProjectDirectory[ nbo_NotebookObject, dir_String, extra_Association ] := With[
+    { result = If[ extra === <| |>, acpSetProjectDirectory[ nbo, dir ], acpSetProjectDirectory[ nbo, dir, extra ] ] },
     acpSetNotice[ nbo, None ];
+    acpDirectoryChanged @ nbo;
+    result
+];
+
+acpChangeProjectDirectory // endDefinition;
+
+
+(* After the folder changed (a new chat): the input field goes to the top of the empty window, the title follows *)
+acpDirectoryChanged // beginDefinition;
+
+acpDirectoryChanged[ nbo_NotebookObject ] := (
     If[ $FrontEnd =!= Null && Quiet @ Cells @ nbo === { }, moveChatInputToTop @ nbo ];
     acpUpdateWindowTitle @ nbo;
     acpPublish[ ];
     Null
 );
 
-acpChangeProjectDirectory // endDefinition;
+acpDirectoryChanged // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2735,20 +3218,118 @@ acpErrorAction // beginDefinition;
 
 acpErrorAction[ nbo_NotebookObject, "Reconnect"       ] := acpReconnectAction @ nbo;
 acpErrorAction[ nbo_NotebookObject, "ChooseModel"     ] := acpSetNotice[ nbo, acpLabel[ "NoticeChooseModel" ] ];
-acpErrorAction[ nbo_NotebookObject, "SignIn"          ] := acpSetNotice[ nbo, acpLabel[ "NoticeSignIn" ] ];
-acpErrorAction[ nbo_NotebookObject, "LocateAgent"     ] := acpSetNotice[ nbo, acpLabel[ "NoticeLocateAgent" ] ];
-acpErrorAction[ nbo_NotebookObject, "ChooseDirectory" ] := acpSetNotice[ nbo, acpLabel[ "NoticeNoDirectory" ] ];
+acpErrorAction[ nbo_NotebookObject, "SignIn"          ] := With[ { window = acpEnsureWindowRecord @ nbo },
+    acpSetNotice[ nbo, If[ acpRemoteQ @ window, signInRemoteNotice @ window, acpLabel[ "NoticeSignIn" ] ] ]
+];
+acpErrorAction[ nbo_NotebookObject, "LocateAgent"     ] := With[ { window = acpEnsureWindowRecord @ nbo },
+    acpSetNotice[ nbo, If[ acpRemoteQ @ window, locateAgentRemoteNotice @ window, acpLabel[ "NoticeLocateAgent" ] ] ]
+];
+(* "Choose folder..." (an error's button, or the folder row of a remote window): a remote window's folder is chosen in
+   the remote folder picker (FolderPicker.wl); a user action, so it clears the host's failure latch (Remote.wl) *)
+acpErrorAction[ nbo_NotebookObject, "ChooseDirectory" ] := With[ { window = acpEnsureWindowRecord @ nbo },
+    If[ AssociationQ @ acpWindowSSH @ window,
+        acpRemoteClearHostError @ acpWindowHostKey @ window;
+        acpFolderPickerOpen @ nbo,
+        acpSetNotice[ nbo, acpLabel[ "NoticeNoDirectory" ] ]
+    ]
+];
 acpErrorAction[ nbo_NotebookObject, "Dismiss"         ] := acpSetNotice[ nbo, None ];
 acpErrorAction[ _NotebookObject  , action_           ] := (acpLog[ "UnknownErrorAction", action ]; Null);
 
 acpErrorAction // endDefinition;
+
+
+(* A remote window has no local program to locate: install the agent on the host, or give its command line there *)
+locateAgentRemoteNotice // beginDefinition;
+locateAgentRemoteNotice[ window_ ] := acpLabel[ "NoticeLocateAgentRemote", <| "host" -> Replace[ acpWindowHostLabel @ window, Except[ _String ] -> "?" ] |> ];
+locateAgentRemoteNotice // endDefinition;
+
+
+(* A remote agent's sign-in runs on its host: the notice gives the terminal command that connects there (as the host key
+   advice does), with "Copy command"; invalid stored settings have no command, so the text alone *)
+signInRemoteNotice // beginDefinition;
+
+signInRemoteNotice[ window_ ] := Module[ { text, command },
+    text    = acpLabel[ "NoticeSignInRemote", <| "host" -> acpRemoteDisplayName @ Replace[ acpWindowHostLabel @ window, Except[ _String ] -> "?" ] |> ];
+    command = acpSSHTerminalCommand @ acpWindowSSH @ window;
+    If[ StringQ @ command, <| "Text" -> text, "Command" -> command |>, text ]
+];
+
+signInRemoteNotice // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpToggleErrorDetail*)
+
+(* "Details" / "Hide details" of the toolbar's error view (preemptive): the window's "ErrorDetailOpen" is the key of the
+   error whose details are shown (acpErrorKey, Rendering.wl), or None. A new error has another key, so it starts
+   closed. *)
+acpToggleErrorDetail // beginDefinition;
+
+acpToggleErrorDetail[ nbo_NotebookObject ] := (
+    acpCheckSession @ nbo;
+    acpEnsureWindowRecord @ nbo;
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ], (* never create a partial record *)
+                With[ { key = acpErrorKey @ Lookup[ w, "Error", None ] },
+                    <| w, "ErrorDetailOpen" -> If[ key === None || Lookup[ w, "ErrorDetailOpen", None ] === key, None, key ] |>
+                ],
+                Missing[ "NotFound" ]
+            ]
+        ]
+    ];
+    acpPublish[ ];
+    acpWindowGet[ nbo, "ErrorDetailOpen", None ]
+);
+
+acpToggleErrorDetail // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpCopyErrorDetail*)
+
+(* "Copy" in the open details of the toolbar's error view (a preemptive button, never a reader handler): the hint and
+   the output of the window's current error, as shown (acpErrorParts) *)
+acpCopyErrorDetail // beginDefinition;
+
+acpCopyErrorDetail[ nbo_NotebookObject ] := Module[ { details },
+    acpCheckSession @ nbo;
+    details = acpErrorParts[ Replace[ acpWindowGet[ nbo, "Error", None ], Except[ _Association ] -> <| |> ] ][ "Details" ];
+    If[ StringQ @ details, CopyToClipboard @ details ];
+    details
+];
+
+acpCopyErrorDetail // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpCopyNoticeCommand*)
+
+(* "Copy command" of a notice with a terminal command (a preemptive button, never a reader handler): the command of the
+   window's current notice, as the user must type it *)
+acpCopyNoticeCommand // beginDefinition;
+
+acpCopyNoticeCommand[ nbo_NotebookObject ] := (
+    acpCheckSession @ nbo;
+    Replace[
+        acpWindowGet[ nbo, "Notice", None ],
+        {
+            KeyValuePattern[ "Command" -> command_String ] :> (If[ $FrontEnd =!= Null, CopyToClipboard @ command ]; command),
+            _ :> Missing[ "NoCommand" ]
+        }
+    ]
+);
+
+acpCopyNoticeCommand // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*acpSetNotice*)
 acpSetNotice // beginDefinition;
 
-acpSetNotice[ nbo_NotebookObject, notice: _String | None ] := (
+acpSetNotice[ nbo_NotebookObject, notice: _String | KeyValuePattern[ "Text" -> _String ] | None ] := (
     If[ AssociationQ @ acpWindowGet @ nbo, acpWindowSet[ nbo, "Notice", notice ] ];
     acpPublish[ ];
     Null
@@ -2806,8 +3387,10 @@ acpRefreshWindowUI[ nbo_NotebookObject ] := Module[ { location },
     NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
     attachWorkspaceChatInput[ nbo, location ];
     acpRefreshToolbar @ nbo;
-    (* An open Sessions window is rebuilt too (Sessions.wl); scheduled, so the window record exists by then *)
+    (* An open Sessions window and folder picker are rebuilt too (Sessions.wl, FolderPicker.wl); scheduled, so the window
+       record exists by then *)
     acpSchedule @ acpSessionsRecover @ nbo;
+    acpSchedule @ acpFolderPickerRecover @ nbo;
     Null
 ];
 

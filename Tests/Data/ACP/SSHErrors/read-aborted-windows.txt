@@ -1,0 +1,6 @@
+chatbook-acp-ready
+chatbook-acp:0123456789abcdef:home:/home/ubuntu
+chatbook-acp:0123456789abcdef:cwd:/home/ubuntu/projects/app
+chatbook-acp:0123456789abcdef:agent:/home/ubuntu/.opencode/bin/opencode
+Read from remote host ec2-203-0-113-100.compute-1.amazonaws.com: Connection aborted
+client_loop: send disconnect: Connection aborted

@@ -93,7 +93,9 @@ $acpSessionsStrings = <|
     "SessionsTimeMinutes"        -> "`n`m",
     "SessionsTimeHours"          -> "`n`h",
     "SessionsTimeDays"           -> "`n`d",
-    "SessionsShowMore"           -> "Show `n` more"
+    "SessionsShowMore"           -> "Show `n` more",
+    "SessionsAgentRemote"        -> "`agent` on `host`",
+    "SessionsFolderRemote"       -> "`path` on `host`"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -718,23 +720,27 @@ sessionHiddenQ // endDefinition;
           "Name" (the folder name, neutralized), "Sessions" -> { item <| ..., "Current" -> bool |>, ... } (newest first),
           "Count", "UpdatedAt" (of the newest session, or None), "Current" (the window's project) |>, ... }
    Projects are ordered by their newest session; hidden sessions are left out (except the window's current one); the
-   window's project always appears, first if it has no visible sessions. *)
+   window's project always appears, first if it has no visible sessions. remote: the folders are POSIX paths on a remote
+   window's host (sessionsPathKey). *)
 acpSessionsProjects // beginDefinition;
 
 (* The window's own sessions are never hidden: also the resumable one of a disconnected window (activeSessionID) *)
 acpSessionsProjects[ window_Association ] := acpSessionsProjects[
     acpSessionsOf[ window ][ "Items" ],
     DeleteDuplicates @ Cases[ Append[ currentSessionIDs @ window, activeSessionID @ window ], _String ],
-    Lookup[ window, "ProjectDirectory", None ]
+    Lookup[ window, "ProjectDirectory", None ],
+    acpRemoteQ @ window
 ];
 
-acpSessionsProjects[ items_List, current_List, currentDir_ ] := Module[ { visible, groups, currentKey, projects },
+acpSessionsProjects[ items_List, current_List, currentDir_ ] := acpSessionsProjects[ items, current, currentDir, False ];
+
+acpSessionsProjects[ items_List, current_List, currentDir_, remote_ ] := Module[ { visible, groups, currentKey, projects },
     visible    = Select[ items, AssociationQ[ # ] && (! TrueQ @ #[ "Hidden" ] || MemberQ[ current, #[ "SessionID" ] ]) & ];
-    groups     = GroupBy[ visible, sessionsPathKey @ #[ "Cwd" ] & ];
-    currentKey = If[ StringQ @ currentDir, sessionsPathKey @ currentDir, None ];
-    projects   = KeyValueMap[ sessionsProject[ #1, First[ #2 ][ "Cwd" ], #2, current, currentKey ] &, groups ];
+    groups     = GroupBy[ visible, sessionsPathKey[ #[ "Cwd" ], remote ] & ];
+    currentKey = If[ StringQ @ currentDir, sessionsPathKey[ currentDir, remote ], None ];
+    projects   = KeyValueMap[ sessionsProject[ #1, First[ #2 ][ "Cwd" ], #2, current, currentKey, remote ] &, groups ];
     If[ StringQ @ currentKey && ! KeyExistsQ[ groups, currentKey ],
-        AppendTo[ projects, sessionsProject[ currentKey, currentDir, { }, current, currentKey ] ]
+        AppendTo[ projects, sessionsProject[ currentKey, currentDir, { }, current, currentKey, remote ] ]
     ];
     SortBy[
         MapIndexed[ { #1, First @ #2 } &, projects ],
@@ -747,12 +753,15 @@ acpSessionsProjects // endDefinition;
 
 sessionsProject // beginDefinition;
 
-sessionsProject[ key_String, cwd_String, sessions_List, current_List, currentKey_ ] := With[
+sessionsProject[ key_String, cwd_String, sessions_List, current_List, currentKey_, remote_ ] := With[
     { times = Cases[ Lookup[ sessions, "UpdatedAt", None ], _? NumberQ ] },
     <|
         "Cwd"       -> cwd,
         "Key"       -> key,
-        "Name"      -> acpNeutralizeLinearSyntax @ Replace[ FileNameTake @ key, "" -> key ],
+        "Name"      -> If[ TrueQ @ remote,
+                           acpRemoteDisplayName @ acpRemotePathName @ key,
+                           acpNeutralizeLinearSyntax @ Replace[ FileNameTake @ key, "" -> key ]
+                       ],
         "Sessions"  -> (<| #, "Current" -> MemberQ[ current, #[ "SessionID" ] ] |> & /@ sessions),
         "Count"     -> Length @ sessions,
         "UpdatedAt" -> If[ times === { }, None, Max @ times ],
@@ -763,22 +772,30 @@ sessionsProject[ key_String, cwd_String, sessions_List, current_List, currentKey
 sessionsProject // endDefinition;
 
 
-(* Paths of the same folder compare equal: expanded, without trailing separators *)
+(* Paths of the same folder compare equal: expanded, without trailing separators. A remote window's folders are POSIX
+   paths on its host: only trailing "/" are dropped (not for the root); never ExpandFileName (on Windows it would make
+   /home/u a path on drive C:) and no ~ expansion. *)
 sessionsPathKey // beginDefinition;
 
-sessionsPathKey[ path_String ] := Module[ { expanded },
+sessionsPathKey[ path_ ] := sessionsPathKey[ path, False ];
+
+sessionsPathKey[ path_String, True ] :=
+    Replace[ StringDelete[ path, "/".. ~~ EndOfString ], "" -> If[ StringStartsQ[ path, "/" ], "/", path ] ];
+
+sessionsPathKey[ path_String, _ ] := Module[ { expanded },
     expanded = Replace[ Quiet @ ExpandFileName @ path, Except[ _String ] -> path ];
     Replace[ StringDelete[ expanded, ("/" | "\\").. ~~ EndOfString ], "" -> expanded ]
 ];
 
-sessionsPathKey[ other_ ] := other;
+sessionsPathKey[ other_, _ ] := other;
 
 sessionsPathKey // endDefinition;
 
 
 samePathQ // beginDefinition;
-samePathQ[ a_String, b_String ] := sessionsPathKey @ a === sessionsPathKey @ b;
-samePathQ[ _, _ ] := False;
+samePathQ[ a_, b_ ] := samePathQ[ a, b, False ];
+samePathQ[ a_String, b_String, remote_ ] := sessionsPathKey[ a, TrueQ @ remote ] === sessionsPathKey[ b, TrueQ @ remote ];
+samePathQ[ _, _, _ ] := False;
 samePathQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -797,10 +814,13 @@ samePathQ // endDefinition;
      * another folder: the project folder changes (disconnect, clear, reconnect) and the new connection loads the
        session instead of creating one; if the load fails, it creates a new session there.
    The session's listed cwd is passed to session/load unchanged (OpenCode requires its exact directory). Refused while
-   the window is busy (acpSessionsBusyState); the current session is a no-op ("Current"). *)
+   the window is busy (acpSessionsBusyState); the current session is a no-op ("Current"). A remote window's folders are
+   on its host: they are never looked at on this computer (a folder that is gone there shows up as the launch's
+   RemoteFolderMissing error, with "Choose folder..."); a cwd that is not an absolute or ~/ path is refused, and the
+   listed cwd is kept exactly ("Raw": OpenCode requires it, and a folder name may end in a space). *)
 acpRestoreSession // beginDefinition;
 
-acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Module[ { window, busy, dir, sameQ, readyQ },
+acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Module[ { window, busy, dir, remote, sameQ, readyQ },
     window = existingWindow @ nbo;
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
     If[ StringLength @ sid === 0 || StringLength @ cwd === 0, Throw @ Failure[ "InvalidSession", <| "SessionID" -> sid, "Cwd" -> cwd |> ] ];
@@ -813,7 +833,8 @@ acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Modul
     ];
 
     dir    = Lookup[ window, "ProjectDirectory", None ];
-    sameQ  = samePathQ[ cwd, dir ];
+    remote = acpRemoteQ @ window;
+    sameQ  = samePathQ[ cwd, dir, remote ];
     readyQ = And[
         Lookup[ window, "Status", None ] === "Ready",
         acpConnectionQ @ Lookup[ window, "Connection", None ],
@@ -828,8 +849,11 @@ acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Modul
                drops them the same way on a connected window) *)
             windowSet[ nbo, <| "PendingRestore" -> <| "SessionID" -> sid, "Cwd" -> cwd |>, "Notice" -> None, "PendingConfig" -> <| |> |> ];
             acpReconnect @ nbo,
+        remote,
+            If[ ! acpRemoteProjectDirectoryQ @ cwd, Throw @ invalidRemoteFolder[ nbo, window, cwd ] ];
+            acpChangeProjectDirectory[ nbo, cwd, <| "PendingRestore" -> <| "SessionID" -> sid, "Cwd" -> cwd |>, "Raw" -> True |> ],
         ! TrueQ @ Quiet @ DirectoryQ @ cwd,
-            acpSetNotice[ nbo, acpLabel[ "NoticeSessionFolderMissing", <| "path" -> displayPath @ cwd |> ] ];
+            acpSetNotice[ nbo, acpLabel[ "NoticeSessionFolderMissing", <| "path" -> displayPath[ cwd, acpPathContext @ window ] |> ] ];
             Throw @ Failure[ "FolderMissing", <| "Cwd" -> cwd |> ],
         True,
             acpChangeProjectDirectory[ nbo, cwd, <| "PendingRestore" -> <| "SessionID" -> sid, "Cwd" -> cwd |> |> ]
@@ -839,6 +863,24 @@ acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Modul
 ];
 
 acpRestoreSession // endDefinition;
+
+
+(* A remote session's folder must be a remote project folder path (absolute or ~/, no control characters): for one that
+   is not, a notice and Failure["InvalidFolder"] *)
+invalidRemoteFolder // beginDefinition;
+
+invalidRemoteFolder[ nbo_NotebookObject, window_Association, cwd_String ] := (
+    acpSetNotice[
+        nbo,
+        acpLabel[
+            "NoticeInvalidRemoteDirectory",
+            <| "path" -> acpRemoteDisplayName @ cwd, "host" -> acpRemoteDisplayName @ Replace[ acpWindowHostLabel @ window, Except[ _String ] -> "?" ] |>
+        ]
+    ];
+    Failure[ "InvalidFolder", <| "Cwd" -> cwd |> ]
+);
+
+invalidRemoteFolder // endDefinition;
 
 
 acpRestoreSessionAction // beginDefinition;
@@ -1005,7 +1047,7 @@ acpReplayRanges // endDefinition;
    user chunks give the prompt, everything else goes through the Transcript reducer with synthetic, increasing times
    (a replay has no timing), and the turn ends normally ("end_turn"). Tools that failed with the agent's text for a
    declined or interrupted tool call get the neutral client outcome a live turn would show. props: "ID", "Notebook",
-   "SessionID", "ProjectDirectory", "AgentName", "StartTime". *)
+   "SessionID", "ProjectDirectory", "Remote" (acpTurnRemote), "AgentName", "StartTime". *)
 acpReplayTurn // beginDefinition;
 
 acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = { }, attachments = { } },
@@ -1180,6 +1222,7 @@ restoreNewJob[ nbo_NotebookObject, window_Association, restore_Association ] := 
         "Next"             -> 1,
         "Hidden"           -> Max[ 0, Max[ restore[ "Turns" ], Length @ ranges ] - Length @ shown ],
         "ProjectDirectory" -> Lookup[ window, "ProjectDirectory", None ],
+        "Remote"           -> acpTurnRemote @ window, (* the host of a remote window's turns *)
         "AgentName"        -> agentName @ window,
         "BaseTime"         -> AbsoluteTime[ ],
         "Written"          -> 0,
@@ -1202,6 +1245,7 @@ restoreTurnCells[ job_Association, i_Integer ] := Module[ { range, turn, cells }
             "Notebook"         -> job[ "Notebook" ],
             "SessionID"        -> job[ "SessionID" ],
             "ProjectDirectory" -> job[ "ProjectDirectory" ],
+            "Remote"           -> Lookup[ job, "Remote", None ],
             "AgentName"        -> job[ "AgentName" ],
             "StartTime"        -> job[ "BaseTime" ] + i
         |>
@@ -1399,19 +1443,24 @@ inputFieldFocusedQ // endDefinition;
 (*New Session in a Folder*)
 
 (* "+" of a project in the Sessions window ("NewSessionIn" action): in the window's folder what New does; in another
-   folder the project folder changes (a new connection with a new session there). Refused while the window is busy. *)
+   folder the project folder changes (a new connection with a new session there). Refused while the window is busy. A
+   remote window's folder is not looked at on this computer (see acpRestoreSession). *)
 acpNewSessionIn // beginDefinition;
 
-acpNewSessionIn[ nbo_NotebookObject, cwd_String ] := Catch @ Module[ { window, busy },
+acpNewSessionIn[ nbo_NotebookObject, cwd_String ] := Catch @ Module[ { window, busy, remote },
     window = existingWindow @ nbo;
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
     busy = acpSessionsBusyState @ window;
     If[ busy =!= None, Throw @ Failure[ "Busy", <| "Reason" -> busy |> ] ];
+    remote = acpRemoteQ @ window;
     Which[
-        samePathQ[ cwd, Lookup[ window, "ProjectDirectory", None ] ],
+        samePathQ[ cwd, Lookup[ window, "ProjectDirectory", None ], remote ],
             acpNewChat @ nbo,
+        remote,
+            If[ ! acpRemoteProjectDirectoryQ @ cwd, Throw @ invalidRemoteFolder[ nbo, window, cwd ] ];
+            acpChangeProjectDirectory[ nbo, cwd, <| "Raw" -> True |> ],
         ! TrueQ @ Quiet @ DirectoryQ @ cwd,
-            acpSetNotice[ nbo, acpLabel[ "NoticeSessionFolderMissing", <| "path" -> displayPath @ cwd |> ] ];
+            acpSetNotice[ nbo, acpLabel[ "NoticeSessionFolderMissing", <| "path" -> displayPath[ cwd, acpPathContext @ window ] |> ] ];
             Throw @ Failure[ "FolderMissing", <| "Cwd" -> cwd |> ],
         True,
             acpChangeProjectDirectory[ nbo, cwd ]
@@ -1855,25 +1904,15 @@ acpSessionsPlacement // endDefinition;
    place. The width scales with the ACP window's magnification like the ACP window's width does. *)
 acpSessionsGeometry // beginDefinition;
 
-acpSessionsGeometry[ owner_NotebookObject ] := Module[ { mag, width, margins, size, display },
-    mag     = Replace[ If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, Magnification ] ], Except[ _? NumberQ ] -> 0.85 ];
-    width   = Ceiling[ $acpSessionsWindowWidth * mag / 0.85 ];
-    margins = If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, WindowMargins ] ];
-    margins = Replace[ margins, m_? NumberQ :> { { m, m }, { m, m } } ];
-    size    = If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, WindowSize ] ];
+acpSessionsGeometry[ owner_NotebookObject ] := Module[ { geometry, mag, width },
+    geometry = acpOwnerGeometry @ owner;
+    mag      = geometry[ "Magnification" ];
+    width    = Ceiling[ $acpSessionsWindowWidth * mag / 0.85 ];
     Append[
-        If[ MatchQ[ margins, { { _? NumberQ, _ }, { _? NumberQ, _? NumberQ } } ] && MatchQ[ size, { _? NumberQ, _ } ],
-            display = sessionsDisplayRange[ owner, margins[[ 1, 1 ]] + size[[ 1 ]] ];
+        If[ NumberQ @ geometry[ "Left" ],
             acpSessionsPlacement[
-                <|
-                    "Left"   -> margins[[ 1, 1 ]],
-                    "Width"  -> size[[ 1 ]],
-                    "Bottom" -> margins[[ 2, 1 ]],
-                    "Top"    -> margins[[ 2, 2 ]],
-                    "Height" -> size[[ 2 ]],
-                    "Frame"  -> sessionsFrameWidth[ margins[[ 1 ]], size[[ 1 ]], display ]
-                |>,
-                display,
+                KeyTake[ geometry, { "Left", "Width", "Bottom", "Top", "Height", "Frame" } ],
+                geometry[ "Display" ],
                 width
             ],
             <| "Placement" -> "Default", "WindowMargins" -> Automatic, "OwnerWindowMargins" -> None, "WindowSize" -> { width, Automatic } |>
@@ -1883,6 +1922,48 @@ acpSessionsGeometry[ owner_NotebookObject ] := Module[ { mag, width, margins, si
 ];
 
 acpSessionsGeometry // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpOwnerGeometry*)
+
+(* The resolved geometry of the ACP window owner (front end calls), for the placement of the windows over or beside it
+   (the Sessions window, FolderPicker.wl's picker): <| "Left", "Width", "Bottom", "Top", "Height" (its WindowMargins and
+   WindowSize), "Frame" (sessionsFrameWidth), "Display" ({ xmin, xmax } of its display), "Magnification" |>. Without a
+   usable front end answer the position and size are None and the magnification 0.85. *)
+acpOwnerGeometry // beginDefinition;
+
+acpOwnerGeometry[ owner_NotebookObject ] := Module[ { mag, margins, size, display },
+    mag     = Replace[ If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, Magnification ] ], Except[ _? NumberQ ] -> 0.85 ];
+    margins = If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, WindowMargins ] ];
+    margins = Replace[ margins, m_? NumberQ :> { { m, m }, { m, m } } ];
+    size    = If[ $FrontEnd === Null, None, Quiet @ AbsoluteCurrentValue[ owner, WindowSize ] ];
+    If[ MatchQ[ margins, { { _? NumberQ, _ }, { _? NumberQ, _? NumberQ } } ] && MatchQ[ size, { _? NumberQ, _ } ],
+        display = sessionsDisplayRange[ owner, margins[[ 1, 1 ]] + size[[ 1 ]] ];
+        <|
+            "Left"          -> margins[[ 1, 1 ]],
+            "Width"         -> size[[ 1 ]],
+            "Bottom"        -> margins[[ 2, 1 ]],
+            "Top"           -> margins[[ 2, 2 ]],
+            "Height"        -> size[[ 2 ]],
+            "Frame"         -> sessionsFrameWidth[ margins[[ 1 ]], size[[ 1 ]], display ],
+            "Display"       -> display,
+            "Magnification" -> mag
+        |>,
+        <|
+            "Left"          -> None,
+            "Width"         -> None,
+            "Bottom"        -> None,
+            "Top"           -> None,
+            "Height"        -> None,
+            "Frame"         -> 0,
+            "Display"       -> None,
+            "Magnification" -> mag
+        |>
+    ]
+];
+
+acpOwnerGeometry // endDefinition;
 
 
 (* The width of the left and right borders of a window's frame together: what its horizontal WindowMargins and its
@@ -2070,6 +2151,9 @@ $sessionsDangerHover := LightDarkSwitched[ RGBColor[ 0.68, 0.12, 0.09 ], RGBColo
 $sessionsButton      := LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.22 ] ];
 $sessionsButtonHover := LightDarkSwitched[ GrayLevel[ 0.94 ], GrayLevel[ 0.30 ] ];
 $sessionsButtonFrame := LightDarkSwitched[ GrayLevel[ 0.75 ], GrayLevel[ 0.45 ] ];
+(* The "Primary" button: the accent color ($sessionsAccent), dark text on the light accent of dark mode *)
+$sessionsPrimaryHover := LightDarkSwitched[ RGBColor[ 0.04, 0.45, 0.70 ], RGBColor[ 0.62, 0.85, 1.0 ] ];
+$sessionsPrimaryFont  := LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.1 ] ];
 
 (* The text of the cell (buttons would use the button font) *)
 $sessionsTextStyle := {
@@ -2102,7 +2186,10 @@ sessionsViewSignature[ window_Association ] := With[ { store = acpSessionsOf @ w
         acpSessionsBusyState @ window,
         currentSessionIDs @ window,
         acpSessionsCapabilities @ window,
-        acpConnectionQ @ Lookup[ window, "Connection", None ]
+        acpConnectionQ @ Lookup[ window, "Connection", None ],
+        (* a remote window's folders are shown with its host and abbreviated with its home folder *)
+        acpWindowHostKey @ window,
+        acpWindowRemoteHome @ window
     }
 ];
 
@@ -2148,7 +2235,7 @@ sessionsContent[ owner_NotebookObject, window_Association, now_? NumberQ ] := Mo
     store  = acpSessionsOf @ window;
     status = sessionsStatus[ window, store ];
     sessionsLayout @ {
-        sessionsHeader[ owner, agentName @ window ],
+        sessionsHeader[ owner, headerAgentLabel @ window ],
         sessionsStatusView[ status, agentName @ window ],
         sessionsNoticeView[ owner, store[ "Notice" ] ],
         If[ NumberQ @ store[ "ListedAt" ] || store[ "Items" ] =!= { },
@@ -2199,11 +2286,19 @@ sessionsViewContext[ owner_NotebookObject, window_Association, store_Association
         "Active"    -> activeSessionID @ window,
         "Restoring" -> Lookup[ restore, "SessionID", None ],
         "Deleting"  -> Keys @ deletingOf @ store,
-        "Confirm"   -> If[ busy === None, Lookup[ Replace[ store[ "ConfirmDelete" ], Except[ _Association ] -> <| |> ], "SessionID", None ], None ]
+        "Confirm"   -> If[ busy === None, Lookup[ Replace[ store[ "ConfirmDelete" ], Except[ _Association ] -> <| |> ], "SessionID", None ], None ],
+        (* where the folders are: on this computer, or on a remote window's host (acpPathContext) *)
+        "Paths"     -> acpPathContext @ window
     |>
 ];
 
 sessionsViewContext // endDefinition;
+
+
+(* Whether the folders of the view are on a remote window's host *)
+remoteContextQ // beginDefinition;
+remoteContextQ[ ctx_Association ] := TrueQ @ Lookup[ Replace[ Lookup[ ctx, "Paths", None ], Except[ _Association ] -> <| |> ], "Remote", False ];
+remoteContextQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2230,6 +2325,20 @@ sessionsHeader[ owner_NotebookObject, agent_ ] := Framed[
 ];
 
 sessionsHeader // endDefinition;
+
+
+(* The agent's name in the header; for a remote window "OpenCode on host" (the host in its short form) *)
+headerAgentLabel // beginDefinition;
+
+headerAgentLabel[ window_Association ] := If[ acpRemoteQ @ window,
+    acpLabel[
+        "SessionsAgentRemote",
+        <| "agent" -> agentName @ window, "host" -> acpRemoteDisplayName @ Replace[ acpWindowShortHost @ window, Except[ _String ] -> "?" ] |>
+    ],
+    agentName @ window
+];
+
+headerAgentLabel // endDefinition;
 
 
 sessionsRefreshButton // beginDefinition;
@@ -2364,15 +2473,18 @@ sessionsProjectView // endDefinition;
 
 
 (* Chevron, folder icon, folder name (the window's project in the accent color) and the number of sessions; the full path
-   in the tooltip. On hover: "+" (new session in the folder) and open-folder buttons. *)
+   in the tooltip. On hover: "+" (new session in the folder) and open-folder buttons. A remote window's folders are on
+   its host: never "missing" (they are not looked at on this computer; a folder that is gone there shows up as the
+   launch's RemoteFolderMissing error, with "Choose folder..."), and without an open-folder button. *)
 sessionsProjectRow // beginDefinition;
 
 sessionsProjectRow[ ctx_Association, project_Association, open_ ] := Module[
-    { owner, key, missing, busy, nameColor, toggle, newButton, openButton },
+    { owner, key, remote, missing, busy, nameColor, toggle, newButton, openButton },
 
     owner     = ctx[ "Owner" ];
     key       = sessionsKey @ project[ "Key" ];
-    missing   = ! TrueQ @ Quiet @ DirectoryQ @ project[ "Cwd" ];
+    remote    = remoteContextQ @ ctx;
+    missing   = ! remote && ! TrueQ @ Quiet @ DirectoryQ @ project[ "Cwd" ];
     busy      = ctx[ "Busy" ];
     nameColor = Which[ missing, $sessionsMuted, TrueQ @ project[ "Current" ], $sessionsAccent, True, $sessionsFont ];
 
@@ -2393,9 +2505,20 @@ sessionsProjectRow[ ctx_Association, project_Association, open_ ] := Module[
             BaseStyle -> $sessionsTextStyle,
             BoxID     -> "ACPSessionsProject-" <> key
         ],
-        If[ missing,
-            acpLabel[ "SessionsFolderMissing" ],
-            acpNeutralizeLinearSyntax @ acpAbbreviatePath[ project[ "Cwd" ], None ]
+        Which[
+            missing,
+                acpLabel[ "SessionsFolderMissing" ],
+            remote,
+                acpLabel[
+                    "SessionsFolderRemote",
+                    <|
+                        (* the normalized folder (no "/" at the end), abbreviated with the remote home *)
+                        "path" -> acpRemoteDisplayName @ acpRemoteAbbreviate[ project[ "Key" ], ctx[ "Paths", "Home" ] ],
+                        "host" -> acpRemoteDisplayName @ Replace[ ctx[ "Paths", "Host" ], Except[ _String ] -> "?" ]
+                    |>
+                ],
+            True,
+                acpNeutralizeLinearSyntax @ acpAbbreviatePath[ project[ "Cwd" ], None ]
         ]
     ];
 
@@ -2407,12 +2530,15 @@ sessionsProjectRow[ ctx_Association, project_Association, open_ ] := Module[
         ! missing && busy === None
     ];
 
-    openButton = sessionsIconButton[
-        sessionsIcon[ "OpenFolder", ! missing ],
-        If[ missing, acpLabel[ "SessionsFolderMissing" ], acpLabel[ "SessionsOpenFolder" ] ],
-        { "SessionsOpenFolder", owner, key },
-        "ACPSessionsOpenFolder-" <> key,
-        ! missing
+    openButton = If[ remote,
+        Nothing,
+        sessionsIconButton[
+            sessionsIcon[ "OpenFolder", ! missing ],
+            If[ missing, acpLabel[ "SessionsFolderMissing" ], acpLabel[ "SessionsOpenFolder" ] ],
+            { "SessionsOpenFolder", owner, key },
+            "ACPSessionsOpenFolder-" <> key,
+            ! missing
+        ]
     ];
 
     Mouseover[
@@ -2592,6 +2718,15 @@ sessionsButtonFrame[ label_String, "Danger", hover_ ] := Framed[
     Background     -> If[ TrueQ @ hover, $sessionsDangerHover, $sessionsDanger ],
     FrameMargins   -> { { 8, 8 }, { 1, 1 } },
     FrameStyle     -> If[ TrueQ @ hover, $sessionsDangerHover, $sessionsDanger ],
+    RoundingRadius -> 3
+];
+
+(* "Primary": the main button of a window (e.g. Choose in FolderPicker.wl's folder picker), in the accent color *)
+sessionsButtonFrame[ label_String, "Primary", hover_ ] := Framed[
+    Style[ label, FontColor -> $sessionsPrimaryFont, FontWeight -> "DemiBold", FontSize -> 12 ],
+    Background     -> If[ TrueQ @ hover, $sessionsPrimaryHover, $sessionsAccent ],
+    FrameMargins   -> { { 8, 8 }, { 1, 1 } },
+    FrameStyle     -> If[ TrueQ @ hover, $sessionsPrimaryHover, $sessionsAccent ],
     RoundingRadius -> 3
 ];
 
@@ -2873,7 +3008,10 @@ sessionsWindowAction[ "SessionsNew", owner_, key_String ] := Replace[
     )
 ];
 
-(* The folder in the file manager (never launches an application bundle: Review.wl's acpReviewOpenFile) *)
+(* The folder in the file manager (never launches an application bundle: Review.wl's acpReviewOpenFile). A remote
+   window's folders are not on this computer: nothing (the button is not shown for them). *)
+sessionsWindowAction[ "SessionsOpenFolder", owner_, _String ] /; acpRemoteQ @ owner := Missing[ "Remote" ];
+
 sessionsWindowAction[ "SessionsOpenFolder", owner_, key_String ] := Replace[
     sessionsProjectOf[ owner, key ],
     project_Association :> (acpReviewOpenFile @ project[ "Cwd" ]; project[ "Cwd" ])
@@ -3161,9 +3299,16 @@ agentMessage[ message_, key_String ] := acpConnectionLabel[
 agentMessage // endDefinition;
 
 
-(* A folder for a notice: home abbreviated, neutralized *)
+(* A folder for a notice: home abbreviated, neutralized. paths: acpPathContext of the window; a remote folder is
+   host:path, abbreviated with the remote home and made display-safe. *)
 displayPath // beginDefinition;
-displayPath[ path_String ] := acpNeutralizeLinearSyntax @ acpAbbreviatePath[ path, None ];
+displayPath[ path_String ] := displayPath[ path, acpPathContext @ None ];
+displayPath[ path_String, paths: KeyValuePattern[ "Remote" -> True ] ] := StringJoin[
+    acpRemoteDisplayName @ Replace[ Lookup[ paths, "Host", None ], Except[ _String ] -> "?" ],
+    ":",
+    acpRemoteDisplayName @ acpRemoteAbbreviate[ path, Lookup[ paths, "Home", None ] ]
+];
+displayPath[ path_String, _ ] := acpNeutralizeLinearSyntax @ acpAbbreviatePath[ path, None ];
 displayPath // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -1,0 +1,8 @@
+# Shell scripts that run under /bin/sh on remote machines (and the fake ssh of the tests) must keep LF line endings,
+# also in a Windows checkout with core.autocrlf=true: dash rejects CRLF ("export: LC_ALL\r: bad variable name").
+Assets/RemoteScripts/*.sh text eol=lf
+Tests/Data/ACP/fake-ssh text eol=lf
+# Test fixtures are byte-exact captures: ssh's lines end in CR LF, the remote shell's in LF, and listings hold CR and
+# newline bytes inside file names. No line-ending conversion, in either direction.
+Tests/Data/ACP/SSHErrors/*.txt -text
+Tests/Data/ACP/RemoteListing/*.bin binary

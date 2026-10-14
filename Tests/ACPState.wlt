@@ -316,6 +316,220 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Kernel Restarts*)
+
+(* The front end does not track symbols created while it evaluates the toolbar's DestroyAfterEvaluation DynamicBox
+   (makeACPChatDockedCell[], from the ACPChat.nb stylesheet), which it evaluates again in a new kernel after a restart.
+   The window's state (record and change symbols) must be rebuilt outside that Dynamic and before the toolbar that
+   tracks it is built (D3 finding F2a). Headless: the window's TaggingRules are emulated (acpFE, acpFESet) and the front
+   end work of the rebuild is recorded instead of done. *)
+VerificationTest[
+    ClearAll[ restartFlagsFE, restartWindowState, restartForget ];
+    (* acpFE/acpFESet on an association of TaggingRules {"ACP", key} values *)
+    restartFlagsFE[ flags_Symbol ] := {
+        Function[ { nbo, key, default }, Lookup[ flags, key, default ] ],
+        Function[ { nbo, key, value }, flags[ key ] = value ]
+    };
+    restartFlagsFE // Attributes = { HoldFirst };
+    (* whether the window has a record and its window change symbol (without creating it) *)
+    restartWindowState[ nbo_ ] := {
+        KeyExistsQ[ Replace[ Wolfram`Chatbook`ACP`Common`acpWindowGet @ nbo, Except[ _Association ] -> <| |> ], "Status" ],
+        KeyExistsQ[ Wolfram`Chatbook`ACP`State`Private`$symbols, { "Window", nbo } ]
+    };
+    restartForget[ nbo_ ] := (
+        Wolfram`Chatbook`ACP`UI`Private`acpForgetWindow @ nbo;
+        KeyDropFrom[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, Key @ nbo ];
+    );
+    Null,
+    Null,
+    TestID -> "ACPState-Restart-Definitions@@Tests/ACPState.wlt:326,1-346,2"
+]
+
+(* A window this kernel does not know (a new kernel after a restart): the toolbar's Dynamic shows a placeholder whose
+   Initialization runs "InitializeWindow"; it creates no change symbols and no record, and notes the window *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], counter, result },
+        counter = Wolfram`Chatbook`ACP`State`Private`$symbolCounter;
+        result  = Block[ { EvaluationNotebook = nbo & }, Wolfram`Chatbook`Common`makeACPChatDockedCell[ ] ];
+        WithCleanup[
+            {
+                Head @ result,
+                Wolfram`Chatbook`ACP`State`Private`$symbolCounter - counter,
+                restartWindowState @ nbo,
+                KeyExistsQ[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, nbo ],
+                ! FreeQ[ result, HoldPattern[ Initialization :> _ ] ] && ! FreeQ[ result, "InitializeWindow" ]
+            },
+            restartForget @ nbo
+        ]
+    ],
+    { Framed, 0, { False, False }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-PlaceholderToolbar@@Tests/ACPState.wlt:350,1-368,2"
+]
+
+(* A window this kernel knows (created in this session): the toolbar is built in the Dynamic from the symbols that
+   exist already; none is created there *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], counter, result },
+        Wolfram`Chatbook`ACP`UI`Private`acpRegisterWindow[ nbo, None, "OpenCode", <| |> ];
+        counter = Wolfram`Chatbook`ACP`State`Private`$symbolCounter;
+        result  = Block[ { EvaluationNotebook = nbo & }, Wolfram`Chatbook`Common`makeACPChatDockedCell[ ] ];
+        WithCleanup[
+            {
+                Head @ result,
+                Wolfram`Chatbook`ACP`State`Private`$symbolCounter - counter,
+                KeyExistsQ[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, nbo ],
+                StringContainsQ[ ToString[ result, InputForm ], "acpChangeSymbol" ]
+            },
+            restartForget @ nbo
+        ]
+    ],
+    { Framed, 0, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-KnownWindowToolbar@@Tests/ACPState.wlt:372,1-390,2"
+]
+
+(* acpCheckSession after a kernel restart (the TaggingRules name another kernel session): the record and its change
+   symbols are rebuilt before acpMarkOrphanCells rebuilds the toolbar and the input field *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], flags, fe, seen = { }, result },
+        flags = <| "KernelSessionID" -> $SessionID + 1, "Busy" -> True, "ProjectDirectory" -> None, "Agent" -> "OpenCode" |>;
+        fe = restartFlagsFE @ flags;
+        result = Block[
+            {
+                Wolfram`Chatbook`ACP`Common`acpFE             = fe[[ 1 ]],
+                Wolfram`Chatbook`ACP`Common`acpFESet          = fe[[ 2 ]],
+                Wolfram`Chatbook`ACP`Common`acpMarkOrphanCells = Function[ n, AppendTo[ seen, restartWindowState @ n ] ]
+            },
+            Wolfram`Chatbook`ACP`Common`acpCheckSession @ nbo
+        ];
+        WithCleanup[
+            { result, seen, flags[ "KernelSessionID" ] === $SessionID, flags[ "Busy" ], Wolfram`Chatbook`ACP`Common`acpWindowGet[ nbo, "Status" ] },
+            restartForget @ nbo
+        ]
+    ],
+    { False, { { True, True } }, True, False, "NoDirectory" },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-RecordBeforeUI@@Tests/ACPState.wlt:394,1-414,2"
+]
+
+(* The placeholder's Initialization (acpInitializeWindow, in the pump) without a kernel restart (e.g. a window whose
+   record was forgotten): the toolbar replaces the placeholder once the record and its symbols exist *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], flags, fe, seen = { } },
+        flags = <| "KernelSessionID" -> $SessionID, "ProjectDirectory" -> None, "Agent" -> "OpenCode", "Input" -> "" |>;
+        fe = restartFlagsFE @ flags;
+        Block[ { EvaluationNotebook = nbo & }, Wolfram`Chatbook`Common`makeACPChatDockedCell[ ] ];
+        Block[
+            {
+                Wolfram`Chatbook`ACP`Common`acpFE                  = fe[[ 1 ]],
+                Wolfram`Chatbook`ACP`Common`acpFESet               = fe[[ 2 ]],
+                Wolfram`Chatbook`ACP`Common`acpUpdateWindowTitle   = Null &,
+                Wolfram`Chatbook`ACP`UI`Private`acpNotebookExistsQ = True &,
+                Cells                                              = { CellObject[ "acp-state-input" ] } &,
+                Wolfram`Chatbook`ACP`UI`Private`acpRefreshToolbar  = Function[ n,
+                    AppendTo[ seen, restartWindowState @ n ];
+                    KeyDropFrom[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, Key @ n ]
+                ]
+            },
+            Wolfram`Chatbook`ACP`UI`Private`acpInitializeWindow @ nbo;
+            (* a second Initialization (the new toolbar's) rebuilds nothing *)
+            Wolfram`Chatbook`ACP`UI`Private`acpInitializeWindow @ nbo
+        ];
+        WithCleanup[
+            { seen, KeyExistsQ[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, nbo ] },
+            restartForget @ nbo
+        ]
+    ],
+    { { { True, True } }, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-PlaceholderReplaced@@Tests/ACPState.wlt:418,1-447,2"
+]
+
+(* A window closed while it still shows the placeholder is forgotten with its placeholder note *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], noted },
+        Block[ { EvaluationNotebook = nbo & }, Wolfram`Chatbook`Common`makeACPChatDockedCell[ ] ];
+        noted = KeyExistsQ[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, nbo ];
+        Wolfram`Chatbook`ACP`UI`Private`acpForgetWindow @ nbo;
+        WithCleanup[
+            { noted, KeyExistsQ[ Wolfram`Chatbook`ACP`UI`Private`$placeholderToolbars, nbo ] },
+            restartForget @ nbo
+        ]
+    ],
+    { True, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-ForgetDropsPlaceholder@@Tests/ACPState.wlt:450,1-463,2"
+]
+
+(* A kernel restart is logged ("KernelRestart"), so that a rebuild that went wrong can be told from one that never ran *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], flags, fe, t0 = AbsoluteTime[ ] },
+        flags = <| "KernelSessionID" -> $SessionID + 1, "ProjectDirectory" -> None, "Agent" -> "OpenCode" |>;
+        fe = restartFlagsFE @ flags;
+        Block[
+            {
+                Wolfram`Chatbook`ACP`Common`acpFE              = fe[[ 1 ]],
+                Wolfram`Chatbook`ACP`Common`acpFESet           = fe[[ 2 ]],
+                Wolfram`Chatbook`ACP`Common`acpMarkOrphanCells = Null &
+            },
+            (* the second call finds the window owned by this session: nothing more is logged *)
+            Wolfram`Chatbook`ACP`Common`acpCheckSession @ nbo;
+            Wolfram`Chatbook`ACP`Common`acpCheckSession @ nbo
+        ];
+        WithCleanup[
+            Cases[
+                Internal`BagPart[ Wolfram`Chatbook`ACP`Common`$acpDebugLog, All ],
+                KeyValuePattern @ { "Where" -> "KernelRestart", "Time" -> t_ /; t >= t0, "Data" -> KeyValuePattern[ "Notebook" -> nbo ] } :> True
+            ],
+            restartForget @ nbo
+        ]
+    ],
+    { True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-Logged@@Tests/ACPState.wlt:466,1-491,2"
+]
+
+(* acpRefreshToolbar replaces the toolbar cell among the window's docked cells (also with its tag given in a list, and a
+   single docked cell); docked cells without the toolbar are kept, and that is logged ("ToolbarNotFound") *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-state-restart-" <> CreateUUID[ ] ], strip, toolbar, set, refresh, t0 = AbsoluteTime[ ] },
+        strip   = Cell[ "", CellTags -> "Strip" ];
+        toolbar = Cell[ "old", CellTags -> { "ACPToolbar" } ];
+        refresh = Function[ docked,
+            set = None;
+            Block[
+                {
+                    AbsoluteCurrentValue = docked &,
+                    SetOptions           = Function[ { n, opt }, set = opt; Null ]
+                },
+                Wolfram`Chatbook`ACP`UI`Private`acpRefreshToolbar @ nbo
+            ];
+            Replace[ set, {
+                ( DockedCells -> cells_List ) :> Replace[ cells, { Cell[ BoxData[ _ ], ___, CellTags -> "ACPToolbar", ___ ] -> "New", Cell[ _, CellTags -> t_ ] :> t }, { 1 } ],
+                None -> None
+            } ]
+        ];
+        WithCleanup[
+            {
+                refresh @ { strip, toolbar },
+                refresh @ Cell[ "old", CellTags -> "ACPToolbar" ],
+                refresh @ { strip },
+                Cases[
+                    Internal`BagPart[ Wolfram`Chatbook`ACP`Common`$acpDebugLog, All ],
+                    KeyValuePattern @ { "Where" -> "ToolbarNotFound", "Time" -> t_ /; t >= t0, "Data" -> KeyValuePattern @ { "Notebook" -> nbo, "DockedCells" -> d_ } } :> d
+                ]
+            },
+            restartForget @ nbo
+        ]
+    ],
+    { { "Strip", "New" }, { "New" }, None, { { 1, { "Strip" } } } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-Restart-RefreshToolbar@@Tests/ACPState.wlt:495,1-529,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Debug Log*)
 
 (* Isolated code swallows messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -326,7 +540,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:322,1-330,2"
+    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:536,1-544,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

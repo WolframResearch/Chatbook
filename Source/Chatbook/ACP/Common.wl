@@ -55,6 +55,7 @@ HoldComplete[
     `acpApplyPermissionWithdrawn,
     `acpApplyTurnEnd,
     `acpApplyUpdate,
+    `acpTurnRemote,
     `acpCanonicalToolName,
     `acpClientInterruptionTextQ,
     `acpDiffStats,
@@ -84,6 +85,8 @@ HoldComplete[
     `acpDiffView,
     `acpDropRenderCache,
     `acpEntityView,
+    `acpErrorKey,   (* also used by UI.wl (ToggleErrorDetail) *)
+    `acpErrorParts, (* also used by UI.wl (CopyErrorDetail) *)
     `acpErrorView,
     `acpFinalCell,
     `acpLiveView,
@@ -99,25 +102,86 @@ HoldComplete[
     `$acpLLMKitEnabled,
     `acpAgentSpec,
     `acpBillingLabel,
+    `acpClearPersistedLastFolder,
     `acpCommandLineSetting,
     `acpConnectionLabel,
     `acpExecutableFileQ,
     `acpFindConfigOption,
     `acpFindLLMKitKey,
     `acpFindProgram,
+    `acpInheritedEnvironment,
     `acpLLMKitAPIKey,
     `acpOpenCodeConfigJSON,
     `acpOpenCodeEnvironment,
+    `acpOpenCodeVariables,
     `acpOptionValues,
     `acpPathDirectories,
+    `acpPersistedRemoteHome,
     `acpPersistedSetting,
     `acpPreferredModel,
     `acpProgramEnvironment,
     `acpSetPersistedSetting,
 
     (* ::**************************************************************************************************************:: *)
+    (* SSH.wl *)
+    `$acpRemoteClassifyBytes,
+    `$acpRemoteMaxPathLength,
+    `$acpSSHDefaultOptions,
+    `$acpSSHFixedOptions,
+    `$acpSSHLaunchCommand,
+    `$acpSSHLaunchTrigger,
+    `$acpSSHMarkerPrefix,
+    `$acpSSHScriptCommand,
+    `acpFindSSH,
+    `acpLastProjectDirectoryKey,
+    `acpNormalizeProjectDirectory,
+    `acpPathContext,
+    `acpProjectDirectoryQ,
+    `acpRemoteAbbreviate,
+    `acpRemoteAbsolutePathQ,
+    `acpRemoteCheckedPath,
+    `acpRemoteChild,
+    `acpRemoteDisplayName,
+    `acpRemoteExpandHome,
+    `acpRemoteFolderLabel,
+    `acpRemoteHomeKey,
+    `acpRemoteLexicalPath,
+    `acpRemoteNormalizeDirectory,
+    `acpRemoteParent,
+    `acpRemotePathName,
+    `acpRemotePathWord,
+    `acpRemoteQ,
+    `acpSettingsSSH,
+    `acpShellQuote,
+    `acpShellWords,
+    `acpSSHCommand,
+    `acpSSHEnvironment,
+    `acpSSHExitError,
+    `acpSSHExitKind,
+    `acpSSHHostKey,
+    `acpSSHHostLabel,
+    `acpSSHLaunchMarkers,
+    `acpSSHLaunchNonce,
+    `acpSSHLaunchScript,
+    `acpSSHPreferenceKey,
+    `acpSSHShortHost,
+    `acpSSHTerminalCommand,
+    `acpSSHTimeoutError,
+    `acpWindowHostKey,
+    `acpWindowHostLabel,
+    `acpWindowRemoteHome,
+    `acpWindowShortHost,
+    `acpWindowSSH,
+    (* acpSSHSettings, acpRemoteProjectDirectoryQ and acpRemoteCommandLineQ are in CommonSymbols.wl (ShowNotebookAssistance
+       validates with them) *)
+
+    (* ::**************************************************************************************************************:: *)
     (* Connection.wl *)
     `$acpAssumeWindowsOpen,
+    `$acpBeforeInitializeHook, (* a test hook *)
+    `$acpInitSendGrace,
+    `$acpMaxDetailLength, (* also used by SSH.wl *)
+    `$acpStderrLines,     (* also used by SSH.wl *)
     `acpAnswerPermission,
     `acpConnectionQ,
     `acpDisconnect,
@@ -131,6 +195,7 @@ HoldComplete[
     `acpOnPermissionRequest,
     `acpOnResponse,
     `acpReconnect,
+    `acpResetProjectDirectory,
     `acpSendPrompt,
     `acpSendSessionDelete,
     `acpSendSessionList,
@@ -160,6 +225,46 @@ HoldComplete[
     `acpGitSummary,
     `acpGitUnquotePath,
     `acpGitWorkTreeRoot,
+    `acpBackgroundRunsQ,   (* also used by State.wl (the pump keeps running for them) *)
+    `acpNaturalOrdering,   (* also used by FolderPicker.wl *)
+    `acpProcessRun,        (* also used by Remote.wl *)
+    `acpProcessRunningQ,   (* also used by Remote.wl *)
+    `acpRunCancelledQ,     (* also used by Remote.wl *)
+    `acpSetCurrentRequest, (* also used by FolderPicker.wl *)
+
+    (* ::**************************************************************************************************************:: *)
+    (* Remote.wl *)
+    `$acpRemoteHostAuthFailedAt,
+    `$acpRemoteLatchMemory,
+    `acpRemoteClearHostError,    (* used by Connection.wl and UI.wl (user actions clear the host latch) *)
+    `acpRemoteNoteHostError,     (* used by Connection.wl (the agent's ssh exited) *)
+    `$acpRemoteDeadlineSlack,
+    `$acpRemoteDrainTimeout,
+    `$acpRemoteHostErrors,
+    `$acpRemoteListMaxFiles,
+    `$acpRemoteListMaxFolders,
+    `$acpRemoteListOutputCap,
+    `$acpRemoteListScanFiles,
+    `$acpRemoteListScanFolders,
+    `$acpRemoteMaxBeforeReady,
+    `$acpRemoteMaxErrorKept,
+    `$acpRemoteMaxFrames,
+    `$acpRemoteMaxOutput,
+    `$acpRemoteMaxRuns,
+    `$acpRemoteMaxScript,
+    `$acpRemoteSlotRetry,
+    `$acpRemoteTimeout,
+    `acpRemoteErrorInfo,
+    `acpRemoteHostLatchedQ,
+    `acpRemoteListBody,
+    `acpRemoteListingParse,
+    `acpRemoteMinify,
+    `acpRemoteParseFrames,
+    `acpRemoteRecentAuthFailureQ, (* also used by Connection.wl (remote errors) *)
+    `acpRemoteResult,
+    `acpRemoteRun,
+    `acpRemoteScript,
+    `acpRemoteTemplate,
 
     (* ::**************************************************************************************************************:: *)
     (* Review.wl *)
@@ -225,6 +330,54 @@ HoldComplete[
     `acpSessionsWindowOf,
     `acpShortRelativeTime,
     `acpToggleSessions,
+    (* The Sessions window's view helpers, also used by FolderPicker.wl (sessionsKey is not shared: FolderPicker.wl has
+       its own pickerKey, since Tests/ACPSessions.wlt binds a global sessionsKey) *)
+    `$sessionsAccent,
+    `$sessionsBackground,
+    `$sessionsButton,
+    `$sessionsButtonFrame,
+    `$sessionsButtonHover,
+    `$sessionsCurrent,
+    `$sessionsDanger,
+    `$sessionsDangerHover,
+    `$sessionsDivider,
+    `$sessionsFont,
+    `$sessionsHeader,
+    `$sessionsHover,
+    `$sessionsInactive,
+    `$sessionsMuted,
+    `$sessionsRefreshIcon,
+    `acpOwnerGeometry,
+    `sessionsButtonFrame,
+    `sessionsButtonLabel,
+    `sessionsEvaluator,
+    `sessionsFocusOwner,
+    `sessionsIconButton,
+    `sessionsMoveToActiveDesktop,
+    `sessionsRowFrame,
+    `sessionsShorten,
+    `sessionsTitleView,
+
+    (* ::**************************************************************************************************************:: *)
+    (* FolderPicker.wl *)
+    `$acpFolderPickerDebounce,
+    `$acpFolderPickerFilesShown,
+    `$acpFolderPickerPageSize,
+    `$acpFolderPickerStrings,
+    `$acpFolderPickerTimeout,
+    `acpFolderPickerAction,
+    `acpFolderPickerAutoOpen,    (* used by UI.wl (a new remote window without a folder, and after a host switch) *)
+    `acpFolderPickerChoose,
+    `acpFolderPickerCloseWindow, (* used by Connection.wl (acpResetProjectDirectory) and UI.wl (closing the window) *)
+    `acpFolderPickerGeometry,
+    `acpFolderPickerNotebook,
+    `acpFolderPickerOf,
+    `acpFolderPickerOnResult,
+    `acpFolderPickerOpen,        (* used by UI.wl ("Choose folder..." of a remote window) *)
+    `acpFolderPickerPlacement,
+    `acpFolderPickerRecover,     (* used by UI.wl (kernel restarts) *)
+    `acpFolderPickerStart,
+    `acpFolderPickerWindowOf,
 
     (* ::**************************************************************************************************************:: *)
     (* UI.wl *)
@@ -236,6 +389,7 @@ HoldComplete[
     `acpEnsureWindowRecord,
     `acpFinalizeTurn,
     `acpMarkOrphanCells,
+    `acpNormalizeDirectory, (* also used by SSH.wl *)
     `acpNewChat,
     `acpSendQueuedPrompt,
     `acpSetNotice,

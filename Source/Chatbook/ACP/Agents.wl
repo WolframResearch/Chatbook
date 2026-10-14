@@ -14,7 +14,8 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
    held in local variables and in the per-session cache below. It is never logged, printed, stored in window records,
    notebook TaggingRules or front end options, and never passed to code that can throw an internal failure (internal
    failures capture the evaluation stack). The key reaches the agent only through the LLMKIT_API_KEY environment
-   variable; the injected OpenCode config refers to it as {env:LLMKIT_API_KEY}. *)
+   variable (for a remote agent: exported by the launch script, which is sent over ssh's standard input, never on a
+   command line); the injected OpenCode config refers to it as {env:LLMKIT_API_KEY}. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -81,6 +82,50 @@ $acpConnectionStrings = <|
     "ErrorServerUnavailable"       -> "The `agent` server is not available.",
     "ErrorAgent"                   -> "`agent` reported an error.",
 
+    (* Errors of remote windows (SSH.wl): `host` is the host label, `path` a folder on it, `command` the ssh command for
+       a terminal, `url` the agent's install URL, `example` the path of the agent on the host *)
+    "ErrorSSHNotFound"                -> "The ssh program was not found on this computer.",
+    "ErrorSSHNotFoundDetail"          -> "Install the OpenSSH client, or give the path of ssh with \"Executable\" in the \"SSHSettings\" setting.",
+    "ErrorSSHNotFoundDetailWindows"   -> "Install the OpenSSH Client (type Optional features in the Start menu search, then add OpenSSH Client), or give the path of ssh.exe with \"Executable\" in the \"SSHSettings\" setting.",
+    "ErrorSSHNotFoundPath"            -> "`path` was not found or is not executable on this computer.",
+    "ErrorSSHNotFoundPathDetail"      -> "Check \"Executable\" in the \"SSHSettings\" setting: it must be the path or the name of the ssh program on this computer (Automatic finds ssh).",
+    "ErrorSSHStartFailed"             -> "Couldn't start ssh.",
+    "ErrorSSHHostKeyUnknown"          -> "`host` is not a known host yet.",
+    "ErrorSSHHostKeyUnknownDetail"    -> "Connect to it once in a terminal with `command`, check that the host key fingerprint is the server's and accept it, then reconnect. Agent chats always check host keys: if your ssh configuration turns host key checking off for this host (StrictHostKeyChecking no, UserKnownHostsFile /dev/null), keep its key in your known_hosts file instead.",
+    "ErrorSSHHostKeyChanged"          -> "The host key of `host` has changed.",
+    "ErrorSSHHostKeyChangedDetail"    -> "This can mean that someone is intercepting the connection, or that the server was reinstalled. Check the new key with the server's administrator before you change your known_hosts file.",
+    "ErrorSSHAuthFailed"              -> "`host` didn't accept your SSH key.",
+    "ErrorSSHAuthFailedDetail"        -> "Agent chats sign in without prompts: use a key that is loaded in your SSH agent or has no passphrase, and give its file with \"Arguments\" -> {\"-i\", \"path\"} in the \"SSHSettings\" setting if it is not a default key.",
+    "ErrorSSHKeyPermissionsDetail"    -> "ssh ignores the key file because other users can read it. Restrict its permissions to your user account.",
+    "ErrorSSHKeyMissingDetail"        -> "ssh couldn't find the key file given with \"-i\".",
+    "ErrorSSHHostNotFound"            -> "The host `host` was not found.",
+    "ErrorSSHHostNotFoundDetail"      -> "Check \"MachineName\" in the \"SSHSettings\" setting and your network connection.",
+    "ErrorSSHConnectionRefused"       -> "`host` refused the connection.",
+    "ErrorSSHConnectionRefusedDetail" -> "Check that its SSH server is running and that the port is right (for another port: \"Arguments\" -> {\"-p\", \"<port>\"}).",
+    "ErrorSSHUnreachable"             -> "Couldn't reach `host`.",
+    "ErrorSSHPenaltyDetail"           -> "After failed sign-ins, the server may refuse connections from this computer for a while. Wait a minute, then reconnect.",
+    "ErrorSSHConnectTimeout"          -> "Connecting to `host` took too long.",
+    "ErrorSSHBadArguments"            -> "ssh didn't accept the \"Arguments\" of the \"SSHSettings\" setting.",
+    "ErrorSSHConnectionLost"          -> "The connection to `host` was lost.",
+    "ErrorSSHFailed"                  -> "Couldn't connect to `host` with ssh.",
+    "ErrorRemoteFolderMissing"        -> "The folder `path` doesn't exist on `host`.",
+    "ErrorRemoteFolderAccess"         -> "The folder `path` on `host` can't be opened.",
+    "ErrorRemoteAgentNotFound"        -> "`agent` was not found on `host`.",
+    "ErrorRemoteAgentNotFoundDetail"  -> "Install it there (`url`), or give its path on `host` with the \"ACPAgentCommandLine\" setting, for example {\"`example`\", \"acp\"}.",
+    "ErrorRemoteAgentExited"          -> "`agent` on `host` stopped unexpectedly.",
+    "ErrorRemoteAgentSignalDetail"    -> "It may have been stopped by the system, for example because `host` ran out of memory.",
+    "ErrorRemoteTimeout"              -> "`agent` on `host` didn't respond in time.",
+    "ErrorRemoteScriptFailed"         -> "The command on `host` could not run.",
+    "ErrorRemoteScriptFailedDetail"   -> "The account's login shell on `host` did not run the command (for example a shell that refuses logins, a restricted shell, or a forced command). Check that `host` gives this user a normal shell.",
+    "ErrorRemoteNoisyShellDetail"     -> "The login shell on `host` printed too much text before the command started. Check the startup files (such as .bashrc) of the remote account.",
+    "ErrorRemoteOperationTimedOut"    -> "The operation on `host` took too long.",
+    "ErrorInvalidSSHSettings"         -> "The \"SSHSettings\" of this window are not valid.",
+    "ErrorInvalidRemoteCommand"       -> "`agent` can't be started on another computer.",
+    "ErrorAuthRequiredRemote"         -> "`agent` on `host` needs you to sign in to the model provider.",
+    "ErrorAuthRequiredRemoteDetail"   -> "The sign-in runs on `host`: connect with `command` in a terminal, run \"opencode auth login\" there, then reconnect.",
+    "ErrorNoModelsRemote"             -> "`agent` on `host` has no models available.",
+    "ErrorNoModelsRemoteDetail"       -> "Sign in to a provider on `host`: connect with `command` in a terminal, run \"opencode auth login\" there, then reconnect.",
+
     (* Notices (shown above the input field) *)
     "NoticeBackgroundPermission"   -> "A background subagent asked for permission after the turn ended; the request was cancelled.",
     "NoticeSessionNotResumed"      -> "New session: `agent` doesn't remember the messages above.",
@@ -128,6 +173,9 @@ acpConnectionLabel // endDefinition;
      "Arguments"   -> its command line arguments
      "Environment" -> process environment: Inherited or an association (may be a RuleDelayed; evaluated only right
                       before the agent is started)
+     "Variables"   -> the agent's own variables (an association; may be a RuleDelayed, evaluated only right before the
+                      agent is started), which the launch script of a remote window exports (sent over ssh's standard
+                      input, never on a command line); a local agent gets them through "Environment". Optional.
      "BillingLabel"-> a function of the model value giving the billing label
    The window setting "ACPAgentCommandLine" (see acpCommandLineSetting) replaces the program (the agent's "Arguments"
    are kept) or the whole command line. *)
@@ -138,6 +186,7 @@ $acpAgents[ "OpenCode" ] = <|
     "Executable"   -> "opencode",
     "Arguments"    -> { "acp" },
     "Environment"  :> acpOpenCodeEnvironment[ ],
+    "Variables"    :> acpOpenCodeVariables @ acpLLMKitAPIKey[ ],
     "BillingLabel" -> acpBillingLabel,
     "InstallURL"   -> $openCodeInstallURL
 |>;
@@ -146,17 +195,19 @@ $acpAgents[ "OpenCode" ] = <|
 (* ::Subsection::Closed:: *)
 (*acpAgentSpec*)
 
-(* acpAgentSpec[name, settings] gives <| "Name", "Command" -> {program, args...}, "Environment" :> env |> or a Failure
-   ("UnknownAgent", "AgentNotFound"). The program is an absolute path (acpFindProgram). The environment is left
+(* acpAgentSpec[name, settings] gives <| "Name", "Command" -> {program, args...}, "Environment" :> env, "Directory",
+   "Remote" |> or a Failure ("UnknownAgent", "AgentNotFound"; for remote windows also "InvalidSSHSettings",
+   "SSHNotFound", "InvalidRemoteCommand"). The program is an absolute path (acpFindProgram). The environment is left
    unevaluated (RuleDelayed): it may contain secrets and is only evaluated by the code that starts the agent.
-   acpAgentSpec[name, settings, env] looks programs up in env (see acpFindProgram; used by tests). *)
+   "Directory" -> Automatic (the project folder) and "Remote" -> None for local agents; with "SSHSettings" see
+   remoteAgentSpec. acpAgentSpec[name, settings, env] looks programs up in env (see acpFindProgram; used by tests). *)
 acpAgentSpec // beginDefinition;
 
 acpAgentSpec[ name_String ] := acpAgentSpec[ name, <| |> ];
 
 acpAgentSpec[ name_String, settings_Association ] := acpAgentSpec[ name, settings, acpProgramEnvironment[ ] ];
 
-acpAgentSpec[ name_String, settings_Association, env_Association ] := Catch @ Module[ { agent, display, command },
+acpAgentSpec[ name_String, settings_Association, env_Association ] := Catch @ Module[ { agent, display, ssh, command },
     agent = Lookup[ $acpAgents, name, Missing[ "UnknownAgent" ] ];
     If[ ! AssociationQ @ agent,
         Throw @ Failure[ "UnknownAgent", <|
@@ -166,6 +217,8 @@ acpAgentSpec[ name_String, settings_Association, env_Association ] := Catch @ Mo
         |> ]
     ];
     display = Replace[ Lookup[ agent, "Name", name ], Except[ _String ] -> name ];
+    ssh     = acpSettingsSSH @ settings;
+    If[ ssh =!= None, Throw @ remoteAgentSpec[ agent, display, ssh, settings, env ] ];
     command = Replace[
         acpCommandLineSetting @ settings,
         {
@@ -180,12 +233,95 @@ acpAgentSpec[ name_String, settings_Association, env_Association ] := Catch @ Mo
         <|
             "Name"        -> display,
             "Command"     -> command,
-            "Environment" :> Lookup[ a, "Environment", Inherited ]
+            "Environment" :> Lookup[ a, "Environment", Inherited ],
+            "Directory"   -> Automatic,
+            "Remote"      -> None
         |>
     ]
 ];
 
 acpAgentSpec // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*remoteAgentSpec*)
+
+(* The agent of a remote window (ssh is acpSettingsSSH of the settings: canonical, or a Failure). The command is the
+   local ssh (acpSSHCommand) running the read bootstrap $acpSSHLaunchCommand in the local home folder, with ssh's
+   environment (acpSSHEnvironment); the launch script (Connection.wl, from "Remote" and "Variables") is sent over ssh's
+   standard input. "Remote" holds no secrets: the host, its key, the canonical settings, the agent's command line on the
+   remote machine (no local lookup: the launch script finds the program there) and its install URL. "Variables" (the
+   LLMKit key) stays unevaluated until the agent is started. *)
+remoteAgentSpec // beginDefinition;
+
+remoteAgentSpec[ agent_Association, display_String, ssh_Failure, _, _ ] := Failure[ "InvalidSSHSettings", <|
+    "Detail" -> Replace[ Lookup[ Last @ ssh, "Detail", None ], Except[ _String ] -> None ],
+    "Agent"  -> display
+|> ];
+
+remoteAgentSpec[ agent_Association, display_String, ssh_Association, settings_Association, env_Association ] :=
+    Catch @ Module[ { program, command, url },
+        url     = Lookup[ agent, "InstallURL", None ];
+        program = acpFindSSH[ ssh, env ];
+        If[ FailureQ @ program, Throw @ Failure[ First @ program, <| Last @ program, "Agent" -> display |> ] ];
+        command = remoteAgentCommand[ agent, display, settings ];
+        If[ FailureQ @ command, Throw @ command ];
+        If[ ! acpRemoteCommandLineQ @ command, Throw @ invalidRemoteCommand @ display ];
+        With[ { a = agent },
+            <|
+                "Name"        -> display,
+                "Command"     -> acpSSHCommand[ <| ssh, "Program" -> program |>, $acpSSHLaunchCommand ],
+                "Environment" :> acpSSHEnvironment[ ],
+                "Directory"   -> $HomeDirectory,
+                "Remote"      -> <|
+                    "Host"         -> acpSSHHostLabel @ ssh,
+                    "HostKey"      -> acpSSHHostKey @ ssh,
+                    "SSH"          -> ssh,
+                    "AgentCommand" -> command,
+                    "InstallURL"   -> url
+                |>,
+                "Variables"   :> Replace[ Lookup[ a, "Variables", <| |> ], Except[ _Association ] -> <| |> ]
+            |>
+        ]
+    ];
+
+remoteAgentSpec // endDefinition;
+
+
+(* The agent's command line on the remote machine, from the "ACPAgentCommandLine" setting or the registry, without any
+   local lookup: {program, args...}, or a Failure for an agent whose program is found by a function (only on this
+   computer) *)
+remoteAgentCommand // beginDefinition;
+
+remoteAgentCommand[ agent_Association, display_, settings_Association ] := Replace[
+    acpCommandLineSetting @ settings,
+    {
+        { "Program", program_String }                  :> Join[ { program }, agentArguments @ agent ],
+        { "CommandLine", { program_String, rest___ } } :> { program, rest },
+        _ :> Replace[
+            Lookup[ agent, "Executable", None ],
+            {
+                program_String                     :> Join[ { program }, agentArguments @ agent ],
+                File[ program_String ]             :> Join[ { program }, agentArguments @ agent ],
+                { program_String, rest___String }  :> Join[ { program, rest }, agentArguments @ agent ],
+                _                                  :> invalidRemoteCommand @ display
+            }
+        ]
+    }
+];
+
+remoteAgentCommand // endDefinition;
+
+
+invalidRemoteCommand // beginDefinition;
+
+invalidRemoteCommand[ display_ ] := Failure[ "InvalidRemoteCommand", <|
+    "MessageTemplate"   -> acpConnectionLabel[ "ErrorInvalidRemoteCommand", <| "agent" -> display |> ],
+    "MessageParameters" -> { },
+    "Agent"             -> display
+|> ];
+
+invalidRemoteCommand // endDefinition;
 
 
 (* A command followed by more arguments (evaluated only if the command is not a Failure) *)
@@ -419,26 +555,35 @@ acpOpenCodeEnvironment // beginDefinition;
 
 acpOpenCodeEnvironment[ ] := acpOpenCodeEnvironment @ acpLLMKitAPIKey[ ];
 
-acpOpenCodeEnvironment[ key_ ] := Join[
-    inheritedEnvironment[ ],
-    <| "OPENCODE_CONFIG_CONTENT" -> acpOpenCodeConfigJSON @ StringQ @ key |>,
-    If[ StringQ @ key, <| "LLMKIT_API_KEY" -> key |>, <| |> ]
-];
+acpOpenCodeEnvironment[ key_ ] := Join[ acpInheritedEnvironment[ ], acpOpenCodeVariables @ key ];
 
 acpOpenCodeEnvironment // endDefinition;
 
 
+(* OpenCode's own variables: <| "OPENCODE_CONFIG_CONTENT" -> json, ("LLMKIT_API_KEY" -> key) |>. A local OpenCode gets
+   them in its environment (acpOpenCodeEnvironment), a remote one from the launch script (the registry's "Variables"). *)
+acpOpenCodeVariables // beginDefinition;
+
+acpOpenCodeVariables[ key_ ] := Join[
+    <| "OPENCODE_CONFIG_CONTENT" -> acpOpenCodeConfigJSON @ StringQ @ key |>,
+    If[ StringQ @ key, <| "LLMKIT_API_KEY" -> key |>, <| |> ]
+];
+
+acpOpenCodeVariables // endDefinition;
+
+
 (* The kernel's environment without the variables that ACPLink refuses in an explicit environment (::envval, the open
    fails): a name or value containing "=" or surrounding spaces, unless the name is a valid shell name and the system is
-   not Windows. Exported bash functions (BASH_FUNC_name%%) are such variables; StartProcess would drop them anyway. *)
-inheritedEnvironment // beginDefinition;
+   not Windows. Exported bash functions (BASH_FUNC_name%%) are such variables; StartProcess would drop them anyway.
+   Also the environment of ssh for remote windows (acpSSHEnvironment, SSH.wl). *)
+acpInheritedEnvironment // beginDefinition;
 
-inheritedEnvironment[ ] := Association @ Select[
+acpInheritedEnvironment[ ] := Association @ Select[
     Normal @ Association @ Replace[ GetEnvironment[ ], Except[ _List | _Association ] -> { } ],
     passableEnvironmentRuleQ
 ];
 
-inheritedEnvironment // endDefinition;
+acpInheritedEnvironment // endDefinition;
 
 
 passableEnvironmentRuleQ[ name_String -> value_String ] :=
@@ -808,6 +953,43 @@ acpSetPersistedSetting[ keys: { __String }, value_ ] := (
 );
 
 acpSetPersistedSetting // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Remote hosts*)
+
+(* The persisted home folder of a remote host ({"SSH", hostKey, "Home"}, written once a launch reported it), or None
+   (local, invalid settings, not known yet, or not an absolute path). A front end read: not for reader handlers. *)
+acpPersistedRemoteHome // beginDefinition;
+
+acpPersistedRemoteHome[ ssh_ ] := With[ { key = acpRemoteHomeKey @ ssh },
+    If[ ListQ @ key,
+        Replace[ acpPersistedSetting[ key, None ], Except[ _String? acpRemoteAbsolutePathQ ] -> None ],
+        None
+    ]
+];
+
+acpPersistedRemoteHome // endDefinition;
+
+
+(* Forgets the persisted last folder of a remote host ({"SSH", hostKey, "LastProjectDirectory"}) if it is one of paths,
+   e.g. a folder that no longer exists (RemoteFolderMissing). Writes nothing if it was changed meanwhile. A front end
+   call: scheduled from reader handlers. *)
+acpClearPersistedLastFolder // beginDefinition;
+
+acpClearPersistedLastFolder[ ssh_, path_String ] := acpClearPersistedLastFolder[ ssh, { path } ];
+
+acpClearPersistedLastFolder[ ssh_Association, paths_List ] := With[ { key = acpLastProjectDirectoryKey @ ssh },
+    If[ ListQ @ key && MemberQ[ Select[ paths, StringQ ], acpPersistedSetting[ key, None ] ],
+        acpSetPersistedSetting[ key, Inherited ];
+        True,
+        False
+    ]
+];
+
+acpClearPersistedLastFolder[ _, _ ] := False;
+
+acpClearPersistedLastFolder // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

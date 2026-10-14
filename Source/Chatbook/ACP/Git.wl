@@ -26,7 +26,11 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      the pump (acpGitCheck and acpGitChanges only schedule them).
    * Bounded work: a timeout and an output cap per command, bounded reads in each poll, at most $acpGitMaxFiles files
      per change set, a size cap and a read budget for untracked files, linear-time parsers. A newer request from the
-     same requester supersedes a running one (its process is killed). *)
+     same requester supersedes a running one (its process is killed).
+   * Remote windows ("SSHSettings"): a request runs one script (Assets/RemoteScripts/git.sh) on the remote machine over
+     one ssh connection (acpRemoteRun, Remote.wl), which runs the same git commands and reads the untracked files there.
+     The steps below then replay its frames instead of running git (see "Remote"), so remote and local change sets are
+     the same. Nothing local is ever checked for a remote folder (no DirectoryQ, ExpandFileName or FileNameJoin). *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -50,6 +54,19 @@ $gitNotFoundRecheck      = 60;         (* seconds before looking for git again a
 $gitErrorDetailLines     = 12;         (* lines (and characters, below) of git's standard error kept in errors *)
 $gitErrorDetailLength    = 1500;
 $gitHousekeepingTicks    = 2;          (* publication ticks (0.2 s each) between housekeeping runs *)
+
+(* Remote windows ("SSHSettings"): each request is one script run over its own ssh connection (acpRemoteRun), so the
+   timeouts are per request, and checks are less frequent (each one is a new sign-in on the remote machine) *)
+$gitRemoteSummaryTimeout    = 30;      (* seconds per summary check *)
+$gitRemoteTimeout           = 90;      (* seconds per full change set *)
+$gitRemoteMinCheckInterval  = 5;       (* as $gitMinCheckInterval *)
+$gitRemoteIdleCheckInterval = 60;      (* as $gitIdleCheckInterval *)
+
+(* Test hooks of the remote git script: the folders searched for git after the remote PATH (Automatic: the script's own
+   list, /usr/bin /usr/local/bin /opt/homebrew/bin), and whether the script may count lines with a NUL-safe awk (False:
+   the portable path, one od per file) *)
+$gitRemoteSystemDirectories = Automatic;
+$gitRemoteNULSafe           = True;
 
 (* Bytes of untracked files read per request (the same for summary checks and full change sets, so that both count the
    same lines): *)
@@ -266,82 +283,203 @@ gitTrimSeparator // endDefinition;
 (* ::Section::Closed:: *)
 (*Running Git*)
 
+(* Defaults of acpProcessRun's "InputAfter" (bytes of standard output without the marker) and "DrainTimeout" (seconds) *)
+$processMarkerLimit  = 65536;
+$processDrainTimeout = 30;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*acpGitRun*)
 
-(* acpGitRun[args, dir, continuation, opts] starts git with the arguments args in the directory dir and polls it from
-   the pump until it has finished; continuation[result] is then evaluated (isolated) in the pump, with
+(* acpGitRun[args, dir, continuation, opts] runs git with the arguments args in the directory dir (acpProcessRun);
+   continuation[result] is then evaluated (isolated) in the pump, with
      <| "ExitCode" -> code | None, "Output" -> String, "Error" -> String, "TimedOut" -> _, "TooLarge" -> _,
         "Cancelled" -> _, "StartFailed" -> _, "Duration" -> seconds, "Arguments" -> args |>
    "Output" and "Error" are decoded as UTF-8 (bytes that are not valid UTF-8 as ISO 8859-1), with "\r\n" normalized to
-   "\n". opts (an association):
-     "Timeout"   -> seconds ($gitTimeout): the process is killed and the result is marked "TimedOut";
-     "MaxOutput" -> bytes ($gitMaxOutput): reading stops, the process is killed and the result is marked "TooLarge"
-                    (with the first "MaxOutput" bytes of the output);
-     "Owner"     -> NotebookObject | None: the process is killed and the result is marked "Cancelled" once the owner's
-                    window record is gone;
-     "Request"   -> { key, token } | None: the same, once the request token is no longer the latest of key (see
-                    gitSupersededQ);
+   "\n". opts (an association): "Timeout", "MaxOutput", "Owner", "Request" (see acpProcessRun) and
      "Git"       -> the executable (acpFindGit[] by default).
-   The continuation is always called, also when git cannot be started ("StartFailed"). Gives the run ID.
-   Processes are always released with KillProcess when they are done (also when they have finished: otherwise every
-   process leaks file descriptors in the 15.0.1 kernel). Reads and status checks block ProcessLink's
-   $processRunningQTimeout to 0, like ACPLink: while a RunProcess (anywhere in the kernel) reads its child's output,
-   ProcessLink sets it to 200 and a read of another process would block until that process writes. Each poll reads at
-   most $gitReadPerPoll bytes per stream (see gitDrain), so the cap and the timeout hold for fast writers too. *)
+   The continuation is always called, also when git cannot be started ("StartFailed"). Gives the run ID. *)
 acpGitRun // beginDefinition;
 
 acpGitRun[ args_List, dir_String, continuation_ ] := acpGitRun[ args, dir, continuation, <| |> ];
 
-acpGitRun[ args: { ___String }, dir_String, continuation_, opts_Association ] := Module[ { id, git, proc },
-    id  = "git-run-" <> ToString[ ++$gitRunCount ];
-    git = Replace[ Lookup[ opts, "Git", Automatic ], Automatic :> acpFindGit[ ] ];
-    proc = If[ StringQ @ git,
-        Quiet @ Catch[ StartProcess[ Prepend[ args, git ], ProcessDirectory -> dir ], _, $Failed & ],
-        $Failed
-    ];
-    If[ ! MatchQ[ proc, _ProcessObject ],
-        With[ { f = continuation, result = gitRunResult[ args, None, { }, { }, "StartFailed", 0 ] },
-            acpSchedule @ gitCallContinuation[ f, result ]
-        ];
-        Return[ id, Module ]
-    ];
-    PreemptProtect[
-        $gitRuns[ id ] = <|
-            "Process"      -> proc,
-            "Arguments"    -> args,
-            "Continuation" -> continuation,
-            "StartedAt"    -> AbsoluteTime[ ],
-            "Timeout"      -> Replace[ Lookup[ opts, "Timeout", $gitTimeout ], Except[ _? Positive ] -> $gitTimeout ],
-            "MaxOutput"    -> Replace[ Lookup[ opts, "MaxOutput", $gitMaxOutput ], Except[ _Integer? Positive ] -> $gitMaxOutput ],
-            "Owner"        -> Lookup[ opts, "Owner", None ],
-            "Request"      -> Lookup[ opts, "Request", None ],
-            "Output"       -> { },
-            "Error"        -> { },
-            "Bytes"        -> 0,
-            "OutputEnded"  -> False,
-            "ErrorEnded"   -> False
-        |>
-    ];
-    With[ { i = id }, acpSchedule[ gitPoll @ i, $gitPollInterval ] ];
-    id
+acpGitRun[ args: { ___String }, dir_String, continuation_, opts_Association ] := With[
+    { git = Replace[ Lookup[ opts, "Git", Automatic ], Automatic :> acpFindGit[ ] ] },
+    If[ StringQ @ git,
+        acpProcessRun[ Prepend[ args, git ], dir, continuation, <| opts, "Arguments" -> args |> ],
+        processStartFailed[ continuation, <| opts, "Arguments" -> args |> ]
+    ]
 ];
 
 acpGitRun // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*acpProcessRun*)
+
+(* acpProcessRun[command, dir, continuation, opts] runs a command (the program and its arguments) in the directory dir
+   without blocking: it is started with StartProcess and polled from the pump until it has finished; continuation[result]
+   is then evaluated (isolated) in the pump, always exactly once (also when the command can't be started), with
+     <| "ExitCode" -> code | None, "Output", "Error", "TimedOut" -> _, "TooLarge" -> _, "Cancelled" -> _,
+        "StartFailed" -> _, "Duration" -> seconds (since the start), "Arguments" -> args |>
+   and also "NoReady" and "ErrorTruncated" for runs with "InputAfter" or "ErrorKeep". Gives the run ID. opts:
+     "Timeout"     -> seconds ($gitTimeout) from the start: the process is killed and the result is marked "TimedOut";
+     "MaxOutput"   -> bytes ($gitMaxOutput) of standard output and error together: reading stops, the process is killed
+                      and the result is marked "TooLarge" (with the first "MaxOutput" bytes of the output);
+     "Owner"       -> NotebookObject | None: the process is killed and the result is marked "Cancelled" once the owner's
+                      window record is gone;
+     "Request"     -> { key, token } | None: the same, once the request token is no longer the latest of key (see
+                      gitSupersededQ and acpSetCurrentRequest);
+     "Environment" -> Inherited | Association: the environment of the process;
+     "Input"       -> None | ByteArray: written right after the start; standard input is then closed, unless
+                      "InputAfter" is given;
+     "InputAfter"  -> None | <| "Marker" -> ByteArray, "Bytes" -> ByteArray, "Limit" -> bytes |>: once the marker appears
+                      in the standard output, the bytes are written and standard input is closed. If "Limit" bytes
+                      ($processMarkerLimit) of standard output arrive without the marker, the process is killed and the
+                      result is marked "NoReady". Each poll searches only its new output, plus the end of the previous
+                      one (gitAwaitMarker);
+     "CancelBeforeReady" -> "Kill" | "Drain": a run that is cancelled (owner gone, superseded) while its marker is still
+                      awaited is killed, or with "Drain": the continuation is called with "Cancelled" at once, but the
+                      process is left to end by itself: standard input is closed, and its output is read and dropped
+                      until it exits, or until "DrainTimeout" seconds ($processDrainTimeout) have passed (then it is
+                      killed). Such a run stays in $gitRuns until it is gone. (A remote run that is still signing in thus
+                      ends cleanly instead of being cut off, which sshd counts as a failed login.)
+     "Decode"      -> True | False: "Output" and "Error" are text (acpGitDecode), or ByteArrays (ByteArray[{}] if empty);
+     "ErrorKeep"   -> None | bytes: only the end of standard error is kept ("ErrorTruncated" tells whether some was
+                      dropped); it still counts toward "MaxOutput";
+     "Arguments"   -> what results report (the command by default).
+   Processes are always released with KillProcess when they are done (also when they have finished: otherwise every
+   process leaks file descriptors in the 15.0.1 kernel). Reads, writes and status checks block ProcessLink's
+   $processRunningQTimeout to 0, like ACPLink: while a RunProcess (anywhere in the kernel) reads its child's output,
+   ProcessLink sets it to 200 and a read of another process would block until that process writes. Writes are quiet
+   (BinaryWrite::errwstrm for a process that has exited: its exit code and output tell what happened). Each poll reads at
+   most $gitReadPerPoll bytes per stream (see gitDrain), so the cap and the timeout hold for fast writers too. *)
+acpProcessRun // beginDefinition;
+
+acpProcessRun[ command: { __String }, dir_String, continuation_, opts_Association ] := Module[
+    { settings, id, proc, input },
+    settings = processSettings[ command, opts ];
+    proc     = Quiet @ Catch[ StartProcess[ command, Sequence @@ processOptions[ dir, Lookup[ opts, "Environment", Inherited ] ] ], _, $Failed & ];
+    If[ ! MatchQ[ proc, _ProcessObject ], Return[ processStartFailed[ continuation, settings ], Module ] ];
+
+    input = Lookup[ opts, "Input", None ];
+    If[ ByteArrayQ @ input,
+        gitNonBlocking @ BinaryWrite[ proc, input ];
+        If[ settings[ "InputAfter" ] === None, gitNonBlocking @ Close @ ProcessConnection[ proc, "StandardInput" ] ]
+    ];
+
+    id = "git-run-" <> ToString[ ++$gitRunCount ];
+    PreemptProtect[
+        $gitRuns[ id ] = <|
+            settings,
+            "Process"        -> proc,
+            "Continuation"   -> continuation,
+            "StartedAt"      -> AbsoluteTime[ ],
+            "Output"         -> { },
+            "Error"          -> { },
+            "ErrorTruncated" -> False,
+            "Bytes"          -> 0,
+            "OutputEnded"    -> False,
+            "ErrorEnded"     -> False,
+            "ReadyTail"      -> ByteArray[ { } ],
+            "BeforeReady"    -> 0,
+            "DrainingSince"  -> None
+        |>
+    ];
+    With[ { i = id }, acpSchedule[ gitPoll @ i, $gitPollInterval ] ];
+    id
+];
+
+acpProcessRun // endDefinition;
+
+
+(* The settings of a run (its record without the process and its state), from the options of acpProcessRun *)
+processSettings // beginDefinition;
+
+processSettings[ command_List, opts_Association ] := Module[ { after, keep },
+    after = processInputAfter @ Lookup[ opts, "InputAfter", None ];
+    keep  = Replace[ Lookup[ opts, "ErrorKeep", None ], Except[ _Integer? Positive ] -> None ];
+    <|
+        "Arguments"         -> Lookup[ opts, "Arguments", command ],
+        "Timeout"           -> Replace[ Lookup[ opts, "Timeout", $gitTimeout ], Except[ _? Positive ] -> $gitTimeout ],
+        "MaxOutput"         -> Replace[ Lookup[ opts, "MaxOutput", $gitMaxOutput ], Except[ _Integer? Positive ] -> $gitMaxOutput ],
+        "Owner"             -> Lookup[ opts, "Owner", None ],
+        "Request"           -> Lookup[ opts, "Request", None ],
+        "Decode"            -> Lookup[ opts, "Decode", True ] =!= False,
+        "ErrorKeep"         -> keep,
+        "InputAfter"        -> after,
+        "CancelBeforeReady" -> Replace[ Lookup[ opts, "CancelBeforeReady", "Kill" ], Except[ "Drain" ] -> "Kill" ],
+        "DrainTimeout"      -> Replace[ Lookup[ opts, "DrainTimeout", $processDrainTimeout ], Except[ _? Positive ] -> $processDrainTimeout ],
+        "Extended"          -> after =!= None || IntegerQ @ keep
+    |>
+];
+
+processSettings // endDefinition;
+
+
+processInputAfter // beginDefinition;
+
+processInputAfter[ after_Association ] := With[ { marker = Lookup[ after, "Marker", None ], bytes = Lookup[ after, "Bytes", None ] },
+    If[ ByteArrayQ @ marker && ByteArrayQ @ bytes,
+        <|
+            "Marker"     -> marker,
+            "MarkerText" -> ByteArrayToString[ marker, "ISOLatin1" ],
+            "Bytes"      -> bytes,
+            "Limit"      -> Replace[ Lookup[ after, "Limit", $processMarkerLimit ], Except[ _Integer? Positive ] -> $processMarkerLimit ]
+        |>,
+        None
+    ]
+];
+
+processInputAfter[ _ ] := None;
+
+processInputAfter // endDefinition;
+
+
+processOptions // beginDefinition;
+processOptions[ dir_String, env_Association ] := { ProcessDirectory -> dir, ProcessEnvironment -> env };
+processOptions[ dir_String, _ ] := { ProcessDirectory -> dir };
+processOptions // endDefinition;
+
+
+(* A run that could not be started: the continuation gets a "StartFailed" result (in the pump, as always). Gives a run
+   ID, as acpProcessRun. *)
+processStartFailed // beginDefinition;
+
+processStartFailed[ continuation_, settings0_Association ] := With[
+    {
+        f      = continuation,
+        result = gitRunResult[ processSettings[ { }, settings0 ], None, { }, { }, "StartFailed", 0 ]
+    },
+    acpSchedule @ gitCallContinuation[ f, result ];
+    "git-run-" <> ToString[ ++$gitRunCount ]
+];
+
+processStartFailed // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*gitPoll*)
 
-(* One poll of a running command (in the pump): drain both streams, then finish, kill or poll again. *)
+(* One poll of a running command (in the pump): drain both streams, write the input that waits for a marker, then
+   finish, kill or poll again. A draining run (cancelled before its marker, see acpProcessRun) only reads and drops its
+   output until it ends. *)
 gitPoll // beginDefinition;
 
-gitPoll[ id_String ] := Module[ { run, proc, finished, out, err, bytes },
+gitPoll[ id_String ] := Module[ { run, proc, draining, finished, out, err, bytes },
     run = Lookup[ $gitRuns, id, None ];
     If[ ! AssociationQ @ run, Return[ Null, Module ] ];
-    proc = run[ "Process" ];
-    If[ ownerGoneQ @ run[ "Owner" ] || gitSupersededQ @ run[ "Request" ], Return[ gitEndRun[ id, "Cancelled" ], Module ] ];
+    proc     = run[ "Process" ];
+    draining = run[ "DrainingSince" ] =!= None;
+    If[ ! draining && (ownerGoneQ @ run[ "Owner" ] || gitSupersededQ @ run[ "Request" ]),
+        Return[
+            If[ run[ "InputAfter" ] =!= None && run[ "CancelBeforeReady" ] === "Drain",
+                gitStartDraining @ id,
+                gitEndRun[ id, "Cancelled" ]
+            ],
+            Module
+        ]
+    ];
 
     (* Checked before reading: everything the process wrote before it exited can then be read in this poll *)
     finished = gitFinishedQ @ proc;
@@ -351,12 +489,13 @@ gitPoll[ id_String ] := Module[ { run, proc, finished, out, err, bytes },
     bytes = bytes + Total[ Length /@ err[ "Chunks" ] ];
     run   = <|
         run,
-        "Output"      -> Join[ run[ "Output" ], out[ "Chunks" ] ],
-        "Error"       -> Join[ run[ "Error" ], err[ "Chunks" ] ],
+        "Output"      -> If[ draining, { }, Join[ run[ "Output" ], out[ "Chunks" ] ] ],
+        "Error"       -> If[ draining, { }, Join[ run[ "Error" ], err[ "Chunks" ] ] ],
         "Bytes"       -> bytes,
         "OutputEnded" -> out[ "Ended" ],
         "ErrorEnded"  -> err[ "Ended" ]
     |>;
+    If[ ! draining, run = gitAwaitMarker[ gitKeepErrorEnd @ run, out[ "Chunks" ] ] ];
     PreemptProtect @ If[ KeyExistsQ[ $gitRuns, id ], $gitRuns[ id ] = run ];
 
     Which[
@@ -364,14 +503,75 @@ gitPoll[ id_String ] := Module[ { run, proc, finished, out, err, bytes },
             gitEndRun[ id, "TooLarge" ],
         run[ "OutputEnded" ] && run[ "ErrorEnded" ] && finished,
             gitEndRun[ id, "Finished" ],
-        AbsoluteTime[ ] - run[ "StartedAt" ] > run[ "Timeout" ],
+        draining && AbsoluteTime[ ] - run[ "DrainingSince" ] > run[ "DrainTimeout" ],
             gitEndRun[ id, "TimedOut" ],
+        ! draining && AbsoluteTime[ ] - run[ "StartedAt" ] > run[ "Timeout" ],
+            gitEndRun[ id, "TimedOut" ],
+        ! draining && run[ "InputAfter" ] =!= None && run[ "BeforeReady" ] > run[ "InputAfter", "Limit" ],
+            gitEndRun[ id, "NoReady" ],
         True,
             With[ { i = id }, acpSchedule[ gitPoll @ i, $gitPollInterval ] ]
     ]
 ];
 
 gitPoll // endDefinition;
+
+
+(* The input that waits for a marker ("InputAfter"): searched for in the output read in this poll, plus the last bytes
+   of the previous polls ("ReadyTail", one byte shorter than the marker), and only up to the limit, so that the work per
+   poll is bounded however much the process writes. Found: the bytes are written and standard input is closed. *)
+gitAwaitMarker // beginDefinition;
+
+gitAwaitMarker[ run_Association, chunks_List ] := Module[ { after, new, room, joined, keep },
+    after = run[ "InputAfter" ];
+    If[ after === None || chunks === { }, Return[ run, Module ] ];
+    new    = Join @@ chunks;
+    room   = Max[ 0, after[ "Limit" ] - run[ "BeforeReady" ] ] + Length @ after[ "Marker" ];
+    joined = Join[ run[ "ReadyTail" ], Take[ new, UpTo[ room ] ] ];
+    If[ StringContainsQ[ ByteArrayToString[ joined, "ISOLatin1" ], after[ "MarkerText" ] ],
+        gitNonBlocking @ BinaryWrite[ run[ "Process" ], after[ "Bytes" ] ];
+        gitNonBlocking @ Close @ ProcessConnection[ run[ "Process" ], "StandardInput" ];
+        <| run, "InputAfter" -> None, "ReadyTail" -> ByteArray[ { } ] |>,
+        keep = Min[ Length @ joined, Length @ after[ "Marker" ] - 1 ];
+        <|
+            run,
+            "BeforeReady" -> run[ "BeforeReady" ] + Length @ new,
+            "ReadyTail"   -> If[ keep > 0, Take[ joined, -keep ], ByteArray[ { } ] ]
+        |>
+    ]
+];
+
+gitAwaitMarker // endDefinition;
+
+
+(* "ErrorKeep": only the last bytes of standard error are kept *)
+gitKeepErrorEnd // beginDefinition;
+
+gitKeepErrorEnd[ run_Association ] := With[ { keep = run[ "ErrorKeep" ] },
+    If[ IntegerQ @ keep && Total[ Length /@ run[ "Error" ] ] > keep,
+        <| run, "Error" -> { Take[ Join @@ run[ "Error" ], -keep ] }, "ErrorTruncated" -> True |>,
+        run
+    ]
+];
+
+gitKeepErrorEnd // endDefinition;
+
+
+(* A run cancelled before its marker with "CancelBeforeReady" -> "Drain": the continuation is called with "Cancelled"
+   now, and the process is left to end by itself (standard input is closed; the following polls drop its output) *)
+gitStartDraining // beginDefinition;
+
+gitStartDraining[ id_String ] := Module[ { run },
+    run = Lookup[ $gitRuns, id, None ];
+    If[ ! AssociationQ @ run, Return[ Null, Module ] ];
+    run = <| run, "DrainingSince" -> AbsoluteTime[ ], "Output" -> { }, "Error" -> { } |>;
+    PreemptProtect @ If[ KeyExistsQ[ $gitRuns, id ], $gitRuns[ id ] = run ];
+    gitNonBlocking @ Close @ ProcessConnection[ run[ "Process" ], "StandardInput" ];
+    With[ { i = id }, acpSchedule[ gitPoll @ i, $gitPollInterval ] ];
+    gitCallContinuation[ run[ "Continuation" ], gitRunResult[ run, None, { }, { }, "Cancelled", AbsoluteTime[ ] - run[ "StartedAt" ] ] ]
+];
+
+gitStartDraining // endDefinition;
 
 
 (* Reads what is available on a stream without waiting: at most $gitReadPerPoll bytes, and at most one byte more than
@@ -449,8 +649,9 @@ ownerGoneQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*gitEndRun*)
 
-(* Removes the run, releases (or kills) the process and calls the continuation. how: "Finished" | "TimedOut" |
-   "TooLarge" | "Cancelled". The output passed on is cut at the cap (the last poll reads one byte more). *)
+(* Removes the run, releases (or kills) the process and calls the continuation (not for a draining run: it was called
+   when the run was cancelled). how: "Finished" | "TimedOut" | "TooLarge" | "Cancelled" | "NoReady". The output passed
+   on is cut at the cap (the last poll reads one byte more); with "ErrorKeep", standard error is its kept end. *)
 gitEndRun // beginDefinition;
 
 gitEndRun[ id_String, how_String ] := Module[ { run, exit, output, error },
@@ -458,11 +659,18 @@ gitEndRun[ id_String, how_String ] := Module[ { run, exit, output, error },
     If[ ! AssociationQ @ run, Return[ Null, Module ] ];
     exit = If[ how === "Finished", gitExitCode @ run[ "Process" ], None ];
     gitNonBlocking @ KillProcess @ run[ "Process" ];
+    If[ run[ "DrainingSince" ] =!= None,
+        acpLog[ "ProcessDrained", <| "How" -> how, "ExitCode" -> exit, "Seconds" -> AbsoluteTime[ ] - run[ "DrainingSince" ] |> ];
+        Return[ Null, Module ]
+    ];
     output = gitTakeBytes[ run[ "Output" ], run[ "MaxOutput" ] ];
-    error  = gitTakeBytes[ run[ "Error" ], run[ "MaxOutput" ] - Total[ Length /@ output ] ];
+    error  = If[ IntegerQ @ run[ "ErrorKeep" ],
+        run[ "Error" ],
+        gitTakeBytes[ run[ "Error" ], run[ "MaxOutput" ] - Total[ Length /@ output ] ]
+    ];
     gitCallContinuation[
         run[ "Continuation" ],
-        gitRunResult[ run[ "Arguments" ], exit, output, error, how, AbsoluteTime[ ] - run[ "StartedAt" ] ]
+        gitRunResult[ run, exit, output, error, how, AbsoluteTime[ ] - run[ "StartedAt" ] ]
     ]
 ];
 
@@ -491,26 +699,70 @@ gitExitCode[ proc_ ] := Replace[ gitNonBlocking @ ProcessInformation[ proc, "Exi
 gitExitCode // endDefinition;
 
 
+(* The result of a run (run: its record or settings) *)
 gitRunResult // beginDefinition;
 
-gitRunResult[ args_, exit_, out_List, err_List, how_String, duration_ ] := <|
-    "ExitCode"    -> exit,
-    "Output"      -> acpGitDecode @ out,
-    "Error"       -> acpGitDecode @ err,
-    "TimedOut"    -> how === "TimedOut",
-    "TooLarge"    -> how === "TooLarge",
-    "Cancelled"   -> how === "Cancelled",
-    "StartFailed" -> how === "StartFailed",
-    "Duration"    -> duration,
-    "Arguments"   -> args
-|>;
+gitRunResult[ run_Association, exit_, out_List, err_List, how_String, duration_ ] := Join[
+    <|
+        "ExitCode"    -> exit,
+        "Output"      -> gitRunOutput[ run, out ],
+        "Error"       -> gitRunOutput[ run, err ],
+        "TimedOut"    -> how === "TimedOut",
+        "TooLarge"    -> how === "TooLarge",
+        "Cancelled"   -> how === "Cancelled",
+        "StartFailed" -> how === "StartFailed",
+        "Duration"    -> duration,
+        "Arguments"   -> run[ "Arguments" ]
+    |>,
+    If[ TrueQ @ run[ "Extended" ],
+        <| "NoReady" -> how === "NoReady", "ErrorTruncated" -> TrueQ @ Lookup[ run, "ErrorTruncated", False ] |>,
+        <| |>
+    ]
+];
 
 gitRunResult // endDefinition;
+
+
+gitRunOutput // beginDefinition;
+gitRunOutput[ run_Association, chunks_List ] /; TrueQ @ run[ "Decode" ] := acpGitDecode @ chunks;
+gitRunOutput[ _, { } ] := ByteArray[ { } ];
+gitRunOutput[ _, chunks: { __ByteArray } ] := Join @@ chunks;
+gitRunOutput // endDefinition;
 
 
 gitCallContinuation // beginDefinition;
 gitCallContinuation[ f_, result_ ] := (acpIsolated @ f @ result; Null);
 gitCallContinuation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Exported helpers*)
+
+(* Makes token the latest request of key: a run started with "Request" -> { key, oldToken } is then cancelled at its
+   next poll (see gitSupersededQ) *)
+acpSetCurrentRequest // beginDefinition;
+acpSetCurrentRequest[ key_, token_ ] := PreemptProtect[ $gitCurrentRequests[ key ] = token ];
+acpSetCurrentRequest // endDefinition;
+
+
+(* Whether a run with these "Owner" and "Request" options would be cancelled (e.g. before it is started) *)
+acpRunCancelledQ // beginDefinition;
+acpRunCancelledQ[ owner_, request_ ] := TrueQ[ ownerGoneQ @ owner || gitSupersededQ @ request ];
+acpRunCancelledQ // endDefinition;
+
+
+(* Whether a run (an ID of acpProcessRun) is still running or draining *)
+acpProcessRunningQ // beginDefinition;
+acpProcessRunningQ[ id_String ] := KeyExistsQ[ $gitRuns, id ];
+acpProcessRunningQ[ _ ] := False;
+acpProcessRunningQ // endDefinition;
+
+
+(* Whether any run of acpProcessRun (git, or a remote one-shot run) is running or draining: the pump must keep running
+   for them *)
+acpBackgroundRunsQ // beginDefinition;
+acpBackgroundRunsQ[ ] := Length @ $gitRuns > 0;
+acpBackgroundRunsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1158,9 +1410,13 @@ gitSplitUnquotedPair // endDefinition;
      "Status"         -> "Changes" | "Clean" | "Unavailable" (no usable git) | "NotRepository" | "Error" |
                          "NoDirectory" (a window without a project directory)
      "Error"          -> None | <| "Code", "Step", "ExitCode", "Detail" (end of git's standard error, or None) |>
-                         Codes: "NotFound", "Disabled", "GitTooOld" (with "Unavailable"); "StartFailed", "GitFailed",
-                         "TimedOut", "TooLarge", "Cancelled", "Superseded" (a newer request replaced it),
-                         "UnsafeConfig" (a filter driver that can't be turned off; "Detail" names it) (with "Error")
+                         Codes: "NotFound", "Disabled", "GitTooOld", "InvalidSSHSettings" (with "Unavailable");
+                         "StartFailed", "GitFailed", "TimedOut", "TooLarge", "Cancelled", "Superseded" (a newer request
+                         replaced it), "UnsafeConfig" (a filter driver that can't be turned off; "Detail" names it),
+                         "SSHFailed" (ssh, the sign-in or the remote login shell failed), "RemoteFailed" (the remote
+                         script could not run, e.g. no temporary folder) (with "Error"). Errors of remote requests may
+                         also have "SSHCode" (the kind of the ssh error, e.g. "SSHAuthFailed") and "Error" (its error
+                         info, see acpErrorInfo: "Message", "Hint", "Output", "Detail", ...)
      "Git", "GitVersion" -> the executable and its version ("2.53.0"), or None
      "Root", "Prefix", "ObjectFormat" -> the repository root, the project directory relative to it ("" or "dir/"),
                          "sha1" | "sha256"
@@ -1173,6 +1429,8 @@ gitSplitUnquotedPair // endDefinition;
      "PatchComplete"  -> False if git's patch was cut short (too large, timed out or failed)
      "CountsComplete" -> False if the line counts could not be determined
      "CheckedAt", "Duration" -> AbsoluteTime when the change set was made, and how long it took (seconds)
+     "Remote"         -> None (a local folder) | <| "Host" (user@machine), "Short" (the short host name), "Home" (the
+                         remote home folder, or None) |> for a folder on another computer (paths are POSIX paths there)
    Files:
      "Path"           -> path relative to the project directory, "/"-separated ("dir/" for untracked directories)
      "RepoPath"       -> path relative to the repository root
@@ -1188,6 +1446,7 @@ gitSplitUnquotedPair // endDefinition;
      "Content"        -> the text of an untracked text file (full change sets), or None
      "OldMode", "NewMode" -> file modes ("100644", "100755", "120000", "160000") from the patch, or None
      "LinkTarget"     -> for an untracked symbolic link, the absolute path it resolves to (None if it does not)
+     "Remote"         -> True for the files of a remote folder (they are not on this computer)
      "Note"           -> None | "Binary" | "ModeChanged" (only the mode changed) | "Renamed" (renamed or copied
                          without changes) | "Empty" (an empty new or deleted file) | "Submodule" | "Directory" |
                          "TooLarge" (untracked file over the size cap) | "NotRead" (the read budget was used up) |
@@ -1215,15 +1474,27 @@ gitSplitUnquotedPair // endDefinition;
    each other. A superseded request stops at its next step (its running git command is killed) and its continuation
    gets a change set with the error "Superseded". Gives the request token (changes["Token"]): compare it to ignore the
    results of superseded requests. The request is only queued here, so this is safe anywhere (git is started by the
-   pump). *)
+   pump). acpGitChanges[dir, continuation, key, ssh]: a folder on another computer ("SSHSettings", canonical or not;
+   None: this computer), e.g. for a review window without its ACP window. A remote folder is used as it is (never
+   ExpandFileName, which would make a Windows path of it); invalid settings give an "Unavailable" change set. *)
 acpGitChanges // beginDefinition;
 
 acpGitChanges[ File[ dir_String ], args___ ] := acpGitChanges[ dir, args ];
 
 acpGitChanges[ dir_String, continuation_ ] := acpGitChanges[ dir, continuation, None ];
 
-acpGitChanges[ dir_String, continuation_, key_ ] := With[ { token = gitNewToken[ ] },
-    gitQueueRequest @ gitNewRequest[ token, Quiet @ ExpandFileName @ dir, "Full", None, continuation, key ];
+acpGitChanges[ dir_String, continuation_, key_ ] := acpGitChanges[ dir, continuation, key, None ];
+
+acpGitChanges[ dir_String, continuation_, key_, ssh0_ ] := With[ { token = gitNewToken[ ], ssh = gitRequestSSH @ ssh0 },
+    gitQueueRequest @ gitNewRequest[
+        token,
+        If[ ssh === None, Quiet @ ExpandFileName @ dir, dir ],
+        "Full",
+        None,
+        continuation,
+        key,
+        ssh
+    ];
     token
 ];
 
@@ -1250,7 +1521,8 @@ acpGitChanges // endDefinition;
      line counts (diff --numstat, if tracked files changed) -> patch (full change sets) -> untracked files (read by
    the kernel) -> change set. The state is an association: "Token", "Directory", "Mode" ("Summary" | "Full"), "Owner",
    "Continuation", "Key" (None, or the requester: a newer request with the same key supersedes this one), "StartedAt",
-   and what the steps found. Every path ends in gitFinish, which calls the continuation. *)
+   "Remote" (None, or the canonical "SSHSettings" of a folder on another computer, or their Failure) and what the steps
+   found. Every path ends in gitFinish, which calls the continuation. *)
 gitNewToken // beginDefinition;
 gitNewToken[ ] := "git-" <> ToString[ ++$gitRequestCount ];
 gitNewToken // endDefinition;
@@ -1258,17 +1530,34 @@ gitNewToken // endDefinition;
 
 gitNewRequest // beginDefinition;
 
-gitNewRequest[ token_, dir_, mode_, owner_, continuation_, key_ ] := <|
+gitNewRequest[ token_, dir_, mode_, owner_, continuation_, key_ ] := gitNewRequest[ token, dir, mode, owner, continuation, key, None ];
+
+gitNewRequest[ token_, dir_, mode_, owner_, continuation_, key_, remote_ ] := <|
     "Token"        -> token,
     "Directory"    -> dir,
     "Mode"         -> mode,
     "Owner"        -> owner,
     "Continuation" -> continuation,
     "Key"          -> key,
-    "StartedAt"    -> AbsoluteTime[ ]
+    "StartedAt"    -> AbsoluteTime[ ],
+    "Remote"       -> remote
 |>;
 
 gitNewRequest // endDefinition;
+
+
+(* The "Remote" of a request for "SSHSettings" (canonical or not): None (this computer), the canonical settings, or
+   their Failure (never treated as local) *)
+gitRequestSSH // beginDefinition;
+gitRequestSSH[ None | Automatic | Inherited | $Failed | _Missing ] := None;
+gitRequestSSH[ ssh_ ] := acpSSHSettings @ ssh;
+gitRequestSSH // endDefinition;
+
+
+gitRemoteQ // beginDefinition;
+gitRemoteQ[ state_Association ] := AssociationQ @ Lookup[ state, "Remote", None ];
+gitRemoteQ[ _ ] := False;
+gitRemoteQ // endDefinition;
 
 
 (* Queues the request; it becomes the latest request of its key *)
@@ -1310,6 +1599,9 @@ gitRequest[ state_Association ] := Module[ { dir, git, hint },
     If[ ! gitCurrentQ @ state, Return[ Null, Module ] ];
     dir = state[ "Directory" ];
     If[ ! TrueQ @ $acpGitEnabled, Return[ gitFinish[ state, "Unavailable", gitError[ "Disabled", None, None ] ], Module ] ];
+    (* A folder on another computer: no local checks, one remote script (see "Remote") *)
+    If[ FailureQ @ Lookup[ state, "Remote", None ], Return[ gitFinish[ state, "Unavailable", gitInvalidSettingsError @ state[ "Remote" ] ], Module ] ];
+    If[ gitRemoteQ @ state, Return[ gitRemoteRequest @ state, Module ] ];
     If[ ! StringQ @ dir || ! TrueQ @ Quiet @ DirectoryQ @ dir, Return[ gitFinish[ state, "NotRepository", None ], Module ] ];
     git = acpFindGit[ ];
     If[ ! StringQ @ git, Return[ gitFinish[ state, "Unavailable", gitError[ "NotFound", None, None ] ], Module ] ];
@@ -1321,22 +1613,29 @@ gitRequest[ state_Association ] := Module[ { dir, git, hint },
 gitRequest // endDefinition;
 
 
-(* Runs a git command of a request; next[state, result] continues (unless the request was superseded meanwhile). *)
+(* Runs a git command of a request; next[state, result] continues (unless the request was superseded meanwhile). step
+   names the command ("Version", "Repository", "Config", "Status", "Numstat", "Patch"): a remote request takes its
+   result from the frame of the remote script that ran it (gitRemoteStepResult), in the next pump tick. *)
 gitRunStep // beginDefinition;
 
-gitRunStep[ state_Association, args_List, next_ ] := With[ { s = state },
-    If[ gitCurrentQ @ state,
-        acpGitRun[
-            args,
-            state[ "Directory" ],
-            Function[ result, If[ gitCurrentQ @ s, next[ s, result ] ] ],
-            <|
-                "Timeout" -> If[ state[ "Mode" ] === "Full", $gitTimeout, $gitSummaryTimeout ],
-                "Owner"   -> state[ "Owner" ],
-                "Request" -> Lookup[ state, { "Key", "Token" } ],
-                "Git"     -> state[ "Git" ]
-            |>
-        ]
+gitRunStep[ state_Association, step_String, args_List, next_ ] := With[ { s = state },
+    Which[
+        ! gitCurrentQ @ state,
+            Null,
+        gitRemoteQ @ state,
+            With[ { result = gitRemoteStepResult[ state, step, args ] }, acpSchedule[ If[ gitCurrentQ @ s, next[ s, result ] ] ] ],
+        True,
+            acpGitRun[
+                args,
+                state[ "Directory" ],
+                Function[ result, If[ gitCurrentQ @ s, next[ s, result ] ] ],
+                <|
+                    "Timeout" -> If[ state[ "Mode" ] === "Full", $gitTimeout, $gitSummaryTimeout ],
+                    "Owner"   -> state[ "Owner" ],
+                    "Request" -> Lookup[ state, { "Key", "Token" } ],
+                    "Git"     -> state[ "Git" ]
+                |>
+            ]
     ]
 ];
 
@@ -1400,19 +1699,21 @@ gitErrorDetail // endDefinition;
 (*Steps*)
 
 (* git --version runs without the global options of gitCommand: it does not look at the repository, and a git that is
-   too old to know them (--no-optional-locks is from 2.15) is then reported as too old instead of failing. *)
+   too old to know them (--no-optional-locks is from 2.15) is then reported as too old instead of failing. The version
+   of a remote git is not cached: the same path can be another git on another computer. *)
 gitStepVersion // beginDefinition;
 
-gitStepVersion[ state_Association ] := With[ { version = Lookup[ $gitVersions, state[ "Git" ], None ] },
+gitStepVersion[ state_Association ] := With[
+    { version = If[ gitRemoteQ @ state, None, Lookup[ $gitVersions, state[ "Git" ], None ] ] },
     If[ ListQ @ version,
         gitCheckVersion[ state, version ],
-        gitRunStep[ state, { "--version" }, gitStepVersion ]
+        gitRunStep[ state, "Version", { "--version" }, gitStepVersion ]
     ]
 ];
 
 gitStepVersion[ state_Association, result_Association ] := If[ gitStepOKQ[ state, result, "Version", { 0 } ],
     With[ { version = acpGitParseVersion @ result[ "Output" ] },
-        If[ ListQ @ version, PreemptProtect[ $gitVersions[ state[ "Git" ] ] = version ] ];
+        If[ ListQ @ version && ! gitRemoteQ @ state, PreemptProtect[ $gitVersions[ state[ "Git" ] ] = version ] ];
         gitCheckVersion[ state, version ]
     ]
 ];
@@ -1432,17 +1733,24 @@ gitCheckVersion // endDefinition;
 
 gitStepRepository // beginDefinition;
 
-gitStepRepository[ state_Association ] := With[ { cached = Lookup[ $gitRepositoryInfo, state[ "Directory" ], None ] },
+(* Remote repositories are not cached (the same path can exist on both computers) *)
+gitStepRepository[ state_Association ] := With[
+    { cached = If[ gitRemoteQ @ state, None, Lookup[ $gitRepositoryInfo, state[ "Directory" ], None ] ] },
     If[ AssociationQ @ cached && cached[ "Hint" ] === state[ "Hint" ],
         gitStepFilters @ <| state, "Repository" -> cached |>,
-        gitRunStep[ state, gitCommand[ state, { "rev-parse", "--show-toplevel", "--show-prefix", "--show-object-format" } ], gitStepRepository ]
+        gitRunStep[
+            state,
+            "Repository",
+            gitCommand[ state, { "rev-parse", "--show-toplevel", "--show-prefix", "--show-object-format" } ],
+            gitStepRepository
+        ]
     ]
 ];
 
 gitStepRepository[ state_Association, result_Association ] := If[ gitStepOKQ[ state, result, "Repository", { 0 } ],
     With[ { info = <| acpGitParseRevParse @ result[ "Output" ], "Hint" -> state[ "Hint" ] |> },
         If[ StringQ @ info[ "Root" ],
-            PreemptProtect[ $gitRepositoryInfo[ state[ "Directory" ] ] = info ];
+            If[ ! gitRemoteQ @ state, PreemptProtect[ $gitRepositoryInfo[ state[ "Directory" ] ] = info ] ];
             gitStepFilters @ <| state, "Repository" -> info |>,
             gitFinish[ state, "Error", gitError[ "GitFailed", "Repository", result ] ]
         ]
@@ -1457,7 +1765,7 @@ gitStepRepository // endDefinition;
 gitStepFilters // beginDefinition;
 
 gitStepFilters[ state_Association ] :=
-    gitRunStep[ state, gitCommand[ state, { "config", "-z", "--get-regexp", "^filter\\." } ], gitStepFilters ];
+    gitRunStep[ state, "Config", gitCommand[ state, { "config", "-z", "--get-regexp", "^filter\\." } ], gitStepFilters ];
 
 gitStepFilters[ state_Association, result_Association ] := If[ gitStepOKQ[ state, result, "Config", { 0, 1 } ],
     With[ { names = acpGitParseFilterDrivers @ result[ "Output" ] },
@@ -1479,7 +1787,7 @@ gitStepFilters // endDefinition;
 
 gitStepStatus // beginDefinition;
 
-gitStepStatus[ state_Association ] := gitRunStep[ state, gitCommand[ state, $gitStatusArguments ], gitStepStatus ];
+gitStepStatus[ state_Association ] := gitRunStep[ state, "Status", gitCommand[ state, $gitStatusArguments ], gitStepStatus ];
 
 gitStepStatus[ state_Association, result_Association ] := If[ gitStepOKQ[ state, result, "Status", { 0 } ],
     gitStepNumstat @ <| state, "Status" -> gitStatusData @ result[ "Output" ] |>
@@ -1494,6 +1802,7 @@ gitStepNumstat // beginDefinition;
 gitStepNumstat[ state_Association ] := If[ gitTrackedChangesQ @ state,
     gitRunStep[
         state,
+        "Numstat",
         gitCommand[ state, Join[ { "diff", gitBase @ state, "--numstat", "-z" }, $gitDiffOptions, { "--", "." } ] ],
         gitStepNumstat
     ],
@@ -1524,6 +1833,7 @@ gitStepPatch[ state_Association ] := Which[
     gitTrackedChangesQ @ state,
         gitRunStep[
             state,
+            "Patch",
             gitCommand[ state, Join[ { "diff", gitBase @ state }, $gitDiffOptions, $gitPatchOptions, { "--", "." } ] ],
             gitStepPatch
         ],
@@ -1563,22 +1873,33 @@ gitStepSplit[ state_Association ] := Module[ { texts, n, next },
 gitStepSplit // endDefinition;
 
 
-(* The untracked files that will be listed are read by the kernel (counts, binary check, contents), within the budget *)
+(* The untracked files that will be listed are read by the kernel (counts, binary check, contents), within the budget.
+   A remote script read them on the remote machine: its records give the same information (gitRemoteUntracked); a run
+   that ended before its records (e.g. it timed out) ends the request with the run's error. *)
 gitStepUntracked // beginDefinition;
 
 gitStepUntracked[ state_Association ] := Module[ { repository, listed, paths, untracked },
     If[ ! gitCurrentQ @ state, Return[ Null, Module ] ];
+    If[ gitRemoteQ @ state && ! KeyExistsQ[ Lookup[ state, "RemoteFrames", <| |> ], $gitRemoteFrames[ "Untracked" ] ],
+        (* the exit codes { } are never met: this always ends the request with an error *)
+        Return[ gitStepOKQ[ state, gitRemoteStepResult[ state, "Untracked", { } ], "Untracked", { } ], Module ]
+    ];
     repository = state[ "Repository" ];
     listed     = gitListedEntries[ state[ "Status" ], { } ];
     paths      = Lookup[ Select[ listed, #[ "Status" ] === "Untracked" && ! #[ "Directory" ] & ], "Path", { } ];
-    untracked  = gitReadUntracked[
-        repository[ "Root" ],
-        paths,
-        $gitUntrackedBudget,
-        state[ "Mode" ] === "Full"
+    untracked  = If[ gitRemoteQ @ state,
+        gitRemoteUntracked[ state, paths ],
+        gitReadUntracked[
+            repository[ "Root" ],
+            paths,
+            $gitUntrackedBudget,
+            state[ "Mode" ] === "Full"
+        ]
     ];
-    (* The change set is built in the next tick: *)
-    With[ { s = <| state, "Untracked" -> untracked |> }, acpSchedule[ If[ gitCurrentQ @ s, gitFinish[ s, Automatic, None ] ] ] ]
+    (* The change set is built in the next tick (the frames of a remote script are no longer needed): *)
+    With[ { s = <| KeyDrop[ state, "RemoteFrames" ], "Untracked" -> untracked |> },
+        acpSchedule[ If[ gitCurrentQ @ s, gitFinish[ s, Automatic, None ] ] ]
+    ]
 ];
 
 gitStepUntracked // endDefinition;
@@ -1725,6 +2046,378 @@ gitLineCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*Remote*)
+
+(* A request for a folder on another computer runs one script there (Assets/RemoteScripts/git.sh after the prelude of
+   Remote.wl) over one ssh connection (acpRemoteRun). The script mirrors the local steps: it finds git as acpFindGit
+   does, runs the same git commands with the same options (the filter drivers neutralized, read-only), reads the
+   untracked files in batched passes, and gives one frame per command (see $gitRemoteFrames), the untracked records and,
+   for full change sets, the text of each untracked text file (frame c<index>). The steps above then replay the frames
+   (gitRunStep, gitStepUntracked), so a remote change set is made by the same code as a local one. Remote output is
+   bounded: at most $acpGitMaxFiles untracked records are used, numbers are read with FromDigits after a digits check,
+   and all text is decoded with acpGitDecode (which neutralizes the front end's linear syntax). Summary checks are
+   "Automatic" runs (refused without a connection while the host is latched after a failed sign-in, see Remote.wl); full
+   change sets come from the Review window, a user action, and clear the latch. *)
+
+(* The frame of each step *)
+$gitRemoteFrames = <|
+    "Version"    -> "version",
+    "Repository" -> "revparse",
+    "Config"     -> "config",
+    "Status"     -> "status",
+    "Numstat"    -> "numstat",
+    "Patch"      -> "patch",
+    "Untracked"  -> "untracked"
+|>;
+
+(* The kinds of the untracked records *)
+$gitRemoteKinds = <|
+    "missing"    -> "Unreadable",
+    "unreadable" -> "Unreadable",
+    "other"      -> "NotRegular",
+    "toolarge"   -> "TooLarge",
+    "notread"    -> "NotRead"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gitRemoteScript*)
+
+(* The body of the remote git script for a folder (absolute, "~" or "~/...") and a mode: the template filled from this
+   file's constants with one StringReplace, which never rescans what it inserted (a folder named "x@FULL@y" stays as it
+   is). A Failure for a folder that can't be quoted (a NUL character). *)
+gitRemoteScript // beginDefinition;
+
+gitRemoteScript[ dir_String, mode_String ] := Module[ { word },
+    word = acpRemotePathWord @ dir;
+    If[ ! StringQ @ word, Return[ word, Module ] ];
+    StringReplace[
+        acpRemoteTemplate[ "git" ],
+        Join[
+            {
+                "@DIR@"        -> word,
+                "@FULL@"       -> If[ mode === "Full", "1", "0" ],
+                "@MINMAJ@"     -> ToString @ $gitMinimumVersion[[ 1 ]],
+                "@MINMIN@"     -> ToString @ $gitMinimumVersion[[ 2 ]],
+                "@LAZYMAJ@"    -> ToString @ $gitNoLazyFetchVersion[[ 1 ]],
+                "@LAZYMIN@"    -> ToString @ $gitNoLazyFetchVersion[[ 2 ]],
+                "@SAFECONFIG@" -> acpShellWords @ Catenate[ { "-c", # } & /@ $gitSafeConfig ],
+                "@STATUSARGS@" -> acpShellWords @ $gitStatusArguments,
+                "@DIFFOPTS@"   -> acpShellWords @ $gitDiffOptions,
+                "@PATCHOPTS@"  -> acpShellWords @ $gitPatchOptions,
+                "@EMPTY1@"     -> $gitEmptyTrees[ "sha1" ],
+                "@EMPTY256@"   -> $gitEmptyTrees[ "sha256" ],
+                "@MAXOUT@"     -> ToString @ $gitMaxOutput,
+                "@CFGCAP@"     -> ToString[ 2^20 ],
+                "@MAXFILES@"   -> ToString @ $acpGitMaxFiles,
+                "@MAXFILE@"    -> ToString @ $gitMaxUntrackedFileSize,
+                "@BUDGET@"     -> ToString @ $gitUntrackedBudget,
+                "@BINCHECK@"   -> ToString @ $gitBinaryCheckBytes,
+                "@NULSAFE@"    -> If[ TrueQ @ $gitRemoteNULSafe, "1", "0" ]
+            },
+            gitRemoteSearchRules @ $gitRemoteSystemDirectories
+        ]
+    ]
+];
+
+gitRemoteScript // endDefinition;
+
+
+(* The test hook $gitRemoteSystemDirectories: the folders the script searches for git after the remote PATH *)
+gitRemoteSearchRules // beginDefinition;
+
+gitRemoteSearchRules[ dirs: { ___String } ] := With[ { words = acpShellWords @ dirs },
+    If[ StringQ @ words, { "$PATH /usr/bin /usr/local/bin /opt/homebrew/bin;" -> "$PATH " <> words <> ";" }, { } ]
+];
+
+gitRemoteSearchRules[ _ ] := { };
+
+gitRemoteSearchRules // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gitRemoteRequest*)
+
+(* Runs the script of a remote request (in the pump, from gitRequest); gitRemoteResult continues with its result. A
+   folder that is not an absolute path is not a repository (a "~/..." folder is resolved by the agent's launch first). *)
+gitRemoteRequest // beginDefinition;
+
+gitRemoteRequest[ state_Association ] := Module[ { dir, mode },
+    dir  = state[ "Directory" ];
+    mode = state[ "Mode" ];
+    If[ ! acpRemoteAbsolutePathQ @ dir, Return[ gitFinish[ state, "NotRepository", None ], Module ] ];
+    With[ { s = state },
+        acpRemoteRun[
+            state[ "Remote" ],
+            gitRemoteScript[ dir, mode ],
+            Function[ result, If[ gitCurrentQ @ s, gitRemoteResult[ s, result ] ] ],
+            <|
+                "Timeout"   -> If[ mode === "Full", $gitRemoteTimeout, $gitRemoteSummaryTimeout ],
+                "MaxOutput" -> 3 * $gitMaxOutput + $gitUntrackedBudget + 2^22,
+                "MaxFrames" -> If[ mode === "Full", $acpGitMaxFiles + 16, 16 ],
+                "Automatic" -> mode =!= "Full",
+                "Owner"     -> state[ "Owner" ],
+                "Request"   -> Lookup[ state, { "Key", "Token" } ],
+                "Label"     -> "Git"
+            |>
+        ]
+    ];
+    Null
+];
+
+gitRemoteRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gitRemoteResult*)
+
+(* The result of the remote script (see acpRemoteRun): a run that did not get to git ends the request (the script's stops
+   nodir/norepo, nogit and tmpdir; ssh's failures; a host that is latched after a failed sign-in, like an ssh failure);
+   otherwise the steps replay its frames, from the version on (also those of a run that was cut: the steps whose frames
+   are missing end the request with the run's error, see gitRemoteStepResult). The remote home folder is kept only if it
+   is an absolute path without control characters. *)
+gitRemoteResult // beginDefinition;
+
+gitRemoteResult[ state_Association, result_Association ] := Module[ { status, frames, stop },
+    status = result[ "Status" ];
+    frames = Replace[ result[ "Frames" ], Except[ _Association ] -> <| |> ];
+    stop   = result[ "Stop" ];
+    Which[
+        status === "Cancelled",
+            gitFinish[ state, "Error", gitError[ "Cancelled", None, None ] ],
+        MatchQ[ status, "SSHFailed" | "Latched" ],
+            gitFinish[ state, "Error", gitRemoteError[ "SSHFailed", result ] ],
+        status === "NoReady",
+            gitFinish[ state, "Error", gitRemoteError[ "RemoteFailed", result ] ],
+        status === "StartFailed",
+            gitFinish[ state, "Error", gitRemoteError[ "StartFailed", result ] ],
+        stop === "tmpdir",
+            gitFinish[ state, "Error", gitRemoteError[ "RemoteFailed", result ] ],
+        MatchQ[ stop, "nodir" | "norepo" ],
+            gitFinish[ state, "NotRepository", None ],
+        stop === "nogit",
+            gitFinish[ state, "Unavailable", gitError[ "NotFound", None, None ] ],
+        ! KeyExistsQ[ frames, "git" ],
+            gitFinish[
+                state,
+                "Error",
+                gitRemoteError[ Switch[ status, "TimedOut" | "RemoteTimedOut", "TimedOut", "TooLarge", "TooLarge", _, "RemoteFailed" ], result ]
+            ],
+        True,
+            gitStepVersion @ <|
+                state,
+                "Git"            -> acpGitDecode @ frames[ "git", "Output" ],
+                "Hint"           -> None,
+                "RemoteFrames"   -> frames,
+                "RemoteStatus"   -> status,
+                "RemoteStop"     -> stop,
+                "RemoteExitCode" -> result[ "ExitCode" ],
+                "RemoteError"    -> result[ "Error" ],
+                "RemoteHome"     -> acpRemoteCheckedPath[ acpGitDecode @ Lookup[ Lookup[ frames, "home", <| |> ], "Output", ByteArray[ { } ] ], "Home" ]
+            |>
+    ]
+];
+
+gitRemoteResult // endDefinition;
+
+
+(* The change set error of a remote run: its code, and the kind and error info of ssh's failure (or the remote script's),
+   whose "Detail" is the advice and ssh's own text *)
+gitRemoteError // beginDefinition;
+
+gitRemoteError[ code_String, result_Association ] := With[ { error = Replace[ Lookup[ result, "Error", None ], Except[ _Association ] -> None ] },
+    <|
+        "Code"     -> code,
+        "Step"     -> If[ code === "SSHFailed", "Connect", None ],
+        "ExitCode" -> Replace[ Lookup[ result, "ExitCode", None ], Except[ _Integer ] -> None ],
+        "Detail"   -> If[ AssociationQ @ error, Replace[ Lookup[ error, "Detail", None ], Except[ _String ] -> None ], None ],
+        "SSHCode"  -> If[ AssociationQ @ error, Lookup[ error, "Code", None ], None ],
+        "Stop"     -> Lookup[ result, "Stop", None ],
+        "Error"    -> error
+    |>
+];
+
+gitRemoteError // endDefinition;
+
+
+(* Invalid "SSHSettings": the validation detail (it names the setting and the problem, never a secret) *)
+gitInvalidSettingsError // beginDefinition;
+
+gitInvalidSettingsError[ failure_Failure ] := <|
+    "Code"     -> "InvalidSSHSettings",
+    "Step"     -> None,
+    "ExitCode" -> None,
+    "Detail"   -> Replace[ Quiet @ failure[ "Detail" ], Except[ _String ] -> None ]
+|>;
+
+gitInvalidSettingsError // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gitRemoteStepResult*)
+
+(* The result of a step (as acpGitRun gives it) from the frame of its command. A step whose frame is missing ends the
+   request: the run timed out or its output was too large, ssh's connection was lost (git's error is then ssh's message),
+   or the script stopped before it (which an honest script does only when an earlier step fails). *)
+gitRemoteStepResult // beginDefinition;
+
+gitRemoteStepResult[ state_Association, step_String, args_List ] := With[
+    { frame = Lookup[ Lookup[ state, "RemoteFrames", <| |> ], Lookup[ $gitRemoteFrames, step, None ], None ] },
+    If[ AssociationQ @ frame,
+        <|
+            "ExitCode"    -> Replace[ frame[ "ExitCode" ], Except[ _Integer ] -> None ],
+            "Output"      -> acpGitDecode @ frame[ "Output" ],
+            "Error"       -> acpGitDecode @ frame[ "Error" ],
+            "TimedOut"    -> False,
+            "TooLarge"    -> TrueQ @ frame[ "OutputTruncated" ],
+            "Cancelled"   -> False,
+            "StartFailed" -> False,
+            "Duration"    -> 0,
+            "Arguments"   -> args
+        |>,
+        gitRemoteMissingStep[ state, args ]
+    ]
+];
+
+gitRemoteStepResult // endDefinition;
+
+
+gitRemoteMissingStep // beginDefinition;
+
+gitRemoteMissingStep[ state_Association, args_List ] := With[
+    {
+        base = <|
+            "ExitCode"    -> None,
+            "Output"      -> "",
+            "Error"       -> "",
+            "TimedOut"    -> False,
+            "TooLarge"    -> False,
+            "Cancelled"   -> False,
+            "StartFailed" -> False,
+            "Duration"    -> 0,
+            "Arguments"   -> args
+        |>
+    },
+    Switch[ Lookup[ state, "RemoteStatus", None ],
+        "TimedOut" | "RemoteTimedOut",
+            <| base, "TimedOut" -> True |>,
+        "TooLarge",
+            <| base, "TooLarge" -> True |>,
+        "OK",
+            <|
+                base,
+                "StartFailed" -> True,
+                "Error"       -> acpLabel[ "ReviewDetailRemoteStopped", <| "stop" -> Replace[ Lookup[ state, "RemoteStop", None ], Except[ _String ] -> "end" ] |> ]
+            |>,
+        _,
+            (* ssh's exit code (never 0: the step must not succeed) and its message *)
+            <|
+                base,
+                "ExitCode" -> Replace[ Lookup[ state, "RemoteExitCode", None ], Except[ _Integer? (# =!= 0 &) ] -> None ],
+                "Error"    -> Replace[ Lookup[ Replace[ Lookup[ state, "RemoteError", None ], Except[ _Association ] -> <| |> ], "Output", None ], Except[ _String ] -> "" ]
+            |>
+    ]
+];
+
+gitRemoteMissingStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gitRemoteUntracked*)
+
+(* The untracked files of a remote request (<| path -> info |> for the listed paths, as gitReadUntracked gives them),
+   from the script's records "index kind size lines target path" (NUL-terminated fields, decoded like the status, so
+   the paths are the status's paths) and, for full change sets, the text frames c<index>. At most $acpGitMaxFiles records
+   are used (the script's own cap, enforced again here): records whose index is not in 1..$acpGitMaxFiles or repeats an
+   earlier one are ignored, and so are later records of the same path. A listed path without a record was not found by
+   the script, whose candidates are lines: a name with a line break ("Unreadable"); otherwise "NotRead". *)
+gitRemoteUntracked // beginDefinition;
+
+gitRemoteUntracked[ state_Association, paths_List ] := Module[ { frames, full, records, byPath },
+    frames  = Lookup[ state, "RemoteFrames", <| |> ];
+    full    = Lookup[ state, "Mode", None ] === "Full";
+    records = gitRemoteRecords @ Lookup[ Lookup[ frames, $gitRemoteFrames[ "Untracked" ], <| |> ], "Output", ByteArray[ { } ] ];
+    byPath  = If[ records === { }, <| |>, GroupBy[ records, Last, First ] ];
+    AssociationMap[
+        Function[ path,
+            Replace[
+                Lookup[ byPath, path, None ],
+                {
+                    record_List :> gitRemoteUntrackedInfo[ record, frames, full ],
+                    _ :> untrackedInfo[ None, If[ StringContainsQ[ path, "\n" ], "Unreadable", "NotRead" ], 0 ]
+                }
+            ]
+        ],
+        paths
+    ]
+];
+
+gitRemoteUntracked // endDefinition;
+
+
+(* The records of the untracked frame: lists of 6 strings with a valid, new index. Only the fields of the first
+   $acpGitMaxFiles records are split off, whatever the size of the frame. *)
+gitRemoteRecords // beginDefinition;
+
+gitRemoteRecords[ bytes_ByteArray ] := Module[ { text, ends, fields, seen = <| |> },
+    text = acpGitDecode @ bytes;
+    ends = StringPosition[ text, $gitNUL, 6 * $acpGitMaxFiles ][[ All, 1 ]];
+    If[ Length @ ends < 6, Return[ { }, Module ] ];
+    fields = StringTake[ text, Transpose @ { Prepend[ Most @ ends + 1, 1 ], ends - 1 } ];
+    Select[
+        Partition[ fields, 6 ],
+        Function[ record,
+            With[ { i = gitRemoteNumber @ First @ record },
+                If[ IntegerQ @ i && 1 <= i <= $acpGitMaxFiles && ! KeyExistsQ[ seen, i ], seen[ i ] = True; True, False ]
+            ]
+        ]
+    ]
+];
+
+gitRemoteRecords[ _ ] := { };
+
+gitRemoteRecords // endDefinition;
+
+
+(* A number of the remote output (at most 18 digits), or None *)
+gitRemoteNumber // beginDefinition;
+gitRemoteNumber[ s_String ] /; StringMatchQ[ s, RegularExpression[ "[0-9]{1,18}" ] ] := FromDigits @ s;
+gitRemoteNumber[ _ ] := None;
+gitRemoteNumber // endDefinition;
+
+
+(* What a record says about a file, as gitUntrackedFileInfo: links are one added line (never followed), text files
+   their line count (and in full change sets their text, from the frame c<index>), binary files their size *)
+gitRemoteUntrackedInfo // beginDefinition;
+
+gitRemoteUntrackedInfo[ { index_, kind_, size0_, lines0_, target_, _ }, frames_Association, full_ ] := Module[
+    { size, lines, content },
+    size  = gitRemoteNumber @ size0;
+    lines = gitRemoteNumber @ lines0;
+    Which[
+        kind === "link",
+            <| untrackedInfo[ 1, "SymbolicLink", 0 ], "LinkTarget" -> If[ StringQ @ target && target =!= "", target, None ] |>,
+        KeyExistsQ[ $gitRemoteKinds, kind ],
+            untrackedInfo[ None, $gitRemoteKinds[ kind ], 0 ],
+        kind === "empty",
+            <| untrackedInfo[ 0, "Empty", 0 ], "Content" -> If[ TrueQ @ full, "", None ] |>,
+        kind === "binary" && IntegerQ @ size,
+            <| untrackedInfo[ None, "Binary", size ], "Binary" -> True |>,
+        kind === "text" && IntegerQ @ size && IntegerQ @ lines,
+            content = If[ TrueQ @ full,
+                Replace[ Lookup[ frames, "c" <> index, None ], { frame_Association :> acpGitDecode @ frame[ "Output" ], _ -> None } ],
+                None
+            ];
+            <| untrackedInfo[ lines, None, size ], "Content" -> content |>,
+        True,
+            untrackedInfo[ None, "Unreadable", 0 ]
+    ]
+];
+
+gitRemoteUntrackedInfo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*gitFinish*)
 
 (* Ends a request: builds the change set (status Automatic) or an empty one with the given status and error, and calls
@@ -1767,11 +2460,32 @@ gitChangeSetInput[ state_Association ] := With[ { repository = state[ "Repositor
         "CountsComplete" -> state[ "CountsComplete" ],
         "Patch"          -> state[ "Patch" ],
         "PatchComplete"  -> state[ "PatchComplete" ],
-        "Untracked"      -> state[ "Untracked" ]
+        "Untracked"      -> state[ "Untracked" ],
+        "Remote"         -> gitChangeSetRemote @ state
     |>
 ];
 
 gitChangeSetInput // endDefinition;
+
+
+(* The change set's "Remote": None for a local folder; the host and the remote home folder (from the remote script, if
+   it reported one) for a remote one; "?" for invalid settings *)
+gitChangeSetRemote // beginDefinition;
+
+gitChangeSetRemote[ state_Association ] := Replace[
+    Lookup[ state, "Remote", None ],
+    {
+        ssh_Association :> <|
+            "Host"  -> acpSSHHostLabel @ ssh,
+            "Short" -> acpSSHShortHost @ ssh,
+            "Home"  -> Replace[ Lookup[ state, "RemoteHome", None ], Except[ _String? acpRemoteAbsolutePathQ ] -> None ]
+        |>,
+        _Failure -> <| "Host" -> "?", "Short" -> "?", "Home" -> None |>,
+        _ -> None
+    }
+];
+
+gitChangeSetRemote // endDefinition;
 
 
 (* A change set with every key, for the request's state *)
@@ -1801,7 +2515,8 @@ gitEmptyChangeSet[ state_Association, status_String, error_ ] := With[ { reposit
         "PatchComplete"  -> True,
         "CountsComplete" -> True,
         "CheckedAt"      -> AbsoluteTime[ ],
-        "Duration"       -> Replace[ AbsoluteTime[ ] - Lookup[ state, "StartedAt", AbsoluteTime[ ] ], Except[ _? NumberQ ] -> 0 ]
+        "Duration"       -> Replace[ AbsoluteTime[ ] - Lookup[ state, "StartedAt", AbsoluteTime[ ] ], Except[ _? NumberQ ] -> 0 ],
+        "Remote"         -> gitChangeSetRemote @ state
     |>
 ];
 
@@ -1825,13 +2540,18 @@ gitVersionString // endDefinition;
      "Untracked"      -> <| repoPath -> <| "Added", "Binary", "Content", "Note" |> |> for untracked files that were read
      "Mode"           -> "Full" | "Summary" (default: "Full" if there is a patch)
      "PatchComplete", "CountsComplete" -> True | False
+     "Remote"         -> None | <| "Host", "Short", "Home" |> (a folder on another computer: its paths are POSIX paths)
    Files that are only in the patch (e.g. changed between the status and diff commands) are listed too. *)
 acpGitBuildChangeSet // beginDefinition;
 
 acpGitBuildChangeSet[ input_Association ] := Module[
-    { dir, root, prefix, status, numstat, chunks, untracked, tracked, byChunk, unmatched, extra, count, listed, paths, files, counted, added, deleted },
+    {
+        dir, root, prefix, status, numstat, chunks, untracked, remote, tracked, byChunk, unmatched, extra, count, listed,
+        paths, files, counted, added, deleted
+    },
 
     dir       = Lookup[ input, "Directory", None ];
+    remote    = Replace[ Lookup[ input, "Remote", None ], Except[ _Association ] -> None ];
     root      = Replace[ Lookup[ input, "Root", dir ], Except[ _String ] -> dir ];
     prefix    = Replace[ Lookup[ input, "Prefix", "" ], Except[ _String ] -> "" ];
     status    = gitStatusData @ Lookup[ input, "Status", "" ];
@@ -1858,7 +2578,8 @@ acpGitBuildChangeSet[ input_Association ] := Module[
         If[ #[ "Status" ] === "Untracked", { }, Lookup[ byChunk, #[ "Path" ], { } ] ],
         ListQ @ chunks,
         TrueQ @ Lookup[ input, "PatchComplete", True ],
-        Lookup[ untracked, #[ "Path" ], None ]
+        Lookup[ untracked, #[ "Path" ], None ],
+        AssociationQ @ remote
     ] & /@ listed;
 
     (* Totals: all tracked changes (except submodules) and the untracked files that were counted *)
@@ -1889,7 +2610,8 @@ acpGitBuildChangeSet[ input_Association ] := Module[
         "PatchComplete"  -> TrueQ @ Lookup[ input, "PatchComplete", True ],
         "CountsComplete" -> TrueQ @ Lookup[ input, "CountsComplete", True ],
         "CheckedAt"      -> AbsoluteTime[ ],
-        "Duration"       -> 0
+        "Duration"       -> 0,
+        "Remote"         -> remote
     |>
 ];
 
@@ -1930,6 +2652,12 @@ gitNaturalOrdering[ { } ] := { };
 gitNaturalOrdering[ paths: { __String } ] := Ordering[ gitNaturalSortKey /@ paths ];
 
 gitNaturalOrdering // endDefinition;
+
+
+(* The same order for other lists of names or paths (the remote folder picker) *)
+acpNaturalOrdering // beginDefinition;
+acpNaturalOrdering[ names: { ___String } ] := gitNaturalOrdering @ names;
+acpNaturalOrdering // endDefinition;
 
 
 (* A string of hexadecimal digits whose canonical order is the natural order of paths. Each folder or file name gives
@@ -2064,10 +2792,14 @@ gitChunkEntry // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*gitFileRecord*)
 (* numstat: the file's line counts (from acpGitParseNumstat) or None; untracked: what was read of an untracked file or
-   None *)
+   None; remote: True for a folder on another computer (a POSIX full path, made without FileNameJoin, which would use
+   "\" on Windows) *)
 gitFileRecord // beginDefinition;
 
-gitFileRecord[ entry_Association, prefix_String, root_, numstat_, chunks_List, patchesQ_, patchComplete_, untracked_ ] := Module[
+gitFileRecord[ entry_Association, prefix_String, root_, numstat_, chunks_List, patchesQ_, patchComplete_, untracked_ ] :=
+    gitFileRecord[ entry, prefix, root, numstat, chunks, patchesQ, patchComplete, untracked, False ];
+
+gitFileRecord[ entry_Association, prefix_String, root_, numstat_, chunks_List, patchesQ_, patchComplete_, untracked_, remote_ ] := Module[
     { path, orig, counts, binary, untrackedQ, note },
     path       = entry[ "Path" ];
     orig       = entry[ "OrigPath" ];
@@ -2082,7 +2814,7 @@ gitFileRecord[ entry_Association, prefix_String, root_, numstat_, chunks_List, p
     <|
         "Path"         -> gitProjectPath[ path, prefix ],
         "RepoPath"     -> path,
-        "FullPath"     -> gitFullPath[ root, path ],
+        "FullPath"     -> If[ TrueQ @ remote, gitPosixFullPath[ root, path ], gitFullPath[ root, path ] ],
         "OrigPath"     -> If[ StringQ @ orig, gitProjectPath[ orig, prefix ], None ],
         "OrigRepoPath" -> orig,
         "Status"       -> entry[ "Status" ],
@@ -2097,7 +2829,8 @@ gitFileRecord[ entry_Association, prefix_String, root_, numstat_, chunks_List, p
         "OldMode"      -> FirstCase[ Lookup[ chunks, "OldMode", { } ], _String, None ],
         "NewMode"      -> FirstCase[ Reverse @ Lookup[ chunks, "NewMode", { } ], _String, None ],
         "LinkTarget"   -> If[ untrackedQ && AssociationQ @ untracked, Replace[ Lookup[ untracked, "LinkTarget", None ], Except[ _String ] -> None ], None ],
-        "Note"         -> note
+        "Note"         -> note,
+        "Remote"       -> TrueQ @ remote
     |>
 ];
 
@@ -2168,6 +2901,13 @@ gitFullPath[ root_String, path_String ] := FileNameJoin @ Prepend[ StringSplit[ 
 gitFullPath[ _, _ ] := None;
 gitFullPath // endDefinition;
 
+
+(* The same for a POSIX path on another computer: a string join with "/" *)
+gitPosixFullPath // beginDefinition;
+gitPosixFullPath[ root_String, path_String ] := StringDelete[ root, "/" ~~ EndOfString ] <> "/" <> StringDelete[ path, "/" ~~ EndOfString ];
+gitPosixFullPath[ _, _ ] := None;
+gitPosixFullPath // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Window Summary*)
@@ -2183,8 +2923,14 @@ gitFullPath // endDefinition;
      "StartedAt"  -> when the current (or last) check started
      "InFlight"   -> True while a check runs; "Token" -> its token (results of other checks are dropped)
      "Stale"      -> True if files may have changed since the current or last check started (a check follows)
-     "Paused"     -> True after a check timed out or its output was too large: no periodic checks until the next
-                     trigger (a tool call, the end of a turn, a directory change, an explicit check) *)
+     "Paused"     -> True after a check timed out or its output was too large, or (remote windows) ssh or the remote
+                     script failed: no periodic checks until the next trigger (a tool call, the end of a turn, a
+                     directory change, an explicit check)
+     "Remote"     -> the host key (acpSSHHostKey; "?" for invalid settings) of a remote window, None for a local one:
+                     the same path on another host is another folder
+   The project directory of a remote window is used once it is an absolute path (after the agent's launch resolved a
+   "~/..." folder), and its first check waits until the window is connected, so that it never signs in to a host in
+   parallel with the agent's own first sign-in. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2196,7 +2942,7 @@ acpGitSummary // beginDefinition;
 acpGitSummary[ nbo_NotebookObject ] := acpGitSummary @ acpWindowGet @ nbo;
 
 acpGitSummary[ window_Association ] := Join[
-    gitInitialSummary @ gitWindowDirectory @ window,
+    gitInitialSummary[ gitWindowDirectory @ window, acpWindowHostKey @ window ],
     Replace[ Lookup[ window, "Git", <| |> ], Except[ _Association ] -> <| |> ]
 ];
 
@@ -2207,7 +2953,9 @@ acpGitSummary // endDefinition;
 
 gitInitialSummary // beginDefinition;
 
-gitInitialSummary[ dir_ ] := <|
+gitInitialSummary[ dir_ ] := gitInitialSummary[ dir, None ];
+
+gitInitialSummary[ dir_, remote_ ] := <|
     "Directory" -> dir,
     "Status"    -> "Unknown",
     "FileCount" -> 0,
@@ -2225,7 +2973,8 @@ gitInitialSummary[ dir_ ] := <|
     "InFlight"  -> False,
     "Token"     -> None,
     "Stale"     -> False,
-    "Paused"    -> False
+    "Paused"    -> False,
+    "Remote"    -> remote
 |>;
 
 gitInitialSummary // endDefinition;
@@ -2237,10 +2986,27 @@ gitWindowQ[ _ ] := False;
 gitWindowQ // endDefinition;
 
 
+(* The window's project directory, or None; for a remote window only an absolute path (a "~/..." folder is resolved by
+   the agent's launch; nothing local is ever checked) *)
 gitWindowDirectory // beginDefinition;
-gitWindowDirectory[ window_Association ] := Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String? (StringLength[ # ] > 0 &) ] -> None ];
+
+gitWindowDirectory[ window_Association ] := Replace[
+    Lookup[ window, "ProjectDirectory", None ],
+    {
+        dir_String /; acpRemoteQ @ window :> If[ acpRemoteAbsolutePathQ @ dir, dir, None ],
+        Except[ _String? (StringLength[ # ] > 0 &) ] -> None
+    }
+];
+
 gitWindowDirectory[ _ ] := None;
+
 gitWindowDirectory // endDefinition;
+
+
+(* Whether the agent of a window is connected: the first check of a remote window waits for that (see above) *)
+gitConnectedQ // beginDefinition;
+gitConnectedQ[ window_Association ] := MemberQ[ { "Ready", "Running", "Restoring" }, Lookup[ window, "Status", None ] ];
+gitConnectedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2257,21 +3023,23 @@ acpGitCheck // endDefinition;
 (* Marks the window's summary as being checked (with a new token) and queues the request; the result updates the
    summary (and is passed on to continuation, unless it is None). The request supersedes a running one of the same mode
    for the window (its key is { mode, nbo }); one of the other mode keeps running, but only the result whose token is the
-   summary's updates the summary. *)
+   summary's updates the summary. A remote window's request runs on its host (acpWindowSSH; invalid settings give an
+   "Unavailable" result). *)
 gitStartWindowRequest // beginDefinition;
 
-gitStartWindowRequest[ nbo_NotebookObject, mode_String, continuation_ ] := Module[ { window, dir, token, claimed = False },
+gitStartWindowRequest[ nbo_NotebookObject, mode_String, continuation_ ] := Module[ { window, dir, remote, token, claimed = False },
     window = acpWindowGet @ nbo;
     If[ ! gitWindowQ @ window, Return[ None, Module ] ];
-    dir = gitWindowDirectory @ window;
+    dir    = gitWindowDirectory @ window;
+    remote = acpWindowHostKey @ window;
     If[ dir === None, gitResetSummary @ nbo; Return[ None, Module ] ];
     token = gitNewToken[ ];
     acpWindowUpdate[
         nbo,
         Function[ w,
-            If[ gitWindowQ @ w && gitWindowDirectory @ w === dir,
+            If[ gitWindowQ @ w && gitWindowDirectory @ w === dir && acpWindowHostKey @ w === remote,
                 claimed = True;
-                <| w, "Git" -> gitStartedSummary[ acpGitSummary @ w, dir, token ] |>,
+                <| w, "Git" -> gitStartedSummary[ acpGitSummary @ w, dir, token, remote ] |>,
                 Missing[ "NotFound" ]
             ]
         ]
@@ -2284,7 +3052,8 @@ gitStartWindowRequest[ nbo_NotebookObject, mode_String, continuation_ ] := Modul
             mode,
             nbo,
             Function[ changes, gitApplySummary[ n, changes ]; If[ f =!= None, f @ changes ] ],
-            { mode, nbo }
+            { mode, nbo },
+            acpWindowSSH @ window
         ]
     ];
     token
@@ -2295,9 +3064,12 @@ gitStartWindowRequest // endDefinition;
 
 gitStartedSummary // beginDefinition;
 
-gitStartedSummary[ old_Association, dir_String, token_String ] := With[ { same = old[ "Directory" ] === dir },
+gitStartedSummary[ old_Association, dir_String, token_String ] := gitStartedSummary[ old, dir, token, None ];
+
+gitStartedSummary[ old_Association, dir_String, token_String, remote_ ] := With[
+    { same = old[ "Directory" ] === dir && Lookup[ old, "Remote", None ] === remote },
     <|
-        If[ same, old, gitInitialSummary @ dir ],
+        If[ same, old, gitInitialSummary[ dir, remote ] ],
         "Status"    -> If[ same && old[ "Status" ] =!= "Unknown", old[ "Status" ], "Checking" ],
         "InFlight"  -> True,
         "Token"     -> token,
@@ -2310,15 +3082,20 @@ gitStartedSummary[ old_Association, dir_String, token_String ] := With[ { same =
 gitStartedSummary // endDefinition;
 
 
-(* Results of superseded checks, or for another directory than the window's current one, are dropped. Stale marks that
-   arrived while the check ran are kept (another check follows). *)
+(* Results of superseded checks, or for another directory or host than the window's current one, are dropped. Stale marks
+   that arrived while the check ran are kept (another check follows). *)
 gitApplySummary // beginDefinition;
 
 gitApplySummary[ nbo_NotebookObject, changes_Association ] := acpWindowUpdate[
     nbo,
     Function[ w,
         With[ { git = acpGitSummary @ w },
-            If[ gitWindowQ @ w && git[ "Token" ] === changes[ "Token" ] && gitWindowDirectory @ w === changes[ "Directory" ],
+            If[ And[
+                    gitWindowQ @ w,
+                    git[ "Token" ] === changes[ "Token" ],
+                    gitWindowDirectory @ w === changes[ "Directory" ],
+                    git[ "Remote" ] === acpWindowHostKey @ w
+                ],
                 <| w, "Git" -> gitResultSummary[ git, changes ] |>,
                 Missing[ "Superseded" ]
             ]
@@ -2346,21 +3123,26 @@ gitResultSummary[ git_Association, changes_Association ] := <|
     "CheckedAt" -> changes[ "CheckedAt" ],
     "Duration"  -> changes[ "Duration" ],
     "InFlight"  -> False,
-    "Paused"    -> MatchQ[ changes[ "Error" ], KeyValuePattern[ "Code" -> "TimedOut" | "TooLarge" ] ]
+    (* Paused after checks that took too long, and (remote windows) after ssh or the remote script failed: a wrong key
+       or host does not sign in again every minute, which servers can count as an attack (fail2ban) *)
+    "Paused"    -> MatchQ[ changes[ "Error" ], KeyValuePattern[ "Code" -> "TimedOut" | "TooLarge" | "SSHFailed" | "RemoteFailed" ] ]
 |>;
 
 gitResultSummary // endDefinition;
 
 
-(* A window without a project directory: an "Unknown" summary (only written if it changes) *)
+(* A window without a project directory (or a remote window that is not connected yet): an "Unknown" summary (only
+   written if it changes) *)
 gitResetSummary // beginDefinition;
 
 gitResetSummary[ nbo_NotebookObject ] := acpWindowUpdate[
     nbo,
     Function[ w,
-        If[ gitWindowQ @ w && (! KeyExistsQ[ w, "Git" ] || acpGitSummary[ w ][ "Directory" ] =!= None || TrueQ @ acpGitSummary[ w ][ "InFlight" ]),
-            <| w, "Git" -> gitInitialSummary @ None |>,
-            Missing[ "Unchanged" ]
+        With[ { git = acpGitSummary @ w, remote = acpWindowHostKey @ w },
+            If[ gitWindowQ @ w && (! KeyExistsQ[ w, "Git" ] || git[ "Directory" ] =!= None || TrueQ @ git[ "InFlight" ] || git[ "Remote" ] =!= remote),
+                <| w, "Git" -> gitInitialSummary[ None, remote ] |>,
+                Missing[ "Unchanged" ]
+            ]
         ]
     ]
 ];
@@ -2455,7 +3237,11 @@ gitFileChangingToolQ // endDefinition;
         least $gitMinCheckInterval seconds ago;
      3. the window is idle and the last check finished more than $gitIdleCheckInterval seconds ago (or
         $gitIdleCheckFactor times its duration, if that is longer), unless checks are paused after a timeout.
-   Only one check per window runs at a time; a check that never finished is given up after $gitRequestTimeout seconds. *)
+   Only one check per window runs at a time; a check that never finished is given up after $gitRequestTimeout seconds.
+   Remote windows: the summary is also for another host in 1 (the same path on another host is another folder); the
+   check of 1 waits until the window is connected (the summary is reset meanwhile, so the counts of another folder or
+   host are not shown); 2 and 3 use $gitRemoteMinCheckInterval and $gitRemoteIdleCheckInterval (each check is a new
+   sign-in), and checks are also paused after ssh or the remote script failed (gitResultSummary). *)
 gitHousekeeping // beginDefinition;
 
 gitHousekeeping[ ] := With[ { now = AbsoluteTime[ ] },
@@ -2468,18 +3254,23 @@ gitHousekeeping // endDefinition;
 
 gitWindowHousekeeping // beginDefinition;
 
-gitWindowHousekeeping[ nbo_NotebookObject, window_Association? gitWindowQ, now_ ] := acpIsolated @ Module[ { dir, git },
-    dir = gitWindowDirectory @ window;
-    git = acpGitSummary @ window;
+gitWindowHousekeeping[ nbo_NotebookObject, window_Association? gitWindowQ, now_ ] := acpIsolated @ Module[ { dir, git, remote },
+    dir    = gitWindowDirectory @ window;
+    git    = acpGitSummary @ window;
+    remote = acpWindowHostKey @ window;
     Which[
-        ! KeyExistsQ[ window, "Git" ] || git[ "Directory" ] =!= dir,
-            If[ StringQ @ dir, acpGitCheck @ nbo, gitResetSummary @ nbo ],
+        ! KeyExistsQ[ window, "Git" ] || git[ "Directory" ] =!= dir || git[ "Remote" ] =!= remote,
+            Which[
+                ! StringQ @ dir                       , gitResetSummary @ nbo,
+                remote === None || gitConnectedQ @ window, acpGitCheck @ nbo,
+                True                                  , gitResetSummary @ nbo
+            ],
         ! StringQ @ dir,
             Null,
         TrueQ @ git[ "InFlight" ],
             If[ ! NumberQ @ git[ "StartedAt" ] || now - git[ "StartedAt" ] > $gitRequestTimeout, gitCheckLost[ nbo, git[ "Token" ] ] ],
         TrueQ @ git[ "Stale" ],
-            If[ ! NumberQ @ git[ "StartedAt" ] || now - git[ "StartedAt" ] >= $gitMinCheckInterval, acpGitCheck @ nbo ],
+            If[ ! NumberQ @ git[ "StartedAt" ] || now - git[ "StartedAt" ] >= gitMinCheckInterval @ remote, acpGitCheck @ nbo ],
         gitIdleCheckDueQ[ window, git, now ],
             acpGitCheck @ nbo
     ]
@@ -2496,10 +3287,26 @@ gitIdleCheckDueQ[ window_, git_, now_ ] := And[
     ! StringQ @ Lookup[ window, "CurrentTurn", None ],
     ! TrueQ @ git[ "Paused" ],
     NumberQ @ git[ "CheckedAt" ],
-    now - git[ "CheckedAt" ] >= Max[ $gitIdleCheckInterval, $gitIdleCheckFactor * Replace[ git[ "Duration" ], Except[ _? NumberQ ] -> 0 ] ]
+    now - git[ "CheckedAt" ] >= Max[
+        gitIdleCheckInterval @ acpWindowHostKey @ window,
+        $gitIdleCheckFactor * Replace[ git[ "Duration" ], Except[ _? NumberQ ] -> 0 ]
+    ]
 ];
 
 gitIdleCheckDueQ // endDefinition;
+
+
+(* The intervals of rules 2 and 3 for a window's host key (None: a local window) *)
+gitMinCheckInterval // beginDefinition;
+gitMinCheckInterval[ None ] := $gitMinCheckInterval;
+gitMinCheckInterval[ _ ] := $gitRemoteMinCheckInterval;
+gitMinCheckInterval // endDefinition;
+
+
+gitIdleCheckInterval // beginDefinition;
+gitIdleCheckInterval[ None ] := $gitIdleCheckInterval;
+gitIdleCheckInterval[ _ ] := $gitRemoteIdleCheckInterval;
+gitIdleCheckInterval // endDefinition;
 
 
 gitCheckLost // beginDefinition;

@@ -1464,12 +1464,18 @@ getCloudTextResources[ ] := Enclose[
 
         string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
 
+        (* The resource ends with the "}" before "@|": strings may contain "}" too, e.g. "Arguments" -> {"-i", "path"} *)
         assoc = ConfirmBy[
             First[
                 StringCases[
                     string,
-                    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :>
-                        Association @ ToExpression @ rules,
+                    StringExpression[
+                        "@@resource ChatbookStrings",
+                        WhitespaceCharacter...,
+                        rules: Shortest[ "{" ~~ ___ ~~ "}" ],
+                        WhitespaceCharacter...,
+                        "@|"
+                    ] :> Association @ ToExpression @ rules,
                     1
                 ],
                 $Failed

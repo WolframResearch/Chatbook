@@ -1,0 +1,4 @@
+chatbook-acp-ready
+chatbook-acp:0123456789abcdef:home:/home/ubuntu
+/bin/sh: 1: cd: can't cd to /home/ubuntu/locked
+chatbook-acp:0123456789abcdef:error:folder-access:/home/ubuntu/locked

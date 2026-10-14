@@ -39,6 +39,7 @@ PacletObject[ <|
                 { "DisplayFunctionsDark", "DisplayFunctionsDark.wxf" },
                 { "Snippets"            , "Snippets"                 },
                 { "Icons"               , "Icons.wxf"                },
+                { "RemoteScripts"       , "RemoteScripts"            },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
                 { "Skills"              , "Skills"                   },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },

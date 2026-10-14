@@ -189,6 +189,7 @@ ShowNotebookAssistance // Options = {
 Chatbook::MissingNotebookAssistanceInput = "No code assistance input defined for key `1`.";
 Chatbook::InvalidExtraInstructions       = "Expected a string or None instead of `1` for ExtraInstructions.";
 Chatbook::InvalidACPWindowSettings       = "Invalid value `2` for the agent window setting \"`1`\".";
+Chatbook::InvalidACPSSHSettings          = "Invalid \"SSHSettings\" for the agent window: `1`.";
 
 GeneralUtilities`SetUsage[ ShowNotebookAssistance, "\
 ShowNotebookAssistance[] shows code assistance in a new or existing window.
@@ -568,10 +569,15 @@ $$acpPathSetting = _String? StringQ | File[ _String? StringQ ];
    { program, args... } as in RunProcess *)
 $$acpCommandLineSetting = $$acpPathSetting | { $$acpPathSetting, ___String? StringQ };
 
-validateACPWindowSettings[ settings_Association ] := (
+(* Settings with "SSHSettings" are passed on with its canonical form (acpSSHSettings); with SSH in the same call, the
+   folder and the command line are checked as remote ones *)
+validateACPWindowSettings[ settings_Association ] := Module[ { ssh },
     KeyValueMap[ validateACPWindowSetting, settings ];
-    settings
-);
+    If[ ! KeyExistsQ[ settings, "SSHSettings" ], Return[ settings, Module ] ];
+    ssh = acpSSHSettings @ settings[ "SSHSettings" ];
+    If[ AssociationQ @ ssh, validateRemotePair @ settings ];
+    <| settings, "SSHSettings" -> ssh |>
+];
 
 validateACPWindowSettings[ settings: { (_Rule|_RuleDelayed)... } ] :=
     validateACPWindowSettings @ Association @ settings;
@@ -583,6 +589,8 @@ validateACPWindowSettings // endDefinition;
 
 
 validateACPWindowSetting // beginDefinition;
+validateACPWindowSetting[ "SSHSettings", value_ ] :=
+    Replace[ acpSSHSettings @ value, { f_Failure :> throwFailure[ "InvalidACPSSHSettings", Lookup[ Last @ f, "Detail", "" ] ], _ -> Null } ];
 validateACPWindowSetting[ "ProjectDirectory"   , $$acpPathSetting | None | Automatic   ] := Null;
 validateACPWindowSetting[ "ACPAgent"           , "OpenCode" | Automatic                ] := Null;
 validateACPWindowSetting[ "ACPAgentCommandLine", $$acpCommandLineSetting | Automatic   ] := Null;
@@ -591,6 +599,27 @@ validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentCommandLin
     throwFailure[ "InvalidACPWindowSettings", key, value ];
 validateACPWindowSetting[ _, _ ] := Null;
 validateACPWindowSetting // endDefinition;
+
+
+(* With "SSHSettings" in the same call: the folder is a remote POSIX path (absolute or ~/..., never a C:\ or relative
+   one), and the command line can be sent to the remote machine *)
+validateRemotePair // beginDefinition;
+
+validateRemotePair[ settings_Association ] := (
+    Replace[
+        Lookup[ settings, "ProjectDirectory", None ],
+        d: _String | File[ _String ] /; ! acpRemoteProjectDirectoryQ @ StringTrim @ Replace[ d, File[ s_ ] :> s ] :>
+            throwFailure[ "InvalidACPWindowSettings", "ProjectDirectory", d ]
+    ];
+    Replace[
+        Lookup[ settings, "ACPAgentCommandLine", Automatic ],
+        c: Except[ Automatic ] /; ! acpRemoteCommandLineQ @ c :>
+            throwFailure[ "InvalidACPWindowSettings", "ACPAgentCommandLine", c ]
+    ];
+    Null
+);
+
+validateRemotePair // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
