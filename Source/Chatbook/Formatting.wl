@@ -715,7 +715,7 @@ makeDiscardedMaterialCell0 // beginDefinition;
 
 makeDiscardedMaterialCell0[ _List ] /; $dynamicText := {
     Cell[
-        BoxData @ ToBoxes @ fakeOpenerView[ tr @ "FormattingDiscardedMaterial", True ],
+        BoxData @ ToBoxes @ fakeOpenerView @ tr @ "FormattingDiscardedMaterial",
         "DiscardedMaterial",
         Background -> None
     ],
@@ -2265,10 +2265,7 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
 makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 
 makeToolCallBoxLabel[ as_Association, name_String ] /; $dynamicText :=
-    fakeOpenerView[
-        makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, $fakeOpenerColor ] ],
-        as[ "Result" ] =!= ""
-    ];
+    fakeOpenerView @ makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, $fakeOpenerColor ] ];
 
 makeToolCallBoxLabel[ as0_Association, name_String ] :=
     With[ { as = resolveToolFormatter @ as0 },
