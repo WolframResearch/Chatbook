@@ -31,12 +31,21 @@ VerificationTest[
    temporary repositories (skipped, Missing["TestSkipped"], when git is not found). Test repositories are set up with
    RunProcess and a local identity (-c user.name=...); GIT_CONFIG_GLOBAL points to a test file (which sets the global
    ignore and attributes files, whose defaults ~/.config/git/ignore and attributes git reads otherwise, to an empty file)
-   and GIT_CONFIG_NOSYSTEM is set while the tests run, so the developer's git configuration is never read or changed. *)
+   and GIT_CONFIG_NOSYSTEM is set while the tests run, so the developer's git configuration is never read or changed.
+   The "Remote" tests run remote requests (windows with "SSHSettings") through the fake ssh (Data/ACP/fake-ssh, set up by
+   Data/ACP/FakeSSH.wl), which runs the remote script on this computer, with the same git isolation (FAKE_SSH_KEEP_ENV);
+   they compare remote change sets with local ones of the same folders. They are skipped without git, on Windows and
+   without /bin/sh. The tests pass with or without a front end (CI runs them under UsingFrontEnd): the windows are fake
+   records without a connection, which no sweep closes, and git persists nothing. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Definitions*)
 VerificationTest[
+    (* CI runs every test file in one kernel and one context: helpers that other test files define too are cleared
+       first, so that none of their definitions is used here *)
+    ClearAll[ changed, fileDescriptors, newRemoteWindow, newWindow, nulJoin, processAliveQ, remoteSSH, writeText ];
+
     $acpLogStart = AbsoluteTime[ ]; (* see ACPGit-DebugLog *)
 
     $gitScratch  = CreateDirectory[ ];
@@ -138,7 +147,7 @@ VerificationTest[
     ,
     _,
     SameTest -> MatchQ,
-    TestID   -> "ACPGit-Definitions@@Tests/ACPGit.wlt:39,1-142,2"
+    TestID   -> "ACPGit-Definitions@@Tests/ACPGit.wlt:44,1-151,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -188,14 +197,14 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "FindGit-InjectedEnvironment@@Tests/ACPGit.wlt:147,1-192,2"
+    TestID   -> "FindGit-InjectedEnvironment@@Tests/ACPGit.wlt:156,1-201,2"
 ]
 
 VerificationTest[
     { acpFindGit[ ] === acpFindGit[ ], MatchQ[ acpFindGit[ ], _String | None ] },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FindGit-Memoized@@Tests/ACPGit.wlt:194,1-199,2"
+    TestID   -> "FindGit-Memoized@@Tests/ACPGit.wlt:203,1-208,2"
 ]
 
 VerificationTest[
@@ -218,7 +227,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "WorkTreeRoot@@Tests/ACPGit.wlt:201,1-222,2"
+    TestID   -> "WorkTreeRoot@@Tests/ACPGit.wlt:210,1-231,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -275,7 +284,7 @@ VerificationTest[
         }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ParseStatus-Entries@@Tests/ACPGit.wlt:231,1-279,2"
+    TestID   -> "ParseStatus-Entries@@Tests/ACPGit.wlt:240,1-288,2"
 ]
 
 VerificationTest[
@@ -292,7 +301,7 @@ VerificationTest[
         <| "Branch" -> _Association, "Entries" -> { } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseStatus-Headers@@Tests/ACPGit.wlt:281,1-296,2"
+    TestID   -> "ParseStatus-Headers@@Tests/ACPGit.wlt:290,1-305,2"
 ]
 
 (* The original path of a rename is never an entry, also when it looks like one ("2 ..."), and the entry after it is
@@ -323,7 +332,7 @@ VerificationTest[
         { "new.txt"   , None             , "??", "Untracked" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseStatus-OriginalPaths@@Tests/ACPGit.wlt:301,1-327,2"
+    TestID   -> "ParseStatus-OriginalPaths@@Tests/ACPGit.wlt:310,1-336,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -355,7 +364,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseNumstat@@Tests/ACPGit.wlt:332,1-359,2"
+    TestID   -> "ParseNumstat@@Tests/ACPGit.wlt:341,1-368,2"
 ]
 
 (* A path field after a rename that looks like an entry itself is still a path *)
@@ -366,7 +375,7 @@ VerificationTest[
         <| "Path" -> "x"  , "OrigPath" -> None          , "Added" -> 3, "Deleted" -> 4, "Binary" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseNumstat-RenamePaths@@Tests/ACPGit.wlt:362,1-370,2"
+    TestID   -> "ParseNumstat-RenamePaths@@Tests/ACPGit.wlt:371,1-379,2"
 ]
 
 (* Many renames (e.g. git mv of a large folder) are parsed in linear time: 20,000 take well under a second *)
@@ -378,7 +387,7 @@ VerificationTest[
     ],
     { 20000, { 0, 0, "old/f20000" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ParseNumstat-ManyRenames@@Tests/ACPGit.wlt:373,1-382,2"
+    TestID   -> "ParseNumstat-ManyRenames@@Tests/ACPGit.wlt:382,1-391,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -398,7 +407,7 @@ VerificationTest[
         <| "Root" -> None, "Prefix" -> "", "ObjectFormat" -> "sha1" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseRevParse@@Tests/ACPGit.wlt:387,1-402,2"
+    TestID   -> "ParseRevParse@@Tests/ACPGit.wlt:396,1-411,2"
 ]
 
 VerificationTest[
@@ -415,7 +424,7 @@ VerificationTest[
     },
     { { 2, 53, 0 }, { 2, 39, 5 }, { 2, 45, 1 }, { 3, 0 }, None, True, False, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ParseVersion@@Tests/ACPGit.wlt:404,1-419,2"
+    TestID   -> "ParseVersion@@Tests/ACPGit.wlt:413,1-428,2"
 ]
 
 VerificationTest[
@@ -440,7 +449,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ParseFilterDrivers@@Tests/ACPGit.wlt:421,1-444,2"
+    TestID   -> "ParseFilterDrivers@@Tests/ACPGit.wlt:430,1-453,2"
 ]
 
 VerificationTest[
@@ -454,7 +463,7 @@ VerificationTest[
     },
     { "plain name.txt", "quo\"te.txt", "tab\there\nnewline\\backslash", "\:00fcn\:00ef.txt", "a\\101", "" },
     SameTest -> MatchQ,
-    TestID   -> "UnquotePath@@Tests/ACPGit.wlt:446,1-458,2"
+    TestID   -> "UnquotePath@@Tests/ACPGit.wlt:455,1-467,2"
 ]
 
 VerificationTest[
@@ -466,7 +475,7 @@ VerificationTest[
     },
     { "line 1\nl\:00efne 2\n", "ab\:00ffc", "", "" },
     SameTest -> MatchQ,
-    TestID   -> "Decode@@Tests/ACPGit.wlt:460,1-470,2"
+    TestID   -> "Decode@@Tests/ACPGit.wlt:469,1-479,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -575,7 +584,7 @@ VerificationTest[
         <| "OldPath" -> None           , "NewPath" -> "empty.txt"    , "Binary" -> False, "NewFile" -> True , "DeletedFile" -> False, "Rename" -> False, "Similarity" -> None, "OldMode" -> None    , "NewMode" -> "100644", "Submodule" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitPatch-Paths@@Tests/ACPGit.wlt:475,1-579,2"
+    TestID   -> "SplitPatch-Paths@@Tests/ACPGit.wlt:484,1-588,2"
 ]
 
 VerificationTest[
@@ -598,7 +607,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitPatch-Hunks@@Tests/ACPGit.wlt:581,1-602,2"
+    TestID   -> "SplitPatch-Hunks@@Tests/ACPGit.wlt:590,1-611,2"
 ]
 
 (* Splitting is linear in the size of the patch: one file with 50,000 changed lines, or 20,000 small files *)
@@ -627,7 +636,7 @@ VerificationTest[
     ],
     { 1, 100000, True, 20000, "d/f20000.js", "@@ -1,3 +1,3 @@\n a\n-b\n+c\n d", True },
     SameTest -> MatchQ,
-    TestID   -> "SplitPatch-Cost@@Tests/ACPGit.wlt:605,1-631,2"
+    TestID   -> "SplitPatch-Cost@@Tests/ACPGit.wlt:614,1-640,2"
 ]
 
 (* Paths of "diff --git" lines (used when a chunk has no ---/+++ or rename lines) *)
@@ -641,7 +650,7 @@ VerificationTest[
     },
     { { "x b/y", "x b/y" }, { "plain.txt", "plain.txt" }, { "tab\there", "tab\there" }, { "old", "new\"name" }, { "one", "two" } },
     SameTest -> MatchQ,
-    TestID   -> "SplitPatch-HeaderPaths@@Tests/ACPGit.wlt:634,1-645,2"
+    TestID   -> "SplitPatch-HeaderPaths@@Tests/ACPGit.wlt:643,1-654,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -706,10 +715,11 @@ VerificationTest[
         "Mode"           -> "Full",
         "PatchComplete"  -> True,
         "CountsComplete" -> True,
-        "Duration"       -> 0
+        "Duration"       -> 0,
+        "Remote"         -> None
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-Summary@@Tests/ACPGit.wlt:650,1-713,2"
+    TestID   -> "ChangeSet-Summary@@Tests/ACPGit.wlt:659,1-723,2"
 ]
 
 VerificationTest[
@@ -736,7 +746,7 @@ VerificationTest[
         "zz-unread.txt"  -> { "Untracked"  , "??", None, None, False, False, "NotRead"     }
     |>,
     SameTest -> (KeySort[ #1 ] === KeySort[ #2 ] &),
-    TestID   -> "ChangeSet-Files@@Tests/ACPGit.wlt:715,1-740,2"
+    TestID   -> "ChangeSet-Files@@Tests/ACPGit.wlt:725,1-750,2"
 ]
 
 VerificationTest[
@@ -772,7 +782,7 @@ VerificationTest[
         "@@ -1 +1,2 @@\n x\n+y"
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-Patches@@Tests/ACPGit.wlt:742,1-776,2"
+    TestID   -> "ChangeSet-Patches@@Tests/ACPGit.wlt:752,1-786,2"
 ]
 
 (* Files are listed in natural path order: folder by folder (the files of a folder stay together, also folders whose
@@ -810,7 +820,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-NaturalOrder@@Tests/ACPGit.wlt:781,1-814,2"
+    TestID   -> "ChangeSet-NaturalOrder@@Tests/ACPGit.wlt:791,1-824,2"
 ]
 
 (* Ordering the listed files is cheap: 500 files with long paths take well under a second *)
@@ -821,7 +831,7 @@ VerificationTest[
     ],
     { True, _? (# < 0.5 &) },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-NaturalOrderCost@@Tests/ACPGit.wlt:817,1-825,2"
+    TestID   -> "ChangeSet-NaturalOrderCost@@Tests/ACPGit.wlt:827,1-835,2"
 ]
 
 (* The project directory is a subdirectory of the repository: paths are relative to it *)
@@ -857,7 +867,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-Prefix@@Tests/ACPGit.wlt:828,1-861,2"
+    TestID   -> "ChangeSet-Prefix@@Tests/ACPGit.wlt:838,1-871,2"
 ]
 
 VerificationTest[
@@ -871,7 +881,7 @@ VerificationTest[
     },
     { "a.txt", "../lib/x.txt", "../src2/x", "../y/z", "a", "b/" },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-ProjectPath@@Tests/ACPGit.wlt:863,1-875,2"
+    TestID   -> "ChangeSet-ProjectPath@@Tests/ACPGit.wlt:873,1-885,2"
 ]
 
 VerificationTest[
@@ -882,7 +892,7 @@ VerificationTest[
     ],
     { 16, 13, 3, 7, 4 }, (* notes.md is not listed, so its lines are not counted *)
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-MaxFiles@@Tests/ACPGit.wlt:877,1-886,2"
+    TestID   -> "ChangeSet-MaxFiles@@Tests/ACPGit.wlt:887,1-896,2"
 ]
 
 VerificationTest[
@@ -907,7 +917,7 @@ VerificationTest[
         { "NoDiff", None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-CleanAndIncomplete@@Tests/ACPGit.wlt:888,1-911,2"
+    TestID   -> "ChangeSet-CleanAndIncomplete@@Tests/ACPGit.wlt:898,1-921,2"
 ]
 
 (* After git rm --cached, a path is both a deleted and an untracked file: the untracked one shows its own content, not
@@ -931,7 +941,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-RemovedFromIndex@@Tests/ACPGit.wlt:915,1-935,2"
+    TestID   -> "ChangeSet-RemovedFromIndex@@Tests/ACPGit.wlt:925,1-945,2"
 ]
 
 (* git status (HEAD and index) and git diff -M (HEAD and working tree) can see renames differently: a rename only the
@@ -970,7 +980,7 @@ VerificationTest[
         { 3, 2 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-RenamesDisagree@@Tests/ACPGit.wlt:939,1-974,2"
+    TestID   -> "ChangeSet-RenamesDisagree@@Tests/ACPGit.wlt:949,1-984,2"
 ]
 
 (* Many untracked files (e.g. a generated directory that is not ignored): only the first $acpGitMaxFiles are listed *)
@@ -992,7 +1002,7 @@ VerificationTest[
     ],
     { { 20001, 19501, 1, 0 }, 500, { "b.txt", "gen/f00001.js", "gen/f00499.js" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ChangeSet-ManyUntrackedFiles@@Tests/ACPGit.wlt:977,1-996,2"
+    TestID   -> "ChangeSet-ManyUntrackedFiles@@Tests/ACPGit.wlt:987,1-1006,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1012,7 +1022,7 @@ VerificationTest[
         KeyValuePattern @ { "Directory" -> None, "Status" -> "Unknown" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Summary-Defaults@@Tests/ACPGit.wlt:1001,1-1016,2"
+    TestID   -> "Summary-Defaults@@Tests/ACPGit.wlt:1011,1-1026,2"
 ]
 
 (* Which housekeeping action each window state leads to (the actions are replaced by recorders) *)
@@ -1067,7 +1077,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Summary-HousekeepingDecisions@@Tests/ACPGit.wlt:1019,1-1071,2"
+    TestID   -> "Summary-HousekeepingDecisions@@Tests/ACPGit.wlt:1029,1-1081,2"
 ]
 
 (* Completed tool calls that may have changed files mark the summary stale (reader handler: kernel state only) *)
@@ -1106,7 +1116,7 @@ VerificationTest[
     ],
     { { False, False, False, False, True }, _Missing, { True, False, True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "Summary-ToolCallsMarkStale@@Tests/ACPGit.wlt:1074,1-1110,2"
+    TestID   -> "Summary-ToolCallsMarkStale@@Tests/ACPGit.wlt:1084,1-1120,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1132,7 +1142,7 @@ VerificationTest[
         "Arguments"   -> { "-c", _String }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "Run-OutputAndExitCode@@Tests/ACPGit.wlt:1115,1-1136,2"
+    TestID   -> "Run-OutputAndExitCode@@Tests/ACPGit.wlt:1125,1-1146,2"
 ]
 
 VerificationTest[
@@ -1151,7 +1161,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { None, True, False }, True, { None, False, True }, True, { None, True, "" }, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Run-TimeoutTooLargeStartFailed@@Tests/ACPGit.wlt:1138,1-1155,2"
+    TestID   -> "Run-TimeoutTooLargeStartFailed@@Tests/ACPGit.wlt:1148,1-1165,2"
 ]
 
 (* A fast writer: each poll reads a bounded amount, so the output cap and the timeout hold (a read of everything that is
@@ -1171,7 +1181,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { True, False }, 1048576, True, { False, True }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Run-FastWriterBounded@@Tests/ACPGit.wlt:1159,1-1175,2"
+    TestID   -> "Run-FastWriterBounded@@Tests/ACPGit.wlt:1169,1-1185,2"
 ]
 
 (* A command of a request that was superseded is killed *)
@@ -1192,7 +1202,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { True, None }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Run-Superseded@@Tests/ACPGit.wlt:1178,1-1196,2"
+    TestID   -> "Run-Superseded@@Tests/ACPGit.wlt:1188,1-1206,2"
 ]
 
 (* A command whose owner window is gone is killed *)
@@ -1212,7 +1222,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { True, None }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Run-OwnerGone@@Tests/ACPGit.wlt:1199,1-1216,2"
+    TestID   -> "Run-OwnerGone@@Tests/ACPGit.wlt:1209,1-1226,2"
 ]
 
 (* Finished processes are released (each one would otherwise leak file descriptors) *)
@@ -1228,7 +1238,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Run-NoDescriptorLeak@@Tests/ACPGit.wlt:1219,1-1232,2"
+    TestID   -> "Run-NoDescriptorLeak@@Tests/ACPGit.wlt:1229,1-1242,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1273,7 +1283,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-CleanRepository@@Tests/ACPGit.wlt:1241,1-1277,2"
+    TestID   -> "Git-CleanRepository@@Tests/ACPGit.wlt:1251,1-1287,2"
 ]
 
 VerificationTest[
@@ -1317,7 +1327,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-Changes@@Tests/ACPGit.wlt:1279,1-1321,2"
+    TestID   -> "Git-Changes@@Tests/ACPGit.wlt:1289,1-1331,2"
 ]
 
 VerificationTest[
@@ -1340,7 +1350,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-Changes-Patches@@Tests/ACPGit.wlt:1323,1-1344,2"
+    TestID   -> "Git-Changes-Patches@@Tests/ACPGit.wlt:1333,1-1354,2"
 ]
 
 (* The project directory is a subdirectory: only its changes, with paths relative to it *)
@@ -1356,7 +1366,7 @@ VerificationTest[
         { { "b.txt", "sub/b.txt", "Modified", "@@ -1 +1,2 @@\n b\n+b2" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-Subdirectory@@Tests/ACPGit.wlt:1347,1-1360,2"
+    TestID   -> "Git-Subdirectory@@Tests/ACPGit.wlt:1357,1-1370,2"
 ]
 
 (* No commits yet: the diff is against the empty tree *)
@@ -1377,7 +1387,7 @@ VerificationTest[
         { { "a.txt", "Added", 2, "@@ -0,0 +1,2 @@\n+1\n+2", None }, { "u.txt", "Untracked", 1, None, "u\n" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-UnbornHead@@Tests/ACPGit.wlt:1363,1-1381,2"
+    TestID   -> "Git-UnbornHead@@Tests/ACPGit.wlt:1373,1-1391,2"
 ]
 
 VerificationTest[
@@ -1392,7 +1402,7 @@ VerificationTest[
         <| "Status" -> "NotRepository", "Error" -> None |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-NotRepository@@Tests/ACPGit.wlt:1383,1-1396,2"
+    TestID   -> "Git-NotRepository@@Tests/ACPGit.wlt:1393,1-1406,2"
 ]
 
 VerificationTest[
@@ -1401,7 +1411,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | <| "Status" -> "Unavailable", "Error" -> KeyValuePattern[ "Code" -> "Disabled" ] |>,
     SameTest -> MatchQ,
-    TestID   -> "Git-Disabled@@Tests/ACPGit.wlt:1398,1-1405,2"
+    TestID   -> "Git-Disabled@@Tests/ACPGit.wlt:1408,1-1415,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1439,7 +1449,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 1, True, { "Changes", 1, 1 }, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Git-ReadOnly-IndexUnchanged@@Tests/ACPGit.wlt:1415,1-1443,2"
+    TestID   -> "Git-ReadOnly-IndexUnchanged@@Tests/ACPGit.wlt:1425,1-1453,2"
 ]
 
 (* The control: the same plain git diff does write the index (so the test above is meaningful) *)
@@ -1452,7 +1462,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Git-ReadOnly-Control@@Tests/ACPGit.wlt:1446,1-1456,2"
+    TestID   -> "Git-ReadOnly-Control@@Tests/ACPGit.wlt:1456,1-1466,2"
 ]
 
 (* Filter drivers configured in the repository would run programs when git reads files of the working tree *)
@@ -1491,7 +1501,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-FilterDriversNeutralized@@Tests/ACPGit.wlt:1459,1-1495,2"
+    TestID   -> "Git-FilterDriversNeutralized@@Tests/ACPGit.wlt:1469,1-1505,2"
 ]
 
 (* A filter driver whose name contains "=" can't be turned off with -c (git splits at the first "="): the request fails
@@ -1539,7 +1549,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-FilterDriversUnsafeNames@@Tests/ACPGit.wlt:1499,1-1543,2"
+    TestID   -> "Git-FilterDriversUnsafeNames@@Tests/ACPGit.wlt:1509,1-1553,2"
 ]
 
 (* With a git older than 2.45 (no --no-lazy-fetch), a partial clone would fetch missing objects, running the upload-pack
@@ -1578,7 +1588,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { "Changes", 1, False }, { "Changes", 1 }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Git-PartialCloneNoFetch@@Tests/ACPGit.wlt:1547,1-1582,2"
+    TestID   -> "Git-PartialCloneNoFetch@@Tests/ACPGit.wlt:1557,1-1592,2"
 ]
 
 (* Untracked symbolic links are listed as links (one added line, like git), never read through *)
@@ -1620,7 +1630,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-UntrackedLinks@@Tests/ACPGit.wlt:1585,1-1624,2"
+    TestID   -> "Git-UntrackedLinks@@Tests/ACPGit.wlt:1595,1-1634,2"
 ]
 
 (* Statuses relative to HEAD with the real git: added then deleted (not listed), renamed then deleted (the original is
@@ -1670,7 +1680,7 @@ VerificationTest[
         { None, "k1\nk2\n" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Git-IndexAndWorkingTree@@Tests/ACPGit.wlt:1628,1-1674,2"
+    TestID   -> "Git-IndexAndWorkingTree@@Tests/ACPGit.wlt:1638,1-1684,2"
 ]
 
 (* The private-use characters of the front end's linear syntax in file names and contents are neutralized when git's
@@ -1696,7 +1706,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { "Changes", 2, 1 }, { }, True, { { "Modified", None }, { "Untracked", "Unreadable" } } },
     SameTest -> MatchQ,
-    TestID   -> "Git-LinearSyntaxNeutralized@@Tests/ACPGit.wlt:1678,1-1700,2"
+    TestID   -> "Git-LinearSyntaxNeutralized@@Tests/ACPGit.wlt:1688,1-1710,2"
 ]
 
 (* A project folder that is a symbolic link into a repository's subfolder (git works in the physical folder) *)
@@ -1721,7 +1731,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { "Changes", 1, 1, "sub/" }, { "a.txt" } },
     SameTest -> MatchQ,
-    TestID   -> "Git-LinkedProjectFolder@@Tests/ACPGit.wlt:1703,1-1725,2"
+    TestID   -> "Git-LinkedProjectFolder@@Tests/ACPGit.wlt:1713,1-1735,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1759,7 +1769,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Window-Check@@Tests/ACPGit.wlt:1730,1-1763,2"
+    TestID   -> "Window-Check@@Tests/ACPGit.wlt:1740,1-1773,2"
 ]
 
 (* Stale: housekeeping checks again; the new counts arrive *)
@@ -1776,7 +1786,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, <| "Status" -> "Changes", "FileCount" -> 9, "Added" -> 7, "Stale" -> False |> },
     SameTest -> MatchQ,
-    TestID   -> "Window-StaleCheck@@Tests/ACPGit.wlt:1766,1-1780,2"
+    TestID   -> "Window-StaleCheck@@Tests/ACPGit.wlt:1776,1-1790,2"
 ]
 
 (* A full request for a window updates its summary; a second one supersedes the first *)
@@ -1806,7 +1816,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "Window-FullRequest@@Tests/ACPGit.wlt:1783,1-1810,2"
+    TestID   -> "Window-FullRequest@@Tests/ACPGit.wlt:1793,1-1820,2"
 ]
 
 (* Summary checks and full change sets read the same untracked files, so the toolbar and the review window show the
@@ -1830,7 +1840,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { 3, 3, 3, { None, "NotRead" } },
     SameTest -> MatchQ,
-    TestID   -> "Window-SameCountsBothModes@@Tests/ACPGit.wlt:1814,1-1834,2"
+    TestID   -> "Window-SameCountsBothModes@@Tests/ACPGit.wlt:1824,1-1844,2"
 ]
 
 (* A new project directory: the summary follows it (results for the old one are dropped) *)
@@ -1846,7 +1856,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, KeyValuePattern @ { "Status" -> "Clean", "FileCount" -> 0, "Added" -> 0, "Deleted" -> 0 } },
     SameTest -> MatchQ,
-    TestID   -> "Window-DirectoryChange@@Tests/ACPGit.wlt:1837,1-1850,2"
+    TestID   -> "Window-DirectoryChange@@Tests/ACPGit.wlt:1847,1-1860,2"
 ]
 
 VerificationTest[
@@ -1863,7 +1873,800 @@ VerificationTest[
     ],
     { True, True, <| "Token" -> _String, "Status" -> "NoDirectory", "Directory" -> None, "Files" -> { }, "Error" -> None |>, "Unknown", None },
     SameTest -> MatchQ,
-    TestID   -> "Window-NoDirectory@@Tests/ACPGit.wlt:1852,1-1867,2"
+    TestID   -> "Window-NoDirectory@@Tests/ACPGit.wlt:1862,1-1877,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Remote*)
+
+(* A test of its own, so that the tests after it are read with the helpers' context on $ContextPath *)
+VerificationTest[
+    Get @ FileNameJoin @ { DirectoryName @ $TestFileName, "Data", "ACP", "FakeSSH.wl" };
+    MemberQ[ $ContextPath, "Wolfram`ChatbookTests`ACPFakeSSH`" ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "ACPGit-LoadFakeSSH@@Tests/ACPGit.wlt:1884,1-1890,2"
+]
+
+(* Test repositories as in the design's experiments (setup_repos.sh): every kind of tracked change and untracked file.
+   Test setup only (the paclet never writes to repositories); the unreadable file only where permission bits are
+   enforced (not as root, as in CI). *)
+VerificationTest[
+    $remoteTestsQ = TrueQ @ $gitTestsQ && TrueQ @ $fakeSSHAvailableQ;
+
+    ifRemoteTests // ClearAll;
+    ifRemoteTests // Attributes = { HoldFirst };
+    ifRemoteTests[ eval_ ] := If[ TrueQ @ $remoteTestsQ, eval, Missing[ "TestSkipped" ] ];
+
+    (* The canonical "SSHSettings" of a host of the fake ssh (testhost runs the commands; see Data/ACP/fake-ssh) *)
+    remoteSSH[ host_String: "testhost" ] := Wolfram`Chatbook`Common`acpSSHSettings @ fakeSSHSettings @ host;
+
+    (* A change set of a folder ("Summary" or "Full"), local (remote: None) or remote *)
+    changeSetOf[ dir_String, mode_String, remote_ ] := Module[ { result = None },
+        Wolfram`Chatbook`ACP`Git`Private`gitQueueRequest @ Wolfram`Chatbook`ACP`Git`Private`gitNewRequest[
+            Wolfram`Chatbook`ACP`Git`Private`gitNewToken[ ], dir, mode, None, (result = #) &, None, remote
+        ];
+        waitUntil[ AssociationQ @ result, 120 ];
+        result
+    ];
+
+    (* A change set without what differs by design: the token, the times and the "Remote" keys *)
+    comparable[ changes_Association ] := <|
+        KeyDrop[ changes, { "Token", "CheckedAt", "Duration", "Remote", "Files" } ],
+        "Files" -> AssociationThread[ Lookup[ changes[ "Files" ], "Path", { } ], KeyDrop[ #, "Remote" ] & /@ changes[ "Files" ] ]
+    |>;
+
+    (* The keys and the file paths in which two change sets differ *)
+    differences[ a_Association, b_Association ] := With[ { ca = comparable @ a, cb = comparable @ b },
+        Join[
+            Select[ Union[ Keys @ ca, Keys @ cb ], # =!= "Files" && Lookup[ ca, #, None ] =!= Lookup[ cb, #, None ] & ],
+            Select[ Union[ Keys @ ca[ "Files" ], Keys @ cb[ "Files" ] ], Lookup[ ca[ "Files" ], #, None ] =!= Lookup[ cb[ "Files" ], #, None ] & ]
+        ]
+    ];
+
+    (* The local and the remote change set of a folder, compared *)
+    compareRemote[ dir_String, mode_String ] := Module[ { local, remote },
+        local  = changeSetOf[ dir, mode, None ];
+        remote = changeSetOf[ dir, mode, $remoteSSH ];
+        <|
+            "Status"      -> local[ "Status" ],
+            "Differences" -> differences[ local, remote ],
+            "Remote"      -> remote[ "Remote" ],
+            "FileRemote"  -> { Union @ Lookup[ local[ "Files" ], "Remote", { } ], Union @ Lookup[ remote[ "Files" ], "Remote", { } ] }
+        |>
+    ];
+
+    (* A remote window record (a fake NotebookObject, no front end) with a status *)
+    newRemoteWindow[ dir_, ssh_, status_String ] := With[ { nbo = NotebookObject[ "acp-git-remote-test-" <> ToString[ Length @ $gitWindows + 1 ] ] },
+        AppendTo[ $gitWindows, nbo ];
+        acpWindowUpdate[
+            nbo,
+            Join[ #, Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ nbo, dir, "OpenCode", <| "SSHSettings" -> ssh |> ], <| "Status" -> status |> ] &
+        ];
+        nbo
+    ];
+
+    (* The window's git summary once a check finished *)
+    checkedSummary[ nbo_ ] := (
+        waitUntil[ ! TrueQ @ acpGitSummary[ nbo ][ "InFlight" ] && NumberQ @ acpGitSummary[ nbo ][ "CheckedAt" ], 60 ];
+        acpGitSummary @ nbo
+    );
+
+    (* Calls of the fake ssh to a host *)
+    callsTo[ host_String ] := Count[ fakeSSHCalls[ ], call_List /; MemberQ[ call, host ] ];
+
+    $remoteReposScript = StringRiffle[
+        {
+            "set -e",
+            "root=$1; git=$2; nohooks=$3; noread=$4",
+            "g() { \"$git\" -c user.name=T -c user.email=t@example.com -c init.defaultBranch=main -c commit.gpgsign=false -c core.autocrlf=false -c core.hooksPath=\"$nohooks\" \"$@\"; }",
+            "mkdir -p \"$root\"",
+            (* basic: tracked changes of every kind and the untracked kinds *)
+            "r=$root/basic; mkdir -p \"$r\"; cd \"$r\"; g init -q",
+            "printf 'one\\ntwo\\nthree\\n' > a.txt; printf 'bee\\n' > b.txt; mkdir sub; printf 'c1\\nc2\\n' > sub/c.txt",
+            "printf 'orig\\n' > '? orig.txt'; printf 'mode\\n' > m.sh",
+            "g add -A; g commit -qm init",
+            "printf 'one\\nTWO\\nthree\\nfour\\n' > a.txt",
+            "rm b.txt",
+            "g mv sub/c.txt sub/d.txt",
+            "g mv '? orig.txt' renamed.txt",
+            "chmod +x m.sh",
+            "printf 'no newline at end' > u1.txt",
+            "printf 'bin\\000ary\\n' > u2.bin",
+            "printf 'spaces\\n' > 'name with space.txt'",
+            "printf 'q\\n' > '? q.txt'",
+            "printf 'crlf\\r\\nline2\\r\\n' > crlf.txt",
+            "printf 'dash\\n' > ./-dash.txt",
+            "printf 'eq\\n' > 'a=b.txt'",
+            "printf 'u\\n' > \"$(printf '\\303\\274n\\303\\257.txt')\"",
+            "ln -s a.txt link.txt; ln -s nowhere broken.lnk",
+            "mkfifo fifo.p",
+            ": > empty.txt",
+            "head -c 2100000 /dev/zero | tr '\\000' 'x' > big.txt",
+            "if [ \"$noread\" = 1 ]; then printf 'secret\\n' > noread.txt; chmod 000 noread.txt; fi",
+            "mkdir nested; (cd nested; g init -q; printf 'n\\n' > n.txt)",
+            "mkdir -p deep/er; printf 'deep\\n' > deep/er/f.txt",
+            "printf 'linear \\357\\237\\201 syntax \\357\\243\\200\\n' > ls.txt",
+            (* initial: no commits *)
+            "r=$root/initial; mkdir -p \"$r\"; cd \"$r\"; g init -q",
+            "printf 'staged\\n' > s.txt; g add s.txt; printf 'untracked\\n' > u.txt",
+            (* filter: filter drivers that would run programs *)
+            "r=$root/filter; mkdir -p \"$r\"; cd \"$r\"; g init -q",
+            "printf 'x\\n' > f.txt; g add -A; g commit -qm init",
+            "printf '* filter=evil\\n' > .gitattributes",
+            "g config filter.evil.clean \"touch $root/PWNED; cat\"",
+            "g config filter.evil.required true",
+            "g config 'filter.with space.clean' \"touch $root/PWNED2; cat\"",
+            "printf 'y\\n' >> f.txt",
+            (* subdir: the project folder is a subfolder; a change outside it does not count *)
+            "r=$root/subdir; mkdir -p \"$r/proj/inner\"; cd \"$r\"; g init -q",
+            "printf 'out\\n' > out.txt; printf 'in\\n' > proj/in.txt; g add -A; g commit -qm init",
+            "printf 'OUT\\n' > out.txt; printf 'IN\\n' > proj/in.txt; printf 'new\\n' > proj/inner/new.txt",
+            "g mv proj/in.txt moved-out.txt",
+            (* clean *)
+            "r=$root/clean; mkdir -p \"$r\"; cd \"$r\"; g init -q; printf 'x\\n' > f.txt; g add -A; g commit -qm init",
+            (* newline: an untracked name with a line break *)
+            "r=$root/newline; mkdir -p \"$r\"; cd \"$r\"; g init -q; printf 'x\\n' > f.txt; g add -A; g commit -qm init",
+            "printf 'nl\\n' > \"$(printf 'nl\\nname.txt')\"; printf 'y\\n' > y.txt",
+            (* trojan: programs in the repository that the remote script would run with a relative PATH entry *)
+            "r=$root/trojan; mkdir -p \"$r\"; cd \"$r\"; g init -q; printf 'x\\n' > f.txt; g add -A; g commit -qm init; printf 'y\\n' >> f.txt",
+            "for t in uname tr head; do printf '#!/bin/sh\\necho %s >> \"%s\"\\n' \"$t\" \"$root/TROJAN\" > \"$t\"; chmod 755 \"$t\"; done",
+            (* plain: not a repository *)
+            "mkdir -p \"$root/plain\""
+        },
+        "\n"
+    ];
+
+    If[ TrueQ @ $remoteTestsQ,
+        fakeSSHSetup @ FileNameJoin @ { $gitScratch, "fake" };
+        (* the remote git is isolated like the local one *)
+        SetEnvironment[ "FAKE_SSH_KEEP_ENV" -> "TMPDIR GIT_CONFIG_GLOBAL GIT_CONFIG_NOSYSTEM" ];
+        $remoteSSH   = remoteSSH[ ];
+        $remoteRepos = FileNameJoin @ { $gitScratch, "remote-repos" };
+        $remoteSetup = RunProcess[
+            { "/bin/sh", "-c", $remoteReposScript, "sh", $remoteRepos, $gitExe, $noHooks, If[ TrueQ @ $permissionsEnforcedQ, "1", "0" ] }
+        ];
+        (* PATH of the remote shell for "git not found": the usual tools, but no git *)
+        $noGitPath = FileNameJoin @ { $gitScratch, "nogit-bin" };
+        RunProcess[
+            {
+                "/bin/sh", "-c",
+                "mkdir -p \"$1\" && for t in mktemp sleep rm uname cat head wc tr sed awk find dd od grep tail mv readlink realpath; do p=$(command -v \"$t\") && ln -s \"$p\" \"$1/$t\"; done; true",
+                "sh", $noGitPath
+            }
+        ]
+    ];
+    ifRemoteTests @ { $remoteSetup[ "ExitCode" ], $remoteSetup[ "StandardError" ] },
+    Missing[ "TestSkipped" ] | { 0, _String },
+    SameTest -> MatchQ,
+    TestID   -> "ACPGit-RemoteDefinitions@@Tests/ACPGit.wlt:1895,1-2044,2"
+]
+
+(* Remote change sets are the local ones in both modes: tracked changes of every kind (an original named "? orig.txt"
+   too), no commits yet, a project folder in a subfolder, filter drivers (never run), and the untracked kinds (no final
+   newline, CRLF, binary, empty, too large, unreadable, symbolic and broken links, a FIFO, a nested repository, Unicode,
+   "-" and "=" names, linear syntax in the content). Only the token, the times and the "Remote" keys differ. The
+   documented difference: an untracked name with a line break is not read remotely (the script's candidates are lines),
+   so it is "Unreadable" and its lines are not counted. *)
+VerificationTest[
+    ifRemoteTests @ Module[ { compared, basic, newline },
+        compared = Table[
+            compareRemote[ FileNameJoin @ { $remoteRepos, dir }, mode ],
+            { dir, { "basic", "initial", "filter", "subdir/proj", "clean" } },
+            { mode, { "Summary", "Full" } }
+        ];
+        basic   = changeSetOf[ FileNameJoin @ { $remoteRepos, "basic" }, "Full", $remoteSSH ];
+        newline = With[
+            {
+                local  = changeSetOf[ FileNameJoin @ { $remoteRepos, "newline" }, "Full", None ],
+                remote = changeSetOf[ FileNameJoin @ { $remoteRepos, "newline" }, "Full", $remoteSSH ]
+            },
+            {
+                differences[ local, remote ],
+                filesByPath[ local ][ "nl\nname.txt", "Note" ],
+                filesByPath[ remote ][ "nl\nname.txt", "Note" ],
+                local[ "Added" ] - remote[ "Added" ]
+            }
+        ];
+        {
+            compared[[ All, All, "Status" ]],
+            compared[[ All, All, "Differences" ]],
+            DeleteDuplicates @ Flatten @ compared[[ All, All, "Remote" ]],
+            compared[[ All, All, "FileRemote" ]],
+            (* the untracked files were really read on the "remote" side *)
+            Lookup[ filesByPath @ basic, { "u2.bin", "big.txt", "link.txt", "broken.lnk", "empty.txt", "nested/", "u1.txt", "crlf.txt" } ][[ All, "Note" ]],
+            Lookup[ filesByPath @ basic, { "u1.txt", "crlf.txt", "a.txt" } ][[ All, "Added" ]],
+            StringStartsQ[ filesByPath[ basic ][ "a.txt", "FullPath" ], FileNameJoin @ { $remoteRepos, "basic" } <> "/" ],
+            newline,
+            FileNames[ "PWNED*", $remoteRepos ]
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        ConstantArray[ "Changes", { 4, 2 } ] ~ Append ~ { "Clean", "Clean" },
+        ConstantArray[ { }, { 5, 2 } ],
+        { <| "Host" -> "testhost", "Short" -> "testhost", "Home" -> $fakeSSH[ "Home" ] |> },
+        ConstantArray[ { { False }, { True } }, { 4, 2 } ] ~ Append ~ { { { }, { } }, { { }, { } } },
+        { "Binary", "TooLarge", "SymbolicLink", "SymbolicLink", "Empty", "Directory", None, None },
+        { 1, 2, 2 },
+        True,
+        { { "Added", "nl\nname.txt" }, None, "Unreadable", 1 },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-MatchesLocal@@Tests/ACPGit.wlt:2052,1-2098,2"
+]
+
+(* The same without a NUL-safe awk (as busybox awk or the BSD awk of macOS): the binary check runs od per file *)
+VerificationTest[
+    ifRemoteTests @ Block[ { Wolfram`Chatbook`ACP`Git`Private`$gitRemoteNULSafe = False },
+        {
+            StringContainsQ[ Wolfram`Chatbook`ACP`Git`Private`gitRemoteScript[ "/x", "Full" ], "-v nulsafe=0 " ],
+            Lookup[ compareRemote[ FileNameJoin @ { $remoteRepos, "basic" }, # ], { "Status", "Differences" } ] & /@ { "Summary", "Full" }
+        }
+    ],
+    Missing[ "TestSkipped" ] | { True, { { "Changes", { } }, { "Changes", { } } } },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-PortableAwk@@Tests/ACPGit.wlt:2101,1-2111,2"
+]
+
+(* Summary checks and full change sets of a remote window read the same untracked files (the counts come from the remote
+   script in both modes) *)
+VerificationTest[
+    ifRemoteTests @ Block[ { Wolfram`Chatbook`ACP`Git`Private`$gitUntrackedBudget = 10 },
+        Module[ { repo, window, summary, full, result },
+            repo = newRepository[ "remote-budget" ];
+            writeText[ FileNameJoin @ { repo, "a.txt" }, "a\n" ];
+            gitSetup[ repo, "add", "." ];
+            gitSetup[ repo, "commit", "-q", "-m", "a" ];
+            writeText[ FileNameJoin @ { repo, "u1.txt" }, "1\n2\n3\n" ];
+            writeText[ FileNameJoin @ { repo, "u2.txt" }, "4\n5\n6\n" ];
+            window = newRemoteWindow[ repo, $remoteSSH, "Ready" ];
+            acpGitCheck @ window;
+            summary = checkedSummary @ window;
+            full    = changesOf @ window;
+            result  = {
+                Lookup[ summary, { "Status", "Added", "Remote" } ],
+                full[ "Added" ],
+                acpGitSummary[ window ][ "Added" ],
+                Lookup[ full[ "Files" ], { "Note", "Remote" } ],
+                full[ "Remote", "Host" ]
+            };
+            acpWindowDrop @ window;
+            result
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { { "Changes", 3, "testhost" }, 3, 3, { { None, True }, { "NotRead", True } }, "testhost" },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-SameCountsBothModes@@Tests/ACPGit.wlt:2115,1-2142,2"
+]
+
+(* Remote checks leave the index and the objects untouched (git status and diff would refresh the index of a file whose
+   modification time changed) *)
+VerificationTest[
+    ifRemoteTests @ Module[ { repo, index, before, objects, window, summary, result },
+        repo = newRepository[ "remote-readonly" ];
+        writeText[ FileNameJoin @ { repo, "f.txt" }, "f\n" ];
+        writeText[ FileNameJoin @ { repo, "g.txt" }, "g\n" ];
+        gitSetup[ repo, "add", "." ];
+        gitSetup[ repo, "commit", "-q", "-m", "f" ];
+        Pause[ 1.1 ];
+        SetFileDate @ FileNameJoin @ { repo, "f.txt" };
+        writeText[ FileNameJoin @ { repo, "g.txt" }, "g\nh\n" ];
+        index   = FileNameJoin @ { repo, ".git", "index" };
+        before  = readFileBytes @ index;
+        objects = FileNames[ "*", FileNameJoin @ { repo, ".git", "objects" }, Infinity ];
+        window  = newRemoteWindow[ repo, $remoteSSH, "Ready" ];
+        acpGitCheck @ window;
+        summary = checkedSummary @ window;
+        result  = {
+            Lookup[ summary, { "Status", "Added" } ],
+            readFileBytes @ index === before,
+            Lookup[ changeSetOf[ repo, "Full", $remoteSSH ], { "Status", "FileCount", "Added" } ],
+            readFileBytes @ index === before,
+            FileExistsQ @ FileNameJoin @ { repo, ".git", "index.lock" },
+            FileNames[ "*", FileNameJoin @ { repo, ".git", "objects" }, Infinity ] === objects
+        };
+        acpWindowDrop @ window;
+        result
+    ],
+    Missing[ "TestSkipped" ] | { { "Changes", 1 }, True, { "Changes", 1, 1 }, True, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-ReadOnly-IndexUnchanged@@Tests/ACPGit.wlt:2146,1-2176,2"
+]
+
+(* Filter drivers of the remote repository never run (the same cases as Git-FilterDriversNeutralized) *)
+VerificationTest[
+    ifRemoteTests @ Module[ { repo, marker, command, changes, ranBefore, ranControl },
+        repo   = newRepository[ "remote-filters" ];
+        marker = FileNameJoin @ { $gitScratch, "remote-filter-ran" };
+        writeText[ FileNameJoin @ { repo, "a.txt" }, "a\n" ];
+        writeText[ FileNameJoin @ { repo, ".gitattributes" }, "*.txt filter=probe\n" ];
+        gitSetup[ repo, "add", "." ];
+        gitSetup[ repo, "commit", "-q", "-m", "a" ];
+        command = "sh -c 'echo ran >> \"" <> marker <> "\"; cat'";
+        gitSetup[ repo, "config", "filter.probe.clean", command ];
+        gitSetup[ repo, "config", "filter.probe.process", command ];
+        gitSetup[ repo, "config", "filter.probe.required", "true" ];
+        writeText[ FileNameJoin @ { repo, "a.txt" }, "a\nb\n" ];
+        changes   = { changeSetOf[ repo, "Summary", $remoteSSH ], changeSetOf[ repo, "Full", $remoteSSH ] };
+        ranBefore = FileExistsQ @ marker;
+        (* the control: plain git runs the driver *)
+        RunProcess[ { $gitExe, "diff", "HEAD", "--numstat" }, ProcessDirectory -> repo ];
+        ranControl = FileExistsQ @ marker;
+        {
+            KeyTake[ #, { "Status", "Added", "Deleted" } ] & /@ changes,
+            Lookup[ Last[ changes ][ "Files" ], "Path" ],
+            ranBefore,
+            ranControl
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        { <| "Status" -> "Changes", "Added" -> 1, "Deleted" -> 0 |>, <| "Status" -> "Changes", "Added" -> 1, "Deleted" -> 0 |> },
+        { "a.txt" },
+        False,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-FilterDriversNeutralized@@Tests/ACPGit.wlt:2179,1-2212,2"
+]
+
+(* A driver whose name contains "=" can't be turned off: the remote script stops before any command that reads files
+   (UnsafeConfig); one with an empty name is turned off like any other (as Git-FilterDriversUnsafeNames) *)
+VerificationTest[
+    ifRemoteTests @ Module[ { marker, command, setUp, unsafe, empty },
+        marker  = FileNameJoin @ { $gitScratch, "remote-filter-ran-2" };
+        command = "sh -c 'echo ran >> \"" <> marker <> "\"; cat'";
+        setUp = Function[ { name, driver },
+            With[ { repo = newRepository @ name },
+                writeText[ FileNameJoin @ { repo, "a.txt" }, "a\n" ];
+                gitSetup[ repo, "add", "." ];
+                gitSetup[ repo, "commit", "-q", "-m", "a" ];
+                writeText[ FileNameJoin @ { repo, ".gitattributes" }, "*.txt filter=" <> driver <> "\n" ];
+                writeText[
+                    FileNameJoin @ { repo, ".git", "config" },
+                    ReadString @ FileNameJoin @ { repo, ".git", "config" } <>
+                        "[filter \"" <> driver <> "\"]\n\tclean = \"" <> StringReplace[ command, { "\\" -> "\\\\", "\"" -> "\\\"" } ] <> "\"\n\trequired = true\n"
+                ];
+                writeText[ FileNameJoin @ { repo, "a.txt" }, "a\nb\n" ];
+                repo
+            ]
+        ];
+        unsafe = changeSetOf[ setUp[ "remote-filter-equals", "x=y" ], "Full", $remoteSSH ];
+        empty  = changeSetOf[ setUp[ "remote-filter-empty", "" ], "Full", $remoteSSH ];
+        {
+            Lookup[ unsafe, { "Status", "FileCount" } ],
+            KeyTake[ unsafe[ "Error" ], { "Code", "Detail" } ],
+            Lookup[ empty, { "Status", "Added" } ],
+            FileExistsQ @ marker,
+            (* the control: plain git runs the driver with the empty name *)
+            RunProcess[ { $gitExe, "diff", "HEAD", "--numstat" }, ProcessDirectory -> FileNameJoin @ { $gitScratch, "remote-filter-empty" } ];
+            FileExistsQ @ marker
+        }
+    ],
+    Missing[ "TestSkipped" ] | { { "Error", 0 }, <| "Code" -> "UnsafeConfig", "Detail" -> "filter.x=y" |>, { "Changes", 2 }, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-UnsafeNames@@Tests/ACPGit.wlt:2216,1-2250,2"
+]
+
+(* A folder that is not in a repository; folders that are not absolute paths make no connection *)
+VerificationTest[
+    ifRemoteTests @ Module[ { results, before },
+        results = Lookup[ changeSetOf[ FileNameJoin @ { $remoteRepos, "plain" }, #, $remoteSSH ], { "Status", "Error" } ] & /@ { "Summary", "Full" };
+        before  = Length @ fakeSSHCalls[ ];
+        {
+            results,
+            Lookup[ changeSetOf[ #, "Full", $remoteSSH ], { "Status", "Error" } ] & /@ { "~/proj", "proj", "/a\nb", "" },
+            Length @ fakeSSHCalls[ ] - before
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        { { "NotRepository", None }, { "NotRepository", None } },
+        ConstantArray[ { "NotRepository", None }, 4 ],
+        0
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-NotRepository@@Tests/ACPGit.wlt:2253,1-2270,2"
+]
+
+VerificationTest[
+    ifRemoteTests @ Module[ { before, changes },
+        before  = Length @ fakeSSHCalls[ ];
+        changes = changeSetOf[ FileNameJoin @ { $gitScratch, "remote-missing" }, "Full", $remoteSSH ];
+        { Lookup[ changes, { "Status", "Error" } ], Length @ fakeSSHCalls[ ] - before, changes[ "Remote", "Host" ] }
+    ],
+    Missing[ "TestSkipped" ] | { { "NotRepository", None }, 1, "testhost" },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-MissingFolder@@Tests/ACPGit.wlt:2272,1-2281,2"
+]
+
+(* No git on the remote machine (its PATH and the usual folders, here replaced by the test hook) *)
+VerificationTest[
+    ifRemoteTests @ Block[ { Wolfram`Chatbook`ACP`Git`Private`$gitRemoteSystemDirectories = { } },
+        withFakeSSHEnvironment[
+            <| "FAKE_SSH_PATH" -> $noGitPath |>,
+            With[ { changes = changeSetOf[ FileNameJoin @ { $remoteRepos, "basic" }, "Full", $remoteSSH ] },
+                {
+                    StringContainsQ[ Wolfram`Chatbook`ACP`Git`Private`gitRemoteScript[ "/x", "Full" ], "for cb_p in $PATH ;" ],
+                    Lookup[ changes, { "Status", "Error" } ],
+                    changes[ "Remote", "Host" ],
+                    FileExistsQ @ FileNameJoin @ { $noGitPath, "git" },
+                    FileExistsQ @ FileNameJoin @ { $noGitPath, "mktemp" }
+                }
+            ]
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { True, { "Unavailable", KeyValuePattern[ "Code" -> "NotFound" ] }, "testhost", False, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-GitNotFound@@Tests/ACPGit.wlt:2284,1-2302,2"
+]
+
+(* A failed sign-in: the summary has the ssh error (its kind and the advice with ssh's text, without CR) and periodic
+   checks pause; the host is latched (Remote.wl) *)
+VerificationTest[
+    ifRemoteTests @ Module[ { window, summary, result },
+        acpRemoteClearHostError[ "x.fail-auth.test" ];
+        window  = newRemoteWindow[ FileNameJoin @ { $remoteRepos, "basic" }, remoteSSH[ "x.fail-auth.test" ], "Ready" ];
+        acpGitCheck @ window;
+        summary = checkedSummary @ window;
+        result  = {
+            Lookup[ summary, { "Status", "Paused", "Remote" } ],
+            KeyTake[ summary[ "Error" ], { "Code", "Step", "ExitCode", "SSHCode" } ],
+            summary[ "Error", "Error", "Code" ],
+            StringContainsQ[ summary[ "Error", "Detail" ], "Permission denied" ],
+            StringFreeQ[ summary[ "Error", "Detail" ], "\r" ],
+            Wolfram`Chatbook`ACP`Git`Private`gitIdleCheckDueQ[ acpWindowGet @ window, summary, AbsoluteTime[ ] + 1000 ],
+            acpRemoteHostLatchedQ[ "x.fail-auth.test" ]
+        };
+        acpWindowDrop @ window;
+        result
+    ],
+    Missing[ "TestSkipped" ] | {
+        { "Error", True, "x.fail-auth.test" },
+        <| "Code" -> "SSHFailed", "Step" -> "Connect", "ExitCode" -> 255, "SSHCode" -> "SSHAuthFailed" |>,
+        "SSHAuthFailed",
+        True,
+        True,
+        False,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-SSHFailed@@Tests/ACPGit.wlt:2306,1-2335,2"
+]
+
+(* A host that never answers: the request times out (the connection never got to the script) *)
+VerificationTest[
+    ifRemoteTests @ Block[ { Wolfram`Chatbook`ACP`Git`Private`$gitRemoteTimeout = 2 },
+        Module[ { time, changes },
+            { time, changes } = AbsoluteTiming @ changeSetOf[ FileNameJoin @ { $remoteRepos, "basic" }, "Full", remoteSSH[ "x.hang.test" ] ];
+            { changes[ "Status" ], KeyTake[ changes[ "Error" ], { "Code", "SSHCode" } ], time < 10 }
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { "Error", <| "Code" -> "TimedOut", "SSHCode" -> "SSHConnectTimeout" |>, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-TimedOut@@Tests/ACPGit.wlt:2338,1-2348,2"
+]
+
+(* A newer request of the same requester supersedes a running one at once (its ssh, still signing in, is left to end by
+   itself: see acpProcessRun's "CancelBeforeReady") *)
+VerificationTest[
+    ifRemoteTests @ withFakeSSHEnvironment[
+        <| "FAKE_SSH_DELAY" -> "2" |>,
+        Module[ { dir, first = None, second = None, t1, t2, superseded },
+            dir = FileNameJoin @ { $remoteRepos, "basic" };
+            t1  = acpGitChanges[ dir, (first = <| #, "At" -> AbsoluteTime[ ] |>) &, "acp-git-remote-key", remoteSSH[ "x.slow.test" ] ];
+            Pause[ 0.6 ];
+            superseded = AbsoluteTime[ ];
+            t2  = acpGitChanges[ dir, (second = #) &, "acp-git-remote-key", remoteSSH[ "x.slow.test" ] ];
+            {
+                waitUntil[ AssociationQ @ first && AssociationQ @ second, 60 ],
+                { first[ "Token" ] === t1, second[ "Token" ] === t2 },
+                { first[ "Status" ], first[ "Error", "Code" ] },
+                first[ "At" ] - superseded < 1.5,
+                Lookup[ second, { "Status", "Mode" } ],
+                waitUntil[ Wolfram`Chatbook`ACP`Git`Private`$gitRuns === <| |>, 30 ]
+            }
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { True, { True, True }, { "Error", "Superseded" }, True, { "Changes", "Full" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-Superseded@@Tests/ACPGit.wlt:2352,1-2374,2"
+]
+
+(* The prelude keeps only absolute PATH entries: with an empty entry (the folder the script is in) the repository's own
+   uname, tr and head would run *)
+VerificationTest[
+    ifRemoteTests @ Module[ { repo, trojan, result },
+        repo   = FileNameJoin @ { $remoteRepos, "trojan" };
+        trojan = FileNameJoin @ { $remoteRepos, "TROJAN" };
+        result = withFakeSSHEnvironment[
+            <| "FAKE_SSH_PATH" -> ":/usr/bin:/bin" |>,
+            Lookup[ compareRemote[ repo, # ], { "Status", "Differences" } ] & /@ { "Summary", "Full" }
+        ];
+        {
+            result,
+            FileExistsQ @ trojan,
+            (* the control: a shell with that PATH runs them *)
+            RunProcess[ { "/bin/sh", "-c", "cd \"$1\" && PATH=:/usr/bin:/bin && uname", "sh", repo } ];
+            FileExistsQ @ trojan
+        }
+    ],
+    Missing[ "TestSkipped" ] | { { { "Changes", { } }, { "Changes", { } } }, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-PathSanitized@@Tests/ACPGit.wlt:2378,1-2397,2"
+]
+
+(* The untracked records of the remote script are bounded on this side too: at most $acpGitMaxFiles records are split
+   off and used, whatever the frame holds; records with an index out of range or repeated, and numbers that are not
+   digits, are not used *)
+VerificationTest[
+    Module[ { record, paths, frame, state, untracked, notes, time },
+        record[ i_, kind_, size_, lines_, path_ ] := StringRiffle[ { i, kind, size, lines, "", path }, "\000" ] <> "\000";
+        paths = Table[ "f" <> IntegerString[ k, 10, 3 ] <> ".txt", { k, 600 } ];
+        frame = StringJoin @ Table[
+            Which[
+                k === 2, record[ "1", "text", "2", "1", paths[[ k ]] ],    (* a repeated index *)
+                k === 3, record[ "9999", "text", "2", "1", paths[[ k ]] ], (* out of range *)
+                k === 4, record[ "4", "text", "1e9", "1", paths[[ k ]] ],  (* not digits *)
+                k === 5, record[ "5", "text", "2", "-5", paths[[ k ]] ],
+                True   , record[ ToString @ k, "text", "2", "1", paths[[ k ]] ]
+            ],
+            { k, 600 }
+        ];
+        state     = <| "Mode" -> "Summary", "RemoteFrames" -> <| "untracked" -> <| "Output" -> StringToByteArray[ frame, "UTF-8" ] |> |> |>;
+        untracked = Wolfram`Chatbook`ACP`Git`Private`gitRemoteUntracked[ state, paths ];
+        notes     = Lookup[ Values @ untracked, "Note" ];
+        time      = First @ AbsoluteTiming[
+            Wolfram`Chatbook`ACP`Git`Private`gitRemoteUntracked[
+                <| state, "RemoteFrames" -> <| "untracked" -> <| "Output" -> ByteArray @ ConstantArray[ 0, 2^24 ] |> |> |>,
+                paths
+            ]
+        ];
+        {
+            Length @ untracked,
+            Lookup[ Counts @ notes, { None, "NotRead", "Unreadable" }, 0 ],
+            Lookup[ Values @ untracked[[ { 1, 2, 3, 4, 5, 6, 500, 501, 600 } ]], "Note" ],
+            Lookup[ untracked[ "f006.txt" ], { "Added", "Bytes" } ],
+            time < 2
+        }
+    ],
+    { 600, { 496, 102, 2 }, { None, "NotRead", "NotRead", "Unreadable", "Unreadable", None, None, "NotRead", "NotRead" }, { 1, 2 }, True },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-UntrackedRecordCap@@Tests/ACPGit.wlt:2402,1-2436,2"
+]
+
+(* The remote home folder in a run's "home" frame is kept only if it is an absolute path without control characters;
+   a rejected one is logged with its key only, never its value (the next step is replaced by a recorder) *)
+VerificationTest[
+    Module[ { t0 = AbsoluteTime[ ], state, result, home, values, log },
+        state = <| "Mode" -> "Summary", "Directory" -> "/srv/repo" |>;
+        result[ value_String ] := <|
+            "Status"   -> "OK",
+            "Stop"     -> None,
+            "ExitCode" -> 0,
+            "Error"    -> None,
+            "Frames"   -> <|
+                "git"  -> <| "Output" -> StringToByteArray[ "/usr/bin/git", "UTF-8" ] |>,
+                "home" -> <| "Output" -> StringToByteArray[ value, "UTF-8" ] |>
+            |>
+        |>;
+        home[ value_String ] := Block[ { Wolfram`Chatbook`ACP`Git`Private`gitStepVersion = Identity },
+            Lookup[ Wolfram`Chatbook`ACP`Git`Private`gitRemoteResult[ state, result @ value ], { "RemoteHome", "RemoteStatus" } ]
+        ];
+        values = home /@ { "/home/evil\ninjected", "relative", "/home/ok" };
+        log    = Select[ Internal`BagPart[ $acpDebugLog, All ], #[ "Time" ] >= t0 & ];
+        {
+            values,
+            Lookup[ Select[ log, #[ "Where" ] === "RemoteValueRejected" & ], "Data" ],
+            FreeQ[ log, s_String /; StringContainsQ[ s, "evil" | "injected" | "relative" ] ]
+        }
+    ],
+    {
+        { { None, "OK" }, { None, "OK" }, { "/home/ok", "OK" } },
+        { <| "Key" -> "Home" |>, <| "Key" -> "Home" |> },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Git-Remote-HomeFrameChecked@@Tests/ACPGit.wlt:2440,1-2471,2"
+]
+
+(* Housekeeping of remote windows (the actions are replaced by recorders): the summary is also for another host; the
+   first check waits until the window is connected and the folder is an absolute path; the intervals are 5 s (stale) and
+   60 s (idle); checks pause after ssh failures *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-git-remote-housekeeping" ], hk, ssh, base, git, apply },
+        hk[ window_, now_ ] := Module[ { calls = { } },
+            Block[
+                {
+                    acpGitCheck = (AppendTo[ calls, "Check" ]; "token") &,
+                    Wolfram`Chatbook`ACP`Git`Private`gitResetSummary = (AppendTo[ calls, "Reset" ]; Null) &,
+                    Wolfram`Chatbook`ACP`Git`Private`gitCheckLost = (AppendTo[ calls, "Lost" ]; Null) &
+                },
+                Wolfram`Chatbook`ACP`Git`Private`gitWindowHousekeeping[ nbo, window, now ]
+            ];
+            calls
+        ];
+        ssh  = <| "MachineName" -> "devbox", "Username" -> Automatic, "Arguments" -> { }, "Executable" -> Automatic |>;
+        base = <| "Status" -> "Ready", "ProjectDirectory" -> "/p", "CurrentTurn" -> None, "Settings" -> <| "SSHSettings" -> ssh |> |>;
+        git  = <|
+            "Directory" -> "/p", "Remote" -> "devbox", "Status" -> "Clean", "CheckedAt" -> 980.0, "Duration" -> 0.1, "StartedAt" -> 979.9,
+            "InFlight" -> False, "Stale" -> False, "Paused" -> False, "Token" -> "t"
+        |>;
+        (* gitApplySummary drops the result of a check for another host (a record that housekeeping leaves alone: not
+           connected, a check in flight that just started) *)
+        apply[ remote_ ] := (
+            acpWindowUpdate[
+                nbo,
+                <|
+                    base,
+                    "Notebook" -> nbo,
+                    "Status"   -> "Disconnected",
+                    "Git"      -> <| git, "Remote" -> remote, "InFlight" -> True, "StartedAt" -> AbsoluteTime[ ] |>
+                |> &
+            ];
+            AssociationQ @ Wolfram`Chatbook`ACP`Git`Private`gitApplySummary[
+                nbo,
+                <| acpGitBuildChangeSet @ <| "Directory" -> "/p", "Status" -> "" |>, "Token" -> "t" |>
+            ]
+        );
+        {
+            hk[ base, 1000.0 ],                                                                     (* connected, no summary *)
+            hk[ <| base, "Status" -> "Connecting" |>, 1000.0 ],                                     (* waits *)
+            hk[ <| base, "Status" -> "Restoring" |>, 1000.0 ],
+            hk[ <| base, "Git" -> <| git, "Remote" -> "otherhost" |> |>, 1000.0 ],                  (* another host *)
+            hk[ <| base, "Git" -> <| git, "Remote" -> None |> |>, 1000.0 ],                         (* this computer *)
+            hk[ <| base, "Status" -> "Disconnected", "Git" -> <| git, "Remote" -> "otherhost" |> |>, 1000.0 ],
+            hk[ <| base, "ProjectDirectory" -> "~/p" |>, 1000.0 ],                                  (* not resolved yet *)
+            hk[ <| base, "Git" -> <| git, "Stale" -> True, "StartedAt" -> 997.0 |> |>, 1000.0 ],    (* debounced: 5 s *)
+            hk[ <| base, "Git" -> <| git, "Stale" -> True, "StartedAt" -> 994.0 |> |>, 1000.0 ],
+            hk[ <| base, "Git" -> git |>, 1000.0 ],                                                 (* idle for 20 s *)
+            hk[ <| base, "Git" -> git |>, 1041.0 ],                                                 (* idle for 61 s *)
+            hk[ <| base, "Git" -> <| git, "Paused" -> True |> |>, 1100.0 ],                         (* paused *)
+            hk[ <| base, "Status" -> "Disconnected", "Git" -> git |>, 1041.0 ],                     (* later checks don't wait *)
+            Lookup[ acpGitSummary @ base, { "Directory", "Remote" } ],
+            Lookup[ acpGitSummary @ <| base, "ProjectDirectory" -> "~/p" |>, { "Directory", "Remote" } ],
+            Wolfram`Chatbook`ACP`Git`Private`gitResultSummary[ git, <| git, "Error" -> <| "Code" -> # |> |> ][ "Paused" ] & /@ {
+                "SSHFailed", "RemoteFailed", "TimedOut", "GitFailed"
+            },
+            apply[ "otherhost" ],
+            apply[ "devbox" ],
+            acpWindowDrop @ nbo
+        }
+    ],
+    {
+        { "Check" },
+        { "Reset" },
+        { "Check" },
+        { "Check" },
+        { "Check" },
+        { "Reset" },
+        { "Reset" },
+        { },
+        { "Check" },
+        { },
+        { "Check" },
+        { },
+        { "Check" },
+        { "/p", "devbox" },
+        { None, "devbox" },
+        { True, True, True, False },
+        False,
+        True,
+        Null
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Summary-RemoteHousekeepingDecisions@@Tests/ACPGit.wlt:2476,1-2559,2"
+]
+
+(* The first check of a remote window waits until the window is connected (no sign-in in parallel with the agent's
+   launch), then runs in the absolute folder the launch resolved *)
+VerificationTest[
+    ifRemoteTests @ Module[ { proj, before, window, waited, summary, result },
+        proj = FileNameJoin @ { $fakeSSH[ "Home" ], "proj" };
+        CreateDirectory @ proj;
+        gitSetup[ proj, "init", "-q" ];
+        writeText[ FileNameJoin @ { proj, "a.txt" }, "a\n" ];
+        gitSetup[ proj, "add", "." ];
+        gitSetup[ proj, "commit", "-q", "-m", "a" ];
+        before = Length @ fakeSSHCalls[ ];
+        window = newRemoteWindow[ "~/proj", $remoteSSH, "Connecting" ];
+        Pause[ 1.5 ]; (* housekeeping runs: the pump runs while the window connects *)
+        waited = { Length @ fakeSSHCalls[ ] - before, KeyTake[ acpGitSummary @ window, { "Directory", "Status", "InFlight", "Remote" } ] };
+        (* connected: the launch resolved ~/proj *)
+        acpWindowUpdate[ window, <| #, "Status" -> "Ready", "ProjectDirectory" -> proj |> & ];
+        waitUntil[ acpGitSummary[ window ][ "Directory" ] === proj && NumberQ @ acpGitSummary[ window ][ "CheckedAt" ] && ! acpGitSummary[ window ][ "InFlight" ], 60 ];
+        summary = acpGitSummary @ window;
+        result  = { waited, Lookup[ summary, { "Directory", "Status", "Remote" } ], Length @ fakeSSHCalls[ ] - before };
+        acpWindowDrop @ window;
+        result
+    ],
+    Missing[ "TestSkipped" ] | {
+        { 0, <| "Directory" -> None, "Status" -> "Unknown", "InFlight" -> False, "Remote" -> "testhost" |> },
+        { FileNameJoin @ { $fakeSSH[ "Home" ], "proj" }, "Clean", "testhost" },
+        1
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Summary-RemoteWaitsForConnection@@Tests/ACPGit.wlt:2563,1-2590,2"
+]
+
+(* The same path on another host is another folder: a new check *)
+VerificationTest[
+    ifRemoteTests @ Module[ { dir, window, first, before, result },
+        dir    = FileNameJoin @ { $remoteRepos, "basic" };
+        window = newRemoteWindow[ dir, $remoteSSH, "Ready" ];
+        acpGitCheck @ window;
+        first  = checkedSummary @ window;
+        before = callsTo[ "otherhost" ];
+        acpWindowUpdate[ window, <| #, "Settings" -> <| #[ "Settings" ], "SSHSettings" -> remoteSSH[ "otherhost" ] |> |> & ];
+        acpGitMarkStale @ window; (* starts the pump; housekeeping notices the other host *)
+        result = {
+            Lookup[ first, { "Status", "Remote", "Directory" } ],
+            waitUntil[
+                acpGitSummary[ window ][ "Remote" ] === "otherhost" && NumberQ @ acpGitSummary[ window ][ "CheckedAt" ] && ! acpGitSummary[ window ][ "InFlight" ],
+                60
+            ],
+            Lookup[ acpGitSummary @ window, { "Status", "Remote", "Directory" } ],
+            callsTo[ "otherhost" ] - before
+        };
+        acpWindowDrop @ window;
+        result
+    ],
+    Missing[ "TestSkipped" ] | {
+        { "Changes", "testhost", FileNameJoin @ { $remoteRepos, "basic" } },
+        True,
+        { "Changes", "otherhost", FileNameJoin @ { $remoteRepos, "basic" } },
+        1
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Window-Remote-Check@@Tests/ACPGit.wlt:2593,1-2622,2"
+]
+
+(* After a failed sign-in the host is latched: another window's summary check makes no connection (it gets the latched
+   error and pauses); the Review window's full change set (a user action) connects, which clears the latch, so a host
+   that answers again is checked again *)
+VerificationTest[
+    ifRemoteTests @ Module[ { dir, a, b, c, callsA, full = None, fullC = None, results },
+        dir = FileNameJoin @ { $remoteRepos, "basic" };
+        acpRemoteClearHostError[ "x.fail-auth.test" ];
+        a = newRemoteWindow[ dir, remoteSSH[ "x.fail-auth.test" ], "Ready" ];
+        acpGitCheck @ a;
+        checkedSummary @ a;
+        callsA = callsTo[ "x.fail-auth.test" ];
+        b = newRemoteWindow[ dir, remoteSSH[ "x.fail-auth.test" ], "Ready" ];
+        acpGitCheck @ b;
+        results = {
+            acpRemoteHostLatchedQ[ "x.fail-auth.test" ],
+            KeyTake[ checkedSummary[ b ][ "Error" ], { "Code", "SSHCode" } ],
+            checkedSummary[ b ][ "Paused" ],
+            callsTo[ "x.fail-auth.test" ] - callsA
+        };
+        acpGitChanges[ b, (full = #) & ];
+        waitUntil[ AssociationQ @ full, 60 ];
+        AppendTo[ results, { full[ "Error", "SSHCode" ], callsTo[ "x.fail-auth.test" ] - callsA } ];
+        (* a latched host that answers again *)
+        acpRemoteNoteHostError[ "testhost", acpErrorInfo[ "SSHAuthFailed", None, None, <| "Host" -> "testhost" |> ] ];
+        c = newRemoteWindow[ dir, $remoteSSH, "Ready" ];
+        acpGitCheck @ c;
+        AppendTo[ results, { checkedSummary[ c ][ "Error", "SSHCode" ], acpRemoteHostLatchedQ[ "testhost" ] } ];
+        acpGitChanges[ c, (fullC = #) & ];
+        waitUntil[ AssociationQ @ fullC, 60 ];
+        AppendTo[ results, { fullC[ "Status" ], acpRemoteHostLatchedQ[ "testhost" ], acpGitSummary[ c ][ "Status" ] } ];
+        Scan[ acpWindowDrop, { a, b, c } ];
+        acpRemoteClearHostError /@ { "x.fail-auth.test", "testhost" };
+        KeyDropFrom[ $acpRemoteHostAuthFailedAt, { "x.fail-auth.test", "testhost" } ];
+        results
+    ],
+    Missing[ "TestSkipped" ] | {
+        True,
+        <| "Code" -> "SSHFailed", "SSHCode" -> "SSHAuthFailed" |>,
+        True,
+        0,
+        { "SSHAuthFailed", 1 },
+        { "SSHAuthFailed", True },
+        { "Changes", False, "Changes" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Summary-RemoteLatched@@Tests/ACPGit.wlt:2627,1-2670,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1877,7 +2680,7 @@ VerificationTest[
     },
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPGit-NoLeftoverRuns@@Tests/ACPGit.wlt:1872,1-1881,2"
+    TestID   -> "ACPGit-NoLeftoverRuns@@Tests/ACPGit.wlt:2675,1-2684,2"
 ]
 
 (* Isolated code swallows messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -1888,10 +2691,16 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPGit-DebugLog@@Tests/ACPGit.wlt:1884,1-1892,2"
+    TestID   -> "ACPGit-DebugLog@@Tests/ACPGit.wlt:2687,1-2695,2"
 ]
 
 VerificationTest[
+    If[ TrueQ @ $remoteTestsQ,
+        (* the unreadable test file; the fake ssh's environment variables *)
+        RunProcess[ { "chmod", "-R", "u+rwX", $remoteRepos } ];
+        fakeSSHCleanup[ ]
+    ];
+    acpRemoteClearHostError /@ { "testhost", "otherhost", "x.fail-auth.test", "x.hang.test", "x.slow.test" };
     Quiet @ DeleteDirectory[ $gitScratch, DeleteContents -> True ];
     SetEnvironment @ Normal @ Replace[ $savedGitEnvironment, Except[ _String ] -> None, { 1 } ];
     {
@@ -1900,7 +2709,7 @@ VerificationTest[
     },
     { False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPGit-Cleanup@@Tests/ACPGit.wlt:1894,1-1904,2"
+    TestID   -> "ACPGit-Cleanup@@Tests/ACPGit.wlt:2697,1-2713,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

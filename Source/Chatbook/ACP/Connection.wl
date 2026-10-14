@@ -41,11 +41,22 @@ $acpMaxDetailLength    = 1500;
 $acpStderrLines        = 12;
 $acpClientName         = "wolfram-chatbook";
 $acpClientTitle        = "Wolfram Chatbook";
+(* how long a connection whose "initialize" could not be written waits for the agent's exit event (exit code and
+   standard error) before it fails with "InitFailed" *)
+$acpInitSendGrace      = Quantity[ 2, "Seconds" ];
+(* seconds between two runs of housekeeping (normally about 1 s apart) after which the kernel counts as having been
+   blocked meanwhile: that run decides no timeouts, unless the run before it decided none either (see
+   connectionHousekeeping) *)
+$acpStallThreshold     = 1.5;
 
 $$setupRequestKind = "Initialize" | "SessionNew" | "SessionResume" | "Config";
 
 (* Set to True to treat every window that has a record as open (tests without a front end use fake NotebookObjects). *)
 If[ ! BooleanQ @ $acpAssumeWindowsOpen, $acpAssumeWindowsOpen = False ];
+
+(* Test hook: None, or a function evaluated right before "initialize" is written (tests use Pause[0.5] & to let an agent
+   that exits at once exit before the write) *)
+$acpBeforeInitializeHook = None;
 
 (* Connections started by this file (connection -> NotebookObject) and connections that are being closed
    (connection -> AbsoluteTime). Not reset on reload so that open connections are not orphaned. *)
@@ -70,7 +81,7 @@ acpEnsureConnected[ nbo_NotebookObject ] := Catch @ Module[ { window, validQ, to
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
     If[ connectingOrConnectedQ @ window || Lookup[ window, "Status" ] === "Error", Throw @ Lookup[ window, "Status" ] ];
 
-    validQ = validProjectDirectoryQ @ Lookup[ window, "ProjectDirectory", None ];
+    validQ = validProjectDirectoryQ[ Lookup[ window, "ProjectDirectory", None ], window ];
     token  = createUUID[ ];
 
     windowUpdate[
@@ -107,22 +118,38 @@ acpEnsureConnected // endDefinition;
 
 (* Runs in a scheduled task (acpSchedule). Starts the agent (OpenACPConnection, ~0.6 s) with ACPLink's permanent
    reader and sends "initialize"; the rest of the setup is done by the response continuations:
-   initialize -> session/resume (if possible) or session/new -> config options (model, effort, mode) -> "Ready". *)
+   initialize -> session/resume (if possible) or session/new -> config options (model, effort, mode) -> "Ready".
+   A remote window (acpRemoteQ) starts ssh instead (Agents.wl's remoteAgentSpec): its folder is never checked or expanded
+   on this computer, not even ~ (the launch script enters it, and the initialize continuation learns the absolute path
+   from its markers), ACPLink holds back the launch script and "initialize" until the remote shell asks for them, and
+   the folder is persisted (per host) only once the launch has entered it.
+   Keys of remote windows' records set here and in remoteLaunched: "LaunchNonce" (per launch), "Remote" (the spec's:
+   host, host key, canonical settings, the agent's command line there, install URL; no secrets), "RemoteHome",
+   "RemoteAgentPath", "RemoteVerified" (the launch reached the host), "LaunchMarkers" (the launch's marker lines); every
+   window: "InitSendFailedAt" (the "initialize" write failed, see initSendFailed), "LaunchProgress" (see
+   observeLaunchProgress). *)
 acpConnect // beginDefinition;
 
 acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
-    { window, dir, load, agent, settings, spec, prefs, conn, claimed = False },
+    { window, remote, dir, load, agent, settings, spec, nonce, prefs, before, conn, claimed = False },
 
     window = acpWindowGet @ nbo;
     If[ ! currentTokenQ[ window, token ], Throw @ Null ];
+    (* Another run for the same attempt (checkStuckConnect scheduled one while the first was still queued): the window
+       already holds the connection that the first run opened, and a second agent would only be closed again *)
+    If[ acpConnectionQ @ Lookup[ window, "Connection", None ], acpLog[ "ConnectSkipped", <| |> ]; Throw @ Null ];
     If[ ! acpWindowAliveQ @ nbo, abandonConnectAttempt[ nbo, token ]; Throw @ Null ];
 
     (* Free the memory of connections that are still being closed before another agent is started: *)
     closePendingConnections[ ];
 
-    dir = Lookup[ window, "ProjectDirectory", None ];
-    If[ ! validProjectDirectoryQ @ dir, failConnectAttempt[ nbo, token, None ]; Throw @ Null ];
-    dir = Quiet @ ExpandFileName @ dir;
+    remote = acpRemoteQ @ window;
+    dir    = Lookup[ window, "ProjectDirectory", None ];
+    If[ ! validProjectDirectoryQ[ dir, window ], failConnectAttempt[ nbo, token, None ]; Throw @ Null ];
+    (* "Raw": the stored folder is already normalized (and a restored one may end in a space). A remote ~ folder is not
+       expanded with the home the window knows, which may be out of date (a host alias moved to another machine): the
+       launch script resolves it with the remote $HOME, and remoteLaunched stores the absolute folder. *)
+    dir = If[ remote, acpRemoteNormalizeDirectory[ dir, None, "Raw" -> True ], Quiet @ ExpandFileName @ dir ];
 
     load = acpLoadACPLink[ ];
     If[ FailureQ @ load, failConnectAttempt[ nbo, token, acpErrorInfo @ load ]; Throw @ Null ];
@@ -131,17 +158,29 @@ acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
     settings = settingsOf @ window;
     spec     = acpAgentSpec[ agent, settings ];
     If[ FailureQ @ spec, failConnectAttempt[ nbo, token, acpErrorInfo @ spec ]; Throw @ Null ];
+    nonce = If[ remote, acpSSHLaunchNonce[ ], None ];
+    If[ remote, spec = Append[ spec, "LaunchNonce" -> nonce ] ];
 
-    (* Front end reads/writes happen here, not in the handlers: *)
+    (* Front end reads/writes happen here, not in the handlers. A remote folder is not persisted yet: it is not verified,
+       and a mistyped one would become the default of every new window for the host. *)
     prefs = agentPreferences @ agent;
-    acpSetPersistedSetting[ "LastProjectDirectory", dir ];
+    If[ ! remote, acpSetPersistedSetting[ "LastProjectDirectory", dir ] ];
 
     (* The window may have been closed or reset in the meantime: *)
     If[ ! currentTokenQ[ acpWindowGet @ nbo, token ], Throw @ Null ];
 
-    conn = openConnection[ nbo, spec, dir ];
+    before = acpLinkConnections[ ];
+    conn   = openConnection[ nbo, spec, dir ];
     If[ ! acpConnectionQ @ conn,
-        failConnectAttempt[ nbo, token, acpErrorInfo[ "ConnectFailed", None, None, <| "Agent" -> spec[ "Name" ] |> ] ];
+        closeStrayConnections[ before, Lookup[ spec, "Command" ] ];
+        failConnectAttempt[
+            nbo,
+            token,
+            If[ remote,
+                acpErrorInfo[ "SSHStartFailed", None, None, <| "Agent" -> spec[ "Name" ], "Host" -> spec[ "Remote", "Host" ] |> ],
+                acpErrorInfo[ "ConnectFailed", None, None, <| "Agent" -> spec[ "Name" ] |> ]
+            ]
+        ];
         Throw @ Null
     ];
     registerConnection[ conn, nbo ];
@@ -151,21 +190,28 @@ acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
         Function[ w,
             If[ currentTokenQ[ w, token ],
                 claimed = True;
-                <|
-                    w,
-                    "Connection"         -> conn,
-                    "ConnectDirectory"   -> dir,
-                    "ConnectedAt"        -> AbsoluteTime[ ],
-                    "AgentPreferences"   -> prefs,
-                    "AgentInfo"          -> <| "Name" -> spec[ "Name" ], "Version" -> "" |>,
-                    "Capabilities"       -> None,
-                    "SessionID"          -> None,
-                    "Requests"           -> <| |>,
-                    "PendingPermissions" -> <| |>,
-                    "Commands"           -> { },
-                    "MCPReady"           -> False,
-                    "ConfigAttempts"     -> <| |>
-                |>,
+                KeyDrop[
+                    <|
+                        w,
+                        "Connection"         -> conn,
+                        "ConnectDirectory"   -> dir,
+                        "ConnectedAt"        -> AbsoluteTime[ ],
+                        "AgentPreferences"   -> prefs,
+                        "AgentInfo"          -> <| "Name" -> spec[ "Name" ], "Version" -> "" |>,
+                        "Capabilities"       -> None,
+                        "SessionID"          -> None,
+                        "Requests"           -> <| |>,
+                        "PendingPermissions" -> <| |>,
+                        "Commands"           -> { },
+                        "MCPReady"           -> False,
+                        "ConfigAttempts"     -> <| |>,
+                        "LaunchNonce"        -> nonce,
+                        "LaunchMarkers"      -> None,
+                        "LaunchProgress"     -> 0,
+                        "Remote"             -> Lookup[ spec, "Remote", None ]
+                    |>,
+                    { "InitSendFailedAt" }
+                ],
                 w
             ]
         ]
@@ -173,14 +219,41 @@ acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
 
     If[ ! claimed, releaseConnection @ conn; Throw @ Null ];
 
-    If[ FailureQ @ sendRequest[ nbo, conn, "initialize", initializeParams[ ], "Initialize", <| |> ],
-        failConnection[ nbo, conn, acpErrorInfo[ "InitFailed", None, None, <| "Agent" -> spec[ "Name" ] |> ] ]
+    If[ FailureQ @ sendInitialize[ nbo, conn ],
+        (* The agent may have exited already (e.g. a wrong command line, or ssh rejected its arguments): its exit event,
+           with the exit code and standard error, arrives within a reader tick and is reported by onAgentExited. Only
+           if the window still holds the connection after the grace period, the connection fails here. *)
+        windowUpdate[ nbo, Function[ w, If[ Lookup[ w, "Connection", None ] === conn, <| w, "InitSendFailedAt" -> AbsoluteTime[ ] |>, w ] ] ];
+        With[ { c = conn, name = spec[ "Name" ] }, acpSchedule[ initSendFailed[ nbo, c, name ], $acpInitSendGrace ] ]
     ];
 
     conn
 ];
 
 acpConnect // endDefinition;
+
+
+(* Writes "initialize" (for a remote window ACPLink queues it until the remote shell asks for the launch script) *)
+sendInitialize // beginDefinition;
+
+sendInitialize[ nbo_NotebookObject, conn_ ] := (
+    If[ $acpBeforeInitializeHook =!= None, $acpBeforeInitializeHook[ ] ];
+    sendRequest[ nbo, conn, "initialize", initializeParams[ ], "Initialize", <| |> ]
+);
+
+sendInitialize // endDefinition;
+
+
+(* The grace period of a failed "initialize" write is over: if the agent's exit was not reported meanwhile, the
+   connection fails *)
+initSendFailed // beginDefinition;
+
+initSendFailed[ nbo_NotebookObject, conn_, name_ ] :=
+    If[ acpWindowGet[ nbo, "Connection", None ] === conn,
+        failConnection[ nbo, conn, acpErrorInfo[ "InitFailed", None, None, <| "Agent" -> name |> ] ]
+    ];
+
+initSendFailed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -191,19 +264,30 @@ acpConnect // endDefinition;
 openConnection // beginDefinition;
 
 openConnection[ nbo_, spec_, dir_ ] := Replace[
-    Quiet @ Catch[ openConnection0[ nbo, spec, dir ], _, $Failed & ],
+    Quiet @ Catch[ Catch @ openConnection0[ nbo, spec, dir ], _, $Failed & ],
     Except[ _? acpConnectionQ ] -> $Failed
 ];
 
 openConnection // endDefinition;
 
 
+(* A remote agent (spec "Remote") is ssh running the read bootstrap in the local home folder; the launch script goes
+   to its standard input as ACPLink's "StandardInputPreamble", which ACPLink holds back, with every message sent
+   meanwhile ("initialize"), until the bootstrap's trigger line arrives on standard error: nothing is written to ssh
+   before the remote shell reads (V2). *)
 openConnection0 // beginDefinition;
 
 openConnection0[ nbo_, spec_, dir_ ] := acpLink[ "OpenACPConnection" ][
     Lookup[ spec, "Command" ],
-    ProcessDirectory              -> dir,
+    ProcessDirectory              -> Replace[ Lookup[ spec, "Directory", Automatic ], Automatic -> dir ],
     ProcessEnvironment            -> Lookup[ spec, "Environment", Inherited ],
+    Sequence @@ If[ AssociationQ @ Lookup[ spec, "Remote", None ],
+        {
+            "StandardInputPreamble"        -> sshLaunchPreamble[ spec, dir ],
+            "StandardInputPreambleTrigger" -> $acpSSHLaunchTrigger
+        },
+        { }
+    ],
     acpLink[ "ACPClientMethods" ] -> <| "session/request_permission" -> permissionMethod @ nbo |>,
     HandlerFunctions              -> connectionHandlers @ nbo,
     HandlerFunctionsKeys          -> All,
@@ -211,6 +295,24 @@ openConnection0[ nbo_, spec_, dir_ ] := acpLink[ "OpenACPConnection" ][
 ];
 
 openConnection0 // endDefinition;
+
+
+(* The launch script as UTF-8 bytes. It holds the agent's variables (the LLMKit key), so it is only ever built here,
+   where openConnection discards anything thrown and quiets every message. *)
+sshLaunchPreamble // beginDefinition;
+
+sshLaunchPreamble[ spec_Association, dir_String ] := Module[ { script },
+    script = acpSSHLaunchScript[
+        Lookup[ spec, "LaunchNonce", None ],
+        dir,
+        spec[ "Remote", "AgentCommand" ],
+        Replace[ Lookup[ spec, "Variables", <| |> ], Except[ _Association ] -> <| |> ]
+    ];
+    If[ ! StringQ @ script, Throw[ script, $sshLaunchPreambleTag ] ];
+    StringToByteArray[ script, "UTF-8" ]
+];
+
+sshLaunchPreamble // endDefinition;
 
 
 connectionHandlers // beginDefinition;
@@ -280,6 +382,19 @@ abandonConnectAttempt[ nbo_NotebookObject, token_String ] := windowUpdate[
 abandonConnectAttempt // endDefinition;
 
 
+(* An open that failed after ACPLink had registered the connection (e.g. something threw after the agent was started)
+   would leave the agent running with no owner: connections that appeared during this window's open and run its command
+   line are closed. Other connections of the kernel (open before, or with another command line) are left alone. *)
+closeStrayConnections // beginDefinition;
+
+closeStrayConnections[ before_List, command_ ] := Scan[
+    (acpLog[ "StrayConnection", # ]; releaseConnection @ #) &,
+    Select[ Complement[ acpLinkConnections[ ], before ], Quiet[ #[ "ProcessCommandLine" ] ] === command & ]
+];
+
+closeStrayConnections // endDefinition;
+
+
 (* A connection failed during setup (or its session could not be created): close it and show the error. *)
 failConnection // beginDefinition;
 
@@ -290,7 +405,11 @@ failConnection[ nbo_NotebookObject, conn_, error_ ] := Module[ { window },
         windowUpdate[ nbo, Function[ w, If[ Lookup[ w, "Connection", None ] === conn, connectionFailedRecord[ w, error ], w ] ] ]
     ];
     releaseConnection @ conn;
-    acpLog[ "ConnectionFailed", <| "Code" -> Lookup[ Replace[ error, Except[ _Association ] -> <| |> ], "Code", None ] |> ];
+    (* the code and the exit code only, never stderr *)
+    acpLog[ "ConnectionFailed", <|
+        "Code"     -> Replace[ error, { KeyValuePattern[ "Code" -> c_ ] :> c, _ -> None } ],
+        "ExitCode" -> Replace[ error, { KeyValuePattern[ "Data" -> KeyValuePattern[ "ExitCode" -> c_ ] ] :> c, _ -> None } ]
+    |> ];
     Null
 ];
 
@@ -724,6 +843,7 @@ onRequestResponse[ "Initialize", nbo_, conn_, _, resp_, _ ] := Module[ { window,
             ]
         ]
     ];
+    If[ acpRemoteQ @ window && ! remoteLaunched[ nbo, conn, acpWindowGet @ nbo ], Return[ Null, Module ] ];
     startSession[ nbo, conn ]
 ];
 
@@ -794,6 +914,77 @@ onRequestResponse[ "Ignore", ___ ] := Null;
 onRequestResponse[ kind_, ___ ] := acpLog[ "UnknownRequestKind", kind ];
 
 onRequestResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Remote launch*)
+
+(* The agent of a remote window answered "initialize", so the launch script entered the folder: its markers on ssh's
+   standard error give the remote home, the absolute folder ($PWD, also for a ~ folder) and the agent's path (each checked
+   with acpRemoteAbsolutePathQ). The session is created with that folder, which also replaces a ~ folder in the window
+   and is persisted as the host's last folder (front end writes are scheduled: this is a reader handler). Gives False
+   (the connection failed) if no absolute folder is known. *)
+remoteLaunched // beginDefinition;
+
+remoteLaunched[ nbo_NotebookObject, conn_, window_Association ] := Module[ { stderr, launch, cwd, home, ssh },
+    stderr = Replace[ Quiet @ conn[ "StandardError" ], Except[ _String ] -> "" ];
+    launch = acpSSHLaunchMarkers[ Replace[ Lookup[ window, "LaunchNonce", None ], Except[ _String ] -> "" ], stderr ];
+    cwd    = Which[
+        acpRemoteAbsolutePathQ @ launch[ "Cwd" ], launch[ "Cwd" ],
+        acpRemoteAbsolutePathQ @ Lookup[ window, "ConnectDirectory", None ], window[ "ConnectDirectory" ],
+        True, None
+    ];
+    If[ cwd === None,
+        failConnection[ nbo, conn, acpErrorInfo[ "SessionFailed", None, None, <| "Agent" -> agentDisplayName @ window |> ] ];
+        Return[ False, Module ]
+    ];
+    home = launch[ "Home" ];
+    windowUpdate[
+        nbo,
+        Function[ w,
+            If[ Lookup[ w, "Connection", None ] === conn,
+                <|
+                    w,
+                    "ConnectDirectory" -> cwd,
+                    "RemoteHome"       -> Replace[ home, None :> Lookup[ w, "RemoteHome", None ] ],
+                    "RemoteAgentPath"  -> launch[ "Agent" ],
+                    "RemoteVerified"   -> True,
+                    "LaunchMarkers"    -> launchMarkerText[ Lookup[ w, "LaunchNonce", None ], launch ],
+                    If[ Lookup[ w, "ProjectDirectory", None ] =!= cwd, "ProjectDirectory" -> cwd, Nothing ]
+                |>,
+                w
+            ]
+        ]
+    ];
+    (* The launch reached the agent: the host's failure latch (Remote.wl) is over *)
+    If[ StringQ @ launch[ "Agent" ], acpRemoteClearHostError @ acpWindowHostKey @ window ];
+    ssh = acpWindowSSH @ window;
+    If[ Lookup[ window, "ProjectDirectory", None ] =!= cwd, acpSchedule @ acpFESet[ nbo, "ProjectDirectory", cwd ] ];
+    With[ { key = acpLastProjectDirectoryKey @ ssh },
+        If[ ListQ @ key && AssociationQ @ ssh, acpSchedule @ acpSetPersistedSetting[ key, cwd ] ]
+    ];
+    With[ { key = acpRemoteHomeKey @ ssh },
+        If[ ListQ @ key && StringQ @ home, acpSchedule @ acpSetPersistedSetting[ key, home ] ]
+    ];
+    True
+];
+
+remoteLaunched // endDefinition;
+
+
+(* The launch's markers as lines of standard error, kept in the window record ("LaunchMarkers"): ACPLink reports only the
+   end of standard error when the agent exits, so a long-running agent's markers are added back for the classification
+   of its exit (remoteExitError). Paths only, no secrets. *)
+launchMarkerText // beginDefinition;
+
+launchMarkerText[ nonce_String, launch_Association ] := StringJoin @ KeyValueMap[
+    If[ StringQ @ #2, $acpSSHMarkerPrefix <> nonce <> ":" <> #1 <> ":" <> #2 <> "\n", "" ] &,
+    <| "home" -> launch[ "Home" ], "cwd" -> launch[ "Cwd" ], "agent" -> launch[ "Agent" ] |>
+];
+
+launchMarkerText[ _, _ ] := None;
+
+launchMarkerText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1254,26 +1445,39 @@ checkConnectionAlive // endDefinition;
 
 (* The agent process died: the running turn ends with an "AgentExited" error (exit code and the end of stderr in the
    details), the window becomes "Disconnected" (with a Reconnect action) or "Error" during setup. The resumable session
-   is kept. Idempotent. *)
+   is kept. Idempotent. For a remote window the process is ssh: its exit is classified (remoteExitError), and the remote
+   home of a launch that failed after reporting it becomes the window's. *)
 onAgentExited // beginDefinition;
 
-onAgentExited[ nbo_NotebookObject, conn_, failure_ ] := Module[ { window, info, error, setupQ },
+onAgentExited[ nbo_NotebookObject, conn_, failure_ ] := Module[ { window, info, error, setupQ, exit },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window || ! acpConnectionQ @ conn || Lookup[ window, "Connection", None ] =!= conn,
         Return[ Null, Module ]
     ];
-    info  = Replace[ failure, { Failure[ _, as_Association ] :> as, _ -> <| |> } ];
-    error = acpErrorInfo[
-        "AgentExited",
-        None,
-        None,
+    info   = Replace[ failure, { Failure[ _, as_Association ] :> as, _ -> <| |> } ];
+    setupQ = StringQ @ Lookup[ window, "ConnectToken", None ] || ! StringQ @ Lookup[ window, "SessionID", None ];
+    exit   = If[ acpRemoteQ @ window,
+        remoteExitError[
+            window,
+            Lookup[ info, "ExitCode", Missing[ "NotAvailable" ] ],
+            Lookup[ info, "StandardErrorTail", "" ],
+            setupQ
+        ],
         <|
-            "Agent"             -> agentDisplayName @ window,
-            "ExitCode"          -> Lookup[ info, "ExitCode", Missing[ "NotAvailable" ] ],
-            "StandardErrorTail" -> Lookup[ info, "StandardErrorTail", Missing[ "NotAvailable" ] ]
+            "Error" -> acpErrorInfo[
+                "AgentExited",
+                None,
+                None,
+                <|
+                    "Agent"             -> agentDisplayName @ window,
+                    "ExitCode"          -> Lookup[ info, "ExitCode", Missing[ "NotAvailable" ] ],
+                    "StandardErrorTail" -> Lookup[ info, "StandardErrorTail", Missing[ "NotAvailable" ] ]
+                |>
+            ],
+            "RemoteHome" -> None
         |>
     ];
-    setupQ = StringQ @ Lookup[ window, "ConnectToken", None ] || ! StringQ @ Lookup[ window, "SessionID", None ];
+    error = exit[ "Error" ];
     endSentTurn[ nbo, window, <| "Error" -> error |> ];
     windowUpdate[
         nbo,
@@ -1291,7 +1495,8 @@ onAgentExited[ nbo_NotebookObject, conn_, failure_ ] := Module[ { window, info, 
                     "PendingPermissions" -> <| |>,
                     "MCPReady"           -> False,
                     "Restore"            -> loadingDropped @ w,
-                    "PendingRestore"     -> None
+                    "PendingRestore"     -> None,
+                    If[ StringQ @ exit[ "RemoteHome" ], "RemoteHome" -> exit[ "RemoteHome" ], Nothing ]
                 |>
             ]
         ]
@@ -1301,6 +1506,81 @@ onAgentExited[ nbo_NotebookObject, conn_, failure_ ] := Module[ { window, info, 
 ];
 
 onAgentExited // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Remote errors*)
+
+(* The error of a remote window whose ssh ended (SSH.wl's acpSSHExitError: ssh's failures, the launch script's markers,
+   the agent's exit), as <| "Error", "RemoteHome" -> the home the launch reported if it differs from the window's, else
+   None |>. Kernel state and pure string work only (it runs in reader handlers): a failure that latches the host is
+   noted (Remote.wl's acpRemoteNoteHostError); a missing folder that is the host's persisted last folder is forgotten,
+   and a reported home that differs from the window's is persisted for the host, in scheduled tasks (a launch that
+   fails, e.g. for a missing folder, still corrects a home persisted for another machine of the same host name).
+   ACPLink reports only the end of standard error, so the markers of a launch that got as far as the agent
+   ("LaunchMarkers") are put in front of it when they are no longer in it. *)
+remoteExitError // beginDefinition;
+
+remoteExitError[ window_Association, exitCode_, tail0_, setupQ_ ] := Module[ { nonce, tail, markers, error, missing, home },
+    nonce = Lookup[ window, "LaunchNonce", None ];
+    tail  = Replace[ tail0, Except[ _String ] -> "" ];
+    If[ StringQ @ nonce && StringQ @ Lookup[ window, "LaunchMarkers", None ] && ! StringContainsQ[ tail, $acpSSHMarkerPrefix <> nonce <> ":home:" ],
+        tail = window[ "LaunchMarkers" ] <> tail
+    ];
+    markers = acpSSHLaunchMarkers[ Replace[ nonce, Except[ _String ] -> "" ], tail ];
+    error   = acpSSHExitError[ exitCode, tail, remoteErrorContext[ window, setupQ ] ];
+    acpRemoteNoteHostError[ acpWindowHostKey @ window, error ];
+    If[ Lookup[ error, "Code", None ] === "RemoteFolderMissing",
+        missing = Select[
+            {
+                Replace[ Lookup[ markers, "Error", None ], { { _, p_String } :> p, _ -> None } ],
+                Lookup[ window, "ProjectDirectory", None ]
+            },
+            StringQ
+        ];
+        With[ { ssh = acpWindowSSH @ window, paths = missing }, acpSchedule @ acpClearPersistedLastFolder[ ssh, paths ] ]
+    ];
+    (* acpSSHLaunchMarkers keeps only a home that passes acpRemoteAbsolutePathQ (and is followed by another marker) *)
+    home = Replace[ Lookup[ markers, "Home", None ], Except[ _String ] -> None ];
+    If[ home === acpWindowRemoteHome @ window, home = None ];
+    With[ { key = acpRemoteHomeKey @ acpWindowSSH @ window, h = home },
+        If[ ListQ @ key && StringQ @ h, acpSchedule @ acpSetPersistedSetting[ key, h ] ]
+    ];
+    <| "Error" -> error, "RemoteHome" -> home |>
+];
+
+remoteExitError // endDefinition;
+
+
+(* The context of a remote window's errors (acpSSHExitError, acpSSHTimeoutError): the launch's nonce, the agent, the
+   canonical SSH settings (for the host label and the ssh command of the hints), the agent's install URL, the folder,
+   the remote home, and whether the host refused a sign-in recently (sshd's PerSourcePenalties, Remote.wl) *)
+remoteErrorContext // beginDefinition;
+
+remoteErrorContext[ window_Association, setupQ_ ] := <|
+    "Setup"             -> TrueQ @ setupQ,
+    "Nonce"             -> Lookup[ window, "LaunchNonce", None ],
+    "Agent"             -> agentDisplayName @ window,
+    "SSH"               -> acpWindowSSH @ window,
+    "InstallURL"        -> Lookup[ Replace[ Lookup[ window, "Remote", None ], Except[ _Association ] -> <| |> ], "InstallURL", None ],
+    "Path"              -> Lookup[ window, "ProjectDirectory", None ],
+    "RemoteHome"        -> acpWindowRemoteHome @ window,
+    "RecentAuthFailure" -> TrueQ @ acpRemoteRecentAuthFailureQ @ acpWindowHostKey @ window
+|>;
+
+remoteErrorContext // endDefinition;
+
+
+(* A remote window's connection setup took too long: SSHConnectTimeout (the launch script never ran: ssh was still
+   connecting or signing in) or RemoteTimeout (the agent did not answer), from ssh's standard error so far *)
+remoteTimeoutError // beginDefinition;
+
+remoteTimeoutError[ window_Association, conn_ ] := acpSSHTimeoutError[
+    If[ acpConnectionQ @ conn, Replace[ Quiet @ conn[ "StandardError" ], Except[ _String ] -> "" ], "" ],
+    remoteErrorContext[ window, True ]
+];
+
+remoteTimeoutError // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1489,7 +1769,8 @@ acpSendPrompt[ nbo_NotebookObject, turnID_String ] := Catch @ Module[ { window, 
                 "RequestID"        -> id,
                 "SessionID"        -> sid,
                 "AgentName"        -> agentDisplayName @ window,
-                "ProjectDirectory" -> Replace[ Lookup[ #, "ProjectDirectory", None ], None :> Lookup[ window, "ProjectDirectory", None ] ]
+                "ProjectDirectory" -> Replace[ Lookup[ #, "ProjectDirectory", None ], None :> Lookup[ window, "ProjectDirectory", None ] ],
+                "Remote"           -> Replace[ Lookup[ #, "Remote", None ], None :> acpTurnRemote @ window ]
             |>,
             "Changed" -> { },
             "Layout"  -> False
@@ -1931,7 +2212,10 @@ restoreLoadingQ // endDefinition;
    transcript, store the directory (window record, notebook TaggingRules, persisted last directory) and reconnect.
    Refused while a turn is running (the UI disables the chooser). extra: keys for the reset window record, e.g. the
    "PendingRestore" of a session restored from another folder (Sessions.wl), which the new connection then loads
-   instead of creating a new session. *)
+   instead of creating a new session; "Raw" -> True takes the folder exactly as given (one the agent listed), apart from
+   ~ and a trailing /. A remote window's folder is checked as a remote path only (never on this computer) and is
+   persisted for its host once the launch has entered it (remoteLaunched). Gives the folder, Null (unchanged) or a
+   Failure. *)
 acpSetProjectDirectory // beginDefinition;
 
 acpSetProjectDirectory[ nbo_NotebookObject, dir_ ] := acpSetProjectDirectory[ nbo, dir, <| |> ];
@@ -1941,11 +2225,59 @@ acpSetProjectDirectory[ nbo_NotebookObject, File[ dir_String ], extra_Associatio
 acpSetProjectDirectory[ nbo_NotebookObject, dir0_, extra_Association ] := Catch @ Module[ { window, dir },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
-    dir = If[ StringQ @ dir0, Quiet @ ExpandFileName @ StringTrim @ dir0, None ];
-    If[ ! validProjectDirectoryQ @ dir, Throw @ Failure[ "InvalidDirectory", <| "Directory" -> dir0 |> ] ];
+    dir = If[ TrueQ @ Lookup[ extra, "Raw", False ] && acpRemoteQ @ window,
+        acpRemoteNormalizeDirectory[ dir0, acpWindowRemoteHome @ window, "Raw" -> True ],
+        acpNormalizeProjectDirectory[ dir0, window ]
+    ];
+    If[ ! validProjectDirectoryQ[ dir, window ], Throw @ Failure[ "InvalidDirectory", <| "Directory" -> dir0 |> ] ];
     If[ dir === Lookup[ window, "ProjectDirectory", None ], Throw @ Null ];
     If[ StringQ @ Lookup[ window, "CurrentTurn", None ], Throw @ Failure[ "Running", <| |> ] ];
 
+    resetProjectDirectory[ nbo, dir, KeyDrop[ extra, { "Raw" } ] ];
+    If[ ! acpRemoteQ @ window, acpSetPersistedSetting[ "LastProjectDirectory", dir ] ];
+    acpEnsureConnected @ nbo;
+    dir
+];
+
+acpSetProjectDirectory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpResetProjectDirectory*)
+
+(* The folder after a change of the window's host (UI.wl's acpReuseWindow, which merged the new "SSHSettings" first): a
+   new chat in dir, or without a folder for None ("NoDirectory"), even for the same folder string (the same path on
+   another machine is another folder). The other host's state is dropped: the resumable session, the remote home (the new
+   host's persisted one instead), whether the host was reached ("RemoteVerified"), the listed sessions, and the folder
+   picker of the old host. Does not connect (the caller does, once). *)
+acpResetProjectDirectory // beginDefinition;
+
+acpResetProjectDirectory[ nbo_NotebookObject, dir0_ ] := Catch @ Module[ { window, ssh, dir },
+    window = acpWindowGet @ nbo;
+    If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
+    ssh = acpWindowSSH @ window;
+    dir = If[ StringQ @ dir0 && validProjectDirectoryQ[ dir0, window ], dir0, None ];
+    resetProjectDirectory[
+        nbo,
+        dir,
+        <|
+            "RemoteHome"     -> acpPersistedRemoteHome @ ssh,
+            "RemoteVerified" -> False,
+            "Sessions"       -> resetSessionsStore @ window
+        |>
+    ];
+    acpFolderPickerCloseWindow @ nbo;
+    dir
+];
+
+acpResetProjectDirectory // endDefinition;
+
+
+(* The reset steps of a new folder: disconnect, drop the turns and the session state, store the folder (window record
+   and TaggingRules), clear the cells. extra: more keys of the window record. *)
+resetProjectDirectory // beginDefinition;
+
+resetProjectDirectory[ nbo_NotebookObject, dir_, extra_Association ] := (
     acpDisconnect[ nbo, "DirectoryChanged" ];
     dropWindowTurns @ nbo;
     windowUpdate[
@@ -1954,7 +2286,7 @@ acpSetProjectDirectory[ nbo_NotebookObject, dir0_, extra_Association ] := Catch 
             <|
                 w,
                 "ProjectDirectory"   -> dir,
-                "Status"             -> "Disconnected",
+                "Status"             -> If[ StringQ @ dir, "Disconnected", "NoDirectory" ],
                 "Error"              -> None,
                 "Turns"              -> { },
                 "QueuedPrompt"       -> None,
@@ -1974,12 +2306,30 @@ acpSetProjectDirectory[ nbo_NotebookObject, dir0_, extra_Association ] := Catch 
     acpFESet[ nbo, "ProjectDirectory", dir ];
     acpFESet[ nbo, "ResumableSessionID", None ];
     clearWindowCells @ nbo;
-    acpSetPersistedSetting[ "LastProjectDirectory", dir ];
-    acpEnsureConnected @ nbo;
-    dir
+    Null
+);
+
+resetProjectDirectory // endDefinition;
+
+
+(* The Sessions store without another host's sessions (UI state such as "Open" is kept) *)
+resetSessionsStore // beginDefinition;
+
+resetSessionsStore[ window_Association ] := Replace[
+    Lookup[ window, "Sessions", None ],
+    store_Association :> <|
+        store,
+        "Status"        -> "Idle",
+        "Items"         -> { },
+        "ListedAt"      -> None,
+        "Error"         -> None,
+        "Deleting"      -> <| |>,
+        "Expanded"      -> <| |>,
+        "ConfirmDelete" -> None
+    |>
 ];
 
-acpSetProjectDirectory // endDefinition;
+resetSessionsStore // endDefinition;
 
 
 dropWindowTurns // beginDefinition;
@@ -2030,7 +2380,7 @@ acpDisconnect[ nbo_NotebookObject, reason_ ] := Catch @ Module[ { window, conn, 
     conn    = Lookup[ window, "Connection", None ];
     sid     = Lookup[ window, "SessionID", None ];
     pending = Keys @ pendingOf @ window;
-    validQ  = validProjectDirectoryQ @ Lookup[ window, "ProjectDirectory", None ];
+    validQ  = validProjectDirectoryQ[ Lookup[ window, "ProjectDirectory", None ], window ];
 
     endSentTurn[ nbo, window, <| "StopReason" -> "cancelled" |>, "Stop" ];
 
@@ -2067,14 +2417,16 @@ acpDisconnect // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpReconnect*)
 
-(* The Reconnect action: disconnect (keeping the resumable session), clear the error and connect again. *)
+(* The Reconnect action: disconnect (keeping the resumable session), clear the error and connect again. Reconnecting is
+   a user action (a button, new settings), so it also clears a remote host's failure latch (Remote.wl). *)
 acpReconnect // beginDefinition;
 
 acpReconnect[ nbo_NotebookObject ] := Catch @ Module[ { window, validQ },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Throw @ Missing[ "NotFound" ] ];
     If[ connectingOrConnectedQ @ window, acpDisconnect[ nbo, "Reconnect" ] ];
-    validQ = validProjectDirectoryQ @ Lookup[ window, "ProjectDirectory", None ];
+    If[ StringQ @ acpWindowHostKey @ window, acpRemoteClearHostError @ acpWindowHostKey @ window ];
+    validQ = validProjectDirectoryQ[ Lookup[ window, "ProjectDirectory", None ], window ];
     windowUpdate[ nbo, Function[ w, <| w, "Error" -> None, "Status" -> If[ validQ, "Disconnected", "NoDirectory" ] |> ] ];
     acpEnsureConnected @ nbo
 ];
@@ -2134,15 +2486,20 @@ ownedConnectionsOf // endDefinition;
 
 (* Whether ACPLink still has the connection open *)
 openConnectionQ // beginDefinition;
+openConnectionQ[ conn_? acpConnectionQ ] := MemberQ[ acpLinkConnections[ ], conn ];
+openConnectionQ[ _ ] := False;
+openConnectionQ // endDefinition;
 
-openConnectionQ[ conn_? acpConnectionQ ] := acpLoadACPLink[ ] === True && MemberQ[
+
+(* ACPLink's open connections (also other users' of the kernel) *)
+acpLinkConnections // beginDefinition;
+
+acpLinkConnections[ ] := If[ acpLoadACPLink[ ] === True,
     Replace[ Quiet @ acpLink[ "ACPConnections" ][ ], Except[ _List ] -> { } ],
-    conn
+    { }
 ];
 
-openConnectionQ[ _ ] := False;
-
-openConnectionQ // endDefinition;
+acpLinkConnections // endDefinition;
 
 
 (* ::**************************************************************************************************************:: *)
@@ -2155,15 +2512,31 @@ openConnectionQ // endDefinition;
 
 (* Every second while the publisher runs (fallbacks for lost tasks and silent agents):
      * a Stop without a prompt response for $acpStopTimeout seconds ends the turn locally;
-     * setup requests without a response for $acpConnectTimeout seconds fail the connection; a user config change
-       without a response for $acpConfigTimeout seconds is dropped;
+     * setup requests without a response for $acpConnectTimeout seconds fail the connection (a remote launch that
+       reports progress restarts the clock, see observeLaunchProgress); a user config change without a response for
+       $acpConfigTimeout seconds is dropped;
      * a connection attempt whose task never ran is scheduled again (at most $acpMaxConnectAttempts times);
      * MCP servers are assumed ready $acpMCPReadyTimeout seconds after the session started;
-     * a connection that ACPLink no longer has open (agent died without an event) is treated as agent death. *)
+     * a connection that ACPLink no longer has open (agent died without an event) is treated as agent death.
+   No timeout is decided by the first run after the kernel was blocked (more than $acpStallThreshold seconds since the
+   previous run, or no previous run): housekeeping can run right after the evaluation that blocked it, in the same pump
+   tick, while an answer that arrived meanwhile is still unread (ACPLink's readers are scheduled tasks too, and could
+   not run either). Deciding then would fail an agent that answered, and close a remote launch that ssh had just
+   reached (its launch script waits for the reader to see the trigger line). By the next run the readers have run: a
+   later run is a later pump tick, and the readers run between two ticks. So the next run decides, even if it came late
+   too: only one run in a row is skipped, or a kernel that stays busy (every run late) would never time anything out. *)
+If[ ! NumberQ @ $lastHousekeepingAt, $lastHousekeepingAt = None ];
+If[ ! BooleanQ @ $housekeepingSkipped, $housekeepingSkipped = False ];
+
 connectionHousekeeping // beginDefinition;
 
-connectionHousekeeping[ ] := With[ { now = AbsoluteTime[ ] },
-    KeyValueMap[ windowHousekeeping[ #1, #2, now ] &, $acpWindows ];
+connectionHousekeeping[ ] := With[ { now = AbsoluteTime[ ], last = $lastHousekeepingAt },
+    $lastHousekeepingAt = now;
+    With[ { stalled = (! NumberQ @ last || now - last > $acpStallThreshold) && ! TrueQ @ $housekeepingSkipped },
+        $housekeepingSkipped = stalled;
+        If[ stalled && NumberQ @ last, acpLog[ "HousekeepingGap", <| "Seconds" -> now - last |> ] ];
+        KeyValueMap[ windowHousekeeping[ #1, #2, now, stalled ] &, $acpWindows ]
+    ];
     Null
 ];
 
@@ -2172,17 +2545,84 @@ connectionHousekeeping // endDefinition;
 
 windowHousekeeping // beginDefinition;
 
-windowHousekeeping[ nbo_NotebookObject, window_Association, now_ ] := acpIsolated[
-    checkStopTimeout[ nbo, window, now ];
-    checkRequestTimeouts[ nbo, window, now ];
-    checkStuckConnect[ nbo, window, now ];
+windowHousekeeping[ nbo_NotebookObject, window0_Association, now_, stalled_ ] := acpIsolated @ Module[ { window },
+    window = observeLaunchProgress[ nbo, window0, now ];
+    If[ ! TrueQ @ stalled,
+        checkStopTimeout[ nbo, window, now ];
+        checkRequestTimeouts[ nbo, window, now ];
+        checkStuckConnect[ nbo, window, now ]
+    ];
     checkMCPReady[ nbo, window, now ];
     If[ acpConnectionQ @ Lookup[ window, "Connection", None ], checkConnectionAlive[ nbo, window[ "Connection" ] ] ]
 ];
 
-windowHousekeeping[ _, _, _ ] := Null;
+windowHousekeeping[ _, _, _, _ ] := Null;
 
 windowHousekeeping // endDefinition;
+
+
+(* A remote launch reports its progress on ssh's standard error: the trigger line once the remote shell runs, then the
+   launch script's markers (home, cwd, agent; see SSH.wl's acpSSHLaunchMarkers). While "initialize" is unanswered,
+   housekeeping counts these lines, and when there are more than before, the clock of the "initialize" request starts
+   again: the setup timeout is the time the launch has not moved on, not the time since the start, so a slow sign-in
+   (or a kernel that was blocked while it went on) does not fail a launch that has just reached the agent. A launch
+   reports a handful of such lines, so the timeout restarts a few times at most. Reading the standard error here also
+   writes a launch script whose trigger line arrived while ACPLink's reader could not run (the kernel was blocked:
+   JSONRPCProcessStandardError releases it), so the agent starts now rather than after the next read. Gives the
+   window record (updated). *)
+observeLaunchProgress // beginDefinition;
+
+observeLaunchProgress[ nbo_NotebookObject, window_Association, now_ ] := Module[ { conn, ids, count },
+    conn = Lookup[ window, "Connection", None ];
+    ids  = Keys @ Select[ requestsOf @ window, #[ "Kind" ] === "Initialize" & ];
+    If[ ids === { } || ! acpRemoteQ @ window || ! acpConnectionQ @ conn, Return[ window, Module ] ];
+    count = launchProgressCount[ Lookup[ window, "LaunchNonce", None ], Quiet @ conn[ "StandardError" ] ];
+    If[ count <= Replace[ Lookup[ window, "LaunchProgress", 0 ], Except[ _Integer ] -> 0 ], Return[ window, Module ] ];
+    acpLog[ "LaunchProgress", count ];
+    Replace[
+        windowUpdate[
+            nbo,
+            Function[ w,
+                If[ Lookup[ w, "Connection", None ] === conn,
+                    <| w, "LaunchProgress" -> count, "Requests" -> restartClocks[ requestsOf @ w, ids, now ] |>,
+                    w
+                ]
+            ]
+        ],
+        Except[ _Association ] -> window
+    ]
+];
+
+observeLaunchProgress[ _, window_, _ ] := window;
+
+observeLaunchProgress // endDefinition;
+
+
+(* The progress lines of the launch with this nonce in standard error so far: the trigger line and the markers *)
+launchProgressCount // beginDefinition;
+
+launchProgressCount[ nonce_String, stderr_String ] := With[ { prefix = $acpSSHMarkerPrefix <> nonce <> ":" },
+    Count[
+        StringDelete[ StringSplit[ stderr, "\n" ], "\r" ~~ EndOfString ],
+        line_ /; line === $acpSSHLaunchTrigger || StringStartsQ[ line, prefix ]
+    ]
+];
+
+launchProgressCount[ _, _ ] := 0;
+
+launchProgressCount // endDefinition;
+
+
+(* The requests with these IDs count from now *)
+restartClocks // beginDefinition;
+
+restartClocks[ requests_Association, ids_List, now_ ] := Fold[
+    If[ KeyExistsQ[ #1, #2 ], <| #1, #2 -> <| #1[ #2 ], "SentAt" -> now |> |>, #1 ] &,
+    requests,
+    ids
+];
+
+restartClocks // endDefinition;
 
 
 checkStopTimeout // beginDefinition;
@@ -2207,19 +2647,19 @@ checkStopTimeout // endDefinition;
 checkRequestTimeouts // beginDefinition;
 
 checkRequestTimeouts[ nbo_, window_, now_ ] := Module[
-    { requests, conn, setupLate, configLate, loadLate, listLate, deleteLate, abandoned, timeout },
+    { requests, conn, late, setupLate, configLate, loadLate, listLate, deleteLate, abandoned, timeout },
     requests   = requestsOf @ window;
     conn       = Lookup[ window, "Connection", None ];
-    setupLate  = Select[ requests, MatchQ[ #[ "Kind" ], $$setupRequestKind ] && now - #[ "SentAt" ] > $acpConnectTimeout & ];
-    configLate = Select[ requests, #[ "Kind" ] === "SetConfig" && now - #[ "SentAt" ] > $acpConfigTimeout & ];
-    (* a long replay arrives over many reader ticks: the load times out after its last replayed update *)
-    loadLate   = Select[ requests, #[ "Kind" ] === "SessionLoad" && now - Max[ #[ "SentAt" ], replayActivity[ window, #[ "Data" ] ] ] > $acpSessionLoadTimeout & ];
-    listLate   = Select[ requests, #[ "Kind" ] === "SessionList" && now - #[ "SentAt" ] > $acpSessionListTimeout & ];
-    deleteLate = Select[ requests, #[ "Kind" ] === "SessionDelete" && now - #[ "SentAt" ] > $acpSessionDeleteTimeout & ];
+    late       = Select[ requests, requestLateQ[ window, #, now ] & ];
+    setupLate  = Select[ late, MatchQ[ #[ "Kind" ], $$setupRequestKind ] & ];
+    configLate = Select[ late, #[ "Kind" ] === "SetConfig" & ];
+    loadLate   = Select[ late, #[ "Kind" ] === "SessionLoad" & ];
+    listLate   = Select[ late, #[ "Kind" ] === "SessionList" & ];
+    deleteLate = Select[ late, #[ "Kind" ] === "SessionDelete" & ];
     abandoned  = Select[ requests, #[ "Kind" ] === "AbandonedLoad" && now - #[ "SentAt" ] > $acpAbandonedLoadExpiry & ];
     timeout    = acpErrorInfo[ "Timeout", None, None, <| "Agent" -> agentDisplayName @ window |> ];
     If[ Length @ setupLate > 0 && acpConnectionQ @ conn,
-        failConnection[ nbo, conn, timeout ]
+        failConnection[ nbo, conn, If[ acpRemoteQ @ window, remoteTimeoutError[ window, conn ], timeout ] ]
     ];
     KeyValueMap[
         Function[ { id, info },
@@ -2268,6 +2708,24 @@ checkRequestTimeouts[ nbo_, window_, now_ ] := Module[
 checkRequestTimeouts // endDefinition;
 
 
+(* Whether an outstanding request has waited too long for its response *)
+requestLateQ // beginDefinition;
+
+requestLateQ[ window_, request_Association, now_ ] := With[ { sent = Lookup[ request, "SentAt", now ] },
+    Switch[ Lookup[ request, "Kind", None ],
+        $$setupRequestKind, now - sent > $acpConnectTimeout,
+        "SetConfig"       , now - sent > $acpConfigTimeout,
+        (* a long replay arrives over many reader ticks: the load times out after its last replayed update *)
+        "SessionLoad"     , now - Max[ sent, replayActivity[ window, Lookup[ request, "Data", <| |> ] ] ] > $acpSessionLoadTimeout,
+        "SessionList"     , now - sent > $acpSessionListTimeout,
+        "SessionDelete"   , now - sent > $acpSessionDeleteTimeout,
+        _                 , False
+    ]
+];
+
+requestLateQ // endDefinition;
+
+
 (* The record of a load request that timed out stays (kind "AbandonedLoad", counted from now for its expiry) *)
 abandonLoadRequest // beginDefinition;
 
@@ -2307,7 +2765,14 @@ checkStuckConnect[ nbo_, window_, now_ ] := Module[ { token, scheduled, attempts
     attempts  = Replace[ Lookup[ window, "ConnectAttempts", 1 ], Except[ _Integer ] -> 1 ];
     If[ StringQ @ token && ! acpConnectionQ @ Lookup[ window, "Connection", None ] && NumberQ @ scheduled && now - scheduled > $acpRescheduleAfter,
         If[ attempts >= $acpMaxConnectAttempts,
-            failConnectAttempt[ nbo, token, acpErrorInfo[ "Timeout", None, None, <| "Agent" -> agentDisplayName @ window |> ] ],
+            failConnectAttempt[
+                nbo,
+                token,
+                If[ acpRemoteQ @ window,
+                    remoteTimeoutError[ window, None ],
+                    acpErrorInfo[ "Timeout", None, None, <| "Agent" -> agentDisplayName @ window |> ]
+                ]
+            ],
             windowUpdate[
                 nbo,
                 Function[ w, If[ currentTokenQ[ w, token ], <| w, "ConnectScheduledAt" -> now, "ConnectAttempts" -> attempts + 1 |>, w ] ]
@@ -2398,19 +2863,30 @@ acpRegisterHousekeeping[ "ACPConnectionSweep", connectionSweep       , 50 ];
 (* ::Subsection::Closed:: *)
 (*acpErrorInfo*)
 
-(* The error table. Gives <| "Code", "Message", "Detail", "Actions", "Data" |> for
-     * acpErrorInfo[failure] (ACPLink loading, agent lookup, agent exit), or
+(* The error table. Gives <| "Code", "Message", "Hint", "Output", "Detail", "Actions", "Data" |> for
+     * acpErrorInfo[failure] (ACPLink loading, agent lookup, agent exit, ssh not found, invalid SSH settings), or
      * acpErrorInfo[code, message, data, context]: code is a JSON-RPC error code (with the agent's message and error
-       data) or one of our codes ("ConnectFailed", "InitFailed", ...); context may give "Agent", "Model", "Default"
-       (the code to use if the error is not recognized), "ExitCode", "StandardErrorTail", "Path", "InstallURL".
-   "Actions" are the buttons of acpErrorView: "ChooseModel", "SignIn", "Reconnect", "LocateAgent". *)
+       data) or one of our codes ("ConnectFailed", "InitFailed", the SSH and Remote kinds of SSH.wl, ...); context may
+       give "Agent", "Model", "Default" (the code to use if the error is not recognized), "ExitCode",
+       "StandardErrorTail", "Path", "InstallURL", and for remote windows "Host", "Command", "Example", "Windows",
+       "Output" (ssh's or the remote side's text, neutralized), "Hints" (keys of additional advice), "HintKey" (replaces
+       the kind's own advice; None for none), "Detail" (of invalid SSH settings).
+   "Message" is our sentence, "Hint" our advice, "Output" what the agent, ssh or the remote side said (neutralized), and
+   "Detail" both (for the full view, logs and copying).
+   "Actions" are the buttons of acpErrorView: "ChooseModel", "SignIn", "Reconnect", "LocateAgent", "ChooseDirectory". *)
 acpErrorInfo // beginDefinition;
 
 acpErrorInfo[ failure: Failure[ tag_String, as_Association ] ] := acpErrorInfo[
     tag,
     If[ KeyExistsQ[ as, "MessageTemplate" ], Replace[ Quiet @ failure[ "Message" ], Except[ _String ] -> None ], None ],
     None,
-    KeyTake[ as, { "Agent", "ExitCode", "StandardErrorTail", "Path", "InstallURL" } ]
+    KeyTake[
+        as,
+        {
+            "Agent", "ExitCode", "StandardErrorTail", "Path", "InstallURL",
+            "Host", "Command", "Example", "Hints", "Detail", "Windows", "Output"
+        }
+    ]
 ];
 
 acpErrorInfo[ failure_Failure ] := acpErrorInfo[ "AgentError", Quiet @ failure[ "Message" ], None, <| |> ];
@@ -2419,18 +2895,28 @@ acpErrorInfo[ code_ ] := acpErrorInfo[ code, None, None, <| |> ];
 acpErrorInfo[ code_, message_ ] := acpErrorInfo[ code, message, None, <| |> ];
 acpErrorInfo[ code_, message_, data_ ] := acpErrorInfo[ code, message, data, <| |> ];
 
-acpErrorInfo[ code_, message_, data_, context_Association ] := Module[ { kind, agent, model, text, detail },
+acpErrorInfo[ code_, message_, data_, context_Association ] := Module[ { kind, agent, model, text, hint, output, detail },
     kind   = classifyError[ code, message, data, Lookup[ context, "Default", "AgentError" ] ];
     agent  = Replace[ Lookup[ context, "Agent", "OpenCode" ], Except[ _String ] -> "OpenCode" ];
     model  = Lookup[ context, "Model", None ];
     text   = errorText[ kind, agent, model, context ];
-    detail = errorDetail[ kind, message, text, context ];
+    hint   = errorHint[ kind, agent, context ];
+    output = errorOutput[ kind, message, text, context ];
+    detail = truncateDetail @ Replace[ StringRiffle[ DeleteCases[ { hint, output }, None ], "\n\n" ], "" -> None ];
     <|
         "Code"    -> kind,
         "Message" -> text,
+        "Hint"    -> hint,
+        "Output"  -> output,
         "Detail"  -> detail,
         "Actions" -> Lookup[ $errorActions, kind, { } ],
-        "Data"    -> <| "ErrorCode" -> code, "ErrorMessage" -> message, "ErrorData" -> data |>
+        "Data"    -> <|
+            "ErrorCode"    -> code,
+            "ErrorMessage" -> message,
+            "ErrorData"    -> data,
+            "ExitCode"     -> Lookup[ context, "ExitCode", None ],
+            "Host"         -> Lookup[ context, "Host", None ]
+        |>
     |>
 ];
 
@@ -2454,7 +2940,29 @@ $errorActions = <|
     "NoModels"         -> { "SignIn", "Reconnect" },
     "ProviderError"    -> { "ChooseModel" },
     "ServerUnavailable"-> { "Reconnect" },
-    "AgentError"       -> { }
+    "AgentError"       -> { },
+
+    (* Remote windows (SSH.wl); one-shot operations (Remote.wl) replace the actions with their own *)
+    "SSHNotFound"             -> { "Reconnect" },
+    "SSHStartFailed"          -> { "Reconnect" },
+    "SSHHostKeyUnknown"       -> { "Reconnect" },
+    "SSHHostKeyChanged"       -> { "Reconnect" },
+    "SSHAuthFailed"           -> { "Reconnect" },
+    "SSHHostNotFound"         -> { "Reconnect" },
+    "SSHConnectionRefused"    -> { "Reconnect" },
+    "SSHUnreachable"          -> { "Reconnect" },
+    "SSHBadArguments"         -> { "Reconnect" },
+    "SSHConnectTimeout"       -> { "Reconnect" },
+    "SSHConnectionLost"       -> { "Reconnect" },
+    "SSHFailed"               -> { "Reconnect" },
+    "RemoteFolderMissing"     -> { "ChooseDirectory", "Reconnect" },
+    "RemoteFolderAccess"      -> { "ChooseDirectory", "Reconnect" },
+    "RemoteAgentNotFound"     -> { "Reconnect" },
+    "RemoteAgentExited"       -> { "Reconnect" },
+    "RemoteTimeout"           -> { "Reconnect" },
+    "RemoteScriptFailed"      -> { "Reconnect" },
+    "RemoteOperationTimedOut" -> { },
+    "InvalidSSHSettings"      -> { }
 |>;
 
 $errorLabels = <|
@@ -2473,7 +2981,29 @@ $errorLabels = <|
     "NoModels"         -> "ErrorNoModels",
     "ProviderError"    -> "ErrorProviderError",
     "ServerUnavailable"-> "ErrorServerUnavailable",
-    "AgentError"       -> "ErrorAgent"
+    "AgentError"       -> "ErrorAgent",
+
+    (* Remote windows (SSH.wl) *)
+    "SSHNotFound"             -> "ErrorSSHNotFound",
+    "SSHStartFailed"          -> "ErrorSSHStartFailed",
+    "SSHHostKeyUnknown"       -> "ErrorSSHHostKeyUnknown",
+    "SSHHostKeyChanged"       -> "ErrorSSHHostKeyChanged",
+    "SSHAuthFailed"           -> "ErrorSSHAuthFailed",
+    "SSHHostNotFound"         -> "ErrorSSHHostNotFound",
+    "SSHConnectionRefused"    -> "ErrorSSHConnectionRefused",
+    "SSHUnreachable"          -> "ErrorSSHUnreachable",
+    "SSHBadArguments"         -> "ErrorSSHBadArguments",
+    "SSHConnectTimeout"       -> "ErrorSSHConnectTimeout",
+    "SSHConnectionLost"       -> "ErrorSSHConnectionLost",
+    "SSHFailed"               -> "ErrorSSHFailed",
+    "RemoteFolderMissing"     -> "ErrorRemoteFolderMissing",
+    "RemoteFolderAccess"      -> "ErrorRemoteFolderAccess",
+    "RemoteAgentNotFound"     -> "ErrorRemoteAgentNotFound",
+    "RemoteAgentExited"       -> "ErrorRemoteAgentExited",
+    "RemoteTimeout"           -> "ErrorRemoteTimeout",
+    "RemoteScriptFailed"      -> "ErrorRemoteScriptFailed",
+    "RemoteOperationTimedOut" -> "ErrorRemoteOperationTimedOut",
+    "InvalidSSHSettings"      -> "ErrorInvalidSSHSettings"
 |>;
 
 
@@ -2515,16 +3045,49 @@ errorText[ "ModelUnavailable", agent_, model_String, _ ] :=
 errorText[ "ModelUnavailable", _, _, _ ] :=
     acpConnectionLabel[ "ErrorModelUnavailableGeneric" ];
 
+(* A remote agent's sign-in happens on its host: the text names the host (the instruction with the ssh command for a
+   terminal is the advice, see errorHint) *)
+errorText[ kind: "AuthRequired" | "NoModels", agent_, _, context_ ] /; StringQ @ Lookup[ context, "Host", None ] :=
+    acpConnectionLabel[ "Error" <> kind <> "Remote", errorParameters[ agent, context ] ];
+
+(* An "Executable" of the "SSHSettings" that was not found is named (SSH.wl's acpFindSSH gives it as "Path"), so that a
+   typo in it is not mistaken for a missing OpenSSH client *)
+errorText[ "SSHNotFound", agent_, _, context_ ] /; StringQ @ Lookup[ context, "Path", None ] :=
+    acpConnectionLabel[ "ErrorSSHNotFoundPath", errorParameters[ agent, context ] ];
+
 errorText[ kind_String, agent_, _, context_ ] :=
-    acpConnectionLabel[ Lookup[ $errorLabels, kind, "ErrorAgent" ], <| "agent" -> Replace[ Lookup[ context, "Agent", agent ], Except[ _String ] -> agent ] |> ];
+    acpConnectionLabel[ Lookup[ $errorLabels, kind, "ErrorAgent" ], errorParameters[ agent, context ] ];
 
 errorText // endDefinition;
 
 
-(* Details shown below the friendly message: the agent's own message, exit code and end of stderr, install hints *)
-errorDetail // beginDefinition;
+(* The parameters of the error texts. Every key a template uses is given ("" if the context has no value), because
+   TemplateApply silently inserts "" for a missing key. Remote paths are shown with acpRemoteDisplayName. *)
+errorParameters // beginDefinition;
 
-errorDetail[ "AgentNotFound", _, _, context_ ] := Which[
+errorParameters[ agent_, context_Association ] := <|
+    "agent"   -> Replace[ Lookup[ context, "Agent", agent ], Except[ _String ] -> agent ],
+    "host"    -> parameterText @ Lookup[ context, "Host", None ],
+    "path"    -> parameterText @ acpRemoteDisplayName @ Lookup[ context, "Path", None ],
+    "command" -> parameterText @ Lookup[ context, "Command", None ],
+    "url"     -> parameterText @ Lookup[ context, "InstallURL", None ],
+    "example" -> parameterText @ Lookup[ context, "Example", None ],
+    "code"    -> Replace[ Lookup[ context, "ExitCode", None ], Except[ _Integer ] -> "" ]
+|>;
+
+errorParameters // endDefinition;
+
+
+parameterText // beginDefinition;
+parameterText[ s_String ] := acpNeutralizeLinearSyntax @ s;
+parameterText[ _ ] := "";
+parameterText // endDefinition;
+
+
+(* Our advice below the friendly message: install hints, the exit code, what to do about an ssh failure *)
+errorHint // beginDefinition;
+
+errorHint[ "AgentNotFound", _, context_ ] := Which[
     StringQ @ Lookup[ context, "Path", None ],
         acpConnectionLabel[ "ErrorAgentNotFoundPath", <| "path" -> context[ "Path" ] |> ],
     StringQ @ Lookup[ context, "InstallURL", None ],
@@ -2533,24 +3096,69 @@ errorDetail[ "AgentNotFound", _, _, context_ ] := Which[
         None
 ];
 
-errorDetail[ "AgentExited", _, _, context_ ] := Module[ { code, tail },
-    code = Lookup[ context, "ExitCode", None ];
-    tail = stderrTail @ Lookup[ context, "StandardErrorTail", None ];
-    truncateDetail @ Replace[
-        StringRiffle[
-            DeleteCases[ { If[ IntegerQ @ code, acpConnectionLabel[ "ErrorAgentExitedDetail", <| "code" -> code |> ], None ], tail }, None ],
-            "\n"
-        ],
-        "" -> None
-    ]
+errorHint[ "AgentExited", _, context_ ] := With[ { code = Lookup[ context, "ExitCode", None ] },
+    If[ IntegerQ @ code, acpConnectionLabel[ "ErrorAgentExitedDetail", <| "code" -> code |> ], None ]
 ];
 
-errorDetail[ _, message_String, text_, _ ] /; StringLength @ StringTrim @ message > 0 && StringTrim @ message =!= text :=
-    truncateDetail @ StringTrim @ message;
+errorHint[ "InvalidSSHSettings", _, context_ ] := Replace[
+    Lookup[ context, "Detail", None ],
+    Except[ _String? (StringLength @ StringTrim @ # > 0 &) ] -> None
+];
 
-errorDetail[ _, _, _, _ ] := None;
+(* Remote windows: the kind's own advice ("Error" <> kind <> "Detail", the exit code for RemoteAgentExited, the Windows
+   variant for SSHNotFound, or context "HintKey"), then the context's "Hints", each a paragraph *)
+errorHint[ kind_String, agent_, context_ ] /; remoteErrorKindQ @ kind := Module[ { base, keys, params },
+    base = Which[
+        KeyExistsQ[ context, "HintKey" ], context[ "HintKey" ],
+        kind === "RemoteAgentExited", If[ IntegerQ @ Lookup[ context, "ExitCode", None ], "ErrorAgentExitedDetail", None ],
+        kind === "SSHNotFound" && StringQ @ Lookup[ context, "Path", None ], "ErrorSSHNotFoundPathDetail",
+        kind === "SSHNotFound" && TrueQ @ Lookup[ context, "Windows", False ], "ErrorSSHNotFoundDetailWindows",
+        True, "Error" <> kind <> "Detail"
+    ];
+    keys = Select[
+        DeleteDuplicates @ Prepend[ Replace[ Lookup[ context, "Hints", { } ], Except[ { ___String } ] -> { } ], base ],
+        StringQ[ # ] && KeyExistsQ[ $acpConnectionStrings, # ] &
+    ];
+    params = errorParameters[ agent, context ];
+    Replace[ StringRiffle[ acpConnectionLabel[ #, params ] & /@ keys, "\n\n" ], "" -> None ]
+];
 
-errorDetail // endDefinition;
+(* A remote agent's sign-in runs on its host: the message stays short, and the advice is the instruction with the ssh
+   command for a terminal (the toolbar shows it in the details, with "Copy") *)
+errorHint[ kind: "AuthRequired" | "NoModels", agent_, context_ ] /; StringQ @ Lookup[ context, "Host", None ] :=
+    acpConnectionLabel[ "Error" <> kind <> "RemoteDetail", errorParameters[ agent, context ] ];
+
+errorHint[ _, _, _ ] := None;
+
+errorHint // endDefinition;
+
+
+(* What the agent, ssh or the remote side said (neutralized): the end of the agent's stderr, the cleaned ssh text of
+   SSH.wl, or the agent's own message if it is not our sentence *)
+errorOutput // beginDefinition;
+
+errorOutput[ "AgentNotFound" | "InvalidSSHSettings", _, _, _ ] := None;
+
+errorOutput[ "AgentExited", _, _, context_ ] :=
+    truncateDetail @ acpNeutralizeLinearSyntax @ stderrTail @ Lookup[ context, "StandardErrorTail", None ];
+
+errorOutput[ kind_String, _, _, context_ ] /; remoteErrorKindQ @ kind := Replace[
+    Lookup[ context, "Output", None ],
+    { s_String /; StringLength @ StringTrim @ s > 0 :> truncateDetail @ acpNeutralizeLinearSyntax @ s, _ -> None }
+];
+
+errorOutput[ _, message_String, text_, _ ] /; StringLength @ StringTrim @ message > 0 && StringTrim @ message =!= text :=
+    truncateDetail @ acpNeutralizeLinearSyntax @ StringTrim @ message;
+
+errorOutput[ _, _, _, _ ] := None;
+
+errorOutput // endDefinition;
+
+
+(* The kinds of remote windows (SSH.wl, Remote.wl) *)
+remoteErrorKindQ // beginDefinition;
+remoteErrorKindQ[ kind_String ] := StringStartsQ[ kind, "SSH" | "Remote" ];
+remoteErrorKindQ // endDefinition;
 
 
 stderrTail // beginDefinition;
@@ -2571,14 +3179,25 @@ truncateDetail[ other_ ] := other;
 truncateDetail // endDefinition;
 
 
-(* The error of an error response *)
+(* The error of an error response; for a remote window with its host and the ssh command for a terminal (sign-in texts) *)
 responseError // beginDefinition;
 
 responseError[ window_, resp_Association, default_String ] := acpErrorInfo[
     resp[ "Code" ],
     resp[ "Message" ],
     resp[ "Data" ],
-    <| "Agent" -> agentDisplayName @ window, "Model" -> currentModel @ window, "Default" -> default |>
+    <|
+        "Agent"   -> agentDisplayName @ window,
+        "Model"   -> currentModel @ window,
+        "Default" -> default,
+        If[ AssociationQ @ acpWindowSSH @ window,
+            Sequence @@ {
+                "Host"    -> acpWindowHostLabel @ window,
+                "Command" -> acpSSHTerminalCommand @ acpWindowSSH @ window
+            },
+            Nothing
+        ]
+    |>
 ];
 
 responseError // endDefinition;
@@ -2666,9 +3285,10 @@ runningTurnQ[ _ ] := False;
 runningTurnQ // endDefinition;
 
 
+(* A local folder must exist; a remote one (also with invalid SSH settings) must be an absolute or ~/ path: it is never
+   checked on this computer (the launch script reports a missing one) *)
 validProjectDirectoryQ // beginDefinition;
-validProjectDirectoryQ[ dir_String ] := StringLength @ StringTrim @ dir > 0 && TrueQ @ Quiet @ DirectoryQ @ dir;
-validProjectDirectoryQ[ _ ] := False;
+validProjectDirectoryQ[ dir_, window_ ] := acpProjectDirectoryQ[ dir, acpWindowSSH @ window ];
 validProjectDirectoryQ // endDefinition;
 
 

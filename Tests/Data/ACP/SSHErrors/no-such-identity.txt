@@ -1,0 +1,2 @@
+no such identity: /home/user/.ssh/nonexistent_key: No such file or directory
+ubuntu@127.0.0.1: Permission denied (publickey).

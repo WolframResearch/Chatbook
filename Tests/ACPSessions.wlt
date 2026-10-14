@@ -40,6 +40,11 @@ VerificationTest[
 ]
 
 VerificationTest[
+    (* CI runs every test file in one kernel and one context: helpers that other test files define too are cleared
+       first, so that none of their definitions is used here *)
+    ClearAll[ boxStrings, connectionClosedQ, containsTextQ, currentOption, lastLog, mockIn, mockRecords,
+        mockRequestsIn, newMockLog, newWindow ];
+
     $acpLLMKitEnabled     = False;
     $acpAssumeWindowsOpen = True;
     Wolfram`Chatbook`ACP`Transcript`Private`$acpNoFrontEndLabels    = True;
@@ -217,7 +222,7 @@ VerificationTest[
     ,
     _,
     SameTest -> MatchQ,
-    TestID   -> "ACPSessions-Definitions@@Tests/ACPSessions.wlt:42,1-221,2"
+    TestID   -> "ACPSessions-Definitions@@Tests/ACPSessions.wlt:42,1-226,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -227,7 +232,7 @@ VerificationTest[
     Select[ $acpSessionsStrings, ! StringQ @ # || StringLength @ # === 0 & ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "SessionsStrings@@Tests/ACPSessions.wlt:226,1-231,2"
+    TestID   -> "SessionsStrings@@Tests/ACPSessions.wlt:231,1-236,2"
 ]
 
 (* Every acpLabel key used in Sessions.wl has an English default (in any of the tables) *)
@@ -241,7 +246,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "SessionsStrings-Coverage@@Tests/ACPSessions.wlt:234,1-245,2"
+    TestID   -> "SessionsStrings-Coverage@@Tests/ACPSessions.wlt:239,1-250,2"
 ]
 
 (* The keys added for sessions are text resources in all seven .tr files, with the English text in ChatbookStrings.tr *)
@@ -268,9 +273,9 @@ VerificationTest[
             Select[ Keys @ keys, english[ "ACP" <> # ] =!= keys[ # ] & ]
         }
     ],
-    { 7, 47, True, { } },
+    { 7, 49, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "SessionsStrings-TextResources@@Tests/ACPSessions.wlt:248,1-274,2"
+    TestID   -> "SessionsStrings-TextResources@@Tests/ACPSessions.wlt:253,1-279,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -292,7 +297,7 @@ VerificationTest[
     },
     { True, True, True, True, None, None, None },
     SameTest -> MatchQ,
-    TestID   -> "SessionTime@@Tests/ACPSessions.wlt:283,1-296,2"
+    TestID   -> "SessionTime@@Tests/ACPSessions.wlt:288,1-301,2"
 ]
 
 VerificationTest[
@@ -306,7 +311,7 @@ VerificationTest[
     },
     { True, True, True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "SessionHiddenTitle@@Tests/ACPSessions.wlt:298,1-310,2"
+    TestID   -> "SessionHiddenTitle@@Tests/ACPSessions.wlt:303,1-315,2"
 ]
 
 (* The fallback title (shown for the window's own session before its first prompt) is shown without its time *)
@@ -320,7 +325,7 @@ VerificationTest[
     },
     { "New session", "New session - ideas for the parser", "Add stdev to stats.py", "Untitled session", "Untitled session" },
     SameTest -> MatchQ,
-    TestID   -> "SessionsTitle-FallbackTitle@@Tests/ACPSessions.wlt:313,1-324,2"
+    TestID   -> "SessionsTitle-FallbackTitle@@Tests/ACPSessions.wlt:318,1-329,2"
 ]
 
 (* The fallback title alone does not hide a session that was updated long after its creation (it was used, but OpenCode
@@ -339,7 +344,7 @@ VerificationTest[
     (* newest first *)
     { { "used", False }, { "child", True }, { "setup", True }, { "slow", True }, { "notime", True } },
     SameTest -> MatchQ,
-    TestID   -> "SessionItems-UsedFallbackTitle@@Tests/ACPSessions.wlt:328,1-343,2"
+    TestID   -> "SessionItems-UsedFallbackTitle@@Tests/ACPSessions.wlt:333,1-348,2"
 ]
 
 VerificationTest[
@@ -360,7 +365,7 @@ VerificationTest[
         <| "SessionID" -> "s-notime", "Cwd" -> "/q", "Title" -> None, "UpdatedAt" -> None, "Hidden" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionItems@@Tests/ACPSessions.wlt:345,1-364,2"
+    TestID   -> "SessionItems@@Tests/ACPSessions.wlt:350,1-369,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -398,7 +403,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsProjects@@Tests/ACPSessions.wlt:369,1-402,2"
+    TestID   -> "SessionsProjects@@Tests/ACPSessions.wlt:374,1-407,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -424,7 +429,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplayRanges@@Tests/ACPSessions.wlt:407,1-428,2"
+    TestID   -> "ReplayRanges@@Tests/ACPSessions.wlt:412,1-433,2"
 ]
 
 VerificationTest[
@@ -439,7 +444,7 @@ VerificationTest[
     ],
     { 13, 13, 0, 4, True, True, 1000.0 },
     SameTest -> MatchQ,
-    TestID   -> "ReplayAppend@@Tests/ACPSessions.wlt:430,1-443,2"
+    TestID   -> "ReplayAppend@@Tests/ACPSessions.wlt:435,1-448,2"
 ]
 
 (* Past the caps the oldest chunks are dropped; the job drops the partial turn at the start and counts the turns that are
@@ -464,7 +469,7 @@ VerificationTest[
     ],
     { 16, True, True, 8, True, "user_message_chunk", 8 },
     SameTest -> MatchQ,
-    TestID   -> "ReplayAppend-Caps@@Tests/ACPSessions.wlt:447,1-468,2"
+    TestID   -> "ReplayAppend-Caps@@Tests/ACPSessions.wlt:452,1-473,2"
 ]
 
 VerificationTest[
@@ -496,7 +501,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplayTurn@@Tests/ACPSessions.wlt:470,1-500,2"
+    TestID   -> "ReplayTurn@@Tests/ACPSessions.wlt:475,1-505,2"
 ]
 
 (* Final cells of replayed turns have no timing ("Worked", "Thoughts"), and a turn without output says "No reply." *)
@@ -519,7 +524,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, { True, True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "ReplayTurn-FinalCells@@Tests/ACPSessions.wlt:503,1-523,2"
+    TestID   -> "ReplayTurn-FinalCells@@Tests/ACPSessions.wlt:508,1-528,2"
 ]
 
 (* Live turns keep their timing labels *)
@@ -532,7 +537,7 @@ VerificationTest[
     },
     { "Worked for 5s", "Thought for 4 seconds" },
     SameTest -> MatchQ,
-    TestID   -> "ReplayLabels-LiveUnchanged@@Tests/ACPSessions.wlt:526,1-536,2"
+    TestID   -> "ReplayLabels-LiveUnchanged@@Tests/ACPSessions.wlt:531,1-541,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -556,7 +561,7 @@ VerificationTest[
     ],
     { None, "Running", "Permission", "Connecting", "Connecting", "Restoring", "Restoring", "Wait for the current turn to finish", "Restoring\[Ellipsis]", None },
     SameTest -> MatchQ,
-    TestID   -> "BusyState@@Tests/ACPSessions.wlt:541,1-560,2"
+    TestID   -> "BusyState@@Tests/ACPSessions.wlt:546,1-565,2"
 ]
 
 (* Restore and new session are refused while the window is busy; the current session is a no-op *)
@@ -588,7 +593,7 @@ VerificationTest[
         Missing[ "NotFound" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-Preconditions@@Tests/ACPSessions.wlt:563,1-592,2"
+    TestID   -> "Restore-Preconditions@@Tests/ACPSessions.wlt:568,1-597,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -625,7 +630,7 @@ VerificationTest[
     ],
     { { "ACPNewChatButton", False }, { False }, True, { False }, True, True, True, { True } },
     SameTest -> MatchQ,
-    TestID   -> "Restoring-Toolbar@@Tests/ACPSessions.wlt:597,1-629,2"
+    TestID   -> "Restoring-Toolbar@@Tests/ACPSessions.wlt:602,1-634,2"
 ]
 
 VerificationTest[
@@ -636,7 +641,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "Restoring-ToolbarStatus@@Tests/ACPSessions.wlt:631,1-640,2"
+    TestID   -> "Restoring-ToolbarStatus@@Tests/ACPSessions.wlt:636,1-645,2"
 ]
 
 (* Send queues the prompt while a session is restored (its user cell must come after the restored transcript), and the
@@ -678,7 +683,7 @@ VerificationTest[
         { { "FESet", "Input", "" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Restoring-SendQueues@@Tests/ACPSessions.wlt:644,1-682,2"
+    TestID   -> "Restoring-SendQueues@@Tests/ACPSessions.wlt:649,1-687,2"
 ]
 
 (* A config change (e.g. ShowNotebookAssistance with "ACPModel") waits while the restored session loads (it is applied to
@@ -715,7 +720,7 @@ VerificationTest[
         { <| "sessionId" -> "s-new", "configId" -> "model", "value" -> "m2" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "Restoring-ConfigWhileWriting@@Tests/ACPSessions.wlt:686,1-719,2"
+    TestID   -> "Restoring-ConfigWhileWriting@@Tests/ACPSessions.wlt:691,1-724,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -761,7 +766,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "RestoreWrite-Steps@@Tests/ACPSessions.wlt:727,1-765,2"
+    TestID   -> "RestoreWrite-Steps@@Tests/ACPSessions.wlt:732,1-770,2"
 ]
 
 (* A newer restore (another token) or a window without the restore ends the job *)
@@ -779,7 +784,7 @@ VerificationTest[
     ],
     { Null, 0, "new" },
     SameTest -> MatchQ,
-    TestID   -> "RestoreWrite-Superseded@@Tests/ACPSessions.wlt:768,1-783,2"
+    TestID   -> "RestoreWrite-Superseded@@Tests/ACPSessions.wlt:773,1-788,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -807,7 +812,7 @@ VerificationTest[
         <| "Status" -> "Error", "Restore" -> None, "PendingRestore" -> None |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-RestoreFallbacks@@Tests/ACPSessions.wlt:788,1-811,2"
+    TestID   -> "Housekeeping-RestoreFallbacks@@Tests/ACPSessions.wlt:793,1-816,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -837,7 +842,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "WindowHooks-Scheduled@@Tests/ACPSessions.wlt:818,1-841,2"
+    TestID   -> "WindowHooks-Scheduled@@Tests/ACPSessions.wlt:823,1-846,2"
 ]
 
 VerificationTest[
@@ -870,7 +875,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "WindowHooks-RecoverAndClose@@Tests/ACPSessions.wlt:843,1-874,2"
+    TestID   -> "WindowHooks-RecoverAndClose@@Tests/ACPSessions.wlt:848,1-879,2"
 ]
 
 VerificationTest[
@@ -882,7 +887,7 @@ VerificationTest[
     },
     { None, Cell[ _BoxData, ___, CellTags -> "ACPSessions", ___ ], Missing[ "NotFound" ], Missing[ "NotFound" ] },
     SameTest -> MatchQ,
-    TestID   -> "WindowHooks-Headless@@Tests/ACPSessions.wlt:876,1-886,2"
+    TestID   -> "WindowHooks-Headless@@Tests/ACPSessions.wlt:881,1-891,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -934,7 +939,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "SessionsWindow-Definitions@@Tests/ACPSessions.wlt:894,1-938,2"
+    TestID   -> "SessionsWindow-Definitions@@Tests/ACPSessions.wlt:899,1-943,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -959,7 +964,7 @@ VerificationTest[
     ],
     { "now", "now", "now", "1m", "3m", "2h", "23h", "5d", "Oct 4", "Mar 4", "2025-12-01", "" },
     SameTest -> MatchQ,
-    TestID   -> "ShortRelativeTime@@Tests/ACPSessions.wlt:943,1-963,2"
+    TestID   -> "ShortRelativeTime@@Tests/ACPSessions.wlt:948,1-968,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -995,7 +1000,7 @@ VerificationTest[
         "SlideOwner"
     },
     SameTest -> MatchQ,
-    TestID   -> "Placement@@Tests/ACPSessions.wlt:968,1-999,2"
+    TestID   -> "Placement@@Tests/ACPSessions.wlt:973,1-1004,2"
 ]
 
 (* With the ACP window's height and frame width (as measured in a Linux front end with a window manager): the same top
@@ -1029,7 +1034,7 @@ VerificationTest[
         0
     },
     SameTest -> MatchQ,
-    TestID   -> "Placement-HeightAndFrame@@Tests/ACPSessions.wlt:1003,1-1033,2"
+    TestID   -> "Placement-HeightAndFrame@@Tests/ACPSessions.wlt:1008,1-1038,2"
 ]
 
 (* Without a front end: the default size, no margins, the ACP window is not moved *)
@@ -1043,7 +1048,7 @@ VerificationTest[
         "Magnification"      -> 0.85
     |>,
     SameTest -> MatchQ,
-    TestID   -> "Placement-Headless@@Tests/ACPSessions.wlt:1036,1-1047,2"
+    TestID   -> "Placement-Headless@@Tests/ACPSessions.wlt:1041,1-1052,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1085,7 +1090,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsNotebook-Options@@Tests/ACPSessions.wlt:1052,1-1089,2"
+    TestID   -> "SessionsNotebook-Options@@Tests/ACPSessions.wlt:1057,1-1094,2"
 ]
 
 (* One self-contained cell: no style name, every option inline, the owner in its own TaggingRules, the cell tag that
@@ -1122,7 +1127,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsCell-Structure@@Tests/ACPSessions.wlt:1093,1-1126,2"
+    TestID   -> "SessionsCell-Structure@@Tests/ACPSessions.wlt:1098,1-1131,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1167,7 +1172,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, False, False, True, True, True, True, False, False, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Rows@@Tests/ACPSessions.wlt:1135,1-1171,2"
+    TestID   -> "SessionsView-Rows@@Tests/ACPSessions.wlt:1140,1-1176,2"
 ]
 
 (* Opened and closed projects are kept in the store; the window's own folder without visible sessions: "No sessions yet" *)
@@ -1188,7 +1193,7 @@ VerificationTest[
     ],
     { True, False, False, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Projects@@Tests/ACPSessions.wlt:1174,1-1192,2"
+    TestID   -> "SessionsView-Projects@@Tests/ACPSessions.wlt:1179,1-1197,2"
 ]
 
 (* A project shows its newest 25 sessions (and the window's own one, wherever it is) and "Show 4 more" (the window's own
@@ -1216,7 +1221,7 @@ VerificationTest[
     ],
     { 50, Missing[ "NotFound" ], 25, True, False, True, True, 29, False },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-ShowMore@@Tests/ACPSessions.wlt:1196,1-1220,2"
+    TestID   -> "SessionsView-ShowMore@@Tests/ACPSessions.wlt:1201,1-1225,2"
 ]
 
 (* The window's own session past the first page is shown and not counted: with 26 sessions and the own one last, there
@@ -1234,7 +1239,7 @@ VerificationTest[
     ],
     { { }, True, { "Show 24 more" }, { "Show 5 more" } },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-ShowMore-OwnSession@@Tests/ACPSessions.wlt:1224,1-1238,2"
+    TestID   -> "SessionsView-ShowMore-OwnSession@@Tests/ACPSessions.wlt:1229,1-1243,2"
 ]
 
 (* A disconnected window's own (resumable) session is shown even if it was never used; without it, it is hidden *)
@@ -1256,7 +1261,7 @@ VerificationTest[
     ],
     { True, False, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-ResumableShown@@Tests/ACPSessions.wlt:1241,1-1260,2"
+    TestID   -> "SessionsView-ResumableShown@@Tests/ACPSessions.wlt:1246,1-1265,2"
 ]
 
 (* An agent that can delete sessions but not load them: the rows can't be opened but have the trash button *)
@@ -1276,7 +1281,7 @@ VerificationTest[
     ],
     { { }, { "ACPSessionsDelete-" <> sessionsKey[ "v2" ], "ACPSessionsDelete-" <> sessionsKey[ "v4" ] }, True, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-DeleteWithoutLoad@@Tests/ACPSessions.wlt:1263,1-1280,2"
+    TestID   -> "SessionsView-DeleteWithoutLoad@@Tests/ACPSessions.wlt:1268,1-1285,2"
 ]
 
 (* Text the agent chose never reaches boxes with the front end's linear syntax characters: its name (initialize
@@ -1305,7 +1310,7 @@ VerificationTest[
     ],
     { False, False, False, False, False, False, False, True },
     SameTest -> MatchQ,
-    TestID   -> "AgentTextNeutralized@@Tests/ACPSessions.wlt:1285,1-1309,2"
+    TestID   -> "AgentTextNeutralized@@Tests/ACPSessions.wlt:1290,1-1314,2"
 ]
 
 (* The trash button asks first: "Delete this session?" with Delete and Cancel (Cancel last, where the trash was) *)
@@ -1328,7 +1333,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Confirm@@Tests/ACPSessions.wlt:1312,1-1332,2"
+    TestID   -> "SessionsView-Confirm@@Tests/ACPSessions.wlt:1317,1-1337,2"
 ]
 
 (* While the ACP window is busy, sessions can't be opened or deleted and "+" is disabled; the tooltip says why *)
@@ -1351,7 +1356,7 @@ VerificationTest[
     ],
     { { }, False, True, True, True, { }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Busy@@Tests/ACPSessions.wlt:1335,1-1355,2"
+    TestID   -> "SessionsView-Busy@@Tests/ACPSessions.wlt:1340,1-1360,2"
 ]
 
 (* Status lines; a session being deleted; the notice of a failed delete *)
@@ -1400,7 +1405,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Status@@Tests/ACPSessions.wlt:1358,1-1404,2"
+    TestID   -> "SessionsView-Status@@Tests/ACPSessions.wlt:1363,1-1409,2"
 ]
 
 (* The view re-renders when what it shows changes, not on listing steps that change nothing *)
@@ -1418,7 +1423,7 @@ VerificationTest[
     ],
     { True, False, False, False, False, True, None },
     SameTest -> MatchQ,
-    TestID   -> "SessionsView-Signature@@Tests/ACPSessions.wlt:1407,1-1422,2"
+    TestID   -> "SessionsView-Signature@@Tests/ACPSessions.wlt:1412,1-1427,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1495,7 +1500,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsWindow-Actions@@Tests/ACPSessions.wlt:1427,1-1499,2"
+    TestID   -> "SessionsWindow-Actions@@Tests/ACPSessions.wlt:1432,1-1504,2"
 ]
 
 (* Delete is refused while the window is busy; a refusal of the backend becomes the window's notice *)
@@ -1527,7 +1532,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "SessionsWindow-DeleteRefused@@Tests/ACPSessions.wlt:1502,1-1531,2"
+    TestID   -> "SessionsWindow-DeleteRefused@@Tests/ACPSessions.wlt:1507,1-1536,2"
 ]
 
 (* The toolbar button opens the window (placed, with the owner in its TaggingRules) and lists; again, it closes it *)
@@ -1572,7 +1577,7 @@ VerificationTest[
         { "Close", NotebookObject[ "acp-sessions-window-2" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToggleSessions@@Tests/ACPSessions.wlt:1534,1-1576,2"
+    TestID   -> "ToggleSessions@@Tests/ACPSessions.wlt:1539,1-1581,2"
 ]
 
 (* Whether the open Sessions window is hidden by the windows in front of it (front to back, as Notebooks[] lists them) *)
@@ -1600,7 +1605,7 @@ VerificationTest[
     ],
     { False, True, True, False, False, False, False, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "SessionsCoveredQ@@Tests/ACPSessions.wlt:1579,1-1604,2"
+    TestID   -> "SessionsCoveredQ@@Tests/ACPSessions.wlt:1584,1-1609,2"
 ]
 
 (* A hidden Sessions window is brought back (placed and selected, and it lists) instead of being closed *)
@@ -1623,7 +1628,7 @@ VerificationTest[
     ],
     { "Raised", { { "Select", NotebookObject[ "acp-sessions-window-3" ] }, { "List", $viewNB } }, True },
     SameTest -> MatchQ,
-    TestID   -> "ToggleSessions-Covered@@Tests/ACPSessions.wlt:1607,1-1627,2"
+    TestID   -> "ToggleSessions-Covered@@Tests/ACPSessions.wlt:1612,1-1632,2"
 ]
 
 (* The toolbar has the Sessions button (icon only, with a tooltip) *)
@@ -1638,7 +1643,225 @@ VerificationTest[
     ],
     { { "ACPSessionsButton" }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SessionsButton@@Tests/ACPSessions.wlt:1630,1-1642,2"
+    TestID   -> "SessionsButton@@Tests/ACPSessions.wlt:1635,1-1647,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Remote Windows*)
+
+(* A remote window's sessions are in folders on its host: POSIX paths that are never looked at on this computer *)
+VerificationTest[
+    $remoteSSH   = <| "MachineName" -> "devbox.example.com", "Username" -> "u", "Arguments" -> { }, "Executable" -> Automatic |>;
+    $remoteItems = {
+        viewItem[ "r1", "/home/u/p/", "Remote one", 120 ],
+        viewItem[ "r2", "/home/u/p", "Remote two", 3600 ],
+        viewItem[ "r3", "/", "At the root", 7200 ],
+        viewItem[ "r4", "/srv/gone dir", "Elsewhere", 86400 ]
+    };
+    remoteViewWindow[ extra_: <| |>, store_: <| |> ] := viewWindow[
+        <| "ProjectDirectory" -> "/home/u/p", "Settings" -> <| "SSHSettings" -> $remoteSSH |>, "RemoteHome" -> "/home/u", "SessionID" -> "r1", extra |>,
+        <| "Items" -> $remoteItems, store |>
+    ];
+    (* Evaluates eval with DirectoryQ and ExpandFileName of the remote paths sown (and not done): { result, sown } *)
+    remotePathQ[ p_String ] := p === "/" || p === "//" || StringStartsQ[ p, { "/home/u", "/srv" } ];
+    remoteTrap // Attributes = { HoldAll };
+    remoteTrap[ eval_ ] := Module[ { r = Reap @ Internal`InheritedBlock[ { DirectoryQ, ExpandFileName },
+            Unprotect[ DirectoryQ, ExpandFileName ];
+            DirectoryQ[ p_String ] /; remotePathQ @ p := (Sow[ { "DirectoryQ", p } ]; False);
+            ExpandFileName[ p_String ] /; remotePathQ @ p := (Sow[ { "ExpandFileName", p } ]; p);
+            eval
+        ] },
+        { First @ r, Flatten[ Last @ r, 1 ] }
+    ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-Definitions@@Tests/ACPSessions.wlt:1654,1-1681,2"
+]
+
+(* Grouping: "/home/u/p/" and "/home/u/p" are one project, named with POSIX names; the root is "/" *)
+VerificationTest[
+    remoteTrap @ Module[ { projects, key },
+        projects = acpSessionsProjects @ remoteViewWindow[ ];
+        key      = Wolfram`Chatbook`ACP`Sessions`Private`sessionsPathKey;
+        {
+            Lookup[ projects, "Key" ],
+            Lookup[ projects, "Name" ],
+            Lookup[ projects, "Count" ],
+            Lookup[ projects, "Current" ],
+            key[ #, True ] & /@ { "/home/u/p/", "/home/u/p", "/", "//", "~/x/", "rel" },
+            Wolfram`Chatbook`ACP`Sessions`Private`samePathQ @@@ {
+                { "/home/u/p/", "/home/u/p", True },
+                { "/home/u/p", "/home/u/P", True },
+                { "/home/u/p", "/home/u/p/q/..", True }
+            },
+            (* a name with a line break or an invisible character is shown visibly *)
+            Lookup[ acpSessionsProjects[ { viewItem[ "x", "/srv/a\nb\:202e", "X", 1 ] }, { }, None, True ], "Name" ]
+        }
+    ],
+    {
+        {
+            { "/home/u/p", "/", "/srv/gone dir" },
+            { "p", "/", "gone dir" },
+            { 2, 1, 1 },
+            { True, False, False },
+            { "/home/u/p", "/home/u/p", "/", "/", "~/x", "rel" },
+            { True, False, False },
+            { "a\:2424b\:27e6U+202E\:27e7" }
+        },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-Grouping@@Tests/ACPSessions.wlt:1684,1-1717,2"
+]
+
+(* The view of a remote window: no folder is "missing" (none is looked at on this computer), "+" works everywhere, the
+   tooltip is the folder on the host, abbreviated with the remote home *)
+VerificationTest[
+    remoteTrap @ Module[ { k = sessionsKey, v },
+        v = view @ remoteViewWindow[ ];
+        {
+            FreeQ[ v, _Failure | _Missing ],
+            containsTextQ[ v, "This folder no longer exists" ],
+            buttonEnabled[ v, "ACPSessionsNew-" <> k[ "/srv/gone dir" ] ],
+            buttonEnabled[ v, "ACPSessionsNew-" <> k[ "/" ] ],
+            MemberQ[ boxStrings @ v, "~/p on devbox" ],
+            MemberQ[ boxStrings @ v, "/srv/gone dir on devbox" ],
+            containsTextQ[ v, "Remote one" ] && containsTextQ[ v, "Remote two" ]
+        }
+    ],
+    { { True, False, True, True, True, True, True }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-NoMissing@@Tests/ACPSessions.wlt:1721,1-1737,2"
+]
+
+(* No "open folder" for a remote window's folders (not on this computer): no button, and the action does nothing *)
+VerificationTest[
+    Module[ { k = sessionsKey, log = { }, v, result },
+        v = view @ remoteViewWindow[ ];
+        result = Block[
+            {
+                $acpWindows        = <| $viewNB -> remoteViewWindow[ ] |>,
+                acpEnsurePublisher = Null &,
+                acpCheckSession    = True &,
+                acpReviewOpenFile  = (AppendTo[ log, { "OpenFile", ## } ]; Null) &
+            },
+            Wolfram`Chatbook`Common`acpAction[ "SessionsOpenFolder", $viewNB, k[ "/home/u/p" ] ]
+        ];
+        {
+            Select[ boxIDs @ v, StringStartsQ[ "ACPSessionsOpenFolder-" ] ],
+            Length @ Select[ boxIDs @ view @ viewWindow[ ], StringStartsQ[ "ACPSessionsOpenFolder-" ] ] > 0,
+            result,
+            log
+        }
+    ],
+    { { }, True, Missing[ "Remote" ], { } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-NoOpenFolder@@Tests/ACPSessions.wlt:1740,1-1762,2"
+]
+
+(* The header names the host; the view's signature follows the host and the remote home *)
+VerificationTest[
+    Module[ { v = view @ remoteViewWindow[ ] },
+        {
+            MemberQ[ boxStrings @ v, "OpenCode on devbox" ],
+            MemberQ[ boxStrings @ view @ viewWindow[ ], "OpenCode" ],
+            viewSignature @ remoteViewWindow[ ] =!= viewSignature @ remoteViewWindow[ <| "RemoteHome" -> "/home/v" |> ],
+            viewSignature @ remoteViewWindow[ ] =!= viewSignature @ remoteViewWindow[ <| "Settings" -> <| "SSHSettings" -> <| $remoteSSH, "MachineName" -> "other" |> |> |> ],
+            viewSignature @ remoteViewWindow[ ] === viewSignature @ remoteViewWindow[ <| "LastActivity" -> 1 |> ]
+        }
+    ],
+    { True, True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-Header@@Tests/ACPSessions.wlt:1765,1-1778,2"
+]
+
+(* Restoring a session (or "+") in another folder of a remote window: the listed cwd is kept exactly ("Raw": a folder
+   name may end in a space) and never looked at on this computer; a cwd that is not a remote folder path is refused
+   with a notice; the window's own folder (with or without "/" at the end) is the same folder *)
+VerificationTest[
+    remoteTrap @ Module[ { nbo = NotebookObject[ "acp-sessions-remote" ], log = { }, window, results },
+        window = <|
+            Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ nbo, "/home/u/p", "OpenCode", <| "SSHSettings" -> $remoteSSH |> ],
+            "Status"     -> "Ready",
+            "SessionID"  -> "cur",
+            "RemoteHome" -> "/home/u"
+        |>;
+        results = Block[
+            {
+                $acpWindows                = <| nbo -> window |>,
+                acpPublish                 = Null &,
+                acpEnsurePublisher         = Null &,
+                acpChangeProjectDirectory  = (AppendTo[ log, { "Change", ## } ]; #2) &,
+                acpSetNotice               = (AppendTo[ log, { "Notice", ## } ]; Null) &,
+                acpNewChat                 = (AppendTo[ log, { "NewChat", ## } ]; Null) &
+            },
+            {
+                acpRestoreSession[ nbo, "s1", "/home/u/q " ],
+                acpRestoreSession[ nbo, "s2", "/home/u/a\nb" ],
+                acpRestoreSession[ nbo, "s3", "relative" ],
+                acpNewSessionIn[ nbo, "/home/u/q " ],
+                acpNewSessionIn[ nbo, "/home/u/p/" ],
+                acpNewSessionIn[ nbo, "~bob/x" ]
+            }
+        ];
+        { results, log }
+    ],
+    {
+        {
+            {
+                "Restoring",
+                Failure[ "InvalidFolder", <| "Cwd" -> "/home/u/a\nb" |> ],
+                Failure[ "InvalidFolder", <| "Cwd" -> "relative" |> ],
+                "New",
+                "New",
+                Failure[ "InvalidFolder", <| "Cwd" -> "~bob/x" |> ]
+            },
+            {
+                { "Change", _NotebookObject, "/home/u/q ", <| "PendingRestore" -> <| "SessionID" -> "s1", "Cwd" -> "/home/u/q " |>, "Raw" -> True |> },
+                { "Notice", _NotebookObject, "/home/u/a\:2424b is not a folder path on u@devbox.example.com: it must start with / or ~/." },
+                { "Notice", _NotebookObject, "relative is not a folder path on u@devbox.example.com: it must start with / or ~/." },
+                { "Change", _NotebookObject, "/home/u/q ", <| "Raw" -> True |> },
+                { "NewChat", _NotebookObject },
+                { "Notice", _NotebookObject, _String }
+            }
+        },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-Restore@@Tests/ACPSessions.wlt:1783,1-1834,2"
+]
+
+(* Replayed turns of a remote window carry its host ("Remote"): a file link of the agent is shown with its path on the
+   host, not as a link to a file on this computer *)
+VerificationTest[
+    Module[ { nbo = NotebookObject[ "acp-sessions-remote-replay" ], window, restore, job, cells },
+        window  = <|
+            Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ nbo, "/home/u/p", "OpenCode", <| "SSHSettings" -> $remoteSSH |> ],
+            "RemoteHome" -> "/home/u"
+        |>;
+        restore = Fold[
+            acpReplayAppend[ #1, #2, 1.0 ] &,
+            acpNewRestore @ <| "SessionID" -> "s1", "Token" -> "t1" |>,
+            {
+                userChunk[ "u1", "Where is it?" ],
+                <| "sessionUpdate" -> "agent_message_chunk", "messageId" -> "a1", "content" -> <| "type" -> "text", "text" -> "Here:" |> |>,
+                <| "sessionUpdate" -> "agent_message_chunk", "messageId" -> "a1", "content" -> <| "type" -> "resource_link", "uri" -> "file:///home/u/p/notes.md", "name" -> "notes.md" |> |>
+            }
+        ];
+        job   = Wolfram`Chatbook`ACP`Sessions`Private`restoreNewJob[ nbo, window, restore ];
+        cells = Wolfram`Chatbook`ACP`Sessions`Private`restoreTurnCells[ job, 1 ];
+        {
+            job[ "Remote" ],
+            containsTextQ[ cells, "On u@devbox.example.com: /home/u/p/notes.md" ],
+            FreeQ[ cells, _ButtonBox | TemplateBox[ _, "HyperlinkURL" | "HyperlinkDefault", ___ ] ],
+            Lookup[ Wolfram`Chatbook`ACP`Sessions`Private`restoreNewJob[ nbo, <| window, "Settings" -> <| |> |>, restore ], "Remote" ]
+        }
+    ],
+    { <| "Host" -> "u@devbox.example.com", "Short" -> "devbox", "Home" -> "/home/u" |>, True, True, None },
+    SameTest -> MatchQ,
+    TestID   -> "ACPSessions-Remote-ReplayTurn@@Tests/ACPSessions.wlt:1838,1-1865,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1656,7 +1879,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "sess-1", "m2", "Idle" },
     SameTest -> MatchQ,
-    TestID   -> "List-Connect@@Tests/ACPSessions.wlt:1651,1-1660,2"
+    TestID   -> "List-Connect@@Tests/ACPSessions.wlt:1874,1-1883,2"
 ]
 
 (* Opening the Sessions window lists every folder's sessions: no cwd, pages followed by their cursor until an empty page
@@ -1688,7 +1911,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "List-Paging@@Tests/ACPSessions.wlt:1664,1-1692,2"
+    TestID   -> "List-Paging@@Tests/ACPSessions.wlt:1887,1-1915,2"
 ]
 
 VerificationTest[
@@ -1708,7 +1931,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "List-Projects@@Tests/ACPSessions.wlt:1694,1-1712,2"
+    TestID   -> "List-Projects@@Tests/ACPSessions.wlt:1917,1-1935,2"
 ]
 
 (* Listings only happen while the Sessions window is open; a turn's end lists now and once more later *)
@@ -1732,7 +1955,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { 0, 1, 2, True, None },
     SameTest -> MatchQ,
-    TestID   -> "List-Triggers@@Tests/ACPSessions.wlt:1715,1-1736,2"
+    TestID   -> "List-Triggers@@Tests/ACPSessions.wlt:1938,1-1959,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1777,7 +2000,7 @@ VerificationTest[
         "Loaded"
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-SameFolder@@Tests/ACPSessions.wlt:1745,1-1781,2"
+    TestID   -> "Restore-SameFolder@@Tests/ACPSessions.wlt:1968,1-2004,2"
 ]
 
 VerificationTest[
@@ -1804,7 +2027,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-SameFolder-Cells@@Tests/ACPSessions.wlt:1783,1-1808,2"
+    TestID   -> "Restore-SameFolder-Cells@@Tests/ACPSessions.wlt:2006,1-2031,2"
 ]
 
 (* After the restore the list is fetched again; explicit model changes work as before *)
@@ -1819,7 +2042,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, KeyValuePattern @ { "sessionId" -> "ses_a1", "configId" -> "model", "value" -> "m2" }, True },
     SameTest -> MatchQ,
-    TestID   -> "Restore-SameFolder-AfterRestore@@Tests/ACPSessions.wlt:1811,1-1823,2"
+    TestID   -> "Restore-SameFolder-AfterRestore@@Tests/ACPSessions.wlt:2034,1-2046,2"
 ]
 
 (* A failed load leaves the window with its session and transcript and shows the error *)
@@ -1837,7 +2060,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "ses_a1", 0, 0, _String? (StringStartsQ[ #, "Couldn't open the session: " ] && StringContainsQ[ #, "session not found: ses_ghost" ] &) },
     SameTest -> MatchQ,
-    TestID   -> "Restore-SameFolder-Failure@@Tests/ACPSessions.wlt:1826,1-1841,2"
+    TestID   -> "Restore-SameFolder-Failure@@Tests/ACPSessions.wlt:2049,1-2064,2"
 ]
 
 (* Restoring the current session does nothing *)
@@ -1845,7 +2068,7 @@ VerificationTest[
     ifConnTests @ { acpRestoreSession[ $w1, "ses_a1", $project1 ], acpWindowGet[ $w1, "Status" ] },
     Missing[ "TestSkipped" ] | { "Current", "Ready" },
     SameTest -> MatchQ,
-    TestID   -> "Restore-Current@@Tests/ACPSessions.wlt:1844,1-1849,2"
+    TestID   -> "Restore-Current@@Tests/ACPSessions.wlt:2067,1-2072,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1870,7 +2093,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "Delete-CurrentAndUnknown@@Tests/ACPSessions.wlt:1854,1-1874,2"
+    TestID   -> "Delete-CurrentAndUnknown@@Tests/ACPSessions.wlt:2077,1-2097,2"
 ]
 
 VerificationTest[
@@ -1888,7 +2111,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Deleting", True, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Delete-Listed@@Tests/ACPSessions.wlt:1876,1-1892,2"
+    TestID   -> "Delete-Listed@@Tests/ACPSessions.wlt:2099,1-2115,2"
 ]
 
 (* An error response becomes the store's notice *)
@@ -1903,7 +2126,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | <| "Deleting" -> <| |>, "Notice" -> "Couldn't delete the session: Internal error" |>,
     SameTest -> MatchQ,
-    TestID   -> "Delete-Error@@Tests/ACPSessions.wlt:1895,1-1907,2"
+    TestID   -> "Delete-Error@@Tests/ACPSessions.wlt:2118,1-2130,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1943,7 +2166,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-OtherFolder@@Tests/ACPSessions.wlt:1914,1-1947,2"
+    TestID   -> "Restore-OtherFolder@@Tests/ACPSessions.wlt:2137,1-2170,2"
 ]
 
 (* If the load fails there, the window falls back to a new session in that folder and shows the error *)
@@ -1970,7 +2193,7 @@ VerificationTest[
         _String? (StringContainsQ[ "session not found: ses_ghost" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-OtherFolder-Failure@@Tests/ACPSessions.wlt:1950,1-1974,2"
+    TestID   -> "Restore-OtherFolder-Failure@@Tests/ACPSessions.wlt:2173,1-2197,2"
 ]
 
 (* A session whose folder no longer exists can't be restored *)
@@ -1982,7 +2205,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { Failure[ "FolderMissing", _ ], $project1, True },
     SameTest -> MatchQ,
-    TestID   -> "Restore-FolderMissing@@Tests/ACPSessions.wlt:1977,1-1986,2"
+    TestID   -> "Restore-FolderMissing@@Tests/ACPSessions.wlt:2200,1-2209,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2012,7 +2235,7 @@ VerificationTest[
         $project2
     },
     SameTest -> MatchQ,
-    TestID   -> "NewSessionIn@@Tests/ACPSessions.wlt:1991,1-2016,2"
+    TestID   -> "NewSessionIn@@Tests/ACPSessions.wlt:2214,1-2239,2"
 ]
 
 VerificationTest[
@@ -2027,7 +2250,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, "NotConnected" },
     SameTest -> MatchQ,
-    TestID   -> "List-NotConnected@@Tests/ACPSessions.wlt:2018,1-2031,2"
+    TestID   -> "List-NotConnected@@Tests/ACPSessions.wlt:2241,1-2254,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2073,7 +2296,7 @@ VerificationTest[
         4
     },
     SameTest -> MatchQ,
-    TestID   -> "SlowLoad-Restoring@@Tests/ACPSessions.wlt:2038,1-2077,2"
+    TestID   -> "SlowLoad-Restoring@@Tests/ACPSessions.wlt:2261,1-2300,2"
 ]
 
 (* The load timeout counts from the last replayed update: a long replay is not cut off, a load that stalls after it is *)
@@ -2101,7 +2324,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, "ses_s1", "Ready", "Couldn't open the session: Mock ACP Agent didn't respond in time." },
     SameTest -> MatchQ,
-    TestID   -> "SlowLoad-TimeoutFromLastUpdate@@Tests/ACPSessions.wlt:2080,1-2105,2"
+    TestID   -> "SlowLoad-TimeoutFromLastUpdate@@Tests/ACPSessions.wlt:2303,1-2328,2"
 ]
 
 (* The load that timed out gets its response late: the agent attached the session after all, so it is closed again
@@ -2120,7 +2343,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "ses_s1", 0, True, True, None },
     SameTest -> MatchQ,
-    TestID   -> "SlowLoad-AbandonedClosed@@Tests/ACPSessions.wlt:2109,1-2124,2"
+    TestID   -> "SlowLoad-AbandonedClosed@@Tests/ACPSessions.wlt:2332,1-2347,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2181,7 +2404,7 @@ VerificationTest[
         "sess-1"
     },
     SameTest -> MatchQ,
-    TestID   -> "SetupLoad-TimeoutFallsBack@@Tests/ACPSessions.wlt:2132,1-2185,2"
+    TestID   -> "SetupLoad-TimeoutFallsBack@@Tests/ACPSessions.wlt:2355,1-2408,2"
 ]
 
 (* session/list and session/delete that get no response in time: the listing fails with a timeout error, the delete
@@ -2214,7 +2437,7 @@ VerificationTest[
         "Couldn't delete the session: Mock ACP Agent didn't respond in time."
     },
     SameTest -> MatchQ,
-    TestID   -> "ListAndDelete-Timeouts@@Tests/ACPSessions.wlt:2189,1-2218,2"
+    TestID   -> "ListAndDelete-Timeouts@@Tests/ACPSessions.wlt:2412,1-2441,2"
 ]
 
 (* A delete whose connection goes away before the response (here: Reconnect) is forgotten, so the session doesn't stay
@@ -2240,7 +2463,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Deleting", { "ses_a1" }, True, True, True, "Deleting", True, True, None },
     SameTest -> MatchQ,
-    TestID   -> "Delete-ConnectionReplaced@@Tests/ACPSessions.wlt:2222,1-2244,2"
+    TestID   -> "Delete-ConnectionReplaced@@Tests/ACPSessions.wlt:2445,1-2467,2"
 ]
 
 VerificationTest[
@@ -2251,14 +2474,20 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "TimeoutsAndRaces-Disconnect@@Tests/ACPSessions.wlt:2246,1-2255,2"
+    TestID   -> "TimeoutsAndRaces-Disconnect@@Tests/ACPSessions.wlt:2469,1-2478,2"
 ]
 
 (* A model change for the session that is left, still waiting for its response when a restore starts, is neither
    applied to the restored session nor allowed to overwrite its options when the response comes (constraint: a restored
-   session keeps its own config); the choice is still remembered *)
+   session keeps its own config); the choice is still remembered. $FrontEnd = Null: the persisted settings are the
+   headless ones (restored afterwards) also when the tests run under a front end; under UsingFrontEnd the choice written
+   by the pump was not read back from the front end's preferences. *)
 VerificationTest[
-    ifConnTests[
+    ifConnTests @ Block[
+        {
+            $FrontEnd = Null,
+            Wolfram`Chatbook`ACP`Agents`Private`$headlessSettings = Wolfram`Chatbook`ACP`Agents`Private`$headlessSettings
+        },
         writeScenario[ "cb-sessions-slow-config", <|
             "description" -> "Chatbook ACPSessions.wlt: session/set_config_option answers after 2 s (always model m2, mode plan)",
             "agent" -> <|
@@ -2309,7 +2538,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Restore-PendingConfigOfLeftSession@@Tests/ACPSessions.wlt:2260,1-2313,2"
+    TestID   -> "Restore-PendingConfigOfLeftSession@@Tests/ACPSessions.wlt:2485,1-2542,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2347,7 +2576,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 20, 20, "ses_m25", True },
     SameTest -> MatchQ,
-    TestID   -> "List-PageCap@@Tests/ACPSessions.wlt:2320,1-2351,2"
+    TestID   -> "List-PageCap@@Tests/ACPSessions.wlt:2549,1-2580,2"
 ]
 
 (* An empty page ends the listing even with a cursor; an error response sets "Error" *)
@@ -2389,7 +2618,7 @@ VerificationTest[
         Null
     },
     SameTest -> MatchQ,
-    TestID   -> "List-EmptyCursorAndError@@Tests/ACPSessions.wlt:2354,1-2393,2"
+    TestID   -> "List-EmptyCursorAndError@@Tests/ACPSessions.wlt:2583,1-2622,2"
 ]
 
 (* An agent that advertises neither list, load nor delete *)
@@ -2424,7 +2653,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Unsupported@@Tests/ACPSessions.wlt:2396,1-2428,2"
+    TestID   -> "Unsupported@@Tests/ACPSessions.wlt:2625,1-2657,2"
 ]
 
 (* A pending restore of a window whose agent can't load sessions continues with a new session and says so *)
@@ -2447,7 +2676,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { }, 1, None, "Mock ACP Agent can't open saved sessions, so a new session was started." },
     SameTest -> MatchQ,
-    TestID   -> "PendingRestore-Unsupported@@Tests/ACPSessions.wlt:2431,1-2451,2"
+    TestID   -> "PendingRestore-Unsupported@@Tests/ACPSessions.wlt:2660,1-2680,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2466,7 +2695,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-NoLeftovers@@Tests/ACPSessions.wlt:2456,1-2470,2"
+    TestID   -> "Cleanup-NoLeftovers@@Tests/ACPSessions.wlt:2685,1-2699,2"
 ]
 
 (* Isolated handlers and tasks swallow messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -2480,7 +2709,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-DebugLog@@Tests/ACPSessions.wlt:2473,1-2484,2"
+    TestID   -> "Cleanup-DebugLog@@Tests/ACPSessions.wlt:2702,1-2713,2"
 ]
 
 VerificationTest[
@@ -2494,7 +2723,12 @@ VerificationTest[
     Wolfram`Chatbook`ACP`Transcript`Private`$acpNoFrontEndLabels    = False;
     Wolfram`Chatbook`ACP`Rendering`Private`$acpNoFrontEndFormatting = False;
     Quiet @ DeleteDirectory[ $scratch, DeleteContents -> True ];
-    KeyValueMap[ acpSetPersistedSetting[ #1, Replace[ #2, _Missing -> Inherited ] ] &, $savedPersisted ];
+    (* Only changed settings are written: with a front end, writing Inherited to an unset {"LastModel", agent} leaves an
+       empty "LastModel" in its preferences *)
+    KeyValueMap[
+        If[ acpPersistedSetting[ #1 ] =!= #2, acpSetPersistedSetting[ #1, Replace[ #2, _Missing -> Inherited ] ] ] &,
+        $savedPersisted
+    ];
     If[ TrueQ @ $setACPLinkEnv, SetEnvironment[ "ACPLINK_DIRECTORY" -> None ] ];
     {
         KeyExistsQ[ $acpAgents, "MockACPAgent" ],
@@ -2503,7 +2737,7 @@ VerificationTest[
     },
     { False, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-Restore@@Tests/ACPSessions.wlt:2486,1-2507,2"
+    TestID   -> "Cleanup-Restore@@Tests/ACPSessions.wlt:2715,1-2741,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

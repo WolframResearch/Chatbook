@@ -11,6 +11,8 @@ Command line
     python3 mock_acp_agent.py [--log FILE] [--scenario NAME] [--scenario-dir DIR]...
                               [--idle-timeout SEC] [--max-lifetime SEC]
                               [--ignore-eof] [--eof-exit-delay SEC] [--ignore-sigterm]
+                              [--stdout-noise TEXT] [--start-delay SEC] [--stderr-line TEXT]...
+                              [--stderr-split-delay SEC] [--exit-after-start CODE] [--preamble-lines N]
 
   --log FILE          append a JSON-lines wire log to FILE (see "Wire log" below)
   --scenario NAME     the process-wide scenario: its "agent" and "methods"
@@ -22,6 +24,21 @@ Command line
   --ignore-eof        keep running when stdin reaches EOF (default: exit 0 on EOF)
   --eof-exit-delay S  on EOF, wait S seconds before exiting (default 0)
   --ignore-sigterm    log SIGTERM but keep running (default: log it and exit 143)
+
+Launch phase (for ACPLink's "StandardInputPreamble" and "StandardInputPreambleTrigger"); it runs before the
+reader starts, in this order:
+  --stdout-noise TEXT     print TEXT and a newline on stdout first (a chatty login shell; not JSON)
+  --start-delay SEC       then sleep SEC seconds (a launcher that is still connecting; default 0)
+  --stderr-line TEXT      then print TEXT and a newline on stderr, flushed; repeatable, in order.  Each write is
+                          logged before it happens, as {"event": "stderr_write", "text", "stdinPending"}, where
+                          stdinPending is the number of bytes already waiting on stdin (0: nothing has been
+                          written to the mock yet; -1: unknown)
+  --stderr-split-delay S  write each --stderr-line in two halves; S seconds pass before every write but the first
+  --exit-after-start CODE then log {"event": "stdin_check", "stdinPending"} and exit with CODE without reading stdin
+  --preamble-lines N      then read N lines from stdin, with the same buffered stdin object the reader uses (so
+                          nothing is lost), and log {"event": "preamble", "lines": [UTF-8 text], "base64": [raw]}
+The first line read from stdin (preamble or message) is logged as {"event": "first_stdin"}; compare its "t" with
+those of the stderr_write records.
 
 Built-in methods
 ----------------
@@ -140,7 +157,8 @@ One JSON object per line: {"seq": n, "t": unixTime, "dir": d, ...} where d is
   "out"    {"msg": message sent to the client}         ({"raw": text} for raw steps)
   "event"  {"event": name, ...}: start, eof, exit, sigterm, scenario, scenario_end,
            cancel_seen, cancel_request_sent, wait_response, spawn, unexpected_response,
-           duplicate_response, response_after_cancel_request, watchdog, mark, error
+           duplicate_response, response_after_cancel_request, watchdog, mark, error,
+           stderr_write, stdin_check, preamble, first_stdin
 Out records are written before the bytes go to stdout.
 """
 
@@ -307,6 +325,8 @@ class Agent(object):
     def __init__(self, args):
         self.args = args
         self.log = WireLog(args.log)
+        self.stdin = sys.stdin.buffer   # one buffered object for the preamble and the reader, so nothing is lost
+        self.first_stdin_seen = False
         self.scenario_dirs = list(args.scenario_dir or []) + [DEFAULT_SCENARIO_DIR]
         self.out_lock = threading.Lock()
         self.cond = threading.Condition(threading.RLock())
@@ -434,13 +454,82 @@ class Agent(object):
             return self.cancel_counts.get(sid, 0)
 
     # ------------------------------------------------------------- inbound
+    def note_first_stdin(self):
+        if not self.first_stdin_seen:
+            self.first_stdin_seen = True
+            self.log.event("first_stdin")
+
+    def stdin_pending(self):
+        """The number of bytes waiting on stdin, without reading them (-1 if it can't be told)."""
+        try:
+            fd = sys.stdin.fileno()
+            if os.name == "nt":
+                import ctypes
+                import msvcrt
+                from ctypes import wintypes
+                avail = wintypes.DWORD(0)
+                ok = ctypes.windll.kernel32.PeekNamedPipe(wintypes.HANDLE(msvcrt.get_osfhandle(fd)), None, 0, None,
+                                                          ctypes.byref(avail), None)
+                return int(avail.value) if ok else -1
+            import array
+            import fcntl
+            import termios
+            buf = array.array("i", [0])
+            fcntl.ioctl(fd, termios.FIONREAD, buf, True)
+            return int(buf[0])
+        except Exception:
+            return -1
+
+    def launch_phase(self):
+        """--stdout-noise, --start-delay, --stderr-line, --exit-after-start, --preamble-lines (before the reader)."""
+        a = self.args
+        if a.stdout_noise is not None:
+            self.send_raw(a.stdout_noise)
+        if a.start_delay > 0:
+            time.sleep(a.start_delay)
+        pieces = []
+        for line in a.stderr_line:
+            data = (line + "\n").encode("utf-8")
+            if a.stderr_split_delay > 0 and len(data) > 1:
+                pieces += [data[:len(data) // 2], data[len(data) // 2:]]
+            else:
+                pieces.append(data)
+        for k, piece in enumerate(pieces):
+            if k > 0 and a.stderr_split_delay > 0:
+                time.sleep(a.stderr_split_delay)
+            self.log.event("stderr_write", text=piece.decode("utf-8", "replace"), stdinPending=self.stdin_pending())
+            try:
+                sys.stderr.buffer.write(piece)
+                sys.stderr.buffer.flush()
+            except Exception:
+                pass
+        if a.exit_after_start is not None:
+            self.log.event("stdin_check", stdinPending=self.stdin_pending())
+            self.exit(a.exit_after_start, "exit after start")
+        if a.preamble_lines > 0:
+            lines = []
+            for _ in range(a.preamble_lines):
+                try:
+                    line = self.stdin.readline()
+                except Exception:
+                    line = b""
+                if not line:
+                    break
+                self.note_first_stdin()
+                lines.append(line)
+            self.touch()
+            self.log.event("preamble", lines=[l.decode("utf-8", "replace") for l in lines],
+                           base64=[base64.b64encode(l).decode("ascii") for l in lines])
+
     def reader(self):
-        stdin = sys.stdin.buffer
+        stdin = self.stdin
         while True:
             try:
                 line = stdin.readline()
             except Exception:
                 line = b""
+            if line:
+                self.note_first_stdin()
             if not line:
                 self.log.event("eof")
                 if self.args.ignore_eof:
@@ -1220,6 +1309,12 @@ def main():
     ap.add_argument("--ignore-eof", action="store_true")
     ap.add_argument("--eof-exit-delay", type=float, default=0.0)
     ap.add_argument("--ignore-sigterm", action="store_true")
+    ap.add_argument("--stdout-noise", default=None)
+    ap.add_argument("--start-delay", type=float, default=0.0)
+    ap.add_argument("--stderr-line", action="append", default=[])
+    ap.add_argument("--stderr-split-delay", type=float, default=0.0)
+    ap.add_argument("--exit-after-start", type=int, default=None)
+    ap.add_argument("--preamble-lines", type=int, default=0)
     args = ap.parse_args()
 
     agent = Agent(args)
@@ -1235,8 +1330,9 @@ def main():
     env = dict((k, v) for k, v in os.environ.items() if k.startswith("ACPLINK_") or k.startswith("MOCK_"))
     agent.log.event("start", pid=os.getpid(), pgid=os.getpgid(0) if hasattr(os, "getpgid") else None,
                     argv=sys.argv, scenario=agent.global_scenario.get("name"), env=env, cwd=os.getcwd())
-    threading.Thread(target=agent.reader, daemon=True).start()
     threading.Thread(target=agent.watchdog, daemon=True).start()
+    agent.launch_phase()
+    threading.Thread(target=agent.reader, daemon=True).start()
     agent.main_loop()
 
 

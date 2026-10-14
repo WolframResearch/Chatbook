@@ -1,0 +1,2 @@
+command-line line 0: Unsupported option "gssapidelegatecredentials"
+ssh: connect to host 10.1.2.3 port 22: Unknown error

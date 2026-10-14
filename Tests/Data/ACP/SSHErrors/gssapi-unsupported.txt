@@ -1,0 +1,2 @@
+command-line line 0: Unsupported option "gssapidelegatecredentials"
+ubuntu@127.0.0.1: Permission denied (publickey).

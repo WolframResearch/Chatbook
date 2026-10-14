@@ -37,6 +37,7 @@ PacletObject[ <|
                 { "AIAssistant"         , "AIAssistant"              },
                 { "DisplayFunctions"    , "DisplayFunctions.wxf"     },
                 { "Snippets"            , "Snippets"                 },
+                { "RemoteScripts"       , "RemoteScripts"            },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
                 { "Skills"              , "Skills"                   },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },

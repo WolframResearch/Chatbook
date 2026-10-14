@@ -22,7 +22,16 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      diff text per window. A result is shown in steps of at most about $reviewStepTime seconds (one per pump tick): the
      rows of the file list, then the notebook with the list, then the file cards in batches (reviewStep).
    * Text from the repository (paths, diffs, branch names, git's messages) never becomes boxes: the characters of the
-     front end's linear syntax are neutralized (acpNeutralizeLinearSyntax). *)
+     front end's linear syntax are neutralized (acpNeutralizeLinearSyntax).
+   * Names are shown display-safe, for local folders too: paths, file and branch names go through acpRemoteDisplayName
+     (a bidi control or another invisible character shows as a visible [[U+XXXX]], so "evil<U+202E>txt.exe" can't pass
+     for another name), and diffs and messages through reviewSafeText. The raw paths stay in the actions (Open links,
+     the folder given to git).
+   * Folders on another computer ("SSHSettings"; Git.wl lists their changes over ssh): the window keeps the settings in
+     its TaggingRules ({"ACPReview", "SSH"}; they hold no secrets), so that a refresh without the ACP window's record
+     (e.g. after a kernel restart) still lists the remote folder and never looks for it on this computer. Paths are shown
+     as host:path (abbreviated with the remote home folder) through acpRemoteDisplayName, and remote files have no Open
+     link (they are not on this computer). *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -33,12 +42,16 @@ $reviewOpenMaxFiles   = 30;        (* ...and when more files changed, all of the
 $reviewMaxText        = 4 * 10^6;  (* characters of diff text in a window; the diffs of later files are not shown *)
 $reviewMaxLineLength  = 300;       (* longer lines are cut (Rendering.wl shows at most 300 characters as well) *)
 $reviewStepTime       = 0.15;      (* seconds of work per step of showing a result (see reviewStep) *)
-$reviewWindowSize     = { 760, 820 };
+$reviewWindowSize     = { 760, 820 };  (* of a new window, if the display has room (see reviewPlacement) *)
+$reviewMinWindowSize  = { 320, 240 };
+$reviewWindowFrame    = { 16, 48 };    (* room for a window frame (its borders; its title bar and borders) *)
+$reviewScreenGap      = 8;             (* kept free around a new window at the edges of the display *)
 $reviewIconSize       = 16;
 $reviewCodeFont       = "Source Code Pro";
 $reviewTextFont       = "Source Sans Pro";
 $reviewMaxIconLabel   = 4;         (* extensions up to this length are written on the generic file icon *)
 $reviewIconLabelColor = RGBColor[ 0.337, 0.835, 0.988 ];  (* the label color of DefinitionNotebookClient's icons *)
+$reviewMaxFolderLabel = 80;        (* characters of the folder in the header (host:path for a remote one), kept from its end *)
 $reviewBackground     = LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.12 ] ];
 
 (* "Open" opens Wolfram Language files in the front end and these in their default application. Other files (scripts,
@@ -136,7 +149,14 @@ $acpReviewStrings = <|
     "ReviewMessageTooLarge"       -> "There are too many changes to list.",
     "ReviewMessageStartFailed"    -> "Git could not be started.",
     "ReviewMessageCancelled"      -> "The check was cancelled.",
-    "ReviewMessageUnsafeConfig"   -> "The changes are not listed: the repository's Git configuration has a filter that can't be turned off safely."
+    "ReviewMessageUnsafeConfig"   -> "The changes are not listed: the repository's Git configuration has a filter that can't be turned off safely.",
+
+    (* Folders on another computer ("SSHSettings") *)
+    "ReviewMessageSSHFailed"      -> "Could not connect to `host`.",
+    "ReviewMessageRemoteFailed"   -> "The changes on `host` could not be listed.",
+    "ReviewMessageGitNotFoundRemote" -> "Git was not found on `host`.",
+    "ReviewMessageGitNotFoundRemoteDetail" -> "Install Git on that computer to review changes.",
+    "ReviewDetailRemoteStopped"   -> "The script on the other computer ended before this step (`stop`)."
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -145,7 +165,8 @@ $acpReviewStrings = <|
 
 (* Review windows of this kernel session: review NotebookObject -> <| "Token" -> token of the latest request, "Header" ->
    the change set shown (without its files, for the header while the next request runs), "Job" -> the result that is
-   being shown (see reviewStep) |>. Entries of closed windows are dropped when the next request starts. *)
+   being shown (see reviewStep), "SSH" -> the settings of the latest request (see reviewWindowSSH) |>. Entries of closed
+   windows are dropped when the next request starts. *)
 If[ ! AssociationQ @ $reviewWindows, $reviewWindows = <| |> ];
 
 (* ::**************************************************************************************************************:: *)
@@ -260,24 +281,31 @@ acpReviewChanges // beginDefinition;
 acpReviewChanges[ nbo_NotebookObject ] := Module[ { window },
     acpCheckSession @ nbo;
     window = acpEnsureWindowRecord @ nbo;
-    reviewOpen[ nbo, Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ] ]
+    reviewOpen[ nbo, Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ], window ]
 ];
 
 acpReviewChanges[ File[ dir_String ] ] := acpReviewChanges @ dir;
 
-acpReviewChanges[ dir_String ] := reviewOpen[ None, Quiet @ ExpandFileName @ dir ];
+acpReviewChanges[ dir_String ] := reviewOpen[ None, Quiet @ ExpandFileName @ dir, None ];
 
 acpReviewChanges // endDefinition;
 
 
+(* window: the owner's window record (its settings: a remote folder is shown as one while the first result loads) *)
 reviewOpen // beginDefinition;
 
-reviewOpen[ owner_, dir_ ] := Module[ { review },
-    review = reviewWindowOf[ owner, dir ];
+reviewOpen[ owner_, dir_, window_ ] := Module[ { ssh, review },
+    ssh    = reviewWindowSSH @ window;
+    review = reviewWindowOf[ owner, dir, ssh ];
     If[ MatchQ[ review, _NotebookObject ],
         SetSelectedNotebook @ review;
         reviewRequest[ review, owner, dir ],
-        review = NotebookPut @ acpReviewNotebook[ <| "Status" -> "Loading", "Directory" -> dir |>, owner, True ];
+        review = NotebookPut @ acpReviewNotebook[
+            <| "Status" -> "Loading", "Directory" -> dir, "Remote" -> reviewRemote[ ssh, acpWindowRemoteHome @ window ] |>,
+            owner,
+            reviewWindowGeometry @ owner,
+            ssh
+        ];
         If[ MatchQ[ review, _NotebookObject ], reviewRequest[ review, owner, dir ] ]
     ];
     review
@@ -287,25 +315,94 @@ reviewOpen // endDefinition;
 
 
 (* The open review window of an ACP window (found by its TaggingRules, so also after a kernel restart), or of a folder
-   (without an ACP window), or None *)
+   (without an ACP window) on the same host, or None *)
 reviewWindowOf // beginDefinition;
 
-reviewWindowOf[ owner_NotebookObject, _ ] := SelectFirst[
+reviewWindowOf[ owner_, dir_ ] := reviewWindowOf[ owner, dir, None ];
+
+reviewWindowOf[ owner_NotebookObject, _, _ ] := SelectFirst[
     Notebooks[ ],
     Quiet @ CurrentValue[ #, { TaggingRules, "ACPReview", "Owner" } ] === owner &,
     None
 ];
 
-reviewWindowOf[ None, dir_String ] := SelectFirst[
-    Notebooks[ ],
-    Quiet @ CurrentValue[ #, { TaggingRules, "ACPReview", "Owner" } ] === None &&
-        Quiet @ CurrentValue[ #, { TaggingRules, "ACPReview", "Directory" } ] === dir &,
-    None
+reviewWindowOf[ None, dir_String, ssh_ ] := With[ { key = reviewHostKey @ ssh },
+    SelectFirst[
+        Notebooks[ ],
+        Quiet @ CurrentValue[ #, { TaggingRules, "ACPReview", "Owner" } ] === None &&
+            Quiet @ CurrentValue[ #, { TaggingRules, "ACPReview", "Directory" } ] === dir &&
+            reviewHostKey @ reviewStoredSSH @ # === key &,
+        None
+    ]
 ];
 
-reviewWindowOf[ _, _ ] := None;
+reviewWindowOf[ _, _, _ ] := None;
 
 reviewWindowOf // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Remote folders*)
+
+(* The "SSHSettings" of an ACP window's record, as a review window keeps them in its TaggingRules ({"ACPReview", "SSH"}):
+   the canonical settings, None (a local folder), or for invalid settings the setting as the window has it (it stays
+   invalid, so the folder is never taken for a local one). None without a record. They hold no secrets. *)
+reviewWindowSSH // beginDefinition;
+
+reviewWindowSSH[ window_Association ] := Replace[
+    acpWindowSSH @ window,
+    _Failure :> Lookup[ Replace[ Lookup[ window, "Settings", <| |> ], Except[ _Association ] -> <| |> ], "SSHSettings", None ]
+];
+
+reviewWindowSSH[ _ ] := None;
+
+reviewWindowSSH // endDefinition;
+
+
+(* The settings a review window kept (None if it has none) *)
+reviewStoredSSH // beginDefinition;
+
+reviewStoredSSH[ review_NotebookObject ] := Replace[
+    Quiet @ CurrentValue[ review, { TaggingRules, "ACPReview", "SSH" } ],
+    Except[ _Association | _String | { ___Rule } ] -> None
+];
+
+reviewStoredSSH // endDefinition;
+
+
+(* The host key of kept settings: None (a local folder), "?" (invalid settings) or acpSSHHostKey *)
+reviewHostKey // beginDefinition;
+reviewHostKey[ None ] := None;
+reviewHostKey[ ssh_ ] := Replace[ acpSSHSettings @ ssh, { a_Association :> acpSSHHostKey @ a, _Failure -> "?", _ -> None } ];
+reviewHostKey // endDefinition;
+
+
+(* The "Remote" of a change set for kept settings and a home folder (for the header while the first result loads) *)
+reviewRemote // beginDefinition;
+
+reviewRemote[ None, _ ] := None;
+
+reviewRemote[ ssh_, home_ ] := Replace[
+    acpSSHSettings @ ssh,
+    {
+        a_Association :> <|
+            "Host"  -> acpSSHHostLabel @ a,
+            "Short" -> acpSSHShortHost @ a,
+            "Home"  -> Replace[ home, Except[ _String? acpRemoteAbsolutePathQ ] -> None ]
+        |>,
+        _Failure -> <| "Host" -> "?", "Short" -> "?", "Home" -> None |>,
+        _ -> None
+    }
+];
+
+reviewRemote // endDefinition;
+
+
+(* The host of a change set's "Remote" for messages (display-safe) *)
+reviewHostLabel // beginDefinition;
+reviewHostLabel[ remote_Association ] := acpRemoteDisplayName @ Replace[ Lookup[ remote, "Host", None ], Except[ _String ] -> "?" ];
+reviewHostLabel[ _ ] := "?";
+reviewHostLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -328,14 +425,22 @@ acpReviewRefresh // endDefinition;
 (* ::Subsection::Closed:: *)
 (*reviewRequest*)
 
-(* Starts listing the changes for a review window (the header shows that it is loading) *)
+(* Starts listing the changes for a review window (the header shows that it is loading). Without the owner's record (e.g.
+   after a kernel restart), the folder is listed with the settings the review window kept: a remote folder is never
+   looked for on this computer. *)
 reviewRequest // beginDefinition;
 
-reviewRequest[ review_NotebookObject, owner_, dir_ ] := Module[ { open, shown, continuation, token },
+reviewRequest[ review_NotebookObject, owner_, dir_ ] := Module[ { open, window, ssh, shown, continuation, token },
     open = Notebooks[ ];
     $reviewWindows = KeySelect[ $reviewWindows, MemberQ[ open, # ] & ];
+    window = If[ MatchQ[ owner, _NotebookObject ], acpWindowGet @ owner, None ];
+    ssh    = If[ AssociationQ @ window, reviewWindowSSH @ window, reviewStoredSSH @ review ];
     (* The header keeps showing the branch and counts of the shown changes while loading: *)
-    shown = Lookup[ Lookup[ $reviewWindows, review, <| |> ], "Header", <| "Status" -> "Loading", "Directory" -> dir |> ];
+    shown = Lookup[
+        Lookup[ $reviewWindows, review, <| |> ],
+        "Header",
+        <| "Status" -> "Loading", "Directory" -> dir, "Remote" -> reviewRemote[ ssh, acpWindowRemoteHome @ window ] |>
+    ];
     Quiet @ SetOptions[ review, DockedCells -> { acpReviewDockedCell[ shown, True ] } ];
     continuation = With[ { r = review }, reviewResult[ r, # ] & ];
     (* Protected, so that the result can't arrive before its token is stored. A request supersedes the window's running
@@ -343,11 +448,11 @@ reviewRequest[ review_NotebookObject, owner_, dir_ ] := Module[ { open, shown, c
        review window. A result that is still being shown is dropped (its job). *)
     PreemptProtect[
         token = Which[
-            MatchQ[ owner, _NotebookObject ] && AssociationQ @ acpWindowGet @ owner, acpGitChanges[ owner, continuation ],
-            StringQ @ dir, acpGitChanges[ dir, continuation, { "ACPReview", review } ],
+            AssociationQ @ window, acpGitChanges[ owner, continuation ],
+            StringQ @ dir, acpGitChanges[ dir, continuation, { "ACPReview", review }, ssh ],
             True, reviewNoDirectory @ continuation
         ];
-        $reviewWindows[ review ] = <| KeyDrop[ Lookup[ $reviewWindows, review, <| |> ], "Job" ], "Token" -> token |>
+        $reviewWindows[ review ] = <| KeyDrop[ Lookup[ $reviewWindows, review, <| |> ], "Job" ], "Token" -> token, "SSH" -> ssh |>
     ];
     token
 ];
@@ -371,16 +476,19 @@ reviewNoDirectory // endDefinition;
    next pump tick on); other results right away. *)
 reviewResult // beginDefinition;
 
-reviewResult[ review_NotebookObject, changes_Association ] := Module[ { owner, current },
+reviewResult[ review_NotebookObject, changes_Association ] := Module[ { owner, ssh, current },
     If[ ! reviewCurrentQ[ review, changes[ "Token" ] ], Return[ Null, Module ] ];
     If[ ! MemberQ[ Notebooks[ ], review ], KeyDropFrom[ $reviewWindows, review ]; Return[ Null, Module ] ];
     owner = Quiet @ CurrentValue[ review, { TaggingRules, "ACPReview", "Owner" } ];
+    (* The settings of the request (kept in the new notebook's TaggingRules) *)
+    ssh = Lookup[ Lookup[ $reviewWindows, review, <| |> ], "SSH", None ];
     (* Protected, so that a request started meanwhile (the Refresh button is preemptive) is not overwritten: *)
     current = PreemptProtect @ If[ reviewCurrentQ[ review, changes[ "Token" ] ],
         $reviewWindows[ review ] = <|
             "Token"  -> changes[ "Token" ],
             "Header" -> KeyDrop[ changes, "Files" ],
-            If[ changes[ "Status" ] === "Changes", "Job" -> reviewNewJob[ changes, owner ], Nothing ]
+            "SSH"    -> ssh,
+            If[ changes[ "Status" ] === "Changes", "Job" -> reviewNewJob[ changes, owner, ssh ], Nothing ]
         |>;
         True,
         False
@@ -388,7 +496,7 @@ reviewResult[ review_NotebookObject, changes_Association ] := Module[ { owner, c
     Which[
         ! current, Null,
         changes[ "Status" ] === "Changes", With[ { r = review, t = changes[ "Token" ] }, acpSchedule @ reviewStep[ r, t ] ],
-        True, reviewPut[ review, acpReviewNotebook[ changes, owner, False ] ]
+        True, reviewPut[ review, acpReviewNotebook[ changes, owner, False, ssh ] ]
     ]
 ];
 
@@ -403,16 +511,40 @@ reviewCurrentQ // endDefinition;
 
 (* Replaces the window's notebook. After NotebookPut the window shows the end of the notebook; the top (the file list)
    is more useful. Scrolling with a front end token leaves the insertion point where it is: moving it before the first
-   cell would scroll too, but the front end then shows its caret above the file list. *)
+   cell would scroll too, but the front end then shows its caret above the file list. NotebookPut keeps the window's
+   size, but without WindowMargins it centers the window again: the window stays where it is (where it was placed, or
+   moved by the user). *)
 reviewPut // beginDefinition;
 
 reviewPut[ review_NotebookObject, nb_Notebook ] := (
-    NotebookPut[ nb, review ];
+    NotebookPut[ reviewKeepPosition[ nb, reviewWindowPosition @ review ], review ];
     FrontEndTokenExecute[ review, "ScrollNotebookStart" ];
     Null
 );
 
 reviewPut // endDefinition;
+
+
+(* The position of an open window as WindowMargins { { left, Automatic }, { Automatic, top } } (from its resolved
+   WindowMargins), or None *)
+reviewWindowPosition // beginDefinition;
+
+reviewWindowPosition[ review_NotebookObject ] := If[ $FrontEnd === Null,
+    None,
+    reviewWindowPosition @ Quiet @ AbsoluteCurrentValue[ review, WindowMargins ]
+];
+
+reviewWindowPosition[ { { left_? NumberQ, _ }, { _, top_? NumberQ } } ] := { { left, Automatic }, { Automatic, top } };
+reviewWindowPosition[ m_? NumberQ ] := { { m, Automatic }, { Automatic, m } };
+reviewWindowPosition[ _ ] := None;
+
+reviewWindowPosition // endDefinition;
+
+
+reviewKeepPosition // beginDefinition;
+reviewKeepPosition[ nb_Notebook, None ] := nb;
+reviewKeepPosition[ Notebook[ cells_, opts___ ], margins_ ] := Notebook[ cells, WindowMargins -> margins, Sequence @@ FilterRules[ { opts }, Except[ WindowMargins ] ] ];
+reviewKeepPosition // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -421,7 +553,7 @@ reviewPut // endDefinition;
 (* Shows a change set in steps, one per pump tick, each about $reviewStepTime seconds of work, so that a large change
    set does not hold up the pump (and the agent windows) for seconds: the rows of the file list ("Rows"), then the
    notebook with the list and the first cards ("Put"), then the remaining cards, written after the last cell ("Cards").
-   A job is dropped when a newer request starts or the window is closed. The job: <| "Changes", "Owner", "Stage",
+   A job is dropped when a newer request starts or the window is closed. The job: <| "Changes", "Owner", "SSH", "Stage",
    "Rows" (the boxes of the list rows made so far), "Next" (the next file), "Budget" (characters of diff text left),
    "AllClosed" |>. *)
 reviewStep // beginDefinition;
@@ -441,7 +573,9 @@ reviewStep[ review_NotebookObject, token_ ] := Module[ { job, stage, deadline, c
         job[ "Stage" ] === "Put" && (stage === "Put" || ! job[ "AllClosed" ] && AbsoluteTime[ ] < deadline),
             With[ { list = reviewListCells[ job[ "Rows" ], job[ "Changes" ] ] },
                 { cells, job } = reviewCardsStep[ job, deadline ];
-                If[ reviewCurrentQ[ review, token ], reviewPut[ review, reviewNotebook[ job[ "Changes" ], job[ "Owner" ], False, Join[ list, cells ] ] ] ]
+                If[ reviewCurrentQ[ review, token ],
+                    reviewPut[ review, reviewNotebook[ job[ "Changes" ], job[ "Owner" ], False, Join[ list, cells ], Lookup[ job, "SSH", None ] ] ]
+                ]
             ];
             job[ "Stage" ] = "Cards",
         stage === "Cards",
@@ -463,10 +597,13 @@ reviewStep // endDefinition;
 
 reviewNewJob // beginDefinition;
 
-reviewNewJob[ changes_Association, owner_ ] := With[ { files = Replace[ Lookup[ changes, "Files", { } ], Except[ _List ] -> { } ] },
+reviewNewJob[ changes_Association, owner_ ] := reviewNewJob[ changes, owner, None ];
+
+reviewNewJob[ changes_Association, owner_, ssh_ ] := With[ { files = Replace[ Lookup[ changes, "Files", { } ], Except[ _List ] -> { } ] },
     <|
         "Changes"   -> <| changes, "Files" -> files |>,
         "Owner"     -> owner,
+        "SSH"       -> ssh,
         "Stage"     -> "Rows",
         "Rows"      -> { },
         "Next"      -> 1,
@@ -510,7 +647,10 @@ reviewCardsStep[ job_Association, deadline_ ] := Module[ { files, cells = Intern
                 budget -= data[ "Size" ];
                 If[ budget < 0, data = "TooManyChanges" ]
             ];
-            Internal`StuffBag[ cells, reviewFileCell[ files[[ i ]], data, reviewFileTag @ i, job[ "AllClosed" ] ] ]
+            Internal`StuffBag[
+                cells,
+                reviewFileCell[ files[[ i ]], data, reviewFileTag @ i, job[ "AllClosed" ], Lookup[ job[ "Changes" ], "Remote", None ] ]
+            ]
         ];
         i++
     ];
@@ -660,20 +800,32 @@ acpReviewDiffView // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpReviewNotebook*)
 
-(* The review notebook for a change set (Git.wl), or for <| "Status" -> "Loading", "Directory" -> dir |>. owner: the ACP
-   window. new: True for a new window (with a window size; the size of an open window is kept). *)
+(* The review notebook for a change set (Git.wl), or for <| "Status" -> "Loading", "Directory" -> dir, "Remote" -> ... |>.
+   owner: the ACP window. new: for a new window True (the default size) or its geometry (see reviewWindowGeometry);
+   False for an open window (its size and place are kept). ssh: the settings the window keeps (see reviewWindowSSH; by
+   default the owner's, if it has a record). *)
 acpReviewNotebook // beginDefinition;
 
-acpReviewNotebook[ changes_Association, owner_, new_ ] := reviewNotebook[ changes, owner, new, acpReviewCells @ changes ];
+acpReviewNotebook[ changes_Association, owner_, new_ ] := acpReviewNotebook[ changes, owner, new, reviewOwnerSSH @ owner ];
+
+acpReviewNotebook[ changes_Association, owner_, new_, ssh_ ] := reviewNotebook[ changes, owner, new, acpReviewCells @ changes, ssh ];
 
 acpReviewNotebook // endDefinition;
+
+
+reviewOwnerSSH // beginDefinition;
+reviewOwnerSSH[ owner_NotebookObject ] := reviewWindowSSH @ acpWindowGet @ owner;
+reviewOwnerSSH[ _ ] := None;
+reviewOwnerSSH // endDefinition;
 
 
 (* The review notebook with the given cells. The stylesheet has the icons of all files of the change set (cards that
    are written later use them too). *)
 reviewNotebook // beginDefinition;
 
-reviewNotebook[ changes_Association, owner_, new_, cells_List ] := Module[ { dir, icons },
+reviewNotebook[ changes_Association, owner_, new_, cells_List ] := reviewNotebook[ changes, owner, new, cells, reviewOwnerSSH @ owner ];
+
+reviewNotebook[ changes_Association, owner_, new_, cells_List, ssh_ ] := Module[ { dir, icons },
     dir   = Replace[ Lookup[ changes, "Directory", None ], Except[ _String ] -> None ];
     icons = Union[
         { "Directory" },
@@ -689,12 +841,12 @@ reviewNotebook[ changes_Association, owner_, new_, cells_List ] := Module[ { dir
             StyleDefinitions        -> reviewStyleSheet @ icons,
             (* not a user notebook: the Notebook Assistant neither reads it nor attaches to it *)
             TaggingRules            -> <|
-                "ACPReview"            -> <| "Owner" -> owner, "Directory" -> dir |>,
+                "ACPReview"            -> <| "Owner" -> owner, "Directory" -> dir, "SSH" -> ssh |>,
                 "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |>
             |>,
-            WindowTitle             -> reviewWindowTitle @ dir,
+            WindowTitle             -> reviewWindowTitle[ dir, Lookup[ changes, "Remote", None ] ],
             Evaluator               -> reviewEvaluator @ owner,
-            If[ TrueQ @ new, WindowSize -> $reviewWindowSize, Nothing ],
+            Sequence @@ reviewWindowOptions @ new,
             CellGrouping            -> Manual,
             (* Nothing can be inserted: no "+" menu, and the insertion line between cells is drawn in the background
                color (the front end still shows its short caret where the user clicks) *)
@@ -717,9 +869,24 @@ reviewNotebook // endDefinition;
 
 
 reviewWindowTitle // beginDefinition;
-reviewWindowTitle[ dir_String ] := acpLabel[ "ReviewWindowTitle", <| "folder" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir |> ];
-reviewWindowTitle[ _ ] := acpLabel[ "ReviewWindowTitleNoFolder" ];
+reviewWindowTitle[ dir_String, _Association ] := acpLabel[ "ReviewWindowTitle", <| "folder" -> acpRemoteDisplayName @ acpRemotePathName @ dir |> ];
+reviewWindowTitle[ dir_String, _ ] := acpLabel[ "ReviewWindowTitle", <| "folder" -> acpRemoteDisplayName @ FileNameTake @ dir |> ];
+reviewWindowTitle[ _, _ ] := acpLabel[ "ReviewWindowTitleNoFolder" ];
 reviewWindowTitle // endDefinition;
+
+
+reviewWindowOptions // beginDefinition;
+
+reviewWindowOptions[ True ] := { WindowSize -> $reviewWindowSize };
+
+reviewWindowOptions[ geometry_Association ] := {
+    WindowSize -> Replace[ geometry[ "WindowSize" ], Except[ { _? NumberQ, _? NumberQ } ] -> $reviewWindowSize ],
+    Replace[ geometry[ "WindowMargins" ], { m: { { _, _ }, { _, _ } } :> WindowMargins -> m, _ -> Nothing } ]
+};
+
+reviewWindowOptions[ _ ] := { };
+
+reviewWindowOptions // endDefinition;
 
 
 (* The kernel that holds the ACP window's state *)
@@ -736,10 +903,95 @@ reviewEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Window geometry*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reviewWindowGeometry*)
+
+(* The size and place of a new review window (front end calls): <| "WindowSize", "WindowMargins" |> on the display the
+   ACP window owner is on (else the first display), see reviewPlacement. Without a usable front end answer the
+   default size and Automatic margins (the front end centers the window). *)
+reviewWindowGeometry // beginDefinition;
+
+reviewWindowGeometry[ owner_ ] := Replace[
+    reviewDisplayArea @ owner,
+    {
+        area: { { _? NumberQ, _? NumberQ }, { _? NumberQ, _? NumberQ } } :> reviewPlacement[ area, $reviewWindowSize ],
+        _ :> <| "WindowSize" -> $reviewWindowSize, "WindowMargins" -> Automatic |>
+    }
+];
+
+reviewWindowGeometry // endDefinition;
+
+
+(* The usable area { { xmin, xmax }, { ymin, ymax } } of the display the ACP window owner is on, else of the first
+   display (front end calls), or None. In points, as WindowMargins count them. *)
+reviewDisplayArea // beginDefinition;
+
+reviewDisplayArea[ owner_ ] := If[ $FrontEnd === Null,
+    None,
+    reviewDisplayArea[
+        Quiet @ CurrentValue[ "ConnectedDisplays" ],
+        If[ MatchQ[ owner, _NotebookObject ], Quiet @ NotebookTools`NotebookDisplayIndex @ owner, None ]
+    ]
+];
+
+(* Pure: displays (CurrentValue["ConnectedDisplays"]) and the index of a display (anything else for the first). The
+   usable area is the display's "Region" (without taskbars and menu bars), else its "FullRegion". *)
+reviewDisplayArea[ displays: { __ }, index_ ] := SelectFirst[
+    Lookup[
+        Replace[
+            If[ IntegerQ @ index && 1 <= index <= Length @ displays, displays[[ index ]], First @ displays ],
+            Except[ _Association | { ___Rule } ] -> { }
+        ],
+        { "Region", "FullRegion" },
+        None
+    ],
+    MatchQ[ { { x0_? NumberQ, x1_? NumberQ }, { y0_? NumberQ, y1_? NumberQ } } /; x1 > x0 && y1 > y0 ],
+    None
+];
+
+reviewDisplayArea[ _, _ ] := None;
+
+reviewDisplayArea // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reviewPlacement*)
+
+(* Where a new review window goes (pure): size (its WindowSize; $reviewWindowSize) clamped to a display's usable area
+   { { xmin, xmax }, { ymin, ymax } }, with room for the window frame ($reviewWindowFrame, which WindowMargins include and
+   WindowSize does not) and a gap at the edges, and centered on the area. Without the clamping, a window taller than the
+   display would be centered with its title bar (and the header with Refresh) above the screen. On a display smaller
+   than the minimum size, the window starts at the area's top left corner. Gives <| "WindowSize" -> { w, h },
+   "WindowMargins" -> { { left, Automatic }, { Automatic, top } } |> (the top margin and the size: under a window manager
+   that adds a title bar after placing a window, a bottom margin would make it taller). *)
+reviewPlacement // beginDefinition;
+
+reviewPlacement[ { { x0_? NumberQ, x1_? NumberQ }, { y0_? NumberQ, y1_? NumberQ } }, { w0_? NumberQ, h0_? NumberQ } ] :=
+    Module[ { fw, fh, w, h },
+        { fw, fh } = $reviewWindowFrame;
+        w = Round @ Max[ First @ $reviewMinWindowSize, Min[ w0, x1 - x0 - fw - 2 * $reviewScreenGap ] ];
+        h = Round @ Max[ Last @ $reviewMinWindowSize, Min[ h0, y1 - y0 - fh - 2 * $reviewScreenGap ] ];
+        <|
+            "WindowSize"    -> { w, h },
+            "WindowMargins" -> {
+                { Round[ x0 + Max[ 0, (x1 - x0 - w - fw) / 2 ] ], Automatic },
+                { Automatic, Round[ y0 + Max[ 0, (y1 - y0 - h - fh) / 2 ] ] }
+            }
+        |>
+    ];
+
+reviewPlacement // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*acpReviewDockedCell*)
 
 (* The header: the project folder, a Refresh button, and a status line (branch, counts, when the changes were listed or
-   that they are loading). *)
+   that they are loading). The folder takes the room Refresh leaves (a Fit column), and a folder that is still too wide
+   (a long path, a narrow window) is drawn smaller: it never pushes Refresh out of the window. *)
 acpReviewDockedCell // beginDefinition;
 
 acpReviewDockedCell[ changes_Association, loading_ ] := Cell[
@@ -750,8 +1002,14 @@ acpReviewDockedCell[ changes_Association, loading_ ] := Cell[
                     {
                         {
                             reviewIcon[ "Directory" ],
-                            reviewFolderLabel @ Lookup[ changes, "Directory", None ],
-                            Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                            Item[
+                                Pane[
+                                    reviewFolderLabel[ Lookup[ changes, "Directory", None ], Lookup[ changes, "Remote", None ] ],
+                                    ImageSize       -> { Full, Automatic },
+                                    ImageSizeAction -> "ShrinkToFit"
+                                ],
+                                ItemSize -> Fit
+                            ],
                             reviewRefreshButton[ ]
                         }
                     },
@@ -773,21 +1031,41 @@ acpReviewDockedCell[ changes_Association, loading_ ] := Cell[
 acpReviewDockedCell // endDefinition;
 
 
+(* remote: the change set's "Remote" (None for a local folder): the tooltip is then user@host:/absolute/path *)
 reviewFolderLabel // beginDefinition;
 
-reviewFolderLabel[ dir_String ] := Tooltip[
-    Style[ reviewDisplayPath @ dir, FontWeight -> "DemiBold", LineBreakWithin -> False ],
-    dir
+reviewFolderLabel[ dir_String, remote_Association ] := Tooltip[
+    Style[ reviewDisplayPath[ dir, remote ], FontWeight -> "DemiBold", LineBreakWithin -> False ],
+    acpRemoteDisplayName[ Replace[ Lookup[ remote, "Host", None ], Except[ _String ] -> "?" ] <> ":" <> dir ]
 ];
 
-reviewFolderLabel[ _ ] := Style[ acpLabel[ "ReviewNoFolder" ], FontSlant -> Italic ];
+reviewFolderLabel[ dir_String, _ ] := Tooltip[
+    Style[ reviewDisplayPath @ dir, FontWeight -> "DemiBold", LineBreakWithin -> False ],
+    acpRemoteDisplayName @ dir
+];
+
+reviewFolderLabel[ _, _ ] := Style[ acpLabel[ "ReviewNoFolder" ], FontSlant -> Italic ];
 
 reviewFolderLabel // endDefinition;
 
 
-(* "~/..." for folders in the home folder (as in the toolbar) *)
+(* "~/..." for folders in the home folder (as in the toolbar), kept from its end like a remote folder; "host:~/..." for a
+   remote folder (as in its toolbar, abbreviated with the remote home folder, kept from its end) *)
 reviewDisplayPath // beginDefinition;
-reviewDisplayPath[ dir_String ] := acpNeutralizeLinearSyntax @ acpAbbreviatePath[ dir, None ];
+
+reviewDisplayPath[ dir_String ] := acpRemoteDisplayName @ acpAbbreviatePath[ dir, $reviewMaxFolderLabel ];
+
+(* acpRemoteFolderLabel gives the path display-safe, and the host as the settings have it *)
+reviewDisplayPath[ dir_String, remote_Association ] := StringRiffle[
+    acpRemoteDisplayName /@ acpRemoteFolderLabel[
+        Replace[ Lookup[ remote, "Short", None ], Except[ _String ] :> Replace[ Lookup[ remote, "Host", None ], Except[ _String ] -> "?" ] ],
+        dir,
+        Lookup[ remote, "Home", None ],
+        $reviewMaxFolderLabel
+    ],
+    ":"
+];
+
 reviewDisplayPath // endDefinition;
 
 
@@ -839,7 +1117,7 @@ reviewBranchLabel[ changes_Association ] := Module[ { branch, oid, parts },
     oid    = Lookup[ changes, "OID", None ];
     parts  = {
         Which[
-            StringQ @ branch, acpLabel[ "ReviewBranch", <| "branch" -> acpNeutralizeLinearSyntax @ branch |> ],
+            StringQ @ branch, acpLabel[ "ReviewBranch", <| "branch" -> acpRemoteDisplayName @ branch |> ],
             TrueQ @ Lookup[ changes, "Detached", False ] && StringQ @ oid, acpLabel[ "ReviewDetached", <| "oid" -> StringTake[ oid, UpTo[ 7 ] ] |> ],
             True, Nothing
         ],
@@ -885,41 +1163,96 @@ acpReviewCells // endDefinition;
 
 reviewUnavailableCell // beginDefinition;
 
-reviewUnavailableCell[ changes_Association ] := Switch[ Lookup[ Replace[ changes[ "Error" ], Except[ _Association ] -> <| |> ], "Code", None ],
-    "Disabled",
-        reviewMessageCell[ acpLabel[ "ReviewMessageGitDisabled" ], None, "Neutral" ],
-    "GitTooOld",
-        reviewMessageCell[
-            acpLabel[ "ReviewMessageGitTooOld", <| "version" -> Replace[ changes[ "GitVersion" ], Except[ _String ] -> "" ] |> ],
-            acpLabel[ "ReviewMessageGitTooOldDetail" ],
-            "Amber"
-        ],
-    _,
-        reviewMessageCell[ acpLabel[ "ReviewMessageGitNotFound" ], acpLabel[ "ReviewMessageGitNotFoundDetail" ], "Amber" ]
+reviewUnavailableCell[ changes_Association ] := With[ { error = Replace[ changes[ "Error" ], Except[ _Association ] -> <| |> ] },
+    Switch[ Lookup[ error, "Code", None ],
+        "Disabled",
+            reviewMessageCell[ acpLabel[ "ReviewMessageGitDisabled" ], None, "Neutral" ],
+        "GitTooOld",
+            reviewMessageCell[
+                acpLabel[ "ReviewMessageGitTooOld", <| "version" -> acpRemoteDisplayName @ Replace[ changes[ "GitVersion" ], Except[ _String ] -> "" ] |> ],
+                acpLabel[ "ReviewMessageGitTooOldDetail" ],
+                "Amber"
+            ],
+        "InvalidSSHSettings",
+            reviewMessageCell[
+                acpLabel[ "ErrorInvalidSSHSettings" ],
+                Replace[ Lookup[ error, "Detail", None ], s_String :> reviewCode @ s ],
+                "Amber"
+            ],
+        _,
+            If[ AssociationQ @ Lookup[ changes, "Remote", None ],
+                reviewMessageCell[
+                    acpLabel[ "ReviewMessageGitNotFoundRemote", <| "host" -> reviewHostLabel @ changes[ "Remote" ] |> ],
+                    acpLabel[ "ReviewMessageGitNotFoundRemoteDetail" ],
+                    "Amber"
+                ],
+                reviewMessageCell[ acpLabel[ "ReviewMessageGitNotFound" ], acpLabel[ "ReviewMessageGitNotFoundDetail" ], "Amber" ]
+            ]
+    ]
 ];
 
 reviewUnavailableCell // endDefinition;
 
 
+(* Errors of remote folders: ssh or the remote script failed (the message names the host; the detail is the advice and
+   ssh's own text, from the error info of the run), or ssh could not be started (the error info's own message) *)
 reviewErrorCell // beginDefinition;
 
-reviewErrorCell[ changes_Association ] := Module[ { error, key },
+reviewErrorCell[ changes_Association ] := Module[ { error, info, host, key },
     error = Replace[ Lookup[ changes, "Error", None ], Except[ _Association ] -> <| |> ];
-    key   = Replace[
-        Lookup[ error, "Code", None ],
-        {
-            "TimedOut"    -> "ReviewMessageTimedOut",
-            "TooLarge"    -> "ReviewMessageTooLarge",
-            "StartFailed" -> "ReviewMessageStartFailed",
-            "Cancelled"   -> "ReviewMessageCancelled",
-            "UnsafeConfig" -> "ReviewMessageUnsafeConfig",
-            _             -> "ReviewMessageGitFailed"
-        }
-    ];
-    reviewMessageCell[ acpLabel @ key, Replace[ Lookup[ error, "Detail", None ], s_String :> reviewCode @ s ], "Red" ]
+    info  = Replace[ Lookup[ error, "Error", None ], Except[ _Association ] -> None ];
+    host  = reviewHostLabel @ Lookup[ changes, "Remote", None ];
+    Which[
+        error[ "Code" ] === "SSHFailed",
+            reviewMessageCell[ acpLabel[ "ReviewMessageSSHFailed", <| "host" -> host |> ], reviewRemoteDetail[ info, error ], "Red" ],
+        error[ "Code" ] === "RemoteFailed",
+            reviewMessageCell[ acpLabel[ "ReviewMessageRemoteFailed", <| "host" -> host |> ], reviewRemoteDetail[ info, error ], "Red" ],
+        error[ "Code" ] === "StartFailed" && StringQ @ Lookup[ Replace[ info, None -> <| |> ], "Message", None ],
+            reviewMessageCell[ reviewSafeText @ info[ "Message" ], reviewRemoteDetail[ info, error ], "Red" ],
+        True,
+            key = Replace[
+                Lookup[ error, "Code", None ],
+                {
+                    "TimedOut"    -> "ReviewMessageTimedOut",
+                    "TooLarge"    -> "ReviewMessageTooLarge",
+                    "StartFailed" -> "ReviewMessageStartFailed",
+                    "Cancelled"   -> "ReviewMessageCancelled",
+                    "UnsafeConfig" -> "ReviewMessageUnsafeConfig",
+                    _             -> "ReviewMessageGitFailed"
+                }
+            ];
+            reviewMessageCell[ acpLabel @ key, Replace[ Lookup[ error, "Detail", None ], s_String :> reviewCode @ s ], "Red" ]
+    ]
 ];
 
 reviewErrorCell // endDefinition;
+
+
+(* The detail of a remote error: the advice (text) and ssh's own text (code), else the error's "Detail"; or None *)
+reviewRemoteDetail // beginDefinition;
+
+reviewRemoteDetail[ info_Association, error_ ] := With[
+    {
+        parts = DeleteCases[
+            {
+                Replace[ Lookup[ info, "Hint", None ], { s_String :> reviewSafeText @ s, _ -> None } ],
+                Replace[ Lookup[ info, "Output", None ], { s_String :> reviewCode @ s, _ -> None } ]
+            },
+            None
+        ]
+    },
+    Switch[ Length @ parts,
+        0, reviewRemoteDetail[ None, error ],
+        1, First @ parts,
+        _, Column[ parts, Spacings -> 0.5 ]
+    ]
+];
+
+reviewRemoteDetail[ _, error_Association ] := Replace[ Lookup[ error, "Detail", None ], { s_String :> reviewCode @ s, _ -> None } ];
+
+reviewRemoteDetail[ _, _ ] := None;
+
+reviewRemoteDetail // endDefinition;
 
 
 reviewMessageCell // beginDefinition;
@@ -947,7 +1280,7 @@ reviewMessageCell // endDefinition;
 
 
 reviewCode // beginDefinition;
-reviewCode[ s_String ] := Style[ acpNeutralizeLinearSyntax @ s, FontFamily -> $reviewCodeFont, FontSize -> 12, LineBreakWithin -> Automatic ];
+reviewCode[ s_String ] := Style[ reviewSafeText @ s, FontFamily -> $reviewCodeFont, FontSize -> 12, LineBreakWithin -> Automatic ];
 reviewCode // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1012,12 +1345,20 @@ reviewDiffData // endDefinition;
 
 reviewTruncatedText // beginDefinition;
 
-reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, truncated },
+(* Only the kept text is made display-safe (reviewSafeText): a replacement in megabytes of text would take a second. A
+   marker makes a line longer, so a line that grew past $reviewMaxLineLength is cut again, before a marker that would
+   not fit (reviewCutMarkedLine): Rendering.wl cuts longer lines too, and it would leave half a marker. *)
+reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, cut, safe, truncated },
     lines     = StringSplit[ StringDelete[ text, "\n" ~~ EndOfString ], "\n", All ];
     kept      = Take[ lines, UpTo @ $reviewMaxLines ];
-    truncated = StringRiffle[
+    cut       = StringRiffle[
         If[ StringLength[ # ] > $reviewMaxLineLength, StringTake[ #, $reviewMaxLineLength ] <> "\[Ellipsis]", # ] & /@ kept,
         "\n"
+    ];
+    safe      = reviewSafeText @ cut;
+    truncated = If[ StringLength @ safe === StringLength @ cut,
+        safe,
+        StringRiffle[ reviewCutMarkedLine /@ StringSplit[ safe, "\n", All ], "\n" ]
     ];
     Join[
         <| "Path" -> path |>,
@@ -1027,6 +1368,51 @@ reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, 
 ];
 
 reviewTruncatedText // endDefinition;
+
+
+(* A display-safe line cut to $reviewMaxLineLength characters and an ellipsis, so that its first $reviewMaxLineLength
+   characters end with a whole marker or with no marker: what Rendering.wl's own cut keeps is then the same. A line
+   that was cut before it was made safe ends with an ellipsis already, which this cut replaces. *)
+reviewCutMarkedLine // beginDefinition;
+
+reviewCutMarkedLine[ line_String ] := If[ StringLength @ line > $reviewMaxLineLength,
+    StringDelete[ StringTake[ line, $reviewMaxLineLength ], $reviewPartialMarker ] <> "\[Ellipsis]",
+    line
+];
+
+reviewCutMarkedLine // endDefinition;
+
+(* The start of a [[U+XXXX]] marker at the end of a cut line *)
+$reviewPartialMarker = RegularExpression[ "\\x{27E6}(U(\\+[0-9A-F]*)?)?\\z" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reviewSafeText*)
+
+(* Text of many lines (diffs, file contents, git's and ssh's messages), display-safe: the bidi controls and the line and
+   paragraph separators show as acpRemoteDisplayName shows them ([[U+XXXX]]), so that a line of code can't look
+   different from what it is (the "Trojan Source" trick) and every diff line stays one row. The other characters that
+   acpRemoteDisplayName shows (zero width joiners, variation selectors, ...) are left as they are: they are part of
+   ordinary text, e.g. of emoji. Tabs, line breaks and carriage returns are kept. Then acpNeutralizeLinearSyntax. A
+   literal search for each character (as in acpNeutralizeLinearSyntax) checks megabytes of text in milliseconds; the
+   replacement is slower, so diffs are made safe after they are cut (reviewTruncatedText). *)
+reviewSafeText // beginDefinition;
+
+reviewSafeText[ s_String ] := acpNeutralizeLinearSyntax @ If[ AnyTrue[ $reviewHiddenCharacters, StringContainsQ[ s, # ] & ],
+    StringReplace[ s, $reviewHiddenCharacterRules ],
+    s
+];
+
+reviewSafeText[ other_ ] := other;
+
+reviewSafeText // endDefinition;
+
+(* ALM, LRM, RLM; the line and paragraph separators; LRE, RLE, PDF, LRO, RLO; LRI, RLI, FSI, PDI *)
+$reviewHiddenCharacters = FromCharacterCode /@ Join[ { 16^^61C, 16^^200E, 16^^200F }, Range[ 16^^2028, 16^^202E ], Range[ 16^^2066, 16^^2069 ] ];
+
+
+(* The markers of acpRemoteDisplayName (made once per session) *)
+$reviewHiddenCharacterRules := $reviewHiddenCharacterRules = Thread[ $reviewHiddenCharacters -> (acpRemoteDisplayName /@ $reviewHiddenCharacters) ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1103,7 +1489,7 @@ reviewPathLabel[ file_Association, bold_ ] := reviewPathLabel[ file, bold, True 
 
 reviewPathLabel[ file_Association, bold_, tooltip_ ] := Module[ { path, orig, label },
     path = reviewPathView[ file[ "Path" ], bold ];
-    orig = acpNeutralizeLinearSyntax @ file[ "OrigPath" ];
+    orig = acpRemoteDisplayName @ file[ "OrigPath" ];
     If[ StringQ @ orig,
         label = Row @ {
             Style[ orig, FontColor -> acpColor[ "Muted" ], FontFamily -> $reviewCodeFont, FontSize -> 12 ],
@@ -1124,7 +1510,7 @@ reviewPathLabel // endDefinition;
 reviewPathView // beginDefinition;
 
 reviewPathView[ path0_String, bold_ ] := Module[ { path, trimmed, name, dir },
-    path    = acpNeutralizeLinearSyntax @ path0;
+    path    = acpRemoteDisplayName @ path0;
     trimmed = StringDelete[ path, "/" ~~ EndOfString ];
     name    = Last[ StringSplit[ trimmed, "/" ], trimmed ] <> If[ StringEndsQ[ path, "/" ], "/", "" ];
     dir     = StringDrop[ path, -StringLength @ name ];
@@ -1159,9 +1545,12 @@ reviewStatusBadge // endDefinition;
    evaluated), so a window with many or large changes stays small. *)
 reviewFileCell // beginDefinition;
 
-reviewFileCell[ file_Association, data_, tag_String, allClosed_ ] := Module[ { open, note, body },
+reviewFileCell[ file_Association, data_, tag_String, allClosed_ ] := reviewFileCell[ file, data, tag, allClosed, None ];
+
+(* remote: the change set's "Remote" (None for a local folder) *)
+reviewFileCell[ file_Association, data_, tag_String, allClosed_, remote_ ] := Module[ { open, note, body },
     open = ! TrueQ @ allClosed && ! TrueQ @ file[ "Binary" ] && ! (AssociationQ @ data && data[ "Lines" ] > $reviewOpenMaxLines);
-    note = reviewNote[ file, data ];
+    note = reviewNote[ file, data, remote ];
     body = Which[
         ! AssociationQ @ data, None,
         open                 , acpReviewDiffView @ data,
@@ -1202,10 +1591,13 @@ reviewFileHeader[ file_Association ] := Grid[
 reviewFileHeader // endDefinition;
 
 
-(* The note above (or instead of) the diff, or None *)
+(* The note above (or instead of) the diff, or None. The target of a link of a remote folder is a remote path:
+   abbreviated with the remote home folder. *)
 reviewNote // beginDefinition;
 
-reviewNote[ file_Association, data_ ] := Module[ { key, params = <| |>, modes },
+reviewNote[ file_Association, data_ ] := reviewNote[ file, data, None ];
+
+reviewNote[ file_Association, data_, remote_ ] := Module[ { key, params = <| |>, modes },
     modes = Lookup[ file, { "OldMode", "NewMode" }, None ];
     key   = Which[
         data === "TooManyChanges",
@@ -1215,7 +1607,12 @@ reviewNote[ file_Association, data_ ] := Module[ { key, params = <| |>, modes },
         file[ "Note" ] === "SymbolicLink",
             With[ { target = Lookup[ file, "LinkTarget", None ] },
                 If[ StringQ @ target,
-                    params = <| "target" -> acpNeutralizeLinearSyntax @ acpAbbreviatePath[ target, None ] |>;
+                    params = <|
+                        "target" -> If[ AssociationQ @ remote,
+                            acpRemoteDisplayName @ acpRemoteAbbreviate[ target, Lookup[ remote, "Home", None ] ],
+                            acpRemoteDisplayName @ acpAbbreviatePath[ target, None ]
+                        ]
+                    |>;
                     "ReviewNoteSymbolicLink",
                     "ReviewNoteSymbolicLinkBroken"
                 ]
@@ -1255,11 +1652,12 @@ reviewLazyDiff[ data_Association ] := With[ { d = data },
 reviewLazyDiff // endDefinition;
 
 
-(* Open (or show in its folder) the file; nothing for deleted files *)
+(* Open (or show in its folder) the file; nothing for deleted files and for the files of a remote folder (they are not on
+   this computer: a local file of the same name must not be opened) *)
 reviewOpenLinkBoxes // beginDefinition;
 
 reviewOpenLinkBoxes[ file_Association ] := With[ { path = file[ "FullPath" ] },
-    If[ file[ "Status" ] === "Deleted" || ! StringQ @ path,
+    If[ file[ "Status" ] === "Deleted" || ! StringQ @ path || TrueQ @ Lookup[ file, "Remote", False ],
         reviewBoxes @ Spacer[ 0 ],
         ReplaceAll[
             reviewTemplate[ "OpenLink" ],
@@ -1267,7 +1665,7 @@ reviewOpenLinkBoxes[ file_Association ] := With[ { path = file[ "FullPath" ] },
                 $slotPath    -> path,
                 $slotTooltip -> ToBoxes @ acpLabel[
                     If[ reviewOpensFileQ @ file, "ReviewOpenTooltip", "ReviewShowInFolderTooltip" ],
-                    <| "name" -> acpNeutralizeLinearSyntax @ FileNameTake @ path |>
+                    <| "name" -> acpRemoteDisplayName @ FileNameTake @ path |>
                 ]
             }
         ]

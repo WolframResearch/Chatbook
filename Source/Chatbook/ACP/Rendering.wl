@@ -440,7 +440,7 @@ activateCodeBlocks // endDefinition;
 (* Returns an inline Cell (boxes) for an entity in the current $renderMode ("Live" or "Final"). *)
 renderEntity // beginDefinition;
 
-renderEntity[ entity: KeyValuePattern[ "Type" -> "Message"    ], key_, _     ] := messageCell[ entity, key ];
+renderEntity[ entity: KeyValuePattern[ "Type" -> "Message"    ], key_, turn_ ] := messageCell[ entity, key, turn ];
 renderEntity[ entity: KeyValuePattern[ "Type" -> "Thought"    ], key_, turn_ ] := thoughtCell[ entity, key, turn ];
 renderEntity[ entity: KeyValuePattern[ "Type" -> "Tool"       ], key_, turn_ ] := toolCardCell[ entity, key, turn, Automatic ];
 renderEntity[ entity: KeyValuePattern[ "Type" -> "Permission" ], _   , turn_ ] := permissionEntityCell[ entity, turn ];
@@ -472,10 +472,11 @@ textBoxCell // endDefinition;
 (*messageCell*)
 messageCell // beginDefinition;
 
-messageCell[ entity_Association, key_ ] := Cell[
+(* turn: the content blocks of a remote window's turn are on that host (resource links, see contentBlockView) *)
+messageCell[ entity_Association, key_, turn_ ] := Cell[
     TextData @ Join[
         markdownItems[ entity[ "Text" ], key ],
-        blockItems @ Lookup[ entity, "Blocks", { } ]
+        blockItems[ Lookup[ entity, "Blocks", { } ], turnRemote @ turn ]
     ],
     "Text",
     Background -> None
@@ -620,26 +621,79 @@ blockItemQ[ _ ] := False;
 blockItemQ // endDefinition;
 
 
-(* Non-text content blocks of messages (images, resource links): *)
+(* Non-text content blocks of messages (images, resource links). remote: the turn's "Remote" (acpTurnRemote: None for a
+   local window's turn) *)
 blockItems // beginDefinition;
-blockItems[ { } ] := { };
-blockItems[ blocks_List ] := Flatten @ Map[ { "\n", boxCell @ contentBlockView @ # } &, blocks ];
+blockItems[ { }, _ ] := { };
+blockItems[ blocks_List, remote_ ] := Flatten @ Map[ { "\n", boxCell @ contentBlockView[ #, remote ] } &, blocks ];
 blockItems // endDefinition;
 
 
+turnRemote // beginDefinition;
+turnRemote[ turn_Association ] := Replace[ Lookup[ turn, "Remote", None ], Except[ _Association ] -> None ];
+turnRemote[ _ ] := None;
+turnRemote // endDefinition;
+
+
+(* The agent chooses the name, the URI and the type of a block: they are neutralized (linear syntax would make boxes
+   of the agent's choice), and only web links (and a local agent's file links, its own files on this computer, as
+   before) are clickable: any other scheme could reach an OS protocol handler (ms-msdt:, search-ms:, ...). A remote
+   agent's file is not on this computer: its name is shown with the path on the host as a tooltip. *)
 contentBlockView // beginDefinition;
 
-contentBlockView[ block: KeyValuePattern[ "type" -> "image" ] ] := imageView @ block;
+contentBlockView[ block: KeyValuePattern[ "type" -> "image" ], _ ] := imageView @ block;
 
-contentBlockView[ block: KeyValuePattern @ { "type" -> "resource_link", "uri" -> uri_String } ] :=
-    Hyperlink[ Replace[ Lookup[ block, "name", uri ], Except[ _String ] -> uri ], uri ];
+contentBlockView[ block: KeyValuePattern @ { "type" -> "resource_link", "uri" -> uri_String }, remote_ ] := Module[
+    { name, safeURI },
+    name    = Replace[ Lookup[ block, "name", uri ], Except[ _String ] -> uri ];
+    name    = If[ AssociationQ @ remote, acpRemoteDisplayName @ name, acpNeutralizeLinearSyntax @ name ];
+    safeURI = acpNeutralizeLinearSyntax @ uri;
+    Which[
+        StringMatchQ[ uri, RegularExpression[ "(?i)https?://\\S+" ] ],
+            Hyperlink[ name, safeURI ],
+        ! AssociationQ @ remote && StringMatchQ[ uri, RegularExpression[ "(?i)file:\\S+" ] ],
+            Hyperlink[ name, safeURI ],
+        AssociationQ @ remote && StringStartsQ[ uri, "file:", IgnoreCase -> True ],
+            Tooltip[
+                Style[ name, FontFamily -> $codeFont, FontSize -> 12 ],
+                acpLabel[
+                    "ResourceLinkRemote",
+                    <|
+                        "host" -> acpRemoteDisplayName @ Replace[ Lookup[ remote, "Host", None ], Except[ _String ] -> "?" ],
+                        "path" -> acpRemoteDisplayName @ remoteFilePath @ uri
+                    |>
+                ]
+            ],
+        True,
+            Tooltip[ Style[ name, FontFamily -> $codeFont, FontSize -> 12 ], safeURI ]
+    ]
+];
 
-contentBlockView[ KeyValuePattern @ { "type" -> "resource", "resource" -> KeyValuePattern[ "text" -> text_String ] } ] :=
-    RawBoxes @ codeBlock[ text, "text" ];
+contentBlockView[ KeyValuePattern @ { "type" -> "resource", "resource" -> KeyValuePattern[ "text" -> text_String ] }, _ ] :=
+    RawBoxes @ codeBlock[ acpNeutralizeLinearSyntax @ text, "text" ];
 
-contentBlockView[ block_ ] := Style[ "[" <> ToString @ Lookup[ Replace[ block, Except[ _Association ] -> <| |> ], "type", "content" ] <> "]", FontColor -> $mutedColor ];
+(* The type as the agent wrote it (ToString would interpret linear syntax in a string): *)
+contentBlockView[ block_, _ ] := Style[
+    StringJoin[
+        "[",
+        acpNeutralizeLinearSyntax @ Replace[
+            Lookup[ Replace[ block, Except[ _Association ] -> <| |> ], "type", "content" ],
+            { s_String :> s, other_ :> ToString[ other, InputForm ] }
+        ],
+        "]"
+    ],
+    FontColor -> $mutedColor
+];
 
 contentBlockView // endDefinition;
+
+
+(* The path of a file: URI (percent-decoded; the URI itself if it can't be decoded) *)
+remoteFilePath // beginDefinition;
+remoteFilePath[ uri_String ] := With[ { path = StringDelete[ uri, StartOfString ~~ ("file://" | "file:"), IgnoreCase -> True ] },
+    Replace[ Quiet @ URLDecode @ path, Except[ _String ] -> path ]
+];
+remoteFilePath // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1924,7 +1978,7 @@ finalCell[ turn_Association, noFE_ ] := Block[
         (* Answer *)
         answer = StringRiffle[ DeleteCases[ StringTrim[ entities[ #, "Text" ] ] & /@ split[ "Answer" ], "" ], "\n\n" ];
         If[ answer =!= "", items = Join[ items, finishedItems @ answer, { "\n" } ] ];
-        items = Join[ items, Flatten[ blockItems @ entities[ #, "Blocks" ] & /@ split[ "Answer" ] ] ];
+        items = Join[ items, Flatten[ blockItems[ entities[ #, "Blocks" ], turnRemote @ turn ] & /@ split[ "Answer" ] ] ];
 
         (* Status line or error *)
         status = If[ turn[ "Error" ] === None, acpTurnStatusLine @ turn, None ];
@@ -2148,11 +2202,13 @@ acpPermissionPanel // endDefinition;
 
 
 permissionSignature // beginDefinition;
+(* The remote home folder is part of it: "Always allow" texts of a remote window resolve ~ with it *)
 permissionSignature[ nbo_NotebookObject ] := Replace[
-    acpIsolated @ Module[ { pending },
-        pending = acpWindowGet[ nbo, "PendingPermissions", <| |> ];
+    acpIsolated @ Module[ { window, pending },
+        window  = Replace[ acpWindowGet @ nbo, Except[ _Association ] -> <| |> ];
+        pending = Lookup[ window, "PendingPermissions", <| |> ];
         If[ AssociationQ @ pending && Length @ pending > 0,
-            { First @ Keys @ pending, Length @ pending, acpWindowGet[ nbo, "ProjectDirectory", None ] },
+            { First @ Keys @ pending, Length @ pending, Lookup[ window, "ProjectDirectory", None ], acpWindowRemoteHome @ window },
             None
         ]
     ],
@@ -2188,20 +2244,22 @@ permissionPanelContent0 // endDefinition;
 permissionCard // beginDefinition;
 
 permissionCard[ nbo_, window_Association, reqID_, info_Association, i_Integer, n_Integer ] := Module[
-    { params, toolCall, tool, agent, project, headline, preview, options, armAt, buttons, scope },
+    { params, toolCall, tool, agent, project, paths, headline, preview, options, armAt, buttons, scope },
 
     params   = Replace[ Lookup[ info, "Params", <| |> ], Except[ _Association ] -> <| |> ];
     toolCall = Replace[ Lookup[ params, "toolCall", <| |> ], Except[ _Association ] -> <| |> ];
     tool     = permissionTool[ info, toolCall ];
     agent    = windowAgentName @ window;
     project  = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> "" ];
+    (* how paths are resolved: on this computer, or on a remote window's host (POSIX paths, ~ is the remote home) *)
+    paths    = acpPathContext @ window;
     (* the labels contain the project folder and paths, which can come from the agent: neutralized *)
     headline = acpNeutralizeLinearSyntax @ permissionHeadline[ tool, toolCall, agent, project ];
     preview  = permissionPreview[ tool, project ];
     options  = Replace[ Lookup[ params, "options", { } ], Except[ _List ] -> { } ];
     armAt    = AbsoluteTime[ ] + $permissionArmDelay;
-    buttons  = permissionButton[ nbo, reqID, #, armAt, tool, agent, project ] & /@ options;
-    scope    = If[ MemberQ[ options, KeyValuePattern[ "kind" -> "allow_always" ] ], acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project ], None ];
+    buttons  = permissionButton[ nbo, reqID, #, armAt, tool, agent, project, paths ] & /@ options;
+    scope    = If[ MemberQ[ options, KeyValuePattern[ "kind" -> "allow_always" ] ], acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project, paths ], None ];
 
     Framed[
         Column[
@@ -2353,7 +2411,7 @@ permissionPreview0 // endDefinition;
 
 permissionButton // beginDefinition;
 
-permissionButton[ nbo_, reqID_, option_Association, armAt_, tool_, agent_, project_ ] := Module[ { kind, optionID, label, style },
+permissionButton[ nbo_, reqID_, option_Association, armAt_, tool_, agent_, project_, paths_ ] := Module[ { kind, optionID, label, style },
     kind     = Lookup[ option, "kind", "" ];
     optionID = Lookup[ option, "optionId", "" ];
     label    = Switch[ kind,
@@ -2371,7 +2429,7 @@ permissionButton[ nbo_, reqID_, option_Association, armAt_, tool_, agent_, proje
             Method     -> "Preemptive",
             BaseStyle  -> { "Text", FontSize -> 13 }
         ]
-    ] // If[ kind === "allow_always", Tooltip[ #, acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project ] ], # ] &
+    ] // If[ kind === "allow_always", Tooltip[ #, acpNeutralizeLinearSyntax @ alwaysScopeText[ tool, agent, project, paths ] ], # ] &
 ];
 
 permissionButton[ ___ ] := Nothing;
@@ -2414,16 +2472,20 @@ buttonFrame // endDefinition;
    send the patterns OpenCode saves, so they are derived the way OpenCode does (see acpShellSavePatterns):
      * access outside the project folder (any tool, including a "cd" in a shell command): that directory;
      * shell commands: one "<prefix> *" pattern per subcommand;
-     * file edits: all edits in the project. *)
+     * file edits: all edits in the project.
+   paths: acpPathContext of the window (a remote window's paths are POSIX paths on its host, ~ is the remote home; they
+   are resolved by string operations only). *)
 alwaysScopeText // beginDefinition;
 
-alwaysScopeText[ tool_Association, agent_, project_ ] := Module[ { name, command, external, scan },
+alwaysScopeText[ tool_, agent_, project_ ] := alwaysScopeText[ tool, agent, project, acpPathContext @ None ];
+
+alwaysScopeText[ tool_Association, agent_, project_, paths_Association ] := Module[ { name, command, external, scan },
     name     = tool[ "Name" ];
     command  = SelectFirst[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "command", "cmd" }, None ], StringQ, None ];
-    external = externalDirectory[ tool, command, project ];
+    external = externalDirectory[ tool, command, project, paths ];
     Which[
         StringQ @ external,
-            acpLabel[ "PermissionAlwaysScopeExternal", <| "agent" -> agent, "dir" -> external |> ],
+            acpLabel[ "PermissionAlwaysScopeExternal", <| "agent" -> agent, "dir" -> scopeDirectoryLabel[ external, paths ] |> ],
         StringQ @ command,
             scan = acpShellSavePatterns @ command;
             Which[
@@ -2448,32 +2510,55 @@ patternList // beginDefinition;
 patternList[ patterns: { __String } ] := StringRiffle[ "\"" <> # <> "\"" & /@ patterns, ", " ];
 patternList // endDefinition;
 
+
+(* A directory outside the project for the scope text: a remote one abbreviated with the remote home and made
+   display-safe (acpRemoteDisplayName) *)
+scopeDirectoryLabel // beginDefinition;
+scopeDirectoryLabel[ dir_String, paths: KeyValuePattern[ "Remote" -> True ] ] := acpRemoteDisplayName @ acpRemoteAbbreviate[ dir, Lookup[ paths, "Home", None ] ];
+scopeDirectoryLabel[ dir_String, _ ] := dir;
+scopeDirectoryLabel // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*externalDirectory*)
 
 (* The directory outside the project that the request is about (a file's directory, a directory itself, or a "cd"
-   target of a shell command), or None *)
+   target of a shell command), or None. paths: acpPathContext of the window. A remote window's paths are on its host:
+   they are never looked at on this computer (no DirectoryQ, ExpandFileName or FileNameJoin), but resolved as POSIX
+   paths with string operations; cd targets and the paths of list/glob/grep are folders, other tools' paths are files
+   (their folder is the scope). *)
 externalDirectory // beginDefinition;
 
-externalDirectory[ tool_Association, command_, project_String ] /; StringLength @ project > 0 := Module[ { paths },
-    paths = Join[
-        Cases[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "path", "filePath", "file_path" }, None ], _String ],
-        Cases[ Replace[ tool[ "Locations" ], Except[ _List ] -> { } ], KeyValuePattern[ "path" -> p_String ] :> p ]
+externalDirectory[ tool_Association, command_, project_String, paths: KeyValuePattern[ "Remote" -> True ] ] /; StringLength @ project > 0 :=
+    remoteExternalDirectory[
+        tool[ "Name" ],
+        toolPaths @ tool,
+        If[ StringQ @ command, shellDirectoryWords @ command, { } ],
+        project,
+        Lookup[ paths, "Home", None ]
     ];
-    FirstCase[
-        Join[
-            If[ StringQ @ command, shellDirectoryTargets[ command, project ], { } ],
-            Select[ absolutePath[ #, project ] & /@ paths, StringQ ]
-        ],
-        p_String /; ! insideDirectoryQ[ p, project ] :> If[ TrueQ @ Quiet @ DirectoryQ @ p, p, Replace[ FileNameDrop[ p, -1 ], "" -> p ] ],
-        None
-    ]
+
+externalDirectory[ tool_Association, command_, project_String, _ ] /; StringLength @ project > 0 := FirstCase[
+    Join[
+        If[ StringQ @ command, shellDirectoryTargets[ command, project ], { } ],
+        Select[ absolutePath[ #, project ] & /@ toolPaths @ tool, StringQ ]
+    ],
+    p_String /; ! insideDirectoryQ[ p, project ] :> If[ TrueQ @ Quiet @ DirectoryQ @ p, p, Replace[ FileNameDrop[ p, -1 ], "" -> p ] ],
+    None
 ];
 
-externalDirectory[ _, _, _ ] := None;
+externalDirectory[ _, _, _, _ ] := None;
 
 externalDirectory // endDefinition;
+
+
+(* The paths of a tool call: its raw input's path and its locations *)
+toolPaths // beginDefinition;
+toolPaths[ tool_Association ] := Join[
+    Cases[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "path", "filePath", "file_path" }, None ], _String ],
+    Cases[ Replace[ tool[ "Locations" ], Except[ _List ] -> { } ], KeyValuePattern[ "path" -> p_String ] :> p ]
+];
+toolPaths // endDefinition;
 
 
 absolutePath // beginDefinition;
@@ -2501,18 +2586,74 @@ insideDirectoryQ // endDefinition;
 
 (* Absolute targets of cd/pushd/... in a shell command (relative to the project folder) *)
 shellDirectoryTargets // beginDefinition;
+shellDirectoryTargets[ command_String, project_String ] := Select[ absolutePath[ #, project ] & /@ shellDirectoryWords @ command, StringQ ];
+shellDirectoryTargets // endDefinition;
 
-shellDirectoryTargets[ command_String, project_String ] := Flatten @ Map[
+
+(* The targets of cd/pushd/... in a shell command, unquoted, as written *)
+shellDirectoryWords // beginDefinition;
+
+shellDirectoryWords[ command_String ] := Flatten @ Map[
     Function[ words,
         If[ words =!= { } && MemberQ[ $shellDirectoryCommands, ToLowerCase @ First @ words ],
-            Select[ absolutePath[ unquote @ #, project ] & /@ Select[ Rest @ words, ! StringStartsQ[ #, "-" ] & ], StringQ ],
+            unquote /@ Select[ Rest @ words, ! StringStartsQ[ #, "-" ] & ],
             { }
         ]
     ],
     shellCommandWords /@ shellSplitCommands @ command
 ];
 
-shellDirectoryTargets // endDefinition;
+shellDirectoryWords // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Remote paths*)
+
+(* The absolute path on the host of a path in a remote tool call (None if it can't be known: a variable, a command
+   substitution, ~user, or ~ with an unknown home) *)
+remoteAbsolutePath // beginDefinition;
+
+remoteAbsolutePath[ path_String, project_, home_ ] := Which[
+    path === "" || StringContainsQ[ path, "$" | "`" ], None,
+    path === "~", If[ StringQ @ home, home, None ],
+    StringStartsQ[ path, "~/" ], If[ StringQ @ home, acpRemoteLexicalPath[ home <> StringDrop[ path, 1 ] ], None ],
+    StringStartsQ[ path, "~" ], None,
+    StringStartsQ[ path, "/" ], acpRemoteLexicalPath @ path,
+    StringQ @ project && StringStartsQ[ project, "/" ], acpRemoteLexicalPath[ project <> "/" <> path ],
+    True, None
+];
+
+remoteAbsolutePath[ _, _, _ ] := None;
+
+remoteAbsolutePath // endDefinition;
+
+
+(* Whether a remote path is the folder dir or in it (lexically: links are not resolved) *)
+remoteInsideQ // beginDefinition;
+
+remoteInsideQ[ path_String, dir_String ] := With[ { a = acpRemoteLexicalPath @ path, d = acpRemoteLexicalPath @ dir },
+    a === d || d === "/" || StringStartsQ[ a, d <> "/" ]
+];
+
+remoteInsideQ[ _, _ ] := False;
+
+remoteInsideQ // endDefinition;
+
+
+(* The first folder outside the project: cd targets are folders, the paths of list/glob/grep too, other tools' paths are
+   files (their parent folder is the scope) *)
+remoteExternalDirectory // beginDefinition;
+
+remoteExternalDirectory[ toolName_, paths_List, cdTargets_List, project_String, home_ ] := FirstCase[
+    Join[
+        { remoteAbsolutePath[ #, project, home ], True } & /@ cdTargets,
+        { remoteAbsolutePath[ #, project, home ], MemberQ[ { "list", "glob", "grep" }, toolName ] } & /@ paths
+    ],
+    { p_String, dirQ_ } /; ! remoteInsideQ[ p, project ] :> If[ TrueQ @ dirQ, p, acpRemoteParent @ p ],
+    None
+];
+
+remoteExternalDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2667,7 +2808,10 @@ acpToolbarStatusView // endDefinition;
 
 statusSignature // beginDefinition;
 statusSignature[ nbo_NotebookObject ] := Replace[
-    acpIsolated @ Replace[ acpWindowGet @ nbo, w_Association :> KeyTake[ w, { "Status", "Error", "AgentInfo", "Agent" } ] ],
+    acpIsolated @ Replace[
+        acpWindowGet @ nbo,
+        w_Association :> { KeyTake[ w, { "Status", "Error", "AgentInfo", "Agent", "ErrorDetailOpen" } ], acpWindowHostKey @ w }
+    ],
     _Failure -> None
 ];
 statusSignature // endDefinition;
@@ -2680,28 +2824,55 @@ statusContent // endDefinition;
 
 statusContent0 // beginDefinition;
 
-statusContent0[ nbo_NotebookObject ] := Module[ { window, agent, version, view },
+(* A remote window names its host (short form) while it connects and once it is connected. "Disconnected" after an error
+   (e.g. the agent exited, or ssh lost the connection) shows that error, with "Reconnect". *)
+statusContent0[ nbo_NotebookObject ] := Module[ { window, agent, version, host, error, view },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Return[ RawBoxes[ "" ], Module ] ];
     agent   = windowAgentName @ window;
     version = Replace[ Lookup[ Replace[ Lookup[ window, "AgentInfo", None ], Except[ _Association ] -> <| |> ], "Version", "" ], Except[ _String ] -> "" ];
+    host    = Replace[ acpWindowShortHost @ window, h_String :> acpRemoteDisplayName @ h ];
+    error   = Lookup[ window, "Error", None ];
     view = Switch[ Lookup[ window, "Status", None ],
         "NoDirectory",
             Style[ acpLabel[ "ToolbarNoDirectory" ], FontColor -> $mutedColor ],
         "Connecting",
-            Row @ { chatbookIcon[ "PercolateProgressAnimation", False ], " ", Style[ acpLabel[ "ToolbarConnecting", <| "agent" -> agent |> ], FontColor -> $mutedColor ] },
+            Row @ {
+                chatbookIcon[ "PercolateProgressAnimation", False ],
+                " ",
+                Style[
+                    If[ StringQ @ host,
+                        acpLabel[ "ToolbarConnectingRemote", <| "agent" -> agent, "host" -> host |> ],
+                        acpLabel[ "ToolbarConnecting", <| "agent" -> agent |> ]
+                    ],
+                    FontColor -> $mutedColor
+                ]
+            },
         "Restoring",
             Row @ { chatbookIcon[ "PercolateProgressAnimation", False ], " ", Style[ acpLabel[ "ToolbarRestoring" ], FontColor -> $mutedColor ] },
         "Ready" | "Running",
-            Style[ StringTrim @ acpLabel[ "ToolbarReady", <| "agent" -> agent, "version" -> version |> ], FontColor -> $mutedColor ],
+            Style[
+                collapseSpaces @ If[ StringQ @ host,
+                    acpLabel[ "ToolbarReadyRemote", <| "agent" -> agent, "version" -> version, "host" -> host |> ],
+                    acpLabel[ "ToolbarReady", <| "agent" -> agent, "version" -> version |> ]
+                ],
+                FontColor -> $mutedColor
+            ],
         "Disconnected",
-            Row @ {
-                Style[ acpLabel[ "ToolbarDisconnected" ], FontColor -> $mutedColor ],
-                " ",
-                actionButton[ nbo, "Reconnect", agent ]
-            },
+            If[ AssociationQ @ error,
+                acpErrorView[
+                    <| error, "Actions" -> DeleteDuplicates @ Append[ Replace[ Lookup[ error, "Actions", { } ], Except[ _List ] -> { } ], "Reconnect" ] |>,
+                    nbo,
+                    "Compact"
+                ],
+                Row @ {
+                    Style[ acpLabel[ "ToolbarDisconnected" ], FontColor -> $mutedColor ],
+                    " ",
+                    actionButton[ nbo, "Reconnect", agent ]
+                }
+            ],
         "Error",
-            acpErrorView[ Replace[ Lookup[ window, "Error", None ], Except[ _Association ] -> <| "Message" -> acpLabel[ "ToolbarError" ] |> ], nbo, "Compact" ],
+            acpErrorView[ Replace[ error, Except[ _Association ] -> <| "Message" -> acpLabel[ "ToolbarError" ] |> ], nbo, "Compact" ],
         _,
             ""
     ];
@@ -2709,6 +2880,12 @@ statusContent0[ nbo_NotebookObject ] := Module[ { window, agent, version, view }
 ];
 
 statusContent0 // endDefinition;
+
+
+(* "OpenCode  on host" for an agent without a version: one space *)
+collapseSpaces // beginDefinition;
+collapseSpaces[ s_String ] := StringTrim @ StringReplace[ s, " " ~~ " ".. -> " " ];
+collapseSpaces // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2783,54 +2960,256 @@ tokenCount // endDefinition;
 (*acpErrorView*)
 
 (* Chatbook-style error box with the friendly message, details, and action buttons. error is
-   <| "Code", "Message", "Detail"/"Data", "Actions" -> { "Reconnect"|"ChooseModel"|"LocateAgent"|"SignIn"|... } |>.
-   Buttons call ChatbookAction[ "ACP", action, nbo ]. *)
+   <| "Code", "Message", "Hint", "Output", "Detail"/"Data", "Actions" -> { "Reconnect"|"ChooseModel"|"LocateAgent"|"SignIn"|... } |>
+   (acpErrorInfo, Connection.wl). Buttons call ChatbookAction[ "ACP", action, nbo ]. A remote window has no local program
+   to locate: "LocateAgent" is dropped for it.
+     * "Full" (final cells, the Review and picker windows): message, detail and buttons in a red box.
+     * "Compact" (the toolbar status row): the message, one line under it (the last line of the output, e.g. ssh's
+       "ubuntu@host: Permission denied (publickey).", or the first line of the hint), and the buttons on their own row,
+       with "Details" when there is more: the hint and the output, with "Copy". Every line wraps, so a long message or
+       ssh text never widens the toolbar (which would push the model/mode/effort menus out of the window). The open state
+       is the window's "ErrorDetailOpen" (acpErrorKey of the error it belongs to: a new error starts closed).
+   Both views turn line breaking on for all they contain ($errorTextStyle): docked cells (the toolbar, the folder
+   picker's header) have LineBreakWithin -> False from the "DockedCell" style, and a LineBreakWithin of a string inside
+   a Row does not reach the line that the Row makes. They show commands and paths as typed: without operator
+   substitution, which draws "-" as a long minus sign and "->" as an arrow. *)
 acpErrorView // beginDefinition;
 
 acpErrorView[ error_Association ] := acpErrorView[ error, None, "Full" ];
 acpErrorView[ error_Association, nbo_ ] := acpErrorView[ error, nbo, "Full" ];
 
-acpErrorView[ error_Association, nbo_, mode_String ] := Module[ { message, detail, actions, buttons },
-    message = Replace[ Lookup[ error, "Message", "" ], Except[ _String ] :> ToString @ Lookup[ error, "Code", "" ] ];
-    detail  = Replace[ Lookup[ error, "Detail", None ], Except[ _String ] -> None ];
-    actions = Replace[ Lookup[ error, "Actions", { } ], Except[ _List ] -> { } ];
-    buttons = If[ MatchQ[ nbo, _NotebookObject ], actionButton[ nbo, #, "OpenCode" ] & /@ Select[ actions, StringQ ], { } ];
-    If[ mode === "Compact",
-        Row @ Flatten @ { Style[ "\:26a0 ", FontColor -> $redText ], Style[ message, FontColor -> $errorFont ], If[ buttons === { }, Nothing, { " ", Row[ buttons, Spacer[ 4 ] ] } ] },
-        Framed[
-            Grid[
+acpErrorView[ error_Association, nbo_, "Compact" ] := Module[ { parts, buttons, more, open },
+    parts   = acpErrorParts @ error;
+    buttons = errorButtons[ error, nbo ];
+    more    = TrueQ @ parts[ "MoreQ" ] && MatchQ[ nbo, _NotebookObject ];
+    open    = more && acpWindowGet[ nbo, "ErrorDetailOpen", None ] === acpErrorKey @ error;
+    Style[
+        Column[
+            DeleteCases[
                 {
-                    {
-                        Style[ "\:26a0", FontColor -> $redText, FontSize -> 16 ],
-                        Column[
-                            DeleteCases[
-                                {
-                                    Style[ message, FontColor -> $errorFont, FontWeight -> "DemiBold" ],
-                                    If[ StringQ @ detail, Style[ detail, FontColor -> $mutedColor, FontSize -> 12 ], None ],
-                                    If[ buttons === { }, None, Row[ buttons, Spacer[ 6 ] ] ]
-                                },
-                                None
-                            ],
-                            Spacings -> 0.4
-                        ]
-                    }
+                    Row @ {
+                        Style[ "\:26a0 ", FontColor -> $redText ],
+                        Style[ parts[ "Message" ], FontColor -> $errorFont ]
+                    },
+                    If[ StringQ @ parts[ "Line" ] && ! open,
+                        Style[ parts[ "Line" ], FontColor -> $mutedColor, FontSize -> 11 ],
+                        None
+                    ],
+                    If[ open && StringQ @ parts[ "Details" ], errorDetailsBlock[ nbo, parts[ "Details" ] ], None ],
+                    If[ buttons === { } && ! more,
+                        None,
+                        Row[ Append[ buttons, If[ more, errorDetailsToggle[ nbo, open ], Nothing ] ], Spacer[ 6 ] ]
+                    ]
                 },
-                Alignment -> { Left, Top },
-                Spacings  -> { 0.6, 0 }
+                None
             ],
-            Background     -> $errorBackground,
-            FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], $errorFrame ],
-            FrameMargins   -> { { 10, 10 }, { 8, 8 } },
-            RoundingRadius -> 6,
-            ImageMargins   -> { { 0, 0 }, { 6, 6 } },
-            BaseStyle      -> { "Text", FontSize -> 13 }
-        ]
+            Alignment -> Left,
+            Spacings  -> 0.3
+        ],
+        Sequence @@ $errorTextStyle
+    ]
+];
+
+acpErrorView[ error_Association, nbo_, _String ] := Module[ { message, detail, buttons },
+    message = acpNeutralizeLinearSyntax @ errorMessage @ error;
+    detail  = acpNeutralizeLinearSyntax @ Replace[ Lookup[ error, "Detail", None ], Except[ _String ] -> None ];
+    buttons = errorButtons[ error, nbo ];
+    Framed[
+        Grid[
+            {
+                {
+                    Style[ "\:26a0", FontColor -> $redText, FontSize -> 16 ],
+                    Column[
+                        DeleteCases[
+                            {
+                                Style[ message, FontColor -> $errorFont, FontWeight -> "DemiBold" ],
+                                If[ StringQ @ detail, Style[ detail, FontColor -> $mutedColor, FontSize -> 12 ], None ],
+                                If[ buttons === { }, None, Row[ buttons, Spacer[ 6 ] ] ]
+                            },
+                            None
+                        ],
+                        Spacings -> 0.4
+                    ]
+                }
+            },
+            Alignment -> { Left, Top },
+            Spacings  -> { 0.6, 0 }
+        ],
+        Background     -> $errorBackground,
+        FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], $errorFrame ],
+        FrameMargins   -> { { 10, 10 }, { 8, 8 } },
+        RoundingRadius -> 6,
+        ImageMargins   -> { { 0, 0 }, { 6, 6 } },
+        BaseStyle      -> Join[ { "Text", FontSize -> 13 }, $errorTextStyle ]
     ]
 ];
 
 acpErrorView[ _, ___ ] := "";
 
 acpErrorView // endDefinition;
+
+
+(* Wrapped lines start at the left edge (LineIndent -> 0), like text *)
+$errorTextStyle = {
+    LineBreakWithin    -> Automatic,
+    LineIndent         -> 0,
+    PrivateFontOptions -> { "OperatorSubstitution" -> False }
+};
+
+
+errorMessage // beginDefinition;
+errorMessage[ error_Association ] := Replace[ Lookup[ error, "Message", None ], Except[ _String ] :> ToString @ Lookup[ error, "Code", "" ] ];
+errorMessage // endDefinition;
+
+
+(* The action buttons of an error (none without a window to act on) *)
+errorButtons // beginDefinition;
+
+errorButtons[ error_Association, nbo_NotebookObject ] := Module[ { actions },
+    actions = Select[ Replace[ Lookup[ error, "Actions", { } ], Except[ _List ] -> { } ], StringQ ];
+    If[ acpRemoteQ @ nbo, actions = DeleteCases[ actions, "LocateAgent" ] ];
+    actionButton[ nbo, #, "OpenCode" ] & /@ actions
+];
+
+errorButtons[ _, _ ] := { };
+
+errorButtons // endDefinition;
+
+
+(* "Details" / "Hide details" (ChatbookAction[ "ACP", "ToggleErrorDetail", nbo ], UI.wl) *)
+errorDetailsToggle // beginDefinition;
+
+errorDetailsToggle[ nbo_NotebookObject, open_ ] := With[ { n = nbo },
+    Button[
+        buttonLabel[ acpLabel @ If[ TrueQ @ open, "ErrorDetailsHide", "ErrorDetailsShow" ], "Secondary" ],
+        acpIsolated @ ChatbookAction[ "ACP", "ToggleErrorDetail", n ],
+        Appearance -> None,
+        Method     -> "Preemptive",
+        BaseStyle  -> { "Text", FontSize -> 12 }
+    ]
+];
+
+errorDetailsToggle // endDefinition;
+
+
+(* The hint and the output of an open error, with "Copy" (ChatbookAction[ "ACP", "CopyErrorDetail", nbo ], UI.wl: the
+   button carries no text, the action copies the window's current error) *)
+errorDetailsBlock // beginDefinition;
+
+errorDetailsBlock[ nbo_NotebookObject, details_String ] := With[ { n = nbo },
+    Framed[
+        Column[
+            {
+                Style[ details, FontFamily -> $codeFont, FontSize -> 11, FontColor -> $mutedColor, Sequence @@ $errorTextStyle ],
+                Button[
+                    buttonLabel[ acpLabel[ "ErrorDetailsCopy" ], "Secondary" ],
+                    acpIsolated @ ChatbookAction[ "ACP", "CopyErrorDetail", n ],
+                    Appearance -> None,
+                    Method     -> "Preemptive",
+                    BaseStyle  -> { "Text", FontSize -> 12 }
+                ]
+            },
+            Alignment -> Left,
+            Spacings  -> 0.4
+        ],
+        Background     -> $errorBackground,
+        FrameStyle     -> None,
+        FrameMargins   -> { { 6, 6 }, { 4, 4 } },
+        RoundingRadius -> 4
+    ]
+];
+
+errorDetailsBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpErrorParts*)
+
+(* What the compact error view shows (pure): <| "Message", "Line", "Details", "MoreQ" |>.
+     "Line"    -> the last line of "Output" (ssh's or the agent's own words, the most specific), else the first line of
+                  "Hint", cut to $errorLineLength characters; None without either;
+     "Details" -> the hint and the output, separated by a blank line (the output's last $errorDetailLines lines, at most
+                  $errorDetailLength characters in all), or None;
+     "MoreQ"   -> whether "Details" shows more than "Line".
+   An error without "Hint" and "Output" (made before they existed, or by Git.wl/Review.wl) has its "Detail" split at
+   the first blank line: two paragraphs are hint and output, one line is a hint, more lines are output. Every string is
+   neutralized (acpNeutralizeLinearSyntax). *)
+acpErrorParts // beginDefinition;
+
+acpErrorParts[ error_Association ] := Module[ { hint, output, detail, paragraphs, line, details },
+    hint   = nonBlankString @ Lookup[ error, "Hint", None ];
+    output = nonBlankString @ Lookup[ error, "Output", None ];
+    detail = nonBlankString @ Lookup[ error, "Detail", None ];
+    If[ hint === None && output === None && StringQ @ detail,
+        paragraphs = StringSplit[ StringTrim @ detail, RegularExpression[ "\n[ \t]*\n" ], 2 ];
+        { hint, output } = Which[
+            Length @ paragraphs === 2, nonBlankString /@ paragraphs,
+            StringContainsQ[ StringTrim @ detail, "\n" ], { None, detail },
+            True, { detail, None }
+        ]
+    ];
+    hint   = If[ StringQ @ hint, cutEnd[ StringTrim @ hint, $errorDetailLength ], None ];
+    output = If[ StringQ @ output, cutStart[ lastLines[ StringTrim @ output, $errorDetailLines ], Max[ 200, $errorDetailLength - stringLength @ hint - 2 ] ], None ];
+    line   = Which[
+        StringQ @ output, Last @ StringSplit[ output, "\n" ],
+        StringQ @ hint, First @ StringSplit[ hint, "\n" ],
+        True, None
+    ];
+    If[ StringQ @ line, line = cutEnd[ StringTrim @ line, $errorLineLength ] ];
+    details = Replace[ StringRiffle[ DeleteCases[ { hint, output }, None ], "\n\n" ], "" -> None ];
+    <|
+        "Message" -> acpNeutralizeLinearSyntax @ errorMessage @ error,
+        "Line"    -> acpNeutralizeLinearSyntax @ line,
+        "Details" -> acpNeutralizeLinearSyntax @ details,
+        "MoreQ"   -> StringQ @ details && details =!= line
+    |>
+];
+
+acpErrorParts[ _ ] := <| "Message" -> "", "Line" -> None, "Details" -> None, "MoreQ" -> False |>;
+
+acpErrorParts // endDefinition;
+
+
+$errorLineLength   = 200;
+$errorDetailLines  = 12;
+$errorDetailLength = 1500;
+
+
+nonBlankString // beginDefinition;
+nonBlankString[ s_String ] /; StringLength @ StringTrim @ s > 0 := s;
+nonBlankString[ _ ] := None;
+nonBlankString // endDefinition;
+
+
+stringLength // beginDefinition;
+stringLength[ s_String ] := StringLength @ s;
+stringLength[ _ ] := 0;
+stringLength // endDefinition;
+
+
+lastLines // beginDefinition;
+lastLines[ s_String, n_Integer ] := With[ { lines = StringSplit[ s, "\n" ] }, If[ Length @ lines > n, StringRiffle[ Take[ lines, -n ], "\n" ], s ] ];
+lastLines // endDefinition;
+
+
+(* Texts cut to n characters with an ellipsis: keeping the start, or keeping the end *)
+cutEnd // beginDefinition;
+cutEnd[ s_String, n_Integer ] := If[ StringLength @ s > n, StringTake[ s, n - 1 ] <> "\[Ellipsis]", s ];
+cutEnd // endDefinition;
+
+cutStart // beginDefinition;
+cutStart[ s_String, n_Integer ] := If[ StringLength @ s > n, "\[Ellipsis]" <> StringTake[ s, -(n - 1) ], s ];
+cutStart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpErrorKey*)
+
+(* Identifies an error for the open state of its details ("ErrorDetailOpen"): a new error starts closed *)
+acpErrorKey // beginDefinition;
+acpErrorKey[ error_Association ] := Hash @ Lookup[ error, { "Code", "Message", "Hint", "Output", "Detail" }, None ];
+acpErrorKey[ _ ] := None;
+acpErrorKey // endDefinition;
 
 
 actionButton // beginDefinition;

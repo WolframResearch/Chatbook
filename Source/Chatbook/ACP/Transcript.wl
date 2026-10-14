@@ -104,9 +104,10 @@ $kindLabelGroups = <|
 (* English defaults for every user-visible string produced by Transcript.wl and Rendering.wl.
    acpLabel[key] first tries the front end text resource "ChatbookStrings" -> "ACP" <> key and falls back to this table
    (then to $acpUIStrings, defined in UI.wl, $acpConnectionStrings, defined in Agents.wl, $acpReviewStrings, defined
-   in Review.wl, and $acpSessionsStrings, defined in Sessions.wl). Every key of the five tables must also be in
-   FrontEnd/TextResources/ChatbookStrings.tr and the localized copies as "ACP" <> key, with the same English text
-   (checked by Tests/ACPWindow.wlt). Templates use StringTemplate slots: `name`. *)
+   in Review.wl, $acpSessionsStrings, defined in Sessions.wl, and $acpFolderPickerStrings, defined in FolderPicker.wl).
+   Every key of the six tables must also be in FrontEnd/TextResources/ChatbookStrings.tr and the localized copies as
+   "ACP" <> key, with the same English text (checked by Tests/ACPWindow.wlt). Templates use StringTemplate slots:
+   `name`. *)
 $acpStrings = <|
     (* Durations *)
     "DurationSeconds"              -> "`s`s",
@@ -376,8 +377,10 @@ $acpStrings = <|
     (* Toolbar status and usage *)
     "ToolbarNoDirectory"           -> "Choose a project folder to start",
     "ToolbarConnecting"            -> "Connecting to `agent`\[Ellipsis]",
+    "ToolbarConnectingRemote"      -> "Connecting to `agent` on `host`\[Ellipsis]",
     "ToolbarRestoring"             -> "Loading the session\[Ellipsis]",
     "ToolbarReady"                 -> "`agent` `version`",
+    "ToolbarReadyRemote"           -> "`agent` `version` on `host`",
     "ToolbarDisconnected"          -> "Disconnected",
     "ToolbarError"                 -> "Error",
     "UsageMeter"                   -> "`used` / `size`",
@@ -390,7 +393,14 @@ $acpStrings = <|
     "ActionChooseModel"            -> "Choose another model",
     "ActionLocateAgent"            -> "Locate `agent`\[Ellipsis]",
     "ActionSignIn"                 -> "Sign in\[Ellipsis]",
-    "LocateAgentDialogTitle"       -> "Locate `agent`"
+    "ActionChooseDirectory"        -> "Choose folder\[Ellipsis]",
+    "LocateAgentDialogTitle"       -> "Locate `agent`",
+    "ErrorDetailsShow"             -> "Details",
+    "ErrorDetailsHide"             -> "Hide details",
+    "ErrorDetailsCopy"             -> "Copy",
+
+    (* Content blocks *)
+    "ResourceLinkRemote"           -> "On `host`: `path`"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -433,7 +443,7 @@ defaultLabel // beginDefinition;
 
 defaultLabel[ key_String ] := Replace[
     FirstCase[
-        { $acpStrings, $acpUIStrings, $acpConnectionStrings, $acpReviewStrings, $acpSessionsStrings },
+        { $acpStrings, $acpUIStrings, $acpConnectionStrings, $acpReviewStrings, $acpSessionsStrings, $acpFolderPickerStrings },
         table_Association /; StringQ @ table[ key ] :> table[ key ],
         Missing[ ]
     ],
@@ -503,6 +513,7 @@ acpNewTurn[ props_Association ] := Module[ { time },
             "OutputCell"       -> None,
             "RequestID"        -> None,
             "ProjectDirectory" -> None,
+            "Remote"           -> None, (* acpTurnRemote: the host of a remote window's turn *)
             "AgentName"        -> $defaultAgentName,
             "Status"           -> "Running",
             "EndTime"          -> None,
@@ -538,6 +549,22 @@ acpNewTurn[ props_Association ] := Module[ { time },
 ];
 
 acpNewTurn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpTurnRemote*)
+
+(* The "Remote" of a turn of the window: None for a local window, else <| "Host" -> host label, "Short" -> short host
+   name, "Home" -> remote home folder | None |> (paths in the turn are on that host; e.g. resource links are not opened
+   on this computer). Pure. *)
+acpTurnRemote // beginDefinition;
+
+acpTurnRemote[ window_ ] := If[ acpRemoteQ @ window,
+    <| "Host" -> acpWindowHostLabel @ window, "Short" -> acpWindowShortHost @ window, "Home" -> acpWindowRemoteHome @ window |>,
+    None
+];
+
+acpTurnRemote // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2291,22 +2318,31 @@ rawInputValue[ tool_Association, keys_List ] := If[ AssociationQ @ tool[ "RawInp
 rawInputValue // endDefinition;
 
 
-(* Paths are shown relative to the project directory when possible: *)
+(* Paths are shown relative to the project directory when possible. A remote agent's paths are POSIX paths, whatever the
+   system of this computer, so their last name is taken by string operations (a backslash is part of a name); a local
+   agent's are this computer's (C:\Users\me\proj on Windows), so FileNameTake takes it: *)
 displayPath // beginDefinition;
 
-displayPath[ path_String, turn_ ] := Module[ { root, rel },
-    root = Replace[ Lookup[ Replace[ turn, Except[ _Association ] -> <| |> ], "ProjectDirectory", None ], Except[ _String ] -> None ];
+displayPath[ path_String, turn0_ ] := Module[ { turn, root, name, rel },
+    turn = Replace[ turn0, Except[ _Association ] -> <| |> ];
+    root = Replace[ Lookup[ turn, "ProjectDirectory", None ], Except[ _String ] -> None ];
+    name = If[ AssociationQ @ Lookup[ turn, "Remote", None ], lastPathName, FileNameTake ];
     rel = Which[
-        StringQ @ root && path === root, FileNameTake @ path,
+        StringQ @ root && path === root, name @ path,
         StringQ @ root && StringStartsQ[ path, StringTrim[ root, "/" ~~ EndOfString ] <> "/" ],
             StringDrop[ path, StringLength @ StringTrim[ root, "/" ~~ EndOfString ] + 1 ],
-        StringStartsQ[ path, "/" ], FileNameTake @ path,
+        StringStartsQ[ path, "/" ], name @ path,
         True, path
     ];
     shorten[ If[ rel === "", path, rel ], $maxTitleObjectLength ]
 ];
 
 displayPath // endDefinition;
+
+
+lastPathName // beginDefinition;
+lastPathName[ path_String ] := Last[ StringSplit[ path, "/" ], path ];
+lastPathName // endDefinition;
 
 
 codeQuote // beginDefinition;

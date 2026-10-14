@@ -34,6 +34,10 @@ VerificationTest[
    the front-end-free formatting path, so results are the same with or without a front end (CI runs under
    UsingFrontEnd). FE-only checks are marked as such and skipped without a front end. *)
 VerificationTest[
+    (* CI runs every test file in one kernel and one context: helpers that other test files define too are cleared
+       first, so that none of their definitions is used here *)
+    ClearAll[ acpApplyEvent, acpEventIndex, acpLoadFixture, acpReplay ];
+
     Wolfram`Chatbook`ACP`Transcript`Private`$acpNoFrontEndLabels    = True;
     Wolfram`Chatbook`ACP`Rendering`Private`$acpNoFrontEndFormatting = True;
     $acpLogStart = AbsoluteTime[ ]; (* see ACPRendering-DebugLog *)
@@ -104,7 +108,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Definitions@@Tests/ACPRendering.wlt:36,1-108,2"
+    TestID   -> "ACPRendering-Definitions@@Tests/ACPRendering.wlt:36,1-112,2"
 ]
 
 VerificationTest[
@@ -127,7 +131,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Definitions-Audit@@Tests/ACPRendering.wlt:110,1-131,2"
+    TestID   -> "ACPRendering-Definitions-Audit@@Tests/ACPRendering.wlt:114,1-135,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -137,7 +141,7 @@ VerificationTest[
     MatchQ[ acpLiveView[ "render-live-1" ], acpTrackingPattern[ acpLayoutSymbol[ "render-live-1" ], Wolfram`Chatbook`ACP`Rendering`Private`liveLayout[ "render-live-1" ] ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveView-TracksLayoutSymbol@@Tests/ACPRendering.wlt:136,1-141,2"
+    TestID   -> "ACPRendering-LiveView-TracksLayoutSymbol@@Tests/ACPRendering.wlt:140,1-145,2"
 ]
 
 VerificationTest[
@@ -154,7 +158,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-OneDynamicPerEntity@@Tests/ACPRendering.wlt:143,1-158,2"
+    TestID   -> "ACPRendering-LiveLayout-OneDynamicPerEntity@@Tests/ACPRendering.wlt:147,1-162,2"
 ]
 
 VerificationTest[
@@ -172,7 +176,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-Header@@Tests/ACPRendering.wlt:160,1-176,2"
+    TestID   -> "ACPRendering-LiveLayout-Header@@Tests/ACPRendering.wlt:164,1-180,2"
 ]
 
 VerificationTest[
@@ -182,7 +186,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-ClosedOpener@@Tests/ACPRendering.wlt:178,1-186,2"
+    TestID   -> "ACPRendering-LiveLayout-ClosedOpener@@Tests/ACPRendering.wlt:182,1-190,2"
 ]
 
 VerificationTest[
@@ -191,21 +195,21 @@ VerificationTest[
     ],
     RawBoxes[ _? (acpContainsTextQ[ #, "Waiting for your approval" ] && acpContainsTextQ[ #, "Working" ] &) ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WorkingLabel-Activity@@Tests/ACPRendering.wlt:188,1-195,2"
+    TestID   -> "ACPRendering-WorkingLabel-Activity@@Tests/ACPRendering.wlt:192,1-199,2"
 ]
 
 VerificationTest[
     acpWithTurns[ { }, { acpLayoutBoxes[ "render-no-such-turn" ], acpEntityView[ "render-no-such-turn", { "Tool", "x" } ], Wolfram`Chatbook`ACP`Rendering`Private`workingLabel[ "render-no-such-turn" ] } ],
     { _? (acpContainsTextQ[ #, "no longer available" ] &), RawBoxes[ _? (acpContainsTextQ[ #, "no longer available" ] &) ], RawBoxes[ _ ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-MissingTurnPlaceholder@@Tests/ACPRendering.wlt:197,1-202,2"
+    TestID   -> "ACPRendering-MissingTurnPlaceholder@@Tests/ACPRendering.wlt:201,1-206,2"
 ]
 
 VerificationTest[
     acpWithTurns[ { turnC }, acpEntityView[ turnC[ "ID" ], { "Tool", "no-such-tool" } ] ],
     RawBoxes[ "" ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-MissingEntity@@Tests/ACPRendering.wlt:204,1-209,2"
+    TestID   -> "ACPRendering-MissingEntity@@Tests/ACPRendering.wlt:208,1-213,2"
 ]
 
 VerificationTest[
@@ -223,7 +227,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-SubagentHeader@@Tests/ACPRendering.wlt:211,1-227,2"
+    TestID   -> "ACPRendering-LiveLayout-SubagentHeader@@Tests/ACPRendering.wlt:215,1-231,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -246,7 +250,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Closed@@Tests/ACPRendering.wlt:232,1-250,2"
+    TestID   -> "ACPRendering-ToolCard-Closed@@Tests/ACPRendering.wlt:236,1-254,2"
 ]
 
 VerificationTest[
@@ -268,7 +272,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Open-Diff@@Tests/ACPRendering.wlt:252,1-272,2"
+    TestID   -> "ACPRendering-ToolCard-Open-Diff@@Tests/ACPRendering.wlt:256,1-276,2"
 ]
 
 VerificationTest[
@@ -290,7 +294,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-ExitCodeAmber@@Tests/ACPRendering.wlt:274,1-294,2"
+    TestID   -> "ACPRendering-ToolCard-ExitCodeAmber@@Tests/ACPRendering.wlt:278,1-298,2"
 ]
 
 VerificationTest[
@@ -302,7 +306,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-DeclinedNeutral@@Tests/ACPRendering.wlt:296,1-306,2"
+    TestID   -> "ACPRendering-ToolCard-DeclinedNeutral@@Tests/ACPRendering.wlt:300,1-310,2"
 ]
 
 VerificationTest[
@@ -314,7 +318,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-StoppedNeutral@@Tests/ACPRendering.wlt:308,1-318,2"
+    TestID   -> "ACPRendering-ToolCard-StoppedNeutral@@Tests/ACPRendering.wlt:312,1-322,2"
 ]
 
 VerificationTest[
@@ -342,7 +346,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Execute@@Tests/ACPRendering.wlt:320,1-346,2"
+    TestID   -> "ACPRendering-ToolCard-Execute@@Tests/ACPRendering.wlt:324,1-350,2"
 ]
 
 VerificationTest[
@@ -355,7 +359,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Execute-RemindersStripped@@Tests/ACPRendering.wlt:348,1-359,2"
+    TestID   -> "ACPRendering-ToolCard-Execute-RemindersStripped@@Tests/ACPRendering.wlt:352,1-363,2"
 ]
 
 VerificationTest[
@@ -377,7 +381,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-LiveOutputTruncated@@Tests/ACPRendering.wlt:361,1-381,2"
+    TestID   -> "ACPRendering-ToolCard-LiveOutputTruncated@@Tests/ACPRendering.wlt:365,1-385,2"
 ]
 
 VerificationTest[
@@ -396,7 +400,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Live@@Tests/ACPRendering.wlt:383,1-400,2"
+    TestID   -> "ACPRendering-Thought-Live@@Tests/ACPRendering.wlt:387,1-404,2"
 ]
 
 VerificationTest[
@@ -406,7 +410,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Active@@Tests/ACPRendering.wlt:402,1-410,2"
+    TestID   -> "ACPRendering-Thought-Active@@Tests/ACPRendering.wlt:406,1-414,2"
 ]
 
 VerificationTest[
@@ -418,7 +422,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Message-Live-TaskList@@Tests/ACPRendering.wlt:412,1-422,2"
+    TestID   -> "ACPRendering-Message-Live-TaskList@@Tests/ACPRendering.wlt:416,1-426,2"
 ]
 
 VerificationTest[
@@ -440,7 +444,7 @@ VerificationTest[
         RawBoxes[ _? (acpContainsTextQ[ #, "Conversation compacted" ] &) ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PlanAndNotice@@Tests/ACPRendering.wlt:424,1-444,2"
+    TestID   -> "ACPRendering-PlanAndNotice@@Tests/ACPRendering.wlt:428,1-448,2"
 ]
 
 VerificationTest[
@@ -451,7 +455,7 @@ VerificationTest[
     ],
     RawBoxes[ _? (acpContainsTextQ[ #, "Access outside the project: /tmp/outside" ] && acpContainsTextQ[ #, "Awaiting approval" ] && FreeQ[ #, _ButtonBox ] &) ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StandalonePermission-Passive@@Tests/ACPRendering.wlt:446,1-455,2"
+    TestID   -> "ACPRendering-StandalonePermission-Passive@@Tests/ACPRendering.wlt:450,1-459,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -466,7 +470,7 @@ VerificationTest[
     },
     { 0, 10, 6, 24 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StableSplit-CodeFence@@Tests/ACPRendering.wlt:460,1-470,2"
+    TestID   -> "ACPRendering-StableSplit-CodeFence@@Tests/ACPRendering.wlt:464,1-474,2"
 ]
 
 VerificationTest[
@@ -479,7 +483,7 @@ VerificationTest[
     ],
     { 18, { "First paragraph.", "\n\n", "Second" }, { "First paragraph.", "\n\n", "Second paragraph." } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StreamingTailOnly@@Tests/ACPRendering.wlt:472,1-483,2"
+    TestID   -> "ACPRendering-StreamingTailOnly@@Tests/ACPRendering.wlt:476,1-487,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -491,7 +495,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-Edit@@Tests/ACPRendering.wlt:488,1-495,2"
+    TestID   -> "ACPRendering-DiffView-Edit@@Tests/ACPRendering.wlt:492,1-499,2"
 ]
 
 VerificationTest[
@@ -500,7 +504,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-NewFile-RawACP@@Tests/ACPRendering.wlt:497,1-504,2"
+    TestID   -> "ACPRendering-DiffView-NewFile-RawACP@@Tests/ACPRendering.wlt:501,1-508,2"
 ]
 
 VerificationTest[
@@ -513,7 +517,7 @@ VerificationTest[
     ],
     { 10, 2, 1, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ContextAndTruncation@@Tests/ACPRendering.wlt:506,1-517,2"
+    TestID   -> "ACPRendering-DiffView-ContextAndTruncation@@Tests/ACPRendering.wlt:510,1-521,2"
 ]
 
 VerificationTest[
@@ -522,7 +526,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-Patch@@Tests/ACPRendering.wlt:519,1-526,2"
+    TestID   -> "ACPRendering-DiffView-Patch@@Tests/ACPRendering.wlt:523,1-530,2"
 ]
 
 VerificationTest[
@@ -531,7 +535,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ContentsWritten@@Tests/ACPRendering.wlt:528,1-535,2"
+    TestID   -> "ACPRendering-DiffView-ContentsWritten@@Tests/ACPRendering.wlt:532,1-539,2"
 ]
 
 (* Inside hunks every line is content: a removed "-- comment" line is "--- comment" in the patch. File headers are
@@ -563,7 +567,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-PatchRows@@Tests/ACPRendering.wlt:539,1-567,2"
+    TestID   -> "ACPRendering-DiffView-PatchRows@@Tests/ACPRendering.wlt:543,1-571,2"
 ]
 
 (* "Header" -> False leaves out the path line; "Omitted" lines are added to the "more lines" note *)
@@ -582,7 +586,7 @@ VerificationTest[
     ],
     { True, False, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-HeaderAndOmitted@@Tests/ACPRendering.wlt:570,1-586,2"
+    TestID   -> "ACPRendering-DiffView-HeaderAndOmitted@@Tests/ACPRendering.wlt:574,1-590,2"
 ]
 
 (* The chat's diff views: natural width, no line numbers *)
@@ -596,7 +600,7 @@ VerificationTest[
     ],
     { { Automatic }, { { 2, 2, 2, 2 } }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ChatLayout@@Tests/ACPRendering.wlt:589,1-600,2"
+    TestID   -> "ACPRendering-DiffView-ChatLayout@@Tests/ACPRendering.wlt:593,1-604,2"
 ]
 
 (* "LineNumbers": old and new line numbers from the hunk headers of patches, counted through line diffs (also across
@@ -631,7 +635,7 @@ VerificationTest[
         { { "+", "only", None, None }, { "-", "lines", None, None }, { "@", "@@ bad header @@", None, None }, { "=", "same", None, None } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-LineNumberRows@@Tests/ACPRendering.wlt:604,1-635,2"
+    TestID   -> "ACPRendering-DiffView-LineNumberRows@@Tests/ACPRendering.wlt:608,1-639,2"
 ]
 
 (* The number columns: narrow, muted, right-aligned, blank where a side has no line; a column without numbers is left
@@ -684,7 +688,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-LineNumbersAndFullWidth@@Tests/ACPRendering.wlt:640,1-688,2"
+    TestID   -> "ACPRendering-DiffView-LineNumbersAndFullWidth@@Tests/ACPRendering.wlt:644,1-692,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -705,7 +709,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:693,1-709,2"
+    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:697,1-713,2"
 ]
 
 VerificationTest[
@@ -722,7 +726,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:711,1-726,2"
+    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:715,1-730,2"
 ]
 
 VerificationTest[
@@ -735,7 +739,7 @@ VerificationTest[
     },
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:728,1-739,2"
+    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:732,1-743,2"
 ]
 
 VerificationTest[
@@ -744,7 +748,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:741,1-748,2"
+    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:745,1-752,2"
 ]
 
 VerificationTest[
@@ -760,7 +764,7 @@ VerificationTest[
     ],
     { True, True, True, _String? (StringContainsQ[ "_You declined" ]) },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:750,1-764,2"
+    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:754,1-768,2"
 ]
 
 VerificationTest[
@@ -769,7 +773,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:766,1-773,2"
+    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:770,1-777,2"
 ]
 
 VerificationTest[
@@ -778,7 +782,7 @@ VerificationTest[
     ],
     { True, <| "Code" -> -32603, "Message" -> "Internal error: Model exo-free has been deprecated." |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:775,1-782,2"
+    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:779,1-786,2"
 ]
 
 VerificationTest[
@@ -787,7 +791,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:784,1-791,2"
+    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:788,1-795,2"
 ]
 
 VerificationTest[
@@ -800,7 +804,7 @@ VerificationTest[
         Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:793,1-804,2"
+    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:797,1-808,2"
 ]
 
 VerificationTest[
@@ -809,7 +813,7 @@ VerificationTest[
     ],
     Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:806,1-813,2"
+    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:810,1-817,2"
 ]
 
 (* FE-only: with a front end, answers are formatted with FormatChatOutput "Finished" (skipped without a front end).
@@ -840,7 +844,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { }, True, True, Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:818,1-844,2"
+    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:822,1-848,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -867,7 +871,7 @@ VerificationTest[
     ],
     { True, { }, False, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:851,1-871,2"
+    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:855,1-875,2"
 ]
 
 VerificationTest[
@@ -903,7 +907,7 @@ VerificationTest[
     ],
     { { "make", "compiling a.c" }, { "File not found: /project/missing.txt" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:873,1-907,2"
+    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:877,1-911,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -929,7 +933,7 @@ VerificationTest[
     ],
     { True, True, 6, 1, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:912,1-933,2"
+    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:916,1-937,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -946,7 +950,7 @@ VerificationTest[
     },
     { { 1, 1 }, { 12, 8 }, { 480, 300 }, { 144, 360 }, { 480, 360 }, { 480, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:938,1-950,2"
+    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:942,1-954,2"
 ]
 
 (* Small images are shown at their natural size (not stretched), large ones are scaled down *)
@@ -961,7 +965,7 @@ VerificationTest[
     ],
     { { { 12, 8 }, { 320, 200 } }, { { 12, 8 }, { 480, 300 } }, { { 1, 1 } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:953,1-965,2"
+    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:957,1-969,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -987,7 +991,7 @@ VerificationTest[
     ],
     { { }, { }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:970,1-991,2"
+    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:974,1-995,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1001,7 +1005,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:996,1-1005,2"
+    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:1000,1-1009,2"
 ]
 
 VerificationTest[
@@ -1026,7 +1030,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:1007,1-1030,2"
+    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:1011,1-1034,2"
 ]
 
 VerificationTest[
@@ -1042,7 +1046,7 @@ VerificationTest[
         RawBoxes[ StyleBox[ _, "Text", ___ ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:1032,1-1046,2"
+    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:1036,1-1050,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1058,7 +1062,7 @@ VerificationTest[
     MatchQ[ acpPermissionPanel @ acpFakeNotebook, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:1051,1-1062,2"
+    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:1055,1-1066,2"
 ]
 
 VerificationTest[
@@ -1084,7 +1088,7 @@ VerificationTest[
     ],
     { True, True, True, 3, True, { { acpFakeNotebook, 2, "once" }, { acpFakeNotebook, 2, "always" }, { acpFakeNotebook, 2, "reject" } }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:1064,1-1088,2"
+    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:1068,1-1092,2"
 ]
 
 VerificationTest[
@@ -1107,7 +1111,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:1090,1-1111,2"
+    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:1094,1-1115,2"
 ]
 
 VerificationTest[
@@ -1116,7 +1120,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:1113,1-1120,2"
+    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:1117,1-1124,2"
 ]
 
 (* What "Always allow" saves, as OpenCode derives it (patterns per subcommand, directories outside the project) *)
@@ -1150,7 +1154,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:1123,1-1154,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:1127,1-1158,2"
 ]
 
 VerificationTest[
@@ -1166,7 +1170,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:1156,1-1170,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:1160,1-1174,2"
 ]
 
 VerificationTest[
@@ -1177,7 +1181,7 @@ VerificationTest[
     },
     { RawBoxes[ "" ], RawBoxes[ "" ], None },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:1172,1-1181,2"
+    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:1176,1-1185,2"
 ]
 
 VerificationTest[
@@ -1195,7 +1199,7 @@ VerificationTest[
     ],
     { True, True, True, True, { "Reconnect" }, { "ChooseModel", "Reconnect" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1183,1-1199,2"
+    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1187,1-1203,2"
 ]
 
 (* MCP readiness changes don't re-render the status view *)
@@ -1208,7 +1212,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1202,1-1212,2"
+    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1206,1-1216,2"
 ]
 
 VerificationTest[
@@ -1224,7 +1228,7 @@ VerificationTest[
     ],
     { True, True, True, True, "" | "\"\"" },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1214,1-1228,2"
+    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1218,1-1232,2"
 ]
 
 VerificationTest[
@@ -1238,7 +1242,7 @@ VerificationTest[
     ],
     { True, True, { "SignIn" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1230,1-1242,2"
+    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1234,1-1246,2"
 ]
 
 (* "Locate OpenCode..." is a file chooser run by the front end; the chosen file goes to the SetAgentExecutable action *)
@@ -1253,14 +1257,386 @@ VerificationTest[
     ],
     { 1, True, { "Reconnect" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1245,1-1257,2"
+    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1249,1-1261,2"
 ]
 
 VerificationTest[
     MatchQ[ #, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ] & /@ { acpToolbarStatusView @ acpFakeNotebook, acpUsageMeterView @ acpFakeNotebook },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1259,1-1264,2"
+    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1263,1-1268,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Remote Windows and Agent Text*)
+VerificationTest[
+    $acpTestSSH = <| "MachineName" -> "devbox.example.com", "Username" -> "u", "Arguments" -> { }, "Executable" -> Automatic |>;
+    $acpRemotePaths = <| "Remote" -> True, "Host" -> "devbox", "HostLabel" -> "u@devbox.example.com", "Home" -> "/home/u" |>;
+    $acpRemoteTurn  = <| "Host" -> "u@devbox.example.com", "Short" -> "devbox", "Home" -> "/home/u" |>;
+    (* a string with linear syntax characters (U+F7C1 U+F7C9 ... U+F7C0), as an agent could send it *)
+    $acpEvil = FromCharacterCode[ { 63425, 63433, 63432 } ] <> "DynamicBox[Print[1]]" <> FromCharacterCode[ 63424 ];
+    acpLinearSyntaxQ[ expr_ ] := ! FreeQ[
+        ToBoxes @ expr,
+        s_String /; StringContainsQ[ s, Append[ Characters @ FromCharacterCode @ Range[ 63424, 63437 ], "\\!\\(" ] ]
+    ];
+    acpClickableQ[ expr_ ] := ! FreeQ[ ToBoxes @ expr, _ButtonBox | TemplateBox[ _, "HyperlinkURL" | "HyperlinkDefault", ___ ] ];
+    (* Evaluates eval with every DirectoryQ or ExpandFileName of a path starting with one of prefixes sown (and not done) *)
+    acpWithLocalPathTrap // Attributes = { HoldRest };
+    acpWithLocalPathTrap[ prefixes_, eval_ ] := Internal`InheritedBlock[ { DirectoryQ, ExpandFileName },
+        Unprotect[ DirectoryQ, ExpandFileName ];
+        DirectoryQ[ p_String ] /; StringStartsQ[ p, prefixes ] := (Sow[ { "DirectoryQ", p } ]; False);
+        ExpandFileName[ p_String ] /; StringStartsQ[ p, prefixes ] := (Sow[ { "ExpandFileName", p } ]; p);
+        eval
+    ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-RemoteDefinitions@@Tests/ACPRendering.wlt:1273,1-1296,2"
+]
+
+(* What the compact error view shows (acpErrorParts): ssh's last line, the hint, older errors' "Detail" split at the
+   first blank line, hint-only and empty errors; every string neutralized *)
+VerificationTest[
+    {
+        acpErrorParts @ <|
+            "Message" -> "h didn't accept your SSH key.",
+            "Hint"    -> "Agent chats sign in without prompts: use a key \[Ellipsis]",
+            "Output"  -> "Warning: Permanently added \[Ellipsis]\nubuntu@h: Permission denied (publickey)."
+        |>,
+        acpErrorParts @ <| "Message" -> "OpenCode stopped unexpectedly.", "Detail" -> "Exit code: 1.\nError: boom" |>,
+        acpErrorParts @ <| "Message" -> "Couldn't start.", "Detail" -> "Install it.\n\nfatal: one\nfatal: two" |>,
+        acpErrorParts @ <| "Message" -> "OpenCode was not found on this computer.", "Detail" -> "Install it from https://opencode.ai, or \[Ellipsis]" |>,
+        acpErrorParts[ <| "Message" -> "m", "Hint" -> StringRepeat[ "word ", 60 ] |> ][ "MoreQ" ],
+        acpErrorParts @ <| "Message" -> "x", "Hint" -> None, "Output" -> "  \n " |>,
+        acpErrorParts @ <| "Code" -> "SSHFailed" |>,
+        acpErrorParts @ None
+    },
+    {
+        <|
+            "Message" -> "h didn't accept your SSH key.",
+            "Line"    -> "ubuntu@h: Permission denied (publickey).",
+            "Details" -> "Agent chats sign in without prompts: use a key \[Ellipsis]\n\nWarning: Permanently added \[Ellipsis]\nubuntu@h: Permission denied (publickey).",
+            "MoreQ"   -> True
+        |>,
+        <| "Message" -> "OpenCode stopped unexpectedly.", "Line" -> "Error: boom", "Details" -> "Exit code: 1.\nError: boom", "MoreQ" -> True |>,
+        <| "Message" -> "Couldn't start.", "Line" -> "fatal: two", "Details" -> "Install it.\n\nfatal: one\nfatal: two", "MoreQ" -> True |>,
+        <|
+            "Message" -> "OpenCode was not found on this computer.",
+            "Line"    -> "Install it from https://opencode.ai, or \[Ellipsis]",
+            "Details" -> "Install it from https://opencode.ai, or \[Ellipsis]",
+            "MoreQ"   -> False
+        |>,
+        True,
+        <| "Message" -> "x", "Line" -> None, "Details" -> None, "MoreQ" -> False |>,
+        <| "Message" -> "SSHFailed", "Line" -> None, "Details" -> None, "MoreQ" -> False |>,
+        <| "Message" -> "", "Line" -> None, "Details" -> None, "MoreQ" -> False |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Remote-ErrorParts@@Tests/ACPRendering.wlt:1300,1-1337,2"
+]
+
+(* The line is cut to 200 characters, the output to its last 12 lines and the details to about 1500 characters; text with
+   linear syntax characters (U+F7C1) is shown with U+FFFD instead *)
+VerificationTest[
+    Module[ { long, many, parts },
+        long  = acpErrorParts @ <| "Message" -> "m", "Output" -> StringRepeat[ "x", 300 ] |>;
+        many  = acpErrorParts @ <| "Message" -> "m", "Hint" -> "hint", "Output" -> StringRiffle[ "line " <> ToString[ # ] & /@ Range[ 30 ], "\n" ] |>;
+        parts = acpErrorParts @ <| "Message" -> "a" <> $acpEvil, "Hint" -> "h" <> $acpEvil, "Output" -> "o" <> $acpEvil |>;
+        {
+            StringLength @ long[ "Line" ],
+            StringEndsQ[ long[ "Line" ], "\[Ellipsis]" ],
+            StringSplit[ many[ "Details" ], "\n" ][[ { 1, 3, -1 } ]],
+            Length @ StringSplit[ many[ "Details" ], "\n" ],
+            StringLength[ acpErrorParts[ <| "Message" -> "m", "Hint" -> "h", "Output" -> StringRepeat[ "y", 5000 ] |> ][ "Details" ] ] <= 1500,
+            AnyTrue[ Values @ parts, acpLinearSyntaxQ ],
+            StringContainsQ[ parts[ "Message" ] <> parts[ "Line" ] <> parts[ "Details" ], "\:fffd" ]
+        }
+    ],
+    { 200, True, { "hint", "line 19", "line 30" }, 14, True, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "Remote-ErrorParts-Limits@@Tests/ACPRendering.wlt:1341,1-1359,2"
+]
+
+(* The toolbar's compact error view: the message and the last line of the output, the buttons on their own row with
+   "Details"; the hint and the output only when the window's "ErrorDetailOpen" is the error's key, with "Copy"; no
+   "Locate OpenCode..." for a remote window; agent and ssh text neutralized in both views *)
+VerificationTest[
+    Module[ { err, local, remote, compact, closed, open, remoteView, plain, view, full },
+        err = <|
+            "Code"    -> "SSHAuthFailed",
+            "Message" -> "devbox didn't accept your SSH key.",
+            "Hint"    -> "Use a key without a passphrase.",
+            "Output"  -> "debug1: tried a key\nu@devbox: Permission denied (publickey). " <> $acpEvil,
+            "Detail"  -> "Use a key without a passphrase.\n\nu@devbox: Permission denied (publickey). " <> $acpEvil,
+            "Actions" -> { "LocateAgent", "Reconnect" }
+        |>;
+        local   = Join[ acpWindowRecord @ <| |>, <| "Status" -> "Error", "Error" -> err |> ];
+        remote  = <| local, "Settings" -> <| "SSHSettings" -> $acpTestSSH |> |>;
+        compact[ rec_ ] := Block[ { $acpWindows = <| acpFakeNotebook -> rec |> }, acpErrorView[ err, acpFakeNotebook, "Compact" ] ];
+        closed     = compact @ local;
+        open       = compact @ <| local, "ErrorDetailOpen" -> acpErrorKey @ err |>;
+        remoteView = compact @ remote;
+        plain      = acpErrorView[ <| "Code" -> "AgentNotFound", "Message" -> "Not found", "Detail" -> "Install it.", "Actions" -> { "Reconnect" } |>, acpFakeNotebook, "Compact" ];
+        view       = Block[ { $acpWindows = <| |> }, acpErrorView[ err, None, "Compact" ] ];
+        full       = Block[ { $acpWindows = <| acpFakeNotebook -> remote |> }, acpErrorView[ err, acpFakeNotebook ] ];
+        {
+            (* message and the last line of the output; the hint only in the open details *)
+            acpContainsTextQ[ ToBoxes @ closed, "didn't accept your SSH key" ],
+            acpContainsTextQ[ ToBoxes @ closed, "Permission denied (publickey)" ],
+            acpContainsTextQ[ ToBoxes @ closed, "debug1" ],
+            acpContainsTextQ[ ToBoxes @ closed, "without a passphrase" ],
+            acpContainsTextQ[ ToBoxes @ open, "without a passphrase" ] && acpContainsTextQ[ ToBoxes @ open, "debug1" ],
+            acpActionNames[ closed, acpFakeNotebook ],
+            acpActionNames[ open, acpFakeNotebook ],
+            acpContainsTextQ[ ToBoxes @ closed, "Details" ],
+            acpContainsTextQ[ ToBoxes @ open, "Hide details" ],
+            (* the copy button carries no text: the action copies the window's error *)
+            FreeQ[ Cases[ open, HoldPattern @ Button[ _, code_, ___ ] :> HoldComplete @ code, Infinity ], _String? (StringContainsQ[ "passphrase" ]) ],
+            (* buttons on their own row, below the message; every line can wrap, also in a docked cell (whose style
+               turns line breaking off), and commands show as typed (no operator substitution) *)
+            MatchQ[ closed, Style[ Column[ { Row[ { _, _ } ], _Style, Row[ { __ }, _ ] }, ___ ], ___ ] ],
+            FreeQ[ closed[[ 1, 1, 1 ]], _Button | _FileNameSetter ],
+            MatchQ[
+                closed,
+                Style[ _Column, OrderlessPatternSequence[ LineBreakWithin -> Automatic, LineIndent -> 0, PrivateFontOptions -> { "OperatorSubstitution" -> False } ] ]
+            ],
+            (* "Locate OpenCode..." is a file chooser for local windows only *)
+            Length @ Cases[ closed, _FileNameSetter, Infinity ],
+            Length @ Cases[ remoteView, _FileNameSetter, Infinity ],
+            acpActionNames[ remoteView, acpFakeNotebook ],
+            Length @ Cases[ full, _FileNameSetter, Infinity ],
+            (* a one-line detail is all there is to see: no "Details" *)
+            acpActionNames[ plain, acpFakeNotebook ],
+            acpContainsTextQ[ ToBoxes @ plain, "Install it." ],
+            (* without a window: no buttons *)
+            FreeQ[ view, _Button | _FileNameSetter ],
+            (* neutralized everywhere: U+F7C1 becomes U+FFFD *)
+            acpLinearSyntaxQ /@ { closed, open, remoteView, full },
+            acpContainsTextQ[ ToBoxes @ full, "\:fffd" ] && acpContainsTextQ[ ToBoxes @ open, "\:fffd" ]
+        }
+    ],
+    {
+        True, True, False, False, True,
+        { "Reconnect", "ToggleErrorDetail" },
+        { "CopyErrorDetail", "Reconnect", "ToggleErrorDetail" },
+        True, True, True, True, True, True,
+        1, 0, { "Reconnect", "ToggleErrorDetail" }, 0,
+        { "Reconnect" }, True,
+        True,
+        { False, False, False, False }, True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ErrorView-Compact@@Tests/ACPRendering.wlt:1364,1-1431,2"
+]
+
+(* The full view (final cells, the Review and picker windows) wraps its lines too, in any cell, and both views and the
+   open details show commands and paths as typed: no operator substitution, which draws "-" as a long minus sign and
+   "->" as an arrow *)
+VerificationTest[
+    Module[ { err, full, open, wrapQ },
+        err  = <| "Code" -> "SSHHostKeyUnknown", "Message" -> "h is not a known host yet.", "Hint" -> "Connect with ssh -l u -p 22 h.", "Output" -> "Host key verification failed." |>;
+        full = acpErrorView[ <| err, "Detail" -> "Connect with ssh -l u -p 22 h.\n\nHost key verification failed." |>, None, "Full" ];
+        open = Block[ { $acpWindows = <| acpFakeNotebook -> <| acpWindowRecord @ <| |>, "Status" -> "Error", "Error" -> err, "ErrorDetailOpen" -> acpErrorKey @ err |> |> },
+            acpErrorView[ err, acpFakeNotebook, "Compact" ]
+        ];
+        wrapQ = Function[ opts, SubsetQ[ Flatten @ { opts }, { LineBreakWithin -> Automatic, LineIndent -> 0, PrivateFontOptions -> { "OperatorSubstitution" -> False } } ] ];
+        {
+            wrapQ @ Cases[ full, HoldPattern[ BaseStyle -> s_ ] :> s, { 1 } ],
+            (* the details' code font, where "-" is substituted as well *)
+            AnyTrue[
+                Cases[ open, Style[ s_String /; StringContainsQ[ s, "ssh -l u" ], opts___ ] :> { opts }, Infinity ],
+                MemberQ[ #, FontFamily -> _ ] && wrapQ[ # ] &
+            ]
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ErrorView-TextStyle@@Tests/ACPRendering.wlt:1436,1-1456,2"
+]
+
+(* FE-only: in a docked cell (the toolbar), whose "DockedCell" style turns line breaking off, the compact view wraps a
+   long message at the cell's width instead of making one line past the window's edge: rasterized, a long message
+   makes the view taller, not wider (skipped without a front end) *)
+VerificationTest[
+    If[ $FrontEnd === Null,
+        Missing[ "TestSkipped" ],
+        Module[ { size, long, short },
+            size = Function[ view,
+                ImageDimensions @ Rasterize[
+                    Cell[ BoxData @ PaneBox[ ToBoxes @ view, ImageSize -> { 300, Automatic } ], "DockedCell", ShowStringCharacters -> False ],
+                    ImageResolution -> 72
+                ]
+            ];
+            long  = size @ acpErrorView[ <| "Message" -> StringRiffle[ ConstantArray[ "/tmp/a-b/c", 40 ], " " ] |>, None, "Compact" ];
+            short = size @ acpErrorView[ <| "Message" -> "/tmp/a-b/c" |>, None, "Compact" ];
+            { long[[ 1 ]] <= short[[ 1 ]], long[[ 2 ]] > 3 * short[[ 2 ]] }
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ErrorView-WrapsInDockedCell-FEOnly@@Tests/ACPRendering.wlt:1461,1-1479,2"
+]
+
+(* B7.5: where "Always allow" applies for a remote window's request, resolved as POSIX paths on the host (~ is the
+   remote home) with string operations only *)
+VerificationTest[
+    Module[ { abs, inside, external },
+        abs      = Wolfram`Chatbook`ACP`Rendering`Private`remoteAbsolutePath;
+        inside   = Wolfram`Chatbook`ACP`Rendering`Private`remoteInsideQ;
+        external = Wolfram`Chatbook`ACP`Rendering`Private`remoteExternalDirectory;
+        {
+            abs[ #, "/home/u/proj", "/home/u" ] & /@ { "src/x.wl", "~/notes.md", "~", "/etc/hosts", "../other/y", "~bob/x", "$HOME/x", "`pwd`/x", "", "/a/./b/../c//" },
+            abs[ "~/x", "/p", None ],
+            abs[ "x", None, None ],
+            {
+                inside[ "/home/u/proj/a", "/home/u/proj" ],
+                inside[ "/home/u/proj", "/home/u/proj/" ],
+                inside[ "/home/u/project2/a", "/home/u/proj" ],
+                inside[ "/home/u/proj/../x", "/home/u/proj" ],
+                inside[ "/x", "/" ]
+            },
+            external[ "read", { "/etc/hosts" }, { }, "/home/u/proj", "/home/u" ],
+            external[ "list", { "/var/log" }, { }, "/home/u/proj", "/home/u" ],
+            external[ "grep", { "/var/log" }, { }, "/home/u/proj", "/home/u" ],
+            external[ None, { }, { "~/other" }, "/home/u/proj", "/home/u" ],
+            external[ None, { }, { "~/other" }, "/home/u/proj", None ],
+            external[ "read", { "src/a.wl" }, { }, "/home/u/proj", "/home/u" ],
+            external[ "read", { "/x" }, { }, "/home/u/proj", "/home/u" ],
+            external[ "edit", { "../sibling/f.txt" }, { }, "/home/u/proj", "/home/u" ]
+        }
+    ],
+    {
+        { "/home/u/proj/src/x.wl", "/home/u/notes.md", "/home/u", "/etc/hosts", "/home/u/other/y", None, None, None, None, "/a/c" },
+        None,
+        None,
+        { True, True, False, False, True },
+        "/etc",
+        "/var/log",
+        "/var/log",
+        "/home/u/other",
+        None,
+        None,
+        "/",
+        "/home/u/sibling"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Remote-PermissionPaths@@Tests/ACPRendering.wlt:1483,1-1525,2"
+]
+
+(* The permission panel of a remote window: read /etc, list /var/log, cd ~/other (the known home), paths inside the
+   project; the external folder shown abbreviated with the remote home; nothing looked at on this computer *)
+VerificationTest[
+    Module[ { scope, texts, sown, panel, remote, signatures },
+        scope[ tool_ ] := Wolfram`Chatbook`ACP`Rendering`Private`alwaysScopeText[ tool, "OpenCode", "/home/u/proj", $acpRemotePaths ];
+        remote = <|
+            acpWindowRecord @ <| 7 -> <| "Params" -> <|
+                "toolCall" -> <| "toolCallId" -> "per_7", "name" -> "bash", "rawInput" -> <| "command" -> "cd ~/other && ls" |> |>,
+                "options"  -> { <| "optionId" -> "once", "kind" -> "allow_once" |>, <| "optionId" -> "always", "kind" -> "allow_always" |> }
+            |> |> |>,
+            "ProjectDirectory" -> "/home/u/proj",
+            "RemoteHome"       -> "/home/u",
+            "Settings"         -> <| "SSHSettings" -> $acpTestSSH |>
+        |>;
+        { texts, sown } = Reap @ acpWithLocalPathTrap[
+            { "/etc", "/var", "/home/u", "~" },
+            {
+                scope @ <| "Name" -> "read", "RawInput" -> <| "filePath" -> "/etc/hosts" |>, "Locations" -> { <| "path" -> "/etc/hosts" |> } |>,
+                scope @ <| "Name" -> "list", "RawInput" -> <| "path" -> "/var/log" |> |>,
+                scope @ <| "Name" -> "shell", "RawInput" -> <| "command" -> "cd ~/other && ls" |> |>,
+                scope @ <| "Name" -> "read", "RawInput" -> <| "filePath" -> "src/a.py" |>, "Locations" -> { <| "path" -> "/home/u/proj/src/a.py" |> } |>,
+                scope @ <| "Name" -> "edit", "RawInput" -> <| "filePath" -> "/home/u/proj/src/a.py" |> |>,
+                scope @ <| "Name" -> "read", "RawInput" -> <| "filePath" -> "~/.bashrc" |> |>,
+                Block[ { $acpWindows = <| acpFakeNotebook -> remote |> },
+                    acpWithTurns[ { }, First @ Wolfram`Chatbook`ACP`Rendering`Private`permissionPanelContent @ acpFakeNotebook ]
+                ]
+            }
+        ];
+        panel = Last @ texts;
+        signatures = Block[ { $acpWindows = <| acpFakeNotebook -> # |> }, Wolfram`Chatbook`ACP`Rendering`Private`permissionSignature @ acpFakeNotebook ] & /@ {
+            remote, <| remote, "RemoteHome" -> "/home/v" |>
+        };
+        {
+            StringContainsQ[ texts[[ 1 ]], "access files in /etc " ],
+            StringContainsQ[ texts[[ 2 ]], "access files in /var/log " ],
+            StringContainsQ[ texts[[ 3 ]], "access files in ~/other " ],
+            StringContainsQ[ texts[[ 4 ]], "this kind of thing in /home/u/proj" ],
+            StringContainsQ[ texts[[ 5 ]], "all file edits in /home/u/proj" ],
+            StringContainsQ[ texts[[ 6 ]], "access files in ~ " ],
+            acpContainsTextQ[ panel, "access files in ~/other" ],
+            sown,
+            (* the remote home is part of the panel's signature *)
+            Unequal @@ signatures
+        }
+    ],
+    { True, True, True, True, True, True, True, { }, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionScope-Remote@@Tests/ACPRendering.wlt:1529,1-1575,2"
+]
+
+(* Resource links of a remote window's turn: a file on the host is shown with its path on the host as a tooltip, not as
+   a link; web links stay links; a local agent's file links stay links (its own files on this computer) *)
+VerificationTest[
+    Module[ { view, remoteFile, turn, cell },
+        view = Wolfram`Chatbook`ACP`Rendering`Private`contentBlockView;
+        remoteFile = view[ <| "type" -> "resource_link", "uri" -> "file:///home/u/my%20x.txt", "name" -> "my x.txt" |>, $acpRemoteTurn ];
+        turn = Fold[
+            Function[ { t, u }, acpApplyUpdate[ t, u, $acpBaseTime + 1 ][ "Turn" ] ],
+            acpNewTurn @ <| "ID" -> "render-remote-links", "Prompt" -> "Q", "ProjectDirectory" -> "/home/u/proj", "Remote" -> $acpRemoteTurn, "StartTime" -> $acpBaseTime |>,
+            {
+                <| "sessionUpdate" -> "agent_message_chunk", "messageId" -> "m1", "content" -> <| "type" -> "text", "text" -> "Here:" |> |>,
+                <| "sessionUpdate" -> "agent_message_chunk", "messageId" -> "m1", "content" -> <| "type" -> "resource_link", "uri" -> "file:///home/u/proj/a.txt", "name" -> "a.txt" |> |>,
+                <| "sessionUpdate" -> "agent_message_chunk", "messageId" -> "m1", "content" -> <| "type" -> "resource_link", "uri" -> "https://example.com/doc", "name" -> "doc" |> |>
+            }
+        ];
+        turn = acpApplyTurnEnd[ turn, <| "StopReason" -> "end_turn" |>, $acpBaseTime + 2 ][ "Turn" ];
+        cell = acpFinalCell @ turn;
+        {
+            acpClickableQ @ remoteFile,
+            acpContainsTextQ[ ToBoxes @ remoteFile, "On u@devbox.example.com: /home/u/my x.txt" ],
+            acpContainsTextQ[ ToBoxes @ remoteFile, "my x.txt" ],
+            acpClickableQ @ view[ <| "type" -> "resource_link", "uri" -> "HTTPS://example.com/x", "name" -> "x" |>, $acpRemoteTurn ],
+            acpClickableQ @ view[ <| "type" -> "resource_link", "uri" -> "file:///tmp/a.txt", "name" -> "a.txt" |>, None ],
+            acpClickableQ @ view[ <| "type" -> "resource_link", "uri" -> "FILE:///home/u/a.txt", "name" -> "a.txt" |>, $acpRemoteTurn ],
+            (* the final cell of the remote turn: only the web link is clickable *)
+            acpContainsTextQ[ cell, "On u@devbox.example.com: /home/u/proj/a.txt" ],
+            Length @ Cases[ cell, TemplateBox[ _, "HyperlinkURL" | "HyperlinkDefault", ___ ] | _ButtonBox, Infinity ],
+            (* and the live view of its message *)
+            acpWithTurns[ { turn }, acpContainsTextQ[ First @ acpEntityView[ turn[ "ID" ], { "Message", "m1" } ], "On u@devbox.example.com: /home/u/proj/a.txt" ] ]
+        }
+    ],
+    { False, True, True, True, True, False, True, 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ResourceLink-Remote@@Tests/ACPRendering.wlt:1579,1-1611,2"
+]
+
+(* The agent's names, URIs and block types never become boxes of its choice (linear syntax), local and remote turns;
+   other URI schemes are shown, not clickable (OS protocol handlers); a resource's text is neutralized *)
+VerificationTest[
+    Module[ { view, blocks },
+        view = Wolfram`Chatbook`ACP`Rendering`Private`contentBlockView;
+        blocks = {
+            <| "type" -> "resource_link", "uri" -> "https://example.com/" <> $acpEvil, "name" -> $acpEvil |>,
+            <| "type" -> "resource_link", "uri" -> "file:///home/u/" <> $acpEvil, "name" -> $acpEvil |>,
+            <| "type" -> "resource_link", "uri" -> "ms-msdt:" <> $acpEvil |>,
+            <| "type" -> $acpEvil |>,
+            <| "type" -> "resource", "resource" -> <| "uri" -> "file:///x", "text" -> "text " <> $acpEvil |> |>
+        };
+        {
+            Flatten @ Table[ acpLinearSyntaxQ @ view[ b, r ], { b, blocks }, { r, { None, $acpRemoteTurn } } ],
+            acpClickableQ @ view[ #, None ] & /@ {
+                <| "type" -> "resource_link", "uri" -> "ms-msdt:x", "name" -> "help" |>,
+                <| "type" -> "resource_link", "uri" -> "javascript:alert(1)", "name" -> "x" |>,
+                <| "type" -> "resource_link", "uri" -> "search-ms:query=x", "name" -> "x" |>,
+                <| "type" -> "resource_link", "uri" -> "https://example.com", "name" -> "x" |>
+            },
+            acpContainsTextQ[ ToBoxes @ view[ <| "type" -> "resource_link", "uri" -> "ms-msdt:x", "name" -> "help" |>, None ], "ms-msdt:x" ],
+            acpContainsTextQ[ ToBoxes @ view[ <| "type" -> $acpEvil |>, None ], "\:fffd" ]
+        }
+    ],
+    { ConstantArray[ False, 10 ], { False, False, False, True }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ResourceLink-LinearSyntax@@Tests/ACPRendering.wlt:1615,1-1640,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1275,7 +1651,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:1271,1-1279,2"
+    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:1647,1-1655,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -22,7 +22,9 @@ $acpPublishEvery         = 4;  (* pump ticks per publication and housekeeping ti
 $acpPumpIdleTicks        = 40; (* the pump task removes itself after 2 s with nothing to do *)
 $acpScheduleDelay        = Quantity[ 50 , "Milliseconds" ];
 $acpMaxDebugLogLength    = 2000;
-$acpMinimumACPLinkOption = UpdateInterval; (* OpenACPConnection must support this option (ACPLink fix branch) *)
+(* OpenACPConnection must support this option (ACPLink fix branch): remote windows hold back the launch script and every
+   message until the remote shell asks for it (Connection.wl's openConnection0) *)
+$acpMinimumACPLinkOption = "StandardInputPreambleTrigger";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -430,17 +432,22 @@ runHousekeeping // endDefinition;
 
 
 (* The pump keeps running while there are dirty symbols, running turns, or open ACP connections
-   (housekeeping such as the window-closed sweeper needs to run while a connection exists). *)
+   (housekeeping such as the window-closed sweeper needs to run while a connection exists), while one-shot processes run
+   (Git.wl's runner: git, and the remote runs of Remote.wl, also those that drain), and while a remote folder picker
+   lists (FolderPicker.wl): a window without a connection would otherwise stop the pump, and the picker's housekeeping
+   (the fallback for a lost listing) would never run. *)
 publisherNeededQ // beginDefinition;
 
 publisherNeededQ[ ] := Or[
     Length @ $dirty > 0,
+    TrueQ @ acpBackgroundRunsQ[ ],
     AnyTrue[ Values @ $acpWindows, publisherNeededQ ]
 ];
 
 publisherNeededQ[ window_Association ] := Or[
     MemberQ[ { "Connecting", "Running", "Restoring" }, Lookup[ window, "Status" ] ],
-    ! MatchQ[ Lookup[ window, "Connection", None ], None | _Missing ]
+    ! MatchQ[ Lookup[ window, "Connection", None ], None | _Missing ],
+    Lookup[ Replace[ Lookup[ window, "FolderPicker", None ], Except[ _Association ] -> <| |> ], "Status", None ] === "Loading"
 ];
 
 publisherNeededQ // endDefinition;
@@ -723,7 +730,11 @@ acpFESet // endDefinition;
 
 (* Detects a kernel restart for a window (the TaggingRules owner session differs from $SessionID) and resets
    front end flags. Kernel-side records of the old session are gone anyway; orphaned live output cells are replaced
-   by acpMarkOrphanCells (UI.wl). Returns True if the window was already owned by this kernel session. *)
+   by acpMarkOrphanCells (UI.wl), which also rebuilds the toolbar and the input field. The window record, with the
+   change symbols those views track, is rebuilt first, here: the rebuilt views then show the window's state at once and
+   track symbols that were created in this evaluation (an entry point, never the toolbar's DestroyAfterEvaluation
+   Dynamic, whose new symbols the front end would not track). Returns True if the window was already owned by this
+   kernel session. *)
 acpCheckSession // beginDefinition;
 
 acpCheckSession[ nbo_NotebookObject ] := Module[ { owner },
@@ -732,7 +743,11 @@ acpCheckSession[ nbo_NotebookObject ] := Module[ { owner },
         True,
         acpFESet[ nbo, "KernelSessionID", $SessionID ];
         acpFESet[ nbo, "Busy", False ];
-        If[ owner =!= None, acpMarkOrphanCells @ nbo ];
+        If[ owner =!= None,
+            acpLog[ "KernelRestart", <| "Notebook" -> nbo, "PreviousSession" -> owner |> ];
+            acpEnsureWindowRecord @ nbo;
+            acpMarkOrphanCells @ nbo
+        ];
         False
     ]
 ];

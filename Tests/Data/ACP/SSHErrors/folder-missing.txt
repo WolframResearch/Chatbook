@@ -1,0 +1,3 @@
+chatbook-acp-ready
+chatbook-acp:0123456789abcdef:home:/home/ubuntu
+chatbook-acp:0123456789abcdef:error:no-folder:/home/ubuntu/no-such-folder

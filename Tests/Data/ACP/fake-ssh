@@ -1,0 +1,127 @@
+#!/bin/sh
+# fake-ssh: a stand-in for OpenSSH's ssh in Chatbook's tests (Tests/Data/ACP/fake-ssh; Unix only). It accepts ssh's
+# command line, parsed like ssh's getopt (the options that take a value consume it, attached as in -p2222 or as the
+# next argument; flags can be combined as in -vq), takes the destination after "--" (or the first non-option word),
+# and runs the remote command the way sshd does: joined with spaces, with "/bin/sh -c" as the login shell, in the home
+# folder, with a clean environment (HOME, USER, LOGNAME, SHELL, PATH and FAKE_SSH_KEEP_ENV only), with standard input,
+# output and error passed through and the command's exit code as its own.
+#
+# Environment:
+#   FAKE_SSH_LOG        if set, each call appends its argument count and its arguments, NUL-terminated
+#   FAKE_SSH_HOME       the "remote" HOME and working directory (default: $HOME)
+#   FAKE_SSH_PATH       PATH of the remote command (default: /usr/bin:/bin)
+#   FAKE_SSH_KEEP_ENV   space-separated names of variables passed to the remote command
+#   FAKE_SSH_DELAY      seconds for *.slow.test (default 3) and *.hang.test (default 3600)
+#   FAKE_SSH_DROP_AFTER seconds after which *.drop.test drops the connection (default 2)
+#
+# Host names (with or without user@) simulate ssh's failures with OpenSSH's messages (lines end in CR LF, exit 255):
+#   *.fail-hostkey.test  unknown host key        *.fail-changed.test  changed host key
+#   *.fail-auth.test     key not accepted        *.fail-keyperm.test  key file readable by others
+#   *.fail-refused.test  connection refused      *.fail-dns.test      unknown host name
+#   *.fail-timeout.test  connect timeout         *.fail-closed.test   connection closed by the server
+# and other behaviors:
+#   *.hang.test   never connects (sleeps; for timeouts)         *.slow.test  connects after FAKE_SSH_DELAY seconds
+#   *.motd.test   a banner and a decoy ACPR1 marker on standard output before the command (a chatty login shell)
+#   *.drop.test   runs the command, then drops the connection after FAKE_SSH_DROP_AFTER seconds ("not responding")
+#   *.signal.test runs the command; exits 255 without a message if it ended with a code above 128 (a signal)
+
+if [ -n "$FAKE_SSH_LOG" ]; then
+    { printf '%s\000' "$#"; for a in "$@"; do printf '%s\000' "$a"; done; } >> "$FAKE_SSH_LOG"
+fi
+
+fail() { printf '%s\r\n' "$@" >&2; exit 255; }
+usage() { fail "usage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address] ..." \
+               "           destination [command [argument ...]]"; }
+
+user=
+port=22
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        --) shift; break;;
+        -?*)
+            # one option word, letter by letter like getopt: -vq, -p2222, -vp2222, -o X
+            opt=${1#-}; shift
+            while [ -n "$opt" ]; do
+                c=${opt%"${opt#?}"}; opt=${opt#?}
+                case $c in
+                    [BbcDEeFIiJLlmOoPpQRSWw])
+                        if [ -n "$opt" ]; then v=$opt; opt=
+                        elif [ "$#" -gt 0 ]; then v=$1; shift
+                        else fail "option requires an argument -- $c"; fi
+                        case $c in l) [ -n "$user" ] || user=$v;; p) port=$v;; esac;;
+                    [46AaCfGgKkMNnqsTtVvXxYy]) ;;
+                    *) fail "unknown option -- $c";;
+                esac
+            done;;
+        *) break;;
+    esac
+done
+[ "$#" -gt 0 ] || usage
+dest=$1; shift
+host=${dest##*@}
+case $dest in *@*) [ -n "$user" ] || user=${dest%@*};; esac
+user=${user:-${USER:-$(id -un)}}
+[ "$#" -gt 0 ] || fail "fake-ssh: an interactive session is not supported"
+
+case $host in
+    *.fail-hostkey.test)
+        fail "No ED25519 host key is known for $host and you have requested strict checking." \
+             "Host key verification failed.";;
+    *.fail-changed.test)
+        fail "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" \
+             "@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @" \
+             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" \
+             "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!" \
+             "Host key for $host has changed and you have requested strict checking." \
+             "Host key verification failed.";;
+    *.fail-auth.test) fail "$user@$host: Permission denied (publickey).";;
+    *.fail-keyperm.test)
+        fail "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" \
+             "@         WARNING: UNPROTECTED PRIVATE KEY FILE!          @" \
+             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" \
+             "Permissions 0644 for 'key.pem' are too open." \
+             "Load key \"key.pem\": bad permissions" \
+             "$user@$host: Permission denied (publickey).";;
+    *.fail-refused.test) fail "ssh: connect to host $host port $port: Connection refused";;
+    *.fail-dns.test) fail "ssh: Could not resolve hostname $host: Name or service not known";;
+    *.fail-timeout.test) fail "ssh: connect to host $host port $port: Connection timed out";;
+    *.fail-closed.test) fail "Connection closed by $host port $port";;
+    *.hang.test) exec sleep "${FAKE_SSH_DELAY:-3600}";;
+    *.slow.test) sleep "${FAKE_SSH_DELAY:-3}";;
+    *.motd.test) printf 'Welcome to the test host!\n#ACPR1 not-the-nonce BEGIN\n';;
+esac
+
+# ssh joins the remote command's words with spaces; the login shell runs the result with -c
+cmd=$1; shift
+for a in "$@"; do cmd="$cmd $a"; done
+
+home=${FAKE_SSH_HOME:-$HOME}
+cd -- "$home" || fail "Could not chdir to home directory $home: No such file or directory"
+set -- HOME="$home" USER="$user" LOGNAME="$user" SHELL=/bin/sh PATH="${FAKE_SSH_PATH:-/usr/bin:/bin}"
+for n in $FAKE_SSH_KEEP_ENV; do
+    case $n in ''|[0-9]*|*[!A-Za-z0-9_]*) continue;; esac
+    eval "[ -n \"\${$n+x}\" ] && set -- \"\$@\" \"$n=\${$n}\""
+done
+
+case $host in
+    *.drop.test)
+        # an asynchronous command's standard input is /dev/null unless it is redirected from a saved descriptor
+        exec 3<&0
+        env -i "$@" /bin/sh -c "$cmd" <&3 3<&- &
+        pid=$!
+        sleep "${FAKE_SSH_DROP_AFTER:-2}"
+        kill "$pid" 2>/dev/null
+        fail "Timeout, server $host not responding.";;
+    *.signal.test)
+        # like ssh when the remote command was killed by a signal (sshd sends exit-signal, not exit-status): no
+        # message, exit 255; here "killed by a signal" is the command's exit code 129 or more
+        # The shell's own "Killed" notice is not shown: the subshell's standard error is /dev/null while it waits (dash
+        # applies a command's redirections in the waiting shell, so the command restores its standard error itself
+        # from descriptor 4); "exit $?" keeps the subshell from exec'ing the command.
+        ( exec 2>/dev/null; env -i "$@" /bin/sh -c "exec 2>&4 4>&-
+$cmd"; exit $? ) 4>&2
+        rc=$?
+        if [ "$rc" -gt 128 ]; then exit 255; fi
+        exit "$rc";;
+esac
+exec env -i "$@" /bin/sh -c "$cmd"

@@ -31,6 +31,10 @@ VerificationTest[
 ]
 
 VerificationTest[
+    (* CI runs every test file in one kernel and one context: helpers that other test files define too are cleared
+       first, so that none of their definitions is used here *)
+    ClearAll[ acpApplyEvent, acpEventIndex, acpLoadFixture, acpReplay ];
+
     (* Labels come from the English defaults (no front end text resources), so results don't depend on a front end: *)
     Wolfram`Chatbook`ACP`Transcript`Private`$acpNoFrontEndLabels = True;
 
@@ -83,21 +87,21 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Definitions@@Tests/ACPTranscript.wlt:33,1-87,2"
+    TestID   -> "ACPTranscript-Definitions@@Tests/ACPTranscript.wlt:33,1-91,2"
 ]
 
 VerificationTest[
     FileNames[ "*.json", $acpFixtureDirectory ] // Length,
     _Integer? (# >= 15 &),
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Fixtures-Present@@Tests/ACPTranscript.wlt:89,1-94,2"
+    TestID   -> "ACPTranscript-Fixtures-Present@@Tests/ACPTranscript.wlt:93,1-98,2"
 ]
 
 VerificationTest[
     FreeQ[ acpLoadFixture /@ FileBaseName /@ FileNames[ "*.json", $acpFixtureDirectory ], s_String /; StringContainsQ[ s, "/home/ubuntu" | "TestProject" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Fixtures-Sanitized@@Tests/ACPTranscript.wlt:96,1-101,2"
+    TestID   -> "ACPTranscript-Fixtures-Sanitized@@Tests/ACPTranscript.wlt:100,1-105,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -111,21 +115,21 @@ VerificationTest[
         "Error" -> None, "EndTime" -> None, "RetryInfo" -> None, "PendingPermissions" -> { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-NewTurn@@Tests/ACPTranscript.wlt:106,1-115,2"
+    TestID   -> "ACPTranscript-NewTurn@@Tests/ACPTranscript.wlt:110,1-119,2"
 ]
 
 VerificationTest[
     { acpTurnEndedQ @ acpFreshTurn[ ], acpTurnEndedQ @ acpApplyTurnEnd[ acpFreshTurn[ ], <| "StopReason" -> "end_turn" |>, 1001. ][ "Turn" ] },
     { False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-TurnEndedQ@@Tests/ACPTranscript.wlt:117,1-122,2"
+    TestID   -> "ACPTranscript-TurnEndedQ@@Tests/ACPTranscript.wlt:121,1-126,2"
 ]
 
 VerificationTest[
     acpApplyTurnEnd[ acpFreshTurn[ ], <| "StopReason" -> "end_turn" |>, 1001. ][ "Turn", "Status" ],
     "Running",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-TurnEnd-KeepsStatus@@Tests/ACPTranscript.wlt:124,1-129,2"
+    TestID   -> "ACPTranscript-TurnEnd-KeepsStatus@@Tests/ACPTranscript.wlt:128,1-133,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -135,21 +139,21 @@ VerificationTest[
     acpCanonicalToolName /@ { "bash", "task", "apply_patch", "Read", "shell", "execute", None },
     { "shell", "subagent", "patch", "read", "shell", "execute", None },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-CanonicalToolName@@Tests/ACPTranscript.wlt:134,1-139,2"
+    TestID   -> "ACPTranscript-CanonicalToolName@@Tests/ACPTranscript.wlt:138,1-143,2"
 ]
 
 VerificationTest[
     acpFormatDuration /@ { 0.4, 45, 59.4, 133, 3599, 3600, 3840 },
     { "1s", "45s", "59s", "2m 13s", "59m 59s", "1h 0m", "1h 4m" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-FormatDuration@@Tests/ACPTranscript.wlt:141,1-146,2"
+    TestID   -> "ACPTranscript-FormatDuration@@Tests/ACPTranscript.wlt:145,1-150,2"
 ]
 
 VerificationTest[
     acpPreprocessAnswer[ "Plan:\n- [ ] one\n- [x] two\n  * [X] nested\n- [link](x) and [ ] not a task" ],
     "Plan:\n- \:2610 one\n- \:2611 two\n  * \:2611 nested\n- [link](x) and [ ] not a task",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-PreprocessAnswer-TaskList@@Tests/ACPTranscript.wlt:148,1-153,2"
+    TestID   -> "ACPTranscript-PreprocessAnswer-TaskList@@Tests/ACPTranscript.wlt:152,1-157,2"
 ]
 
 (* Chatbook's formatter can't show bold spans that contain inline code (the asterisks were shown literally): *)
@@ -171,7 +175,7 @@ VerificationTest[
         "`a*b` and `c`"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode@@Tests/ACPTranscript.wlt:156,1-175,2"
+    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode@@Tests/ACPTranscript.wlt:160,1-179,2"
 ]
 
 VerificationTest[
@@ -202,7 +206,7 @@ VerificationTest[
         "```inline```\n`x`"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode-Unchanged@@Tests/ACPTranscript.wlt:177,1-206,2"
+    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode-Unchanged@@Tests/ACPTranscript.wlt:181,1-210,2"
 ]
 
 (* The rewritten text formats without literal asterisks (front-end-free streaming formatter): *)
@@ -215,28 +219,28 @@ VerificationTest[
     ],
     { True, 2 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode-Formatted@@Tests/ACPTranscript.wlt:209,1-219,2"
+    TestID   -> "ACPTranscript-PreprocessAnswer-BoldCode-Formatted@@Tests/ACPTranscript.wlt:213,1-223,2"
 ]
 
 VerificationTest[
     acpStripToolOutput[ "Out[1]= 4\n\n\n<system-reminder>Pass session=\"x\" in future calls.</system-reminder>" ],
     "Out[1]= 4",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-StripToolOutput-Reminder@@Tests/ACPTranscript.wlt:221,1-226,2"
+    TestID   -> "ACPTranscript-StripToolOutput-Reminder@@Tests/ACPTranscript.wlt:225,1-230,2"
 ]
 
 VerificationTest[
     acpStripToolOutput @ StringReplace[ "<ESC>[1;31merror<ESC>[0m: bad\r\nline2<ESC>]0;title<BEL>\n  \n", { "<ESC>" -> FromCharacterCode[ 27 ], "<BEL>" -> FromCharacterCode[ 7 ] } ],
     "error: bad\nline2",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-StripToolOutput-ANSI@@Tests/ACPTranscript.wlt:228,1-233,2"
+    TestID   -> "ACPTranscript-StripToolOutput-ANSI@@Tests/ACPTranscript.wlt:232,1-237,2"
 ]
 
 VerificationTest[
     acpLineDiff[ "a\nb\nc", "a\nB\nc\nd" ],
     { { "=", "a" }, { "-", "b" }, { "+", "B" }, { "=", "c" }, { "+", "d" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-LineDiff@@Tests/ACPTranscript.wlt:235,1-240,2"
+    TestID   -> "ACPTranscript-LineDiff@@Tests/ACPTranscript.wlt:239,1-244,2"
 ]
 
 VerificationTest[
@@ -247,7 +251,7 @@ VerificationTest[
     },
     { { 1, 1 }, { 3, 0 }, { 2, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-DiffStats@@Tests/ACPTranscript.wlt:242,1-251,2"
+    TestID   -> "ACPTranscript-DiffStats@@Tests/ACPTranscript.wlt:246,1-255,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -257,7 +261,7 @@ VerificationTest[
     { acpLabel[ "WorkedFor", <| "time" -> "5s" |> ], acpLabel[ "Working" ], acpLabel[ "NoSuchACPLabelKey" ] },
     { "Worked for 5s", "Working", "NoSuchACPLabelKey" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-Defaults@@Tests/ACPTranscript.wlt:256,1-261,2"
+    TestID   -> "ACPTranscript-Label-Defaults@@Tests/ACPTranscript.wlt:260,1-265,2"
 ]
 
 VerificationTest[
@@ -266,14 +270,14 @@ VerificationTest[
     ],
     { "From UI table `x`", "From UI table 1" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-UIStrings@@Tests/ACPTranscript.wlt:263,1-270,2"
+    TestID   -> "ACPTranscript-Label-UIStrings@@Tests/ACPTranscript.wlt:267,1-274,2"
 ]
 
 VerificationTest[
     AllTrue[ Values @ $acpStrings, StringQ ] && DuplicateFreeQ @ Keys @ $acpStrings,
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-Table@@Tests/ACPTranscript.wlt:272,1-277,2"
+    TestID   -> "ACPTranscript-Label-Table@@Tests/ACPTranscript.wlt:276,1-281,2"
 ]
 
 VerificationTest[
@@ -287,7 +291,7 @@ VerificationTest[
     },
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-Tables@@Tests/ACPTranscript.wlt:279,1-291,2"
+    TestID   -> "ACPTranscript-Label-Tables@@Tests/ACPTranscript.wlt:283,1-295,2"
 ]
 
 (* With a front end, labels come from the "ChatbookStrings" text resources ("ACP" <> key), memoized; keys the front end
@@ -317,7 +321,7 @@ VerificationTest[
     ],
     { "Arbeitet", "Gearbeitet: 5s", "Thinking\[Ellipsis]", "Done.", "Subagent: x", { 5, "Arbeitet", "Gearbeitet: 6s", 5 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-FrontEndResources@@Tests/ACPTranscript.wlt:295,1-321,2"
+    TestID   -> "ACPTranscript-Label-FrontEndResources@@Tests/ACPTranscript.wlt:299,1-325,2"
 ]
 
 (* Every tool label group has the strings acpToolTitle needs *)
@@ -332,7 +336,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-ToolGroups@@Tests/ACPTranscript.wlt:324,1-336,2"
+    TestID   -> "ACPTranscript-Label-ToolGroups@@Tests/ACPTranscript.wlt:328,1-340,2"
 ]
 
 (* All literal acpLabel keys used in Transcript.wl and Rendering.wl have English defaults *)
@@ -349,7 +353,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Label-Coverage@@Tests/ACPTranscript.wlt:339,1-353,2"
+    TestID   -> "ACPTranscript-Label-Coverage@@Tests/ACPTranscript.wlt:343,1-357,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -364,7 +368,7 @@ VerificationTest[
     { turnA[ "StopReason" ], Length @ acpKeysOfType[ turnA, "Tool" ], Length @ acpKeysOfType[ turnA, "Message" ], Length @ acpKeysOfType[ turnA, "Thought" ] },
     { "end_turn", 4, 5, 5 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Entities@@Tests/ACPTranscript.wlt:362,1-368,2"
+    TestID   -> "ACPTranscript-exp5A-Entities@@Tests/ACPTranscript.wlt:366,1-372,2"
 ]
 
 VerificationTest[
@@ -372,7 +376,7 @@ VerificationTest[
     { tool[ "Name" ], tool[ "Status" ], tool[ "Version" ], acpToolTitle @ tool, acpToolSummary @ tool },
     { "execute", "completed", 3, "Used Wolfram Language Evaluator", "2 calls" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-ExecuteTitle-NoOpUpdatesIgnored@@Tests/ACPTranscript.wlt:370,1-376,2"
+    TestID   -> "ACPTranscript-exp5A-ExecuteTitle-NoOpUpdatesIgnored@@Tests/ACPTranscript.wlt:374,1-380,2"
 ]
 
 VerificationTest[
@@ -382,14 +386,14 @@ VerificationTest[
         KeyValuePattern @ { "Tool" -> "Wolfram.WolframLanguageEvaluator", "Code" -> "Plot[Sin[x], {x, 0, 2 Pi}]" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-ExecuteScriptParsing@@Tests/ACPTranscript.wlt:378,1-386,2"
+    TestID   -> "ACPTranscript-exp5A-ExecuteScriptParsing@@Tests/ACPTranscript.wlt:382,1-390,2"
 ]
 
 VerificationTest[
     acpToolByID[ turnA, "call_00_2yr2c8ismakyxzrfju41k3fq" ] // { acpExecuteToolCalls[ # ][[ All, "Code" ]], acpToolSummary @ # } &,
     { { "Head[Plot[Sin[x], {x, 0, 2 Pi}]]", "Export[\"/project/sin_plot.png\", Plot[Sin[x], {x, 0, 2 Pi}]]" }, "2 calls" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-ExecuteMetadataToolCalls@@Tests/ACPTranscript.wlt:388,1-393,2"
+    TestID   -> "ACPTranscript-exp5A-ExecuteMetadataToolCalls@@Tests/ACPTranscript.wlt:392,1-397,2"
 ]
 
 VerificationTest[
@@ -400,14 +404,14 @@ VerificationTest[
     ],
     { "Using Wolfram Language Evaluator", "Using Wolfram Language Evaluator" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-ExecuteRunningTitle@@Tests/ACPTranscript.wlt:395,1-404,2"
+    TestID   -> "ACPTranscript-exp5A-ExecuteRunningTitle@@Tests/ACPTranscript.wlt:399,1-408,2"
 ]
 
 VerificationTest[
     acpToolTitle @ acpToolByID[ acpReplay[ "exp5_A_mcp", acpEventIndex[ "exp5_A_mcp", KeyValuePattern[ "Update" -> KeyValuePattern[ "sessionUpdate" -> "tool_call" ] ] ] ], "call_00_t0f4xkm2fzc7o94bv113pt4j" ],
     "Preparing code\[Ellipsis]",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-PendingTitle@@Tests/ACPTranscript.wlt:406,1-411,2"
+    TestID   -> "ACPTranscript-exp5A-PendingTitle@@Tests/ACPTranscript.wlt:410,1-415,2"
 ]
 
 VerificationTest[
@@ -415,7 +419,7 @@ VerificationTest[
     { shell[ "Name" ], shell[ "ExitCode" ], shell[ "Permission", "Outcome" ], acpToolTitle @ shell, acpToolSummary @ shell },
     { "shell", 0, "once", "Ran `cp /tmp/sin_plot.png /project/sin_plot.png && ls -l /projec\[Ellipsis]`", "1 line" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Shell@@Tests/ACPTranscript.wlt:413,1-419,2"
+    TestID   -> "ACPTranscript-exp5A-Shell@@Tests/ACPTranscript.wlt:417,1-423,2"
 ]
 
 VerificationTest[
@@ -423,35 +427,35 @@ VerificationTest[
     { Length @ split[ "Answer" ], split[ "Tail" ], Length @ split[ "Work" ], StringStartsQ[ acpEntity[ turnA, First @ split[ "Answer" ] ][ "Text" ], "Here are the results" ] },
     { 1, { }, 13, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Split@@Tests/ACPTranscript.wlt:421,1-427,2"
+    TestID   -> "ACPTranscript-exp5A-Split@@Tests/ACPTranscript.wlt:425,1-431,2"
 ]
 
 VerificationTest[
     { turnA[ "WaitingSince" ], Round[ turnA[ "WaitingTime" ], 0.01 ], acpWorkedForLabel @ turnA, acpTurnStatusLine @ turnA },
     { None, 1.03, "Worked for 23s", None },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Labels@@Tests/ACPTranscript.wlt:429,1-434,2"
+    TestID   -> "ACPTranscript-exp5A-Labels@@Tests/ACPTranscript.wlt:433,1-438,2"
 ]
 
 VerificationTest[
     turnA[ "Usage" ],
     KeyValuePattern @ { "inputTokens" -> 9853, "outputTokens" -> 815 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Usage@@Tests/ACPTranscript.wlt:436,1-441,2"
+    TestID   -> "ACPTranscript-exp5A-Usage@@Tests/ACPTranscript.wlt:440,1-445,2"
 ]
 
 VerificationTest[
     turnA[ "ContextUsage" ],
     <| "Used" -> 10307, "Size" -> 200000, "Cost" -> <| "amount" -> 0, "currency" -> "USD" |> |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-ContextUsage@@Tests/ACPTranscript.wlt:443,1-448,2"
+    TestID   -> "ACPTranscript-exp5A-ContextUsage@@Tests/ACPTranscript.wlt:447,1-452,2"
 ]
 
 VerificationTest[
     acpTurnToMarkdown @ turnA,
     _String? (StringStartsQ[ #, "Here are the results:" ] && StringEndsQ[ #, "at a higher resolution?" ] &),
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5A-Markdown@@Tests/ACPTranscript.wlt:450,1-455,2"
+    TestID   -> "ACPTranscript-exp5A-Markdown@@Tests/ACPTranscript.wlt:454,1-459,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -474,7 +478,7 @@ VerificationTest[
         "Ran `echo hello && uname -s`"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5B-TitleTenses@@Tests/ACPTranscript.wlt:460,1-478,2"
+    TestID   -> "ACPTranscript-exp5B-TitleTenses@@Tests/ACPTranscript.wlt:464,1-482,2"
 ]
 
 VerificationTest[
@@ -483,7 +487,7 @@ VerificationTest[
     ],
     { { 1 }, _Real, "Waiting for your approval" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5B-AwaitingApproval@@Tests/ACPTranscript.wlt:480,1-487,2"
+    TestID   -> "ACPTranscript-exp5B-AwaitingApproval@@Tests/ACPTranscript.wlt:484,1-491,2"
 ]
 
 VerificationTest[
@@ -493,7 +497,7 @@ VerificationTest[
     ],
     { "2 lines", "once", "echo hello && uname -s", "echo hello && uname -s", { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5B-Result@@Tests/ACPTranscript.wlt:489,1-497,2"
+    TestID   -> "ACPTranscript-exp5B-Result@@Tests/ACPTranscript.wlt:493,1-501,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -510,7 +514,7 @@ VerificationTest[
         { KeyValuePattern @ { "Path" -> "/project/main.py", "OldText" -> None, "NewText" -> _String, "Source" -> "Permission", "Synthesized" -> False } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-DiffSurvivesCompletion-U1@@Tests/ACPTranscript.wlt:502,1-514,2"
+    TestID   -> "ACPTranscript-exp5C-DiffSurvivesCompletion-U1@@Tests/ACPTranscript.wlt:506,1-518,2"
 ]
 
 VerificationTest[
@@ -518,7 +522,7 @@ VerificationTest[
     main[ "Content" ],
     { KeyValuePattern[ "content" -> KeyValuePattern[ "text" -> "Created file successfully: main.py" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-ContentReplaced@@Tests/ACPTranscript.wlt:516,1-522,2"
+    TestID   -> "ACPTranscript-exp5C-ContentReplaced@@Tests/ACPTranscript.wlt:520,1-526,2"
 ]
 
 VerificationTest[
@@ -529,7 +533,7 @@ VerificationTest[
     ],
     { "in_progress", "write", "/project/main.py", None, "Wants to write main.py" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-PermissionTitleSeparate@@Tests/ACPTranscript.wlt:524,1-533,2"
+    TestID   -> "ACPTranscript-exp5C-PermissionTitleSeparate@@Tests/ACPTranscript.wlt:528,1-537,2"
 ]
 
 VerificationTest[
@@ -537,7 +541,7 @@ VerificationTest[
     { readme[ "Permission", "Outcome" ], readme[ "ClientOutcome" ], readme[ "Status" ], acpToolTitle @ readme, turnC[ "PendingPermissions" ] },
     { "withdrawn", None, "completed", "Created README.md", { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-WithdrawnThenAnswered@@Tests/ACPTranscript.wlt:535,1-541,2"
+    TestID   -> "ACPTranscript-exp5C-WithdrawnThenAnswered@@Tests/ACPTranscript.wlt:539,1-545,2"
 ]
 
 VerificationTest[
@@ -545,7 +549,7 @@ VerificationTest[
     { testFile[ "Permission" ], acpToolTitle @ testFile, acpToolSummary @ testFile, testFile[ "Diffs" ] },
     { None, "Wrote test_main.py", "+5", { KeyValuePattern @ { "Synthesized" -> True, "Write" -> True, "OldText" -> None } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-SynthesizedWriteDiff@@Tests/ACPTranscript.wlt:543,1-549,2"
+    TestID   -> "ACPTranscript-exp5C-SynthesizedWriteDiff@@Tests/ACPTranscript.wlt:547,1-553,2"
 ]
 
 VerificationTest[
@@ -553,7 +557,7 @@ VerificationTest[
     { pytest[ "Status" ], pytest[ "ExitCode" ], acpToolSummary @ pytest, pytest[ "Permission", "Outcome" ] },
     { "completed", 1, "exit 1", "always" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-ExitCode@@Tests/ACPTranscript.wlt:551,1-557,2"
+    TestID   -> "ACPTranscript-exp5C-ExitCode@@Tests/ACPTranscript.wlt:555,1-561,2"
 ]
 
 VerificationTest[
@@ -562,14 +566,14 @@ VerificationTest[
     ],
     { 1, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-Split@@Tests/ACPTranscript.wlt:559,1-566,2"
+    TestID   -> "ACPTranscript-exp5C-Split@@Tests/ACPTranscript.wlt:563,1-570,2"
 ]
 
 VerificationTest[
     StringCount[ acpPreprocessAnswer @ acpTurnToMarkdown @ turnC, "\:2611" ],
     4,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-Checklist@@Tests/ACPTranscript.wlt:568,1-573,2"
+    TestID   -> "ACPTranscript-exp5C-Checklist@@Tests/ACPTranscript.wlt:572,1-577,2"
 ]
 
 VerificationTest[
@@ -577,7 +581,7 @@ VerificationTest[
     { Length @ acpKeysOfType[ turnC, "Message" ], DuplicateFreeQ @ turnC[ "Order" ] },
     { 4, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp5C-MessageSegments@@Tests/ACPTranscript.wlt:575,1-581,2"
+    TestID   -> "ACPTranscript-exp5C-MessageSegments@@Tests/ACPTranscript.wlt:579,1-585,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -589,14 +593,14 @@ VerificationTest[
     { turnR1[ "StopReason" ], turnR1[ "ClientCancel" ], edit[ "Status" ], edit[ "ClientOutcome" ], edit[ "Permission", "Outcome" ], acpToolTitle @ edit },
     { "cancelled", "Reject", "failed", "Declined", "reject", "Declined: edit hello.txt" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-Declined@@Tests/ACPTranscript.wlt:586,1-593,2"
+    TestID   -> "ACPTranscript-exp4b-Declined@@Tests/ACPTranscript.wlt:590,1-597,2"
 ]
 
 VerificationTest[
     edit[ "Diffs" ],
     { KeyValuePattern @ { "Path" -> "/project/hello.txt", "OldText" -> "hi", "NewText" -> "hello world", "Synthesized" -> False } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-DeclinedDiffKept@@Tests/ACPTranscript.wlt:595,1-600,2"
+    TestID   -> "ACPTranscript-exp4b-DeclinedDiffKept@@Tests/ACPTranscript.wlt:599,1-604,2"
 ]
 
 VerificationTest[
@@ -605,21 +609,21 @@ VerificationTest[
     ],
     { { }, { { "Message", "msg_12295fa29001OKkO4A0Gta0R2z" }, { "Tool", "call_e86fc73fd46e4384bd8e55ba" } }, 3 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-TailForReject-U2@@Tests/ACPTranscript.wlt:602,1-609,2"
+    TestID   -> "ACPTranscript-exp4b-TailForReject-U2@@Tests/ACPTranscript.wlt:606,1-613,2"
 ]
 
 VerificationTest[
     { acpTurnStatusLine @ turnR1, acpWorkedForLabel @ turnR1 },
     { "You declined: edit hello.txt. Tell OpenCode what to do instead.", _String? (StringStartsQ[ "Worked for " ]) },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-StatusLine@@Tests/ACPTranscript.wlt:611,1-616,2"
+    TestID   -> "ACPTranscript-exp4b-StatusLine@@Tests/ACPTranscript.wlt:615,1-620,2"
 ]
 
 VerificationTest[
     acpTurnToMarkdown @ turnR1,
     "Now editing it to say 'hello world':\n\n_Declined: edit hello.txt_\n\n_You declined: edit hello.txt. Tell OpenCode what to do instead._",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-Markdown@@Tests/ACPTranscript.wlt:618,1-623,2"
+    TestID   -> "ACPTranscript-exp4b-Markdown@@Tests/ACPTranscript.wlt:622,1-627,2"
 ]
 
 VerificationTest[
@@ -629,7 +633,7 @@ VerificationTest[
     ],
     { "Read hello.txt", "1 line", { "Message", "Tool" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4b-Turn2@@Tests/ACPTranscript.wlt:625,1-633,2"
+    TestID   -> "ACPTranscript-exp4b-Turn2@@Tests/ACPTranscript.wlt:629,1-637,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -647,7 +651,7 @@ VerificationTest[
     ],
     { "Listed project", "1 entry", "Wrote hello.txt", "4 lines", "Ran `ls -la`" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp4a-DirectoryRead@@Tests/ACPTranscript.wlt:638,1-651,2"
+    TestID   -> "ACPTranscript-exp4a-DirectoryRead@@Tests/ACPTranscript.wlt:642,1-655,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -663,14 +667,14 @@ VerificationTest[
     },
     { "cancelled", "Stop", <| "Work" -> { }, "Answer" -> { { "Message", _ } }, "Tail" -> { } |>, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6-StopKeepsPartialAnswer-U2@@Tests/ACPTranscript.wlt:656,1-667,2"
+    TestID   -> "ACPTranscript-exp6-StopKeepsPartialAnswer-U2@@Tests/ACPTranscript.wlt:660,1-671,2"
 ]
 
 VerificationTest[
     { acpWorkedForLabel @ turnS, acpTurnStatusLine @ turnS },
     { _String? (StringStartsQ[ "Stopped after " ]), _String? (StringStartsQ[ "Stopped by you after " ]) },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6-Labels@@Tests/ACPTranscript.wlt:669,1-674,2"
+    TestID   -> "ACPTranscript-exp6-Labels@@Tests/ACPTranscript.wlt:673,1-678,2"
 ]
 
 VerificationTest[
@@ -680,7 +684,7 @@ VerificationTest[
     ],
     { "failed", "Stopped", "cancelled", "Stopped: run `echo cancel-test`", { }, { "Message", "Tool" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6b-StopWithPendingPermission@@Tests/ACPTranscript.wlt:676,1-684,2"
+    TestID   -> "ACPTranscript-exp6b-StopWithPendingPermission@@Tests/ACPTranscript.wlt:680,1-688,2"
 ]
 
 VerificationTest[
@@ -690,7 +694,7 @@ VerificationTest[
     ],
     { "failed", "Stopped", "Stopped: run `sleep 30 && echo done`", "", <| "Work" -> { }, "Answer" -> { }, "Tail" -> { { "Tool", _ } } |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6b-StopRunningTool@@Tests/ACPTranscript.wlt:686,1-694,2"
+    TestID   -> "ACPTranscript-exp6b-StopRunningTool@@Tests/ACPTranscript.wlt:690,1-698,2"
 ]
 
 VerificationTest[
@@ -699,7 +703,7 @@ VerificationTest[
     ],
     { "Stopped", "Stopping\[Ellipsis]" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6b-StopMarksUnfinishedTools@@Tests/ACPTranscript.wlt:696,1-703,2"
+    TestID   -> "ACPTranscript-exp6b-StopMarksUnfinishedTools@@Tests/ACPTranscript.wlt:700,1-707,2"
 ]
 
 VerificationTest[
@@ -708,7 +712,7 @@ VerificationTest[
     ],
     { "Ran `echo after-cancel`", "The output is:\nafter-cancel" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp6b-AfterCancel@@Tests/ACPTranscript.wlt:705,1-712,2"
+    TestID   -> "ACPTranscript-exp6b-AfterCancel@@Tests/ACPTranscript.wlt:709,1-716,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -720,7 +724,7 @@ VerificationTest[
     ],
     { "0 entries", "Reject", { { "Tool", "call_00_xpv27hd4llvlpuo8gx1i0oxb" } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp7-PlanReject@@Tests/ACPTranscript.wlt:717,1-724,2"
+    TestID   -> "ACPTranscript-exp7-PlanReject@@Tests/ACPTranscript.wlt:721,1-728,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -732,14 +736,14 @@ VerificationTest[
     { notice[ "Kind" ], notice[ "Data", "FirstAttempt" ], notice[ "Data", "LastAttempt" ], notice[ "Data", "Active" ], notice[ "Data", "ErrorType" ], turnRetry[ "RetryInfo" ], turnRetry[ "RetryEpisode" ] },
     { "Retry", 2, 7, False, "provider.rate-limit", None, None },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-RetryNotice@@Tests/ACPTranscript.wlt:729,1-736,2"
+    TestID   -> "ACPTranscript-exp2-RetryNotice@@Tests/ACPTranscript.wlt:733,1-740,2"
 ]
 
 VerificationTest[
     Round[ notice[ "Data", "EndTime" ] - notice[ "Data", "StartTime" ] ],
     47,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-RetryDuration@@Tests/ACPTranscript.wlt:738,1-743,2"
+    TestID   -> "ACPTranscript-exp2-RetryDuration@@Tests/ACPTranscript.wlt:742,1-747,2"
 ]
 
 VerificationTest[
@@ -750,7 +754,7 @@ VerificationTest[
     ],
     { 2, True, "Retrying in 7s (rate limited, attempt 2)", "Retrying (attempt 2)\[Ellipsis]" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-RetryActivityLabel@@Tests/ACPTranscript.wlt:745,1-754,2"
+    TestID   -> "ACPTranscript-exp2-RetryActivityLabel@@Tests/ACPTranscript.wlt:749,1-758,2"
 ]
 
 VerificationTest[
@@ -759,14 +763,14 @@ VerificationTest[
     ],
     { None, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-RetryCleared@@Tests/ACPTranscript.wlt:756,1-763,2"
+    TestID   -> "ACPTranscript-exp2-RetryCleared@@Tests/ACPTranscript.wlt:760,1-767,2"
 ]
 
 VerificationTest[
     { acpTurnSplit[ turnRetry ][ "Work" ][[ All, 1 ]], acpWorkedForLabel @ turnRetry },
     { { "Notice", "Thought" }, "Worked for 48s" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-RetryWork@@Tests/ACPTranscript.wlt:765,1-770,2"
+    TestID   -> "ACPTranscript-exp2-RetryWork@@Tests/ACPTranscript.wlt:769,1-774,2"
 ]
 
 VerificationTest[
@@ -775,7 +779,7 @@ VerificationTest[
     ],
     { { "Thought" }, "Hello! How can I help you today?" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp2-ThoughtOnly@@Tests/ACPTranscript.wlt:772,1-779,2"
+    TestID   -> "ACPTranscript-exp2-ThoughtOnly@@Tests/ACPTranscript.wlt:776,1-783,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -801,7 +805,7 @@ VerificationTest[
         "_Failed: Internal error: Model exo-free has been deprecated._"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-exp3-Error@@Tests/ACPTranscript.wlt:784,1-805,2"
+    TestID   -> "ACPTranscript-exp3-Error@@Tests/ACPTranscript.wlt:788,1-809,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -832,7 +836,7 @@ VerificationTest[
         { "something_else"   , <| "Work" -> { { "Message", "m1" }, { "Tool", "t1" } }, "Answer" -> { { "Message", "m2" } }, "Tail" -> { } |>, "Stopped (something_else)." }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-AllStopReasons-WithAnswer@@Tests/ACPTranscript.wlt:810,1-836,2"
+    TestID   -> "ACPTranscript-Split-AllStopReasons-WithAnswer@@Tests/ACPTranscript.wlt:814,1-840,2"
 ]
 
 VerificationTest[
@@ -847,21 +851,21 @@ VerificationTest[
         <| "Work" -> { }, "Answer" -> { }, "Tail" -> { { "Message", "m1" }, { "Tool", "t1" } } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-AllStopReasons-NoAnswer@@Tests/ACPTranscript.wlt:838,1-851,2"
+    TestID   -> "ACPTranscript-Split-AllStopReasons-NoAnswer@@Tests/ACPTranscript.wlt:842,1-855,2"
 ]
 
 VerificationTest[
     acpTurnToMarkdown @ acpApplyTurnEnd[ msgTool, <| "StopReason" -> "end_turn" |>, 1010. ][ "Turn" ],
     "Done.",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-EmptyAnswerDone@@Tests/ACPTranscript.wlt:853,1-858,2"
+    TestID   -> "ACPTranscript-Split-EmptyAnswerDone@@Tests/ACPTranscript.wlt:857,1-862,2"
 ]
 
 VerificationTest[
     acpTurnSplit @ acpApplyTurnEnd[ msgTool, <| "Error" -> <| "Code" -> -32000, "Message" -> "auth required" |> |>, 1010. ][ "Turn" ],
     <| "Work" -> { }, "Answer" -> { }, "Tail" -> { { "Message", "m1" }, { "Tool", "t1" } } |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-Error@@Tests/ACPTranscript.wlt:860,1-865,2"
+    TestID   -> "ACPTranscript-Split-Error@@Tests/ACPTranscript.wlt:864,1-869,2"
 ]
 
 (* A cancelled turn whose last step ran several tools without any text in between: only the tools from the first one that
@@ -879,7 +883,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-CompletedToolsThenDeclined@@Tests/ACPTranscript.wlt:869,1-883,2"
+    TestID   -> "ACPTranscript-Split-CompletedToolsThenDeclined@@Tests/ACPTranscript.wlt:873,1-887,2"
 ]
 
 VerificationTest[
@@ -892,7 +896,7 @@ VerificationTest[
         "_Declined: edit notes.md_\n\n_You declined: edit notes.md. Tell OpenCode what to do instead._"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-CompletedToolsThenDeclined-Text@@Tests/ACPTranscript.wlt:885,1-896,2"
+    TestID   -> "ACPTranscript-Split-CompletedToolsThenDeclined-Text@@Tests/ACPTranscript.wlt:889,1-900,2"
 ]
 
 (* The same without the "Let me look around first." message, and with the message right before the declined tool: *)
@@ -919,7 +923,7 @@ VerificationTest[
         <| "Work" -> { { "Tool", "t1" }, { "Tool", "t2" }, { "Tool", "t3" } }, "Tail" -> { { "Message", "m1" }, { "Tool", "t4" } } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-TailStartsAtFirstUnfinishedTool@@Tests/ACPTranscript.wlt:899,1-923,2"
+    TestID   -> "ACPTranscript-Split-TailStartsAtFirstUnfinishedTool@@Tests/ACPTranscript.wlt:903,1-927,2"
 ]
 
 (* Stopped after several completed tools: only the last one is shown expanded *)
@@ -934,7 +938,7 @@ VerificationTest[
     ],
     <| "Work" -> { { "Tool", "t1" }, { "Tool", "t2" } }, "Tail" -> { { "Tool", "t3" } } |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Split-AllToolsCompleted-LastToolOnly@@Tests/ACPTranscript.wlt:926,1-938,2"
+    TestID   -> "ACPTranscript-Split-AllToolsCompleted-LastToolOnly@@Tests/ACPTranscript.wlt:930,1-942,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -947,7 +951,7 @@ VerificationTest[
     ],
     { { { "Message", "m1" }, { "Tool", "t1" }, { "Message", "m1#2" } }, "A", "B", { { "Message", "m1#2" } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-InterleavedSegments@@Tests/ACPTranscript.wlt:943,1-951,2"
+    TestID   -> "ACPTranscript-U12-InterleavedSegments@@Tests/ACPTranscript.wlt:947,1-955,2"
 ]
 
 VerificationTest[
@@ -957,7 +961,7 @@ VerificationTest[
     ],
     { { "Thought", "msg_1:reasoning:0" }, { "Message", "msg_1" }, { "Thought", "msg_1:reasoning:0#2" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-ListKeysWithColons@@Tests/ACPTranscript.wlt:953,1-961,2"
+    TestID   -> "ACPTranscript-U12-ListKeysWithColons@@Tests/ACPTranscript.wlt:957,1-965,2"
 ]
 
 VerificationTest[
@@ -967,7 +971,7 @@ VerificationTest[
     ],
     { { { "Message", "segment#1" } }, "ab" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-ChunksWithoutMessageID@@Tests/ACPTranscript.wlt:963,1-971,2"
+    TestID   -> "ACPTranscript-U12-ChunksWithoutMessageID@@Tests/ACPTranscript.wlt:967,1-975,2"
 ]
 
 VerificationTest[
@@ -984,7 +988,7 @@ VerificationTest[
     ],
     { { { "Tool", "t1" }, { "Tool", "t1", 2 } }, "Ran `ls`", "Preparing a command\[Ellipsis]" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-TerminalIDReuse@@Tests/ACPTranscript.wlt:973,1-988,2"
+    TestID   -> "ACPTranscript-U12-TerminalIDReuse@@Tests/ACPTranscript.wlt:977,1-992,2"
 ]
 
 VerificationTest[
@@ -997,7 +1001,7 @@ VerificationTest[
     ],
     { { { "Tool", "t1" } }, { }, False, True, 2, 1011. },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-NoOpUpdateNoVersionBump@@Tests/ACPTranscript.wlt:990,1-1001,2"
+    TestID   -> "ACPTranscript-U12-NoOpUpdateNoVersionBump@@Tests/ACPTranscript.wlt:994,1-1005,2"
 ]
 
 VerificationTest[
@@ -1007,7 +1011,7 @@ VerificationTest[
     ],
     { { { "Tool", "ghost" } }, "in_progress", "Read notes.md" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-UpdateForUnseenTool@@Tests/ACPTranscript.wlt:1003,1-1011,2"
+    TestID   -> "ACPTranscript-U12-UpdateForUnseenTool@@Tests/ACPTranscript.wlt:1007,1-1015,2"
 ]
 
 VerificationTest[
@@ -1024,7 +1028,7 @@ VerificationTest[
     ],
     { "/project/notes.md", <| "path" -> "/project/notes.md" |>, "read" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-NeverDowngradeTitle-NullUnchanged@@Tests/ACPTranscript.wlt:1013,1-1028,2"
+    TestID   -> "ACPTranscript-U12-NeverDowngradeTitle-NullUnchanged@@Tests/ACPTranscript.wlt:1017,1-1032,2"
 ]
 
 VerificationTest[
@@ -1042,7 +1046,7 @@ VerificationTest[
     ],
     { 1, 2 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-DiffsAccumulateWithoutDuplicates@@Tests/ACPTranscript.wlt:1030,1-1046,2"
+    TestID   -> "ACPTranscript-U12-DiffsAccumulateWithoutDuplicates@@Tests/ACPTranscript.wlt:1034,1-1050,2"
 ]
 
 VerificationTest[
@@ -1063,7 +1067,7 @@ VerificationTest[
     ],
     { "patch", { KeyValuePattern @ { "Path" -> "src/a.py", "Patch" -> _String, "Source" -> "Metadata" } }, "+1 \[Minus]1", _String },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-PatchMetadataDiffs@@Tests/ACPTranscript.wlt:1048,1-1067,2"
+    TestID   -> "ACPTranscript-U12-PatchMetadataDiffs@@Tests/ACPTranscript.wlt:1052,1-1071,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1097,7 +1101,7 @@ VerificationTest[
     ],
     { 1, "Update", "+1 \[Minus]1" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-OneDiffPerFile-UnaskedPatch@@Tests/ACPTranscript.wlt:1072,1-1101,2"
+    TestID   -> "ACPTranscript-OneDiffPerFile-UnaskedPatch@@Tests/ACPTranscript.wlt:1076,1-1105,2"
 ]
 
 VerificationTest[
@@ -1129,7 +1133,7 @@ VerificationTest[
     ],
     { 1, "Update", "+1 \[Minus]1" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-OneDiffPerFile-UnaskedEdit@@Tests/ACPTranscript.wlt:1103,1-1133,2"
+    TestID   -> "ACPTranscript-OneDiffPerFile-UnaskedEdit@@Tests/ACPTranscript.wlt:1107,1-1137,2"
 ]
 
 VerificationTest[
@@ -1163,7 +1167,7 @@ VerificationTest[
     ],
     { { { "Update" }, "+1 \[Minus]1" }, { { "Permission" }, "+1 \[Minus]1" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-OneDiffPerFile-AskedEditChangedByFormatter@@Tests/ACPTranscript.wlt:1135,1-1167,2"
+    TestID   -> "ACPTranscript-OneDiffPerFile-AskedEditChangedByFormatter@@Tests/ACPTranscript.wlt:1139,1-1171,2"
 ]
 
 VerificationTest[
@@ -1182,7 +1186,7 @@ VerificationTest[
     ],
     { 1, "Update", "+1 \[Minus]1" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-OneDiffPerFile-MetadataFirst@@Tests/ACPTranscript.wlt:1169,1-1186,2"
+    TestID   -> "ACPTranscript-OneDiffPerFile-MetadataFirst@@Tests/ACPTranscript.wlt:1173,1-1190,2"
 ]
 
 VerificationTest[
@@ -1193,7 +1197,7 @@ VerificationTest[
     ],
     { { }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U12-UnknownUpdateIgnored@@Tests/ACPTranscript.wlt:1188,1-1197,2"
+    TestID   -> "ACPTranscript-U12-UnknownUpdateIgnored@@Tests/ACPTranscript.wlt:1192,1-1201,2"
 ]
 
 VerificationTest[
@@ -1209,7 +1213,7 @@ VerificationTest[
     ],
     { { { "Plan" } }, 2, 2 },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Plan@@Tests/ACPTranscript.wlt:1199,1-1213,2"
+    TestID   -> "ACPTranscript-Plan@@Tests/ACPTranscript.wlt:1203,1-1217,2"
 ]
 
 VerificationTest[
@@ -1225,7 +1229,7 @@ VerificationTest[
     ],
     { { { "Notice", 1 } }, "Compaction", "completed" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-CompactionNotice@@Tests/ACPTranscript.wlt:1215,1-1229,2"
+    TestID   -> "ACPTranscript-CompactionNotice@@Tests/ACPTranscript.wlt:1219,1-1233,2"
 ]
 
 VerificationTest[
@@ -1251,7 +1255,7 @@ VerificationTest[
     ],
     { KeyValuePattern @ { "ID" -> "ses_child", "ParentID" -> "ses_parent", "Title" -> "Explore repo", "Depth" -> 1 }, "ses_child", "Subagent: Explore repo", { { "Message", "m2" } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U13-ChildSessions@@Tests/ACPTranscript.wlt:1231,1-1255,2"
+    TestID   -> "ACPTranscript-U13-ChildSessions@@Tests/ACPTranscript.wlt:1235,1-1259,2"
 ]
 
 VerificationTest[
@@ -1262,7 +1266,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-U13-ChildEndsTrailingMessages@@Tests/ACPTranscript.wlt:1257,1-1266,2"
+    TestID   -> "ACPTranscript-U13-ChildEndsTrailingMessages@@Tests/ACPTranscript.wlt:1261,1-1270,2"
 ]
 
 VerificationTest[
@@ -1272,7 +1276,7 @@ VerificationTest[
     ],
     { { { "Notice", 1 } }, True, KeyValuePattern @ { "Type" -> "Notice", "Kind" -> "Info", "Text" -> _String, "Version" -> 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ApplyNotice@@Tests/ACPTranscript.wlt:1268,1-1276,2"
+    TestID   -> "ACPTranscript-ApplyNotice@@Tests/ACPTranscript.wlt:1272,1-1280,2"
 ]
 
 VerificationTest[
@@ -1282,7 +1286,7 @@ VerificationTest[
     ],
     { "", { KeyValuePattern[ "type" -> "image" ] } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-NonTextBlocks@@Tests/ACPTranscript.wlt:1278,1-1286,2"
+    TestID   -> "ACPTranscript-NonTextBlocks@@Tests/ACPTranscript.wlt:1282,1-1290,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1308,7 +1312,7 @@ VerificationTest[
     ],
     { True, { { "Permission", 7 } }, "Access outside the project: /tmp/outside", { 7 }, "once", 3. },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Permission-Standalone@@Tests/ACPTranscript.wlt:1291,1-1312,2"
+    TestID   -> "ACPTranscript-Permission-Standalone@@Tests/ACPTranscript.wlt:1295,1-1316,2"
 ]
 
 VerificationTest[
@@ -1333,7 +1337,7 @@ VerificationTest[
         { "always", None, None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Permission-OutcomeNormalization@@Tests/ACPTranscript.wlt:1314,1-1337,2"
+    TestID   -> "ACPTranscript-Permission-OutcomeNormalization@@Tests/ACPTranscript.wlt:1318,1-1341,2"
 ]
 
 VerificationTest[
@@ -1352,14 +1356,14 @@ VerificationTest[
     ],
     { "withdrawn", None, { }, 0.5, { }, { KeyValuePattern @ { "OldText" -> None, "NewText" -> "x", "Synthesized" -> False } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Permission-CancelRequestWithdrawal@@Tests/ACPTranscript.wlt:1339,1-1356,2"
+    TestID   -> "ACPTranscript-Permission-CancelRequestWithdrawal@@Tests/ACPTranscript.wlt:1343,1-1360,2"
 ]
 
 VerificationTest[
     acpApplyPermissionOutcome[ acpFreshTurn[ ], 99, "once", 1001. ][ "Changed" ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Permission-UnknownRequest@@Tests/ACPTranscript.wlt:1358,1-1363,2"
+    TestID   -> "ACPTranscript-Permission-UnknownRequest@@Tests/ACPTranscript.wlt:1362,1-1367,2"
 ]
 
 VerificationTest[
@@ -1372,7 +1376,7 @@ VerificationTest[
     ],
     { 12., "Worked for 18s (+12s waiting for approval)", "/project/a.txt" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-Permission-WaitingTime@@Tests/ACPTranscript.wlt:1365,1-1376,2"
+    TestID   -> "ACPTranscript-Permission-WaitingTime@@Tests/ACPTranscript.wlt:1369,1-1380,2"
 ]
 
 VerificationTest[
@@ -1384,7 +1388,7 @@ VerificationTest[
     ],
     { "Stop", { }, "cancelled", "Stopped", "Stop" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ClientCancel-Stop@@Tests/ACPTranscript.wlt:1378,1-1388,2"
+    TestID   -> "ACPTranscript-ClientCancel-Stop@@Tests/ACPTranscript.wlt:1382,1-1392,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1412,7 +1416,7 @@ VerificationTest[
         "Finishing\[Ellipsis]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ActivityLabels@@Tests/ACPTranscript.wlt:1393,1-1416,2"
+    TestID   -> "ACPTranscript-ActivityLabels@@Tests/ACPTranscript.wlt:1397,1-1420,2"
 ]
 
 VerificationTest[
@@ -1423,7 +1427,7 @@ VerificationTest[
     ],
     "Running `sleep 30`",
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ActivityLabel-RunningTool@@Tests/ACPTranscript.wlt:1418,1-1427,2"
+    TestID   -> "ACPTranscript-ActivityLabel-RunningTool@@Tests/ACPTranscript.wlt:1422,1-1431,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1464,7 +1468,7 @@ VerificationTest[
         "Ran code"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-Verbs@@Tests/ACPTranscript.wlt:1432,1-1468,2"
+    TestID   -> "ACPTranscript-ToolTitles-Verbs@@Tests/ACPTranscript.wlt:1436,1-1472,2"
 ]
 
 VerificationTest[
@@ -1476,7 +1480,7 @@ VerificationTest[
     ],
     { "Read README.md", "Declined: Read README.md", "Read y.txt" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-KindFallback@@Tests/ACPTranscript.wlt:1470,1-1480,2"
+    TestID   -> "ACPTranscript-ToolTitles-KindFallback@@Tests/ACPTranscript.wlt:1474,1-1484,2"
 ]
 
 VerificationTest[
@@ -1496,21 +1500,21 @@ VerificationTest[
     ],
     { "No files found", "3 files", "7 matches", "no output", "exit 2", "42 lines", "", "+3 \[Minus]1" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolSummaries@@Tests/ACPTranscript.wlt:1482,1-1500,2"
+    TestID   -> "ACPTranscript-ToolSummaries@@Tests/ACPTranscript.wlt:1486,1-1504,2"
 ]
 
 VerificationTest[
     acpExecuteToolNames @ <| "RawInput" -> <| "code" -> "const a = await tools.Wolfram.WolframLanguageContext({ context: \"x\" });\nconst b = await tools.Wolfram.WolframLanguageEvaluator({ code: `Range[3]` });\nreturn {a, b};" |>, "RawOutput" -> None |>,
     { "Wolfram Language Context", "Wolfram Language Evaluator" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ExecuteToolNames@@Tests/ACPTranscript.wlt:1502,1-1507,2"
+    TestID   -> "ACPTranscript-ExecuteToolNames@@Tests/ACPTranscript.wlt:1506,1-1511,2"
 ]
 
 VerificationTest[
     acpExecuteToolCalls[ <| "RawInput" -> <| "code" -> "await tools.Wolfram.WolframLanguageEvaluator({ code: `Range[3]` });\nawait tools.Wolfram.WolframLanguageEvaluator({ code: \"f[\\\"a\\\"]\\n\" })" |>, "RawOutput" -> None |> ][[ All, "Code" ]],
     { "Range[3]", "f[\"a\"]\n" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ExecuteScriptCodeArguments@@Tests/ACPTranscript.wlt:1509,1-1514,2"
+    TestID   -> "ACPTranscript-ExecuteScriptCodeArguments@@Tests/ACPTranscript.wlt:1513,1-1518,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1545,7 +1549,7 @@ VerificationTest[
         "load skill wolfram-notebooks"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-Skill@@Tests/ACPTranscript.wlt:1519,1-1549,2"
+    TestID   -> "ACPTranscript-ToolTitles-Skill@@Tests/ACPTranscript.wlt:1523,1-1553,2"
 ]
 
 VerificationTest[
@@ -1592,7 +1596,7 @@ VerificationTest[
         "Used frobnicate"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-OpenCodeTools@@Tests/ACPTranscript.wlt:1551,1-1596,2"
+    TestID   -> "ACPTranscript-ToolTitles-OpenCodeTools@@Tests/ACPTranscript.wlt:1555,1-1600,2"
 ]
 
 (* Without any input, the title never uses the bare tool name as its object ("Used skill skill") and never ends with a
@@ -1611,7 +1615,7 @@ VerificationTest[
     ],
     { { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-NoBareNameEcho@@Tests/ACPTranscript.wlt:1600,1-1615,2"
+    TestID   -> "ACPTranscript-ToolTitles-NoBareNameEcho@@Tests/ACPTranscript.wlt:1604,1-1619,2"
 ]
 
 VerificationTest[
@@ -1622,7 +1626,7 @@ VerificationTest[
     },
     { "2 of 3 done", "", "3 lines" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolSummaries-OpenCodeTools@@Tests/ACPTranscript.wlt:1617,1-1626,2"
+    TestID   -> "ACPTranscript-ToolSummaries-OpenCodeTools@@Tests/ACPTranscript.wlt:1621,1-1630,2"
 ]
 
 VerificationTest[
@@ -1632,7 +1636,7 @@ VerificationTest[
     },
     { { True, True, True, True, True }, { False, False, False } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ClientInterruptionText@@Tests/ACPTranscript.wlt:1628,1-1636,2"
+    TestID   -> "ACPTranscript-ClientInterruptionText@@Tests/ACPTranscript.wlt:1632,1-1640,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1651,7 +1655,86 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-SyntheticFormatting@@Tests/ACPTranscript.wlt:1641,1-1655,2"
+    TestID   -> "ACPTranscript-SyntheticFormatting@@Tests/ACPTranscript.wlt:1645,1-1659,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Remote Turns*)
+
+(* A turn of a remote window knows its host (acpTurnRemote); new turns are local *)
+VerificationTest[
+    {
+        acpNewTurn[ ][ "Remote" ],
+        acpTurnRemote @ <| "Settings" -> <| |> |>,
+        acpTurnRemote @ <|
+            "Settings"   -> <| "SSHSettings" -> <| "MachineName" -> "ec2-1.compute.example.com", "Username" -> "ubuntu" |> |>,
+            "RemoteHome" -> "/home/ubuntu"
+        |>,
+        (* a home that is not an absolute path is not used *)
+        acpTurnRemote @ <| "Settings" -> <| "SSHSettings" -> "devbox" |>, "RemoteHome" -> "home\nx" |>
+    },
+    {
+        None,
+        None,
+        <| "Host" -> "ubuntu@ec2-1.compute.example.com", "Short" -> "ec2-1", "Home" -> "/home/ubuntu" |>,
+        <| "Host" -> "devbox", "Short" -> "devbox", "Home" -> None |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-TurnRemote@@Tests/ACPTranscript.wlt:1666,1-1685,2"
+]
+
+(* Tool paths relative to the project folder, else their last name; the same for the POSIX paths of a local turn (this
+   computer's paths on Unix) and of a remote turn (whatever this computer's system) *)
+VerificationTest[
+    Function[ turn,
+        Wolfram`Chatbook`ACP`Transcript`Private`displayPath[ #, turn ] & /@ {
+            "/home/u/proj/src/a.wl",
+            "/home/u/proj",
+            "/etc/hosts",
+            "/srv/data/",
+            "/",
+            "relative/b.txt"
+        }
+    ] /@ {
+        <| "ProjectDirectory" -> "/home/u/proj" |>,
+        <| "ProjectDirectory" -> "/home/u/proj", "Remote" -> <| "Host" -> "dev", "Short" -> "dev", "Home" -> "/home/u" |> |>
+    },
+    ConstantArray[ { "src/a.wl", "proj", "hosts", "data", "/", "relative/b.txt" }, 2 ],
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-DisplayPath-POSIX@@Tests/ACPTranscript.wlt:1689,1-1706,2"
+]
+
+(* A local turn's paths are this computer's (C:\Users\me\proj on Windows): the last name of the project folder is
+   taken with FileNameTake; a remote turn's paths are POSIX paths, where a backslash is part of a name. The second part
+   runs as on a Windows computer (FileNameTake's OperatingSystem option), so it checks both rules on any system. *)
+VerificationTest[
+    With[
+        {
+            path   = Wolfram`Chatbook`ACP`Transcript`Private`displayPath,
+            remote = <| "Host" -> "dev", "Short" -> "dev", "Home" -> "/home/u" |>,
+            root   = FileNameJoin @ { $TemporaryDirectory, "proj" }
+        },
+        {
+            {
+                path[ root, <| "ProjectDirectory" -> root |> ],
+                path[ "/home/u/a\\b", <| "ProjectDirectory" -> "/home/u/proj", "Remote" -> remote |> ],
+                path[ "/home/u/a\\b", <| "ProjectDirectory" -> "/home/u/a\\b", "Remote" -> remote |> ]
+            },
+            Internal`InheritedBlock[ { FileNameTake },
+                SetOptions[ FileNameTake, OperatingSystem -> "Windows" ];
+                {
+                    path[ "C:\\Users\\me\\proj", <| "ProjectDirectory" -> "C:\\Users\\me\\proj" |> ],
+                    path[ "/home/u/a\\b", <| "ProjectDirectory" -> "/home/u/proj", "Remote" -> remote |> ],
+                    path[ "/home/u/a\\b", <| "ProjectDirectory" -> "/home/u/a\\b", "Remote" -> remote |> ],
+                    path[ "/home/u/proj", <| "ProjectDirectory" -> "/home/u/proj", "Remote" -> remote |> ]
+                }
+            ]
+        }
+    ],
+    { { "proj", "a\\b", "a\\b" }, { "proj", "a\\b", "a\\b", "proj" } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-DisplayPath-LocalAndRemoteNames@@Tests/ACPTranscript.wlt:1711,1-1738,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1666,7 +1749,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-DebugLog@@Tests/ACPTranscript.wlt:1662,1-1670,2"
+    TestID   -> "ACPTranscript-DebugLog@@Tests/ACPTranscript.wlt:1745,1-1753,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
