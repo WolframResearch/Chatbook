@@ -2042,7 +2042,7 @@ makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
     BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
     "InlineToolCall",
     Background   -> None,
-    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+    TaggingRules -> KeyDrop[ as, { "Icon", "CallIcon", "Result" } ]
 ];
 
 makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
@@ -2130,6 +2130,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
             "Name"        -> name,
             "DisplayName" -> getToolDisplayName @ tool,
             "Icon"        -> getToolIcon @ tool,
+            "CallIcon"    -> getToolCallIcon @ tool,
             "ToolCall"    -> StringTrim @ string,
             "Parameters"  -> params,
             "Result"      -> result
@@ -2139,7 +2140,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
 ];
 
 parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
+    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, callIcon, query, result },
 
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDRESULT"~~___~~EndOfString ];
@@ -2147,6 +2148,7 @@ parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"
         tool        = getToolByName @ name;
         displayName = getToolDisplayName[ tool, name ];
         icon        = getToolIcon @ tool;
+        callIcon    = getToolCallIcon @ tool;
         query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
         result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDRESULT" :> r ], "" ];
 
@@ -2154,6 +2156,7 @@ parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"
             "Name"        -> name,
             "DisplayName" -> displayName,
             "Icon"        -> icon,
+            "CallIcon"    -> callIcon,
             "ToolCall"    -> StringTrim @ string,
             "Parameters"  -> StringTrim @ query,
             "Result"      -> StringTrim @ result
@@ -2193,6 +2196,7 @@ parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_As
         "Name"               -> toolName @ tool,
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
+        "CallIcon"           -> getToolCallIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,
         "ToolCall"           -> StringTrim @ string,
         "Parameters"         -> parameters,
@@ -2260,20 +2264,17 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
 
 makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 
-makeToolCallBoxLabel[ as_Association, name_String ] :=
-    makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
-
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText :=
+makeToolCallBoxLabel[ as_Association, name_String ] /; $dynamicText :=
     fakeOpenerView[
-        makeToolCallBoxLabel0[ as, name, icon ],
+        makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, $fakeOpenerColor ] ],
         as[ "Result" ] =!= ""
     ];
 
-makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
+makeToolCallBoxLabel[ as0_Association, name_String ] :=
     With[ { as = resolveToolFormatter @ as0 },
         openerView[
             {
-                makeToolCallBoxLabel0[ as, name, icon ],
+                Function[ col, makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, col ] ] ],
                 (*TODO: custom interface LLM 667 *)
                 TabView[
                     {
@@ -2296,7 +2297,7 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
-With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
+With[ { col = $fakeOpenerColor },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
@@ -2312,6 +2313,16 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolCallIcon*)
+$fakeOpenerColor = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ];
+
+toolCallIcon // beginDefinition;
+toolCallIcon[ KeyValuePattern[ "CallIcon" -> icon_Function ], color_ ] := icon @ color;
+toolCallIcon[ _, color_ ] := getToolCallIcon[ None ][ color ];
+toolCallIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2341,7 +2352,7 @@ toolCallIconPane // endDefinition;
 toolCallIconPane0 // beginDefinition;
 
 toolCallIconPane0[ $$unspecified ] :=
-    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ];
+    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ToolIconCallGenericTool" ];
 
 toolCallIconPane0[ icon_ ] :=
     Dynamic[

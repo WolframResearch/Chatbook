@@ -32,6 +32,7 @@ $defaultChatTools0[ "CreateNotebook" ] = <|
     toolDefaultData[ "CreateNotebook" ],
     "ShortName"          -> "create_nb",
     "Icon"               -> $createNotebookIcon,
+    "CallIcon"           -> toolCallIconResource[ "CreateNotebook" ],
     "Description"        -> $createNotebookDescription,
     "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "Function"           -> createNotebook,

@@ -448,6 +448,21 @@ VerificationTest[
     TestID   -> "Discarded-ToolCalls-Grouped"
 ]
 
+(* Tool call openers use the "ToolIconCall<name>" resource for each button state, falling back to the generic icon: *)
+VerificationTest[
+    Union @ Cases[
+        FormatChatOutput @ StringJoin[
+            "TOOLCALL: web_fetcher\n{\n\t\"url\":\"https://example.com\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(abcd1234)\n\n",
+            "TOOLCALL: made_up_tool\n{\n\t\"x\":\"1\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(efgh5678)\n\nDone."
+        ],
+        FEPrivate`FrontEndResource[ "ChatbookExpressions", name_String ][ _ ] :> name,
+        Infinity
+    ],
+    { "ToolIconCallGenericTool", "ToolIconCallWebFetcher" },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCall-Opener-Icons"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Placeholders*)

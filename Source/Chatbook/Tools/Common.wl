@@ -126,6 +126,7 @@ $installedToolExtraKeys = {
 };
 
 $autoAppearanceRules = <|
+    "CallIcon"           -> Automatic,
     "DocumentationLink"  -> None,
     "FormattingFunction" -> Automatic,
     "Icon"               -> $defaultToolIcon,
@@ -1318,6 +1319,76 @@ getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
 getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ] ];
 getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolCallIcon*)
+(* The "CallIcon" appearance rule is a function of a single color that gives the glyph shown in tool call openers.
+   Chatbook supplies the color, so the glyph always matches the surrounding text. *)
+getToolCallIcon // beginDefinition;
+
+getToolCallIcon[ tool: $$llmTool ] := getToolCallIcon @ toolData @ tool;
+
+getToolCallIcon[ as_Association ] := With[ { data = toolData @ as }, getToolCallIcon[ data, Lookup[ data, "CallIcon", Automatic ] ] ];
+
+getToolCallIcon[ _ ] := $defaultToolCallIcon;
+
+getToolCallIcon[ as_, icon_Function ] := validatedToolCallIcon @ icon;
+
+(* Installed copies of built-in tools don't carry a "CallIcon", so use the one from the built-in definition: *)
+getToolCallIcon[ as: KeyValuePattern[ "CanonicalName" -> name_String ], Automatic ] /;
+    MatchQ[ builtInToolCallIcon @ name, _Function ] :=
+        builtInToolCallIcon @ name;
+
+getToolCallIcon[ KeyValuePattern[ "Origin" -> "LLMToolRepository" ], _ ] := $repositoryToolCallIcon;
+
+getToolCallIcon[ _, _ ] := $defaultToolCallIcon;
+
+getToolCallIcon // endDefinition;
+
+
+builtInToolCallIcon // beginDefinition;
+
+builtInToolCallIcon[ name_String ] :=
+    Replace[
+        $defaultChatTools0[ name ],
+        {
+            HoldPattern @ LLMTool[ KeyValuePattern[ "CallIcon" -> icon_Function ], ___ ] :> icon,
+            _ -> None
+        }
+    ];
+
+builtInToolCallIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validatedToolCallIcon*)
+(* Third-party glyphs may fail for a given color, so fall back to the generic glyph instead of breaking the opener: *)
+validatedToolCallIcon // beginDefinition;
+
+validatedToolCallIcon[ icon_Function ] :=
+    Function[ col, validToolCallIcon[ Quiet @ Check[ icon @ col, $Failed ], col ] ];
+
+validatedToolCallIcon // endDefinition;
+
+
+$$invalidToolCallIcon = _? FailureQ | Null | None | _Missing | "" | { };
+
+validToolCallIcon // beginDefinition;
+validToolCallIcon[ $$invalidToolCallIcon, col_ ] := $defaultToolCallIcon @ col;
+validToolCallIcon[ icon_, _ ] := icon;
+validToolCallIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallIconResource*)
+(* Built-in glyphs are "ToolIconCall<name>" function resources in ChatbookExpressions: *)
+toolCallIconResource // beginDefinition;
+toolCallIconResource[ name_String ] := Function[ col, chatbookIcon[ "ToolIconCall" <> name, False, col ] ];
+toolCallIconResource // endDefinition;
+
+$defaultToolCallIcon    = toolCallIconResource[ "GenericTool"    ];
+$repositoryToolCallIcon = toolCallIconResource[ "RepositoryTool" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

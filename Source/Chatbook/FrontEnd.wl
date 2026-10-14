@@ -1177,12 +1177,14 @@ MouseAppearance[
         FEPrivate`Set[ Typeset`var, Not[ Typeset`var ] ],
         Alignment        -> Left,
         Appearance       -> "Suppressed",
-        BaselinePosition -> Baseline,
-        ImageSize        -> Scaled[ 1 ]
+        BaselinePosition -> Baseline
     ],
     "LinkHand"
 ]
 ]
+
+clickableOpenerRow0[ Dynamic[ var_ ], label_Function, direction_, color_ ] :=
+    clickableOpenerRow0[ Dynamic[ var ], label @ color, direction, color ];
 
 clickableOpenerRow0[ Dynamic[ var_ ], label_, direction_, color_ ] :=
 Grid[

@@ -38,6 +38,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     toolDefaultData[ "WolframLanguageEvaluator" ],
     "ShortName"          -> "wl",
     "Icon"               -> $wolframLanguageEvaluatorIcon,
+    "CallIcon"           -> toolCallIconResource[ "WolframLanguageEvaluator" ],
     "Description"        -> $wolframLanguageEvaluatorDescription,
     "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> sandboxFormatter,
