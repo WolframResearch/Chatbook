@@ -2340,31 +2340,18 @@ activeToolProgressIndicator // endDefinition;
 toolCallIconPane // beginDefinition;
 
 toolCallIconPane[ icon_ ] := Pane[
-    toolCallIconPane0 @ icon,
+    icon,
+    Alignment        -> { Left, Center },
     BaselinePosition -> Scaled[ 0.27 ],
     ContentPadding   -> False,
-    FrameMargins     -> { { 0, 0 }, { 0, 0 } }
+    FrameMargins     -> { { 0, 0 }, { 0, 0 } },
+    ImageMargins     -> { { 0, 2}, { 2, 2 } },
+    ImageSize        -> { 20, 20 },
+    ImageSizeAction  -> "ShrinkToFit"
 ];
 
 toolCallIconPane // endDefinition;
 
-
-toolCallIconPane0 // beginDefinition;
-
-toolCallIconPane0[ $$unspecified ] :=
-    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ToolIconCallGenericTool" ];
-
-toolCallIconPane0[ icon_ ] :=
-    Dynamic[
-        If[ TrueQ @ $CloudEvaluation,
-            cloudShrinkToFit[ #1, { 20, 20 } ],
-            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
-        ] &[ icon ],
-        SingleEvaluation -> True,
-        TrackedSymbols   :> { }
-    ];
-
-toolCallIconPane0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
