@@ -255,6 +255,248 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Same-Size Index Corruption*)
+flipIndexBytes[ ] := With[ { f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" } },
+    With[ { b = Normal @ ReadByteArray @ f },
+        DeleteFile @ f;
+        BinaryWrite[ f, ByteArray @ ReplacePart[ b, Thread[ Range[ 1, 64 ] -> BitXor[ b[[ 1 ;; 64 ]], 255 ] ] ] ];
+        Close @ f
+    ]
+];
+
+VerificationTest[
+    Developer`ReadWXFFile @ FileNameJoin @ { dbDir[ ], "Manifest.wxf" },
+    KeyValuePattern[ "IndexFingerprint" -> { 4401488, { __? NumberQ } } ],
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-Recorded"
+]
+
+VerificationTest[
+    Module[ { size },
+        size = FileByteCount @ FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
+        flipIndexBytes[ ];
+        {
+            FileByteCount @ FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" } === size,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBIndexSizeValidQ[ dbDir[ ], $name, "1.2.0" ],
+            validQ[ ]
+        }
+    ],
+    { True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "SameSizeCorruption-Detected"
+]
+
+VerificationTest[
+    $prompts = { };
+    Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined = False }, withPrompt[ True, download @ $name ] ];
+    { Length @ $prompts, validQ[ ] },
+    { 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "SameSizeCorruption-Repaired"
+]
+
+VerificationTest[
+    Module[ { f, manifestFile },
+        f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
+        manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
+        (* An unchanged index whose modification date changed (e.g. restored from a backup) is verified by hash: *)
+        SetFileDate[ f, Now - Quantity[ 1, "Days" ] ];
+        {
+            validQ[ ],
+            Developer`ReadWXFFile[ manifestFile ][ "IndexFingerprint" ] === Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`fileFingerprint @ f
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-TouchedButIntact"
+]
+
+VerificationTest[
+    Module[ { f, manifestFile, manifest },
+        f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
+        manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
+        (* Simulate an install from an older version of Chatbook, which has no manifest: *)
+        DeleteFile @ manifestFile;
+        SetFileDate[ f, Now - Quantity[ 1, "Days" ] ];
+        { validQ[ ], KeyExistsQ[ Developer`ReadWXFFile @ manifestFile, "IndexFingerprint" ] }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-LegacyInstallAdopted"
+]
+
+VerificationTest[
+    Module[ { manifestFile },
+        manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
+        DeleteFile @ manifestFile;
+        (* Legacy install whose index was modified after it was installed: *)
+        flipIndexBytes[ ];
+        { validQ[ ], FileExistsQ @ manifestFile }
+    ],
+    { False, False },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-LegacyInstallModifiedRejected"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined = False }, withPrompt[ True, download @ $name ] ];
+    validQ[ ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-LegacyInstallModifiedRepaired"
+]
+
+VerificationTest[
+    Module[ { f, hashed },
+        f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
+        hashed = 0;
+        Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$verifyIndexHashes = True,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$verifiedIndexFingerprints = <| |>
+            },
+            Internal`InheritedBlock[ { FileHash },
+                Unprotect @ FileHash;
+                FileHash[ file_, args___ ] /; ! TrueQ @ $inFileHash := Block[ { $inFileHash = True }, hashed++; FileHash[ file, args ] ];
+                { validQ[ ], validQ[ ], hashed }
+            ]
+        ]
+    ],
+    { True, True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "VerifyIndexHashes-HashesOncePerSession"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Memoized Databases*)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$localVectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined = False,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs = <| |>
+        },
+        Module[ { first, loads, second },
+            first = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name;
+            loads = 0;
+            Internal`InheritedBlock[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB0 },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB0[ n_String ] /; ! TrueQ @ $inLoad :=
+                    Block[ { $inLoad = True }, loads++; Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB0 @ n ];
+                second = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name
+            ];
+            { MatchQ[ first, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ], second === first, loads }
+        ]
+    ],
+    { True, True, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "GetVectorDB-CachedWhileUnchanged"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$localVectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined = False,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs = <| |>
+        },
+        Module[ { result },
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name;
+            (* Corrupt the index after it has been loaded and memoized: *)
+            flipIndexBytes[ ];
+            $prompts = { };
+            result = withPrompt[ True, Quiet @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name ];
+            { MatchQ[ result, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ], Length @ $prompts, validQ[ ] }
+        ]
+    ],
+    { True, 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "GetVectorDB-RevalidatesAfterCorruption"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Download Locks*)
+VerificationTest[
+    Module[ { dir, lock, result },
+        dir  = CreateDirectory[ ];
+        lock = FileNameJoin @ { dir, "download.lock" };
+        (* A lock left behind by a kernel that was killed while holding it: *)
+        Put[
+            <|
+                "Header"       -> "Wolfram Language lock file, created by WithLock[].",
+                "UserName"     -> $UserName,
+                "MachineName"  -> $MachineName,
+                "ProcessID"    -> First @ Complement[ Range[ 900000, 900100 ], Lookup[ Normal @ SystemProcessData[ ], "PID" ] ],
+                "CreationTime" -> DateString[ "ISODateTime" ]
+            |>,
+            lock
+        ];
+        result = TimeConstrained[ Wolfram`Chatbook`PromptGenerators`Common`withDownloadLock[ lock, "acquired" ], 30, "timed out" ];
+        WithCleanup[ { result, FileExistsQ @ lock }, DeleteDirectory[ dir, DeleteContents -> True ] ]
+    ],
+    { "acquired", False },
+    SameTest -> MatchQ,
+    TestID   -> "DownloadLock-BreaksStaleLock"
+]
+
+VerificationTest[
+    Module[ { dir, lock, result },
+        dir  = CreateDirectory[ ];
+        lock = FileNameJoin @ { dir, "download.lock" };
+        (* A lock held by a running kernel (this one) must not be broken: *)
+        Put[
+            <|
+                "Header"       -> "Wolfram Language lock file, created by WithLock[].",
+                "UserName"     -> $UserName,
+                "MachineName"  -> $MachineName,
+                "ProcessID"    -> $ProcessID,
+                "CreationTime" -> DateString[ "ISODateTime" ]
+            |>,
+            lock
+        ];
+        result = Block[ { Wolfram`Chatbook`PromptGenerators`Common`Private`$downloadLockPollInterval = 1 },
+            TimeConstrained[ Wolfram`Chatbook`PromptGenerators`Common`withDownloadLock[ lock, "acquired" ], 5, "waiting" ]
+        ];
+        WithCleanup[ { result, FileExistsQ @ lock }, DeleteDirectory[ dir, DeleteContents -> True ] ]
+    ],
+    { "waiting", True },
+    SameTest -> MatchQ,
+    TestID   -> "DownloadLock-WaitsForLiveLock"
+]
+
+VerificationTest[
+    Module[ { dir, lock, result },
+        dir  = CreateDirectory[ ];
+        lock = FileNameJoin @ { dir, "download.lock" };
+        result = Catch @ Wolfram`Chatbook`PromptGenerators`Common`withDownloadLock[ lock, Throw[ "thrown" ] ];
+        WithCleanup[ { result, FileExistsQ @ lock }, DeleteDirectory[ dir, DeleteContents -> True ] ]
+    ],
+    { "thrown", False },
+    SameTest -> MatchQ,
+    TestID   -> "DownloadLock-ReleasedOnThrow"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Path Containment*)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$pacletVectorDBDirectory = FileNameJoin @ { $root, "VectorDatabases" } },
+        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`pacletVectorDBDirectoryQ /@ {
+            FileNameJoin @ { $root, "VectorDatabases", $name },
+            FileNameJoin @ { $root, "VectorDatabases-old", $name },
+            FileNameJoin @ { $root, "VectorDatabases" }
+        }
+    ],
+    { True, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "PacletVectorDBDirectoryQ-PathComponents"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Leftover Artifacts*)
 VerificationTest[
     Module[ { tmp },
@@ -430,8 +672,32 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`validSnippetArchiveQ[ "ResourceSystem", FileNameJoin @ { $snipRoot, "ResourceSystem", "Snippets.wxfl" } ],
-    False,
+    Module[ { zip, bad, bytes, n },
+        zip = FileNameJoin @ { $TemporaryDirectory, "ResourceSystem-" <> CreateUUID[ ] <> ".zip" };
+        URLDownload[
+            URLBuild @ {
+                Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$streamableSnippetBaseURL,
+                "ResourceSystem",
+                StringReplace[ Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$streamableSnippetVersions[ "ResourceSystem" ], "." -> "-" ] <> ".zip"
+            },
+            zip
+        ];
+        bad = FileNameJoin @ { $TemporaryDirectory, "ResourceSystem-bad-" <> CreateUUID[ ] <> ".zip" };
+        bytes = Normal @ ReadByteArray @ zip;
+        n = Length @ bytes;
+        bytes[[ n - 1000 ;; n - 900 ]] = BitXor[ bytes[[ n - 1000 ;; n - 900 ]], 255 ];
+        BinaryWrite[ bad, ByteArray @ bytes ];
+        Close @ bad;
+        WithCleanup[
+            {
+                FileByteCount @ bad === FileByteCount @ zip,
+                Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`validSnippetArchiveQ[ "ResourceSystem", zip ],
+                Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`validSnippetArchiveQ[ "ResourceSystem", bad ]
+            },
+            Quiet[ DeleteFile /@ { zip, bad } ]
+        ]
+    ],
+    { True, True, False },
     SameTest -> MatchQ,
     TestID   -> "Snippets-InvalidArchiveRejected"
 ]
@@ -450,6 +716,33 @@ VerificationTest[
 ]
 
 VerificationTest[
+    Module[ { before, result },
+        before = FileNames[ "ResourceSystem-*.zip", $TemporaryDirectory ];
+        (* Interrupt after the archive has been downloaded: *)
+        result = Block[ { Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`validSnippetArchiveQ = (Abort[ ] &) },
+            CheckAbort[ Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`downloadStreamableSnippets[ $snipRoot, "ResourceSystem", 1, None ], "aborted" ]
+        ];
+        { result, Complement[ FileNames[ "ResourceSystem-*.zip", $TemporaryDirectory ], before ] }
+    ],
+    { "aborted", { } },
+    SameTest -> MatchQ,
+    TestID   -> "Snippets-AbortCleansTemporaryFile"
+]
+
+VerificationTest[
+    Module[ { name },
+        name = "ResourceSystem";
+        Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$streamableSnippetIndexCache[ name ] = <| "Stale" -> True |>;
+        Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`downloadStreamableSnippets[ $snipRoot, name ];
+        Lookup[ Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$streamableSnippetIndexCache, name ]
+    ],
+    Except[ KeyValuePattern[ "Stale" -> True ] ],
+    {},
+    SameTest -> MatchQ,
+    TestID   -> "Snippets-InstallClearsIndexCache"
+]
+
+VerificationTest[
     Module[ { target, backup },
         target = FileNameJoin @ { $snipRoot, "ResourceSystem" };
         backup = target <> ".old-test";
@@ -461,7 +754,7 @@ VerificationTest[
             Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`streamableSnippetsDirectoryQ0 @ target
         }
     ],
-    { True, False, False },
+    { True, False, True },
     SameTest -> MatchQ,
     TestID   -> "Snippets-InterruptedSwap-RestoresBackup"
 ]

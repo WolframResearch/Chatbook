@@ -131,7 +131,6 @@ $allowDownload   = True;
 $cacheEmbeddings = True;
 
 $vectorDBDownloadDeclined = False;
-$downloadLockPersistence  = Infinity;
 $staleArtifactAge         = 120;
 $downloadProgress         = <| |>;
 $downloadStatus           = <| |>;
@@ -210,6 +209,19 @@ $vectorDBDownloadHashes = <|
     { "SourceSelector"         , "1.5.0" } -> "ab30dce8ee13ca04e09474220570c7bc5c206c066612d7717f8ac6f0d0cc03b6",
     { "WolframAlphaQueries"    , "1.3.0" } -> "97de69e0fa681b9e686c45aabac7b7c11508659c602c9c4331946f169b161bc7"
 |>;
+
+(* SHA-256 hashes of the vector index files after extraction (keyed by name and version): *)
+$vectorDBIndexHashes = <|
+    { "DataRepositoryURIs"     , "1.2.0" } -> "d69717e8a419562bb0b52ae84d19333add82e0fe20047d8423413cda3e00f144",
+    { "DocumentationURIs"      , "1.5.0" } -> "c8bf047f33a1d04b2e1c2278fee70f3c700b1cc2141c210865133501142d7b61",
+    { "DocumentationURIs"      , "1.6.0" } -> "29fdb2ec5681bfea5c445f1963a694dae4762500bc1661d65473f55331ee3921",
+    { "EntityValues"           , "1.1.0" } -> "d56b31964bb2d93351bd8c1ea22966b5c758c5abf6374349f4d2ee62a01fabbc",
+    { "FunctionRepositoryURIs" , "1.3.0" } -> "12c6cf606c5cdddb3584637edeac41d27e2e8359a77fbb77c4155235d552ae2b",
+    { "NeuralNetRepositoryURIs", "1.2.0" } -> "6a24c6c7817d434233abb879201c4a4be8094a56f766079a17c19dfa3910b71c",
+    { "PacletRepositoryURIs"   , "1.2.0" } -> "dd700b6ddbbd1a24d1e94bf145678e758467756122976ca6989a90ccff998420",
+    { "SourceSelector"         , "1.5.0" } -> "278d783b58799cb02263f5d5c8518437cd9b543e9910971f0b102e0e6a54abe4",
+    { "WolframAlphaQueries"    , "1.3.0" } -> "cf442349eacf48750144e33ee5f864a509f8ec323538363eb8fcaa113bf3666a"
+|>;
 (* END GENERATED: VectorDatabaseDownloadMetadata *)
 
 (* Archive sizes for the versions used by the current Wolfram Language version: *)
@@ -259,6 +271,12 @@ vectorDBNameQ // endDefinition;
 (*Cache*)
 $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
+$loadedVectorDBs     = <| |>;
+
+(* Set to True to verify index hashes even when the index file appears unchanged: *)
+$verifyIndexHashes         = False;
+$verifiedIndexFingerprints = <| |>;
+$modificationDateTolerance = 2;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -583,7 +601,7 @@ vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
         versionFile     = FileNameJoin @ { dir, "Version.wl" };
         expectedVersion = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "ExpectedVersion" ];
         devQ            = pacletVectorDBDirectoryQ @ dir;
-        cloudQ          = TrueQ[ $CloudEvaluation && With[ { c = Quiet @ $cloudVectorDBDirectory }, StringQ @ c && StringStartsQ[ dir, c ] ] ];
+        cloudQ          = TrueQ[ $CloudEvaluation && pathWithinQ[ dir, Quiet @ $cloudVectorDBDirectory ] ];
 
         (* Bypass version check for development builds: *)
         If[ ! FileExistsQ @ versionFile && devQ, Put[ expectedVersion, versionFile ] ];
@@ -592,7 +610,7 @@ vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
             installedVectorDBVersion @ dir === expectedVersion,
             vectorDBFilesPresentQ[ dir, name ],
             vectorDBManifestValidQ @ dir,
-            devQ || cloudQ || vectorDBIndexSizeValidQ[ dir, name, expectedVersion ]
+            devQ || cloudQ || (vectorDBIndexSizeValidQ[ dir, name, expectedVersion ] && vectorDBIndexIntactQ[ dir, name, expectedVersion ])
         ]
     ],
     throwInternalFailure
@@ -607,10 +625,24 @@ vectorDBDirectoryQ0 // endDefinition;
 (*pacletVectorDBDirectoryQ*)
 pacletVectorDBDirectoryQ // beginDefinition;
 
-pacletVectorDBDirectoryQ[ dir_String ] :=
-    With[ { root = $pacletVectorDBDirectory }, StringQ @ root && StringStartsQ[ dir, root ] ];
+pacletVectorDBDirectoryQ[ dir_String ] := pathWithinQ[ dir, $pacletVectorDBDirectory ];
 
 pacletVectorDBDirectoryQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*pathWithinQ*)
+(* Compares whole path components, so that e.g. "VectorDatabases-old" is not considered inside "VectorDatabases": *)
+pathWithinQ // beginDefinition;
+
+pathWithinQ[ path_String, root_String ] :=
+    With[ { p = FileNameSplit @ ExpandFileName @ path, r = FileNameSplit @ ExpandFileName @ root },
+        Length @ p >= Length @ r && Take[ p, Length @ r ] === r
+    ];
+
+pathWithinQ[ _, _ ] := False;
+
+pathWithinQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -676,18 +708,161 @@ vectorDBManifestValidQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*vectorDBIndexIntactQ*)
+(* Detects same-size changes to the index file. Hashing large indices is slow, so this is only done when the size or
+   modification date of the index differs from what was recorded in the manifest (or when $verifyIndexHashes is True).
+   Installs from older versions have no recorded fingerprint; their index is only hashed if it was modified after the
+   install was completed. *)
+vectorDBIndexIntactQ // beginDefinition;
+
+vectorDBIndexIntactQ[ dir_String, name_String, version_String ] :=
+    Module[ { file, manifestFile, manifest, fingerprint, recorded },
+        file         = FileNameJoin @ { dir, name <> "-vectors.usearch" };
+        manifestFile = FileNameJoin @ { dir, "Manifest.wxf" };
+        manifest     = Replace[ If[ FileExistsQ @ manifestFile, Quiet @ Developer`ReadWXFFile @ manifestFile ], Except[ _Association ] -> <| |> ];
+        fingerprint  = fileFingerprint @ file;
+        recorded     = Lookup[ manifest, "IndexFingerprint" ];
+        Which[
+            TrueQ @ $verifyIndexHashes,
+                verifiedIndexHashQ[ file, fingerprint, name, version ] && recordIndexFingerprint[ dir, manifest, fingerprint ],
+            fingerprint === recorded,
+                True,
+            MissingQ @ recorded && modifiedBeforeQ[ file, FileNameJoin @ { dir, "Version.wl" } ],
+                recordIndexFingerprint[ dir, manifest, fingerprint ],
+            indexHashValidQ[ file, name, version ],
+                recordIndexFingerprint[ dir, manifest, fingerprint ],
+            True,
+                False
+        ]
+    ];
+
+vectorDBIndexIntactQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modifiedBeforeQ*)
+(* True if file1 was last modified at least a few seconds before file2 (file dates may only have one-second precision): *)
+modifiedBeforeQ // beginDefinition;
+
+modifiedBeforeQ[ file1_String, file2_String ] := Quiet @ With[
+    { d1 = FileDate[ file1, "Modification" ], d2 = FileDate[ file2, "Modification" ] },
+    TrueQ[ DateObjectQ @ d1 && DateObjectQ @ d2 && AbsoluteTime @ d1 < AbsoluteTime @ d2 - $modificationDateTolerance ]
+];
+
+modifiedBeforeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fileFingerprint*)
+(* The raw modification date is used so that the fingerprint does not depend on the value of $TimeZone: *)
+fileFingerprint // beginDefinition;
+
+fileFingerprint[ file_String ] := Quiet @ With[ { date = FileDate[ file, "Modification" ] },
+    If[ FileExistsQ @ file && DateObjectQ @ date, { FileByteCount @ file, First @ date }, None ]
+];
+
+fileFingerprint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*indexHashValidQ*)
+indexHashValidQ // beginDefinition;
+
+indexHashValidQ[ file_String, name_String, version_String ] :=
+    With[ { expected = Lookup[ $vectorDBIndexHashes, Key @ { name, version } ] },
+        StringQ @ expected && Quiet @ FileHash[ file, "SHA256", All, "HexString" ] === expected
+    ];
+
+indexHashValidQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*verifiedIndexHashQ*)
+(* Avoids hashing the same unchanged file more than once per session when $verifyIndexHashes is True: *)
+verifiedIndexHashQ // beginDefinition;
+
+verifiedIndexHashQ[ file_String, fingerprint_, name_String, version_String ] :=
+    TrueQ @ Lookup[
+        $verifiedIndexFingerprints,
+        Key @ { file, fingerprint },
+        If[ indexHashValidQ[ file, name, version ], $verifiedIndexFingerprints[ { file, fingerprint } ] = True, False ]
+    ];
+
+verifiedIndexHashQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*recordIndexFingerprint*)
+(* Best effort: if the manifest cannot be updated, the index will simply be verified again next time. *)
+recordIndexFingerprint // beginDefinition;
+
+recordIndexFingerprint[ dir_String, manifest_Association, fingerprint: { _Integer, _List } ] := (
+    If[ manifest[ "IndexFingerprint" ] =!= fingerprint,
+        Quiet @ writeManifestFile[
+            FileNameJoin @ { dir, "Manifest.wxf" },
+            <|
+                "Version" -> installedVectorDBVersion @ dir,
+                "Files"   -> manifestFileSizes @ dir,
+                manifest,
+                "IndexFingerprint" -> fingerprint
+            |>
+        ]
+    ];
+    True
+);
+
+recordIndexFingerprint[ _, _, _ ] := False;
+
+recordIndexFingerprint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*manifestFileSizes*)
+manifestFileSizes // beginDefinition;
+
+manifestFileSizes[ dir_String ] := Association[
+    FileNameTake[ #, -1 ] -> FileByteCount[ # ] & /@ Select[
+        FileNames[ "*", dir ],
+        ! DirectoryQ[ # ] && ! MemberQ[ { "Manifest.wxf", "Version.wl" }, FileNameTake[ #, -1 ] ] && ! StringEndsQ[ #, ".tmp" ] &
+    ]
+];
+
+manifestFileSizes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeManifestFile*)
+(* Written to a temporary file first and then moved into place, so readers never see a partially written manifest: *)
+writeManifestFile // beginDefinition;
+
+writeManifestFile[ file_String, manifest_Association ] :=
+    With[ { tmp = file <> "." <> CreateUUID[ ] <> ".tmp" },
+        WithCleanup[
+            If[ FileExistsQ @ Developer`WriteWXFFile[ tmp, manifest ],
+                RenameFile[ tmp, file, OverwriteTarget -> True ],
+                $Failed
+            ],
+            Quiet @ If[ FileExistsQ @ tmp, DeleteFile @ tmp ]
+        ]
+    ];
+
+writeManifestFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*writeVectorDBManifest*)
 writeVectorDBManifest // beginDefinition;
 
 writeVectorDBManifest[ dir_String, version_String ] := Enclose[
-    Module[ { files, manifest, file },
-        files = ConfirmMatch[ FileNames[ "*", dir ], { __String }, "Files" ];
+    Module[ { name, manifest, file },
+        name = ConfirmBy[ FileBaseName @ StringDelete[ dir, ".staging" ~~ EndOfString ], StringQ, "Name" ];
         manifest = <|
-            "Version" -> version,
-            "Files"   -> Association[ FileNameTake[ #, -1 ] -> FileByteCount[ # ] & /@ Select[ files, FileExistsQ[ # ] && ! DirectoryQ[ # ] & ] ]
+            "Version"          -> version,
+            "Files"            -> ConfirmBy[ manifestFileSizes @ dir, AssociationQ, "Files" ],
+            "IndexFingerprint" -> ConfirmMatch[ fileFingerprint @ FileNameJoin @ { dir, name <> "-vectors.usearch" }, { _Integer, _List }, "Fingerprint" ]
         |>;
         file = FileNameJoin @ { dir, "Manifest.wxf" };
-        ConfirmBy[ Developer`WriteWXFFile[ file, manifest ], FileExistsQ, "Write" ]
+        ConfirmBy[ writeManifestFile[ file, manifest ], FileExistsQ, "Write" ]
     ],
     throwInternalFailure
 ];
@@ -812,11 +987,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
         dir  = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
         lock = FileNameJoin @ { dir, "download.lock" };
 
-        WithLock[
-            File @ lock,
-            downloadVectorDatabasesLocked[ dir, urls0 ],
-            PersistenceTime -> $downloadLockPersistence
-        ]
+        withDownloadLock[ lock, downloadVectorDatabasesLocked[ dir, urls0 ] ]
     ] // LogChatTiming[ "DownloadVectorDatabases" ],
     throwInternalFailure
 ];
@@ -1238,11 +1409,18 @@ initializeVectorDatabases // endDefinition;
 (*getVectorDB*)
 getVectorDB // beginDefinition;
 
+(* Reuse the loaded database only while its index file is unchanged, since the index is read from disk during search: *)
+getVectorDB[ name_String ] :=
+    With[ { cached = $loadedVectorDBs[ name ] },
+        cached[ "Data" ] /; AssociationQ @ cached && cached[ "Fingerprint" ] === loadedIndexFingerprint @ name
+    ];
+
 getVectorDB[ name_String ] := Enclose[
-    getVectorDB[ name ] = ConfirmMatch[
-        Association @ loadVectorDB @ name,
-        $$loadedVectorDB,
-        "VectorDB"
+    Module[ { data },
+        If[ KeyExistsQ[ $loadedVectorDBs, name ], clearVectorDBCaches @ name ];
+        data = ConfirmMatch[ Association @ loadVectorDB @ name, $$loadedVectorDB, "VectorDB" ];
+        $loadedVectorDBs[ name ] = <| "Data" -> data, "Fingerprint" -> loadedIndexFingerprint @ name |>;
+        data
     ],
     throwInternalFailure
 ];
@@ -1250,6 +1428,16 @@ getVectorDB[ name_String ] := Enclose[
 getVectorDB // endDefinition;
 
 $$loadedVectorDB = KeyValuePattern @ { "Values" -> { ___String }, "VectorDatabaseObject" -> $$vectorDatabase };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadedIndexFingerprint*)
+loadedIndexFingerprint // beginDefinition;
+
+loadedIndexFingerprint[ name_String ] :=
+    fileFingerprint @ FileNameJoin @ { $vectorDBDirectory, name, name <> "-vectors.usearch" };
+
+loadedIndexFingerprint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1351,6 +1539,7 @@ clearVectorDBCaches // beginDefinition;
 clearVectorDBCaches[ name_String ] := (
     Quiet[ loadVectorDBValues[ name ] =. ];
     Quiet[ getVectorDB[ name ] =. ];
+    $loadedVectorDBs     = KeyDrop[ $loadedVectorDBs, name ];
     $vectorDBSearchCache = KeyDrop[ $vectorDBSearchCache, name ];
 );
 

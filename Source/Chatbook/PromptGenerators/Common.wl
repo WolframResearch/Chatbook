@@ -21,7 +21,8 @@ HoldComplete[
     `getSmallContextString,
     `getStreamSnippets,
     `insertContextPrompt,
-    `vectorDBSearch
+    `vectorDBSearch,
+    `withDownloadLock
 ];
 
 Begin[ "`Private`" ];
@@ -47,6 +48,9 @@ $maxDownloadAttempts   = 3;
 $promptRedownload      = True;
 $longDownloadThreshold = 30;
 $fallbackDownloadRate  = 2.0*^6;
+
+$downloadLockPollInterval = 10;
+$staleLockFileAge         = 60;
 
 $downloadPromptFunction := defaultDownloadPrompt;
 
@@ -133,6 +137,77 @@ formatDuration // beginDefinition;
 formatDuration[ seconds_? NumberQ ] /; seconds >= 90 := trStringTemplate[ "DownloadDurationMinutes" ][ ToString @ Ceiling[ seconds / 60 ] ];
 formatDuration[ seconds_? NumberQ ] := trStringTemplate[ "DownloadDurationSeconds" ][ ToString @ Ceiling @ seconds ];
 formatDuration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withDownloadLock*)
+(* Like WithLock, but periodically breaks the lock if the kernel that created it is no longer running: *)
+withDownloadLock // beginDefinition;
+withDownloadLock // Attributes = { HoldRest };
+
+withDownloadLock[ lock_String, eval_ ] := Catch[
+    While[ True,
+        breakStaleDownloadLock @ lock;
+        WithLock[ File @ lock, Throw[ eval, $downloadLockTag ], TimeConstraint -> $downloadLockPollInterval ]
+    ],
+    $downloadLockTag
+];
+
+withDownloadLock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*breakStaleDownloadLock*)
+breakStaleDownloadLock // beginDefinition;
+
+breakStaleDownloadLock[ lock_String ] :=
+    If[ FileExistsQ @ lock,
+        With[ { info = Quiet @ Get @ lock },
+            (* Re-read before deleting in case another kernel has just taken over the lock: *)
+            If[ staleDownloadLockQ[ lock, info ] && Quiet @ Get @ lock === info, Quiet @ DeleteFile @ lock ]
+        ]
+    ];
+
+breakStaleDownloadLock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*staleDownloadLockQ*)
+staleDownloadLockQ // beginDefinition;
+
+staleDownloadLockQ[ lock_, KeyValuePattern @ { "MachineName" -> m_String, "ProcessID" -> pid_Integer, "CreationTime" -> t_ } ] :=
+    m === $MachineName && ! processRunningQ[ pid, t ];
+
+(* Lock files left empty or unreadable by an interrupted write: *)
+staleDownloadLockQ[ lock_, Null | $Failed | _String ] :=
+    With[ { date = Quiet @ FileDate[ lock, "Modification" ] },
+        DateObjectQ @ date && AbsoluteTime[ ] - AbsoluteTime @ date > $staleLockFileAge
+    ];
+
+staleDownloadLockQ[ _, _ ] := False;
+
+staleDownloadLockQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*processRunningQ*)
+(* Errs on the side of True if the process table is unavailable. A process that started after the lock was created
+   has only reused the PID of the kernel that created it. *)
+processRunningQ // beginDefinition;
+
+processRunningQ[ pid_Integer, created_ ] :=
+    With[ { procs = Quiet @ SystemProcesses[ "PID" -> pid ] },
+        Which[
+            ! ListQ @ procs, True,
+            procs === { }, False,
+            True,
+            With[ { start = Quiet @ First[ procs ][ "StartTime" ], time = Quiet @ DateObject @ created },
+                ! TrueQ[ DateObjectQ @ start && DateObjectQ @ time && AbsoluteTime @ start > AbsoluteTime @ time + 5 ]
+            ]
+        ]
+    ];
+
+processRunningQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

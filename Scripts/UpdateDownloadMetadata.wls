@@ -67,6 +67,9 @@ WithCleanup[
 privateSymbol[ ctx_String, name_String ] := ToExpression[ ctx <> name, InputForm, Hold ];
 privateValue[ ctx_String, name_String ] := ReleaseHold @ privateSymbol[ ctx, name ];
 
+(* Metadata tables that have not been generated yet are treated as empty: *)
+privateTable[ ctx_String, name_String ] := Replace[ privateValue[ ctx, name ], Except[ _Association ] -> <| |> ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Definitions*)
@@ -201,7 +204,12 @@ vectorDBMetadata[ key: { name_String, version_String } ] := Enclose[
         ];
 
         WithCleanup[
-            <| "ArchiveSize" -> dl[ "Size" ], "IndexSize" -> FileByteCount @ index, "Hash" -> dl[ "Hash" ] |>,
+            <|
+                "ArchiveSize" -> dl[ "Size" ],
+                "IndexSize"   -> FileByteCount @ index,
+                "Hash"        -> dl[ "Hash" ],
+                "IndexHash"   -> ConfirmBy[ FileHash[ index, "SHA256", All, "HexString" ], StringQ, "IndexHash" ]
+            |>,
             Quiet[ DeleteFile @ dl[ "File" ]; DeleteDirectory[ dir, DeleteContents -> True ] ]
         ]
     ],
@@ -229,19 +237,30 @@ snippetMetadata[ key: { name_String, version_String } ] := Enclose[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Existing Metadata*)
-existingVectorDBMetadata[ ] := Module[ { sizes, index, hashes },
-    sizes  = privateValue[ $vdbContext, "$vectorDBArchiveSizes"   ];
-    index  = privateValue[ $vdbContext, "$vectorDBIndexSizes"     ];
-    hashes = privateValue[ $vdbContext, "$vectorDBDownloadHashes" ];
+(* All keys from every table are included, so that an entry present in only some of the tables is reported as
+   incomplete (if referenced) or stale (if not), rather than being silently dropped: *)
+existingVectorDBMetadata[ ] := Module[ { sizes, index, hashes, indexHashes },
+    sizes       = privateTable[ $vdbContext, "$vectorDBArchiveSizes"   ];
+    index       = privateTable[ $vdbContext, "$vectorDBIndexSizes"     ];
+    hashes      = privateTable[ $vdbContext, "$vectorDBDownloadHashes" ];
+    indexHashes = privateTable[ $vdbContext, "$vectorDBIndexHashes"    ];
     Association @ Map[
-        # -> <| "ArchiveSize" -> sizes @ #, "IndexSize" -> index @ #, "Hash" -> hashes @ # |> &,
-        Intersection[ Keys @ sizes, Keys @ index, Keys @ hashes ]
+        # -> DeleteMissing @ <|
+            "ArchiveSize" -> Lookup[ sizes      , Key @ # ],
+            "IndexSize"   -> Lookup[ index      , Key @ # ],
+            "Hash"        -> Lookup[ hashes     , Key @ # ],
+            "IndexHash"   -> Lookup[ indexHashes, Key @ # ]
+        |> &,
+        Union[ Keys @ sizes, Keys @ index, Keys @ hashes, Keys @ indexHashes ]
     ]
 ];
 
+$vdbRequired     = { "ArchiveSize", "IndexSize", "Hash", "IndexHash" };
+$snippetRequired = { "ArchiveSize", "Hash" };
+
 existingSnippetMetadata[ ] := Map[
     Replace[ { size_Integer, hash_String } :> <| "ArchiveSize" -> size, "Hash" -> hash |> ],
-    privateValue[ $rdocContext, "$streamableSnippetArchiveInfo" ]
+    privateTable[ $rdocContext, "$streamableSnippetArchiveInfo" ]
 ];
 
 completeEntryQ[ as_Association, keys_List ] := AllTrue[ keys, MatchQ[ as @ #, _Integer? Positive | _String? (StringLength @ # === 64 &) ] & ];
@@ -292,7 +311,10 @@ vectorDBBlock[ data_Association ] := StringRiffle[
         formatTable[ "$vectorDBIndexSizes", data, ToString @ #IndexSize & ],
         "",
         "(* SHA-256 hashes of the downloaded archives (keyed by name and version): *)",
-        formatTable[ "$vectorDBDownloadHashes", data, "\"" <> #Hash <> "\"" & ]
+        formatTable[ "$vectorDBDownloadHashes", data, "\"" <> #Hash <> "\"" & ],
+        "",
+        "(* SHA-256 hashes of the vector index files after extraction (keyed by name and version): *)",
+        formatTable[ "$vectorDBIndexHashes", data, "\"" <> #IndexHash <> "\"" & ]
     },
     "\n"
 ];
@@ -331,10 +353,19 @@ replaceGeneratedBlock[ file_String, tag_String, content_String ] := Enclose[
     Function[ failure, logError[ "Failed to update generated block " <> tag <> " in " <> file ]; failure ]
 ];
 
-writeUTF8[ file_String, text_String ] := WithCleanup[
-    BinaryWrite[ file, StringToByteArray[ text, "UTF-8" ] ],
-    Close @ file
-];
+(* Writes to a sibling temporary file first and then moves it into place, so an interrupted write cannot leave the
+   source file partially written: *)
+writeUTF8[ file_String, text_String ] :=
+    With[ { tmp = file <> "." <> CreateUUID[ ] <> ".tmp" },
+        WithCleanup[
+            WithCleanup[ BinaryWrite[ tmp, StringToByteArray[ text, "UTF-8" ] ], Quiet @ Close @ tmp ];
+            If[ ReadByteArray @ tmp === StringToByteArray[ text, "UTF-8" ],
+                RenameFile[ tmp, file, OverwriteTarget -> True ],
+                $Failed
+            ],
+            Quiet @ If[ FileExistsQ @ tmp, DeleteFile @ tmp ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -350,8 +381,8 @@ $existingSnippet = existingSnippetMetadata[ ];
 
 If[ $checkOnly,
     $missing = Join[
-        Complement[ $vdbKeys, Keys @ Select[ $existingVDB, completeEntryQ[ #, { "ArchiveSize", "IndexSize", "Hash" } ] & ] ],
-        Complement[ $snippetKeys, Keys @ Select[ $existingSnippet, completeEntryQ[ #, { "ArchiveSize", "Hash" } ] & ] ]
+        Complement[ $vdbKeys, Keys @ Select[ $existingVDB, completeEntryQ[ #, $vdbRequired ] & ] ],
+        Complement[ $snippetKeys, Keys @ Select[ $existingSnippet, completeEntryQ[ #, $snippetRequired ] & ] ]
     ];
     $stale = Join[ Complement[ Keys @ $existingVDB, $vdbKeys ], Complement[ Keys @ $existingSnippet, $snippetKeys ] ];
     If[ $missing === { } && $stale === { },
@@ -363,8 +394,8 @@ If[ $checkOnly,
         Exit[ 1 ]
     ]
     ,
-    $vdbData     = collect[ $vdbKeys, $existingVDB, vectorDBMetadata, { "ArchiveSize", "IndexSize", "Hash" } ];
-    $snippetData = collect[ $snippetKeys, $existingSnippet, snippetMetadata, { "ArchiveSize", "Hash" } ];
+    $vdbData     = collect[ $vdbKeys, $existingVDB, vectorDBMetadata, $vdbRequired ];
+    $snippetData = collect[ $snippetKeys, $existingSnippet, snippetMetadata, $snippetRequired ];
 
     result = <|
         "VectorDatabases" -> replaceGeneratedBlock[ $vdbFile, "VectorDatabaseDownloadMetadata", vectorDBBlock @ $vdbData ],

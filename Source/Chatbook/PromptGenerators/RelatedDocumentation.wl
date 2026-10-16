@@ -92,7 +92,6 @@ streamableSnippetArchiveInfo[ name_String, n_Integer ] :=
     ];
 
 $snippetDownloadDeclined = False;
-$snippetLockPersistence  = Infinity;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1375,7 +1374,7 @@ downloadStreamableSnippets[ ] := Enclose[
     Module[ { dir, lock },
         dir  = ConfirmBy[ GeneralUtilities`EnsureDirectory @ $localStreamableSnippetsDirectory, DirectoryQ, "Directory" ];
         lock = FileNameJoin @ { dir, "download.lock" };
-        WithLock[ File @ lock, downloadStreamableSnippetsLocked @ dir, PersistenceTime -> $snippetLockPersistence ]
+        withDownloadLock[ lock, downloadStreamableSnippetsLocked @ dir ]
     ] // LogChatTiming[ "DownloadStreamableSnippets" ],
     throwInternalFailure
 ];
@@ -1406,19 +1405,21 @@ downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] :=
             Throw @ downloadStreamableSnippets[ dir, name, attempt + 1, newRate ]
         ];
 
-        ver = ConfirmBy[ StringReplace[ $streamableSnippetVersions @ name, "." -> "-" ], StringQ, "Version" ];
-        url = ConfirmBy[ URLBuild @ { $streamableSnippetBaseURL, name, ver<>".zip" }, StringQ, "URL" ];
-
-        start    = AbsoluteTime[ ];
-        response = Quiet @ URLDownload[ url, tmp, { "File", "StatusCode" } ];
-        size     = Quiet @ FileByteCount @ tmp;
-        newRate  = If[ IntegerQ @ size && size > 0, size / Max[ AbsoluteTime[ ] - start, 0.001 ], rate ];
-
-        If[ ! MatchQ[ response, KeyValuePattern[ "StatusCode" -> 200 ] ], retry[ ] ];
-        If[ ! validSnippetArchiveQ[ name, tmp ], retry[ ] ];
-
+        (* Ensure the temporary file is removed even if interrupted: *)
         WithCleanup[
+            ver = ConfirmBy[ StringReplace[ $streamableSnippetVersions @ name, "." -> "-" ], StringQ, "Version" ];
+            url = ConfirmBy[ URLBuild @ { $streamableSnippetBaseURL, name, ver<>".zip" }, StringQ, "URL" ];
+
+            start    = AbsoluteTime[ ];
+            response = Quiet @ URLDownload[ url, tmp, { "File", "StatusCode" } ];
+            size     = Quiet @ FileByteCount @ tmp;
+            newRate  = If[ IntegerQ @ size && size > 0, size / Max[ AbsoluteTime[ ] - start, 0.001 ], rate ];
+
+            If[ ! MatchQ[ response, KeyValuePattern[ "StatusCode" -> 200 ] ], retry[ ] ];
+            If[ ! validSnippetArchiveQ[ name, tmp ], retry[ ] ];
+
             Replace[ installSnippetArchive[ dir, name, tmp ], Except[ _String? DirectoryQ ] :> retry[ ] ],
+
             Quiet @ DeleteFile @ tmp
         ]
     ],
@@ -1453,7 +1454,7 @@ downloadStreamableSnippetsLocked[ dir_String ] := Enclose[
             ]
         ];
 
-        Scan[ (Quiet @ $streamableSnippetIndexCache[ # ] =.) &, queue ];
+        $streamableSnippetIndexCache = KeyDrop[ $streamableSnippetIndexCache, queue ];
 
         failed = withApproximateProgress[
             Select[
@@ -1568,7 +1569,7 @@ installSnippetArchive0[ dir_String, name_String, zip_String, staging_String ] :=
         ConfirmBy[ CreateDirectory @ staging, DirectoryQ, "Staging" ];
         ConfirmMatch[ Quiet @ ExtractArchive[ zip, staging, OverwriteTarget -> True ], { __String }, "Extracted" ];
         ConfirmAssert[ streamableSnippetsDirectoryQ0 @ staging, "Validate" ];
-        Quiet @ $streamableSnippetIndexCache[ name ] =.;
+        $streamableSnippetIndexCache = KeyDrop[ $streamableSnippetIndexCache, name ];
 
         If[ DirectoryQ @ target,
             old = target <> ".old-" <> CreateUUID[ ];
