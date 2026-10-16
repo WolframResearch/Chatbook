@@ -106,6 +106,66 @@ VerificationTest[
     TestID   -> "ConfirmDownloadRetry-HeadlessProceeds@@Tests/VectorDatabaseDownloads.wlt:100,1-107,2"
 ]
 
+(* Evaluates eval with a stubbed StopChat and returns { result, list of StopChat calls }: *)
+countStopChat // Attributes = { HoldFirst };
+countStopChat[ eval_ ] := Module[ { calls = { }, result },
+    Block[ { Wolfram`Chatbook`Actions`StopChat },
+        Wolfram`Chatbook`Actions`StopChat[ args___ ] := (AppendTo[ calls, { args } ]; Null);
+        result = eval
+    ];
+    { result, calls }
+];
+
+$fakeChatCell = CellObject[ "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000" ];
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = $fakeChatCell },
+        countStopChat @ withPrompt[ False, Wolfram`Chatbook`PromptGenerators`Common`confirmDownloadPrompt[ "message" ] ]
+    ],
+    { False, { { } } },
+    SameTest -> MatchQ,
+    TestID   -> "ConfirmDownloadPrompt-CancelStopsChat"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = $fakeChatCell },
+        countStopChat @ withPrompt[ True, Wolfram`Chatbook`PromptGenerators`Common`confirmDownloadPrompt[ "message" ] ]
+    ],
+    { True, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ConfirmDownloadPrompt-AcceptDoesNotStopChat"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = None },
+        countStopChat @ withPrompt[ False, Wolfram`Chatbook`PromptGenerators`Common`confirmDownloadPrompt[ "message" ] ]
+    ],
+    { False, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ConfirmDownloadPrompt-CancelOutsideChatDoesNotStopChat"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = $fakeChatCell },
+        countStopChat @ withPrompt[ False, Wolfram`Chatbook`PromptGenerators`Common`confirmDownloadRetry[ "big", 370*^6, 1*^6 ] ]
+    ],
+    { False, { { } } },
+    SameTest -> MatchQ,
+    TestID   -> "ConfirmDownloadRetry-CancelStopsChat"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = $fakeChatCell },
+        Block[ { Wolfram`Chatbook`Actions`StopChat },
+            Wolfram`Chatbook`Actions`StopChat[ ] := Wolfram`Chatbook`Common`throwInternalFailure @ "StopChatFailed";
+            withPrompt[ False, Wolfram`Chatbook`PromptGenerators`Common`confirmDownloadPrompt[ "message" ] ]
+        ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "ConfirmDownloadPrompt-StopChatFailureStillDeclines"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Vector Databases*)

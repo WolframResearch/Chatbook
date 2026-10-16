@@ -27,8 +27,9 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"         ];
+Needs[ "Wolfram`Chatbook`Actions`" ];
+Needs[ "Wolfram`Chatbook`Common`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -53,6 +54,7 @@ $downloadLockPollInterval = 10;
 $staleLockFileAge         = 60;
 
 $downloadPromptFunction := defaultDownloadPrompt;
+$downloadDialogWidth     = 480;
 
 $downloadPromptAllowed := TrueQ @ And[ ! TrueQ @ $CloudEvaluation, TrueQ @ $Notebooks, TrueQ @ $dialogInputAllowed ];
 
@@ -61,17 +63,39 @@ $downloadPromptAllowed := TrueQ @ And[ ! TrueQ @ $CloudEvaluation, TrueQ @ $Note
 (*confirmDownloadPrompt*)
 confirmDownloadPrompt // beginDefinition;
 confirmDownloadPrompt[ message_String ] /; ! $downloadPromptAllowed := True;
-confirmDownloadPrompt[ message_String ] := TrueQ @ $downloadPromptFunction @ message;
+
+confirmDownloadPrompt[ message_String ] :=
+    With[ { confirmed = TrueQ @ $downloadPromptFunction @ message },
+        If[ ! confirmed, stopChatOnCancel[ ] ];
+        confirmed
+    ];
+
 confirmDownloadPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stopChatOnCancel*)
+(* If the download was cancelled during a chat evaluation, stop the chat so the output cell is not left in progress.
+   Only done while a chat is evaluating, since StopChat[] would otherwise act on the most recent chat output. *)
+stopChatOnCancel // beginDefinition;
+
+stopChatOnCancel[ ] :=
+    If[ MatchQ[ $ChatEvaluationCell, _CellObject ],
+        Quiet @ catchAlways @ StopChat[ ];
+    ];
+
+stopChatOnCancel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*defaultDownloadPrompt*)
 defaultDownloadPrompt // beginDefinition;
 
+(* The text wraps to the window width, so it must not be wrapped in a fixed-width Pane that is wider than the window: *)
 defaultDownloadPrompt[ message_String ] := ChoiceDialog[
-    Pane[ Style[ message, "DialogTextBasic", FontSize -> 14 ], ImageSize -> 450 ],
+    Style[ message, "DialogTextCommon", FontSize -> 14 ],
     { tr[ "DownloadButton" ] -> True, tr[ "CancelButton" ] -> False },
+    WindowSize  -> { $downloadDialogWidth, FitAll },
     WindowTitle -> tr[ "DownloadDialogTitle" ]
 ];
 
