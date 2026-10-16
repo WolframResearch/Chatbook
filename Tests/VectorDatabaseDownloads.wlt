@@ -264,6 +264,18 @@ flipIndexBytes[ ] := With[ { f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.u
     ]
 ];
 
+(* Evaluates eval and returns { result, number of times an index file was hashed }: *)
+countIndexHashes // Attributes = { HoldFirst };
+countIndexHashes[ eval_ ] := Module[ { hashed = 0, result },
+    Internal`InheritedBlock[ { FileHash },
+        Unprotect @ FileHash;
+        FileHash[ file_String, args___ ] /; ! TrueQ @ $inFileHash && StringEndsQ[ file, ".usearch" ] :=
+            Block[ { $inFileHash = True }, hashed++; FileHash[ file, args ] ];
+        result = eval
+    ];
+    { result, hashed }
+];
+
 VerificationTest[
     Developer`ReadWXFFile @ FileNameJoin @ { dbDir[ ], "Manifest.wxf" },
     KeyValuePattern[ "IndexFingerprint" -> { 4401488, { __? NumberQ } } ],
@@ -296,19 +308,81 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Module[ { f, manifestFile },
+    Module[ { f, hashes, result },
+        f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
+        (* An unchanged index whose modification date changed (e.g. restored from a backup) is not hashed during normal
+           use, since that can take tens of seconds; it is treated as damaged instead: *)
+        SetFileDate[ f, Now - Quantity[ 1, "Days" ] ];
+        { result, hashes } = countIndexHashes @ validQ[ ];
+        { result, hashes }
+    ],
+    { False, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-TouchedNotHashedByDefault"
+]
+
+VerificationTest[
+    Module[ { f, manifestFile, result, hashes },
         f = FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" };
         manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
-        (* An unchanged index whose modification date changed (e.g. restored from a backup) is verified by hash: *)
-        SetFileDate[ f, Now - Quantity[ 1, "Days" ] ];
+        (* When hashing is allowed (as in InstallVectorDatabases), the intact index is accepted and its new fingerprint recorded: *)
+        { result, hashes } = Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowIndexHashing = True },
+            countIndexHashes @ validQ[ ]
+        ];
         {
-            validQ[ ],
-            Developer`ReadWXFFile[ manifestFile ][ "IndexFingerprint" ] === Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`fileFingerprint @ f
+            result,
+            hashes,
+            Developer`ReadWXFFile[ manifestFile ][ "IndexFingerprint" ] === Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`fileFingerprint @ f,
+            Last @ countIndexHashes @ validQ[ ]
         }
     ],
-    { True, True },
+    { True, 1, True, 0 },
     SameTest -> MatchQ,
     TestID   -> "IndexFingerprint-TouchedButIntact@@Tests/VectorDatabaseDownloads.wlt:298,1-312,2"
+]
+
+VerificationTest[
+    Module[ { manifestFile, manifest },
+        manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
+        manifest = Developer`ReadWXFFile @ manifestFile;
+        (* Simulate the reported modification date shifting by an hour after a DST or time zone change: *)
+        manifest[ "IndexFingerprint" ] = MapAt[ DateList[ AbsoluteTime @ # + 3600 ] &, manifest[ "IndexFingerprint" ], 2 ];
+        Developer`WriteWXFFile[ manifestFile, manifest ];
+        countIndexHashes @ validQ[ ]
+    ],
+    { True, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-TimeZoneChangeNotHashed"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`fingerprintMatchQ @@@ {
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 10, { 2026, 3, 8, 1, 30, 0. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 10, { 2026, 3, 8, 2, 30, 0. } } },
+        { { 10, { 2026, 3, 8, 2, 30, 0. } }, { 10, { 2026, 3, 8, 1, 30, 0. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 10, { 2026, 3, 8, 2, 0, 0. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 10, { 2026, 3, 8, 3, 30, 0. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 10, { 2026, 3, 8, 1, 30, 1. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, { 11, { 2026, 3, 8, 2, 30, 0. } } },
+        { { 10, { 2026, 3, 8, 1, 30, 0. } }, Missing[ ] },
+        { None, None }
+    },
+    { True, True, True, False, False, False, False, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "FingerprintMatchQ"
+]
+
+VerificationTest[
+    Module[ { manifestFile },
+        manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
+        (* Install from an older version whose files were all copied or extracted at the same time: *)
+        DeleteFile @ manifestFile;
+        Scan[ SetFileDate[ #, Now ] &, FileNames[ "*", dbDir[ ] ] ];
+        Append[ countIndexHashes @ validQ[ ], KeyExistsQ[ Developer`ReadWXFFile @ manifestFile, "IndexFingerprint" ] ]
+    ],
+    { True, 0, True },
+    SameTest -> MatchQ,
+    TestID   -> "IndexFingerprint-LegacyInstallSameDatesAdopted"
 ]
 
 VerificationTest[
@@ -330,10 +404,11 @@ VerificationTest[
         manifestFile = FileNameJoin @ { dbDir[ ], "Manifest.wxf" };
         DeleteFile @ manifestFile;
         (* Legacy install whose index was modified after it was installed: *)
+        SetFileDate[ FileNameJoin @ { dbDir[ ], "Version.wl" }, Now - Quantity[ 1, "Days" ] ];
         flipIndexBytes[ ];
-        { validQ[ ], FileExistsQ @ manifestFile }
+        Append[ countIndexHashes @ validQ[ ], FileExistsQ @ manifestFile ]
     ],
-    { False, False },
+    { False, 0, False },
     SameTest -> MatchQ,
     TestID   -> "IndexFingerprint-LegacyInstallModifiedRejected@@Tests/VectorDatabaseDownloads.wlt:328,1-339,2"
 ]
@@ -365,6 +440,33 @@ VerificationTest[
     { True, True, 1 },
     SameTest -> MatchQ,
     TestID   -> "VerifyIndexHashes-HashesOncePerSession@@Tests/VectorDatabaseDownloads.wlt:349,1-368,2"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$localVectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory = $root,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowDownload = False
+        },
+        (* The chat path must never hash indices, even when the recorded fingerprint does not match: *)
+        SetFileDate[ FileNameJoin @ { dbDir[ ], $name <> "-vectors.usearch" }, Now - Quantity[ 2, "Days" ] ];
+        Last @ countIndexHashes @ Quiet @ Wolfram`Chatbook`Common`catchAlways @ Catch[
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vdbTag
+        ]
+    ],
+    0,
+    SameTest -> MatchQ,
+    TestID   -> "GetVectorDB-NeverHashes"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowIndexHashing = True }, validQ[ ] ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "GetVectorDB-NeverHashes-Restore"
 ]
 
 (* ::**************************************************************************************************************:: *)

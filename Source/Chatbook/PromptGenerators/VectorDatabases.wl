@@ -273,6 +273,10 @@ $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
 $loadedVectorDBs     = <| |>;
 
+(* Whether index files whose fingerprint does not match the manifest may be hashed to check if they are still intact
+   (enabled by InstallVectorDatabases; disabled otherwise, since hashing all indices can take tens of seconds): *)
+$allowIndexHashing = False;
+
 (* Set to True to verify index hashes even when the index file appears unchanged: *)
 $verifyIndexHashes         = False;
 $verifiedIndexFingerprints = <| |>;
@@ -519,7 +523,7 @@ registerVectorDatabase // endDefinition;
 InstallVectorDatabases // beginDefinition;
 
 InstallVectorDatabases[ ] :=
-    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True },
+    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True, $allowIndexHashing = True },
         $vectorDBDownloadDeclined = False;
         installVectorDatabases[ ]
     ];
@@ -709,27 +713,31 @@ vectorDBManifestValidQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*vectorDBIndexIntactQ*)
-(* Detects same-size changes to the index file. Hashing large indices is slow, so this is only done when the size or
-   modification date of the index differs from what was recorded in the manifest (or when $verifyIndexHashes is True).
-   Installs from older versions have no recorded fingerprint; their index is only hashed if it was modified after the
-   install was completed. *)
+(* Detects same-size changes to the index file by comparing its size and modification date to the fingerprint recorded
+   in the manifest. Hashing large indices takes tens of seconds, so it is never done during normal use (e.g. the first
+   chat evaluation). An index that no longer matches its fingerprint is treated as damaged and offered for re-download.
+   Hashing is only done when $allowIndexHashing is True (as in InstallVectorDatabases), which allows an intact index
+   with a changed modification date to be accepted again, or when $verifyIndexHashes is True.
+   Installs from older versions have no recorded fingerprint. They are adopted unless the index was clearly modified
+   after the install was completed, in which case it is treated like a fingerprint mismatch. *)
 vectorDBIndexIntactQ // beginDefinition;
 
 vectorDBIndexIntactQ[ dir_String, name_String, version_String ] :=
-    Module[ { file, manifestFile, manifest, fingerprint, recorded },
+    Module[ { file, manifestFile, manifest, fingerprint, recorded, hashQ },
         file         = FileNameJoin @ { dir, name <> "-vectors.usearch" };
         manifestFile = FileNameJoin @ { dir, "Manifest.wxf" };
         manifest     = Replace[ If[ FileExistsQ @ manifestFile, Quiet @ Developer`ReadWXFFile @ manifestFile ], Except[ _Association ] -> <| |> ];
         fingerprint  = fileFingerprint @ file;
         recorded     = Lookup[ manifest, "IndexFingerprint" ];
+        hashQ        = TrueQ @ $allowIndexHashing;
         Which[
             TrueQ @ $verifyIndexHashes,
                 verifiedIndexHashQ[ file, fingerprint, name, version ] && recordIndexFingerprint[ dir, manifest, fingerprint ],
-            fingerprint === recorded,
+            fingerprintMatchQ[ fingerprint, recorded ],
                 True,
-            MissingQ @ recorded && modifiedBeforeQ[ file, FileNameJoin @ { dir, "Version.wl" } ],
+            MissingQ @ recorded && ! modifiedAfterQ[ file, FileNameJoin @ { dir, "Version.wl" } ],
                 recordIndexFingerprint[ dir, manifest, fingerprint ],
-            indexHashValidQ[ file, name, version ],
+            hashQ && indexHashValidQ[ file, name, version ],
                 recordIndexFingerprint[ dir, manifest, fingerprint ],
             True,
                 False
@@ -740,21 +748,40 @@ vectorDBIndexIntactQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*modifiedBeforeQ*)
-(* True if file1 was last modified at least a few seconds before file2 (file dates may only have one-second precision): *)
-modifiedBeforeQ // beginDefinition;
+(*fingerprintMatchQ*)
+(* Modification dates that differ by exactly one hour are considered equal, since file dates can be reported with a
+   different UTC offset after a daylight saving time change or a change of time zone: *)
+fingerprintMatchQ // beginDefinition;
 
-modifiedBeforeQ[ file1_String, file2_String ] := Quiet @ With[
-    { d1 = FileDate[ file1, "Modification" ], d2 = FileDate[ file2, "Modification" ] },
-    TrueQ[ DateObjectQ @ d1 && DateObjectQ @ d2 && AbsoluteTime @ d1 < AbsoluteTime @ d2 - $modificationDateTolerance ]
+fingerprintMatchQ[ fp_, fp_ ] := True;
+
+fingerprintMatchQ[ { size_Integer, date1_List }, { size_Integer, date2_List } ] := TrueQ @ Quiet[
+    Abs[ Abs[ AbsoluteTime @ date1 - AbsoluteTime @ date2 ] - 3600 ] < 0.001
 ];
 
-modifiedBeforeQ // endDefinition;
+fingerprintMatchQ[ _, _ ] := False;
+
+fingerprintMatchQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modifiedAfterQ*)
+(* True if file1 was last modified more than a few seconds after file2 (file dates may only have one-second precision,
+   and files extracted or copied together may have nearly identical dates): *)
+modifiedAfterQ // beginDefinition;
+
+modifiedAfterQ[ file1_String, file2_String ] := Quiet @ With[
+    { d1 = FileDate[ file1, "Modification" ], d2 = FileDate[ file2, "Modification" ] },
+    TrueQ[ DateObjectQ @ d1 && DateObjectQ @ d2 && AbsoluteTime @ d1 > AbsoluteTime @ d2 + $modificationDateTolerance ]
+];
+
+modifiedAfterQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*fileFingerprint*)
-(* The raw modification date is used so that the fingerprint does not depend on the value of $TimeZone: *)
+(* Size and modification date (as a local date list). Compare fingerprints with fingerprintMatchQ, since the reported
+   date can shift by one hour with the UTC offset: *)
 fileFingerprint // beginDefinition;
 
 fileFingerprint[ file_String ] := Quiet @ With[ { date = FileDate[ file, "Modification" ] },
@@ -1412,7 +1439,7 @@ getVectorDB // beginDefinition;
 (* Reuse the loaded database only while its index file is unchanged, since the index is read from disk during search: *)
 getVectorDB[ name_String ] :=
     With[ { cached = $loadedVectorDBs[ name ] },
-        cached[ "Data" ] /; AssociationQ @ cached && cached[ "Fingerprint" ] === loadedIndexFingerprint @ name
+        cached[ "Data" ] /; AssociationQ @ cached && fingerprintMatchQ[ cached[ "Fingerprint" ], loadedIndexFingerprint @ name ]
     ];
 
 getVectorDB[ name_String ] := Enclose[
