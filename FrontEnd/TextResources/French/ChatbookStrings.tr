@@ -308,7 +308,23 @@
 "ProgressTextWaitingForResponse" -> "Attente||R\[EAcute]ception||\[CapitalEAcute]coute||Maintien||Traitement||V\[EAcute]rification",
 "ProgressTextGeneratingSuggestions" -> "G\[EAcute]n\[EAcute]ration de suggestions",
 "ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
-"ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`"
+"ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`",
+"DownloadButton" -> "Download",
+"DownloadDialogTitle" -> "Chatbook",
+"DownloadRedownloadPrompt" -> "The following locally installed `type` appear to be incomplete or corrupt:\n\n`names`\n\nWould you like to download them again (about `size`)?",
+"DownloadRetryPrompt" -> "The download of `label` (about `size`) did not complete.\n\nTrying again may take about `time`. Would you like to try again?",
+"DownloadTypeVectorDatabases" -> "semantic search indices",
+"DownloadTypeVectorDatabase" -> "semantic search index",
+"DownloadTypeDocumentation" -> "documentation resources",
+"DownloadLabelDocumentation" -> "`1` documentation",
+"DownloadSizeGB" -> "`1` GB",
+"DownloadSizeMB" -> "`1` MB",
+"DownloadSizeUnknown" -> "an unknown size",
+"DownloadDurationMinutes" -> "`1` minutes",
+"DownloadDurationSeconds" -> "`1` seconds",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextRetryingSearchIndices" -> "Retrying download of semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|
