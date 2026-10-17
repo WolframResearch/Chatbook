@@ -140,7 +140,7 @@ focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
 focusedNotebookDisplay0[ sidebarCell_CellObject ] :=
 DynamicModule[
     {
-        Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ], Automatic -> False ],
+        Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ], Automatic -> True ],
         Typeset`mouseOver = False
     },
     EventHandler[
