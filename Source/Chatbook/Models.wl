@@ -515,6 +515,7 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Cha
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5."~~DigitCharacter, ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", ("6"|("6."~~DigitCharacter..))~~WordBoundary, ___ } ] ] := "GPT54Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
