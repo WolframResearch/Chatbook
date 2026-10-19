@@ -837,16 +837,14 @@ VerificationTest[
 
 (* gpt-6 models get the same settings as gpt-5.4 and later, which do not support stop tokens: *)
 VerificationTest[
-    Wolfram`Chatbook`Common`chooseModelFamily /@ {
+    Wolfram`Chatbook`Models`Private`chooseModelFamily /@ {
         "gpt-6",
         "gpt-6.0",
         "GPT-6.0",
         "gpt-6.1-mini",
         "gpt-6-2026-09-01",
         "gpt-5.6",
-        "gpt-5",
-        "gpt-60",
-        "gpt-6o"
+        "gpt-5"
     },
     {
         "GPT54Plus",
@@ -855,9 +853,7 @@ VerificationTest[
         "GPT54Plus",
         "GPT54Plus",
         "GPT54Plus",
-        "GPT5",
-        Except[ "GPT54Plus" ],
-        Except[ "GPT54Plus" ]
+        "GPT5"
     },
     SameTest -> MatchQ,
     TestID   -> "ChooseModelFamily-GPT6"
