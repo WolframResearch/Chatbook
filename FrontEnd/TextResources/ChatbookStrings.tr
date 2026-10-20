@@ -193,6 +193,7 @@
 "UIAdvancedToolCallFrequency" -> "Tool Call Frequency",
 "UIAdvancedChooseAutomatically" -> "Choose automatically",
 "UIAdvancedRoles" -> "Roles",
+"UIAdvancedReasoning" -> "Reasoning",
 "UITryEnableChatDialogMainText" -> "Enabling Chat Notebook functionality will destroy the private styles defined in this notebook, and replace them with the shared Chatbook stylesheet.",
 "UITryEnableChatDialogConfirm" -> "Are you sure you wish to continue?",
 "UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
