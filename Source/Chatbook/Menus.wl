@@ -665,6 +665,21 @@ Row[ Flatten @ {
                     CurrentValue[ sidebarNotebook , { TaggingRules, "ChatNotebookSettings", "Model" } ],
                     Wolfram`Chatbook`CurrentChatSettings[ sidebarNotebook , "Model" ] ]
             ],
+        (* An unset or automatic reasoning effort checks the "Automatic" entry; levels match in any spelling: *)
+        "Reasoning",
+            Dynamic[
+                Function[
+                    If[ MatchQ[
+                            Replace[ If[ #1 === Inherited, #2, #1 ], Inherited | Automatic -> "Automatic" ],
+                            s_String /; StringMatchQ[ s, val, IgnoreCase -> True ]
+                        ],
+                        Style[ "\[Checkmark]", FontColor -> c1 ],
+                        Style[ "\[Checkmark]", ShowContents -> False ]
+                    ]
+                ][
+                    CurrentValue[ sidebarNotebook , { TaggingRules, "ChatNotebookSettings", "Reasoning" } ],
+                    Wolfram`Chatbook`CurrentChatSettings[ sidebarNotebook , "Reasoning" ] ]
+            ],
         None,
             "" ],
     Lookup[ spec, "Icon", { " ", resizeMenuIcon @ Graphics[ Background -> Red ] }, Replace[ #, { None :> Nothing, _ :> { " ", resizeMenuIcon @ # } } ]& ]
