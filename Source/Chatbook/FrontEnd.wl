@@ -1207,7 +1207,7 @@ Grid[
     },
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
-    BaseStyle        -> { FontColor -> color, FontFamily -> "Source Sans Pro", FontSize -> 12, ShowStringCharacters -> False },
+    BaseStyle        -> { FontColor -> color, FontFamily -> "Source Sans Pro", FontSize -> 13, ShowStringCharacters -> False },
     Spacings         -> { { Automatic, 0.5, 0.2, { 0.05 (* space between "Used/Using" and tool name *) } }, { } }
 ]
 
