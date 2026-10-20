@@ -1125,7 +1125,7 @@ canonicalCellMessages // endDefinition;
 allowedMultimodalRoles // beginDefinition;
 
 (* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
-allowedMultimodalRoles[ settings_ ] /; TrueQ @ responsesEndpointQ @ settings := { "User" };
+allowedMultimodalRoles[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] := { "User" };
 
 (* A family or service may declare which roles can carry an image; anything undeclared is
    unrestricted, which is what every provider except OpenAI has been verified to allow: *)
