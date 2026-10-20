@@ -458,9 +458,9 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "EndToken"                   -> None,
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
-    (* Reasoning and tools only coexist on the Responses endpoint: *)
-    "Reasoning"                  :> If[ TrueQ @ $responsesAPIAvailable, "Medium", Missing[ "NotSupported" ] ],
+    "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
     "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
+    "ResponsesReasoning"         -> "Medium",
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
     (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. However, there are still
@@ -1069,6 +1069,13 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 
+(* Some models only accept reasoning together with tools on the Responses endpoint, so they declare a separate default
+   for it (e.g. GPT-5.4+, whose "Reasoning" default is "None" elsewhere): *)
+resolveAutoSetting0[ as: KeyValuePattern[ "RequestMethod" -> "Responses" ], "Reasoning" ] :=
+    With[ { s = autoModelSetting[ as, "ResponsesReasoning" ] },
+        s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
+    ];
+
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
@@ -1132,6 +1139,7 @@ $autoSettingKeyDependencies = <|
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
     "OpenToolCallBoxes"          -> "SendToolResponse",
+    "Reasoning"                  -> "RequestMethod",
     "RequestMethod"              -> { "Authentication", "Model" },
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
