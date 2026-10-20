@@ -500,9 +500,9 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                     With[
                         {
-                            chat = constructChatObject @ Append[
+                            chat = constructChatObject @ mergeToolCallMessages @ Append[
                                 $lastMessages,
-                                makeAssistantMessage @ $lastChatString
+                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                             ] // LogChatTiming[ "ConstructChatObject" ]
                         },
                         If[ TrueQ @ settings[ "AutoSaveConversations" ],
