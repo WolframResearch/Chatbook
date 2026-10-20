@@ -231,7 +231,7 @@ formatToolCall0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*reformatTextData*)
 reformatTextData // beginDefinition;
-reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ string;
+reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ neutralizeLinearSyntax @ string;
 reformatTextData // endDefinition;
 
 
@@ -368,23 +368,56 @@ toolCallPartQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*importHTMLEntities*)
+(* HTML entities in the text are decoded, except in code: a code block (also one that is not closed yet) and inline code
+   are kept as they are written, with the formatter's own rules for where they start and end ($textDataFormatRules), so
+   that code such as `StringReplace[html, "&amp;" -> "&"]` keeps its meaning. Each entity is matched on its own, so that
+   adjacent ones ("&lt;&lt;") are all decoded. *)
 importHTMLEntities // beginDefinition;
 
 importHTMLEntities[ string_String ] := StringReplace[
     string,
-    entity: ("&" ~~ Repeated[ Except[ "\n" ], { 1, 6 } ] ~~ ";") :> importHTMLEntity @ entity
+    {
+        code: $$htmlEntityFreeCode :> code,
+        entity: $$htmlEntity :> importHTMLEntity @ entity
+    }
 ];
 
 importHTMLEntities // endDefinition;
 
+
+$$htmlEntityFreeCode = Alternatives[
+    StringExpression[
+        Longest[ "```" ~~ Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ __ ],
+        ("```"|EndOfString)
+    ],
+    "``" ~~ Shortest[ __ ] ~~ "``",
+    "`" ~~ Except[ "`"|"\n" ].. ~~ "`"
+];
+
+(* A named (&amp; &Alpha;), decimal (&#34;) or hexadecimal (&#x41;) entity *)
+$$htmlEntity = "&" ~~ Alternatives[
+    LetterCharacter ~~ Repeated[ LetterCharacter|DigitCharacter, { 0, 31 } ],
+    "#" ~~ Repeated[ DigitCharacter, { 1, 7 } ],
+    "#" ~~ ("x"|"X") ~~ Repeated[ HexadecimalCharacter, { 1, 6 } ]
+] ~~ ";";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*importHTMLEntity*)
+
+(* Decode a named or numeric HTML entity ($$htmlEntity), and keep the entity's case: "&Alpha;" and "&alpha;" are
+   different characters. Anything that is not an entity HTML knows is returned unchanged, never lowercased, so that only
+   genuine entities in the model's text are decoded. Entities are decoded after reformatTextData has replaced the
+   characters of linear syntax, so a numeric entity of one of them (&#xF7C1;) is replaced here (neutralizeLinearSyntax). *)
 importHTMLEntity // beginDefinition;
 
 importHTMLEntity[ entity_String ] := importHTMLEntity[ entity ] =
-    With[ { str = Quiet @ ImportString[ ToLowerCase @ entity, "HTML" ] },
-        If[ StringQ @ str, str, entity ]
+    If[ StringMatchQ[ entity, $$htmlEntity ],
+        With[ { str = Quiet @ ImportString[ entity, "HTML" ] },
+            If[ StringQ @ str && str =!= entity, neutralizeLinearSyntax @ str, entity ]
+        ],
+        entity
     ];
 
 importHTMLEntity // endDefinition;
@@ -500,10 +533,11 @@ makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacte
 makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength @ name > 1 :=
     makeResultCell0 @ inlineCodeCell @ name;
 
+(* TeX can give any character (\char), also those of linear syntax (see neutralizeLinearSyntax): *)
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
-            Cell @ BoxData @ toTeXBoxes @ boxes,
+            Cell @ BoxData @ neutralizeLinearSyntax @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
         ]
     ];
@@ -2330,7 +2364,7 @@ makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
     Framed[
         Framed[
             RawBoxes @ Cell[
-                BoxData @ ToBoxes @ wideScrollPane @ raw,
+                BoxData @ ToBoxes @ wideScrollPane @ neutralizeLinearSyntax @ raw,
                 "Text", "RawToolCall",
                 FontSize   -> 11,
                 Background -> None
@@ -2397,11 +2431,12 @@ makeToolCallInterpretedView // endDefinition;
 (*makeToolCallInputSection*)
 makeToolCallInputSection // beginDefinition;
 
+(* The parameter values are the model's (see neutralizeLinearSyntax) *)
 makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Association ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
         Grid[
-            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, params ],
+            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, neutralizeLinearSyntax @ params ],
             Alignment  -> Left,
             BaseStyle  -> { "Text", LineBreakWithin -> Automatic },
             Dividers   -> All,
@@ -2413,7 +2448,7 @@ makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Associatio
 ];
 
 makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
-    TextCell[ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
+    TextCell[ neutralizeLinearSyntax @ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
 
 makeToolCallInputSection // endDefinition;
 
@@ -2446,9 +2481,10 @@ toolAutoFormatter[ result_String, "Result" ] := RawBoxes @ Cell[
     Background -> None
 ];
 
-toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
+toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ neutralizeLinearSyntax @ parameter;
 
-toolAutoFormatter[ result_, ___ ] := result;
+(* Other results, such as the Dataset of WebSearcher, hold text from the web (see neutralizeLinearSyntax) *)
+toolAutoFormatter[ result_, ___ ] := neutralizeLinearSyntax @ result;
 
 toolAutoFormatter // endDefinition;
 
@@ -2457,6 +2493,14 @@ toolAutoFormatter // endDefinition;
 (*makeToolCallOutputSection*)
 makeToolCallOutputSection // beginDefinition;
 
+(* FIXME: Only toolAutoFormatter (a tool's "FormattingFunction" -> Inherited, the default) removes the front end's linear
+   syntax from a tool's result (see neutralizeLinearSyntax). The parameters are neutralized for every formatter
+   (makeToolCallInputSection), but any other formatter gets the result as it is: clickToCopy for Automatic, the result
+   itself for None, and a tool's own function (e.g. a third-party LLMTool's). If the result holds untrusted text (a web
+   page, a file, an API's answer) and the formatter puts it into boxes (clickToCopy, MakeBoxes, ToBoxes, RawBoxes, a
+   string in a cell), the front end interprets its linear syntax and can evaluate code in this kernel when the tool
+   call's output is shown. The result is not neutralized here because a custom formatter may rely on getting it
+   unchanged. *)
 makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
@@ -2493,6 +2537,10 @@ wideScrollPane // endDefinition;
 (* ::Subsection::Closed:: *)
 (*makeInteractiveCodeCell*)
 makeInteractiveCodeCell // beginDefinition;
+
+(* Code from the model or a tool call is shown as a string in boxes (see neutralizeLinearSyntax) *)
+makeInteractiveCodeCell[ language_, code_String ] /; linearSyntaxQ @ code :=
+    makeInteractiveCodeCell[ language, neutralizeLinearSyntax @ code ];
 
 (* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
@@ -2681,7 +2729,8 @@ makeBlockLabel // endDefinition;
 (*wlStringToBoxes*)
 wlStringToBoxes // beginDefinition;
 
-wlStringToBoxes[ string_String ] /; $dynamicText := formatSpecialBoxes @ string;
+(* While streaming, the string is shown as it is (with no reparse that would replace linear syntax): *)
+wlStringToBoxes[ string_String ] /; $dynamicText := formatSpecialBoxes @ neutralizeLinearSyntax @ string;
 
 wlStringToBoxes[ string_String ] :=
     string // RightComposition[
@@ -2853,13 +2902,31 @@ $pacletRepositoryPacletSymbolBoxes := $pacletRepositoryPacletSymbolBoxes = (
 (*formatEntityBoxes*)
 formatEntityBoxes // beginDefinition;
 
+(* MakeBoxes of an entity with a qualifier list can evaluate the qualifier values (which could be any code, e.g.
+   EntityProperty[..., { "Date" -> (dangerousCode; 2020) }]), so the parsed expression is first held and checked to be
+   an entity built only from literal atoms before it is sent to MakeBoxes; anything else keeps the plain boxes. *)
 formatEntityBoxes[ boxes_RowBox ] :=
-    Quiet @ Module[ { new },
-        new = Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ];
+    Quiet @ Module[ { held, new },
+        held = Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ];
+        new  = If[ MatchQ[ held, _[ $$possibleSafeEntity ] ],
+                   Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ],
+                   boxes
+               ];
         formatEntityBoxes[ Verbatim[ boxes ] ] = If[ MatchQ[ new, _TemplateBox ], new, boxes ]
     ];
 
 formatEntityBoxes // endDefinition;
+
+
+(* An entity (Entity, EntityClass or EntityProperty) whose every argument is a literal atom or a flat list of literal
+   atoms. Qualifier lists of rules and any other non-literal content are excluded, so MakeBoxes can run no code from
+   them (see formatEntityBoxes). Built with `With` so the literal alternatives are injected into the held pattern. *)
+$$safeEntityLiteral = _String | _Integer | _Real | True | False | None | Automatic;
+
+$$possibleSafeEntity := $$possibleSafeEntity = With[
+    { arg = $$safeEntityLiteral | { $$safeEntityLiteral ... } },
+    HoldPattern[ (Entity|EntityClass|EntityProperty)[ arg .. ] ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2882,11 +2949,20 @@ formatDateObjectBoxes[ boxes_RowBox ] :=
 formatDateObjectBoxes // endDefinition;
 
 
-$$possibleDateObject = HoldPattern @ DateObject[
-    { (_Real|_Integer).. },
-    ___String,
-    (_Real|_Integer)...,
-    OptionsPattern[ ]
+(* A DateObject that is safe to evaluate (ReleaseHold) just to render it: its coordinate list and any positional
+   arguments are literal numbers or strings, and every option is a plain Rule (never RuleDelayed) from an option symbol
+   to a literal atom (or a flat list of literal atoms). This rejects options such as `TimeZone -> (dangerousCode; 0)`,
+   whose held right-hand side would otherwise be evaluated by ReleaseHold. Built with `With` so the literal
+   alternatives are injected into the held pattern instead of a helper symbol that HoldPattern would keep unevaluated. *)
+$$dateObjectLiteral = _String | _Integer | _Real | True | False | None | Automatic;
+
+$$possibleDateObject := $$possibleDateObject = With[
+    { opt = $$dateObjectLiteral | { $$dateObjectLiteral ... } },
+    HoldPattern @ DateObject[
+        { (_Real|_Integer).. },
+        (_String|_Integer|_Real)...,
+        (_Symbol -> opt) ...
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -3073,6 +3149,105 @@ styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ 
 styleBox[ a_, ___ ] := a;
 
 styleBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*neutralizeLinearSyntax*)
+
+(* Text that the formatter shows (the model's answers, tool results such as fetched web pages, an external agent's
+   answers) ends up as strings in boxes, and its code is turned into boxes by the front end (reparseBoxStructurePacket).
+   The private-use characters U+F7C0 to U+F7CD of the front end's linear syntax would make the front end turn such a
+   string into boxes chosen by whoever wrote the text, and their box constructor (U+F7C8) makes it evaluate a box
+   expression in the kernel, with any code in it, so they are replaced with U+FFFD in all text that is formatted
+   (reformatTextData, makeInteractiveCodeCell, reparseBoxStructurePacket), in the characters that the formatter makes
+   from the text afterwards (HTML entities, TeX), and in what a tool call shows (the model's parameters, the raw tool
+   call, toolAutoFormatter's results). The same backslash sequences typed as text (ASCII) are not linear syntax and need
+   nothing. Some genuine text has these characters: results of the sandbox in a form such as TraditionalForm, and
+   CellToString of a string or message cell with linear syntax. A model that repeats such text in its answer or code
+   now shows U+FFFD and the box text instead of the formatted expression (the tool call's own output, formatted by
+   sandboxFormatter from the result, is unchanged). Also used by the ACP window for any text from the agent or the
+   repository (acpNeutralizeLinearSyntax). *)
+neutralizeLinearSyntax // beginDefinition;
+
+(* A search for each character as a literal string is fast (megabytes are checked in milliseconds); a pattern of
+   alternatives would be much slower. *)
+neutralizeLinearSyntax[ s_String ] := If[ linearSyntaxQ @ s,
+    StringReplace[ s, Alternatives @@ $linearSyntaxCharacters -> "\:fffd" ],
+    s
+];
+
+(* Any other expression (boxes, a tool's parameters or result) has every string in it replaced: *)
+neutralizeLinearSyntax[ expr_ ] := ReplaceAll[
+    expr,
+    s_String? linearSyntaxQ :> RuleCondition @ neutralizeLinearSyntax @ s
+];
+
+neutralizeLinearSyntax // endDefinition;
+
+
+linearSyntaxQ // beginDefinition;
+linearSyntaxQ[ s_String ] := AnyTrue[ $linearSyntaxCharacters, StringContainsQ[ s, # ] & ];
+linearSyntaxQ // endDefinition;
+
+$linearSyntaxCharacters = Characters @ FromCharacterCode @ Range[ 63424, 63437 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withUntrustedContent*)
+
+(* Formats text that comes from an untrusted source (an LLM tool result, an external agent's answer, the notebook
+   tools' markdown). For a chat answer the formatter loads and evaluates things that such text must not make it do in
+   the user's kernel: it imports markdown images from their URL, file or cloud object (with no time limit), and its
+   special forms of Wolfram Language code (formatSpecialBoxes, for code blocks and inline code) query Wolfram|Alpha,
+   the resource system and the paclet repository, and evaluate DateObject expressions (whose options can be any code).
+   Under this switch, none of that happens: markdown images become links to their sources (untrustedImageLink), code is
+   kept as it is written, nothing is imported or looked up online, and HTML entities are not decoded. Callers outside
+   `Formatting.wl` reach this through `Wolfram`Chatbook`Common`` (see ACP/Rendering.wl and ACP/NotebookTools.wl). *)
+withUntrustedContent // beginDefinition;
+withUntrustedContent // Attributes = { HoldFirst };
+
+withUntrustedContent[ eval_ ] := Block[
+    {
+        image              = untrustedImageLink,
+        formatSpecialBoxes = Identity,
+        importHTMLEntities = Identity
+    },
+    eval
+];
+
+withUntrustedContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*untrustedImageLink*)
+
+(* A markdown image as a text cell with a link to its URL or file, labeled with its alt text (or the URL if it has
+   none), instead of the imported image. A cell of its own, as the image would be. The formatter calls `image` with the
+   image's alt text and URL (alt is None for an expression URI), or with the markdown of a code block that is only an
+   image. *)
+untrustedImageLink // beginDefinition;
+
+untrustedImageLink[ markdown_String ] := Replace[
+    StringCases[
+        StringTrim @ markdown,
+        StartOfString ~~ "![" ~~ alt___ ~~ "](" ~~ url__ ~~ ")" ~~ EndOfString :> untrustedImageLink[ alt, url ]
+    ],
+    { { link_Cell } :> link, _ :> markdown }
+];
+
+untrustedImageLink[ alt_, url_String ] := Cell[
+    TextData @ {
+        ButtonBox[
+            If[ StringQ @ alt && StringTrim @ alt =!= "", StringTrim @ alt, url ],
+            BaseStyle  -> "Hyperlink",
+            ButtonData -> { URL @ url, None },
+            ButtonNote -> url
+        ]
+    },
+    "Text"
+];
+
+untrustedImageLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -3677,9 +3852,10 @@ stringToBoxes0 // endDefinition;
 (*reparseBoxStructurePacket*)
 reparseBoxStructurePacket // beginDefinition;
 
+(* The front end would evaluate the box expressions of linear syntax in the string (see neutralizeLinearSyntax) *)
 reparseBoxStructurePacket[ string_String ] := Replace[
     usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
-        string,
+        neutralizeLinearSyntax @ string,
         ShowStringCharacters -> True
     ],
     StyleBox[ boxes_, ___ ] :> boxes

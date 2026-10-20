@@ -797,3 +797,302 @@ VerificationTest[
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Untrusted Content Safety*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+(* :!CodeAnalysis::Disable::GlobalSymbol:: *)
+
+(* The finished-mode formatter turns DateObject[...] boxes into a date, which evaluates the expression (ReleaseHold).
+   An option whose value is arbitrary code (never a literal atom), or a RuleDelayed option, must not be evaluated: the
+   boxes are kept as plain code instead. This holds in a code block, in inline code, and in a tool result formatted by
+   toolAutoFormatter. The probe symbol would be assigned if the option value were evaluated. *)
+VerificationTest[
+    {
+        Block[ { Global`cbDateProbe = "unset" },
+            FormatChatOutput[
+                "```wl\nDateObject[{2024, 1, 1}, TimeZone -> (Global`cbDateProbe = 1; 0)]\n```",
+                <| "Status" -> "Finished" |>
+            ];
+            Global`cbDateProbe
+        ],
+        Block[ { Global`cbDateProbe = "unset" },
+            FormatChatOutput[
+                "```wl\nDateObject[{2024, 1, 1}, TimeZone :> (Global`cbDateProbe = 1; 0)]\n```",
+                <| "Status" -> "Finished" |>
+            ];
+            Global`cbDateProbe
+        ],
+        Block[ { Global`cbDateProbe = "unset" },
+            FormatChatOutput[
+                "Use `DateObject[{2024, 1, 1}, TimeZone -> (Global`cbDateProbe = 1; 0)]` here.",
+                <| "Status" -> "Finished" |>
+            ];
+            Global`cbDateProbe
+        ],
+        Block[ { Global`cbDateProbe = "unset" },
+            Wolfram`Chatbook`Formatting`Private`toolAutoFormatter[
+                "Fetched page:\n```wl\nDateObject[{2024, 1, 1}, TimeZone -> (Global`cbDateProbe = 1; 0)]\n```\n",
+                "Result"
+            ];
+            Global`cbDateProbe
+        ]
+    },
+    { "unset", "unset", "unset", "unset" },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-DateObject-Options-Not-Evaluated@@Tests/Formatting.wlt:814,1-848,2"
+]
+
+(* A DateObject with a literal option (and with positional arguments only) still formats as a date, so the protection
+   does not break the common case: *)
+VerificationTest[
+    {
+        FreeQ[ StringToBoxes[ "DateObject[{2024, 1, 1}, TimeZone -> \"America/New_York\"]", "WL" ], TemplateBox[ _, "DateObject", ___ ] ],
+        FreeQ[ StringToBoxes[ "DateObject[{2024, 1, 1}, \"Day\", \"Gregorian\", -5.]", "WL" ], TemplateBox[ _, "DateObject", ___ ] ]
+    },
+    { False, False },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-DateObject-Literal-Option-Still-Formats@@Tests/Formatting.wlt:852,1-860,2"
+]
+
+(* An entity whose qualifier list holds arbitrary code (e.g. EntityProperty's third argument) must not be evaluated by
+   MakeBoxes: the boxes are kept as plain code. The probe would be assigned if the qualifier value were evaluated. *)
+VerificationTest[
+    {
+        Block[ { Global`cbEntProbe = "unset" },
+            StringToBoxes[ "EntityProperty[\"Country\", \"Population\", {\"Date\" -> (Global`cbEntProbe = 1; 2020)}]", "WL" ];
+            Global`cbEntProbe
+        ],
+        FreeQ[ StringToBoxes[ "EntityProperty[\"Country\", \"Population\", {\"Date\" -> (expr; 2020)}]", "WL" ], _TemplateBox ]
+    },
+    { "unset", True },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-Entity-Qualifier-Not-Evaluated@@Tests/Formatting.wlt:864,1-875,2"
+]
+
+(* HTML entities in the model's text are decoded only when they are real named or numeric entities, with their case
+   kept, each on its own (also adjacent ones); anything else (e.g. a bit of code that looks like "&...;") is returned
+   unchanged, never lowercased: *)
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`importHTMLEntities /@ {
+        "result = Map[#^2 &, M];",
+        "a && B;",
+        "#&/@L;",
+        "x &amp; y",
+        "&Alpha; and &alpha;",
+        "&#34;q&#34;",
+        "&amp;",
+        "&lt;&gt;",
+        "cout &lt;&lt; x",
+        "a &gt;&gt; b",
+        "x&lt;y;",
+        "&#x3C;b&#62;"
+    },
+    {
+        "result = Map[#^2 &, M];",
+        "a && B;",
+        "#&/@L;",
+        "x & y",
+        "\[CapitalAlpha] and \[Alpha]",
+        "\"q\"",
+        "&",
+        "<>",
+        "cout << x",
+        "a >> b",
+        "x<y;",
+        "<b>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ImportHTMLEntity-Real-Entities-Only@@Tests/Formatting.wlt:880,1-911,2"
+]
+
+(* Code keeps its HTML entities as they are written, in code blocks (also one that is not closed yet) and inline code,
+   while the same entities in the text around it are decoded: *)
+VerificationTest[
+    {
+        Wolfram`Chatbook`Formatting`Private`importHTMLEntities[
+            "Use &lt;b&gt;:\n```wl\nStringReplace[html, {\"&lt;\" -> \"<\", \"&amp;\" -> \"&\"}]\n```\nthen `a &amp;&amp; b` and ``x &lt; y`` &amp; more"
+        ],
+        Wolfram`Chatbook`Formatting`Private`importHTMLEntities[ "Streaming &amp;\n```python\nhtml.replace('&amp;', '&')" ],
+        Cases[
+            FormatChatOutput[ "```python\nhtml.replace('&amp;', '&')\n```", <| "Status" -> "Finished" |> ],
+            s_String /; StringContainsQ[ s, "html.replace" ] :> StringContainsQ[ s, "'&amp;'" ],
+            Infinity
+        ],
+        ! FreeQ[
+            FormatChatOutput[ "```wl\nStringReplace[html, \"&lt;\" -> \"<\"]\n```", <| "Status" -> "Streaming" |> ],
+            s_String /; StringContainsQ[ s, "&lt;" ]
+        ]
+    },
+    {
+        "Use <b>:\n```wl\nStringReplace[html, {\"&lt;\" -> \"<\", \"&amp;\" -> \"&\"}]\n```\nthen `a &amp;&amp; b` and ``x &lt; y`` & more",
+        "Streaming &\n```python\nhtml.replace('&amp;', '&')",
+        { __? TrueQ },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim@@Tests/Formatting.wlt:915,1-939,2"
+]
+
+(* The untrusted-content switch keeps the formatter from importing markdown images (they become links to their source)
+   and from evaluating special boxes (a Wolfram|Alpha query, a DateObject: both are kept as code), and decodes no HTML
+   entities (the "&amp;" is kept). Without the switch the same text queries Wolfram|Alpha and formats the date, so the
+   test can't pass because the formatter does neither anyway. Queries are unique, as their results are cached. *)
+VerificationTest[
+    Module[ { imageCalls = { }, alphaCalls = { }, query, format },
+        query[ ] := "population of " <> CreateUUID[ ];
+        format[ text_ ] := FormatChatOutput[ text, <| "Status" -> "Finished" |> ];
+        Block[
+            {
+                Import       = (AppendTo[ imageCalls, { ## } ]; $Failed) &,
+                WolframAlpha = (AppendTo[ alphaCalls, { ## } ]; $Failed) &
+            },
+            {
+                ! FreeQ[
+                    Wolfram`Chatbook`Common`withUntrustedContent @ format[ "![alt](https://example.com/x.png)" ],
+                    ButtonBox[ "alt", ___, ButtonData -> { URL[ "https://example.com/x.png" ], None }, ___ ]
+                ],
+                imageCalls,
+                Wolfram`Chatbook`Common`withUntrustedContent @ format[ "```wl\n\[FreeformPrompt][\"" <> query[ ] <> "\"]\n```" ];
+                alphaCalls,
+                format[ "```wl\n\[FreeformPrompt][\"" <> query[ ] <> "\"]\n```" ];
+                Length @ alphaCalls,
+                FreeQ[
+                    Wolfram`Chatbook`Common`withUntrustedContent @ format[ "```wl\nDateObject[{2024, 1, 1}, TimeZone -> \"America/New_York\"]\n```" ],
+                    TemplateBox[ _, "DateObject", ___ ]
+                ],
+                FreeQ[
+                    format[ "```wl\nDateObject[{2024, 1, 1}, TimeZone -> \"America/New_York\"]\n```" ],
+                    TemplateBox[ _, "DateObject", ___ ]
+                ],
+                ! FreeQ[
+                    Wolfram`Chatbook`Common`withUntrustedContent @ format[ "x &amp; y" ],
+                    s_String /; StringContainsQ[ s, "&amp;" ]
+                ]
+            }
+        ]
+    ],
+    { True, { }, { }, 1, True, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-Switch-Disables-Effects@@Tests/Formatting.wlt:945,1-982,2"
+]
+
+(* The front end's linear syntax (private-use characters) in the model's text, in a tool result or in the code of a
+   tool call never makes the front end evaluate a box expression (with the code in it) and never reaches
+   the output boxes, where the front end would turn it into boxes when it shows them: the characters are replaced with
+   U+FFFD. The probe would gain an entry if the box expression were evaluated. *)
+VerificationTest[
+    Module[ { payload, linearSyntaxQ, results },
+        payload[ tag_String ] := "f[\!\(\*RowBox[{AppendTo[Global`cbLinearSyntaxProbe, \"" <> tag <> "\"]; \"x\"}]\)]";
+        linearSyntaxQ[ expr_ ] := ! FreeQ[ expr, s_String /; StringContainsQ[ s, "\!" | "\(" | "\*" ] ];
+        Global`cbLinearSyntaxProbe = { };
+        results = {
+            FormatChatOutput[ "```wl\n" <> payload[ "block" ] <> "\n```", <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Run `" <> payload[ "inline" ] <> "` now.", <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Some text " <> payload[ "text" ], <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Some text " <> payload[ "streaming" ], <| "Status" -> "Streaming" |> ],
+            FormatChatOutput[
+                StringJoin[
+                    "TOOLCALL: WebFetcher\n{\"url\": \"https://example.com\"}\nRESULT\nFetched page:\n```wl\n",
+                    payload[ "toolcall" ],
+                    "\n```\nENDRESULT(abc123)\nENDTOOLCALL"
+                ],
+                <| "Status" -> "Finished" |>
+            ],
+            Block[ { Wolfram`Chatbook`Common`$dynamicText = False },
+                Wolfram`Chatbook`Common`makeInteractiveCodeCell[ "Wolfram", payload[ "code" ] ]
+            ],
+            StringToBoxes[ payload[ "stringToBoxes" ], "WL" ]
+        };
+        {
+            Global`cbLinearSyntaxProbe,
+            linearSyntaxQ /@ results,
+            (* the code is still shown, with the replacement characters *)
+            ! FreeQ[ #, s_String /; StringContainsQ[ s, "\:fffd" ] ] & /@ results
+        }
+    ],
+    { { }, { False, False, False, False, False, False, False }, { True, True, True, True, True, True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-LinearSyntax-Not-Evaluated@@Tests/Formatting.wlt:988,1-1021,2"
+]
+
+(* The characters of linear syntax are also replaced when the formatter makes them from the text, after the text itself
+   was checked: from hexadecimal or decimal HTML entities (in prose, and in inline code whose backticks are entities too,
+   streaming or finished) and from TeX's \char, also by the untrusted-content formatter (which decodes no entity but
+   does format TeX). Other entities are still decoded. *)
+VerificationTest[
+    Module[ { linearSyntaxQ, entities, tex, results },
+        linearSyntaxQ[ expr_ ] := ! FreeQ[ expr, s_String /; AnyTrue[ ToCharacterCode @ s, 63424 <= # <= 63437 & ] ];
+        entities = "&#xF7C1;&#xF7C9;RowBox[{&#34;x&#34;}]&#63424;";
+        tex = "$$\\text{\\char63425\\char63433 x\\char63424}$$";
+        results = {
+            FormatChatOutput[ "Some text " <> entities, <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Some text " <> entities, <| "Status" -> "Streaming" |> ],
+            FormatChatOutput[ "Run &#96;f[" <> entities <> "]&#96; now.", <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Run &#96;f[" <> entities <> "]&#96; now.", <| "Status" -> "Streaming" |> ],
+            FormatChatOutput[ "Math: " <> tex, <| "Status" -> "Finished" |> ],
+            FormatChatOutput[ "Math: " <> tex, <| "Status" -> "Streaming" |> ],
+            Wolfram`Chatbook`Common`withUntrustedContent @ FormatChatOutput[ "Math: " <> tex, <| "Status" -> "Finished" |> ]
+        };
+        {
+            linearSyntaxQ /@ results,
+            ! FreeQ[ #, s_String /; StringContainsQ[ s, "\:fffd" ] ] & /@ results,
+            Wolfram`Chatbook`Formatting`Private`importHTMLEntity /@ { "&#xF7C1;", "&#63432;", "&#x41;", "&#66;" }
+        }
+    ],
+    {
+        { False, False, False, False, False, False, False },
+        { True, True, True, True, True, True, True },
+        { "\:fffd", "\:fffd", "A", "B" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-LinearSyntax-Decoded-Characters@@Tests/Formatting.wlt:1027,1-1054,2"
+]
+
+(* What a tool call shows besides its text: the model's parameters (with the tool's formatter, with clickToCopy, or as
+   a query string), the raw tool call, and a result that toolAutoFormatter shows as an expression (WebSearcher's
+   Dataset, a list) have the characters replaced. Expressions without them are left as they are. A Dataset is checked by
+   its Normal form, as patterns do not always see the strings in it. *)
+VerificationTest[
+    Module[ { linearSyntaxQ, payload, results },
+        linearSyntaxQ[ expr_ ] := ! FreeQ[ expr, s_String /; AnyTrue[ ToCharacterCode @ s, 63424 <= # <= 63437 & ] ];
+        payload = "q \!\(\*RowBox[{\"x\"}]\)";
+        results = ReplaceAll[ d_Dataset :> RuleCondition @ Normal @ d ] @ {
+            Wolfram`Chatbook`Formatting`Private`makeToolCallInputSection @ <|
+                "Parameters"         -> <| "query" -> payload |>,
+                "FormattingFunction" -> Wolfram`Chatbook`Common`toolAutoFormatter
+            |>,
+            Wolfram`Chatbook`Formatting`Private`makeToolCallInputSection @ <|
+                "Parameters"         -> <| "query" -> payload |>,
+                "FormattingFunction" -> (Wolfram`Chatbook`Common`clickToCopy[ #1 ] &)
+            |>,
+            Wolfram`Chatbook`Formatting`Private`makeToolCallInputSection @ <| "Parameters" -> payload |>,
+            Wolfram`Chatbook`Formatting`Private`makeToolCallRawView @ <|
+                "ToolCall" -> "TOOLCALL: web_searcher\n{\"query\": \"" <> payload <> "\"}"
+            |>,
+            Wolfram`Chatbook`Formatting`Private`makeToolCallOutputSection @ <|
+                "Result"             -> <| "Result" -> Dataset @ { <| "Title" -> payload |> }, "String" -> "" |>,
+                "FormattingFunction" -> Wolfram`Chatbook`Common`toolAutoFormatter
+            |>,
+            Wolfram`Chatbook`Common`toolAutoFormatter[ { payload }, "Result" ]
+        };
+        {
+            linearSyntaxQ /@ results,
+            ! FreeQ[ #, s_String /; StringContainsQ[ s, "\:fffd" ] ] & /@ results,
+            Wolfram`Chatbook`Common`neutralizeLinearSyntax @ <| "a" -> { "b", 1, None } |>
+        }
+    ],
+    {
+        { False, False, False, False, False, False },
+        { True, True, True, True, True, True },
+        <| "a" -> { "b", 1, None } |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "UntrustedContent-LinearSyntax-ToolCall-Views@@Tests/Formatting.wlt:1060,1-1096,2"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)

@@ -3921,6 +3921,15 @@ sandboxFormatter[ code_String, "Parameters", "code" ] :=
 sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
     sandboxFormatter[ result, "Result" ];
 
+(* FIXME: The result of the model's code is shown live: its boxes are made with MakeBoxes in this kernel and shown as they
+   are in the chat. Results with dynamic content (Manipulate, DynamicModule: see fancyResultQ) are meant to work here, so
+   the front end evaluates their Dynamic code in this kernel, outside the sandbox, as soon as the tool call's output is
+   shown. Strings in the result can also hold the front end's linear syntax (e.g. ToString[ x^2, StandardForm ]), whose
+   box constructor makes the front end evaluate any box expression in this kernel. So code that the model runs in the
+   sandbox can, through its result, run code in the user's kernel. The result is not passed through
+   neutralizeLinearSyntax, which would not stop the dynamic content and would break the display of genuine
+   linear syntax. Fixing this needs a decision on how sandbox results are shown (e.g. inert boxes, or dynamic content
+   that is evaluated in the sandbox). *)
 sandboxFormatter[ result_, "Result" ] :=
     RawBoxes @ makeInteractiveCodeCell[ "Wolfram", Cell[ BoxData @ Quiet @ MakeBoxes @ result, "Input" ] ];
 
