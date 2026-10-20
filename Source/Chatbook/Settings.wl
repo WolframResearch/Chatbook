@@ -712,7 +712,10 @@ resolveReasoningEffort[ settings_Association ] /; ! KeyExistsQ[ settings, "Model
     settings[ "Reasoning" ];
 
 resolveReasoningEffort[ settings_Association ] :=
-    resolveReasoningEffort[ settings[ "Reasoning" ], autoModelSetting[ settings, "ReasoningEfforts" ] ];
+    resolveReasoningEffort[
+        settings[ "Reasoning" ],
+        requestMethodReasoningEfforts[ settings, autoModelSetting[ settings, "ReasoningEfforts" ] ]
+    ];
 
 (* Families that declare no effort levels are left exactly as they were: *)
 resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
@@ -727,6 +730,20 @@ resolveReasoningEffort[ effort_String, levels: { __String } ] :=
 resolveReasoningEffort[ value_, levels_ ] := value;
 
 resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestMethodReasoningEfforts*)
+requestMethodReasoningEfforts // beginDefinition;
+
+(* "Max" is only accepted on the Responses endpoint (gpt-5.6 offers it there, but stops at "XHigh" on chat
+   completions), so on chat completions it clamps to the next level down: *)
+requestMethodReasoningEfforts[ KeyValuePattern[ "RequestMethod" -> "ChatCompletions" ], levels: { __String } ] :=
+    DeleteCases[ levels, level_ /; StringMatchQ[ level, "Max", IgnoreCase -> True ] ];
+
+requestMethodReasoningEfforts[ settings_, levels_ ] := levels;
+
+requestMethodReasoningEfforts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
