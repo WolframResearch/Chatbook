@@ -14,7 +14,8 @@ Needs[ "Wolfram`Chatbook`CodeCheck`" ];
 reformatTextData // beginDefinition;
 
 (* The rules only look for "\n", so "\r\n" and a lone "\r" (both line endings in CommonMark) become "\n" first: *)
-reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ StringReplace[ string, "\r\n" | "\r" -> "\n" ];
+reformatTextData[ string_String ] :=
+    reformatTextData0 @ autoCorrect @ neutralizeLinearSyntax @ StringReplace[ string, "\r\n" | "\r" -> "\n" ];
 
 reformatTextData // endDefinition;
 
@@ -72,17 +73,33 @@ importHTMLEntities // beginDefinition;
 importHTMLEntities[ string_String ] /; $htmlEntitiesDecoded := string;
 
 (* Named entities (case-sensitive, as in HTML) and numeric ones are decoded in a single pass, so "&amp;lt;" gives
-   "&lt;". Anything else is left as it is: *)
+   "&lt;". Anything else is left as it is. Code is kept as it is written: a code block (also one that is not closed yet)
+   and inline code, with the formatter's own rules for where they start and end ($textDataFormatRules), so that code
+   such as `StringReplace[html, "&amp;" -> "&"]` keeps its meaning. Numeric entities can give the characters of linear
+   syntax (&#xF7C1;), which are replaced (see neutralizeLinearSyntax): *)
 importHTMLEntities[ string_String ] := StringReplace[
     string,
     {
-        e: ("&#" ~~ ("x"|"X") ~~ hex: HexadecimalCharacter.. ~~ ";") :> codePointString[ FromDigits[ hex, 16 ], e ],
-        e: ("&#" ~~ decimal: CharacterRange[ "0", "9" ].. ~~ ";")    :> codePointString[ FromDigits @ decimal, e ],
-        e: ("&" ~~ name: WordCharacter.. ~~ ";")                    :> Lookup[ $htmlEntities, name, e ]
+        code: $$htmlEntityFreeCode :> code,
+        e: ("&#" ~~ ("x"|"X") ~~ hex: HexadecimalCharacter.. ~~ ";") :>
+            neutralizeLinearSyntax @ codePointString[ FromDigits[ hex, 16 ], e ],
+        e: ("&#" ~~ decimal: CharacterRange[ "0", "9" ].. ~~ ";") :>
+            neutralizeLinearSyntax @ codePointString[ FromDigits @ decimal, e ],
+        e: ("&" ~~ name: WordCharacter.. ~~ ";") :> Lookup[ $htmlEntities, name, e ]
     }
 ];
 
 importHTMLEntities // endDefinition;
+
+$$htmlEntityFreeCode = Alternatives[
+    StringExpression[
+        Longest[ "```" ~~ Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ __ ],
+        ("```"|EndOfString)
+    ],
+    "``" ~~ Shortest[ __ ] ~~ "``",
+    "`" ~~ Except[ "`"|"\n" ].. ~~ "`"
+];
 
 $htmlEntitiesDecoded = False;
 
@@ -288,10 +305,11 @@ makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacte
 makeResultCell0[ mathCell[ name_String ] ] /; systemNameQ @ name && StringLength @ name > 1 :=
     makeResultCell0 @ inlineCodeCell @ name;
 
+(* TeX can give any character (\char), also those of linear syntax (see neutralizeLinearSyntax): *)
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = makeTeXBoxes @ StringReplace[ math, $texUnescapeRules ] },
         If[ MatchQ[ boxes, _RawBoxes ],
-            Cell @ BoxData @ toTeXBoxes @ boxes,
+            Cell @ BoxData @ neutralizeLinearSyntax @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
         ]
     ];

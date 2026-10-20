@@ -90,6 +90,10 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] /; StringS
         cell /; cell =!= None
     ];
 
+(* Code from the model or a tool call is shown as a string in boxes (see neutralizeLinearSyntax) *)
+makeInteractiveCodeCell[ language_, code_String ] /; linearSyntaxQ @ code :=
+    makeInteractiveCodeCell[ language, neutralizeLinearSyntax @ code ];
+
 (* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,

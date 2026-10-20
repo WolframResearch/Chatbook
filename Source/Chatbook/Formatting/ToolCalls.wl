@@ -372,7 +372,7 @@ makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
     Framed[
         Framed[
             RawBoxes @ Cell[
-                BoxData @ ToBoxes @ wideScrollPane @ raw,
+                BoxData @ ToBoxes @ wideScrollPane @ neutralizeLinearSyntax @ raw,
                 "Text", "RawToolCall",
                 FontSize   -> 11,
                 Background -> None
@@ -439,11 +439,12 @@ makeToolCallInterpretedView // endDefinition;
 (*makeToolCallInputSection*)
 makeToolCallInputSection // beginDefinition;
 
+(* The parameter values are the model's (see neutralizeLinearSyntax) *)
 makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Association ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
         Grid[
-            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, params ],
+            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, neutralizeLinearSyntax @ params ],
             Alignment  -> Left,
             BaseStyle  -> { "Text", LineBreakWithin -> Automatic },
             Dividers   -> All,
@@ -455,7 +456,7 @@ makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Associatio
 ];
 
 makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
-    TextCell[ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
+    TextCell[ neutralizeLinearSyntax @ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
 
 makeToolCallInputSection // endDefinition;
 
@@ -488,9 +489,10 @@ toolAutoFormatter[ result_String, "Result" ] := RawBoxes @ Cell[
     Background -> None
 ];
 
-toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
+toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ neutralizeLinearSyntax @ parameter;
 
-toolAutoFormatter[ result_, ___ ] := result;
+(* Other results, such as the Dataset of WebSearcher, hold text from the web (see neutralizeLinearSyntax) *)
+toolAutoFormatter[ result_, ___ ] := neutralizeLinearSyntax @ result;
 
 toolAutoFormatter // endDefinition;
 
@@ -499,6 +501,14 @@ toolAutoFormatter // endDefinition;
 (*makeToolCallOutputSection*)
 makeToolCallOutputSection // beginDefinition;
 
+(* FIXME: Only toolAutoFormatter (a tool's "FormattingFunction" -> Inherited, the default) removes the front end's linear
+   syntax from a tool's result (see neutralizeLinearSyntax). The parameters are neutralized for every formatter
+   (makeToolCallInputSection), but any other formatter gets the result as it is: clickToCopy for Automatic, the result
+   itself for None, and a tool's own function (e.g. a third-party LLMTool's). If the result holds untrusted text (a web
+   page, a file, an API's answer) and the formatter puts it into boxes (clickToCopy, MakeBoxes, ToBoxes, RawBoxes, a
+   string in a cell), the front end interprets its linear syntax and can evaluate code in this kernel when the tool
+   call's output is shown. The result is not neutralized here because a custom formatter may rely on getting it
+   unchanged. *)
 makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];

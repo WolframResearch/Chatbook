@@ -15,8 +15,9 @@ wlStringToBoxes // beginDefinition;
 
 (* While streaming, the code from the start of a fold is hidden behind an icon until the code block is complete, since
    finding where the fold ends would need bracket matching: *)
+(* While streaming, the string is shown as it is (with no reparse that would replace linear syntax): *)
 wlStringToBoxes[ string_String ] /; $dynamicText :=
-    formatSpecialBoxes @ StringReplace[
+    formatSpecialBoxes @ neutralizeLinearSyntax @ StringReplace[
         string,
         "IconizedObject" ~~ (("[" ~~ ___) | EndOfString) :> $foldedCodePlaceholder
     ];
@@ -210,11 +211,18 @@ $pacletRepositoryPacletSymbolBoxes := $pacletRepositoryPacletSymbolBoxes = (
 (*formatEntityBoxes*)
 formatEntityBoxes // beginDefinition;
 
+(* MakeBoxes of an entity with a qualifier list can evaluate the qualifier values (which could be any code, e.g.
+   EntityProperty[..., { "Date" -> (dangerousCode; 2020) }]), so the parsed expression is first held and checked to be
+   an entity built only from literal atoms before it is sent to MakeBoxes; anything else keeps the plain boxes. *)
 formatEntityBoxes[ boxes_RowBox ] := Lookup[
     $entityBoxesCache,
     boxes,
-    Quiet @ Module[ { new },
-        new = Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ];
+    Quiet @ Module[ { held, new },
+        held = Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ];
+        new  = If[ MatchQ[ held, _[ $$possibleSafeEntity ] ],
+                   Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ],
+                   boxes
+               ];
         addToCache[
             $entityBoxesCache,
             $maxEntityBoxesCacheSize,
@@ -225,6 +233,17 @@ formatEntityBoxes[ boxes_RowBox ] := Lookup[
 ];
 
 formatEntityBoxes // endDefinition;
+
+
+(* An entity (Entity, EntityClass or EntityProperty) whose every argument is a literal atom or a flat list of literal
+   atoms. Qualifier lists of rules and any other non-literal content are excluded, so MakeBoxes can run no code from
+   them (see formatEntityBoxes). Built with `With` so the literal alternatives are injected into the held pattern. *)
+$$safeEntityLiteral = _String | _Integer | _Real | True | False | None | Automatic;
+
+$$possibleSafeEntity := $$possibleSafeEntity = With[
+    { arg = $$safeEntityLiteral | { $$safeEntityLiteral ... } },
+    HoldPattern[ (Entity|EntityClass|EntityProperty)[ arg .. ] ]
+];
 
 $entityBoxesCache        = <| |>;
 $maxEntityBoxesCacheSize = 500;
@@ -250,11 +269,20 @@ formatDateObjectBoxes[ boxes_RowBox ] :=
 formatDateObjectBoxes // endDefinition;
 
 
-$$possibleDateObject = HoldPattern @ DateObject[
-    { (_Real|_Integer).. },
-    ___String,
-    (_Real|_Integer)...,
-    OptionsPattern[ ]
+(* A DateObject that is safe to evaluate (ReleaseHold) just to render it: its coordinate list and any positional
+   arguments are literal numbers or strings, and every option is a plain Rule (never RuleDelayed) from an option symbol
+   to a literal atom (or a flat list of literal atoms). This rejects options such as `TimeZone -> (dangerousCode; 0)`,
+   whose held right-hand side would otherwise be evaluated by ReleaseHold. Built with `With` so the literal
+   alternatives are injected into the held pattern instead of a helper symbol that HoldPattern would keep unevaluated. *)
+$$dateObjectLiteral = _String | _Integer | _Real | True | False | None | Automatic;
+
+$$possibleDateObject := $$possibleDateObject = With[
+    { opt = $$dateObjectLiteral | { $$dateObjectLiteral ... } },
+    HoldPattern @ DateObject[
+        { (_Real|_Integer).. },
+        (_String|_Integer|_Real)...,
+        (_Symbol -> opt) ...
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -420,9 +448,10 @@ stringToBoxes0 // endDefinition;
 (*reparseBoxStructurePacket*)
 reparseBoxStructurePacket // beginDefinition;
 
+(* The front end would evaluate the box expressions of linear syntax in the string (see neutralizeLinearSyntax) *)
 reparseBoxStructurePacket[ string_String ] := Replace[
     usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
-        string,
+        neutralizeLinearSyntax @ string,
         ShowStringCharacters -> True
     ],
     StyleBox[ boxes_, ___ ] :> boxes
