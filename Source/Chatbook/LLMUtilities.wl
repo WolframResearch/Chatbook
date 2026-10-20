@@ -411,7 +411,10 @@ extractBodyChunks0 // endDefinition;
 (*reasoningEnvelope*)
 
 (* The reasoning UI is driven by `<think>` markers in the response text, but reasoning arrives as structured chunks,
-   so the markers are inserted here. Streaming delivers one delta per call, hence the `$reasoningOpen` latch. *)
+   so the markers are inserted here. Streaming delivers one delta per call, hence the `$reasoningOpen` latch.
+   On the Responses endpoint, convertReasoningChunks and convertReasoningContent (Reasoning.wl) have already turned
+   reasoning into summary think tags before this point, so this serves the chat completions path, where LLMConnections
+   streams carry "ReasoningChunk" (Anthropic, Cohere, Ollama) and Anthropic results carry "Reasoning" parts. *)
 
 reasoningEnvelope // beginDefinition;
 
