@@ -307,6 +307,8 @@ During chat processing, `resolveTools` (`Tools/Common.wl`) assigns the resolved 
 
 Tool implementations use this to read their configuration: e.g., `Sandbox.wl` reads `"EvaluationTimeConstraint"`, `"Method"`, `"AllowedReadPaths"`, `"AllowedWritePaths"`, `"AllowedExecutePaths"`, `"AppendURIPrompt"`, and `"PingTimeConstraint"` for `"WolframLanguageEvaluator"`; `WolframAlpha.wl` reads `"DefaultPods"`, `"FoldPods"`, and `"MaxPodByteCount"`; `WebFetcher.wl` reads `"MaxContentLength"`.
 
+The `"WolframLanguageEvaluator"` tool evaluates each top-level expression in its code as a separate input, like an interactive kernel session: CodeParser splits the code without creating symbols, and each input is parsed in the evaluator kernel right before it's evaluated, with its own `In`/`Out` line. `"EvaluationTimeConstraint"` applies to the whole tool call, and evaluation stops at the first input that exceeds the remaining time.
+
 ### Programmatic Access
 
 Users can modify tool options via `SetToolOptions` (exported in `Main.wl`):

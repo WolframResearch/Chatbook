@@ -76,7 +76,7 @@
 "FormattingToolUsingLoading" -> "\:B3C4\:AD6C \:C0AC\:C6A9\[Ellipsis]",
 "FormattingThinkingActive" -> "\:C0DD\:AC01\:C911\[Ellipsis]",
 "FormattingThinkingComplete" -> "`time`\:CD08 \:B3D9\:C548 \:C0DD\:AC01",
-"FormattingThinkingCompleteSingular" -> "Thought for a second",
+"FormattingThinkingCompleteSingular" -> "1 \:cd08 \:b3d9\:c548 \:c0dd\:ac01",
 "FormattingThinkingCompleteFallback" -> "\:C0DD\:AC01",
 "FormattingHide" -> "\:C228\:AE30\:AE30",
 
