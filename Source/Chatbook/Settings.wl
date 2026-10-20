@@ -483,6 +483,17 @@ $modelAutoSettings[ Automatic, "GPT56Cyber" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
+(* Pro models reject some of their families' default effort levels (e.g. gpt-5-pro only accepts "high"), so they
+   request summaries without an effort, and OpenAI applies the model's own default: *)
+$modelAutoSettings[ Automatic, "GPT5Pro" ] = <|
+    "Reasoning"          -> <| "summary" -> "auto" |>,
+    "ResponsesReasoning" -> <| "summary" -> "auto" |>
+|>;
+
+$modelAutoSettings[ Automatic, "GPT52Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
+$modelAutoSettings[ Automatic, "GPT54Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
+$modelAutoSettings[ Automatic, "GPT55Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
+
 $gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
 
 (* ::**************************************************************************************************************:: *)
