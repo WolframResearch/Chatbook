@@ -831,4 +831,90 @@ VerificationTest[
     TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:824,1-832,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*gpt-6*)
+
+(* gpt-6 models get the same settings as gpt-5.4 and later, which do not support stop tokens: *)
+VerificationTest[
+    Wolfram`Chatbook`Models`Private`chooseModelFamily /@ {
+        "gpt-6",
+        "gpt-6.0",
+        "GPT-6.0",
+        "gpt-6.1-mini",
+        "gpt-6-2026-09-01",
+        "gpt-5.6",
+        "gpt-5"
+    },
+    {
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT5"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ChooseModelFamily-GPT6"
+]
+
+VerificationTest[
+    Function[
+        name,
+        Wolfram`Chatbook`Common`autoModelSetting[ <| "Service" -> "OpenAI", "Name" -> name |>, # ] & /@ {
+            "StopTokens",
+            "Temperature",
+            "PresencePenalty"
+        }
+    ] /@ { "gpt-6", "gpt-6.0", "gpt-5.6" },
+    ConstantArray[ Missing[ "NotSupported" ], { 3, 3 } ],
+    SameTest -> MatchQ,
+    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`stopTokensSupportedQ /@ {
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6" |> |>,
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |> |>
+    },
+    { False, False },
+    SameTest -> MatchQ,
+    TestID   -> "StopTokensSupportedQ-GPT6"
+]
+
+(* No "stop" parameter is sent for gpt-6, so the stop tokens are emulated instead: *)
+VerificationTest[
+    Block[ { $AutomaticAssistance = False },
+        Function[
+            settings,
+            {
+                Wolfram`Chatbook`SendChat`Private`makeStopTokens @ settings,
+                Wolfram`Chatbook`SendChat`Private`emulatedStopTokens @ settings
+            }
+        ] @ Wolfram`Chatbook`Common`resolveAutoSettings @ <|
+            Wolfram`Chatbook`Common`$defaultChatSettings,
+            "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>
+        |>
+    ],
+    { _Missing, { "\n/exec" } },
+    SameTest -> MatchQ,
+    TestID   -> "StopTokens-GPT6-NotSent"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        Automatic,
+        <|
+            "Model"       -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>,
+            "StopTokens"  -> { "[NONE]" },
+            "Temperature" -> 0.7,
+            "MaxTokens"   -> 250
+        |>
+    ],
+    <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>, "MaxTokens" -> 250 |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-GPT6"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
