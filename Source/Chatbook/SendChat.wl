@@ -764,7 +764,10 @@ makeReasoningParameter // beginDefinition;
 
 makeReasoningParameter[ settings_Association ] :=
     With[ { effort = resolveReasoningEffort @ settings },
-        If[ TrueQ @ responsesEndpointQ @ settings, requestReasoningSummary @ effort, effort ]
+        If[ MatchQ[ settings, KeyValuePattern[ "RequestMethod" -> "Responses" ] ],
+            requestReasoningSummary @ effort,
+            effort
+        ]
     ];
 
 makeReasoningParameter // endDefinition;
@@ -1123,23 +1126,6 @@ chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings
 );
 
 chatSubmit0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*resolveChatEndpoint*)
-
-(* The LLMServices functions for each endpoint. Which endpoint a request uses is decided by the "Endpoint" setting,
-   resolved in resolveAutoSettings (see responsesEndpointQ in Settings.wl); this only maps that decision onto the
-   synchronous and streaming functions, so a chat cannot mix endpoints: *)
-$completionsEndpoint := <| "Synchronous" -> LLMServices`Chat    , "Streaming" -> LLMServices`ChatSubmit     |>;
-$responsesEndpoint   := <| "Synchronous" -> LLMServices`Response, "Streaming" -> LLMServices`ResponseSubmit |>;
-
-resolveChatEndpoint // beginDefinition;
-
-resolveChatEndpoint[ settings_Association ] :=
-    If[ TrueQ @ responsesEndpointQ @ settings, $responsesEndpoint, $completionsEndpoint ];
-
-resolveChatEndpoint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2262,7 +2248,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         toolID = tinyHash[ toolResponse, 9 ];
-        If[ ! TrueQ @ responsesEndpointQ @ settings, toolCall = insertToolID[ toolCall, toolID ] ];
+        If[ ! MatchQ[ settings, KeyValuePattern[ "RequestMethod" -> "Responses" ] ],
+            toolCall = insertToolID[ toolCall, toolID ]
+        ];
         toolResponse = insertToolID[ toolResponse, toolID, toolCall ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];

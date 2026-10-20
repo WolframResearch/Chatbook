@@ -38,7 +38,6 @@ $defaultChatSettings = <|
     "EnableChatGroupSettings"        -> False,
     "EnabledBasePrompts"             -> Automatic,
     "EnableLLMServices"              -> Automatic,
-    "Endpoint"                       -> Automatic,
     "EndToken"                       -> Automatic,
     "ExcludedBasePrompts"            -> Automatic,
     "ExperimentalFeatures"           -> Automatic,
@@ -132,19 +131,6 @@ $modelInheritedLists = {
     "ExcludedBasePrompts"
 };
 
-(* Check both the version of LLMFunctions that starts to support Responses endpoint and if the necessary endpoint
-   functions exist: *)
-$responsesEndpointAvailable := $responsesEndpointAvailable = (
-    Quiet @ Needs[ "LLMServices`" -> None ];
-    TrueQ @ And[
-        ! Quiet @ PacletNewerQ[ "2.4", PacletObject[ "Wolfram/LLMFunctions" ] ],
-        ContainsAll[
-            SymbolName /@ Cases[ Flatten @ { LLMServices`$LLMServicesEndpoints }, _Symbol ],
-            { "Response", "ResponseSubmit" }
-        ]
-    ]
-);
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*responsesServiceQ*)
@@ -152,7 +138,7 @@ responsesServiceQ // beginDefinition;
 
 (* Whether the installed LLMFunctions can serve the Responses endpoint for the given service: *)
 responsesServiceQ[ service_String ] := And[
-    TrueQ @ $responsesEndpointAvailable,
+    TrueQ @ $responsesAPIAvailable,
     TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
     TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
 ];
@@ -297,11 +283,6 @@ $modelAutoSettings[ "OpenAI", Automatic ] = <|
     "ToolMethod"                 -> "Service",
     "ToolCallExamplePromptStyle" -> "Basic"
 |>;
-
-(* Families that prefer the Responses endpoint on OpenAI. This is only a preference: chooseEndpoint still falls back to
-   chat completions when the installed LLMFunctions cannot provide the endpoint for the service. *)
-$modelAutoSettings[ "OpenAI", "GPT54Plus" ] = <| "Endpoint" -> "Responses" |>;
-$modelAutoSettings[ "OpenAI", "GPT56Plus" ] = <| "Endpoint" -> "Responses" |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -478,7 +459,7 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
     (* Reasoning and tools only coexist on the Responses endpoint: *)
-    "Reasoning"                  :> If[ TrueQ @ $responsesEndpointAvailable, "Medium", Missing[ "NotSupported" ] ],
+    "Reasoning"                  :> If[ TrueQ @ $responsesAPIAvailable, "Medium", Missing[ "NotSupported" ] ],
     "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
@@ -1084,10 +1065,6 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 
-(* A model's "Endpoint" setting is only a preference, so it goes through the support check rather than being used
-   directly like other model-specific defaults: *)
-resolveAutoSetting0[ as_, "Endpoint" ] := chooseEndpoint @ as;
-
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
@@ -1141,7 +1118,6 @@ $autoSettingKeyDependencies = <|
     "Authentication"             -> "Model",
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "BypassResponseChecking"     -> "ForceSynchronous",
-    "Endpoint"                   -> "Model",
     "ExperimentalFeatures"       -> { "WolframAlphaCAGEnabled", "WebSearchRAGMethod", "PromptGenerators" },
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
@@ -1182,43 +1158,6 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*chooseEndpoint*)
-chooseEndpoint // beginDefinition;
-
-(* Resolved here rather than at submit time, so the endpoint that will actually be used is visible in
-   AbsoluteCurrentChatSettings and $ChatHandlerData. A model family prefers Responses by declaring it in
-   $modelAutoSettings; anything short of a fully resolved model spec uses chat completions: *)
-chooseEndpoint[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> service_String, "Family" -> family_String } ] ] :=
-    If[ And[
-            autoModelSetting[ toBaseServiceName @ service, model[ "Name" ], model[ "BaseID" ], family, "Endpoint" ] === "Responses",
-            responsesServiceQ @ service
-        ],
-        "Responses",
-        "ChatCompletions"
-    ];
-
-chooseEndpoint[ _ ] := "ChatCompletions";
-
-chooseEndpoint // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*responsesEndpointQ*)
-responsesEndpointQ // beginDefinition;
-
-(* Whether a request with these settings goes to the Responses endpoint. An explicit "Responses" still needs a
-   supporting service; unresolved settings are resolved on the spot: *)
-responsesEndpointQ[ settings: KeyValuePattern[ "Model" -> model: KeyValuePattern @ { "Service" -> _String, "Family" -> _String } ] ] :=
-    With[ { endpoint = Replace[ Lookup[ settings, "Endpoint", Automatic ], Automatic :> chooseEndpoint @ settings ] },
-        endpoint === "Responses" && responsesServiceQ @ model[ "Service" ]
-    ];
-
-responsesEndpointQ[ _ ] := False;
-
-responsesEndpointQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
