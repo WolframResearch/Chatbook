@@ -843,10 +843,10 @@ chatObject := chatObject = Symbol[ "System`ChatObject" ];
 revertMultimodalContent // beginDefinition;
 
 (* "ReasoningContent" controls what happens to reasoning parts:
-     "Preserve": a message holding them is left as it is, since they carry opaque state that is replayed verbatim
-     "Drop":     they are removed when the content is flattened to text
-     "Summary":  each part's readable summary is kept as a <think> block when the content is flattened to text *)
-revertMultimodalContent // Options = { "ReasoningContent" -> "Preserve" };
+     "Drop":     they are removed when the content is flattened to text (the default, and main's behavior)
+     "Summary":  each part's readable summary is kept as a <think> block when the content is flattened to text
+     "Preserve": a message holding them is left as it is, since they carry opaque state that is replayed verbatim *)
+revertMultimodalContent // Options = { "ReasoningContent" -> "Drop" };
 
 revertMultimodalContent[ messages_List, opts: OptionsPattern[ ] ] :=
     revertMultimodalContent[ #, opts ] & /@ messages;
