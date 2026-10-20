@@ -411,6 +411,50 @@ acpCommandLineSetting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*acpOwnAgentCommandQ*)
+
+(* Whether the window settings run the agent's own program (name: the registry's name), which gets the window's
+   environment (e.g. OPENCODE_CONFIG_CONTENT with its "ask" rules): the registry's command line, a program (with the
+   agent's arguments: the "Locate OpenCode..." file, a path to opencode), or a whole command line whose program has the
+   name of the registry's program (e.g. {"/opt/oc/bin/opencode", "acp", "--print-logs"}). Not a command line that runs
+   another program, such as docker, env, ssh or a wrapper script, which may not pass the environment on. Pure (the MCP
+   server's handler uses it through MCP.wl's acpMCPEnabledQ). *)
+acpOwnAgentCommandQ // beginDefinition;
+
+acpOwnAgentCommandQ[ name_, settings_Association ] := Replace[
+    acpCommandLineSetting @ settings,
+    {
+        None | { "Program", _ }                    -> True,
+        { "CommandLine", { program_String, ___ } } :> agentProgramQ[ Lookup[ $acpAgents, name, <| |> ], program ],
+        _                                          -> False
+    }
+];
+
+acpOwnAgentCommandQ // endDefinition;
+
+
+(* Whether a program (a path or a command name) has the name of the agent's program: the same file name without its
+   extension (opencode, /usr/local/bin/opencode, opencode.cmd), in any case on Windows. False for an agent whose
+   program is found by a function. *)
+agentProgramQ // beginDefinition;
+
+agentProgramQ[ agent_Association, program_String ] := With[
+    {
+        own = Replace[
+            Lookup[ agent, "Executable", None ],
+            { p_String | File[ p_String ] | { p_String, ___ } :> FileBaseName @ p, _ -> None }
+        ]
+    },
+    StringQ @ own && If[ $OperatingSystem === "Windows",
+        ToLowerCase @ FileBaseName @ program === ToLowerCase @ own,
+        FileBaseName @ program === own
+    ]
+];
+
+agentProgramQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*acpFindProgram*)
 
 (* acpFindProgram[program, env] gives the absolute path of a program, or None:
@@ -523,12 +567,15 @@ acpOpenCodeConfigJSON[ llmKit_ ] := Developer`WriteRawJSONString[ openCodeConfig
 acpOpenCodeConfigJSON // endDefinition;
 
 
+(* Edits, shell commands and the notebook tools that change open notebooks (MCP.wl's acpMCPToolPermissions, e.g.
+   "WolframNotebooks_InsertCells") ask for permission. These rules only reach an agent that gets the environment: see
+   acpOwnAgentCommandQ. *)
 openCodeConfig // beginDefinition;
 
 openCodeConfig[ llmKit_ ] := Join[
     <|
         "$schema"    -> $openCodeConfigSchema,
-        "permission" -> <| "edit" -> "ask", "bash" -> "ask" |>
+        "permission" -> <| "edit" -> "ask", "bash" -> "ask", acpMCPToolPermissions[ ] |>
     |>,
     If[ TrueQ @ llmKit, <| "provider" -> <| "llmkit" -> $llmKitProvider |> |>, <| |> ]
 ];

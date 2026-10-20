@@ -33,6 +33,14 @@ $maxLineLength       = 300;
 $diffContextLines    = 3;
 $permissionPreviewHeight = 260;
 $permissionArmDelay  = 0.4;  (* seconds before permission buttons accept clicks *)
+$permissionScriptLines   = 80;  (* lines of a script (code mode) in the permission panel *)
+$permissionScriptLength  = 20000; (* characters of those lines (which are not cut) in the permission panel *)
+$permissionArgumentLines = 12;  (* lines of an argument (markdown) in the permission panel *)
+$permissionCallLimit     = 12;  (* tool references of a script listed in the permission panel *)
+$permissionHeadlineTools = 6;   (* tools named in the headline of the permission panel for a script *)
+
+(* The parameters of the notebook tools (NotebookTools.wl), in the order they are shown *)
+$notebookToolParameters = { "notebook", "cell", "position", "cells", "offset", "limit", "markdown" };
 $clockTicks          = 5;    (* the Working header's elapsed time is refreshed every 5 publisher ticks (1 s) *)
 $cacheSweepTicks     = 50;
 $codeFont            = "Source Code Pro";
@@ -95,21 +103,13 @@ acpColor // endDefinition;
 (* Text from the agent or the repository (diff lines, file names and contents, git's messages) is shown as strings in
    boxes. The private-use characters U+F7C0 to U+F7CD of the front end's linear syntax would make the front end turn
    such a string into boxes chosen by whoever wrote the text (styles that hide text, or dynamic content that evaluates
-   code), so they are replaced with U+FFFD. Typed backslashes are escaped by ToBoxes and need nothing. *)
+   code), so they are replaced with U+FFFD (neutralizeLinearSyntax, in Formatting.wl, which also does this for all the
+   text that Chatbook's formatter formats). Typed backslashes are escaped by ToBoxes and need nothing. A search for each
+   character as a literal string is fast: megabytes of patch text are checked in milliseconds. *)
 acpNeutralizeLinearSyntax // beginDefinition;
-
-(* A search for each character as a literal string is fast (megabytes of patch text are checked in milliseconds); a
-   pattern of alternatives would be much slower. *)
-acpNeutralizeLinearSyntax[ s_String ] := If[ AnyTrue[ $linearSyntaxCharacters, StringContainsQ[ s, # ] & ],
-    StringReplace[ s, Alternatives @@ $linearSyntaxCharacters -> "\:fffd" ],
-    s
-];
-
+acpNeutralizeLinearSyntax[ s_String ] := neutralizeLinearSyntax @ s;
 acpNeutralizeLinearSyntax[ other_ ] := other;
-
 acpNeutralizeLinearSyntax // endDefinition;
-
-$linearSyntaxCharacters = Characters @ FromCharacterCode @ Range[ 63424, 63437 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -503,7 +503,7 @@ markdownItems // endDefinition;
 streamingItems // beginDefinition;
 
 streamingItems[ id_, key_, text0_String ] := Module[ { text, split, prefix, tail, cache, items, newPart },
-    text   = acpPreprocessAnswer @ text0;
+    text   = acpPreprocessAnswer @ acpNeutralizeLinearSyntax @ text0;
     split  = stableSplitPosition @ text;
     prefix = StringTake[ text, split ];
     tail   = StringDrop[ text, split ];
@@ -547,7 +547,7 @@ formatStreaming[ _, text_String, _ ] /; StringTrim @ text === "" := { };
 formatStreaming[ id_, text_String, useCache_ ] := Module[ { cache, items },
     cache = If[ TrueQ @ useCache && StringQ @ id, Lookup[ $turnResultCellCache, id, <| |> ], <| |> ];
     Block[ { $dynamicText = True, $resultCellCache = cache },
-        items = textDataItems @ FormatChatOutput[ text, <| "Status" -> "Streaming" |> ];
+        items = textDataItems @ withUntrustedContent @ FormatChatOutput[ text, <| "Status" -> "Streaming" |> ];
         If[ TrueQ @ useCache && StringQ @ id, $turnResultCellCache[ id ] = $resultCellCache ]
     ];
     items
@@ -561,12 +561,12 @@ formatStreaming // endDefinition;
 finishedItems // beginDefinition;
 
 finishedItems[ text0_String ] := Module[ { text, items },
-    text = acpPreprocessAnswer @ text0;
+    text = acpPreprocessAnswer @ acpNeutralizeLinearSyntax @ text0;
     If[ StringTrim @ text === "", Return[ { }, Module ] ];
     items = If[ frontEndFormattingQ[ ],
         acpCatchAll[
             Block[ { $dynamicText = False, $resultCellCache = <| |> },
-                textDataItems @ FormatChatOutput[ text, <| "Status" -> "Finished" |> ]
+                textDataItems @ withUntrustedContent @ FormatChatOutput[ text, <| "Status" -> "Finished" |> ]
             ]
         ],
         None
@@ -707,10 +707,15 @@ codeBlock // beginDefinition;
    templates (and their Copy/Insert buttons) don't work: *)
 codeBlock[ code_String, _String ] /; TrueQ @ $plainCodeBlocks := plainCodeBoxes @ code;
 
-codeBlock[ code_String, lang_String ] := Module[ { finished, cell },
+(* The code is agent- or tool-controlled, so the front end's linear syntax characters are neutralized (they would make
+   the reparse of Wolfram Language code build boxes the agent chose, e.g. a DynamicBox that evaluates code when shown).
+   Finished Wolfram Language formatting evaluates special boxes (DateObject options, Wolfram|Alpha and resource
+   lookups), so it runs with no effects (withUntrustedContent). The streaming form makes no such evaluations. *)
+codeBlock[ code0_String, lang_String ] := Module[ { code, finished, cell },
+    code     = acpNeutralizeLinearSyntax @ code0;
     finished = $renderMode === "Final" && (! wolframLanguageQ @ lang || frontEndFormattingQ[ ]);
     cell = If[ finished,
-        Catch[ Block[ { $dynamicText = False }, makeInteractiveCodeCell[ lang, code ] ], _, $Failed & ],
+        Catch[ withUntrustedContent @ Block[ { $dynamicText = False }, makeInteractiveCodeCell[ lang, code ] ], _, $Failed & ],
         $Failed
     ];
     If[ MatchQ[ cell, _Cell ],
@@ -729,7 +734,7 @@ plainCodeBoxes // beginDefinition;
 
 plainCodeBoxes[ code_String ] := ToBoxes @ Framed[
     Style[
-        code,
+        acpNeutralizeLinearSyntax @ code,
         FontFamily         -> $codeFont,
         FontSize           -> 12,
         LineBreakWithin    -> Automatic,
@@ -1181,6 +1186,9 @@ inputSection[ tool_Association, key_ ] := Module[ { name, input },
             executeInputSection[ tool, key ],
         name === "subagent",
             subagentInputSection @ input,
+        (* a direct call of the notebook tools (not in code mode): the same view as a call in a script *)
+        StringQ @ acpNotebookToolName @ tool[ "RawName" ],
+            Replace[ argumentsView[ input, False, $notebookToolParameters, <| |> ], view: Except[ None ] :> section[ "SectionInput", view ] ],
         AssociationQ @ input && Length @ input > 0,
             section[ "SectionInput", rawInputGrid @ input ],
         True,
@@ -1198,9 +1206,10 @@ codeLineLimit // endDefinition;
 
 rawInputGrid // beginDefinition;
 
+(* The agent's input: keys and values are shown as plain text (linear syntax neutralized) *)
 rawInputGrid[ input_Association ] := Grid[
     KeyValueMap[
-        { Style[ #1, FontColor -> $mutedColor, FontSize -> 12 ], inputValueView @ #2 } &,
+        { Style[ acpNeutralizeLinearSyntax @ #1, FontColor -> $mutedColor, FontSize -> 12 ], inputValueView @ #2 } &,
         input
     ],
     Alignment -> { Left, Top },
@@ -1212,8 +1221,8 @@ rawInputGrid // endDefinition;
 
 inputValueView // beginDefinition;
 inputValueView[ s_String ] /; StringContainsQ[ s, "\n" ] || StringLength @ s > 80 := RawBoxes @ codeBlock[ truncateHead[ s, codeLineLimit[ ] ], "text" ];
-inputValueView[ s_String ] := Style[ s, FontFamily -> $codeFont, FontSize -> 12 ];
-inputValueView[ other_ ] := Style[ shortJSON @ other, FontFamily -> $codeFont, FontSize -> 12 ];
+inputValueView[ s_String ] := Style[ acpNeutralizeLinearSyntax @ s, FontFamily -> $codeFont, FontSize -> 12 ];
+inputValueView[ other_ ] := Style[ acpNeutralizeLinearSyntax @ shortJSON @ other, FontFamily -> $codeFont, FontSize -> 12 ];
 inputValueView // endDefinition;
 
 
@@ -1228,8 +1237,9 @@ subagentInputSection[ _ ] := None;
 subagentInputSection // endDefinition;
 
 
-(* MCP code mode: each inner Wolfram Language call is shown with Chatbook's WL code formatting; the JavaScript is in a
-   collapsed "Script" section. *)
+(* MCP code mode: each call is shown with its input (while the call runs, as far as the script shows it, see
+   acpExecuteScript): the code of a Wolfram Language call with Chatbook's WL code formatting, the arguments of the
+   notebook tools and of other tools as grids. The JavaScript is in a collapsed "Script" section. *)
 executeInputSection // beginDefinition;
 
 executeInputSection[ tool_Association, key_ ] := Module[ { calls, views, script },
@@ -1255,17 +1265,27 @@ executeInputSection[ tool_Association, key_ ] := Module[ { calls, views, script 
 executeInputSection // endDefinition;
 
 
+(* One call of acpExecuteToolCalls. titles: the window titles of the notebooks that calls of the notebook tools name, as
+   the permission panel has them (see notebookArgumentView); <| |> elsewhere. *)
 executeCallView // beginDefinition;
 
-executeCallView[ call_Association ] := Module[ { name, code },
-    name = First @ acpExecuteToolNames @ <| "RawOutput" -> <| "metadata" -> <| "toolCalls" -> { <| "tool" -> call[ "Tool" ] |> } |> |> |>;
-    code = call[ "Code" ];
+executeCallView[ call_Association ] := executeCallView[ call, <| |> ];
+
+executeCallView[ call_Association, titles_Association ] := Module[ { tool, code, arguments, more },
+    tool      = call[ "Tool" ];
+    code      = call[ "Code" ];
+    arguments = call[ "Arguments" ];
+    more      = TrueQ @ call[ "MoreArguments" ];
     Column[
         {
-            Style[ name, FontColor -> $mutedColor, FontSize -> 12 ],
-            If[ StringQ @ code,
-                RawBoxes @ codeBlock[ truncateHead[ code, codeLineLimit[ ] ], If[ StringContainsQ[ call[ "Tool" ], "Wolfram" ], "Wolfram", "text" ] ],
-                If[ AssociationQ @ call[ "Input" ], rawInputGrid @ call[ "Input" ], Nothing ]
+            Style[ acpNeutralizeLinearSyntax @ shortenText[ acpMCPDisplayName @ tool, 80 ], FontColor -> $mutedColor, FontSize -> 12 ],
+            Which[
+                StringQ @ acpNotebookToolName @ tool,
+                    Replace[ argumentsView[ arguments, more, $notebookToolParameters, titles ], None -> Nothing ],
+                StringQ @ code,
+                    RawBoxes @ codeBlock[ truncateHead[ code, codeLineLimit[ ] ], If[ StringContainsQ[ tool, "Wolfram" ], "Wolfram", "text" ] ],
+                True,
+                    Replace[ argumentsView[ arguments, more, All, titles ], None -> Nothing ]
             ]
         },
         Spacings -> 0.2
@@ -1273,6 +1293,95 @@ executeCallView[ call_Association ] := Module[ { name, code },
 ];
 
 executeCallView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Tool call arguments*)
+
+(* The arguments of a tool call as a grid of keys and values: the parameters of the notebook tools in their order
+   ($notebookToolParameters, other keys are not used by the tools), or All keys. Values that a script does not write as
+   literals are "(computed)" (see acpExecuteScript), and a last row stands for arguments that a spread or a computed
+   key may add (more). The values are the agent's: they are shown as plain text, never formatted. None if there is
+   nothing to show. *)
+argumentsView // beginDefinition;
+
+argumentsView[ _Missing, _, _, _ ] := computedView[ ];
+
+argumentsView[ arguments_Association, more_, keys_, titles_Association ] := Module[ { shown, rows },
+    shown = If[ keys === All, arguments, KeyTake[ arguments, keys ] ];
+    rows  = KeyValueMap[ { argumentKeyView @ #1, argumentValueView[ #1, #2, titles ] } &, shown ];
+    If[ TrueQ @ more, AppendTo[ rows, { argumentKeyView[ "\[Ellipsis]" ], computedView[ ] } ] ];
+    If[ rows === { }, None, Grid[ rows, Alignment -> { Left, Top }, Spacings -> { 1, 0.4 } ] ]
+];
+
+argumentsView[ ___ ] := None;
+
+argumentsView // endDefinition;
+
+
+argumentKeyView // beginDefinition;
+argumentKeyView[ key_ ] := Style[ acpNeutralizeLinearSyntax @ shortenText[ ToString @ key, 40 ], FontColor -> $mutedColor, FontSize -> 12 ];
+argumentKeyView // endDefinition;
+
+
+argumentValueView // beginDefinition;
+
+argumentValueView[ _, _Missing, _ ] := computedView[ ];
+argumentValueView[ "notebook", spec_String, titles_Association ] := notebookArgumentView[ spec, Lookup[ titles, spec, None ] ];
+argumentValueView[ "markdown", text_String, _ ] := RawBoxes @ codeBlock[ truncateHead[ text, argumentLineLimit[ ] ], "text" ];
+argumentValueView[ _, list: { (_String | _Integer | True | False | Null)... }, _ ] := codeText @ StringRiffle[ jsonText /@ list, ", " ];
+argumentValueView[ _, value: (_Integer | True | False | Null), _ ] := codeText @ jsonText @ value;
+argumentValueView[ _, value_, _ ] := inputValueView @ value;
+
+argumentValueView // endDefinition;
+
+
+(* The notebook of a call of the notebook tools: its window title and id, if the permission panel resolved the argument
+   to one of the notebooks the tools reach (see acpNotebookTitles), else the argument as it is *)
+notebookArgumentView // beginDefinition;
+
+notebookArgumentView[ spec_String, KeyValuePattern @ { "ID" -> id_String, "Title" -> title_String } ] := Row[
+    { Style[ acpNeutralizeLinearSyntax @ shortenText[ title, 80 ], FontWeight -> "DemiBold" ], "  ", codeText @ id }
+];
+
+notebookArgumentView[ spec_String, _ ] := codeText @ spec;
+
+notebookArgumentView // endDefinition;
+
+
+codeText // beginDefinition;
+codeText[ s_String ] := Style[ acpNeutralizeLinearSyntax @ shortenText[ s, $maxLineLength ], FontFamily -> $codeFont, FontSize -> 12 ];
+codeText // endDefinition;
+
+
+jsonText // beginDefinition;
+jsonText[ s_String ] := s;
+jsonText[ n_Integer ] := ToString @ n;
+jsonText[ True  ] := "true";
+jsonText[ False ] := "false";
+jsonText[ Null  ] := "null";
+jsonText // endDefinition;
+
+
+computedView // beginDefinition;
+computedView[ ] := Style[ acpLabel[ "ScriptComputed" ], FontColor -> $mutedColor, FontSize -> 12, FontSlant -> Italic ];
+computedView // endDefinition;
+
+
+(* One line, at most n characters *)
+shortenText // beginDefinition;
+shortenText[ s_String, n_Integer ] := With[ { line = StringReplace[ s, WhitespaceCharacter.. -> " " ] },
+    If[ StringLength @ line > n, StringTake[ line, n - 1 ] <> "\[Ellipsis]", line ]
+];
+shortenText // endDefinition;
+
+
+(* Lines of markdown shown for an argument: fewer in the permission panel *)
+argumentLineLimit // beginDefinition;
+argumentLineLimit[ ] := Replace[ $argumentLines, Automatic :> codeLineLimit[ ] ];
+argumentLineLimit // endDefinition;
+
+$argumentLines = Automatic;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2202,13 +2311,21 @@ acpPermissionPanel // endDefinition;
 
 
 permissionSignature // beginDefinition;
-(* The remote home folder is part of it: "Always allow" texts of a remote window resolve ~ with it *)
+(* The remote home folder is part of it: "Always allow" texts of a remote window resolve ~ with it. So are the titles of
+   the notebooks that the request names, which the pump adds after the request arrived (the panel is shown again with
+   them, and its buttons wait again before they accept clicks). *)
 permissionSignature[ nbo_NotebookObject ] := Replace[
     acpIsolated @ Module[ { window, pending },
         window  = Replace[ acpWindowGet @ nbo, Except[ _Association ] -> <| |> ];
         pending = Lookup[ window, "PendingPermissions", <| |> ];
         If[ AssociationQ @ pending && Length @ pending > 0,
-            { First @ Keys @ pending, Length @ pending, Lookup[ window, "ProjectDirectory", None ], acpWindowRemoteHome @ window },
+            {
+                First @ Keys @ pending,
+                Length @ pending,
+                Lookup[ window, "ProjectDirectory", None ],
+                acpWindowRemoteHome @ window,
+                Lookup[ Replace[ First @ pending, Except[ _Association ] -> <| |> ], "NotebookTitles", None ]
+            },
             None
         ]
     ],
@@ -2244,7 +2361,7 @@ permissionPanelContent0 // endDefinition;
 permissionCard // beginDefinition;
 
 permissionCard[ nbo_, window_Association, reqID_, info_Association, i_Integer, n_Integer ] := Module[
-    { params, toolCall, tool, agent, project, paths, headline, preview, options, armAt, buttons, scope },
+    { params, toolCall, tool, agent, project, paths, titles, headline, preview, options, armAt, buttons, scope },
 
     params   = Replace[ Lookup[ info, "Params", <| |> ], Except[ _Association ] -> <| |> ];
     toolCall = Replace[ Lookup[ params, "toolCall", <| |> ], Except[ _Association ] -> <| |> ];
@@ -2253,9 +2370,11 @@ permissionCard[ nbo_, window_Association, reqID_, info_Association, i_Integer, n
     project  = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> "" ];
     (* how paths are resolved: on this computer, or on a remote window's host (POSIX paths, ~ is the remote home) *)
     paths    = acpPathContext @ window;
+    (* the window titles of the notebooks that the request names, resolved by the pump (see acpNotebookTitles) *)
+    titles   = Replace[ Lookup[ info, "NotebookTitles", <| |> ], Except[ _Association ] -> <| |> ];
     (* the labels contain the project folder and paths, which can come from the agent: neutralized *)
     headline = acpNeutralizeLinearSyntax @ permissionHeadline[ tool, toolCall, agent, project ];
-    preview  = permissionPreview[ tool, project ];
+    preview  = permissionPreview[ tool, project, titles ];
     options  = Replace[ Lookup[ params, "options", { } ], Except[ _List ] -> { } ];
     armAt    = AbsoluteTime[ ] + $permissionArmDelay;
     buttons  = permissionButton[ nbo, reqID, #, armAt, tool, agent, project, paths ] & /@ options;
@@ -2342,6 +2461,8 @@ permissionHeadline[ tool_Association, toolCall_Association, agent_, project_ ] :
     Which[
         tool[ "Type" ] === "Permission" || name === "external_directory",
             acpLabel[ "PermissionExternal", <| "agent" -> agent, "path" -> path |> ],
+        name === "execute",
+            scriptHeadline[ tool, agent ],
         name === "shell" || (name === None && tool[ "Kind" ] === "execute"),
             acpLabel[ "PermissionRun", <| "agent" -> agent |> ],
         MatchQ[ name, "edit" | "patch" | "multiedit" ],
@@ -2356,6 +2477,62 @@ permissionHeadline[ tool_Association, toolCall_Association, agent_, project_ ] :
 ];
 
 permissionHeadline // endDefinition;
+
+
+(* A script (code mode): OpenCode's request names neither the tool it asks about nor its input, only "execute" and the
+   script. The headline names every tool that the script names (anywhere, so that a decoy can't take the place of a real
+   call; the edits of open notebooks first), "and other tools" unless these are surely all (scriptToolsShownQ), and
+   none if it names none. *)
+scriptHeadline // beginDefinition;
+
+scriptHeadline[ tool_Association, agent_ ] := Module[ { references, tools, shown },
+    references = acpExecuteToolReferences @ tool;
+    tools      = editToolsFirst @ references[ "Tools" ];
+    shown      = Take[ tools, UpTo[ $permissionHeadlineTools ] ];
+    Which[
+        tools === { },
+            acpLabel[ "PermissionScript", <| "agent" -> agent |> ],
+        scriptToolsShownQ[ references, shown ],
+            acpLabel[ "PermissionScriptTools", <| "agent" -> agent, "tools" -> scriptToolList @ shown |> ],
+        True,
+            acpLabel[ "PermissionScriptToolsMore", <| "agent" -> agent, "tools" -> scriptToolList @ shown |> ]
+    ]
+];
+
+scriptHeadline // endDefinition;
+
+
+(* Whether the tools shown for a script's permission request are surely all that the request can be about: the
+   script's references are complete (acpExecuteScript), all its tools are shown, and one of them changes open notebooks.
+   Chatbook's permission rules make OpenCode ask about those tools, so if the script names none, it reaches the tool
+   that the request is about in a way that can't be read (or the request is about a rule of the user's own). *)
+scriptToolsShownQ // beginDefinition;
+
+scriptToolsShownQ[ references_Association, shown_List ] := And[
+    TrueQ @ references[ "Complete" ],
+    Length @ shown === Length @ references[ "Tools" ],
+    AnyTrue[ shown, notebookEditToolQ ]
+];
+
+scriptToolsShownQ // endDefinition;
+
+
+(* Tools ("Server.Tool") with the notebook tools that change open notebooks first (Chatbook's permission rules make
+   OpenCode ask for them, so the request is most likely for one of them), otherwise in their order *)
+editToolsFirst // beginDefinition;
+editToolsFirst[ tools_List ] := Join[ Select[ tools, notebookEditToolQ ], Select[ tools, ! notebookEditToolQ @ # & ] ];
+editToolsFirst // endDefinition;
+
+
+notebookEditToolQ // beginDefinition;
+notebookEditToolQ[ name_String ] := MemberQ[ $acpNotebookEditTools, acpNotebookToolName @ name ];
+notebookEditToolQ[ _ ] := False;
+notebookEditToolQ // endDefinition;
+
+
+scriptToolList // beginDefinition;
+scriptToolList[ tools_List ] := StringRiffle[ shortenText[ acpMCPDisplayName @ #, 60 ] & /@ tools, ", " ];
+scriptToolList // endDefinition;
 
 
 permissionAction // beginDefinition;
@@ -2381,32 +2558,94 @@ permissionPath // endDefinition;
 
 permissionPreview // beginDefinition;
 
-permissionPreview[ tool_Association, project_ ] := Block[ { $plainCodeBlocks = True }, permissionPreview0[ tool, project ] ];
+(* titles: the window titles of the notebooks that the request names (see permissionCard) *)
+permissionPreview[ tool_Association, project_ ] := permissionPreview[ tool, project, <| |> ];
+
+permissionPreview[ tool_Association, project_, titles_Association ] := Block[
+    { $plainCodeBlocks = True, $renderMode = "Final", $argumentLines = $permissionArgumentLines },
+    permissionPreview0[ tool, project, titles ]
+];
 
 permissionPreview // endDefinition;
 
 
 permissionPreview0 // beginDefinition;
 
-permissionPreview0[ tool_Association, project_ ] := Module[ { name, command, diffs },
-    name    = tool[ "Name" ];
-    command = SelectFirst[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "command", "cmd" }, None ], StringQ, None ];
-    diffs   = Replace[ tool[ "Diffs" ], Except[ _List ] -> { } ];
+(* A script and a call of the notebook tools come first: their input may have a "command" too, which is not what runs *)
+permissionPreview0[ tool_Association, project_, titles_Association ] := Module[ { name, input, command, diffs, arguments },
+    name      = tool[ "Name" ];
+    input     = Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ];
+    command   = SelectFirst[ Lookup[ input, { "command", "cmd" }, None ], StringQ, None ];
+    diffs     = Replace[ tool[ "Diffs" ], Except[ _List ] -> { } ];
+    arguments = If[ StringQ @ acpNotebookToolName @ tool[ "RawName" ], argumentsView[ input, False, $notebookToolParameters, titles ], None ];
     Which[
+        name === "execute",
+            scriptPreview[ tool, titles ],
+        arguments =!= None,
+            arguments,
         StringQ @ command,
-            RawBoxes @ Block[ { $renderMode = "Final" }, codeBlock[ command, "text" ] ],
+            RawBoxes @ codeBlock[ command, "text" ],
         diffs =!= { },
             Column[ acpDiffView[ #, <| "MaxLines" -> $finalDiffLines, "ProjectDirectory" -> project |> ] & /@ diffs, Spacings -> 0.5 ],
-        name === "execute",
-            Column[ Block[ { $renderMode = "Final" }, executeCallView /@ acpExecuteToolCalls @ tool ], Spacings -> 0.5 ],
-        AssociationQ @ tool[ "RawInput" ] && Length @ tool[ "RawInput" ] > 0,
-            rawInputGrid @ tool[ "RawInput" ],
+        Length @ input > 0,
+            rawInputGrid @ input,
         True,
             None
     ]
 ];
 
 permissionPreview0 // endDefinition;
+
+
+(* A script (code mode): the tool references that it shows (edits of open notebooks first; see acpExecuteScript), and
+   always the script itself, as plain text (it is the agent's), below them: the request names neither the tool it asks
+   about nor its input, so what the user approves is the script *)
+scriptPreview // beginDefinition;
+
+scriptPreview[ tool_Association, titles_Association ] := Module[ { input, calls, shown, script },
+    input  = Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ];
+    calls  = acpExecuteToolCalls @ tool;
+    calls  = Join[ Select[ calls, notebookEditToolQ @ #[ "Tool" ] & ], Select[ calls, ! notebookEditToolQ @ #[ "Tool" ] & ] ];
+    shown  = Take[ calls, UpTo[ $permissionCallLimit ] ];
+    script = SelectFirst[ Lookup[ input, { "code", "script" }, None ], StringQ, None ];
+    If[ ! StringQ @ script,
+        Return[ If[ Length @ input > 0, rawInputGrid @ input, None ], Module ]
+    ];
+    Column[
+        Flatten @ {
+            executeCallView[ #, titles ] & /@ shown,
+            If[ Length @ calls > Length @ shown,
+                Style[ acpLabel[ "PermissionMoreToolReferences", <| "n" -> Length @ calls - Length @ shown |> ], FontColor -> $mutedColor, FontSize -> 11 ],
+                Nothing
+            ],
+            section[ "SectionScript", RawBoxes @ plainCodeBoxes @ scriptPreviewText @ StringTrim @ script ]
+        },
+        Spacings -> 0.6
+    ]
+];
+
+scriptPreview // endDefinition;
+
+
+(* The script in the permission panel: its first $permissionScriptLines lines, wrapped and not cut (the end of a long
+   line can hold a call), and of those at most $permissionScriptLength characters, with a note of the rest *)
+scriptPreviewText // beginDefinition;
+
+scriptPreviewText[ script_String ] := Module[ { lines, text },
+    lines = StringSplit[ script, "\n", All ];
+    text  = StringRiffle[ Take[ lines, UpTo[ $permissionScriptLines ] ], "\n" ];
+    Which[
+        StringLength @ text > $permissionScriptLength,
+            StringTake[ text, $permissionScriptLength ] <> "\n" <>
+                acpLabel[ "TruncatedMoreCharacters", <| "n" -> StringLength @ script - $permissionScriptLength |> ],
+        Length @ lines > $permissionScriptLines,
+            text <> "\n" <> acpLabel[ "TruncatedMoreLines", <| "n" -> Length @ lines - $permissionScriptLines |> ],
+        True,
+            text
+    ]
+];
+
+scriptPreviewText // endDefinition;
 
 
 permissionButton // beginDefinition;
@@ -2479,13 +2718,29 @@ alwaysScopeText // beginDefinition;
 
 alwaysScopeText[ tool_, agent_, project_ ] := alwaysScopeText[ tool, agent, project, acpPathContext @ None ];
 
-alwaysScopeText[ tool_Association, agent_, project_, paths_Association ] := Module[ { name, command, external, scan },
-    name     = tool[ "Name" ];
-    command  = SelectFirst[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "command", "cmd" }, None ], StringQ, None ];
-    external = externalDirectory[ tool, command, project, paths ];
+alwaysScopeText[ tool_Association, agent_, project_, paths_Association ] := Module[
+    { name, notebookTool, mcp, command, external, scan, references, tools, shown },
+    name         = tool[ "Name" ];
+    notebookTool = acpNotebookToolName @ tool[ "RawName" ];
+    (* a script or a call of the notebook tools: OpenCode saves the tool (for all its uses), whatever the input says,
+       so a "command" or path in it says nothing about the scope *)
+    mcp      = name === "execute" || StringQ @ notebookTool;
+    command  = If[ mcp, None, SelectFirst[ Lookup[ Replace[ tool[ "RawInput" ], Except[ _Association ] -> <| |> ], { "command", "cmd" }, None ], StringQ, None ] ];
+    external = If[ mcp, None, externalDirectory[ tool, command, project, paths ] ];
+    references = If[ name === "execute", acpExecuteToolReferences @ tool, <| "Tools" -> { }, "Complete" -> True |> ];
+    tools      = editToolsFirst @ references[ "Tools" ];
+    shown      = Take[ tools, UpTo[ $permissionHeadlineTools ] ];
     Which[
         StringQ @ external,
             acpLabel[ "PermissionAlwaysScopeExternal", <| "agent" -> agent, "dir" -> scopeDirectoryLabel[ external, paths ] |> ],
+        (* the tool that a script asks about is one of the script's, as far as its text shows (see scriptHeadline) *)
+        tools =!= { },
+            acpLabel[
+                If[ scriptToolsShownQ[ references, shown ], "PermissionAlwaysScopeScript", "PermissionAlwaysScopeScriptMore" ],
+                <| "agent" -> agent, "project" -> projectLabel @ project, "tools" -> scriptToolList @ shown |>
+            ],
+        StringQ @ notebookTool,
+            acpLabel[ "PermissionAlwaysScopeTool", <| "agent" -> agent, "project" -> projectLabel @ project, "tool" -> scriptToolList @ { tool[ "RawName" ] } |> ],
         StringQ @ command,
             scan = acpShellSavePatterns @ command;
             Which[

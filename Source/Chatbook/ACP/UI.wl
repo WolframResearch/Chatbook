@@ -594,9 +594,9 @@ acpRebuildWindowRecord // endDefinition;
 (*acpPersistedWindowSettings*)
 
 (* The explicit agent settings of a window. They are also stored in the notebook's TaggingRules ({"ACP", "Settings"}),
-   so a window rebuilt after a kernel restart connects with the same command line, model and host ("SSHSettings", in
-   its canonical form: it holds no secrets, at most the path of a key file). *)
-$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPModel", "SSHSettings" };
+   so a window rebuilt after a kernel restart connects with the same command line, model, MCP server setting and host
+   ("SSHSettings", in its canonical form: it holds no secrets, at most the path of a key file). *)
+$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPMCPServer", "ACPModel", "SSHSettings" };
 
 acpPersistedWindowSettings // beginDefinition;
 acpPersistedWindowSettings[ settings_Association ] := KeyTake[ settings, $acpPersistedSettingNames ];
@@ -835,19 +835,24 @@ acpMergeWindowSettings[ nbo_NotebookObject, settings_Association ] := Module[ { 
 acpMergeWindowSettings // endDefinition;
 
 
-(* A setting's value for comparisons: SSH settings in their canonical form (an invalid value stays as it is) *)
+(* A setting's value for comparisons: SSH settings in their canonical form (an invalid value stays as it is);
+   "ACPMCPServer" True, False or Automatic: Automatic and True are not the same, since Automatic offers the MCP server
+   only to the agent's own program (MCP.wl's acpMCPEnabledQ) *)
 settingNormal // beginDefinition;
 settingNormal[ "SSHSettings", value_ ] := Replace[ acpSSHSettings @ value, _Failure -> value ];
+settingNormal[ "ACPMCPServer", value_ ] := Replace[ value, Except[ True | False ] -> Automatic ];
 settingNormal[ _, value_ ] := value;
 settingNormal // endDefinition;
 
 
 (* Applies changed settings (see acpMergeWindowSettings): a new agent, executable or SSH setting of the same host (or a
    window in "Error", e.g. after AgentNotFound) reconnects, after the running turn if there is one (the folder, the
-   transcript and the resumable session stay); a new model is selected in the current session. Otherwise the window
-   just makes sure it is connected. dirChanged: the window is already reconnecting for a new project directory (or a
-   new host). New SSH settings are a user action: they clear the host's failure latch (Remote.wl), typically the fix of
-   the failure that latched it. *)
+   transcript and the resumable session stay); so does a new MCP server setting of a local window (the MCP servers are
+   only offered when a session starts; turning the setting off revokes the connection's token at once, MCP.wl), while a
+   remote window, which never offers the server, only keeps the value for a later switch to this computer. A new model
+   is selected in the current session. Otherwise the window just makes sure it is connected. dirChanged: the window is
+   already reconnecting for a new project directory (or a new host). New SSH settings are a user action: they clear the
+   host's failure latch (Remote.wl), typically the fix of the failure that latched it. *)
 acpApplyWindowSettings // beginDefinition;
 
 acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Module[ { window, modelID, model },
@@ -860,7 +865,11 @@ acpApplyWindowSettings[ nbo_NotebookObject, changed_List, dirChanged_ ] := Modul
             Null,
         TrueQ @ dirChanged,
             acpEnsureConnected @ nbo,
-        MemberQ[ changed, "ACPAgentCommandLine" | "ACPAgent" | "SSHSettings" ] || Lookup[ window, "Status" ] === "Error",
+        Or[
+            MemberQ[ changed, "ACPAgentCommandLine" | "ACPAgent" | "SSHSettings" ],
+            MemberQ[ changed, "ACPMCPServer" ] && ! acpRemoteQ @ window,
+            Lookup[ window, "Status" ] === "Error"
+        ],
             If[ acpRunningQ @ window || acpRestoringQ @ window,
                 acpWindowSet[ nbo, "ReconnectRequested", True ];
                 acpSetNotice[ nbo, acpLabel[ "NoticeReconnectAfterTurn" ] ],

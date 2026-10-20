@@ -1518,6 +1518,539 @@ VerificationTest[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Execute scripts*)
+
+(* acpExecuteScript reads what an agent's code mode script does with MCP tools (see Transcript.wl): the permission panel
+   shows it above the script (OpenCode's request names only "execute" and the script) *)
+
+(* The request of the end-to-end run (OpenCode 2.0.26, InsertCells through code mode) *)
+VerificationTest[
+    acpExecuteScript[ "return await tools.WolframNotebooks.InsertCells({notebook:\"5de1d007\",markdown:\"Escape velocity: v = sqrt(2 mu / r).\"});" ],
+    <|
+        "Calls" -> {
+            <|
+                "Tool"          -> "WolframNotebooks.InsertCells",
+                "Input"         -> None,
+                "Code"          -> None,
+                "Arguments"     -> <| "notebook" -> "5de1d007", "markdown" -> "Escape velocity: v = sqrt(2 mu / r)." |>,
+                "MoreArguments" -> False
+            |>
+        },
+        "Tools"    -> { "WolframNotebooks.InsertCells" },
+        "Complete" -> True
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-E2ERequest@@Tests/ACPTranscript.wlt:1528,1-1545,2"
+]
+
+(* Every form of a tool reference: dots, brackets with any quotes, mixed, optional chaining, white space *)
+VerificationTest[
+    Module[ { tools },
+        tools[ code_ ] := acpExecuteScript[ code ][ "Tools" ];
+        {
+            tools[ "await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook: \"ab12cd34\"})" ],
+            tools[ "await tools['WolframNotebooks']['DeleteCells']({})" ],
+            tools[ "await tools[`WolframNotebooks`][`DeleteCells`]({})" ],
+            tools[ "await tools[\"WolframNotebooks\"].DeleteCells({})" ],
+            tools[ "await tools.WolframNotebooks[\"DeleteCells\"]({})" ],
+            tools[ "await tools?.WolframNotebooks?.[\"DeleteCells\"]?.({})" ],
+            tools[ "await tools\n  .WolframNotebooks\n  [ \"DeleteCells\" ] ( {} )" ],
+            tools[ "await globalThis.tools.WolframNotebooks.DeleteCells({})" ],
+            tools[ "const nb = tools[\"WolframNotebooks\"];\nawait nb.DeleteCells({});\nawait nb['ReadNotebook']({});" ],
+            tools[ "await tools.Wolfram.WolframAlpha({ query: \"pi\" })" ]
+        }
+    ],
+    {
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells" },
+        { "WolframNotebooks.DeleteCells", "WolframNotebooks.ReadNotebook" },
+        { "Wolfram.WolframAlpha" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-ReferenceForms@@Tests/ACPTranscript.wlt:1548,1-1578,2"
+]
+
+(* The shapes of D2-01: the bracket form, the mixed form, a decoy in a comment. Every reference counts, wherever it
+   is, so the decoy can't hide the real call; the call's arguments are read where they are literals *)
+VerificationTest[
+    Module[ { read },
+        read[ code_ ] := acpExecuteScript[ code ][[ { "Tools", "Calls" } ]];
+        {
+            read[ "await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})" ],
+            read[ "await tools[\"WolframNotebooks\"].DeleteCells({ notebook: 'ab12cd34', cells: [\"c1\", \"c2\"] })" ],
+            read[ "/* tools.WolframNotebooks.ListNotebooks({}) */ await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})" ],
+            read[ "// tools.WolframNotebooks.ListNotebooks({});\nawait tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: \"c1, c2\"})" ]
+        }
+    ],
+    {
+        <|
+            "Tools" -> { "WolframNotebooks.DeleteCells" },
+            "Calls" -> { KeyValuePattern[ "Arguments" -> <| "notebook" -> "ab12cd34", "cells" -> Missing[ "Computed" ] |> ] }
+        |>,
+        <|
+            "Tools" -> { "WolframNotebooks.DeleteCells" },
+            "Calls" -> { KeyValuePattern[ "Arguments" -> <| "notebook" -> "ab12cd34", "cells" -> { "c1", "c2" } |> ] }
+        |>,
+        <|
+            "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" },
+            "Calls" -> {
+                (* in a comment: its arguments can't be read *)
+                KeyValuePattern @ { "Tool" -> "WolframNotebooks.ListNotebooks", "Arguments" -> Missing[ "Computed" ] },
+                KeyValuePattern @ { "Tool" -> "WolframNotebooks.DeleteCells", "Arguments" -> <| "notebook" -> "ab12cd34", "cells" -> Missing[ "Computed" ] |> }
+            }
+        |>,
+        <|
+            "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" },
+            "Calls" -> {
+                KeyValuePattern @ { "Tool" -> "WolframNotebooks.ListNotebooks" },
+                KeyValuePattern @ { "Tool" -> "WolframNotebooks.DeleteCells", "Arguments" -> <| "notebook" -> "ab12cd34", "cells" -> "c1, c2" |> }
+            }
+        |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-BracketMixedDecoy@@Tests/ACPTranscript.wlt:1582,1-1619,2"
+]
+
+(* Tools reached in ways that can't be read make the references incomplete; the edit tools that the script names
+   anywhere count (also in a string), and so do names written with Unicode escapes (the server's name written after an
+   escaped "tools" is not part of a reference that can be read) *)
+VerificationTest[
+    Module[ { read },
+        read[ code_ ] := acpExecuteScript[ code ][[ { "Tools", "Complete" } ]];
+        {
+            read[ "// tools.WolframNotebooks.ListNotebooks({});\nconst n = 'DeleteCells';\nawait tools.WolframNotebooks[n]({notebook: 'a'})" ],
+            read[ "const t = tools;\nawait t.WolframNotebooks.DeleteCells({})" ],
+            read[ "const nb = tools.WolframNotebooks;\nawait nb[name]({})" ],
+            read[ "const { DeleteCells } = tools.WolframNotebooks;\nawait DeleteCells({})" ],
+            read[ "/* tools.WolframNotebooks.ListNotebooks() */ await \\u0074ools.WolframNotebooks.DeleteCells({notebook: \"x\"})" ],
+            read[ "const x = compute();\nreturn x;" ],
+            (* the word in text is no use of the tools, and neither is the server's name in text *)
+            read[ "await tools.WolframNotebooks.InsertCells({notebook: \"a\", markdown: \"Use these tools. Then the tools [1] work.\"})" ],
+            read[ "// WolframNotebooks: a summary\nawait tools.WolframNotebooks.InsertCells({notebook: \"a\", markdown: \"See WolframNotebooks\"})" ],
+            (* the server's name anywhere else is, and so is a string that is the name or a path that starts with it *)
+            read[ "await tools.WolframNotebooks.InsertCells({notebook: \"a\"});\nconst s = WolframNotebooks;" ],
+            read[ "await tools.WolframNotebooks.InsertCells({notebook: \"a\"});\nconst s = 'WolframNotebooks';" ],
+            read[ "await tools.WolframNotebooks.InsertCells({notebook: \"a\"});\nconst s = \"WolframNotebooks.Delete\" + \"Cells\";" ]
+        }
+    ],
+    {
+        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { }, "Complete" -> True |>,
+        <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>,
+        <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>,
+        <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-Unresolved@@Tests/ACPTranscript.wlt:1624,1-1658,2"
+]
+
+(* Plain JavaScript that reaches a tool without a reference that can be read, after a decoy in a comment: every such
+   use of "tools" (or of an alias) makes the references incomplete, and the edit tool that the script names is listed,
+   so the decoy can't pass for all that the script does. White space of JavaScript's that PCRE's \s lacks (U+FEFF,
+   U+3000, ...) still makes a reference. *)
+VerificationTest[
+    Module[ { decoy, call, read },
+        decoy = "/* tools.WolframNotebooks.ListNotebooks({}) */\n";
+        call  = ".WolframNotebooks.DeleteCells({notebook:\"ab12cd34\", cells:\"c1,c2\"})";
+        read[ code_ ] := acpExecuteScript[ decoy <> code ][[ { "Tools", "Complete" } ]];
+        {
+            read /@ {
+                "await tools /**/ " <> call,
+                "await tools // x\n  " <> call,
+                "await (0, tools)" <> call,
+                "const t = 0 || tools;\nawait t" <> call,
+                "const t = true ? tools : 0;\nawait t" <> call,
+                "const f = async (a, t) => t.WolframNotebooks.DeleteCells(a);\nawait f({notebook:\"ab12cd34\"}, tools)",
+                "const g = () => { return tools };\nawait g()" <> call,
+                "const nb = tools.WolframNotebooks;\nconst m = nb;\nawait m.DeleteCells({})",
+                "await globalThis[\"tools\"][\"WolframNotebooks\"][\"DeleteCells\"]({})"
+            },
+            read /@ {
+                "await tools" <> FromCharacterCode[ 16^^FEFF ] <> call,
+                "await tools" <> FromCharacterCode[ 16^^3000 ] <> call
+            }
+        }
+    ],
+    {
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>, 9 ],
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> True |>, 2 ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-HiddenUses@@Tests/ACPTranscript.wlt:1664,1-1693,2"
+]
+
+(* The same after a decoy with literal arguments, with tools.WolframNotebooks assigned in an expression (an alias is only
+   a declaration of its own), a comment or computed member after it, a line comment that ends inside a declaration, or
+   a name in brackets that is not a plain name (an octal escape, a string whose quotes end two literals with a call
+   between them): the edit is reached in a way that can't be read. A name written with an escape of any number of
+   digits is decoded, so the edit is named. *)
+VerificationTest[
+    Module[ { decoy, read },
+        decoy = "if (false) await tools.WolframNotebooks.InsertCells({notebook: \"c6d32676\", markdown: \"## Summary\"});\n";
+        read[ code_ ] := acpExecuteScript[ decoy <> code ][[ { "Tools", "Complete" } ]];
+        {
+            read /@ {
+                "let p = tools.WolframNotebooks;\nawait (p = tools.WolframNotebooks)[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"});",
+                "let p = tools.WolframNotebooks;\nawait (p = tools[\"WolframNotebooks.Delete\\x43ells\"])({notebook: \"c6d32676\", cells: \"all\"});",
+                "let p = tools.WolframNotebooks;\nawait (p = tools.WolframNotebooks /* ns */ [\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"}));",
+                "let r = tools.WolframNotebooks;\nawait (r = tools.WolframNotebooks // then\n  [\"Replace\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"}));",
+                "const p = tools.WolframNotebooks /**/ [\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"});\nawait p;",
+                "const x = // const p =\n  tools.WolframNotebooks;\nawait x[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"});",
+                "let p = tools[\"\\127olframNotebooks\"];\nawait p[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"});",
+                "const y = 'const p = tools[' + await tools.WolframNotebooks[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\"}) + '];';",
+                "const y = 'x tools.a[' + await tools.WolframNotebooks[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\"}) + ']';",
+                "const nb = tools.WolframNotebooks;\nconst y = 'nb[' + await nb[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\"}) + ']';"
+            },
+            read[ "return await t\\u{0000006F}ols.W\\u{0000006F}lframNotebooks.D\\u{00000065}leteCells({notebook: \"c6d32676\", cells: \"all\"});" ]
+        }
+    ],
+    {
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>, 10 ],
+        <| "Tools" -> { "WolframNotebooks.InsertCells", "WolframNotebooks.DeleteCells" }, "Complete" -> True |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-HiddenAliasUses@@Tests/ACPTranscript.wlt:1700,1-1726,2"
+]
+
+(* Which definitions of an alias are read: a declaration (const, let or var) on one line that ends there *)
+VerificationTest[
+    Module[ { read },
+        read[ code_ ] := acpExecuteScript[ code ][[ { "Tools", "Complete" } ]];
+        {
+            read /@ {
+                "const nb = tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});",
+                "let nb = tools[\"WolframNotebooks\"]\nawait nb.InsertCells({notebook: \"a\"})",
+                "{ var nb = tools.WolframNotebooks }\nawait nb.InsertCells({notebook: \"a\"});"
+            },
+            read[ "await f();\nconst nb = tools.WolframNotebooks" ],
+            read /@ {
+                "nb = tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks // the notebook tools\nawait nb.InsertCells({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks, x = 1;\nawait nb.InsertCells({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks\n(nb.InsertCells)({notebook: \"a\"});",
+                "const nb =\n  tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});"
+            }
+        }
+    ],
+    {
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>, 3 ],
+        <| "Tools" -> { }, "Complete" -> True |>,
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>, 5 ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-AliasDeclarations@@Tests/ACPTranscript.wlt:1729,1-1755,2"
+]
+
+(* A decoy that JavaScript never runs (in a regular expression, after an HTML-like comment, in the text of a template
+   literal after a substitution with a comment) is not taken for a call: arguments are only read up to the first token
+   after which JavaScript may read the script differently, and the decoy's notebook is not resolved. Arguments before
+   such a token are read. *)
+VerificationTest[
+    Module[ { decoy, real, read },
+        decoy = "tools.WolframNotebooks.InsertCells({notebook: \"5de1d007\", markdown: \"Escape velocity\"})";
+        real  = "\nawait tools[\"WolframNotebooks\"][\"InsertCells\"](p);";
+        read[ code_ ] := {
+            acpExecuteScript[ code ][ "Calls" ][[ All, "Arguments" ]],
+            acpPermissionNotebooks @ <| "toolCall" -> <| "name" -> "execute", "rawInput" -> <| "code" -> code |> |> |>
+        };
+        {
+            read[ "const r = /" <> decoy <> "/;" <> real ],
+            read[ "<!-- " <> decoy <> real ],
+            read[ "x = 1\n--> " <> decoy <> real ],
+            read[ "const s = `${/*`*/0}" <> decoy <> "`;" <> real ],
+            read[ "const s = `" <> decoy <> real ],
+            read[ "await " <> decoy <> ";\nconst r = /x/;" ]
+        }
+    ],
+    {
+        { { Missing[ "Computed" ], Missing[ "Computed" ] }, { } },
+        { { Missing[ "Computed" ], Missing[ "Computed" ] }, { } },
+        { { Missing[ "Computed" ], Missing[ "Computed" ] }, { } },
+        { { Missing[ "Computed" ], Missing[ "Computed" ] }, { } },
+        { { Missing[ "Computed" ], Missing[ "Computed" ] }, { } },
+        { { <| "notebook" -> "5de1d007", "markdown" -> "Escape velocity" |> }, { "5de1d007" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-UnclearTokens@@Tests/ACPTranscript.wlt:1761,1-1788,2"
+]
+
+(* A slash after a number, a literal, "]" or a name (not a keyword) is a division, and a template literal with string
+   literals, braces and template literals in its substitutions is read as JavaScript does: the arguments of a call
+   after them are read, and its notebook is resolved. After ")", "}" or a keyword such as return, a slash may start a
+   regular expression, and so may a slash in a substitution: the arguments after them are not read. *)
+VerificationTest[
+    Module[ { call, read },
+        call = "\nawait tools.WolframNotebooks.InsertCells({ notebook: \"c6d32676\", markdown: \"Done.\" });";
+        read[ code_ ] := {
+            Last[ acpExecuteScript[ code <> call ][ "Calls" ] ][ "Arguments" ],
+            acpPermissionNotebooks @ <| "toolCall" -> <| "name" -> "execute", "rawInput" -> <| "code" -> code <> call |> |> |>
+        };
+        {
+            read /@ {
+                "const half = 10 / 2;",
+                "const r = n / 2 / m[0] / 'x' / `a` / length;",
+                "const rows = [[1, 2], [3, 4]];\nconst table = `${rows.map(r => `| ${r.join(\" | \")} |`).join(\"\\n\")}`;",
+                "const md = `${xs.map(x => { return `- ${x}`; }).join(\"\\n\")}`;"
+            },
+            read /@ {
+                "const half = (a + b) / 2;",
+                "if (a) {}\n/x/.test(s);",
+                "const f = () => { return /x/ };",
+                "const s = `${x.replace(/\\|/g, \"\")}`;"
+            }
+        }
+    ],
+    {
+        ConstantArray[ { <| "notebook" -> "c6d32676", "markdown" -> "Done." |>, { "c6d32676" } }, 4 ],
+        ConstantArray[ { Missing[ "Computed" ], { } }, 4 ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-ReadableTokens@@Tests/ACPTranscript.wlt:1794,1-1822,2"
+]
+
+(* Reading a script takes time in proportion to its length: literals and comments that are not closed are one token
+   each, and only $maxScriptAliases definitions of aliases are read (these took from 15 s to 100 s before) *)
+VerificationTest[
+    Module[ { call, time },
+        call = "await tools.WolframNotebooks.ListNotebooks({});\n";
+        time[ code_String ] := Block[ { Wolfram`Chatbook`ACP`Transcript`Private`$scriptCache = <| |> },
+            First @ AbsoluteTiming @ acpExecuteScript @ code
+        ];
+        Max[
+            time[ call <> "const s = '" <> StringRepeat[ "\\'", 20000 ] ],
+            time[ call <> "const s = `" <> StringRepeat[ "\\`", 20000 ] ],
+            time[ StringJoin @ Table[ "const a" <> ToString[ i ] <> "=tools.W;", { i, 4000 } ] ],
+            time[ StringRepeat[ "tools[\"\\\"", 10000 ] ],
+            time[ StringRepeat[ "await tools.WolframNotebooks.ListNotebooks();", 2000 ] ],
+            time[ call <> StringRepeat[ "/* ", 20000 ] ]
+        ] < 3
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-Performance@@Tests/ACPTranscript.wlt:1826,1-1844,2"
+]
+
+(* Reading the arguments is bounded too ($maxTokenVisits, also for comments; lists of at most $maxListItems items), and
+   only the first $maxScriptTokens tokens are read: references whose arguments run to the end of a long script, a long
+   list, dense references and aliases (these took from 3 s to 8.5 s before) *)
+VerificationTest[
+    Module[ { open, time },
+        open = StringRepeat[ "tools.W.I({a: (", 100 ];
+        time[ code_String ] := Block[ { Wolfram`Chatbook`ACP`Transcript`Private`$scriptCache = <| |> },
+            First @ AbsoluteTiming @ acpExecuteScript @ code
+        ];
+        Max[
+            time[ open <> StringRepeat[ "/**/", 24000 ] ],
+            time[ open <> StringRepeat[ "//\n", 32000 ] ],
+            time[ open <> StringRepeat[ "a+", 48000 ] ],
+            time[ "await tools.W.I({cells: [" <> StringRepeat[ "1,", 49000 ] <> "]})" ],
+            time[ StringRepeat[ "tools.a.b();", 8300 ] ],
+            time[ StringJoin[ Table[ "const a" <> ToString[ i ] <> "=tools.W;", { i, 20 } ], Table[ "a" <> ToString[ Mod[ i, 20 ] + 1 ] <> ".b();", { i, 11000 } ] ] ],
+            time[ StringRepeat[ "`${ `x` ", 12000 ] ],
+            time[ "await tools.W.I({});\n" <> StringRepeat[ "1/", 49000 ] ]
+        ] < 1.5
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-PerformanceReading@@Tests/ACPTranscript.wlt:1849,1-1869,2"
+]
+
+(* Literal values (decoded), values that are not literals, spreads, computed keys and __proto__ *)
+VerificationTest[
+    Module[ { arguments },
+        arguments[ object_ ] := Lookup[ First @ acpExecuteScript[ "await tools.WolframNotebooks.InsertCells(" <> object <> ")" ][ "Calls" ], { "Arguments", "MoreArguments" } ];
+        {
+            arguments[ "{notebook: \"a\\u0062c\", markdown: 'it\\'s\\n\\x41\\u{1F600}', offset: 10, limit: -2, cell: null, x: true, cells: [\"a\", 'b',]}" ],
+            arguments[ "{ markdown: `# Title\nline` }" ],
+            arguments[ "{ notebook: id, markdown: `# ${title}`, cell: \"a\" + b, position: (\"before\"), cells }" ],
+            arguments[ "{ notebook: \"a\\1\", markdown: \"\\08\" }" ],
+            arguments[ "{ notebook: \"a\", ...rest, markdown: \"m\" }" ],
+            arguments[ "{ notebook: \"a\", [key]: \"x\", markdown: \"m\" }" ],
+            arguments[ "{ notebook: \"a\", __proto__: { notebook: \"b\" } }" ],
+            arguments[ "{ notebook: \"a\", notebook: \"b\" }" ],
+            arguments[ "{ notebook: \"a\" /* , notebook: \"b\" */, markdown: \"m\" // , notebook: \"c\"\n}" ],
+            arguments[ "args" ],
+            arguments[ "" ],
+            (* \u{...} with any number of digits, as in JavaScript *)
+            arguments[ "{notebook: \"\\u{00000061}b\\u{0063}\", markdown: \"\\u{110000}\"}" ]
+        }
+    ],
+    {
+        {
+            <|
+                "notebook" -> "abc", "markdown" -> "it's\nA" <> FromCharacterCode[ 128512 ], "offset" -> 10, "limit" -> -2,
+                "cell" -> Null, "x" -> True, "cells" -> { "a", "b" }
+            |>,
+            False
+        },
+        { <| "markdown" -> "# Title\nline" |>, False },
+        {
+            <|
+                "notebook" -> Missing[ "Computed" ], "markdown" -> Missing[ "Computed" ], "cell" -> Missing[ "Computed" ],
+                "position" -> Missing[ "Computed" ], "cells" -> Missing[ "Computed" ]
+            |>,
+            False
+        },
+        { <| "notebook" -> Missing[ "Computed" ], "markdown" -> Missing[ "Computed" ] |>, False },
+        { <| "notebook" -> Missing[ "Computed" ], "markdown" -> "m" |>, True },
+        { <| "notebook" -> Missing[ "Computed" ], "markdown" -> "m" |>, True },
+        { <| "notebook" -> Missing[ "Computed" ] |>, True },
+        { <| "notebook" -> "b" |>, False },
+        { <| "notebook" -> "a", "markdown" -> "m" |>, False },
+        { Missing[ "Computed" ], False },
+        { <| |>, False },
+        { <| "notebook" -> "abc", "markdown" -> Missing[ "Computed" ] |>, False }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-Literals@@Tests/ACPTranscript.wlt:1872,1-1919,2"
+]
+
+(* Syntax that the reader doesn't place the way JavaScript does (regular expressions, HTML-like comments, an argument
+   that is an expression) gives up the whole argument, so that a value that is shown is the one JavaScript uses; a
+   substitution with a template literal in it is read as JavaScript does; a line comment ends at any line terminator, as
+   in JavaScript *)
+VerificationTest[
+    Module[ { arguments },
+        arguments[ args_ ] := First[ acpExecuteScript[ "await tools.WolframNotebooks.InsertCells(" <> args <> ")" ][ "Calls" ] ][ "Arguments" ];
+        {
+            (* JavaScript: markdown is /"/ and the notebook is "evil" *)
+            arguments[ "{notebook: \"real\", markdown: /\"/, notebook: \"evil\"}/}" ],
+            (* JavaScript: the template literal holds `, notebook: "evil"}` *)
+            arguments[ "{notebook: \"real\", markdown: `${` , notebook: \"evil\"}`}`}" ],
+            arguments[ "{notebook: \"real\"\n<!-- , notebook: \"evil\"\n}" ],
+            arguments[ "{notebook: \"real\"} && {notebook: \"evil\"}" ],
+            (* JavaScript: the comment ends at U+2028, so the notebook is "evil" *)
+            arguments[ "{notebook: \"real\" // c\:2028, notebook: \"evil\"\n}" ]
+        }
+    ],
+    {
+        Missing[ "Computed" ],
+        <| "notebook" -> "real", "markdown" -> Missing[ "Computed" ] |>,
+        Missing[ "Computed" ],
+        Missing[ "Computed" ],
+        <| "notebook" -> "evil" |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-NoSpoofing@@Tests/ACPTranscript.wlt:1925,1-1948,2"
+]
+
+(* Long scripts are read up to $maxScriptLength characters, and the arguments of the first $maxScriptReferences
+   references; the references are then not complete *)
+VerificationTest[
+    Module[ { many, long },
+        many = acpExecuteScript @ StringRepeat[ "await tools.WolframNotebooks.ReadNotebook({notebook: \"aaaaaaaa\"});\n", 150 ];
+        long = acpExecuteScript[ StringRepeat[ " ", 100000 ] <> "await tools.WolframNotebooks.DeleteCells({})" ];
+        { Length @ many[ "Calls" ], many[ "Tools" ], many[ "Complete" ], long }
+    ],
+    { 100, { "WolframNotebooks.ReadNotebook" }, False, <| "Calls" -> { }, "Tools" -> { }, "Complete" -> False |> },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-Limits@@Tests/ACPTranscript.wlt:1952,1-1961,2"
+]
+
+(* The arguments of a call after the first $maxScriptTokens tokens are not read, and a list of more than $maxListItems
+   items is not read *)
+VerificationTest[
+    Module[ { call, arguments },
+        call = "await tools.WolframNotebooks.DeleteCells({notebook: \"a\", cells: [" <> StringRiffle[ ConstantArray[ "\"c\"", # ], "," ] <> "]});" &;
+        arguments[ code_ ] := Last[ acpExecuteScript[ code ][ "Calls" ] ][ "Arguments" ];
+        {
+            arguments[ StringRepeat[ "x;", 9000 ] <> call @ 2 ],
+            arguments[ StringRepeat[ "x;", 11000 ] <> call @ 2 ],
+            Length @ arguments[ call @ 1000 ][ "cells" ],
+            Block[
+                {
+                    Wolfram`Chatbook`ACP`Transcript`Private`$maxListItems = 3,
+                    Wolfram`Chatbook`ACP`Transcript`Private`$scriptCache  = <| |>
+                },
+                { arguments[ call @ 3 ], arguments[ call @ 4 ] }
+            ]
+        }
+    ],
+    {
+        <| "notebook" -> "a", "cells" -> { "c", "c" } |>,
+        Missing[ "Computed" ],
+        1000,
+        { <| "notebook" -> "a", "cells" -> { "c", "c", "c" } |>, <| "notebook" -> "a", "cells" -> Missing[ "Computed" ] |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteScript-TokenLimits@@Tests/ACPTranscript.wlt:1965,1-1990,2"
+]
+
+(* The tools of a call that ran come from its metadata (complete), else from the script *)
+VerificationTest[
+    {
+        acpExecuteToolReferences @ <|
+            "RawInput"  -> <| "code" -> "/* tools.WolframNotebooks.DeleteCells */ await tools.WolframNotebooks.ListNotebooks({})" |>,
+            "RawOutput" -> <| "metadata" -> <| "toolCalls" -> { <| "tool" -> "WolframNotebooks.ListNotebooks", "status" -> "completed" |> } |> |>
+        |>,
+        acpExecuteToolReferences @ <|
+            "RawInput"  -> <| "code" -> "/* tools.WolframNotebooks.DeleteCells */ await tools.WolframNotebooks.ListNotebooks({})" |>,
+            "RawOutput" -> None
+        |>,
+        acpExecuteToolReferences @ <| "RawInput" -> None, "RawOutput" -> None |>
+    },
+    {
+        <| "Tools" -> { "WolframNotebooks.ListNotebooks" }, "Complete" -> True |>,
+        <| "Tools" -> { "WolframNotebooks.DeleteCells", "WolframNotebooks.ListNotebooks" }, "Complete" -> True |>,
+        <| "Tools" -> { }, "Complete" -> True |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-ExecuteToolReferences@@Tests/ACPTranscript.wlt:1993,1-2012,2"
+]
+
+(* The notebook tools' names in both forms (code mode, and a direct call's OpenCode name) show the server *)
+VerificationTest[
+    {
+        acpMCPDisplayName /@ {
+            "WolframNotebooks.InsertCells", "WolframNotebooks_InsertCells", "WolframNotebooks.ReadNotebook",
+            "Wolfram.ReadNotebook", "Wolfram_WolframAlpha", "github.create_issue", "github_create_issue"
+        },
+        acpNotebookToolName /@ { "WolframNotebooks.InsertCells", "WolframNotebooks_DeleteCells", "WolframNotebooksX_Y", "WolframNotebooks.a.b", None }
+    },
+    {
+        {
+            "WolframNotebooks: InsertCells", "WolframNotebooks: InsertCells", "WolframNotebooks: ReadNotebook",
+            "Read Notebook", "Wolfram|Alpha", "github: create_issue", "github_create_issue"
+        },
+        { "InsertCells", "DeleteCells", None, None, None }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-MCPDisplayName@@Tests/ACPTranscript.wlt:2015,1-2032,2"
+]
+
+(* The notebook arguments of a permission request, for the titles in the permission panel: a script's literal ones,
+   a direct call's, none for other tools *)
+VerificationTest[
+    acpPermissionNotebooks /@ {
+        <| "toolCall" -> <| "name" -> "execute", "rawInput" -> <| "code" ->
+            "await tools.WolframNotebooks.DeleteCells({notebook: \"ab12cd34\"});\n" <>
+            "await tools.WolframNotebooks.InsertCells({notebook: id});\n" <>
+            "await tools[\"WolframNotebooks\"][\"ReadNotebook\"]({notebook: \"My Notes\"});\n" <>
+            "await tools.Other.Tool({notebook: \"other\"});"
+        |> |> |>,
+        <| "toolCall" -> <| "name" -> "WolframNotebooks_InsertCells", "rawInput" -> <| "notebook" -> "5de1d007", "markdown" -> "x" |> |> |>,
+        <| "toolCall" -> <| "name" -> "edit", "rawInput" -> <| "notebook" -> "5de1d007" |> |> |>,
+        <| |>
+    },
+    { { "ab12cd34", "My Notes" }, { "5de1d007" }, { }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPTranscript-PermissionNotebooks@@Tests/ACPTranscript.wlt:2036,1-2051,2"
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*OpenCode Tool Titles*)
 VerificationTest[
@@ -1549,7 +2082,7 @@ VerificationTest[
         "load skill wolfram-notebooks"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-Skill@@Tests/ACPTranscript.wlt:1523,1-1553,2"
+    TestID   -> "ACPTranscript-ToolTitles-Skill@@Tests/ACPTranscript.wlt:2056,1-2086,2"
 ]
 
 VerificationTest[
@@ -1596,7 +2129,7 @@ VerificationTest[
         "Used frobnicate"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-OpenCodeTools@@Tests/ACPTranscript.wlt:1555,1-1600,2"
+    TestID   -> "ACPTranscript-ToolTitles-OpenCodeTools@@Tests/ACPTranscript.wlt:2088,1-2133,2"
 ]
 
 (* Without any input, the title never uses the bare tool name as its object ("Used skill skill") and never ends with a
@@ -1615,7 +2148,7 @@ VerificationTest[
     ],
     { { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolTitles-NoBareNameEcho@@Tests/ACPTranscript.wlt:1604,1-1619,2"
+    TestID   -> "ACPTranscript-ToolTitles-NoBareNameEcho@@Tests/ACPTranscript.wlt:2137,1-2152,2"
 ]
 
 VerificationTest[
@@ -1626,7 +2159,7 @@ VerificationTest[
     },
     { "2 of 3 done", "", "3 lines" },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ToolSummaries-OpenCodeTools@@Tests/ACPTranscript.wlt:1621,1-1630,2"
+    TestID   -> "ACPTranscript-ToolSummaries-OpenCodeTools@@Tests/ACPTranscript.wlt:2154,1-2163,2"
 ]
 
 VerificationTest[
@@ -1636,7 +2169,7 @@ VerificationTest[
     },
     { { True, True, True, True, True }, { False, False, False } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-ClientInterruptionText@@Tests/ACPTranscript.wlt:1632,1-1640,2"
+    TestID   -> "ACPTranscript-ClientInterruptionText@@Tests/ACPTranscript.wlt:2165,1-2173,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1655,7 +2188,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-SyntheticFormatting@@Tests/ACPTranscript.wlt:1645,1-1659,2"
+    TestID   -> "ACPTranscript-SyntheticFormatting@@Tests/ACPTranscript.wlt:2178,1-2192,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1681,7 +2214,7 @@ VerificationTest[
         <| "Host" -> "devbox", "Short" -> "devbox", "Home" -> None |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-TurnRemote@@Tests/ACPTranscript.wlt:1666,1-1685,2"
+    TestID   -> "ACPTranscript-TurnRemote@@Tests/ACPTranscript.wlt:2199,1-2218,2"
 ]
 
 (* Tool paths relative to the project folder, else their last name; the same for the POSIX paths of a local turn (this
@@ -1702,7 +2235,7 @@ VerificationTest[
     },
     ConstantArray[ { "src/a.wl", "proj", "hosts", "data", "/", "relative/b.txt" }, 2 ],
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-DisplayPath-POSIX@@Tests/ACPTranscript.wlt:1689,1-1706,2"
+    TestID   -> "ACPTranscript-DisplayPath-POSIX@@Tests/ACPTranscript.wlt:2222,1-2239,2"
 ]
 
 (* A local turn's paths are this computer's (C:\Users\me\proj on Windows): the last name of the project folder is
@@ -1734,7 +2267,7 @@ VerificationTest[
     ],
     { { "proj", "a\\b", "a\\b" }, { "proj", "a\\b", "a\\b", "proj" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-DisplayPath-LocalAndRemoteNames@@Tests/ACPTranscript.wlt:1711,1-1738,2"
+    TestID   -> "ACPTranscript-DisplayPath-LocalAndRemoteNames@@Tests/ACPTranscript.wlt:2244,1-2271,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1749,7 +2282,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPTranscript-DebugLog@@Tests/ACPTranscript.wlt:1745,1-1753,2"
+    TestID   -> "ACPTranscript-DebugLog@@Tests/ACPTranscript.wlt:2278,1-2286,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

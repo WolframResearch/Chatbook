@@ -1184,6 +1184,369 @@ VerificationTest[
     TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:1176,1-1185,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Scripts and notebook tools*)
+
+(* OpenCode's code mode asks for permission with toolCall { name: "execute", rawInput: { code } } and nothing else (the
+   permission's action, e.g. WolframNotebooks_InsertCells, is not in the request). The panel always shows the script
+   as plain text, and the tool references that it shows above it. *)
+VerificationTest[
+    $acpPermissionOptions = {
+        <| "optionId" -> "once"  , "kind" -> "allow_once"  , "name" -> "Allow once"   |>,
+        <| "optionId" -> "always", "kind" -> "allow_always", "name" -> "Always allow" |>,
+        <| "optionId" -> "reject", "kind" -> "reject_once" , "name" -> "Reject"       |>
+    };
+    (* a permission request as OpenCode 2.0.26 sends it for code mode, and for a direct call of an MCP tool *)
+    acpScriptRequest[ code_String ] := <| "Params" -> <|
+        "toolCall" -> <|
+            "toolCallId" -> "call_script", "name" -> "execute", "title" -> "execute", "kind" -> "other", "status" -> "pending",
+            "locations" -> { }, "rawInput" -> <| "code" -> code |>
+        |>,
+        "options"  -> $acpPermissionOptions
+    |> |>;
+    acpToolRequest[ name_String, input_Association ] := <| "Params" -> <|
+        "toolCall" -> <| "toolCallId" -> "call_tool", "name" -> name, "title" -> name, "kind" -> "other", "status" -> "pending", "rawInput" -> input |>,
+        "options"  -> $acpPermissionOptions
+    |> |>;
+    (* the panel's boxes for one pending request *)
+    acpPanelBoxes[ info_Association ] := Block[ { $acpWindows = <| acpFakeNotebook -> acpWindowRecord @ <| 7 -> info |> |> },
+        acpWithTurns[ { }, First @ Wolfram`Chatbook`ACP`Rendering`Private`permissionPanelContent @ acpFakeNotebook ]
+    ];
+    (* the panel's headline (the text of its first line) *)
+    acpPanelHeadline[ info_Association ] := FirstCase[
+        acpBoxStrings @ acpPanelBoxes @ info,
+        s_String /; StringStartsQ[ s, "OpenCode wants to" ],
+        Missing[ "NoHeadline" ]
+    ];
+    (* the texts of the plain code blocks (Framed strings in the code font) of the panel *)
+    acpPlainCodeTexts[ boxes_ ] := Cases[
+        boxes,
+        StyleBox[ s_String, ___, FontFamily -> "Source Code Pro", ___, PrivateFontOptions -> { "OperatorSubstitution" -> False }, ___ ] :>
+            ToExpression[ s, InputForm ],
+        Infinity
+    ];
+    $acpE2EScript = "return await tools.WolframNotebooks.InsertCells({notebook:\"5de1d007\",markdown:\"Escape velocity: v = sqrt(2 mu / r).\"});";
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptDefinitions@@Tests/ACPRendering.wlt:1194,1-1234,2"
+]
+
+(* The request of the end-to-end run: the headline names the tool, the call's notebook and markdown are shown, and the
+   script itself below them; the options are the agent's *)
+VerificationTest[
+    Module[ { boxes = acpPanelBoxes @ acpScriptRequest @ $acpE2EScript, buttons },
+        buttons = Cases[ boxes, b_ButtonBox :> b, Infinity ];
+        {
+            acpPanelHeadline @ acpScriptRequest @ $acpE2EScript,
+            acpContainsTextQ[ boxes, "WolframNotebooks: InsertCells" ],
+            acpContainsTextQ[ boxes, "5de1d007" ],
+            MemberQ[ acpPlainCodeTexts @ boxes, "Escape velocity: v = sqrt(2 mu / r)." ],
+            MemberQ[ acpPlainCodeTexts @ boxes, $acpE2EScript ],
+            acpContainsTextQ[ boxes, "Script" ],
+            (* plain text: no Chatbook code block, whose formatter would format the agent's text *)
+            FreeQ[ boxes, _String? (StringContainsQ[ "ChatCodeBlock" ]) ],
+            acpActionCalls[ buttons, "PermissionResponse" ],
+            acpContainsTextQ[ boxes, "use the tool that it asks about here (the script may use WolframNotebooks: InsertCells)" ]
+        }
+    ],
+    {
+        "OpenCode wants to run a script that may use WolframNotebooks: InsertCells",
+        True, True, True, True, True, True,
+        { { acpFakeNotebook, 7, "once" }, { acpFakeNotebook, 7, "always" }, { acpFakeNotebook, 7, "reject" } },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptE2E@@Tests/ACPRendering.wlt:1238,1-1262,2"
+]
+
+(* The window title of the notebook, once the pump resolved it (see acpNotebookTitles), with its id *)
+VerificationTest[
+    Module[ { info, boxes },
+        info  = Append[ acpScriptRequest @ $acpE2EScript, "NotebookTitles" -> <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> ];
+        boxes = acpPanelBoxes @ info;
+        {
+            acpContainsTextQ[ boxes, "Orbits.nb" ],
+            acpContainsTextQ[ boxes, "5de1d007" ],
+            (* the titles are part of the panel's signature: it is shown again when they arrive *)
+            Block[ { $acpWindows = <| acpFakeNotebook -> acpWindowRecord @ <| 7 -> info |> |> },
+                Last @ Wolfram`Chatbook`ACP`Rendering`Private`permissionSignature @ acpFakeNotebook
+            ]
+        }
+    ],
+    { True, True, <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptNotebookTitle@@Tests/ACPRendering.wlt:1265,1-1281,2"
+]
+
+(* The shapes of D2-01: the bracket form, the mixed form, a namespace alias, and decoys in a comment. The headline
+   names every tool that the script names (the edits first), and the script is always shown *)
+VerificationTest[
+    Module[ { scripts },
+        scripts = {
+            "await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})",
+            "await tools[\"WolframNotebooks\"].DeleteCells({notebook:\"ab12cd34\", cells: \"c1\"})",
+            "const nb = tools.WolframNotebooks;\nawait nb.DeleteCells({notebook:\"ab12cd34\", cells: \"c1\"})",
+            "/* tools.WolframNotebooks.ListNotebooks({}) */ await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})",
+            "// tools.WolframNotebooks.ListNotebooks({});\nawait tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})"
+        };
+        {
+            acpPanelHeadline @ acpScriptRequest @ # & /@ scripts,
+            AllTrue[ scripts, MemberQ[ acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest @ #, # ] & ],
+            (* the arguments of the real call: the notebook, and cells that are not a literal *)
+            With[ { boxes = acpPanelBoxes @ acpScriptRequest @ Last @ scripts },
+                { acpContainsTextQ[ boxes, "ab12cd34" ], acpContainsTextQ[ boxes, "(computed)" ] }
+            ]
+        }
+    ],
+    {
+        {
+            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
+            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
+            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
+            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells, WolframNotebooks: ListNotebooks",
+            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells, WolframNotebooks: ListNotebooks"
+        },
+        True,
+        { True, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptBracketMixedDecoy@@Tests/ACPRendering.wlt:1285,1-1316,2"
+]
+
+(* A script whose tools can't be read: a neutral headline (or "and other tools" when some can), and the script, at
+   most $permissionScriptLines lines with a note of the rest *)
+VerificationTest[
+    Module[ { long, boxes },
+        long  = StringRiffle[ Join[ { "const n = pick();" }, Table[ "// line " <> ToString @ k, { k, 100 } ], { "return n;" } ], "\n" ];
+        boxes = acpPanelBoxes @ acpScriptRequest @ long;
+        {
+            acpPanelHeadline @ acpScriptRequest[ "const x = compute();\nreturn x;" ],
+            acpPanelHeadline @ acpScriptRequest[ "const t = tools;\nreturn t.WolframNotebooks.DeleteCells({});" ],
+            acpPanelHeadline @ acpScriptRequest[ "await tools.WolframNotebooks.ListNotebooks({});\nawait tools.WolframNotebooks[name]({})" ],
+            MemberQ[ acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest[ "const x = compute();\nreturn x;" ], "const x = compute();\nreturn x;" ],
+            Length @ StringSplit[ First @ acpPlainCodeTexts @ boxes, "\n" ],
+            StringEndsQ[ First @ acpPlainCodeTexts @ boxes, "\[Ellipsis] 22 more lines" ],
+            (* no tools: the "Always allow" text is the generic one *)
+            acpContainsTextQ[ boxes, "do this kind of thing in /project" ]
+        }
+    ],
+    {
+        "OpenCode wants to run a script",
+        "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells and other tools",
+        "OpenCode wants to run a script that may use WolframNotebooks: ListNotebooks and other tools",
+        True,
+        81,
+        True,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptUnparseable@@Tests/ACPRendering.wlt:1320,1-1346,2"
+]
+
+(* A decoy (with literal arguments, in a regular expression) and a real edit that the reader can't see (a comment
+   between "tools" and its member): the headline and the "Always allow" text name the edit with "and other tools", and
+   the decoy's arguments and notebook are not shown. A script that names no tool that changes notebooks (which are what
+   Chatbook's permission rules make OpenCode ask about) gets "and other tools" too. *)
+VerificationTest[
+    Module[ { hidden, scope },
+        hidden = StringJoin[
+            "const r = /tools.WolframNotebooks.InsertCells({notebook: \"5de1d007\", markdown: \"Escape velocity\"})/;\n",
+            "await tools /* namespace */ .WolframNotebooks.DeleteCells({notebook: \"5de1d007\", cells: \"a1,b2,c3\"});"
+        ];
+        scope[ code_ ] := Wolfram`Chatbook`ACP`Rendering`Private`alwaysScopeText[
+            <| "Name" -> "execute", "RawName" -> "execute", "RawInput" -> <| "code" -> code |>, "RawOutput" -> None |>,
+            "OpenCode",
+            "/project"
+        ];
+        {
+            acpPanelHeadline @ acpScriptRequest @ hidden,
+            StringContainsQ[ scope @ hidden, "(the script may use WolframNotebooks: InsertCells, WolframNotebooks: DeleteCells and other tools)" ],
+            (* only the script is shown as code: no markdown argument of the decoy *)
+            acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest @ hidden === { hidden },
+            acpPermissionNotebooks @ <| "toolCall" -> <| "name" -> "execute", "rawInput" -> <| "code" -> hidden |> |> |>,
+            acpPanelHeadline @ acpScriptRequest[ "await tools.WolframNotebooks.ListNotebooks({})" ],
+            StringContainsQ[ scope[ "await tools.WolframNotebooks.ListNotebooks({})" ], "(the script may use WolframNotebooks: ListNotebooks and other tools)" ],
+            StringContainsQ[ scope @ $acpE2EScript, "(the script may use WolframNotebooks: InsertCells) in /project" ]
+        }
+    ],
+    {
+        "OpenCode wants to run a script that may use WolframNotebooks: InsertCells, WolframNotebooks: DeleteCells and other tools",
+        True,
+        True,
+        { },
+        "OpenCode wants to run a script that may use WolframNotebooks: ListNotebooks and other tools",
+        True,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptHiddenCall@@Tests/ACPRendering.wlt:1352,1-1385,2"
+]
+
+(* A real call with a long markdown literal and an edit hidden after it on the same line (tools.WolframNotebooks
+   assigned in an expression): "and other tools", and the whole line is shown (wrapped, not cut). A script longer than
+   $permissionScriptLength characters ends with a note of the rest. *)
+VerificationTest[
+    Module[ { markdown, hidden, long, boxes },
+        markdown = "## Summary\\n\\n" <> StringRepeat[ "The orbital period follows from Kepler's third law. ", 6 ];
+        hidden   = StringJoin[
+            "await tools.WolframNotebooks.InsertCells({notebook: \"c6d32676\", markdown: \"", markdown, "\"}); ",
+            "let p = tools.WolframNotebooks; await (p = tools.WolframNotebooks)[\"Delete\" + \"Cells\"]({notebook: \"c6d32676\", cells: \"all\"});"
+        ];
+        long  = "const s = \"" <> StringRepeat[ "x", 25000 ] <> "\";\nreturn s;";
+        boxes = acpPanelBoxes @ acpScriptRequest @ long;
+        {
+            StringLength @ hidden > 400,
+            acpPanelHeadline @ acpScriptRequest @ hidden,
+            MemberQ[ acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest @ hidden, hidden ],
+            StringLength @ First @ acpPlainCodeTexts @ boxes,
+            StringEndsQ[ First @ acpPlainCodeTexts @ boxes, StringRepeat[ "x", 100 ] <> "\n\[Ellipsis] 5023 more characters" ]
+        }
+    ],
+    {
+        True,
+        "OpenCode wants to run a script that may use WolframNotebooks: InsertCells and other tools",
+        True,
+        20000 + StringLength[ "\n\[Ellipsis] 5023 more characters" ],
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptLongLines@@Tests/ACPRendering.wlt:1390,1-1416,2"
+]
+
+(* A direct call of a notebook tool (not in code mode): the same arguments as for a script, and a "command" in its
+   input is neither shown nor taken for the scope of "Always allow" *)
+VerificationTest[
+    Module[ { info, boxes },
+        info  = acpToolRequest[ "WolframNotebooks_InsertCells", <| "notebook" -> "5de1d007", "markdown" -> "# Notes\ntext", "position" -> "before", "command" -> "rm -rf /" |> ];
+        boxes = acpPanelBoxes @ Append[ info, "NotebookTitles" -> <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> ];
+        {
+            acpPanelHeadline @ info,
+            acpContainsTextQ[ boxes, "Orbits.nb" ],
+            MemberQ[ acpPlainCodeTexts @ boxes, "# Notes\ntext" ],
+            acpContainsTextQ[ boxes, "before" ],
+            acpContainsTextQ[ boxes, "rm -rf" ],
+            acpContainsTextQ[ boxes, "lets OpenCode use WolframNotebooks: InsertCells in /project" ]
+        }
+    ],
+    { "OpenCode wants to use WolframNotebooks: InsertCells", True, True, True, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-DirectNotebookTool@@Tests/ACPRendering.wlt:1420,1-1436,2"
+]
+
+(* The script, the markdown and the arguments are the agent's: shown as plain strings, with the front end's linear
+   syntax neutralized, never through the formatter *)
+VerificationTest[
+    Module[ { evil, boxes },
+        evil  = FromCharacterCode[ { 63425, 63433, 63432 } ] <> "DynamicBox[Print[1]]" <> FromCharacterCode[ 63424 ];
+        boxes = acpPanelBoxes @ acpScriptRequest[
+            "await tools.WolframNotebooks.InsertCells({notebook: \"" <> evil <> "\", markdown: \"" <> evil <> "\"}) // " <> evil
+        ];
+        {
+            FreeQ[ boxes, s_String /; StringContainsQ[ s, Characters @ FromCharacterCode @ Range[ 63424, 63437 ] ] ],
+            FreeQ[ boxes, _DynamicBox ],
+            Length @ acpPlainCodeTexts @ boxes
+        }
+    ],
+    { True, True, 2 },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ScriptPlainText@@Tests/ACPRendering.wlt:1440,1-1455,2"
+]
+
+(* The tool cards show the same arguments: a script's calls while it runs, and a direct call of a notebook tool *)
+VerificationTest[
+    Module[ { tool, script, direct },
+        tool[ name_, input_ ] := <|
+            "Type" -> "Tool", "ToolCallID" -> "t", "Name" -> Wolfram`Chatbook`ACP`Common`acpCanonicalToolName @ name, "RawName" -> name,
+            "Kind" -> "other", "Title" -> name, "Status" -> "in_progress", "ClientOutcome" -> None, "RawInput" -> input, "RawOutput" -> None,
+            "Content" -> { }, "Diffs" -> { }, "Locations" -> { }, "Permission" -> None, "ExitCode" -> None, "Child" -> None
+        |>;
+        (* the calls of the execute card's Input section (the section's Script opener needs a turn) *)
+        script = ToBoxes[
+            Wolfram`Chatbook`ACP`Rendering`Private`executeCallView /@ acpExecuteToolCalls @ tool[
+                "execute",
+                <| "code" -> "await tools.WolframNotebooks.ReplaceCells({notebook: \"5de1d007\", cells: [\"c1\", \"c2\"], markdown: md})" |>
+            ]
+        ];
+        direct = ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`inputSection[
+            tool[ "WolframNotebooks_DeleteCells", <| "notebook" -> "5de1d007", "cells" -> "c1, c2", "unusedParameter" -> "x" |> ],
+            { "Tool", "t" }
+        ];
+        {
+            acpContainsTextQ[ script, "WolframNotebooks: ReplaceCells" ],
+            acpContainsTextQ[ script, "c1, c2" ],
+            acpContainsTextQ[ script, "(computed)" ],
+            acpContainsTextQ[ direct, "c1, c2" ],
+            (* only the tools' parameters *)
+            acpContainsTextQ[ direct, "unusedParameter" ]
+        }
+    ],
+    { True, True, True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ToolCard-NotebookToolArguments@@Tests/ACPRendering.wlt:1458,1-1488,2"
+]
+
+(* The pump adds the notebooks' titles to a pending request (Connection.wl), and only to one that is still pending *)
+VerificationTest[
+    Module[ { titles = <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |>, info, calls = { }, run },
+        info = acpScriptRequest @ $acpE2EScript;
+        run[ pending_ ] := Block[
+            {
+                $acpWindows = <| acpFakeNotebook -> acpWindowRecord @ pending |>,
+                Wolfram`Chatbook`ACP`Common`acpNotebookTitles = (AppendTo[ calls, # ]; titles) &,
+                (* no pump for the made-up window *)
+                Wolfram`Chatbook`ACP`Common`acpMarkWindowDirty = Null &
+            },
+            Wolfram`Chatbook`ACP`Connection`Private`resolvePermissionNotebooks[ acpFakeNotebook, 7, { "5de1d007" } ];
+            $acpWindows[ acpFakeNotebook, "PendingPermissions" ]
+        ];
+        {
+            run @ <| 7 -> info |>,
+            run @ <| 8 -> info |>,
+            calls
+        }
+    ],
+    {
+        <| 7 -> KeyValuePattern[ "NotebookTitles" -> <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> ] |>,
+        <| 8 -> _? (FreeQ[ #, "NotebookTitles" ] &) |>,
+        { { "5de1d007" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-PermissionPanel-ResolveNotebookTitles@@Tests/ACPRendering.wlt:1491,1-1517,2"
+]
+
+(* acpNotebookTitles resolves the arguments as the tools do: an id (or the start of it) or a title of one of the listed
+   notebooks; others are left out. Needs a front end (else Missing["TestSkipped"]); the notebook is closed again. *)
+VerificationTest[
+    If[ TrueQ @ Quiet @ MatchQ[ UsingFrontEnd @ $FrontEnd, _FrontEndObject ],
+        UsingFrontEnd @ Module[ { nbo, id, titles },
+            nbo = NotebookPut @ Notebook[ { Cell[ "Escape velocity", "Text" ] }, WindowTitle -> "ACPRendering Orbits" ];
+            WithCleanup[
+                id     = StringTake[ First @ nbo, 8 ];
+                titles = Wolfram`Chatbook`ACP`Common`acpNotebookTitles @ { id, "ACPRendering Orbits", "no-such-notebook" };
+                {
+                    Keys @ titles === { id, "ACPRendering Orbits" },
+                    MatchQ[ titles[ id ], <| "ID" -> _String? (StringStartsQ[ id ]), "Title" -> "ACPRendering Orbits" |> ],
+                    titles[ "ACPRendering Orbits" ] === titles[ id ]
+                },
+                NotebookClose @ nbo
+            ]
+        ],
+        Missing[ "TestSkipped" ]
+    ],
+    { True, True, True } | Missing[ "TestSkipped" ],
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-NotebookTitles-FrontEnd@@Tests/ACPRendering.wlt:1521,1-1541,2"
+]
+
+VerificationTest[
+    Block[ { $FrontEnd = Null }, Wolfram`Chatbook`ACP`Common`acpNotebookTitles /@ { { "5de1d007" }, { } } ],
+    { <| |>, <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-NotebookTitles-NoFrontEnd@@Tests/ACPRendering.wlt:1543,1-1548,2"
+]
+
 VerificationTest[
     Module[ { status },
         status[ rec_ ] := Block[ { $acpWindows = <| acpFakeNotebook -> Join[ acpWindowRecord @ <| |>, rec ] |> }, First @ Wolfram`Chatbook`ACP`Rendering`Private`statusContent @ acpFakeNotebook ];
@@ -1199,7 +1562,7 @@ VerificationTest[
     ],
     { True, True, True, True, { "Reconnect" }, { "ChooseModel", "Reconnect" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1187,1-1203,2"
+    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:1550,1-1566,2"
 ]
 
 (* MCP readiness changes don't re-render the status view *)
@@ -1212,7 +1575,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1206,1-1216,2"
+    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:1569,1-1579,2"
 ]
 
 VerificationTest[
@@ -1228,7 +1591,7 @@ VerificationTest[
     ],
     { True, True, True, True, "" | "\"\"" },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1218,1-1232,2"
+    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:1581,1-1595,2"
 ]
 
 VerificationTest[
@@ -1242,7 +1605,7 @@ VerificationTest[
     ],
     { True, True, { "SignIn" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1234,1-1246,2"
+    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:1597,1-1609,2"
 ]
 
 (* "Locate OpenCode..." is a file chooser run by the front end; the chosen file goes to the SetAgentExecutable action *)
@@ -1257,14 +1620,14 @@ VerificationTest[
     ],
     { 1, True, { "Reconnect" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1249,1-1261,2"
+    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:1612,1-1624,2"
 ]
 
 VerificationTest[
     MatchQ[ #, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ] & /@ { acpToolbarStatusView @ acpFakeNotebook, acpUsageMeterView @ acpFakeNotebook },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1263,1-1268,2"
+    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:1626,1-1631,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1292,7 +1655,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-RemoteDefinitions@@Tests/ACPRendering.wlt:1273,1-1296,2"
+    TestID   -> "ACPRendering-RemoteDefinitions@@Tests/ACPRendering.wlt:1636,1-1659,2"
 ]
 
 (* What the compact error view shows (acpErrorParts): ssh's last line, the hint, older errors' "Detail" split at the
@@ -1333,7 +1696,7 @@ VerificationTest[
         <| "Message" -> "", "Line" -> None, "Details" -> None, "MoreQ" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-ErrorParts@@Tests/ACPRendering.wlt:1300,1-1337,2"
+    TestID   -> "Remote-ErrorParts@@Tests/ACPRendering.wlt:1663,1-1700,2"
 ]
 
 (* The line is cut to 200 characters, the output to its last 12 lines and the details to about 1500 characters; text with
@@ -1355,7 +1718,7 @@ VerificationTest[
     ],
     { 200, True, { "hint", "line 19", "line 30" }, 14, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-ErrorParts-Limits@@Tests/ACPRendering.wlt:1341,1-1359,2"
+    TestID   -> "Remote-ErrorParts-Limits@@Tests/ACPRendering.wlt:1704,1-1722,2"
 ]
 
 (* The toolbar's compact error view: the message and the last line of the output, the buttons on their own row with
@@ -1427,7 +1790,7 @@ VerificationTest[
         { False, False, False, False }, True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-Compact@@Tests/ACPRendering.wlt:1364,1-1431,2"
+    TestID   -> "ACPRendering-ErrorView-Compact@@Tests/ACPRendering.wlt:1727,1-1794,2"
 ]
 
 (* The full view (final cells, the Review and picker windows) wraps its lines too, in any cell, and both views and the
@@ -1452,7 +1815,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-TextStyle@@Tests/ACPRendering.wlt:1436,1-1456,2"
+    TestID   -> "ACPRendering-ErrorView-TextStyle@@Tests/ACPRendering.wlt:1799,1-1819,2"
 ]
 
 (* FE-only: in a docked cell (the toolbar), whose "DockedCell" style turns line breaking off, the compact view wraps a
@@ -1475,7 +1838,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-WrapsInDockedCell-FEOnly@@Tests/ACPRendering.wlt:1461,1-1479,2"
+    TestID   -> "ACPRendering-ErrorView-WrapsInDockedCell-FEOnly@@Tests/ACPRendering.wlt:1824,1-1842,2"
 ]
 
 (* B7.5: where "Always allow" applies for a remote window's request, resolved as POSIX paths on the host (~ is the
@@ -1521,7 +1884,7 @@ VerificationTest[
         "/home/u/sibling"
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-PermissionPaths@@Tests/ACPRendering.wlt:1483,1-1525,2"
+    TestID   -> "Remote-PermissionPaths@@Tests/ACPRendering.wlt:1846,1-1888,2"
 ]
 
 (* The permission panel of a remote window: read /etc, list /var/log, cd ~/other (the known home), paths inside the
@@ -1571,7 +1934,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionScope-Remote@@Tests/ACPRendering.wlt:1529,1-1575,2"
+    TestID   -> "ACPRendering-PermissionScope-Remote@@Tests/ACPRendering.wlt:1892,1-1938,2"
 ]
 
 (* Resource links of a remote window's turn: a file on the host is shown with its path on the host as a tooltip, not as
@@ -1607,7 +1970,7 @@ VerificationTest[
     ],
     { False, True, True, True, True, False, True, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ResourceLink-Remote@@Tests/ACPRendering.wlt:1579,1-1611,2"
+    TestID   -> "ACPRendering-ResourceLink-Remote@@Tests/ACPRendering.wlt:1942,1-1974,2"
 ]
 
 (* The agent's names, URIs and block types never become boxes of its choice (linear syntax), local and remote turns;
@@ -1636,8 +1999,98 @@ VerificationTest[
     ],
     { ConstantArray[ False, 10 ], { False, False, False, True }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ResourceLink-LinearSyntax@@Tests/ACPRendering.wlt:1615,1-1640,2"
+    TestID   -> "ACPRendering-ResourceLink-LinearSyntax@@Tests/ACPRendering.wlt:1978,1-2003,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Untrusted Content Safety*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::GlobalSymbol:: *)
+
+(* The agent's answer text is untrusted: rendering it must not import markdown images (a URL image would reach the
+   network, could hang the pump or exhaust memory) or evaluate Wolfram|Alpha / resource lookups. finishedItems and
+   formatStreaming are run with Import and WolframAlpha blocked to loggers, on an image, a Wolfram|Alpha free-form
+   prompt and a DateObject; neither is ever called. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`ACP`Rendering`Private`$acpNoFrontEndFormatting = True },
+        Module[ { importCalls = { }, alphaCalls = { }, payloads },
+            payloads = {
+                "![diagram](http://10.255.255.1/x.png)",
+                "```wl\n\[FreeformPrompt][\"population of france\"]\n```",
+                "```wl\nDateObject[{2024, 1, 1}, TimeZone -> \"America/New_York\"]\n```"
+            };
+            Block[
+                {
+                    Import       = (AppendTo[ importCalls, { ## } ]; $Failed) &,
+                    WolframAlpha = (AppendTo[ alphaCalls, { ## } ]; $Failed) &
+                },
+                Scan[ Wolfram`Chatbook`ACP`Rendering`Private`finishedItems, payloads ];
+                Scan[ Wolfram`Chatbook`ACP`Rendering`Private`formatStreaming[ "turn", #, False ] &, payloads ]
+            ];
+            { importCalls, alphaCalls }
+        ]
+    ],
+    { { }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-UntrustedContent-NoImportOrWolframAlpha@@Tests/ACPRendering.wlt:2016,1-2038,2"
+]
+
+(* With finished Wolfram Language formatting (a front end), neither a DateObject option nor front-end linear syntax in
+   the agent's code runs code, in finishedItems or in the final codeBlock, and no image is imported, no Wolfram|Alpha
+   query is made and no resource function is looked up. The probe list would gain an entry if any payload were
+   evaluated. The same Wolfram|Alpha and resource function payloads in a chat's code block do make the calls, so the
+   test can't pass because the formatter makes neither anyway; queries are unique, as their results are cached. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`ACP`Rendering`Private`$acpNoFrontEndFormatting = False },
+        UsingFrontEnd @ Module[ { importCalls = { }, alphaCalls = { }, resourceCalls = { }, lookups, acpCalls },
+            Global`acpUntrustedProbe = { };
+            Needs[ "FunctionResource`" -> None ];
+            lookups[ ] := StringJoin[
+                "```wl\n\[FreeformPrompt][\"population of ", CreateUUID[ ], "\"]\n",
+                "ResourceFunction[\"NoSuchFunction", StringDelete[ CreateUUID[ ], "-" ], "\"]\n```"
+            ];
+            Block[
+                {
+                    Import       = (AppendTo[ importCalls, { ## } ]; $Failed) &,
+                    WolframAlpha = (AppendTo[ alphaCalls, { ## } ]; $Failed) &,
+                    FunctionResource`MakeResourceFunctionBoxes = (AppendTo[ resourceCalls, { ## } ]; $Failed) &
+                },
+                Wolfram`Chatbook`ACP`Rendering`Private`finishedItems @ lookups[ ];
+                Wolfram`Chatbook`ACP`Rendering`Private`finishedItems[
+                    "```wl\nDateObject[{2024, 1, 1}, TimeZone -> (AppendTo[Global`acpUntrustedProbe, \"date\"]; 0)]\n```"
+                ];
+                Wolfram`Chatbook`ACP`Rendering`Private`finishedItems[ "![a](http://10.255.255.1/x.png)" ];
+                Wolfram`Chatbook`ACP`Rendering`Private`finishedItems[
+                    "```wl\nf[\!\(\*RowBox[{AppendTo[Global`acpUntrustedProbe, \"ls\"]; \"x\"}]\)]\n```"
+                ];
+                Block[ { Wolfram`Chatbook`ACP`Rendering`Private`$renderMode = "Final" },
+                    Wolfram`Chatbook`ACP`Rendering`Private`codeBlock[
+                        "DateObject[{2024, 1, 1}, TimeZone -> (AppendTo[Global`acpUntrustedProbe, \"cb\"]; 0)]",
+                        "Wolfram"
+                    ];
+                    Wolfram`Chatbook`ACP`Rendering`Private`codeBlock[
+                        "f[\!\(\*RowBox[{AppendTo[Global`acpUntrustedProbe, \"lscb\"]; \"x\"}]\)]",
+                        "Wolfram"
+                    ];
+                    Wolfram`Chatbook`ACP`Rendering`Private`codeBlock[
+                        StringDelete[ lookups[ ], "```wl\n" | "\n```" ],
+                        "Wolfram"
+                    ]
+                ];
+                acpCalls = { importCalls, alphaCalls, resourceCalls };
+                FormatChatOutput[ lookups[ ], <| "Status" -> "Finished" |> ]
+            ];
+            { Global`acpUntrustedProbe, acpCalls, Length /@ { alphaCalls, resourceCalls } }
+        ]
+    ],
+    { { }, { { }, { }, { } }, { 1, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-UntrustedContent-FinishedModeNoEvaluation@@Tests/ACPRendering.wlt:2045,1-2091,2"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1651,7 +2104,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:1647,1-1655,2"
+    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:2100,1-2108,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

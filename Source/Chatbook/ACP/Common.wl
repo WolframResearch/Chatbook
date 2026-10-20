@@ -20,6 +20,7 @@ HoldComplete[
     `acpFE,
     `acpFESet,
     `acpIsolated,
+    `acpIsolatedAbortable,
     `acpLayoutSymbol,
     `acpLink,
     `acpLinkAvailableQ,
@@ -59,13 +60,18 @@ HoldComplete[
     `acpCanonicalToolName,
     `acpClientInterruptionTextQ,
     `acpDiffStats,
+    `acpExecuteScript,
     `acpExecuteToolCalls,
     `acpExecuteToolNames,
+    `acpExecuteToolReferences,
     `acpFormatDuration,
     `acpLabel,
     `acpLineDiff,
+    `acpMCPDisplayName,
     `acpNewTurn,
+    `acpNotebookToolName,
     `acpPatchRows,
+    `acpPermissionNotebooks, (* used by Connection.wl (the notebooks of a permission request, see Rendering.wl) *)
     `acpPreprocessAnswer,
     `acpStripToolOutput,
     `acpToolAction,
@@ -115,6 +121,7 @@ HoldComplete[
     `acpOpenCodeEnvironment,
     `acpOpenCodeVariables,
     `acpOptionValues,
+    `acpOwnAgentCommandQ,     (* used by MCP.wl (acpMCPEnabledQ) *)
     `acpPathDirectories,
     `acpPersistedRemoteHome,
     `acpPersistedSetting,
@@ -378,6 +385,29 @@ HoldComplete[
     `acpFolderPickerRecover,     (* used by UI.wl (kernel restarts) *)
     `acpFolderPickerStart,
     `acpFolderPickerWindowOf,
+
+    (* ::**************************************************************************************************************:: *)
+    (* NotebookTools.wl *)
+    `$acpNotebookEditTools,
+    `acpNotebookTitles, (* used by Connection.wl (the notebooks of a permission request, for the permission panel) *)
+    `acpNotebookTools,
+
+    (* ::**************************************************************************************************************:: *)
+    (* MCP.wl *)
+    `$acpMCPServerName,
+    `acpMCPAuthorizedQ,       (* the server's "Authentication" function (SocketListen handler) *)
+    `acpMCPAvailableQ,
+    `acpMCPConnectionStarted, (* used by Connection.wl (acpConnect) *)
+    `acpMCPDrain,             (* the ButtonFunction of the hidden pump notebook; called by its full name *)
+    `acpMCPEnabledQ,          (* used by Connection.wl (acpConnect) *)
+    `acpMCPEnqueue,           (* the server's "EvaluationFunction" (SocketListen handler) *)
+    `acpMCPEnsureServer,      (* used by Connection.wl (acpConnect) *)
+    `acpMCPKick,
+    `acpMCPPendingQ,          (* used by State.wl (the pump keeps running for queued tool calls and the server) *)
+    `acpMCPServer,
+    `acpMCPServersParam,      (* used by Connection.wl (session/new, session/load, session/resume) *)
+    `acpMCPStopServer,
+    `acpMCPToolPermissions,   (* used by Agents.wl (OpenCode's permission rules) *)
 
     (* ::**************************************************************************************************************:: *)
     (* UI.wl *)

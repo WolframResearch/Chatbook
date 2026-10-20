@@ -355,7 +355,9 @@ $acpStrings = <|
     "SectionError"                 -> "Error",
     "TruncatedEarlierLines"        -> "\[Ellipsis] `n` earlier lines",
     "TruncatedMoreLines"           -> "\[Ellipsis] `n` more lines",
+    "TruncatedMoreCharacters"      -> "\[Ellipsis] `n` more characters",
     "ImageUnavailable"             -> "[image]",
+    "ScriptComputed"               -> "(computed)",
 
     (* Permission panel *)
     "PermissionRun"                -> "`agent` wants to run a command",
@@ -364,6 +366,10 @@ $acpStrings = <|
     "PermissionRead"               -> "`agent` wants to read `path`",
     "PermissionExternal"           -> "`agent` wants to access `path` outside the project",
     "PermissionGeneric"            -> "`agent` wants to `action`",
+    "PermissionScript"             -> "`agent` wants to run a script",
+    "PermissionScriptTools"        -> "`agent` wants to run a script that may use `tools`",
+    "PermissionScriptToolsMore"    -> "`agent` wants to run a script that may use `tools` and other tools",
+    "PermissionMoreToolReferences" -> "\[Ellipsis] `n` more references to tools (see the script)",
     "PermissionQueue"              -> "`i` of `n`",
     "PermissionAllowOnce"          -> "Allow once",
     "PermissionAllowAlways"        -> "Always allow",
@@ -373,6 +379,9 @@ $acpStrings = <|
     "PermissionAlwaysScopeShellRelated" -> "\"Always allow\" lets `agent` run commands matching `patterns` (and the commands nested in this one) in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
     "PermissionAlwaysScopeExternal" -> "\"Always allow\" lets `agent` access files in `dir` (or in the repository that contains it) without asking again. `agent` saves this choice, so it also applies to future sessions.",
     "PermissionAlwaysScopeGeneric" -> "\"Always allow\" lets `agent` do this kind of thing in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
+    "PermissionAlwaysScopeScript"  -> "\"Always allow\" lets `agent` use the tool that it asks about here (the script may use `tools`) in `project` without asking again, also in other scripts. `agent` saves this choice, so it also applies to future sessions.",
+    "PermissionAlwaysScopeScriptMore" -> "\"Always allow\" lets `agent` use the tool that it asks about here (the script may use `tools` and other tools) in `project` without asking again, also in other scripts. `agent` saves this choice, so it also applies to future sessions.",
+    "PermissionAlwaysScopeTool"    -> "\"Always allow\" lets `agent` use `tool` in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
 
     (* Toolbar status and usage *)
     "ToolbarNoDirectory"           -> "Choose a project folder to start",
@@ -2230,7 +2239,7 @@ toolObject[ _, "LSP", tool_, turn_ ] := lspObject[ tool, turn ];
 toolObject[ _, "Invalid", tool_, _ ] := Replace[ rawInputValue[ tool, { "tool" } ], { t_String :> codeQuote @ t, _ :> "" } ];
 toolObject[ _, "Todo"|"TodoRead", _, _ ] := acpLabel[ "ToolTodoObject" ];
 toolObject[ _, "Think", tool_, _ ] := fallbackObject @ tool;
-toolObject[ _, "Generic", tool_, _ ] := Replace[ tool[ "RawName" ], { n_String :> mcpDisplayName @ n, _ :> fallbackObject @ tool } ];
+toolObject[ _, "Generic", tool_, _ ] := Replace[ tool[ "RawName" ], { n_String :> acpMCPDisplayName @ n, _ :> fallbackObject @ tool } ];
 toolObject[ ___ ] := "";
 
 toolObject // endDefinition;
@@ -2382,78 +2391,94 @@ permissionObject // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*MCP tools (OpenCode code mode)*)
 
-(* OpenCode runs MCP tools through its "execute" tool (JavaScript calling tools.<Server>.<Tool>(...)). Returns the
-   display names of the MCP tools used, from rawOutput.metadata.toolCalls or, while running, from the script. *)
+(* OpenCode runs MCP tools through its "execute" tool (code mode): JavaScript that calls them as
+   tools.<Server>.<Tool>(input), or with brackets, tools["<Server>"]["<Tool>"](input) (the form OpenCode's instructions
+   suggest). Once the call has completed, rawOutput.metadata.toolCalls lists the calls that ran, with their input. Until
+   then, and when OpenCode asks for permission (its request names only the "execute" tool and the script), they are read
+   from the script (acpExecuteScript). *)
+
+(* The display names of the MCP tools used: *)
 acpExecuteToolNames // beginDefinition;
 
-acpExecuteToolNames[ tool_Association ] := DeleteDuplicates[ mcpDisplayName /@ acpExecuteToolCalls[ tool ][[ All, "Tool" ]] ];
+acpExecuteToolNames[ tool_Association ] := DeleteDuplicates[ acpMCPDisplayName /@ acpExecuteToolCalls[ tool ][[ All, "Tool" ]] ];
 
 acpExecuteToolNames // endDefinition;
 
 
-(* Returns { <| "Tool" -> "Server.Tool", "Input" -> _Association|None, "Code" -> _String|None |>... } *)
+(* Returns { <| "Tool" -> "Server.Tool", "Input" -> _Association|None, "Code" -> _String|None,
+   "Arguments" -> _Association|_Missing|None, "MoreArguments" -> True|False |>... }: the calls that ran (their
+   "Arguments" are their "Input", None if they had none), or the tool references of the script (see acpExecuteScript) *)
 acpExecuteToolCalls // beginDefinition;
 
 acpExecuteToolCalls[ tool_Association ] := Module[ { meta, code },
-    meta = Replace[ tool[ "RawOutput" ], { KeyValuePattern[ "metadata" -> KeyValuePattern[ "toolCalls" -> calls_List ] ] :> calls, _ -> None } ];
-    If[ ListQ @ meta && meta =!= { },
+    meta = executeMetadataCalls @ tool;
+    If[ ListQ @ meta,
         Cases[ meta, call: KeyValuePattern[ "tool" -> name_String ] :> executeToolCall[ name, Lookup[ call, "input", None ] ] ],
-        code = rawInputValue[ tool, { "code", "script" } ];
-        If[ StringQ @ code, parseExecuteScript @ code, { } ]
+        code = executeScript @ tool;
+        If[ StringQ @ code, acpExecuteScript[ code ][ "Calls" ], { } ]
     ]
 ];
 
 acpExecuteToolCalls // endDefinition;
 
 
+(* The MCP tools that an execute call uses: <| "Tools" -> { "Server.Tool"... }, "Complete" -> True|False |>, the tools
+   of the calls that ran, or every tool that the script names (see acpExecuteScript for "Complete") *)
+acpExecuteToolReferences // beginDefinition;
+
+acpExecuteToolReferences[ tool_Association ] := Module[ { meta, code },
+    meta = executeMetadataCalls @ tool;
+    code = executeScript @ tool;
+    Which[
+        ListQ @ meta,
+            <| "Tools" -> DeleteDuplicates @ Cases[ meta, KeyValuePattern[ "tool" -> name_String ] :> name ], "Complete" -> True |>,
+        StringQ @ code,
+            KeyTake[ acpExecuteScript @ code, { "Tools", "Complete" } ],
+        True,
+            <| "Tools" -> { }, "Complete" -> True |>
+    ]
+];
+
+acpExecuteToolReferences // endDefinition;
+
+
+executeMetadataCalls // beginDefinition;
+executeMetadataCalls[ tool_Association ] := Replace[
+    tool[ "RawOutput" ],
+    { KeyValuePattern[ "metadata" -> KeyValuePattern[ "toolCalls" -> calls: { __ } ] ] :> calls, _ -> None }
+];
+executeMetadataCalls // endDefinition;
+
+
+executeScript // beginDefinition;
+executeScript[ tool_Association ] := rawInputValue[ tool, { "code", "script" } ];
+executeScript // endDefinition;
+
+
 executeToolCall // beginDefinition;
-executeToolCall[ name_String, input_Association ] := <| "Tool" -> name, "Input" -> input, "Code" -> Replace[ Lookup[ input, "code", None ], Except[ _String ] -> None ] |>;
-executeToolCall[ name_String, _ ] := <| "Tool" -> name, "Input" -> None, "Code" -> None |>;
+
+executeToolCall[ name_String, input_Association ] := <|
+    "Tool"          -> name,
+    "Input"         -> input,
+    "Code"          -> Replace[ Lookup[ input, "code", None ], Except[ _String ] -> None ],
+    "Arguments"     -> input,
+    "MoreArguments" -> False
+|>;
+
+executeToolCall[ name_String, _ ] := <| "Tool" -> name, "Input" -> None, "Code" -> None, "Arguments" -> None, "MoreArguments" -> False |>;
+
 executeToolCall // endDefinition;
 
 
-parseExecuteScript // beginDefinition;
+(* "Server.Tool" (code mode) or "Server_Tool" (OpenCode's name of an MCP tool) as it is shown. The tools of Chatbook's
+   own notebook tools server ($acpMCPServerName) always show the server ("WolframNotebooks: InsertCells"), in both
+   forms; tools of the Wolfram MCP server (and others with a name in $mcpToolDisplayNames) show only their name. *)
+acpMCPDisplayName // beginDefinition;
 
-parseExecuteScript[ code_String ] := StringCases[
-    code,
-    "tools." ~~ server: (WordCharacter|"_").. ~~ "." ~~ name: (WordCharacter|"_").. ~~ WhitespaceCharacter... ~~ "(" ~~ args: Shortest[ ___ ] ~~ ")" ~~ WhitespaceCharacter... ~~ (")"|";"|","|"\n"|EndOfString) :> <|
-        "Tool"  -> server <> "." <> name,
-        "Input" -> None,
-        "Code"  -> scriptCodeArgument @ args
-    |>
-];
-
-parseExecuteScript // endDefinition;
-
-
-(* Extracts the `code` argument of an MCP tool call from the JavaScript source: *)
-scriptCodeArgument // beginDefinition;
-
-scriptCodeArgument[ args_String ] := Module[ { literal },
-    literal = StringCases[
-        args,
-        {
-            "code" ~~ WhitespaceCharacter... ~~ ":" ~~ WhitespaceCharacter... ~~ s: ("\"" ~~ Shortest[ ___ ] ~~ Except[ "\\" ] ~~ "\"") :> jsStringValue @ s,
-            "code" ~~ WhitespaceCharacter... ~~ ":" ~~ WhitespaceCharacter... ~~ "`" ~~ s: Shortest[ ___ ] ~~ "`" :> s,
-            "code" ~~ WhitespaceCharacter... ~~ ":" ~~ WhitespaceCharacter... ~~ "'" ~~ s: Shortest[ ___ ] ~~ Except[ "\\" ] ~~ "'" :> StringReplace[ s, { "\\'" -> "'", "\\n" -> "\n", "\\\\" -> "\\" } ]
-        },
-        1
-    ];
-    Replace[ literal, { { s_String } :> s, _ -> None } ]
-];
-
-scriptCodeArgument // endDefinition;
-
-
-jsStringValue // beginDefinition;
-jsStringValue[ s_String ] := Replace[ Quiet @ Developer`ReadRawJSONString @ s, Except[ _String ] :> StringTrim[ s, "\"" ] ];
-jsStringValue // endDefinition;
-
-
-mcpDisplayName // beginDefinition;
-
-mcpDisplayName[ name_String ] := Module[ { parts, server, tool },
-    parts  = StringSplit[ name, "." | ("_"..), 2 ];
+acpMCPDisplayName[ name_String ] := Module[ { notebookTool, parts, server, tool },
+    notebookTool = acpNotebookToolName @ name;
+    If[ StringQ @ notebookTool, Return[ $acpMCPServerName <> ": " <> notebookTool, Module ] ];
+    parts = StringSplit[ name, "." | ("_"..), 2 ];
     { server, tool } = If[ Length @ parts === 2 && KeyExistsQ[ $mcpToolDisplayNames, Last @ parts ], parts, { None, name } ];
     Which[
         KeyExistsQ[ $mcpToolDisplayNames, tool ], $mcpToolDisplayNames[ tool ],
@@ -2462,7 +2487,825 @@ mcpDisplayName[ name_String ] := Module[ { parts, server, tool },
     ]
 ];
 
-mcpDisplayName // endDefinition;
+acpMCPDisplayName // endDefinition;
+
+
+(* The name of a tool of Chatbook's notebook tools server ($acpMCPServerName, see MCP.wl) without the server, from
+   "WolframNotebooks.InsertCells" (code mode) or "WolframNotebooks_InsertCells" (OpenCode's name of the MCP tool, which
+   a direct call has); None for any other name *)
+acpNotebookToolName // beginDefinition;
+
+acpNotebookToolName[ name_String ] := Replace[
+    StringCases[ name, StartOfString ~~ $acpMCPServerName ~~ ("." | "_") ~~ tool: Except[ "." ].. ~~ EndOfString :> tool, 1 ],
+    { { tool_String } :> tool, _ -> None }
+];
+
+acpNotebookToolName[ _ ] := None;
+
+acpNotebookToolName // endDefinition;
+
+
+(* The notebook arguments (string literals, as the agent wrote them) of the calls of the notebook tools in a permission
+   request: the direct call of a tool (toolCall name "WolframNotebooks_InsertCells", rawInput its input) or the calls of
+   an execute script. The permission panel shows the notebooks' window titles, which the pump resolves when the request
+   arrives (see Connection.wl, onPermissionRequest). *)
+acpPermissionNotebooks // beginDefinition;
+
+acpPermissionNotebooks[ params_Association ] := Module[ { toolCall, name, input, arguments },
+    toolCall  = Replace[ Lookup[ params, "toolCall", <| |> ], Except[ _Association ] -> <| |> ];
+    name      = Lookup[ toolCall, "name", None ];
+    input     = Lookup[ toolCall, "rawInput", None ];
+    arguments = Which[
+        acpCanonicalToolName @ name === "execute",
+            Cases[
+                acpExecuteToolCalls @ <| "RawInput" -> input, "RawOutput" -> None |>,
+                KeyValuePattern @ { "Tool" -> t_ /; StringQ @ acpNotebookToolName @ t, "Arguments" -> args_ } :> args
+            ],
+        StringQ @ acpNotebookToolName @ name,
+            { input },
+        True,
+            { }
+    ];
+    DeleteDuplicates @ Cases[ arguments, KeyValuePattern[ "notebook" -> nb_String /; StringTrim @ nb =!= "" ] :> nb ]
+];
+
+acpPermissionNotebooks[ _ ] := { };
+
+acpPermissionNotebooks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpExecuteScript*)
+
+(* What an execute script does with MCP tools, as far as its text shows it. The script is the agent's JavaScript: it is
+   never run, and what is read from it is only shown (above the script itself, which the permission panel always shows
+   as well), so the rules are conservative:
+   * "Calls": every reference to a tool, in the order of the script, wherever it is (also in comments and strings, so
+     that a decoy can't hide a real call): tools.S.T, tools["S"]["T"], tools["S"].T and tools.S["T"] (any quotes, with
+     optional chaining and white space), and nb.T or nb["T"] for a namespace alias (const nb = tools.S;). For a call
+     whose argument is an object literal, "Arguments" is <| key -> value |> with the values that are literals (strings,
+     decoded; numbers; true, false and null; lists of those) and Missing["Computed"] for any other value (variables,
+     template literals with ${...}, expressions). A spread (...x), a computed key or __proto__ may set any key: the keys
+     before it are Missing["Computed"] and "MoreArguments" is True. A call without an argument has <| |>; any other
+     reference (not called, not called with an object literal, or a call that can't be read) has Missing["Computed"].
+     "Code" is the "code" argument (of the Wolfram MCP server's evaluator). Only the first $maxScriptReferences
+     references are listed, then one for each other tool of "Tools".
+   * "Tools": the tools of the references, in order, then the edit tools of Chatbook's notebook tools that the script
+     names anywhere (InsertCells, ReplaceCells, DeleteCells: whatever reaches them, the request is most likely about
+     one of them), without duplicates. Unicode escapes in names (\u0074ools) are decoded for these.
+   * "Complete": False if the script may also reach tools in a way that can't be read: a use of "tools", of an alias or
+     of the name of the notebook tools server that is not part of a reference or alias that can be read (tools[name],
+     a comment between tools and its member, the tools object or an alias as a value, as in f(tools) or x || tools,
+     tools.S assigned other than in a declaration of its own; only words in comments and literals are no use), more
+     than $maxScriptAliases definitions of aliases, more than $maxScriptReferences references, or more than
+     $maxScriptLength characters (only that much is read).
+   Arguments are only read in the part of the script up to the first token after which JavaScript may read the script
+   differently from the tokens (scriptTokens: a slash that may start a regular expression; an HTML-like comment; a
+   string literal that is not closed; a template literal whose substitutions have comments or slashes), so a decoy
+   after such a token (in a regular expression or a template literal) is not taken for a call.
+   An object literal is read with a subset of JavaScript (strings, template literals, comments, names, numbers,
+   brackets and a few operators): an argument with anything else can't be read and is Missing["Computed"] as a whole,
+   as is a call whose callee or "(" is not a token there. *)
+acpExecuteScript // beginDefinition;
+
+(* A tool card and the permission panel read the same script several times per view: the last results are cached *)
+acpExecuteScript[ code_String ] := Replace[
+    $scriptCache[ code ],
+    _Missing :> cacheScript[ code, Block[ { $scriptTokenBudget = $maxTokenVisits }, executeScript0 @ code ] ]
+];
+
+acpExecuteScript // endDefinition;
+
+
+cacheScript // beginDefinition;
+cacheScript[ code_String, result_Association ] := (
+    If[ Length @ $scriptCache >= $maxCachedScripts, $scriptCache = <| |> ];
+    $scriptCache[ code ] = result
+);
+cacheScript // endDefinition;
+
+If[ ! AssociationQ @ $scriptCache, $scriptCache = <| |> ];
+$maxCachedScripts = 16;
+
+
+executeScript0 // beginDefinition;
+
+executeScript0[ code0_String ] := Module[ { truncated, code, tokens, refs, decoded, escaped, calls, tools },
+    truncated = StringLength @ code0 > $maxScriptLength;
+    code      = If[ truncated, StringTake[ code0, $maxScriptLength ], code0 ];
+    tokens    = scriptTokens @ code;
+    refs      = scriptReferences[ code, tokens ];
+    decoded   = decodeUnicodeEscapes @ code;
+    (* Names may be written with Unicode escapes, so the tools that a decoded copy names count too. An escape in a string
+       literal may stand for a quote, so the tokens of the decoded copy can't be trusted: every word in it counts. *)
+    escaped   = If[ decoded === code,
+                    <| "References" -> { }, "Tools" -> { }, "Complete" -> True |>,
+                    scriptReferences[ decoded, None ]
+                ];
+    calls     = scriptCall[ tokens, # ] & /@ Take[ refs[ "References" ], UpTo[ $maxScriptReferences ] ];
+    tools     = DeleteDuplicates @ Join[ refs[ "Tools" ], escaped[ "Tools" ] ];
+    <|
+        (* tools that are only named (or only in the decoded copy) are references whose arguments can't be read *)
+        "Calls"    -> Join[ calls, scriptCall[ None, <| "Tool" -> #, "Call" -> None |> ] & /@ Complement[ tools, calls[[ All, "Tool" ]] ] ],
+        "Tools"    -> tools,
+        "Complete" -> And[
+            ! truncated,
+            TrueQ @ refs[ "Complete" ],
+            TrueQ @ escaped[ "Complete" ],
+            Length @ refs[ "References" ] <= $maxScriptReferences
+        ]
+    |>
+];
+
+executeScript0 // endDefinition;
+
+
+$maxScriptLength     = 100000; (* characters of an execute script that are read *)
+$maxScriptReferences = 100;    (* tool references whose arguments are read *)
+$maxScriptTokens     = 20000;  (* tokens of a script that are read as JavaScript's (see scriptTokens) *)
+$maxTokenVisits      = 5000;   (* tokens (also comments) that reading the arguments of all references may visit *)
+$maxScriptAliases    = 20;     (* definitions of namespace aliases that are read *)
+$maxListItems        = 1000;   (* items of a list literal that are read *)
+$maxTemplateDepth    = 4;      (* levels of template literals and braces in substitutions that the tokens follow *)
+
+(* One member access (see $jsMember) with the given white space *)
+jsMember // beginDefinition;
+jsMember[ space_String ] := StringJoin[
+    space, "*(?:\\?\\.", space, "*(", $jsName, ")|\\.", space, "*(", $jsName, ")|(?:\\?\\.", space, "*)?\\[",
+    space, "*(", $jsString, ")", space, "*\\])"
+];
+jsMember // endDefinition;
+
+(* JavaScript (PCRE): white space (with the characters of JavaScript's that PCRE's \s may lack, such as U+FEFF), white
+   space without line terminators, and line terminators; a name; a string literal or a template literal without
+   substitutions, of at most 200 characters (the names of tools are short, and a longer literal is not read at every use
+   of "tools"); one member access (.name, ?.name, ["name"] or ?.["name"], the name in group 1, 2 or 3); a call ("(" or
+   ?.( after the callee) *)
+$jsSpace      = "[\\s\\x{00A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]";
+$jsLineSpace  = "[\\t\\x{000B}\\x{000C} \\x{00A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]";
+$jsLineEnd    = "[\\n\\r\\x{2028}\\x{2029}]";
+$jsName       = "[A-Za-z_$][\\w$]*(?![\\w$])";
+$jsString     = "\"(?:[^\"\\\\\\n\\r]|\\\\[\\s\\S]){0,200}\"|'(?:[^'\\\\\\n\\r]|\\\\[\\s\\S]){0,200}'|`(?:[^`\\\\$]|\\\\[\\s\\S]|\\$(?!\\{)){0,200}`";
+$jsMember     = jsMember @ $jsSpace;
+$jsCallSuffix = $jsSpace <> "*(?:\\?\\." <> $jsSpace <> "*)?\\(";
+
+(* "tools" (also as a property, e.g. globalThis.tools) with two member accesses, and the call that follows it, if any *)
+$toolsReference = RegularExpression[ "(?<![\\w$])tools(?![\\w$])" <> $jsMember <> $jsMember <> "(?:" <> $jsCallSuffix <> ")?" ];
+
+(* A namespace alias: a declaration of a name (in group 1) as tools.S, on one line, that ends there: with ";" or "}", or
+   at the end of the line before a name, "}" or the end of the script (where JavaScript inserts a semicolon). tools.S
+   assigned in any other way (in an expression, or with a comment or another member access after it) is a use of
+   "tools" that can't be read. On one line, with a name as its member (memberNames), a declaration can't start in a
+   comment or literal and end outside of it. *)
+$toolsAlias = RegularExpression[
+    StringJoin[
+        "(?<![\\w$.])(?:const|let|var)", $jsLineSpace, "+(", $jsName, ")", $jsLineSpace, "*=(?![=>])", $jsLineSpace,
+        "*tools(?![\\w$])", jsMember @ $jsLineSpace,
+        "(?=", $jsLineSpace, "*(?:[;}]|", $jsLineEnd, $jsSpace, "*(?:[A-Za-z_$}]|\\z)|\\z))"
+    ]
+];
+
+(* The start of such a declaration, with the alias in group 1 *)
+$aliasDeclaration = RegularExpression[ "^(?:const|let|var)" <> $jsLineSpace <> "+(" <> $jsName <> ")" ];
+
+(* Names as words: "tools", the name of Chatbook's notebook tools server, the names of its tools that change notebooks *)
+$toolsWord     = RegularExpression[ "(?<![\\w$])tools(?![\\w$])" ];
+$serverWord   := RegularExpression[ "(?<![\\w$])" <> $acpMCPServerName <> "(?![\\w$])" ];
+$editToolWord := RegularExpression[ "(?<![\\w$])(?:" <> StringRiffle[ $acpNotebookEditTools, "|" ] <> ")(?![\\w$])" ];
+
+(* A template literal whose substitutions the tokens read as JavaScript does, with depth levels of template literals and
+   braces in them: names, numbers, operators, brackets, string literals, braces and such template literals, but no
+   comments, slashes (which may start a regular expression), backslashes or HTML-like comments, which may hold a
+   backtick or a brace that ends the template literal or a substitution elsewhere *)
+templatePattern // beginDefinition;
+
+templatePattern[ 0 ] := "`(?:[^`\\\\$]++|\\\\[\\s\\S]|\\$(?!\\{))*+`";
+
+templatePattern[ depth_Integer ] := StringJoin[
+    "`(?:[^`\\\\$]++|\\\\[\\s\\S]|\\$(?!\\{)|\\$\\{", substitutionPattern[ depth - 1 ], "\\})*+`"
+];
+
+templatePattern // endDefinition;
+
+
+substitutionPattern // beginDefinition;
+
+substitutionPattern[ depth_Integer ] := StringJoin[
+    "(?:[^`'\"{}/\\\\<-]++|(?!<!--|-->)[<-]|",
+    "\"(?:[^\"\\\\\\n\\r]++|\\\\[\\s\\S])*+\"|'(?:[^'\\\\\\n\\r]++|\\\\[\\s\\S])*+'",
+    If[ depth > 0, "|" <> templatePattern[ depth - 1 ] <> "|\\{" <> substitutionPattern[ depth - 1 ] <> "\\}", "" ],
+    ")*+"
+];
+
+substitutionPattern // endDefinition;
+
+
+(* The tokens of a script: comments (a line comment ends at any line terminator, as in JavaScript), string literals,
+   template literals, names, numbers, "...", "?.", the marks of HTML-like comments and single characters. A comment or
+   literal that is not closed runs to the end of the script (a string literal to the end of its line), and so does a
+   template literal that is not one of templatePattern (to its next backtick), so that the tokens are found in one pass,
+   whatever the script. *)
+$scriptToken = RegularExpression[
+    StringJoin[
+        "/\\*[\\s\\S]*?(?:\\*/|$)|//[^\\n\\r\:2028\:2029]*|",
+        "\"(?:[^\"\\\\\\n\\r]|\\\\[\\s\\S])*\"?|'(?:[^'\\\\\\n\\r]|\\\\[\\s\\S])*'?|",
+        templatePattern @ $maxTemplateDepth, "|`(?:[^`\\\\]|\\\\[\\s\\S])*`?|",
+        "[A-Za-z_$][\\w$]*|\\d[\\w.]*|\\.\\.\\.|\\?\\.|<!--|-->|\\S"
+    ]
+];
+
+(* A closed string literal, and a template literal whose substitutions the tokens read as JavaScript does *)
+$jsQuotedLiteral   = RegularExpression[ "\"(?:[^\"\\\\\\n\\r]|\\\\[\\s\\S])*\"|'(?:[^'\\\\\\n\\r]|\\\\[\\s\\S])*'" ];
+$jsTemplateLiteral = RegularExpression @ templatePattern @ $maxTemplateDepth;
+
+(* The previous token (not a comment) of a slash that JavaScript reads as a division: a number, a string or template
+   literal, "]" or a name that is not a keyword after which an expression (or a statement) may start. After any other
+   token (such as ")" or "}", after which it may be either) the slash may start a regular expression. *)
+$expressionKeywords = {
+    "await", "break", "case", "continue", "debugger", "delete", "do", "else", "extends", "in", "instanceof", "new",
+    "of", "return", "throw", "typeof", "void", "yield"
+};
+
+$divisionAfter = RegularExpression[
+    StringJoin[
+        "(?!(?:", StringRiffle[ $expressionKeywords, "|" ], ")\\z)",
+        "(?:\\d[\\w.]*|[\"'`][\\s\\S]*|\\]|[A-Za-z_$][\\w$]*)"
+    ]
+];
+
+(* The single characters that a value that is not a literal may contain: anything else gives up the argument *)
+$skippableTokens = Alternatives[
+    ".", "?.", "...", "(", ")", "[", "]", "{", "}", ",", ":", "+", "-", "*", "%", "!", "?", "=", "&", "|", "^", "~"
+];
+
+$scriptParseTag = "Wolfram`Chatbook`ACP`Transcript`ScriptParse";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Tool references*)
+
+(* <| "References" -> { <| "Tool" -> "S.T", "Call" -> position of the call's "(" | None, "At" -> position |>... },
+   "Tools" -> { "S.T"... }, "Complete" -> _ |>. "Tools" are the tools of the references, then those of the server's
+   edit tools that the script names anywhere ($editToolWord): Chatbook's permission rules make OpenCode ask about them,
+   so one of them is most likely what a request is about, however the script reaches it. The references are not
+   complete if any use of "tools", of an alias or of the server's name is not part of a reference or alias that can be
+   read (every other use may reach any tool: tools[name], a comment between "tools" and ".", the tools object as a
+   value, as in f(tools) or x || tools), or there are more than $maxScriptAliases definitions of aliases. Only a word in
+   text (a comment or a literal, see textWordStarts) is no use; tokens: scriptTokens of the script, or None to count
+   every word. *)
+scriptReferences // beginDefinition;
+
+scriptReferences[ code_String, tokens_ ] := Module[
+    { directSpans, direct, aliasSpans, definitions, viaAliases, spans, references, unused },
+    directSpans = StringPosition[ code, $toolsReference, Overlaps -> False ];
+    (* with more than $maxScriptReferences references, the references are not complete: the others are not read *)
+    direct      = referenceAt[ code, # ] & /@ Take[ directSpans, UpTo[ $maxScriptReferences + 1 ] ];
+    aliasSpans  = StringPosition[ code, $toolsAlias, Overlaps -> False ];
+    definitions = DeleteCases[ aliasAt[ code, # ] & /@ Take[ aliasSpans, UpTo[ $maxScriptAliases ] ], None ];
+    viaAliases  = KeyValueMap[ aliasReferences[ code, tokens, #1, #2 ] &, GroupBy[ definitions, #[ "Alias" ] & ] ];
+    (* the words of a definition that can't be read are uses (a reference that can't be read is None) *)
+    spans       = Join[ directSpans, definitions[[ All, "Span" ]] ];
+    unused      = Or[
+        MemberQ[ direct, None ],
+        Length @ aliasSpans > $maxScriptAliases,
+        unusedWordsQ[ code, tokens, $toolsWord, spans ],
+        unusedWordsQ[ code, tokens, $serverWord, spans ],
+        ! AllTrue[ viaAliases, TrueQ @ #[ "Complete" ] & ]
+    ];
+    references = SortBy[ Join[ DeleteCases[ direct, None ], Join @@ viaAliases[[ All, "References" ]] ], #[ "At" ] & ];
+    <|
+        "References" -> references,
+        "Tools"      -> DeleteDuplicates @ Join[
+            references[[ All, "Tool" ]],
+            $acpMCPServerName <> "." <> # & /@ StringCases[ code, $editToolWord ]
+        ],
+        "Complete"   -> ! unused
+    |>
+];
+
+scriptReferences // endDefinition;
+
+
+(* The reference of a match of $toolsReference: <| "Tool", "Call", "At" |>, or None if a name can't be read *)
+referenceAt // beginDefinition;
+
+referenceAt[ code_String, span: { start_Integer, end_Integer } ] := Module[ { text, names },
+    text  = StringTake[ code, span ];
+    names = memberNames @ StringDrop[ text, 5 ];
+    If[ MatchQ[ names, { _String, _String, ___ } ],
+        <|
+            "Tool" -> names[[ 1 ]] <> "." <> names[[ 2 ]],
+            "Call" -> If[ StringEndsQ[ text, "(" ], end, None ],
+            "At"   -> start
+        |>,
+        None
+    ]
+];
+
+referenceAt // endDefinition;
+
+
+(* The names of the member accesses in text (decoded strings for brackets); None for a string that can't be decoded or
+   is not a name (memberNameQ) *)
+memberNames // beginDefinition;
+
+memberNames[ text_String ] := StringCases[
+    text,
+    RegularExpression[ $jsMember ] :> Which[
+        "$1" =!= "", "$1",
+        "$2" =!= "", "$2",
+        True, Replace[ jsStringValue[ "$3" ], Except[ _String? memberNameQ ] -> None ]
+    ]
+];
+
+memberNames // endDefinition;
+
+
+(* The name of a server or tool in brackets: letters, digits, "_", "$" and "-". Any other string can't be read: with a
+   dot, it is a path of names (tools["S.T"]); with quotes, brackets or operators, its quotes may be the ends of two
+   literals with code between them that JavaScript runs (a reference that is found in a literal). *)
+memberNameQ // beginDefinition;
+memberNameQ[ name_String ] := StringMatchQ[ name, RegularExpression[ "[\\w$-]+" ] ];
+memberNameQ // endDefinition;
+
+
+(* A match of $toolsAlias: <| "Alias" -> name, "Server" -> S, "Span" -> span |>, or None *)
+aliasAt // beginDefinition;
+
+aliasAt[ code_String, span: { _Integer, _Integer } ] := Module[ { text, alias, at, names },
+    text  = StringTake[ code, span ];
+    alias = First @ StringCases[ text, $aliasDeclaration :> "$1", 1 ];
+    at    = First @ First @ StringPosition[ text, $toolsWord, 1 ];
+    names = memberNames @ StringDrop[ text, at + 4 ];
+    If[ alias =!= "tools" && MatchQ[ names, { _String } ],
+        <| "Alias" -> alias, "Server" -> First @ names, "Span" -> span |>,
+        None
+    ]
+];
+
+aliasAt // endDefinition;
+
+
+(* The references through an alias (to each server it is defined for): <| "References" -> { ... }, "Complete" -> _ |>,
+   which is not complete if the alias is also used in other ways (a computed name, a member that can't be read, the
+   alias as a value, ...) *)
+aliasReferences // beginDefinition;
+
+aliasReferences[ code_String, tokens_, alias_String, definitions: { __Association } ] := Module[
+    { word, servers, spans, first, names, read, refs },
+    word    = "(?<![\\w$])" <> StringReplace[ alias, "$" -> "\\$" ] <> "(?![\\w$])";
+    servers = DeleteDuplicates @ definitions[[ All, "Server" ]];
+    spans   = StringPosition[ code, RegularExpression[ word <> $jsMember <> "(?:" <> $jsCallSuffix <> ")?" ], Overlaps -> False ];
+    (* with more than $maxScriptReferences references, the references are not complete: the others are not read *)
+    first   = Take[ spans, UpTo[ $maxScriptReferences + 1 ] ];
+    names   = First @ memberNames @ StringDrop[ StringTake[ code, # ], StringLength @ alias ] & /@ first;
+    read    = Pick[ first, StringQ /@ names ];
+    refs    = Join @@ MapThread[
+        Function[ { span, name },
+            Function[ server,
+                <|
+                    "Tool" -> server <> "." <> name,
+                    "Call" -> If[ StringEndsQ[ StringTake[ code, span ], "(" ], Last @ span, None ],
+                    "At"   -> First @ span
+                |>
+            ] /@ servers
+        ],
+        { read, Select[ names, StringQ ] }
+    ];
+    <|
+        "References" -> refs,
+        "Complete"   -> ! unusedWordsQ[
+            code,
+            tokens,
+            RegularExpression @ word,
+            Join[ read, Drop[ spans, Length @ first ], definitions[[ All, "Span" ]] ]
+        ]
+    |>
+];
+
+aliasReferences // endDefinition;
+
+
+(* Whether word (a RegularExpression) occurs in code other than in the given spans (of references and aliases), and,
+   if tokens is not None, other than as text (textWordStarts) *)
+unusedWordsQ // beginDefinition;
+
+unusedWordsQ[ code_String, tokens_, word_RegularExpression, spans_List ] := Module[ { starts },
+    starts = Complement[ StringPosition[ code, word, Overlaps -> False ][[ All, 1 ]], spanWordStarts[ code, spans, word ] ];
+    If[ AssociationQ @ tokens && starts =!= { }, starts = Complement[ starts, textWordStarts[ tokens, word ] ] ];
+    starts =!= { }
+];
+
+unusedWordsQ // endDefinition;
+
+
+(* The positions of the matches of word in the given spans of code *)
+spanWordStarts // beginDefinition;
+
+spanWordStarts[ _String, { }, _ ] := { };
+
+spanWordStarts[ code_String, spans_List, word_RegularExpression ] := Flatten @ MapThread[
+    #2[[ All, 1 ]] + #1 - 1 &,
+    { spans[[ All, 1 ]], StringPosition[ StringTake[ code, spans ], word, Overlaps -> False ] }
+];
+
+spanWordStarts // endDefinition;
+
+
+(* The positions of the matches of word in the tokens (scriptTokens) that are only text: comments, string literals and
+   template literals without substitutions. A string literal that is only the word, or a path that starts with it, is
+   not text, since it can be a property name (globalThis["tools"]) or the path of a tool (tools["S.T"]). *)
+textWordStarts // beginDefinition;
+
+textWordStarts[ tokens_Association, word_RegularExpression ] := Module[ { found, name },
+    found = Pick[ Transpose @ { tokens[ "Texts" ], tokens[ "Starts" ] }, StringContainsQ[ tokens[ "Texts" ], word ] ];
+    name  = word ~~ Repeated[ "." ~~ ___, { 0, 1 } ];
+    Flatten @ Cases[
+        found,
+        { t_String? textTokenQ, start_Integer } /; ! StringMatchQ[ StringTake[ t, { 2, -2 } ], name ] :>
+            StringPosition[ t, word, Overlaps -> False ][[ All, 1 ]] + start - 1
+    ]
+];
+
+textWordStarts // endDefinition;
+
+
+textTokenQ // beginDefinition;
+textTokenQ[ t_String ] := StringLength @ t >= 2 && Or[
+    StringStartsQ[ t, "/*" | "//" | "\"" | "'" ],
+    StringStartsQ[ t, "`" ] && StringFreeQ[ t, "${" ]
+];
+textTokenQ // endDefinition;
+
+
+(* \uXXXX and \u{X...} (with any number of digits, as in JavaScript) decoded (names may be written with them), for
+   finding the tools that a script names *)
+decodeUnicodeEscapes // beginDefinition;
+
+decodeUnicodeEscapes[ code_String ] := If[ StringFreeQ[ code, "\\u" ],
+    code,
+    StringReplace[
+        code,
+        {
+            "\\u{" ~~ h: HexadecimalCharacter.. ~~ "}" :> codePointString @ h,
+            "\\u" ~~ h: Repeated[ HexadecimalCharacter, { 4 } ] :> codePointString @ h
+        }
+    ]
+];
+
+decodeUnicodeEscapes // endDefinition;
+
+
+codePointString // beginDefinition;
+codePointString[ hex_String ] := With[ { n = FromDigits[ hex, 16 ] }, If[ n <= 1114111, FromCharacterCode @ n, "\:fffd" ] ];
+codePointString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Call arguments*)
+
+(* A reference as one of "Calls" (see acpExecuteScript); tokens is scriptTokens of the script (None if not needed) *)
+scriptCall // beginDefinition;
+
+scriptCall[ tokens_, ref_Association ] := Module[ { arguments, more },
+    { arguments, more } = Replace[
+        (* only a call whose callee and "(" are tokens that can be trusted (see scriptTokens) *)
+        If[ AssociationQ @ tokens && IntegerQ @ ref[ "Call" ] && KeyExistsQ[ tokens[ "Index" ], Lookup[ ref, "At", None ] ],
+            Catch[ callArguments[ tokens[ "Texts" ], Lookup[ tokens[ "Index" ], ref[ "Call" ], None ] ], $scriptParseTag ],
+            None
+        ],
+        Except[ { _Association, True|False } ] -> { Missing[ "Computed" ], False }
+    ];
+    <|
+        "Tool"          -> ref[ "Tool" ],
+        "Input"         -> None,
+        "Code"          -> If[ AssociationQ @ arguments, Replace[ Lookup[ arguments, "code", None ], Except[ _String ] -> None ], None ],
+        "Arguments"     -> arguments,
+        "MoreArguments" -> more
+    |>
+];
+
+scriptCall // endDefinition;
+
+
+(* The tokens of a script up to the first one after which JavaScript may read the script differently: a slash that may
+   start a regular expression (regexSlashes; its text may have quotes or comment marks), an HTML-like comment ("<!--",
+   "-->"), "#" (a hashbang comment), a string literal that is not closed, or a template literal that is not closed or
+   has a substitution that the tokens don't read as JavaScript does ($jsTemplateLiteral). Up to there the tokens are
+   JavaScript's, so a call's arguments are only read there, and only there a word in a comment or literal is only text.
+   Only the first $maxScriptTokens tokens are read. Gives
+   <| "Texts" -> { token... }, "Starts" -> { position... }, "Index" -> <| position -> token number |> |>. *)
+scriptTokens // beginDefinition;
+
+scriptTokens[ code_String ] := Module[ { spans, texts, unclear, n },
+    spans   = StringPosition[ code, $scriptToken, $maxScriptTokens + 1, Overlaps -> False ];
+    texts   = If[ spans === { }, { }, StringTake[ code, spans ] ];
+    unclear = Plus[
+        Boole @ StringMatchQ[ texts, "#" | "<!--" | "-->" ],
+        regexSlashes @ texts,
+        Boole @ StringStartsQ[ texts, "\"" | "'" ] - Boole @ StringMatchQ[ texts, $jsQuotedLiteral ],
+        Boole @ StringStartsQ[ texts, "`" ] - Boole @ StringMatchQ[ texts, $jsTemplateLiteral ]
+    ];
+    n = Min[ First @ FirstPosition[ unclear, 1, { Length @ texts + 1 }, { 1 } ] - 1, $maxScriptTokens ];
+    <|
+        "Texts"  -> Take[ texts, n ],
+        "Starts" -> Take[ spans[[ All, 1 ]], n ],
+        "Index"  -> AssociationThread[ Take[ spans[[ All, 1 ]], n ] -> Range @ n ]
+    |>
+];
+
+scriptTokens // endDefinition;
+
+
+(* For each token, 1 if it is a slash that may start a regular expression, else 0: a slash is a division only after
+   $divisionAfter (the previous token that is not a comment) *)
+regexSlashes // beginDefinition;
+
+regexSlashes[ texts_List ] := Module[ { flags, slashes, significant, before },
+    flags   = ConstantArray[ 0, Length @ texts ];
+    slashes = Pick[ Range @ Length @ texts, texts, "/" ];
+    If[ slashes === { }, Return[ flags, Module ] ];
+    (* the tokens that are not comments, and the one of them before each slash ("" at the start) *)
+    significant = 1 - Boole @ StringStartsQ[ texts, "/*" | "//" ];
+    before      = Prepend[ Pick[ texts, significant, 1 ], "" ][[ Accumulate[ significant ][[ slashes ]] ]];
+    flags[[ Pick[ slashes, StringMatchQ[ before, $divisionAfter ], False ] ]] = 1;
+    flags
+];
+
+regexSlashes // endDefinition;
+
+
+(* The arguments of the call whose "(" is token i: { <| key -> value |>, more } (see acpExecuteScript); throws to
+   $scriptParseTag when they can't be read *)
+callArguments // beginDefinition;
+
+callArguments[ tokens_List, i_Integer ] := Module[ { j, object },
+    j = nextToken[ tokens, i + 1 ];
+    Switch[ tokenAt[ tokens, j ],
+        ")", { <| |>, False },
+        "{",
+            object = objectLiteral[ tokens, j ];
+            (* only the first argument is the tool's input, and only as it is: not { ... } && other, ... *)
+            If[ MatchQ[ tokenAt[ tokens, nextToken[ tokens, Last @ object ] ], ")" | "," ], Most @ object, scriptParseFail[ ] ],
+        _, scriptParseFail[ ]
+    ]
+];
+
+callArguments[ _, _ ] := scriptParseFail[ ];
+
+callArguments // endDefinition;
+
+
+(* The object literal whose "{" is token i0: { values, more, the number of the token after its "}" } *)
+objectLiteral // beginDefinition;
+
+objectLiteral[ tokens_List, i0_Integer ] := Module[ { i = i0 + 1, values = <| |>, more = False, key, value },
+    While[ True,
+        i = nextToken[ tokens, i ];
+        Switch[ tokenAt[ tokens, i ],
+            "}",
+                Return[ { values, more, i + 1 }, Module ],
+            "...", (* a spread: skips its value *)
+                { values, more } = { Missing[ "Computed" ] & /@ values, True };
+                i = skipValue[ tokens, i + 1 ],
+            "[", (* a computed key: skips [ key ]: value *)
+                { values, more } = { Missing[ "Computed" ] & /@ values, True };
+                i = skipValue[ tokens, i ],
+            _,
+                key = propertyKey @ tokenAt[ tokens, i ];
+                i   = nextToken[ tokens, i + 1 ];
+                Switch[ tokenAt[ tokens, i ],
+                    ":"      , { value, i } = propertyValue[ tokens, i + 1 ],
+                    "," | "}", value = Missing[ "Computed" ], (* shorthand: { notebook } *)
+                    _        , scriptParseFail[ ]
+                ];
+                If[ key === "__proto__",
+                    { values, more } = { Missing[ "Computed" ] & /@ values, True },
+                    values[ key ] = value
+                ]
+        ];
+        i = nextToken[ tokens, i ];
+        Switch[ tokenAt[ tokens, i ],
+            ",", i++,
+            "}", Null,
+            _  , scriptParseFail[ ]
+        ]
+    ]
+];
+
+objectLiteral // endDefinition;
+
+
+(* A property name: a name, a string literal (not a template literal) or a whole number *)
+propertyKey // beginDefinition;
+
+propertyKey[ t_String ] := Which[
+    StringMatchQ[ t, RegularExpression[ $jsName ] ], t,
+    StringStartsQ[ t, "\"" | "'" ] && StringQ @ jsStringValue @ t, jsStringValue @ t,
+    StringMatchQ[ t, RegularExpression[ "0|[1-9]\\d*" ] ], t,
+    True, scriptParseFail[ ]
+];
+
+propertyKey // endDefinition;
+
+
+(* The value of a property, from token i0: { value, the number of the token after it }. A literal is only taken as the
+   value if the property ends right after it; anything else is Missing[ "Computed" ] *)
+propertyValue // beginDefinition;
+
+propertyValue[ tokens_List, i0_Integer ] := Module[ { i, literal },
+    i = nextToken[ tokens, i0 ];
+    literal = literalValue[ tokens, i ];
+    If[ MatchQ[ literal, { Except[ _Missing ], _Integer } ] && MatchQ[ tokenAt[ tokens, nextToken[ tokens, Last @ literal ] ], "," | "}" ],
+        literal,
+        { Missing[ "Computed" ], skipValue[ tokens, i ] }
+    ]
+];
+
+propertyValue // endDefinition;
+
+
+(* A literal from token i: { value, the number of the token after it }, or None *)
+literalValue // beginDefinition;
+
+literalValue[ tokens_List, i_Integer ] := Module[ { t = tokenAt[ tokens, i ], j },
+    Which[
+        StringStartsQ[ t, "\"" | "'" | "`" ], { jsStringValue @ t, i + 1 },
+        t === "true" , { True , i + 1 },
+        t === "false", { False, i + 1 },
+        t === "null" , { Null , i + 1 },
+        numberTokenQ @ t, { jsNumber @ t, i + 1 },
+        t === "-" && numberTokenQ @ tokenAt[ tokens, nextToken[ tokens, i + 1 ] ],
+            j = nextToken[ tokens, i + 1 ];
+            { Replace[ jsNumber @ tokens[[ j ]], { n_Integer :> -n, s_String :> "-" <> s } ], j + 1 },
+        t === "[", listLiteral[ tokens, i ],
+        True, None
+    ]
+];
+
+literalValue // endDefinition;
+
+
+(* A list of at most $maxListItems literals (not lists) whose "[" is token i0, such as [ "a", "b" ]: { items, the number
+   of the token after its "]" }, or None *)
+listLiteral // beginDefinition;
+
+listLiteral[ tokens_List, i0_Integer ] := Module[ { items = Internal`Bag[ ], i, item },
+    i = nextToken[ tokens, i0 + 1 ];
+    While[ tokenAt[ tokens, i ] =!= "]",
+        item = literalValue[ tokens, i ];
+        If[ ! MatchQ[ item, { Except[ _Missing | _List ], _Integer } ] || Internal`BagLength @ items >= $maxListItems,
+            Return[ None, Module ]
+        ];
+        Internal`StuffBag[ items, First @ item ];
+        i = nextToken[ tokens, Last @ item ];
+        Switch[ tokenAt[ tokens, i ],
+            ",", i = nextToken[ tokens, i + 1 ],
+            "]", Null,
+            _  , Return[ None, Module ]
+        ]
+    ];
+    { Internal`BagPart[ items, All ], i + 1 }
+];
+
+listLiteral // endDefinition;
+
+
+(* From token i to the "," or "}" (not included) that ends a value at the object's level: the number of that token.
+   Gives up (throws) on tokens outside the subset (see acpExecuteScript), unbalanced brackets and the end of the script *)
+skipValue // beginDefinition;
+
+skipValue[ tokens_List, i0_Integer ] := Module[ { i = i0, depth = 0, t },
+    While[ True,
+        i = nextToken[ tokens, i ];
+        t = tokenAt[ tokens, i ];
+        Which[
+            depth === 0 && MatchQ[ t, "," | "}" ], Return[ i, Module ],
+            MatchQ[ t, "(" | "[" | "{" ], depth++,
+            MatchQ[ t, ")" | "]" | "}" ], If[ depth === 0, scriptParseFail[ ], depth-- ],
+            skippableTokenQ @ t, Null,
+            True, scriptParseFail[ ]
+        ];
+        i++
+    ]
+];
+
+skipValue // endDefinition;
+
+
+skippableTokenQ // beginDefinition;
+
+skippableTokenQ[ t_String ] := Or[
+    MatchQ[ t, $skippableTokens ],
+    StringMatchQ[ t, RegularExpression[ "[A-Za-z_$][\\w$]*|\\d[\\w.]*" ] ],
+    (* the string literals and template literals of the tokens are closed, and read as JavaScript does (scriptTokens) *)
+    StringStartsQ[ t, "\"" | "'" | "`" ]
+];
+
+skippableTokenQ // endDefinition;
+
+
+(* The number of the first token from i on that is not a comment (the comments are counted against the budget of a
+   script, see tokenAt) *)
+nextToken // beginDefinition;
+
+nextToken[ tokens_List, i0_Integer ] := Module[ { i = i0 },
+    While[ i <= Length @ tokens && StringStartsQ[ tokens[[ i ]], "/*" | "//" ],
+        If[ --$scriptTokenBudget < 0, scriptParseFail[ ] ];
+        i++
+    ];
+    i
+];
+
+nextToken // endDefinition;
+
+
+(* Token i (counted against the budget of a script); the end of the tokens can't be read *)
+tokenAt // beginDefinition;
+
+tokenAt[ tokens_List, i_Integer ] := (
+    If[ --$scriptTokenBudget < 0 || i > Length @ tokens, scriptParseFail[ ] ];
+    tokens[[ i ]]
+);
+
+tokenAt // endDefinition;
+
+
+scriptParseFail // beginDefinition;
+scriptParseFail[ ] := Throw[ None, $scriptParseTag ];
+scriptParseFail // endDefinition;
+
+
+numberTokenQ // beginDefinition;
+numberTokenQ[ t_String ] := StringMatchQ[ t, RegularExpression[ "(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE]\\d+)?" ] ];
+numberTokenQ // endDefinition;
+
+
+(* A whole number as an Integer, other numbers as they are written (they are only shown) *)
+jsNumber // beginDefinition;
+jsNumber[ t_String ] := If[ StringMatchQ[ t, DigitCharacter.. ], FromDigits @ t, t ];
+jsNumber // endDefinition;
+
+
+(* The value of a string literal or of a template literal without substitutions; Missing[ "Computed" ] for a template
+   literal with substitutions and for escapes that JavaScript doesn't allow (or only in sloppy mode, such as octal) *)
+jsStringValue // beginDefinition;
+
+jsStringValue[ literal_String ] /; StringStartsQ[ literal, "`" ] && StringContainsQ[ literal, "${" ] := Missing[ "Computed" ];
+
+jsStringValue[ literal_String ] /; StringLength @ literal >= 2 := Module[ { body },
+    body = StringTake[ literal, { 2, -2 } ];
+    (* template literals: line terminators are normalized *)
+    If[ StringStartsQ[ literal, "`" ], body = StringReplace[ body, "\r\n" | "\r" -> "\n" ] ];
+    If[ AllTrue[ StringCases[ body, $jsEscape ], validEscapeQ ], jsUnescape @ body, Missing[ "Computed" ] ]
+];
+
+jsStringValue[ _ ] := Missing[ "Computed" ];
+
+jsStringValue // endDefinition;
+
+
+(* The escape sequences of a literal's text, from left to right (a backslash escapes the next character, also a
+   backslash) *)
+$jsEscape = RegularExpression[ "\\\\(?:u\\{[0-9A-Fa-f]*\\}?|u[0-9A-Fa-f]{0,4}|x[0-9A-Fa-f]{0,2}|0\\d?|[\\s\\S])" ];
+
+
+validEscapeQ // beginDefinition;
+
+validEscapeQ[ escape_String ] := Which[
+    StringStartsQ[ escape, "\\u{" ],
+        StringMatchQ[ escape, RegularExpression[ "\\\\u\\{[0-9A-Fa-f]+\\}" ] ] && FromDigits[ StringTake[ escape, { 4, -2 } ], 16 ] <= 1114111,
+    StringStartsQ[ escape, "\\u" ], StringLength @ escape === 6,
+    StringStartsQ[ escape, "\\x" ], StringLength @ escape === 4,
+    StringStartsQ[ escape, "\\0" ], escape === "\\0",
+    True, ! StringMatchQ[ escape, "\\" ~~ DigitCharacter ]
+];
+
+validEscapeQ // endDefinition;
+
+
+(* The text of a literal with valid escape sequences (validEscapeQ), decoded *)
+jsUnescape // beginDefinition;
+
+jsUnescape[ body_String ] := StringReplace[
+    body,
+    {
+        "\\" ~~ ("\r\n" | "\n" | "\r" | "\:2028" | "\:2029") -> "",
+        "\\u{" ~~ h: HexadecimalCharacter.. ~~ "}" :> codePointString @ h,
+        "\\u" ~~ h: Repeated[ HexadecimalCharacter, { 4 } ] :> codePointString @ h,
+        "\\x" ~~ h: Repeated[ HexadecimalCharacter, { 2 } ] :> codePointString @ h,
+        "\\0" -> FromCharacterCode[ 0 ],
+        "\\n" -> "\n",
+        "\\t" -> "\t",
+        "\\r" -> "\r",
+        "\\b" -> FromCharacterCode[ 8 ],
+        "\\f" -> FromCharacterCode[ 12 ],
+        "\\v" -> FromCharacterCode[ 11 ],
+        "\\" ~~ c_ :> c
+    }
+];
+
+jsUnescape // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

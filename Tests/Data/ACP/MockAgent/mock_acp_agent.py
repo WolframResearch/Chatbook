@@ -76,6 +76,10 @@ Sessions (emulating OpenCode 2.0.26 where it matters for a session list UI):
   agent.titleFromPrompt: the first prompt of a session that has no title (or the
                  sessionTitle one) sets the title to the prompt text (50 chars).
   Prompts, session/set_config_option and session/set_mode update "updatedAt".
+  MCP servers:   session/new and session/fork store the request's "mcpServers" with
+                 the session (a fork without them keeps its source's), and session/load
+                 and session/resume replace them if the request has the key; the
+                 mcp_request step calls them.
 
 Selecting a scenario for a prompt
 ---------------------------------
@@ -137,6 +141,36 @@ Step types (every step also accepts "when" and "end"; see below):
   replay         {"interval"?: 0}   replays the session's history (as session/load
                  does), "interval" seconds between the updates; for "methods"
                  overrides of session/load (e.g. a slow replay, or one that fails)
+  mcp_request    {"method": m, "params"?: {...}, "server"?: name, "as"?: name, "id"?: id,
+                  "headers"?: {name: value | null}, "timeout"?: 30, "initialized"?: true}
+                 Sends one JSON-RPC message to an MCP server of the session over MCP's
+                 Streamable HTTP transport, the way OpenCode does, and waits for the
+                 answer.  "server" names one of the session's "mcpServers" (see
+                 Sessions; a run without a session uses the "mcpServers" of its own
+                 request); the default is the first one of type "http".  The message is
+                 a notification if m starts with "notifications/", else a request whose
+                 id counts up from 0 (or is "id").  Without "params" the message has
+                 none, except initialize: {"protocolVersion": "2025-11-25",
+                 "capabilities": {}, "clientInfo": {"name": "mock-acp-agent", ...}}.
+                 The POST has Content-Type application/json, Accept "application/json,
+                 text/event-stream", the server's "headers", MCP-Protocol-Version (the
+                 one negotiated by a successful initialize of this session and server;
+                 never on initialize itself), and no Origin; "headers" then sets
+                 (value) or removes (null) headers, by case-insensitive name.  The body
+                 of the answer is read as JSON, or as an event stream (comments are
+                 counted; the "message" event that answers the request is the
+                 response, other "message" events are kept), and logged as an
+                 mcp_response event (any HTTP status) or an mcp_error event (no HTTP
+                 answer, "timeout" seconds passed, the step was cancelled, a 2xx
+                 answer that is not a JSON-RPC message or an event stream that ends
+                 without the response).  A request that times out or is cancelled (see
+                 on_cancel) is followed by notifications/cancelled; a successful
+                 initialize by notifications/initialized (unless "initialized": false).
+                 Those notifications are logged like the step's own messages but get
+                 "as": null.  Connections are HTTP/1.1 keep-alive connections, reused
+                 by later steps (one retry on a fresh one when a reused one turns out
+                 to be closed); proxies are never used.  MCP traffic counts as traffic
+                 for --idle-timeout.
   exit           {"code"?: 0, "delay"?: 0}
 
 "when" makes a step conditional:
@@ -148,7 +182,15 @@ Step types (every step also accepts "when" and "end"; see below):
 String values of the form "${name}" are replaced (keeping the JSON type) by:
 sessionId, promptId, lastRequestId, promptText, cwd, i (the "repeat" index),
 pid; "${bytes:N}" becomes a string of N "x" characters.  "${name}" inside a longer
-string is replaced textually.
+string is replaced textually (an object or array as JSON text).
+The answers of earlier mcp_request steps of the same run are available as
+"${mcpText:as}", "${mcpResult:as}" and "${mcpStatus:as}" ("as" is the step's
+"as"; without ":as", the last mcp_request step):
+  mcpText    the result's text: its "content" text blocks joined by newlines, or
+             the JSON text of a result without "content"; for a JSON-RPC error its
+             message, for mcp_error the error, else the body's text ("" if none)
+  mcpResult  the JSON-RPC "result" (null if there is none)
+  mcpStatus  the HTTP status (null for an mcp_error without an HTTP answer)
 
 Wire log
 --------
@@ -158,7 +200,18 @@ One JSON object per line: {"seq": n, "t": unixTime, "dir": d, ...} where d is
   "event"  {"event": name, ...}: start, eof, exit, sigterm, scenario, scenario_end,
            cancel_seen, cancel_request_sent, wait_response, spawn, unexpected_response,
            duplicate_response, response_after_cancel_request, watchdog, mark, error,
-           stderr_write, stdin_check, preamble, first_stdin
+           stderr_write, stdin_check, preamble, first_stdin, and those of mcp_request:
+  mcp_request   {"as", "server", "method", "id", "url", "protocolVersion"}: before the POST
+                ("id" null for a notification, "protocolVersion" the header sent or null)
+  mcp_response  {"as", "server", "method", "id", "status", "contentType", "body",
+                 "sse", "seconds"}: "body" is the JSON-RPC response (from the event
+                stream, or the parsed JSON body), the body text if it is not JSON, or
+                null if there is none (202); "sse" is null for a body that is not an
+                event stream, else {"comments": number of comment lines,
+                "messages": [the other "message" events, parsed]}
+  mcp_error     {"as", "server", "method", "id", "error", "seconds"}, plus "status",
+                "contentType", "body", "sse" (and "text", the body's text, if a body
+                that is not an event stream is the problem) if an HTTP answer came
 Out records are written before the bytes go to stdout.
 """
 
@@ -166,16 +219,19 @@ import argparse
 import base64
 import copy
 import datetime
+import http.client
 import json
 import os
 import queue
 import re
 import signal
+import socket
 import subprocess
 import sys
 import threading
 import time
 import traceback
+import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SCENARIO_DIR = os.path.join(HERE, "scenarios")
@@ -236,6 +292,20 @@ DEFAULT_AGENT = {
 
 # session/update kinds that recordHistory records (OpenCode replays only messages, thoughts and tool calls)
 RECORDED_UPDATES = ("user_message_chunk", "agent_message_chunk", "agent_thought_chunk", "tool_call", "tool_call_update")
+
+# the initialize params of mcp_request steps without "params" (OpenCode 2.0.26 asks for 2025-11-25)
+MCP_INITIALIZE_PARAMS = {"protocolVersion": "2025-11-25", "capabilities": {},
+                         "clientInfo": {"name": "mock-acp-agent", "version": "1.0.0"}}
+
+# errors of a request on a kept-alive connection that the server had closed meanwhile (retried on a new connection;
+# http.client.RemoteDisconnected is a ConnectionResetError)
+STALE_CONNECTION_ERRORS = (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)
+
+# seconds that the notifications/cancelled after a timed out or cancelled mcp_request may take at most
+MCP_CANCEL_TIMEOUT = 5.0
+
+# seconds that the rest of an event stream may take after the response (then the connection is not reused)
+MCP_DRAIN_TIMEOUT = 2.0
 
 
 def iso_utc(ms):
@@ -321,6 +391,202 @@ class WireLog(object):
         self.write("event", **kw)
 
 
+def parse_json(text):
+    """(value, True) for JSON text, (text, False) otherwise."""
+    try:
+        return json.loads(text), True
+    except ValueError:
+        return text, False
+
+
+def close_quietly(conn):
+    """Close an http.client connection; the shutdown also ends a read that another thread is blocked in."""
+    sock = conn.sock
+    if sock is not None:
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+    try:
+        conn.close()
+    except Exception:
+        pass
+
+
+def mcp_substitution(kind, rec):
+    """The value of "${mcpText:...}", "${mcpResult:...}" or "${mcpStatus:...}" for the record of an mcp_request."""
+    body = rec.get("body")
+    result = body.get("result") if isinstance(body, dict) else None
+    if kind == "mcpStatus":
+        return rec.get("status")
+    if kind == "mcpResult":
+        return result
+    if rec.get("event") == "mcp_error":
+        return rec.get("error", "")
+    if isinstance(result, dict) and isinstance(result.get("content"), list):
+        return "\n".join(str(c.get("text", "")) for c in result["content"]
+                         if isinstance(c, dict) and c.get("type") == "text")
+    if isinstance(body, dict) and "result" in body:
+        return json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+    if isinstance(body, dict) and isinstance(body.get("error"), dict):
+        return str(body["error"].get("message", ""))
+    if body is None:
+        return ""
+    return body if isinstance(body, str) else json.dumps(body, separators=(",", ":"), ensure_ascii=False)
+
+
+class MCPExchange(object):
+    """One JSON-RPC message POSTed to a Streamable HTTP MCP server, and its answer (the mcp_request step).
+
+    run() does the HTTP work in a worker thread and sets done (notifying agent.cond) once the body has been read to its
+    end and the connection is back in the agent's pool, so that the next exchange reuses it (the rest of an event
+    stream has MCP_DRAIN_TIMEOUT seconds after the response; then the connection is closed instead).  abort() shuts
+    the connection down, which ends a read that is still blocked."""
+
+    def __init__(self, agent, url, headers, message, timeout):
+        self.agent = agent
+        self.url = url
+        self.headers = headers
+        self.message = message
+        self.timeout = timeout
+        self.lock = threading.Lock()
+        self.conn = None
+        self.aborted = False
+        self.done = False
+        self.answer = None      # {"status", "contentType", "body", "sse"}, with "error" (and "text") if it failed
+
+    def start(self):
+        threading.Thread(target=self.run, daemon=True).start()
+
+    def finish(self, answer):
+        with self.agent.cond:
+            if not self.done:
+                self.done = True
+                self.answer = answer
+            self.agent.cond.notify_all()
+
+    def abort(self):
+        with self.lock:
+            self.aborted = True
+            conn = self.conn
+        if conn is not None:
+            close_quietly(conn)
+
+    def run(self):
+        try:
+            self.finish(self.exchange())
+        except Exception as e:
+            with self.lock:
+                conn, self.conn = self.conn, None
+            if conn is not None:
+                close_quietly(conn)
+            self.finish({"error": "%s: %s" % (type(e).__name__, e)})
+
+    def exchange(self):
+        parts = urllib.parse.urlsplit(self.url if isinstance(self.url, str) else "")
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            return {"error": "not an http(s) URL: %r" % (self.url,)}
+        key = (parts.scheme, parts.hostname, parts.port)
+        target = (parts.path or "/") + ("?" + parts.query if parts.query else "")
+        body = json.dumps(self.message, separators=(",", ":")).encode("utf-8")
+        for reuse in (True, False):
+            conn, reused = self.agent.mcp_connection(key, self.timeout, reuse)
+            with self.lock:
+                if self.aborted:
+                    close_quietly(conn)
+                    return {"error": "aborted"}
+                self.conn = conn
+            try:
+                conn.request("POST", target, body=body, headers=self.headers)
+                resp = conn.getresponse()
+                break
+            except STALE_CONNECTION_ERRORS:
+                close_quietly(conn)
+                if not reused or self.aborted:
+                    raise
+        ctype = resp.getheader("Content-Type")
+        mime = (ctype or "").split(";")[0].strip().lower()
+        answer = {"status": resp.status, "contentType": ctype, "body": None, "sse": None}
+        if mime == "text/event-stream":
+            complete = self.read_event_stream(resp, conn, answer)
+        else:
+            complete = self.read_body(resp, mime, answer)
+        with self.lock:
+            keep = complete and not self.aborted and not resp.will_close
+            self.conn = None
+        if keep:
+            self.agent.mcp_release(key, conn)
+        else:
+            close_quietly(conn)
+        return answer
+
+    def read_body(self, resp, mime, answer):
+        """Read a body that is not an event stream (a 2xx answer to a request must be one JSON-RPC message); returns
+        True: the body was read completely."""
+        data = resp.read()
+        text = data.decode("utf-8", "replace")
+        body, is_json = parse_json(text) if data else (None, True)
+        answer["body"] = body
+        if 200 <= resp.status < 300 and "id" in self.message:
+            if not data:
+                answer.update(error="the %d answer has no body" % resp.status, text=text)
+            elif mime != "application/json":
+                answer.update(error="the %d answer has the Content-Type %r" % (resp.status, answer["contentType"]),
+                              text=text)
+            elif not (is_json and isinstance(body, dict)):
+                answer.update(error="the %d answer is not a JSON-RPC message" % resp.status, text=text)
+        return True
+
+    def read_event_stream(self, resp, conn, answer):
+        """Read an event stream up to its end; returns True if it was read completely.  The "message" event that
+        answers the request is the response; after it the rest of the stream has MCP_DRAIN_TIMEOUT seconds."""
+        rid = self.message.get("id")
+        request = "id" in self.message
+        sse = answer["sse"] = {"comments": 0, "messages": []}
+        response = None
+        drain_deadline = None
+        data, kind = [], "message"
+        while not self.aborted:
+            if drain_deadline is not None:
+                remaining = drain_deadline - time.time()
+                if remaining <= 0 or conn.sock is None:
+                    return False
+                conn.sock.settimeout(remaining)
+            try:
+                line = resp.readline()
+            except socket.timeout:
+                if response is None:
+                    raise
+                return False
+            if not line:
+                break
+            self.agent.touch()
+            line = line.decode("utf-8", "replace").rstrip("\r\n")
+            if not line:  # the end of an event
+                if data and kind == "message" and response is None:
+                    msg = parse_json("\n".join(data))[0]
+                    if (request and isinstance(msg, dict) and msg.get("id") == rid
+                            and ("result" in msg or "error" in msg)):
+                        response = answer["body"] = msg
+                        drain_deadline = time.time() + MCP_DRAIN_TIMEOUT
+                    else:
+                        sse["messages"].append(msg)
+                data, kind = [], "message"
+            elif line.startswith(":"):
+                if response is None:
+                    sse["comments"] += 1
+            else:
+                field, _, value = line.partition(":")
+                value = value[1:] if value.startswith(" ") else value
+                if field == "event":
+                    kind = value
+                elif field == "data":
+                    data.append(value)
+        if response is None and request:
+            answer["error"] = "the event stream ended without the response"
+        return not self.aborted
+
+
 class Agent(object):
     def __init__(self, args):
         self.args = args
@@ -339,6 +605,9 @@ class Agent(object):
         self.message_counter = 0    # messageIds that recordHistory makes up
         self.last_ms = 0            # the last updatedAt handed out (they strictly increase)
         self.cancel_counts = {}     # sid -> number of session/cancel notifications received
+        self.next_mcp_id = 0        # ids of the mcp_request requests (one counter for every MCP server)
+        self.mcp_versions = {}      # (sid, MCP server name) -> protocol version negotiated by initialize
+        self.mcp_idle = {}          # (scheme, host, port) -> kept-alive HTTP connections not in use
         self.last_activity = time.time()
         self.started = time.time()
         self.global_scenario = self.load_scenario(args.scenario) if args.scenario else None
@@ -452,6 +721,34 @@ class Agent(object):
     def cancel_count(self, sid):
         with self.cond:
             return self.cancel_counts.get(sid, 0)
+
+    # ------------------------------------------------------- MCP over HTTP
+    def alloc_mcp_id(self):
+        with self.cond:
+            rid = self.next_mcp_id
+            self.next_mcp_id += 1
+            return rid
+
+    def mcp_connection(self, key, timeout, reuse=True):
+        """(connection, reused): an idle kept-alive connection to key = (scheme, host, port) if reuse, or a new one."""
+        conn = None
+        if reuse:
+            with self.cond:
+                idle = self.mcp_idle.get(key)
+                conn = idle.pop() if idle else None
+        if conn is not None:
+            conn.timeout = timeout
+            if conn.sock is not None:
+                conn.sock.settimeout(timeout)
+            return conn, True
+        scheme, host, port = key
+        cls = http.client.HTTPSConnection if scheme == "https" else http.client.HTTPConnection
+        return cls(host, port, timeout=timeout), False
+
+    def mcp_release(self, key, conn):
+        """Keep a connection whose last answer was read completely for the next exchange."""
+        with self.cond:
+            self.mcp_idle.setdefault(key, []).append(conn)
 
     # ------------------------------------------------------------- inbound
     def note_first_stdin(self):
@@ -604,7 +901,7 @@ class Agent(object):
         rec = {"cwd": cwd, "configOptions": copy.deepcopy(cfg.get("configOptions") or []),
                "modes": copy.deepcopy(cfg.get("modes")), "closed": False, "title": None,
                "updatedAt": None, "additionalDirectories": None, "fallbackTitle": None,
-               "history": None, "prompted": False}
+               "history": None, "prompted": False, "mcpServers": None}
         if listed is not None:
             rec["cwd"] = listed.get("cwd", cwd)
             rec["title"] = listed.get("title")
@@ -834,6 +1131,10 @@ class Agent(object):
             rec = self.new_session_record(sid, params.get("cwd"))
             if params.get("additionalDirectories"):
                 rec["additionalDirectories"] = list(params["additionalDirectories"])
+            if "mcpServers" in params or source is None:
+                rec["mcpServers"] = copy.deepcopy(params.get("mcpServers"))
+            else:
+                rec["mcpServers"] = copy.deepcopy(source.get("mcpServers"))
             if source is not None and rec.get("history") is not None:
                 rec["history"] = self.history_of(params.get("sessionId"), source)  # a fork copies the messages
             self.respond(rid, self.session_state_result(sid, rec))
@@ -846,6 +1147,8 @@ class Agent(object):
             rec["closed"] = False
             if params.get("additionalDirectories"):
                 rec["additionalDirectories"] = list(params["additionalDirectories"])
+            if "mcpServers" in params:
+                rec["mcpServers"] = copy.deepcopy(params["mcpServers"])
             if method == "session/load":
                 self.replay(sid)
             self.respond(rid, self.session_state_result(None, rec))
@@ -980,6 +1283,8 @@ class Run(object):
         self.outcomes = {}
         self.my_requests = []
         self.last_request = None
+        self.mcp_results = {}       # "as" name -> record of an mcp_request step
+        self.last_mcp = None        # record of the last mcp_request step
         text = ""
         for block in (request.get("params") or {}).get("prompt") or []:
             if isinstance(block, dict) and block.get("type") == "text":
@@ -996,6 +1301,9 @@ class Run(object):
         name, arg = match.group(1), match.group(2)
         if name == "bytes":
             return "x" * int(arg or 0)
+        if name in ("mcpText", "mcpResult", "mcpStatus"):
+            rec = self.mcp_results.get(arg) if arg else self.last_mcp
+            return match.group(0) if rec is None else mcp_substitution(name, rec)
         if name in extra:
             return extra[name]
         if name == "lastRequestId":
@@ -1010,12 +1318,19 @@ class Run(object):
             m = self.VAR.fullmatch(obj)
             if m:
                 return self.lookup(m, extra)
-            return self.VAR.sub(lambda mm: str(self.lookup(mm, extra)), obj)
+            return self.VAR.sub(lambda mm: self.embed(self.lookup(mm, extra)), obj)
         if isinstance(obj, list):
             return [self.subst(x, extra) for x in obj]
         if isinstance(obj, dict):
             return dict((k, self.subst(v, extra)) for k, v in obj.items())
         return obj
+
+    @staticmethod
+    def embed(value):
+        """The text of a value substituted inside a longer string (an object or array as JSON)."""
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+        return str(value)
 
     def cancelled(self):
         return self.agent.cancel_count(self.sid) > self.cancel_base
@@ -1024,12 +1339,13 @@ class Run(object):
         if self.on_cancel is not None and not self.handling_cancel and self.cancelled():
             raise CancelledRun()
 
-    def wait(self, pred, timeout):
-        """Wait until pred() or timeout; raise CancelledRun if a registered cancel handler should run."""
+    def wait(self, pred, timeout, cancellable=True):
+        """Wait until pred() or timeout; raise CancelledRun if a registered cancel handler should run (cancellable)."""
         deadline = time.time() + float(timeout)
         with self.agent.cond:
             while True:
-                self.check_cancel()
+                if cancellable:
+                    self.check_cancel()
                 if pred():
                     return True
                 remaining = deadline - time.time()
@@ -1074,6 +1390,89 @@ class Run(object):
                 if option not in want:
                     return False
         return True
+
+    # ------------------------------------------------------ mcp_request
+    def mcp_servers(self):
+        """The "mcpServers" of the run's session, or else those of the run's request."""
+        with self.agent.cond:
+            servers = (self.agent.sessions.get(self.sid) or {}).get("mcpServers")
+        if servers is None:
+            servers = (self.request.get("params") or {}).get("mcpServers")
+        return [x for x in servers if isinstance(x, dict)] if isinstance(servers, list) else []
+
+    def mcp_headers(self, server, version, overrides):
+        """The headers of a POST to server: its own, MCP-Protocol-Version, ours (they win, as in OpenCode's MCP
+        client), then the step's overrides (None removes one)."""
+        headers = {}  # lower-case name -> (name, value)
+        for h in server.get("headers") or []:
+            if isinstance(h, dict) and isinstance(h.get("name"), str):
+                headers[h["name"].lower()] = (h["name"], str(h.get("value", "")))
+        if version is not None:
+            headers["mcp-protocol-version"] = ("MCP-Protocol-Version", version)
+        headers["content-type"] = ("Content-Type", "application/json")
+        headers["accept"] = ("Accept", "application/json, text/event-stream")
+        for name, value in overrides.items():
+            if value is None:
+                headers.pop(name.lower(), None)
+            else:
+                headers[name.lower()] = (name, str(value))
+        return dict(headers.values())
+
+    def mcp_exchange(self, server, wanted, method, params, rid, overrides, timeout, as_name=None, keep=False,
+                     cancellable=True):
+        """POST one message to server (None if no server of the session matched wanted), log the answer as an
+        mcp_response or mcp_error event and return that record (keep: also for the "${mcp...}" substitutions).  After
+        a timeout or a cancel, a request is followed by notifications/cancelled (and a cancel raises CancelledRun)."""
+        a = self.agent
+        name = server.get("name") if server is not None else wanted
+        rec = {"as": as_name, "server": name, "method": method, "id": rid}
+        if keep:  # finish() completes the record in place
+            self.last_mcp = rec
+            if as_name is not None:
+                self.mcp_results[as_name] = rec
+        started = time.time()
+
+        def finish(event, **kw):
+            a.touch()
+            rec.update(kw)
+            rec["seconds"] = round(time.time() - started, 3)
+            a.log.event(event, **rec)
+            rec["event"] = event
+            return rec
+
+        if server is None:
+            return finish("mcp_error", error="the session has no MCP server of type http" if wanted is None
+                          else "the session has no MCP server named %r" % (wanted,))
+        if server.get("type") != "http":
+            return finish("mcp_error", error="the MCP server %r is not of type http" % (name,))
+        message = {"jsonrpc": "2.0", "method": method}
+        if not method.startswith("notifications/"):
+            message["id"] = rid
+        if params is not None:
+            message["params"] = params
+        with a.cond:
+            version = None if method == "initialize" else a.mcp_versions.get((self.sid, name))
+        a.log.event("mcp_request", url=server.get("url"), protocolVersion=version, **rec)
+        a.touch()
+        exchange = MCPExchange(a, server.get("url"), self.mcp_headers(server, version, overrides), message, timeout)
+        exchange.start()
+
+        def abandon(error, reason):
+            exchange.abort()
+            finish("mcp_error", error=error)
+            if "id" in message:
+                self.mcp_exchange(server, wanted, "notifications/cancelled", {"requestId": rid, "reason": reason},
+                                  None, overrides, min(timeout, MCP_CANCEL_TIMEOUT), cancellable=False)
+            return rec
+
+        try:
+            answered = self.wait(lambda: exchange.done, timeout, cancellable)
+        except CancelledRun:
+            abandon("cancelled", "cancelled")
+            raise
+        if not answered:
+            return abandon("no answer within %g seconds" % timeout, "timeout")
+        return finish("mcp_error" if "error" in exchange.answer else "mcp_response", **exchange.answer)
 
     # -------------------------------------------------------------- run
     def run(self):
@@ -1226,6 +1625,39 @@ class Run(object):
 
     def step_replay(self, s):
         self.agent.replay(self.sid, float(s.get("interval", 0)))
+
+    def step_mcp_request(self, s):
+        a = self.agent
+        method = self.subst(s.get("method"))
+        if not isinstance(method, str) or not method:
+            raise ValueError("mcp_request needs a \"method\"")
+        wanted = s.get("server")
+        servers = self.mcp_servers()
+        if wanted is None:
+            server = next((x for x in servers if x.get("type") == "http"), None)
+        else:
+            server = next((x for x in servers if x.get("name") == wanted), None)
+        if method.startswith("notifications/"):
+            rid = None
+        elif "id" in s:
+            rid = self.subst(s["id"])
+        else:
+            rid = a.alloc_mcp_id()
+        if "params" in s:
+            params = self.subst(s["params"])
+        else:
+            params = copy.deepcopy(MCP_INITIALIZE_PARAMS) if method == "initialize" else None
+        overrides = self.subst(s.get("headers") or {})
+        timeout = float(s.get("timeout", 30))
+        rec = self.mcp_exchange(server, wanted, method, params, rid, overrides, timeout, as_name=s.get("as"), keep=True)
+        body = rec.get("body")
+        result = body.get("result") if isinstance(body, dict) else None
+        if method == "initialize" and rec["event"] == "mcp_response" and isinstance(result, dict):
+            if isinstance(result.get("protocolVersion"), str):
+                with a.cond:
+                    a.mcp_versions[(self.sid, server.get("name"))] = result["protocolVersion"]
+            if s.get("initialized", True):
+                self.mcp_exchange(server, wanted, "notifications/initialized", None, None, overrides, timeout)
 
     def step_exit(self, s):
         time.sleep(float(s.get("delay", 0)))

@@ -42,8 +42,9 @@ VerificationTest[
 VerificationTest[
     (* CI runs every test file in one kernel and one context: helpers that other test files define too are cleared
        first, so that none of their definitions is used here *)
-    ClearAll[ busyPumpItem, connectionClosedQ, connectionPID, currentOption, housekeepingThisTick, lastLog, mockIn,
-        mockRecords, mockRequestsIn, newMockLog, newRemoteWindow, newWindow, processAliveQ, remoteSSH, reuseWindow ];
+    ClearAll[ busyPumpItem, connectionClosedQ, connectionPID, currentOption, housekeepingThisTick, lastLog,
+        mcpServersExpected, mockIn, mockRecords, mockRequestsIn, newMockLog, newRemoteWindow, newWindow, processAliveQ,
+        remoteSSH, reuseWindow ];
 
     $acpLLMKitEnabled     = False;
     $acpAssumeWindowsOpen = True;
@@ -60,6 +61,13 @@ VerificationTest[
         SetEnvironment[ "ACPLINK_DIRECTORY" -> FileNameJoin @ { $HomeDirectory, "ACPLink", "ACPLink" } ];
         $setACPLinkEnv = True
     ];
+    (* The MCP server of the notebook tools (MCP.wl) needs an AgentTools with StartMCPSocketServer: for development, an
+       AgentTools checkout (AGENTTOOLS_DIRECTORY, default ~/AgentTools); restored by Cleanup-Restore *)
+    $setAgentToolsEnv = False;
+    If[ ! StringQ @ Environment[ "AGENTTOOLS_DIRECTORY" ] && FileExistsQ @ FileNameJoin @ { $HomeDirectory, "AgentTools", "PacletInfo.wl" },
+        SetEnvironment[ "AGENTTOOLS_DIRECTORY" -> FileNameJoin @ { $HomeDirectory, "AgentTools" } ];
+        $setAgentToolsEnv = True
+    ];
     (* Persisted choices that connecting and the tests change (with a front end they are the developer's real front end
        preferences); restored by Cleanup-Restore *)
     $savedPersisted = AssociationMap[
@@ -70,6 +78,12 @@ VerificationTest[
     $acpLogStart = AbsoluteTime[ ];
     $acpConnTestsQ = TrueQ[ StringQ @ $python && FileExistsQ @ $mockScript && acpLinkAvailableQ[ ] && acpLoadACPLink[ ] === True ];
     $procfsQ       = $OperatingSystem === "Unix" && DirectoryQ[ "/proc/self" ];
+    (* The "mcpServers" of a local window's sessions: the notebook tools' server if an AgentTools with
+       StartMCPSocketServer can be loaded (see Tests/ACPMCP.wlt), else none (CI) *)
+    mcpServersExpected[ ] := If[ TrueQ @ acpMCPAvailableQ[ ],
+        { KeyValuePattern @ { "type" -> "http", "name" -> "WolframNotebooks", "url" -> _String, "headers" -> { KeyValuePattern[ "name" -> "Authorization" ] } } },
+        { }
+    ];
 
     $scratch = CreateDirectory[ ];
     $project1 = CreateDirectory @ FileNameJoin @ { $scratch, "project1" };
@@ -175,7 +189,7 @@ VerificationTest[
     ,
     _,
     SameTest -> MatchQ,
-    TestID   -> "ACPConnection-Definitions@@Tests/ACPConnection.wlt:42,1-179,2"
+    TestID   -> "ACPConnection-Definitions@@Tests/ACPConnection.wlt:42,1-193,2"
 ]
 
 (* A test of its own, so that the tests after it are read with the fake ssh helpers' context on $ContextPath *)
@@ -184,7 +198,7 @@ VerificationTest[
     MemberQ[ $ContextPath, "Wolfram`ChatbookTests`ACPFakeSSH`" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPConnection-LoadFakeSSH@@Tests/ACPConnection.wlt:182,1-188,2"
+    TestID   -> "ACPConnection-LoadFakeSSH@@Tests/ACPConnection.wlt:196,1-202,2"
 ]
 
 (* Everything the remote tests run is created here, before any agent is started: chmod (RunProcess) must not run while an
@@ -290,7 +304,7 @@ VerificationTest[
     ,
     _,
     SameTest -> MatchQ,
-    TestID   -> "ACPConnection-RemoteDefinitions@@Tests/ACPConnection.wlt:192,1-294,2"
+    TestID   -> "ACPConnection-RemoteDefinitions@@Tests/ACPConnection.wlt:206,1-308,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -302,9 +316,18 @@ VerificationTest[
 (*OpenCode Configuration*)
 VerificationTest[
     Developer`ReadRawJSONString @ acpOpenCodeConfigJSON[ ],
-    <| "$schema" -> "https://opencode.ai/config.json", "permission" -> <| "edit" -> "ask", "bash" -> "ask" |> |>,
+    <|
+        "$schema"    -> "https://opencode.ai/config.json",
+        "permission" -> <|
+            "edit"                          -> "ask",
+            "bash"                          -> "ask",
+            "WolframNotebooks_InsertCells"  -> "ask",
+            "WolframNotebooks_ReplaceCells" -> "ask",
+            "WolframNotebooks_DeleteCells"  -> "ask"
+        |>
+    |>,
     SameTest -> MatchQ,
-    TestID   -> "OpenCodeConfigJSON-NoLLMKit@@Tests/ACPConnection.wlt:303,1-308,2"
+    TestID   -> "OpenCodeConfigJSON-NoLLMKit@@Tests/ACPConnection.wlt:317,1-331,2"
 ]
 
 VerificationTest[
@@ -322,7 +345,13 @@ VerificationTest[
         }
     ],
     {
-        <| "edit" -> "ask", "bash" -> "ask" |>,
+        <|
+            "edit"                          -> "ask",
+            "bash"                          -> "ask",
+            "WolframNotebooks_InsertCells"  -> "ask",
+            "WolframNotebooks_ReplaceCells" -> "ask",
+            "WolframNotebooks_DeleteCells"  -> "ask"
+        |>,
         "@ai-sdk/openai-compatible",
         "https://services.wolfram.com/api/llmkit/v1",
         "Bearer {env:LLMKIT_API_KEY}",
@@ -331,7 +360,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "OpenCodeConfigJSON-LLMKit@@Tests/ACPConnection.wlt:310,1-335,2"
+    TestID   -> "OpenCodeConfigJSON-LLMKit@@Tests/ACPConnection.wlt:333,1-364,2"
 ]
 
 VerificationTest[
@@ -347,7 +376,7 @@ VerificationTest[
     ],
     { True, True, False, True, False },
     SameTest -> MatchQ,
-    TestID   -> "OpenCodeEnvironment-NoKey@@Tests/ACPConnection.wlt:337,1-351,2"
+    TestID   -> "OpenCodeEnvironment-NoKey@@Tests/ACPConnection.wlt:366,1-380,2"
 ]
 
 VerificationTest[
@@ -361,7 +390,7 @@ VerificationTest[
     ],
     { "fake-llmkit-key-for-tests", True, False },
     SameTest -> MatchQ,
-    TestID   -> "OpenCodeEnvironment-Key@@Tests/ACPConnection.wlt:353,1-365,2"
+    TestID   -> "OpenCodeEnvironment-Key@@Tests/ACPConnection.wlt:382,1-394,2"
 ]
 
 VerificationTest[
@@ -377,7 +406,7 @@ VerificationTest[
         ]
     ],
     <| "ACPTEST_EQ" -> "a=b", "ACPTEST_PLAIN%%" -> "plain" |>,
-    TestID -> "OpenCodeEnvironment-UnpassableVariables@@Tests/ACPConnection.wlt:367,1-381,2"
+    TestID -> "OpenCodeEnvironment-UnpassableVariables@@Tests/ACPConnection.wlt:396,1-410,2"
 ]
 
 VerificationTest[
@@ -385,7 +414,7 @@ VerificationTest[
     acpLLMKitAPIKey[ ],
     None,
     SameTest -> MatchQ,
-    TestID   -> "LLMKitAPIKey-Disabled@@Tests/ACPConnection.wlt:383,1-389,2"
+    TestID   -> "LLMKitAPIKey-Disabled@@Tests/ACPConnection.wlt:412,1-418,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -421,7 +450,7 @@ VerificationTest[
     ],
     _,
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-Definitions@@Tests/ACPConnection.wlt:394,1-425,2"
+    TestID   -> "LLMKitKey-Definitions@@Tests/ACPConnection.wlt:423,1-454,2"
 ]
 
 VerificationTest[
@@ -438,14 +467,14 @@ VerificationTest[
     ],
     { <| "Key" -> "fake-key-c", "Status" -> "Found", "Definitive" -> True |>, { { "GET", "keys", None } } },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-UsesActiveKeyWithGrant@@Tests/ACPConnection.wlt:427,1-442,2"
+    TestID   -> "LLMKitKey-UsesActiveKeyWithGrant@@Tests/ACPConnection.wlt:456,1-471,2"
 ]
 
 VerificationTest[
     findKey[ <| "Keys" -> { keyRecord[ "No grant", "fake-key-a", "Active", { "MCPAPIs", "AgentOne" } ] }, "Grants" -> { "AgentOne", "MCPAPIs" } |>, (True &) ],
     { <| "Key" -> None, "Status" -> "NoPermission", "Definitive" -> True |>, { { "GET", "keys", None }, { "GET", "permissions", None } } },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-NeverUsesKeysWithoutGrant@@Tests/ACPConnection.wlt:444,1-449,2"
+    TestID   -> "LLMKitKey-NeverUsesKeysWithoutGrant@@Tests/ACPConnection.wlt:473,1-478,2"
 ]
 
 VerificationTest[
@@ -460,14 +489,14 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-CreatesKey@@Tests/ACPConnection.wlt:451,1-464,2"
+    TestID   -> "LLMKitKey-CreatesKey@@Tests/ACPConnection.wlt:480,1-493,2"
 ]
 
 VerificationTest[
     findKey[ <| "Keys" -> { }, "Grants" -> { "LLMKitAPIs" }, "CreateSucceeds" -> True |>, (False &) ],
     { <| "Key" -> None, "Status" -> "CreationNotAllowed", "Definitive" -> False |>, { { "GET", "keys", None }, { "GET", "permissions", None } } },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-CreationNotAllowed@@Tests/ACPConnection.wlt:466,1-471,2"
+    TestID   -> "LLMKitKey-CreationNotAllowed@@Tests/ACPConnection.wlt:495,1-500,2"
 ]
 
 VerificationTest[
@@ -477,7 +506,7 @@ VerificationTest[
     ],
     { <| "Key" -> None, "Status" -> "KeyNameTaken", "Definitive" -> True |>, { { "GET", "keys", None }, { "GET", "permissions", None } } },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-NoSecondKeyWithSameName@@Tests/ACPConnection.wlt:473,1-481,2"
+    TestID   -> "LLMKitKey-NoSecondKeyWithSameName@@Tests/ACPConnection.wlt:502,1-510,2"
 ]
 
 VerificationTest[
@@ -492,7 +521,7 @@ VerificationTest[
         <| "Key" -> None, "Status" -> "ListFailed", "Definitive" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitKey-Failures@@Tests/ACPConnection.wlt:483,1-496,2"
+    TestID   -> "LLMKitKey-Failures@@Tests/ACPConnection.wlt:512,1-525,2"
 ]
 
 VerificationTest[
@@ -516,7 +545,7 @@ VerificationTest[
     ],
     { None, None, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitAPIKey-CreationAttemptedOnce@@Tests/ACPConnection.wlt:498,1-520,2"
+    TestID   -> "LLMKitAPIKey-CreationAttemptedOnce@@Tests/ACPConnection.wlt:527,1-549,2"
 ]
 
 VerificationTest[
@@ -545,7 +574,7 @@ VerificationTest[
     ],
     { "fake-key-c", "fake-key-c", 1, True, None, 1 },
     SameTest -> MatchQ,
-    TestID   -> "LLMKitAPIKey-Cached@@Tests/ACPConnection.wlt:522,1-549,2"
+    TestID   -> "LLMKitAPIKey-Cached@@Tests/ACPConnection.wlt:551,1-578,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -586,7 +615,7 @@ VerificationTest[
         "openai/gpt-6.1-sol"
     },
     SameTest -> MatchQ,
-    TestID   -> "PreferredModel@@Tests/ACPConnection.wlt:554,1-590,2"
+    TestID   -> "PreferredModel@@Tests/ACPConnection.wlt:583,1-619,2"
 ]
 
 VerificationTest[
@@ -613,7 +642,7 @@ VerificationTest[
         ""
     },
     SameTest -> MatchQ,
-    TestID   -> "BillingLabel@@Tests/ACPConnection.wlt:592,1-617,2"
+    TestID   -> "BillingLabel@@Tests/ACPConnection.wlt:621,1-646,2"
 ]
 
 VerificationTest[
@@ -625,7 +654,7 @@ VerificationTest[
     },
     { "mode", "effort", Missing[ "NotAvailable" ], { "a/b", "c/d" } },
     SameTest -> MatchQ,
-    TestID   -> "FindConfigOption@@Tests/ACPConnection.wlt:619,1-629,2"
+    TestID   -> "FindConfigOption@@Tests/ACPConnection.wlt:648,1-658,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -646,7 +675,7 @@ VerificationTest[
     FileExistsQ /@ { $pathExe, $homeExe },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FindProgram-Setup@@Tests/ACPConnection.wlt:634,1-650,2"
+    TestID   -> "FindProgram-Setup@@Tests/ACPConnection.wlt:663,1-679,2"
 ]
 
 VerificationTest[
@@ -663,7 +692,7 @@ VerificationTest[
     },
     { $pathExe, $homeExe, $homeExe, $pathExe, FileNameJoin @ { $pathDir2, "myagent" } },
     SameTest -> MatchQ,
-    TestID   -> "FindProgram-Found@@Tests/ACPConnection.wlt:652,1-667,2"
+    TestID   -> "FindProgram-Found@@Tests/ACPConnection.wlt:681,1-696,2"
 ]
 
 VerificationTest[
@@ -676,7 +705,7 @@ VerificationTest[
     },
     { None, None, None, None },
     SameTest -> MatchQ,
-    TestID   -> "FindProgram-NotFound@@Tests/ACPConnection.wlt:669,1-680,2"
+    TestID   -> "FindProgram-NotFound@@Tests/ACPConnection.wlt:698,1-709,2"
 ]
 
 VerificationTest[
@@ -691,7 +720,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FindProgram-Windows@@Tests/ACPConnection.wlt:682,1-695,2"
+    TestID   -> "FindProgram-Windows@@Tests/ACPConnection.wlt:711,1-724,2"
 ]
 
 (* The "ACPAgentCommandLine" setting: a program gets the agent's arguments, a list is the whole command line *)
@@ -731,7 +760,7 @@ VerificationTest[
         Failure[ "AgentNotFound", KeyValuePattern @ { "Agent" -> "OpenCode", "Path" -> None, "InstallURL" -> "https://opencode.ai" } ]
     },
     SameTest -> MatchQ,
-    TestID   -> "AgentSpec-CommandLine@@Tests/ACPConnection.wlt:698,1-735,2"
+    TestID   -> "AgentSpec-CommandLine@@Tests/ACPConnection.wlt:727,1-764,2"
 ]
 
 VerificationTest[
@@ -780,7 +809,7 @@ VerificationTest[
         Failure[ "UnknownAgent", KeyValuePattern[ "Agent" -> "NoSuchAgent" ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "AgentSpec@@Tests/ACPConnection.wlt:737,1-784,2"
+    TestID   -> "AgentSpec@@Tests/ACPConnection.wlt:766,1-813,2"
 ]
 
 VerificationTest[
@@ -807,7 +836,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "CommandLineSetting@@Tests/ACPConnection.wlt:786,1-811,2"
+    TestID   -> "CommandLineSetting@@Tests/ACPConnection.wlt:815,1-840,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -832,7 +861,7 @@ VerificationTest[
     ],
     { Missing[ "NotSet" ], "m2", "m2", None, Inherited, "default" },
     SameTest -> MatchQ,
-    TestID   -> "PersistedSettings-Headless@@Tests/ACPConnection.wlt:818,1-836,2"
+    TestID   -> "PersistedSettings-Headless@@Tests/ACPConnection.wlt:847,1-865,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -848,7 +877,7 @@ VerificationTest[
         "Data"    -> KeyValuePattern[ "ErrorCode" -> -32603 ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-ModelUnavailable@@Tests/ACPConnection.wlt:841,1-852,2"
+    TestID   -> "ErrorInfo-ModelUnavailable@@Tests/ACPConnection.wlt:870,1-881,2"
 ]
 
 VerificationTest[
@@ -872,7 +901,7 @@ VerificationTest[
         { "NotConnected", { "Reconnect" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-Table@@Tests/ACPConnection.wlt:854,1-876,2"
+    TestID   -> "ErrorInfo-Table@@Tests/ACPConnection.wlt:883,1-905,2"
 ]
 
 VerificationTest[
@@ -889,7 +918,7 @@ VerificationTest[
         KeyValuePattern @ { "Code" -> "UnknownAgent", "Message" -> "Unknown agent: X.", "Detail" -> None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-Failures@@Tests/ACPConnection.wlt:878,1-893,2"
+    TestID   -> "ErrorInfo-Failures@@Tests/ACPConnection.wlt:907,1-922,2"
 ]
 
 VerificationTest[
@@ -917,7 +946,7 @@ VerificationTest[
         "ModelUnavailable"
     },
     SameTest -> MatchQ,
-    TestID   -> "ErrorInfo-ProviderErrorsAreNotModelErrors@@Tests/ACPConnection.wlt:895,1-921,2"
+    TestID   -> "ErrorInfo-ProviderErrorsAreNotModelErrors@@Tests/ACPConnection.wlt:924,1-950,2"
 ]
 
 VerificationTest[
@@ -933,7 +962,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "MessageData@@Tests/ACPConnection.wlt:923,1-937,2"
+    TestID   -> "MessageData@@Tests/ACPConnection.wlt:952,1-966,2"
 ]
 
 VerificationTest[
@@ -947,7 +976,7 @@ VerificationTest[
     },
     { False, False, False, Missing[ "NotFound" ], True },
     SameTest -> MatchQ,
-    TestID   -> "ConnectionUtilities@@Tests/ACPConnection.wlt:939,1-951,2"
+    TestID   -> "ConnectionUtilities@@Tests/ACPConnection.wlt:968,1-980,2"
 ]
 
 VerificationTest[
@@ -959,7 +988,7 @@ VerificationTest[
     },
     { None, None, "m1" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentModel-NoConfigOptions@@Tests/ACPConnection.wlt:953,1-963,2"
+    TestID   -> "CurrentModel-NoConfigOptions@@Tests/ACPConnection.wlt:982,1-992,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -972,7 +1001,7 @@ VerificationTest[
     ],
     { "NoDirectory", "NoDirectory", None },
     SameTest -> MatchQ,
-    TestID   -> "Connect-NoDirectory@@Tests/ACPConnection.wlt:968,1-976,2"
+    TestID   -> "Connect-NoDirectory@@Tests/ACPConnection.wlt:997,1-1005,2"
 ]
 
 VerificationTest[
@@ -988,7 +1017,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "Connect-AgentNotFound@@Tests/ACPConnection.wlt:978,1-992,2"
+    TestID   -> "Connect-AgentNotFound@@Tests/ACPConnection.wlt:1007,1-1021,2"
 ]
 
 VerificationTest[
@@ -1000,7 +1029,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Error", "UnknownAgent" },
     SameTest -> MatchQ,
-    TestID   -> "Connect-UnknownAgent@@Tests/ACPConnection.wlt:994,1-1004,2"
+    TestID   -> "Connect-UnknownAgent@@Tests/ACPConnection.wlt:1023,1-1033,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1013,7 +1042,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Connecting", True },
     SameTest -> MatchQ,
-    TestID   -> "Connect-Ready@@Tests/ACPConnection.wlt:1009,1-1017,2"
+    TestID   -> "Connect-Ready@@Tests/ACPConnection.wlt:1038,1-1046,2"
 ]
 
 VerificationTest[
@@ -1032,7 +1061,7 @@ VerificationTest[
         "Error"              -> None
     |>,
     SameTest -> MatchQ,
-    TestID   -> "Connect-WindowRecord@@Tests/ACPConnection.wlt:1019,1-1036,2"
+    TestID   -> "Connect-WindowRecord@@Tests/ACPConnection.wlt:1048,1-1065,2"
 ]
 
 VerificationTest[
@@ -1043,7 +1072,7 @@ VerificationTest[
     } ],
     Missing[ "TestSkipped" ] | { "m2", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Connect-PreferredModelApplied@@Tests/ACPConnection.wlt:1038,1-1047,2"
+    TestID   -> "Connect-PreferredModelApplied@@Tests/ACPConnection.wlt:1067,1-1076,2"
 ]
 
 VerificationTest[
@@ -1057,7 +1086,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Ready", 1, 1, 1 },
     SameTest -> MatchQ,
-    TestID   -> "Connect-Idempotent@@Tests/ACPConnection.wlt:1049,1-1061,2"
+    TestID   -> "Connect-Idempotent@@Tests/ACPConnection.wlt:1078,1-1090,2"
 ]
 
 VerificationTest[
@@ -1081,11 +1110,11 @@ VerificationTest[
             "clientInfo"         -> KeyValuePattern[ "name" -> "wolfram-chatbook" ]
         },
         _String? (StringStartsQ[ "cb-" ]),
-        KeyValuePattern @ { "cwd" -> ExpandFileName @ $project1, "mcpServers" -> { } },
+        KeyValuePattern @ { "cwd" -> ExpandFileName @ $project1, "mcpServers" -> mcpServersExpected[ ] },
         { KeyValuePattern @ { "configId" -> "model", "sessionId" -> "sess-1", "value" -> "m2" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Connect-WireLog@@Tests/ACPConnection.wlt:1063,1-1089,2"
+    TestID   -> "Connect-WireLog@@Tests/ACPConnection.wlt:1092,1-1118,2"
 ]
 
 VerificationTest[
@@ -1093,7 +1122,7 @@ VerificationTest[
         SubsetQ[ Keys @ Wolfram`Chatbook`ACP`State`Private`$housekeeping, { "ACPConnection", "ACPConnectionSweep" } ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Connect-HousekeepingRegistered@@Tests/ACPConnection.wlt:1091,1-1097,2"
+    TestID   -> "Connect-HousekeepingRegistered@@Tests/ACPConnection.wlt:1120,1-1126,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1118,7 +1147,7 @@ VerificationTest[
         KeyValuePattern @ { "Name" -> "write", "Permission" -> KeyValuePattern @ { "RequestID" -> $perm1, "Outcome" -> None }, "Diffs" -> { __ } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-StreamingAndPermissionRequest@@Tests/ACPConnection.wlt:1102,1-1122,2"
+    TestID   -> "Prompt-StreamingAndPermissionRequest@@Tests/ACPConnection.wlt:1131,1-1151,2"
 ]
 
 VerificationTest[
@@ -1128,7 +1157,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-AnswerPermissionLater@@Tests/ACPConnection.wlt:1124,1-1132,2"
+    TestID   -> "Prompt-AnswerPermissionLater@@Tests/ACPConnection.wlt:1153,1-1161,2"
 ]
 
 VerificationTest[
@@ -1147,7 +1176,7 @@ VerificationTest[
         { "I'll write the file.", "Done: hello.txt contains hi." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-FinalTurn@@Tests/ACPConnection.wlt:1134,1-1151,2"
+    TestID   -> "Prompt-FinalTurn@@Tests/ACPConnection.wlt:1163,1-1180,2"
 ]
 
 VerificationTest[
@@ -1164,14 +1193,14 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-WindowAfterTurn@@Tests/ACPConnection.wlt:1153,1-1168,2"
+    TestID   -> "Prompt-WindowAfterTurn@@Tests/ACPConnection.wlt:1182,1-1197,2"
 ]
 
 VerificationTest[
     ifConnTests @ acpAnswerPermission[ $w1, 999, "once" ],
     Missing[ "TestSkipped" ] | Missing[ "NotPending", 999 ],
     SameTest -> MatchQ,
-    TestID   -> "Prompt-AnswerUnknownPermission@@Tests/ACPConnection.wlt:1170,1-1175,2"
+    TestID   -> "Prompt-AnswerUnknownPermission@@Tests/ACPConnection.wlt:1199,1-1204,2"
 ]
 
 VerificationTest[
@@ -1194,7 +1223,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, "end_turn", "withdrawn", "completed", { <| "outcome" -> <| "outcome" -> "cancelled" |> |> } },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-CancelRequest@@Tests/ACPConnection.wlt:1177,1-1198,2"
+    TestID   -> "Prompt-CancelRequest@@Tests/ACPConnection.wlt:1206,1-1227,2"
 ]
 
 VerificationTest[
@@ -1226,7 +1255,7 @@ VerificationTest[
         "Ready"
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-StopWithPendingPermission@@Tests/ACPConnection.wlt:1200,1-1230,2"
+    TestID   -> "Prompt-StopWithPendingPermission@@Tests/ACPConnection.wlt:1229,1-1259,2"
 ]
 
 VerificationTest[
@@ -1247,7 +1276,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "end_turn", { <| "outcome" -> <| "outcome" -> "cancelled" |> |> }, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-BackgroundPermissionCancelled@@Tests/ACPConnection.wlt:1232,1-1251,2"
+    TestID   -> "Prompt-BackgroundPermissionCancelled@@Tests/ACPConnection.wlt:1261,1-1280,2"
 ]
 
 VerificationTest[
@@ -1274,7 +1303,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "cancelled", { }, { <| "outcome" -> <| "outcome" -> "cancelled" |> |> }, "Ready", None },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-PermissionAfterStop@@Tests/ACPConnection.wlt:1253,1-1278,2"
+    TestID   -> "Prompt-PermissionAfterStop@@Tests/ACPConnection.wlt:1282,1-1307,2"
 ]
 
 VerificationTest[
@@ -1290,7 +1319,7 @@ VerificationTest[
         "Ready"
     },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-ModelUnavailable@@Tests/ACPConnection.wlt:1280,1-1294,2"
+    TestID   -> "Prompt-ModelUnavailable@@Tests/ACPConnection.wlt:1309,1-1323,2"
 ]
 
 VerificationTest[
@@ -1302,7 +1331,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Prompt-MCPReadyDetection@@Tests/ACPConnection.wlt:1296,1-1306,2"
+    TestID   -> "Prompt-MCPReadyDetection@@Tests/ACPConnection.wlt:1325,1-1335,2"
 ]
 
 VerificationTest[
@@ -1318,7 +1347,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { Null, Null, Null, Null, Null, Null, "Ready" },
     SameTest -> MatchQ,
-    TestID   -> "Handlers-Isolated@@Tests/ACPConnection.wlt:1308,1-1322,2"
+    TestID   -> "Handlers-Isolated@@Tests/ACPConnection.wlt:1337,1-1351,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1333,7 +1362,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-Mode@@Tests/ACPConnection.wlt:1327,1-1337,2"
+    TestID   -> "ConfigOption-Mode@@Tests/ACPConnection.wlt:1356,1-1366,2"
 ]
 
 VerificationTest[
@@ -1347,7 +1376,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True, _String? (StringStartsQ[ "Couldn't change Session Mode" ]), "plan" },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-Error@@Tests/ACPConnection.wlt:1339,1-1351,2"
+    TestID   -> "ConfigOption-Error@@Tests/ACPConnection.wlt:1368,1-1380,2"
 ]
 
 (* $FrontEnd = Null: the persisted settings are the headless ones (restored afterwards) also when the tests run under a
@@ -1368,7 +1397,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Sent", True, "m1", "m1" },
     SameTest -> MatchQ,
-    TestID   -> "ConfigOption-ModelPersisted@@Tests/ACPConnection.wlt:1355,1-1372,2"
+    TestID   -> "ConfigOption-ModelPersisted@@Tests/ACPConnection.wlt:1384,1-1401,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1390,7 +1419,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Connecting", True, "sess-2", "sess-2", { <| "sessionId" -> "sess-1" |> }, 2, "m1", "build" },
     SameTest -> MatchQ,
-    TestID   -> "Session-New@@Tests/ACPConnection.wlt:1377,1-1394,2"
+    TestID   -> "Session-New@@Tests/ACPConnection.wlt:1406,1-1423,2"
 ]
 
 VerificationTest[
@@ -1410,7 +1439,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Session-Disconnect@@Tests/ACPConnection.wlt:1396,1-1414,2"
+    TestID   -> "Session-Disconnect@@Tests/ACPConnection.wlt:1425,1-1443,2"
 ]
 
 (* A resumed session keeps its own config: the window's preferred model (here m2, the session's is m1; m2 is no longer
@@ -1436,9 +1465,9 @@ VerificationTest[
             acpWindowUpdate[ $w1, <| #, "UserModel" -> "m1", "FailedModels" -> $failedModels |> & ]
         ]
     ],
-    Missing[ "TestSkipped" ] | { True, 2, { KeyValuePattern @ { "sessionId" -> "sess-2", "cwd" -> ExpandFileName @ $project1, "mcpServers" -> { } } }, { }, "sess-2", None, { }, "m1", "Resumed" },
+    Missing[ "TestSkipped" ] | { True, 2, { KeyValuePattern @ { "sessionId" -> "sess-2", "cwd" -> ExpandFileName @ $project1, "mcpServers" -> mcpServersExpected[ ] } }, { }, "sess-2", None, { }, "m1", "Resumed" },
     SameTest -> MatchQ,
-    TestID   -> "Session-Resume@@Tests/ACPConnection.wlt:1419,1-1442,2"
+    TestID   -> "Session-Resume@@Tests/ACPConnection.wlt:1448,1-1471,2"
 ]
 
 VerificationTest[
@@ -1459,7 +1488,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 1, 1, "sess-1", True },
     SameTest -> MatchQ,
-    TestID   -> "Session-ResumeFallsBackToNew@@Tests/ACPConnection.wlt:1444,1-1463,2"
+    TestID   -> "Session-ResumeFallsBackToNew@@Tests/ACPConnection.wlt:1473,1-1492,2"
 ]
 
 VerificationTest[
@@ -1481,7 +1510,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { <| "StopReason" -> "cancelled", "ClientCancel" -> "Stop", "Error" -> None |>, "Disconnected", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Session-DisconnectRunningTurn@@Tests/ACPConnection.wlt:1465,1-1485,2"
+    TestID   -> "Session-DisconnectRunningTurn@@Tests/ACPConnection.wlt:1494,1-1514,2"
 ]
 
 VerificationTest[
@@ -1503,7 +1532,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, <| "StopReason" -> "cancelled", "ClientCancel" -> "Stop" |>, <| |>, "Ready" },
     SameTest -> MatchQ,
-    TestID   -> "Session-StopTimeout@@Tests/ACPConnection.wlt:1487,1-1507,2"
+    TestID   -> "Session-StopTimeout@@Tests/ACPConnection.wlt:1516,1-1536,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1528,7 +1557,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "AgentDeath-DuringTurn@@Tests/ACPConnection.wlt:1512,1-1532,2"
+    TestID   -> "AgentDeath-DuringTurn@@Tests/ACPConnection.wlt:1541,1-1561,2"
 ]
 
 VerificationTest[
@@ -1544,7 +1573,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Error", "AgentExited", None },
     SameTest -> MatchQ,
-    TestID   -> "AgentDeath-DuringSetup@@Tests/ACPConnection.wlt:1534,1-1548,2"
+    TestID   -> "AgentDeath-DuringSetup@@Tests/ACPConnection.wlt:1563,1-1577,2"
 ]
 
 VerificationTest[
@@ -1566,7 +1595,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { KeyValuePattern @ { "Code" -> "NoModels", "Actions" -> { "SignIn", "Reconnect" } }, None, True, "Error" },
     SameTest -> MatchQ,
-    TestID   -> "SessionError-NoModels@@Tests/ACPConnection.wlt:1550,1-1570,2"
+    TestID   -> "SessionError-NoModels@@Tests/ACPConnection.wlt:1579,1-1599,2"
 ]
 
 VerificationTest[
@@ -1576,7 +1605,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, None },
     SameTest -> MatchQ,
-    TestID   -> "Reconnect-ClearsError@@Tests/ACPConnection.wlt:1572,1-1580,2"
+    TestID   -> "Reconnect-ClearsError@@Tests/ACPConnection.wlt:1601,1-1609,2"
 ]
 
 VerificationTest[
@@ -1602,7 +1631,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, None, True },
     SameTest -> MatchQ,
-    TestID   -> "Reconnect-AfterCommandLineSet@@Tests/ACPConnection.wlt:1582,1-1606,2"
+    TestID   -> "Reconnect-AfterCommandLineSet@@Tests/ACPConnection.wlt:1611,1-1635,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1615,7 +1644,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { Failure[ "InvalidDirectory", _ ], Null },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-Invalid@@Tests/ACPConnection.wlt:1611,1-1619,2"
+    TestID   -> "ProjectDirectory-Invalid@@Tests/ACPConnection.wlt:1640,1-1648,2"
 ]
 
 VerificationTest[
@@ -1633,12 +1662,12 @@ VerificationTest[
         ExpandFileName @ $project2,
         <| "ProjectDirectory" -> ExpandFileName @ $project2, "ResumableSessionID" -> None, "Turns" -> { } |>,
         True,
-        { KeyValuePattern @ { "cwd" -> ExpandFileName @ $project2, "mcpServers" -> { } } },
+        { KeyValuePattern @ { "cwd" -> ExpandFileName @ $project2, "mcpServers" -> mcpServersExpected[ ] } },
         { },
         ExpandFileName @ $project2
     },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-Change@@Tests/ACPConnection.wlt:1621,1-1642,2"
+    TestID   -> "ProjectDirectory-Change@@Tests/ACPConnection.wlt:1650,1-1671,2"
 ]
 
 VerificationTest[
@@ -1651,7 +1680,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { Failure[ "Running", _ ], ExpandFileName @ $project2, "cancelled" },
     SameTest -> MatchQ,
-    TestID   -> "ProjectDirectory-RefusedWhileRunning@@Tests/ACPConnection.wlt:1644,1-1655,2"
+    TestID   -> "ProjectDirectory-RefusedWhileRunning@@Tests/ACPConnection.wlt:1673,1-1684,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1693,7 +1722,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "m2", "plan", { "model", "effort", "mode" } },
     SameTest -> MatchQ,
-    TestID   -> "WindowUpdates-ConfigAndMode@@Tests/ACPConnection.wlt:1660,1-1697,2"
+    TestID   -> "WindowUpdates-ConfigAndMode@@Tests/ACPConnection.wlt:1689,1-1726,2"
 ]
 
 VerificationTest[
@@ -1710,7 +1739,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { None, True, { }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "Session-NewWhileDisconnected@@Tests/ACPConnection.wlt:1699,1-1714,2"
+    TestID   -> "Session-NewWhileDisconnected@@Tests/ACPConnection.wlt:1728,1-1743,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1725,7 +1754,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, None, 0 },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-StuckConnect@@Tests/ACPConnection.wlt:1719,1-1729,2"
+    TestID   -> "Housekeeping-StuckConnect@@Tests/ACPConnection.wlt:1748,1-1758,2"
 ]
 
 VerificationTest[
@@ -1735,7 +1764,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | True,
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-MCPReadyTimeout@@Tests/ACPConnection.wlt:1731,1-1739,2"
+    TestID   -> "Housekeeping-MCPReadyTimeout@@Tests/ACPConnection.wlt:1760,1-1768,2"
 ]
 
 VerificationTest[
@@ -1755,7 +1784,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Timeout", None, True },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-SetupTimeout@@Tests/ACPConnection.wlt:1741,1-1759,2"
+    TestID   -> "Housekeeping-SetupTimeout@@Tests/ACPConnection.wlt:1770,1-1788,2"
 ]
 
 (* Agents for the timeout tests: the mock, silent for $mockStartDelay seconds before it reads anything (a launcher that
@@ -1789,7 +1818,7 @@ VerificationTest[
     busyPumpItem[ ] := If[ TrueQ @ $busyPump, Pause[ 0.2 ]; acpSchedule @ busyPumpItem[ ] ];
     Null,
     Null,
-    TestID -> "Housekeeping-TimeoutDefinitions@@Tests/ACPConnection.wlt:1764,1-1793,2"
+    TestID -> "Housekeeping-TimeoutDefinitions@@Tests/ACPConnection.wlt:1793,1-1822,2"
 ]
 
 (* The kernel is blocked right after the agent was started (an evaluation in the pump, e.g. one that waits for the
@@ -1808,7 +1837,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Ready", None },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-StalledKernel-NoSpuriousTimeout@@Tests/ACPConnection.wlt:1799,1-1812,2"
+    TestID   -> "Housekeeping-StalledKernel-NoSpuriousTimeout@@Tests/ACPConnection.wlt:1828,1-1841,2"
 ]
 
 (* A kernel that stays busy (every run of housekeeping comes late): only one run in a row decides no timeouts, so an
@@ -1846,7 +1875,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Timeout", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-BusyKernel-TimeoutFires@@Tests/ACPConnection.wlt:1817,1-1850,2"
+    TestID   -> "Housekeeping-BusyKernel-TimeoutFires@@Tests/ACPConnection.wlt:1846,1-1879,2"
 ]
 
 (* An agent that never answers: the setup timeout ends its process (and the connection) *)
@@ -1869,7 +1898,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Timeout", True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-SetupTimeout-EndsAgent@@Tests/ACPConnection.wlt:1853,1-1873,2"
+    TestID   -> "Housekeeping-SetupTimeout-EndsAgent@@Tests/ACPConnection.wlt:1882,1-1902,2"
 ]
 
 VerificationTest[
@@ -1886,7 +1915,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "AgentExited", None, "s-dead" },
     SameTest -> MatchQ,
-    TestID   -> "Housekeeping-DeadConnection@@Tests/ACPConnection.wlt:1875,1-1890,2"
+    TestID   -> "Housekeeping-DeadConnection@@Tests/ACPConnection.wlt:1904,1-1919,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1937,7 +1966,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Connect@@Tests/ACPConnection.wlt:1902,1-1941,2"
+    TestID   -> "Remote-Connect@@Tests/ACPConnection.wlt:1931,1-1970,2"
 ]
 
 (* A home persisted for the host that is out of date (the host name now points to another machine): a new window's ~
@@ -1970,7 +1999,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-StaleHome-TildeFolder@@Tests/ACPConnection.wlt:1946,1-1974,2"
+    TestID   -> "Remote-StaleHome-TildeFolder@@Tests/ACPConnection.wlt:1975,1-2003,2"
 ]
 
 (* The agent's variables reach the remote agent byte-exact (over ssh's standard input), and nothing of the local
@@ -1992,7 +2021,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, <| "MOCK_REMOTE_VAR" -> $remoteVarValue |>, False },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Variables@@Tests/ACPConnection.wlt:1978,1-1996,2"
+    TestID   -> "Remote-Variables@@Tests/ACPConnection.wlt:2007,1-2025,2"
 ]
 
 (* ssh's command line: the fixed options, -l, the user's Arguments, the default options, -T, --, the host and the
@@ -2016,7 +2045,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Argv@@Tests/ACPConnection.wlt:2001,1-2020,2"
+    TestID   -> "Remote-Argv@@Tests/ACPConnection.wlt:2030,1-2049,2"
 ]
 
 (* The client capabilities stay off for remote agents: the kernel never reads or writes local files for them *)
@@ -2024,7 +2053,7 @@ VerificationTest[
     ifRemoteTests @ Lookup[ First @ mockRequestsIn[ lastLog[ ], "initialize" ], "params" ][ "clientCapabilities" ],
     Missing[ "TestSkipped" ] | <| "fs" -> <| "readTextFile" -> False, "writeTextFile" -> False |>, "terminal" -> False |>,
     SameTest -> MatchQ,
-    TestID   -> "Remote-InitializeCapabilities@@Tests/ACPConnection.wlt:2023,1-2028,2"
+    TestID   -> "Remote-InitializeCapabilities@@Tests/ACPConnection.wlt:2052,1-2057,2"
 ]
 
 (* Nothing is written to ssh before the remote shell asks for the launch script: ACPLink holds the script and the queued
@@ -2059,7 +2088,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { { True, 1 }, "Connecting", { "Initialize" }, True }, True, True, { False, 0 }, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-LaunchWaitsForTrigger@@Tests/ACPConnection.wlt:2033,1-2063,2"
+    TestID   -> "Remote-LaunchWaitsForTrigger@@Tests/ACPConnection.wlt:2062,1-2092,2"
 ]
 
 (* Connecting, reconnecting and changing the folder of a remote window never look at the folder on this computer (the
@@ -2094,7 +2123,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { True, True, $remoteHome <> "/proj2", True, True }, { } },
     SameTest -> MatchQ,
-    TestID   -> "Remote-NoLocalFS@@Tests/ACPConnection.wlt:2068,1-2098,2"
+    TestID   -> "Remote-NoLocalFS@@Tests/ACPConnection.wlt:2097,1-2127,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2127,7 +2156,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-SameHostReconnect@@Tests/ACPConnection.wlt:2105,1-2131,2"
+    TestID   -> "Remote-SameHostReconnect@@Tests/ACPConnection.wlt:2134,1-2160,2"
 ]
 
 (* Another host is a new chat in that host's last folder; the old connection is closed *)
@@ -2158,7 +2187,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-HostSwitch@@Tests/ACPConnection.wlt:2134,1-2162,2"
+    TestID   -> "Remote-HostSwitch@@Tests/ACPConnection.wlt:2163,1-2191,2"
 ]
 
 (* A host that was never reached (a typo in the user name or port) keeps its folder for the corrected host *)
@@ -2181,7 +2210,7 @@ VerificationTest[
         <| "ProjectDirectory" -> $remoteHome <> "/proj3", "RemoteVerified" -> True, "Error" -> None |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-HostSwitch-KeepsUnverifiedFolder@@Tests/ACPConnection.wlt:2165,1-2185,2"
+    TestID   -> "Remote-HostSwitch-KeepsUnverifiedFolder@@Tests/ACPConnection.wlt:2194,1-2214,2"
 ]
 
 (* A command line is for the machine that runs the agent: another host drops it (with a notice) unless the call gives one *)
@@ -2200,7 +2229,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, Automatic, acpLabel[ "NoticeCommandLineReset" ], $remoteHome <> "/proj4" },
     SameTest -> MatchQ,
-    TestID   -> "Remote-CommandLineReset@@Tests/ACPConnection.wlt:2188,1-2204,2"
+    TestID   -> "Remote-CommandLineReset@@Tests/ACPConnection.wlt:2217,1-2233,2"
 ]
 
 (* Back to this computer: a local folder, no remote state; a command line given in the same call is kept *)
@@ -2221,7 +2250,7 @@ VerificationTest[
         { KeyValuePattern[ "cwd" -> ExpandFileName @ $project1 ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-RemoteToLocal@@Tests/ACPConnection.wlt:2207,1-2225,2"
+    TestID   -> "Remote-RemoteToLocal@@Tests/ACPConnection.wlt:2236,1-2254,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2256,7 +2285,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "NoModels", True, "AuthRequired", True, "testhost" },
     SameTest -> MatchQ,
-    TestID   -> "Remote-AuthRequiredText@@Tests/ACPConnection.wlt:2232,1-2260,2"
+    TestID   -> "Remote-AuthRequiredText@@Tests/ACPConnection.wlt:2261,1-2289,2"
 ]
 
 (* Invalid stored SSH settings: an error, and no ssh is started *)
@@ -2275,7 +2304,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, <| "Code" -> "InvalidSSHSettings", "Actions" -> { } |>, True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "Remote-InvalidStoredSettings@@Tests/ACPConnection.wlt:2263,1-2279,2"
+    TestID   -> "Remote-InvalidStoredSettings@@Tests/ACPConnection.wlt:2292,1-2308,2"
 ]
 
 (* A folder that doesn't exist on the host: the launch script's marker names it; it is never persisted, and the host's
@@ -2304,7 +2333,7 @@ VerificationTest[
         "~/missing"
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-FolderMissing@@Tests/ACPConnection.wlt:2283,1-2308,2"
+    TestID   -> "Remote-FolderMissing@@Tests/ACPConnection.wlt:2312,1-2337,2"
 ]
 
 (* A launch that fails after reporting the remote home (here: a missing folder) still corrects an out-of-date home, in
@@ -2331,7 +2360,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-FailedLaunchCorrectsHome@@Tests/ACPConnection.wlt:2312,1-2335,2"
+    TestID   -> "Remote-FailedLaunchCorrectsHome@@Tests/ACPConnection.wlt:2341,1-2364,2"
 ]
 
 (* remoteExitError (a reader handler: kernel state only) gives the home a failed launch reported if it differs from
@@ -2375,7 +2404,7 @@ VerificationTest[
         { "SSHConnectionRefused", None, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-ExitError-Home@@Tests/ACPConnection.wlt:2340,1-2379,2"
+    TestID   -> "Remote-ExitError-Home@@Tests/ACPConnection.wlt:2369,1-2408,2"
 ]
 
 (* A launch whose home marker is rejected (a line break in the value) is not persisted and does not replace the
@@ -2412,7 +2441,7 @@ VerificationTest[
         <| { "SSH", "x.reject.test", "LastProjectDirectory" } -> "/home/evil/proj" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Launched-RejectedHome@@Tests/ACPConnection.wlt:2384,1-2416,2"
+    TestID   -> "Remote-Launched-RejectedHome@@Tests/ACPConnection.wlt:2413,1-2445,2"
 ]
 
 VerificationTest[
@@ -2429,7 +2458,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "RemoteAgentNotFound", "OpenCode was not found on testhost.", True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-AgentMissing@@Tests/ACPConnection.wlt:2418,1-2433,2"
+    TestID   -> "Remote-AgentMissing@@Tests/ACPConnection.wlt:2447,1-2462,2"
 ]
 
 (* An agent or ssh that exits right away: its exit (exit code, standard error) is reported, not "InitFailed", even when
@@ -2456,7 +2485,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, Null, "SSHHostNotFound", "SSHBadArguments", True, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-FastFail-NoInitFailed@@Tests/ACPConnection.wlt:2437,1-2460,2"
+    TestID   -> "Remote-FastFail-NoInitFailed@@Tests/ACPConnection.wlt:2466,1-2489,2"
 ]
 
 VerificationTest[
@@ -2475,7 +2504,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, Null, <| "Code" -> "AgentExited", "Hint" -> "Exit code: 3.", "Output" -> "fatal: boom" |>, True },
     SameTest -> MatchQ,
-    TestID   -> "Connection-InitSendFailed-Local@@Tests/ACPConnection.wlt:2462,1-2479,2"
+    TestID   -> "Connection-InitSendFailed-Local@@Tests/ACPConnection.wlt:2491,1-2508,2"
 ]
 
 (* An agent killed by a signal: the launch shell reports 128+n and its own "Killed" line; ssh's silent 255 for an agent
@@ -2499,7 +2528,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "RemoteAgentExited", 137, True, True, "RemoteAgentExited", 255, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-SignalExit@@Tests/ACPConnection.wlt:2483,1-2503,2"
+    TestID   -> "Remote-SignalExit@@Tests/ACPConnection.wlt:2512,1-2532,2"
 ]
 
 (* ssh's own failures (OpenSSH's texts, lines ending in CR LF) *)
@@ -2530,7 +2559,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-SSHFailures@@Tests/ACPConnection.wlt:2506,1-2534,2"
+    TestID   -> "Remote-SSHFailures@@Tests/ACPConnection.wlt:2535,1-2563,2"
 ]
 
 (* A login that never completes ends with the setup timeout *)
@@ -2544,7 +2573,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "SSHConnectTimeout", None },
     SameTest -> MatchQ,
-    TestID   -> "Remote-SetupTimeout@@Tests/ACPConnection.wlt:2537,1-2548,2"
+    TestID   -> "Remote-SetupTimeout@@Tests/ACPConnection.wlt:2566,1-2577,2"
 ]
 
 (* The kernel is blocked right after ssh was started, for longer than the setup timeout, and housekeeping runs right
@@ -2568,7 +2597,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Ready", None, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-StalledKernel-NoSpuriousTimeout@@Tests/ACPConnection.wlt:2554,1-2572,2"
+    TestID   -> "Remote-StalledKernel-NoSpuriousTimeout@@Tests/ACPConnection.wlt:2583,1-2601,2"
 ]
 
 (* A slow sign-in (the trigger line comes after 3 s) and a slow agent (another 3 s) with a setup timeout of 4 s: the
@@ -2592,7 +2621,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "Ready", None },
     SameTest -> MatchQ,
-    TestID   -> "Remote-LaunchProgressRestartsTimeout@@Tests/ACPConnection.wlt:2578,1-2596,2"
+    TestID   -> "Remote-LaunchProgressRestartsTimeout@@Tests/ACPConnection.wlt:2607,1-2625,2"
 ]
 
 (* A sign-in that does not complete within the setup timeout: the window fails with SSHConnectTimeout and ssh is ended,
@@ -2621,7 +2650,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, "SSHConnectTimeout", True, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Remote-TimeoutEndsLaunch@@Tests/ACPConnection.wlt:2600,1-2625,2"
+    TestID   -> "Remote-TimeoutEndsLaunch@@Tests/ACPConnection.wlt:2629,1-2654,2"
 ]
 
 (* A timeout decided while the launch completes (the decision reads ssh's standard error, which writes a launch script
@@ -2655,7 +2684,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-TimeoutWhileLaunchCompletes@@Tests/ACPConnection.wlt:2629,1-2659,2"
+    TestID   -> "Remote-TimeoutWhileLaunchCompletes@@Tests/ACPConnection.wlt:2658,1-2688,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2678,7 +2707,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, <| "Code" -> "SSHConnectionLost", "Actions" -> { "Reconnect" } |> },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Drop-Disconnected@@Tests/ACPConnection.wlt:2666,1-2682,2"
+    TestID   -> "Remote-Drop-Disconnected@@Tests/ACPConnection.wlt:2695,1-2711,2"
 ]
 
 (* Closing ends the remote agent: ssh's standard input ends, which the agent sees *)
@@ -2700,7 +2729,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-Close@@Tests/ACPConnection.wlt:2685,1-2704,2"
+    TestID   -> "Remote-Close@@Tests/ACPConnection.wlt:2714,1-2733,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2716,13 +2745,16 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-OrphanConnectionSweep@@Tests/ACPConnection.wlt:2709,1-2720,2"
+    TestID   -> "Cleanup-OrphanConnectionSweep@@Tests/ACPConnection.wlt:2738,1-2749,2"
 ]
 
 VerificationTest[
     ifConnTests[
         Scan[ acpDisconnect[ #, "TestCleanup" ] &, $windows ];
         Scan[ acpWindowDrop, $windows ];
+        (* the notebook tools' server that the local windows started keeps the pump running until housekeeping stops it,
+           30 s after its last connection (MCP.wl) *)
+        acpMCPStopServer[ ];
         {
             waitUntil[ Replace[ Quiet @ ACPConnections[ ], Except[ _List ] -> { } ] === { } ],
             ! $procfsQ || waitUntil[ ! AnyTrue[ mockPID /@ $mockLogs, processAliveQ ] ],
@@ -2741,7 +2773,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, { }, <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-NoLeftoverProcessesOrTasks@@Tests/ACPConnection.wlt:2722,1-2745,2"
+    TestID   -> "Cleanup-NoLeftoverProcessesOrTasks@@Tests/ACPConnection.wlt:2751,1-2777,2"
 ]
 
 (* The remote tests' agents, persisted per-host settings and fake ssh (environment variables, scratch copies) *)
@@ -2765,7 +2797,7 @@ VerificationTest[
     },
     { False, True, None, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-RemoteRestore@@Tests/ACPConnection.wlt:2748,1-2769,2"
+    TestID   -> "Cleanup-RemoteRestore@@Tests/ACPConnection.wlt:2780,1-2801,2"
 ]
 
 (* Isolated handlers and tasks swallow messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -2779,7 +2811,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-DebugLog@@Tests/ACPConnection.wlt:2772,1-2783,2"
+    TestID   -> "Cleanup-DebugLog@@Tests/ACPConnection.wlt:2804,1-2815,2"
 ]
 
 VerificationTest[
@@ -2797,15 +2829,19 @@ VerificationTest[
         $savedPersisted
     ];
     If[ TrueQ @ $setACPLinkEnv, SetEnvironment[ "ACPLINK_DIRECTORY" -> None ] ];
+    (* the notebook tools' server that the local windows started (MCP.wl) *)
+    acpMCPStopServer[ ];
+    If[ TrueQ @ $setAgentToolsEnv, SetEnvironment[ "AGENTTOOLS_DIRECTORY" -> None ] ];
     {
         KeyExistsQ[ $acpAgents, "MockACPAgent" ],
         DirectoryQ @ $scratch,
         AssociationMap[ acpPersistedSetting, Keys @ $savedPersisted ] === $savedPersisted,
-        ! TrueQ @ $setACPLinkEnv || Environment[ "ACPLINK_DIRECTORY" ] === $Failed
+        ! TrueQ @ $setACPLinkEnv || Environment[ "ACPLINK_DIRECTORY" ] === $Failed,
+        acpMCPServer[ ]
     },
-    { False, False, True, True },
+    { False, False, True, True, None },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-Restore@@Tests/ACPConnection.wlt:2785,1-2809,2"
+    TestID   -> "Cleanup-Restore@@Tests/ACPConnection.wlt:2817,1-2845,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
