@@ -149,6 +149,8 @@ Replace[
         Dynamic[ FEPrivate`FrontEndResource[ "ChatbookStrings", s_String ] ] :> s,
         Dynamic[ else_ ] :> ToString[ else ],
         s_String :> s,
+        (* A highlighted label (devModeMenuItems) keeps the name of what it wraps: *)
+        Style[ inner_, ___ ] :> stringResName @ inner,
         _ :> ""
     }
 ]

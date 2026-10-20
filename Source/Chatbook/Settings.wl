@@ -125,6 +125,9 @@ $absoluteCurrentSettingsCache = None;
 
 $experimentalFeatures = { };
 
+(* UI that is not released yet is shown only when this is True, and then highlighted (see devModeMenuItems in UI.wl): *)
+$devModeUI = False;
+
 
 $modelInheritedLists = {
     "BasePrompt",

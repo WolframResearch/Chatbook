@@ -37,6 +37,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$defaultMaxCellStringLength;
 `$defaultMaxOutputCellStringLength;
 `$defaultPromptGenerators;
+`$devModeUI;
 `$dialogInputAllowed;
 `$disabledBasePrompts;
 `$documentationMarkdownBaseURL;

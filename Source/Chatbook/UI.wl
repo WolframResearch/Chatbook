@@ -1735,7 +1735,7 @@ With[
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedToolCallFrequency" |>,
 			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider[ targetObj, appContainer ] |>
 		},
-		reasoningMenuItems @ targetObj,
+		devModeMenuItems @ reasoningMenuItems @ targetObj,
 		{
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedRoles" |>
 		},
@@ -1758,6 +1758,30 @@ With[
 ];
 
 createMenuAdvancedSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*devModeMenuItems*)
+devModeMenuItems // beginDefinition;
+
+(* Menu items that are not released yet are hidden unless $devModeUI is True, and are then highlighted so they stand
+   out from the released ones. Releasing an item means no longer wrapping it here: *)
+devModeMenuItems[ items_List ] :=
+	If[ TrueQ @ $devModeUI, devModeMenuItem /@ items, { } ];
+
+devModeMenuItems // endDefinition;
+
+
+devModeMenuItem // beginDefinition;
+devModeMenuItem[ item: KeyValuePattern[ "Label" -> label_ ] ] := <| item, "Label" -> devModeStyle @ label |>;
+devModeMenuItem[ item_Association ] := item;
+devModeMenuItem // endDefinition;
+
+
+devModeStyle // beginDefinition;
+devModeStyle[ expr_ ] :=
+	Style[ expr, Background -> color @ "DevModeUIBackground", FontColor -> color @ "DevModeUIForeground" ];
+devModeStyle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
