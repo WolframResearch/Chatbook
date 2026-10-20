@@ -14,9 +14,10 @@
 dir = $ScriptCommandLine[[ 2 ]];
 models = Drop[ $ScriptCommandLine, 2 ];
 
-(* The Responses-endpoint gate needs a modern-enough LLMFunctions; load the working-tree copy so both
-   branches are compared under the same LLMFunctions version rather than whatever is installed: *)
+(* The Responses-endpoint gate ($responsesAPIAvailable) needs a modern-enough LLMFunctions and LLMConnections; load the
+   working-tree copies so both branches are compared under the same paclet versions rather than whatever is installed: *)
 Quiet @ PacletDirectoryLoad[ "/Users/meng/WorkSpace-mengmaclap/Wolfram/AIDev/LLMFunctions/LLMFunctions" ];
+Quiet @ PacletDirectoryLoad[ "/Users/meng/WorkSpace-mengmaclap/Wolfram/AIDev/LLMConnections/LLMConnections" ];
 PacletDirectoryLoad @ dir;
 Needs[ "Wolfram`Chatbook`" ];
 
