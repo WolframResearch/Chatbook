@@ -123,6 +123,9 @@ acpEnsureConnected // endDefinition;
    on this computer, not even ~ (the launch script enters it, and the initialize continuation learns the absolute path
    from its markers), ACPLink holds back the launch script and "initialize" until the remote shell asks for them, and
    the folder is persisted (per host) only once the launch has entered it.
+   A local window that offers the MCP server of the notebook tools (acpMCPEnabledQ: "ACPMCPServer", and with Automatic
+   the agent's own program) makes sure that the kernel's server runs (MCP.wl) and gets a token for the new connection,
+   which its sessions offer to the agent (acpMCPServersParam).
    Keys of remote windows' records set here and in remoteLaunched: "LaunchNonce" (per launch), "Remote" (the spec's:
    host, host key, canonical settings, the agent's command line there, install URL; no secrets), "RemoteHome",
    "RemoteAgentPath", "RemoteVerified" (the launch reached the host), "LaunchMarkers" (the launch's marker lines); every
@@ -165,6 +168,10 @@ acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
        and a mistyped one would become the default of every new window for the host. *)
     prefs = agentPreferences @ agent;
     If[ ! remote, acpSetPersistedSetting[ "LastProjectDirectory", dir ] ];
+
+    (* The MCP server of the notebook tools (MCP.wl; the first time, this loads AgentTools), for local windows that offer
+       it. If there is none, the sessions get no MCP servers. *)
+    If[ ! remote && acpMCPEnabledQ[ agent, settings ], acpMCPEnsureServer[ ] ];
 
     (* The window may have been closed or reset in the meantime: *)
     If[ ! currentTokenQ[ acpWindowGet @ nbo, token ], Throw @ Null ];
@@ -218,6 +225,9 @@ acpConnect[ nbo_NotebookObject, token_String ] := Catch @ Module[
     ];
 
     If[ ! claimed, releaseConnection @ conn; Throw @ Null ];
+
+    (* The connection's token for the MCP server, before the initialize response can start a session *)
+    acpMCPConnectionStarted[ nbo, conn ];
 
     If[ FailureQ @ sendInitialize[ nbo, conn ],
         (* The agent may have exited already (e.g. a wrong command line, or ssh rejected its arguments): its exit event,
@@ -1014,7 +1024,7 @@ startSession[ nbo_NotebookObject, conn_ ] := Module[ { window, dir, resumeID, re
             nbo,
             conn,
             "session/resume",
-            <| "sessionId" -> resumeID, "cwd" -> dir, "mcpServers" -> { } |>,
+            <| "sessionId" -> resumeID, "cwd" -> dir, "mcpServers" -> acpMCPServersParam @ window |>,
             "SessionResume",
             <| "SessionID" -> resumeID |>
         ],
@@ -1041,8 +1051,10 @@ newSession[ nbo_NotebookObject, conn_ ] := Module[ { window, sent },
 newSession // endDefinition;
 
 
+(* The MCP servers of session/new, session/load and session/resume: MCP.wl's notebook tools server for a local window
+   whose agent supports HTTP MCP servers, else none (acpMCPServersParam, a pure lookup) *)
 sendNewSession // beginDefinition;
-sendNewSession[ nbo_, conn_, dir_String ] := sendRequest[ nbo, conn, "session/new", <| "cwd" -> dir, "mcpServers" -> { } |>, "SessionNew", <| |> ];
+sendNewSession[ nbo_, conn_, dir_String ] := sendRequest[ nbo, conn, "session/new", <| "cwd" -> dir, "mcpServers" -> acpMCPServersParam @ nbo |>, "SessionNew", <| |> ];
 sendNewSession[ _, _, _ ] := Failure[ "NoDirectory", <| |> ];
 sendNewSession // endDefinition;
 
@@ -1639,6 +1651,13 @@ onPermissionRequest[ nbo_NotebookObject, request_ ] := Module[
                     ]
                 |>
             ]
+        ];
+        (* the panel shows the window titles of the notebooks that a call of the notebook tools names: they take front
+           end calls, so the pump looks them up (a remote window's agent can't reach this computer's notebooks) *)
+        If[ ! acpRemoteQ @ window,
+            With[ { specs = acpPermissionNotebooks @ params },
+                If[ specs =!= { }, acpSchedule @ resolvePermissionNotebooks[ nbo, id, specs ] ]
+            ]
         ],
 
         answerOutcome[ conn, id, None ];
@@ -1652,6 +1671,31 @@ onPermissionRequest[ nbo_NotebookObject, request_ ] := Module[
 onPermissionRequest[ _, _ ] := Null;
 
 onPermissionRequest // endDefinition;
+
+
+(* In the pump: adds the window titles of the notebooks that a pending request names (acpNotebookTitles, which makes
+   front end calls) to the request as "NotebookTitles", for the permission panel, which then shows them. Nothing if the
+   request was answered meanwhile or no notebook was found. *)
+resolvePermissionNotebooks // beginDefinition;
+
+resolvePermissionNotebooks[ nbo_NotebookObject, id_, specs_List ] := Module[ { titles },
+    If[ ! KeyExistsQ[ pendingOf @ Replace[ acpWindowGet @ nbo, Except[ _Association ] -> <| |> ], id ], Return[ Null, Module ] ];
+    titles = acpNotebookTitles @ specs;
+    If[ AssociationQ @ titles && titles =!= <| |>,
+        windowUpdate[
+            nbo,
+            Function[ w,
+                If[ KeyExistsQ[ pendingOf @ w, id ],
+                    <| w, "PendingPermissions" -> MapAt[ Append[ #, "NotebookTitles" -> titles ] &, pendingOf @ w, Key @ id ] |>,
+                    Missing[ "NotFound" ]
+                ]
+            ]
+        ]
+    ];
+    Null
+];
+
+resolvePermissionNotebooks // endDefinition;
 
 
 backgroundPermissionNotice // beginDefinition;
@@ -1999,7 +2043,7 @@ sendSessionLoad[ nbo_NotebookObject, conn_, sid_String, cwd_String, mode_String,
             |>
         |> &
     ];
-    sent = sendRequest[ nbo, conn, "session/load", <| "sessionId" -> sid, "cwd" -> cwd, "mcpServers" -> { } |>, "SessionLoad", data ];
+    sent = sendRequest[ nbo, conn, "session/load", <| "sessionId" -> sid, "cwd" -> cwd, "mcpServers" -> acpMCPServersParam @ nbo |>, "SessionLoad", data ];
     If[ FailureQ @ sent,
         sessionLoadFailed[ nbo, conn, data, acpErrorInfo[ "SendFailed", None, None, <| "Agent" -> agentDisplayName @ acpWindowGet @ nbo |> ] ]
     ];

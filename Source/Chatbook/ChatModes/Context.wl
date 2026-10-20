@@ -710,6 +710,13 @@ insertSelectionMarkers0 // Attributes = { HoldFirst };
 insertSelectionMarkers0[ state_, (h: BoxData|TextData|RowBox|StyleBox)[ box_, a___ ] ] :=
     h[ insertSelectionMarkers0[ state, box ], a ];
 
+(* FIXME: An inline cell takes one position, and only strings get markers. When the start of the selection (or the
+   cursor) is right before an inline cell that has no string right before it (the inline cell starts the cell's text,
+   or follows another inline cell), the position is passed here, `before` becomes negative, and the left marker is
+   never inserted: the cell gets a lone $rightSelectionIndicator (or no marker at all for a cursor). It should be
+   inserted before the inline cell instead. The Notebook Assistant gets such cells as they are; the ACP window's
+   ReadNotebook tool works around it by keeping a marking only if both markers are there (markSelection in
+   ACP/NotebookTools.wl). *)
 insertSelectionMarkers0[ { before_, after_ }, cell_Cell ] :=
     WithCleanup[
         cell,

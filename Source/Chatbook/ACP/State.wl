@@ -433,14 +433,17 @@ runHousekeeping // endDefinition;
 
 (* The pump keeps running while there are dirty symbols, running turns, or open ACP connections
    (housekeeping such as the window-closed sweeper needs to run while a connection exists), while one-shot processes run
-   (Git.wl's runner: git, and the remote runs of Remote.wl, also those that drain), and while a remote folder picker
-   lists (FolderPicker.wl): a window without a connection would otherwise stop the pump, and the picker's housekeeping
-   (the fallback for a lost listing) would never run. *)
+   (Git.wl's runner: git, and the remote runs of Remote.wl, also those that drain), while a remote folder picker
+   lists (FolderPicker.wl), and while MCP tool calls wait in MCP.wl's queue or its server runs: a window without a
+   connection would otherwise stop the pump, and the picker's housekeeping (the fallback for a lost listing) or MCP.wl's
+   (the queue's watchdog, which triggers a queue whose drain was dropped again, and the stop of an idle server) would
+   never run. *)
 publisherNeededQ // beginDefinition;
 
 publisherNeededQ[ ] := Or[
     Length @ $dirty > 0,
     TrueQ @ acpBackgroundRunsQ[ ],
+    TrueQ @ acpMCPPendingQ[ ],
     AnyTrue[ Values @ $acpWindows, publisherNeededQ ]
 ];
 
@@ -505,42 +508,68 @@ acpToggleOpen // endDefinition;
    The value of a failed evaluation is a Failure["ACPInternal", ...]. *)
 acpIsolated // beginDefinition;
 acpIsolated // Attributes = { HoldFirst };
+acpIsolated[ eval_ ] := isolatedCatch @ AbortProtect @ isolatedBlock @ eval;
+acpIsolated // endDefinition;
 
-acpIsolated[ eval_ ] := Module[ { normal = False, result },
-    (* Catch[ expr, _, f ] only catches tagged throws, so an outer untagged Catch is needed as well. `normal` tells a
-       regular result (or a handled tagged throw) apart from the value of an untagged Throw. *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpIsolatedAbortable*)
+
+(* Like acpIsolated, but a user abort (Alt+.) is not deferred: it ends the evaluation. Only for main link evaluations
+   that run code the user must be able to abort, such as the MCP tool calls of MCP.wl's drain, which runs as a queued
+   button evaluation. *)
+acpIsolatedAbortable // beginDefinition;
+acpIsolatedAbortable // Attributes = { HoldFirst };
+acpIsolatedAbortable[ eval_ ] := isolatedCatch @ isolatedBlock @ eval;
+acpIsolatedAbortable // endDefinition;
+
+
+(* Catch[ expr, _, f ] only catches tagged throws, so an outer untagged Catch is needed as well. `normal` tells a regular
+   result (or a handled tagged throw) apart from the value of an untagged Throw. *)
+isolatedCatch // beginDefinition;
+isolatedCatch // Attributes = { HoldFirst };
+
+isolatedCatch[ eval_ ] := Module[ { normal = False, result },
     result = Catch @ Catch[
-        AbortProtect @ Block[
-            {
-                $catching                     = True,
-                $chatState                    = False,
-                $ChatHandlerData              = <| |>,
-                $WorkspaceChat                = True,
-                $SidebarChat                  = False,
-                $InlineChat                   = False,
-                $AutomaticAssistance          = False,
-                $thinkingStart                = None,
-                $thinkingEnd                  = None,
-                $customToolFormatter          = None,
-                $openToolCallBoxes            = Automatic,
-                $toolCallCount                = 0,
-                $receivedToolCall             = False,
-                $progressContainer            = None,
-                $currentSettingsCache         = None,
-                $absoluteCurrentSettingsCache = None,
-                $dynamicText                  = False
-            },
-            Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
-                Internal`HandlerBlock[ { "Message.Veto", vetoMessage }, With[ { r = eval }, normal = True; r ] ]
-            ]
-        ],
+        With[ { r = eval }, normal = True; r ],
         _,
         (normal = True; isolatedFailure[ #1, #2 ]) &
     ];
     If[ TrueQ @ normal, result, isolatedFailure[ result, None ] ]
 ];
 
-acpIsolated // endDefinition;
+isolatedCatch // endDefinition;
+
+
+isolatedBlock // beginDefinition;
+isolatedBlock // Attributes = { HoldFirst };
+
+isolatedBlock[ eval_ ] := Block[
+    {
+        $catching                     = True,
+        $chatState                    = False,
+        $ChatHandlerData              = <| |>,
+        $WorkspaceChat                = True,
+        $SidebarChat                  = False,
+        $InlineChat                   = False,
+        $AutomaticAssistance          = False,
+        $thinkingStart                = None,
+        $thinkingEnd                  = None,
+        $customToolFormatter          = None,
+        $openToolCallBoxes            = Automatic,
+        $toolCallCount                = 0,
+        $receivedToolCall             = False,
+        $progressContainer            = None,
+        $currentSettingsCache         = None,
+        $absoluteCurrentSettingsCache = None,
+        $dynamicText                  = False
+    },
+    Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
+        Internal`HandlerBlock[ { "Message.Veto", vetoMessage }, eval ]
+    ]
+];
+
+isolatedBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -619,11 +648,15 @@ delaySeconds // endDefinition;
 (*acpLog*)
 acpLog // beginDefinition;
 
+(* PreemptProtect: acpLog also runs on the main link (MCP.wl's drain), where a preemptive evaluation that logs could
+   otherwise come between the truncation and the append and lose entries *)
 acpLog[ where_String, data_ ] := (
-    If[ Internal`BagLength @ $acpDebugLog >= $acpMaxDebugLogLength,
-        $acpDebugLog = Internal`Bag @ Take[ Internal`BagPart[ $acpDebugLog, All ], -Quotient[ $acpMaxDebugLogLength, 2 ] ]
+    PreemptProtect[
+        If[ Internal`BagLength @ $acpDebugLog >= $acpMaxDebugLogLength,
+            $acpDebugLog = Internal`Bag @ Take[ Internal`BagPart[ $acpDebugLog, All ], -Quotient[ $acpMaxDebugLogLength, 2 ] ]
+        ];
+        Internal`StuffBag[ $acpDebugLog, <| "Time" -> AbsoluteTime[ ], "Where" -> where, "Data" -> data |> ]
     ];
-    Internal`StuffBag[ $acpDebugLog, <| "Time" -> AbsoluteTime[ ], "Where" -> where, "Data" -> data |> ];
     Null
 );
 

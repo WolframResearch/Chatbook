@@ -595,7 +595,8 @@ validateACPWindowSetting[ "ProjectDirectory"   , $$acpPathSetting | None | Autom
 validateACPWindowSetting[ "ACPAgent"           , "OpenCode" | Automatic                ] := Null;
 validateACPWindowSetting[ "ACPAgentCommandLine", $$acpCommandLineSetting | Automatic   ] := Null;
 validateACPWindowSetting[ "ACPModel"           , _String? StringQ | Automatic          ] := Null;
-validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentCommandLine"|"ACPModel", value_ ] :=
+validateACPWindowSetting[ "ACPMCPServer"       , True | False | Automatic              ] := Null;
+validateACPWindowSetting[ key: "ProjectDirectory"|"ACPAgent"|"ACPAgentCommandLine"|"ACPModel"|"ACPMCPServer", value_ ] :=
     throwFailure[ "InvalidACPWindowSettings", key, value ];
 validateACPWindowSetting[ _, _ ] := Null;
 validateACPWindowSetting // endDefinition;
