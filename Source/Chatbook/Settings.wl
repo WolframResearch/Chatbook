@@ -707,6 +707,10 @@ $reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "
 
 resolveReasoningEffort // beginDefinition;
 
+(* Without a model there are no declared levels to clamp to: *)
+resolveReasoningEffort[ settings_Association ] /; ! KeyExistsQ[ settings, "Model" ] :=
+    settings[ "Reasoning" ];
+
 resolveReasoningEffort[ settings_Association ] :=
     resolveReasoningEffort[ settings[ "Reasoning" ], autoModelSetting[ settings, "ReasoningEfforts" ] ];
 
