@@ -1057,47 +1057,106 @@ compressRasterBoxes // endDefinition;
 openerView[ args___ ] := Verbatim[ openerView[ args ] ] = openerView0[ args ];
 
 openerView0 // beginDefinition;
-openerView0[ { label_, content_ }, initialState_, ___ ] /; ByteCount @ content > 50000 := openerView1[ { label, compressUntilViewed @ content }, initialState ];
-openerView0[ { label_, content_ }, initialState_, ___ ] := openerView1[ { label, content }, initialState ];
+openerView0[ { label_, content_ }, initialState_, rest___ ] := openerView0[ { label, content, "Tool" }, initialState, rest ];
+openerView0[ { label_, content_, type_ }, initialState_, ___ ] /; ByteCount @ content > 50000 := openerView1[ { label, compressUntilViewed @ content, type }, initialState ];
+openerView0[ { label_, content_, type_ }, initialState_, ___ ] := openerView1[ { label, content, type }, initialState ];
 openerView0 // endDefinition;
 
 
-openerView1[ { label_, content_ }, initialState_ ] :=
-DynamicModule[{Typeset`var = initialState},
+openerViewColors // beginDefinition;
+
+openerViewColors[ "Tool" ] := <|
+    "Default"  -> LightDarkSwitched[ RGBColor[ 0.404, 0.545, 0.624 ], RGBColor[ 0.545, 0.639, 0.706 ] ],
+    "Default2" -> LightDarkSwitched[ RGBColor[ 0.702, 0.784, 0.831 ], RGBColor[ 0.404, 0.478, 0.525 ] ],
+    "Hover"    -> LightDarkSwitched[ RGBColor[ 0.537, 0.784, 0.91  ], RGBColor[ 0.702, 0.878, 0.98  ] ],
+    "Pressed"  -> LightDarkSwitched[ RGBColor[ 0.38,  0.651, 0.788 ], RGBColor[ 0.545, 0.784, 0.91  ] ]
+|>;
+
+openerViewColors[ "Discarded" ] := <|
+    "Default"  -> LightDarkSwitched[ GrayLevel[ 0.51 ], GrayLevel[ 0.62 ] ],
+    "Default2" -> LightDarkSwitched[ GrayLevel[ 0.65 ], GrayLevel[ 0.45 ] ],
+    "Hover"    -> LightDarkSwitched[ GrayLevel[ 0.72 ], GrayLevel[ 0.84 ] ],
+    "Pressed"  -> LightDarkSwitched[ GrayLevel[ 0.59 ], GrayLevel[ 0.73 ] ]
+|>;
+
+openerViewColors // endDefinition;
+
+
+openerViewDividerAppearance // beginDefinition;
+
+openerViewDividerAppearance[ "Tool" ] := {
+    "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolDefault.9.png" ],
+    "Hover"   -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolHover.9.png" ],
+    "Pressed" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolPressed.9.png" ]
+};
+
+openerViewDividerAppearance[ "Discarded" ] := {
+    "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedDefault.9.png" ],
+    "Hover"   -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedHover.9.png" ],
+    "Pressed" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerDiscardedPressed.9.png" ]
+};
+
+openerViewDividerAppearance // endDefinition;
+
+
+openerDown[ color_ ] := Graphics[
+    { color, CapForm[ "Round" ], Thickness[ 0.3` ], Line[ { { -1, 0 }, { 0, -1 }, { 1, 0 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 1, 1 }, { 2, 3 } },  BaselinePosition -> Center -> Center
+]
+
+openerUp[ color_ ] := Graphics[ 
+    { color, CapForm[ "Round" ], Thickness[ 0.3` ], Line[ { { -1, 0 }, { 0, 1 }, { 1, 0 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 1, 1 }, { 2, 3 } }, BaselinePosition -> Center -> Center
+]
+
+openerRight[ color_ ] := Graphics[ 
+    { color, CapForm[ "Round" ], Thickness[ 0.6` ], Line[ { { 0, -1 }, { 1, 0 }, { 0, 1 } } ] },
+    AspectRatio -> Full, ImageSize -> { 8, 8 }, ImagePadding -> { { 3, 2 }, { 1, 1 } }, BaselinePosition -> Center -> Center
+]
+
+
+openerView1[ { label_, content_, type_ }, initialState_ ] :=
+With[ { appearance = openerViewDividerAppearance @ type },
+DynamicModule[ { Typeset`var = TrueQ @ initialState },
     Style[
         PaneSelector[
             {
                 False ->
-                    Mouseover[
-                        Framed[
-                            clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.55893535, 0.7525889017999999, 0.85595 ]],
-                            $openerFrameOptionsDefault
-                        ],
-                        Framed[
-                            clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ]],
-                            $openerFrameOptionsActive
-                        ]
+                    Grid[(* This inert Grid is needed to prevent opener shifting downward when opened *)
+                        {{ clickableOpenerRow[ Dynamic[ Typeset`var ], label, Right, type ] }},
+                        Alignment        -> { Left, Baseline },
+                        BaselinePosition -> { 1, 1 },
+                        BaseStyle        -> { ShowStringCharacters -> False }
                     ],
                 True ->
-                    Framed[
-                        Grid[
+                    Grid[
+                        {
                             {
-                                {
-                                    Mouseover[
-                                        clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.55893535, 0.7525889017999999, 0.85595 ]],
-                                        clickableOpenerRow[Dynamic[Typeset`var], label, RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ]]
-                                    ]
-                                },
-                                {content}},
-                            Alignment        -> { Left, Baseline },
-                            BaselinePosition -> { 1, 1 },
-                            BaseStyle        -> { ShowStringCharacters -> False },
-                            Spacings         -> 0.25
-                        ],
-                        $openerFrameOptionsDefault
+                                clickableOpenerRow[ Dynamic[ Typeset`var ], label, Down, type ],
+                                SpanFromLeft
+                            },
+                            {
+                                Item[
+                                    MouseAppearance[
+                                        Button[ "", Typeset`var = False, Appearance -> appearance ],
+                                        "LinkHand"
+                                    ],
+                                    ItemMargins -> { { 3.5, 0 }, { 0, 0 } }
+                                ],
+                                content
+                            },
+                            {
+                                clickableOpenerRow[ Dynamic[ Typeset`var ], "Hide", Up, type ],
+                                SpanFromLeft
+                            }
+                        },
+                        Alignment        -> { Left, Baseline },
+                        BaselinePosition -> { 1, 1 },
+                        BaseStyle        -> { ShowStringCharacters -> False },
+                        Spacings         -> { 0.6, 0.5 }
                     ]
             },
-            Dynamic[TrueQ[Typeset`var]],
+            Dynamic[ Typeset`var ],
             ImageSize        -> Automatic,
             BaselinePosition -> Baseline,
             DefaultBaseStyle -> "OpenerView",
@@ -1107,61 +1166,52 @@ DynamicModule[{Typeset`var = initialState},
         StripOnInput -> False
     ]
 ]
+]
 
-clickableOpenerRow[ Dynamic[var_], label_, color_ ] :=
+
+clickableOpenerRow[ Dynamic[ var_ ], label_, direction_ ] :=
+    clickableOpenerRow[ Dynamic[ var ], label, direction, "Tool" ];
+
+clickableOpenerRow[ Dynamic[ var_ ], label_, direction_, type_ ] :=
+With[ { colors = openerViewColors @ type },
 MouseAppearance[
-    EventHandler[
-        Grid[
-            {
-                Append[
-                    If[ListQ[label], label, {label}],
-                    PaneSelector[
-                        {
-                            True -> RawBoxes @ TemplateBox[ { color }, "DiscardedMaterialCloserIcon" ],
-                            False -> RawBoxes @ TemplateBox[ { color }, "DiscardedMaterialOpenerIcon" ]
-                        },
-                        Dynamic[var],
-                        ImageSize -> Automatic,
-                        BaselinePosition -> Baseline
-                    ]
-                ]
-            },
-            Alignment        -> { Left, Baseline },
-            BaselinePosition -> { 1, 1 },
-            BaseStyle        -> { FontColor -> color, ShowStringCharacters -> False },
-            Spacings         -> 0.25
+    Button[
+        mouseDown[
+            clickableOpenerRow0[ label, direction, colors[ "Default" ], colors[ "Default2" ] ],
+            clickableOpenerRow0[ label, direction, colors[ "Hover"   ], colors[ "Hover"    ] ],
+            clickableOpenerRow0[ label, direction, colors[ "Pressed" ], colors[ "Pressed"  ] ]
         ],
-        "MouseDown"    :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
-        Method         -> "Preemptive",
-        PassEventsDown -> Automatic,
-        PassEventsUp   -> True],
-    "Arrow"]
+        FEPrivate`Set[ var, Not[ var ] ],
+        Alignment        -> Left,
+        Appearance       -> "Suppressed",
+        BaselinePosition -> Baseline,
+        Evaluator        -> None
+    ],
+    "LinkHand"
+]
+]
 
+clickableOpenerRow0[ label_Function, direction_, color_, chevronColor_ ] :=
+    clickableOpenerRow0[ label @ color, direction, color, chevronColor ];
 
-$openerLabelGridOptions[ ] := Sequence[
+clickableOpenerRow0[ label_, direction_, color_, chevronColor_ ] :=
+Grid[
+    {
+        Prepend[
+            If[ ListQ[ label ], label, { label }],
+            Switch[ direction,
+                Up,    openerUp @ chevronColor,
+                Down,  openerDown @ chevronColor,
+                Right, openerRight @ chevronColor
+            ]
+        ]
+    },
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
-    BaseStyle        -> { ShowStringCharacters -> False },
-    Spacings         -> 0.25
-];
+    BaseStyle        -> { FontColor -> color, FontFamily -> "Source Sans Pro", FontSize -> 13, ShowStringCharacters -> False },
+    Spacings         -> { { Automatic, 0.5, 0.2, { 0.05 (* space between "Used/Using" and tool name *) } }, { } }
+]
 
-$openerFrameOptionsDefault := Sequence[
-    BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> RGBColor[ 0.709527, 0.831759396, 0.897, 0.08 ],
-    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.709527, 0.831759396, 0.897, 0.5 ] ],
-    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
-    ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 6
-];
-
-$openerFrameOptionsActive := Sequence[
-    BaseStyle      -> { "Text", "IconizedDefaultName", FontSize -> 13, LineBreakWithin -> False },
-    Background     -> RGBColor[ 0.588353, 0.792198844, 0.901, 0.08 ],
-    FrameStyle     -> Directive[ AbsoluteThickness[ 1.5 ], RGBColor[ 0.588353, 0.792198844, 0.901, 0.5 ] ],
-    FrameMargins   -> { { 4, 6 }, { 2, 2 } },
-    ImageMargins   -> { { 0, 0 }, { 8, 8 } },
-    RoundingRadius -> 6
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1170,24 +1220,13 @@ $openerFrameOptionsActive := Sequence[
    but doesn't yet contain any inner data to reduce MathLink traffic *)
 fakeOpenerView // beginDefinition;
 
-fakeOpenerView[ label_, showButton_: False ] := Deploy @ Framed[
-    Grid[
-        {
-            Flatten @ {
-                label,
-                If[ TrueQ @ showButton,
-                    RawBoxes @ TemplateBox[ { RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] }, "DiscardedMaterialOpenerIcon" ],
-                    Nothing
-                ]
-            }
-        },
-        Alignment        -> { Left, Baseline },
-        BaselinePosition -> { 1, 1 },
-        BaseStyle        -> { FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ], ShowStringCharacters -> False },
-        Spacings         -> 0.25
-    ],
-    $openerFrameOptionsDefault
-];
+fakeOpenerView[ label_ ] := Deploy @
+    clickableOpenerRow0[
+        label,
+        Right,
+        openerViewColors[ "Tool" ][ "Default"  ],
+        openerViewColors[ "Tool" ][ "Default2" ]
+    ]
 
 fakeOpenerView // endDefinition;
 

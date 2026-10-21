@@ -79,6 +79,7 @@
 "FormattingThinkingCompleteSingular" -> "A r\[EAcute]fl\[EAcute]chi pendant une seconde",
 "FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
 "FormattingHide" -> "Cacher",
+"FormattingDiscardedMaterial" -> "Discarded material",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",

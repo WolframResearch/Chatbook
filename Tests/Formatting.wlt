@@ -408,10 +408,59 @@ VerificationTest[
     ],
     {
         { Cell[ _, "DiscardedMaterial", ___ ], "\n", Cell[ _, "InlineToolCall", ___ ], "\nCost $5." },
-        RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ]
+        Column[ { RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ] }, ___ ]
     },
     SameTest -> MatchQ,
     TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:389,1-415,2"
+]
+
+(* Consecutive discarded tool calls are grouped into a single opener, with one row per tool call: *)
+VerificationTest[
+    With[
+        {
+            boxes = FormatChatOutput @ StringJoin[
+                "/wl\n0\n/exec\nRESULT\nOut[1]= 0\nENDRESULT(aaa111)\nBad one.\n/retry\n",
+                "/wl\n1\n/exec\nRESULT\nOut[1]= 1\nENDRESULT(bbb222)\nBad two.\n/retry\n",
+                "/wl\n2\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(ccc333)\nDone."
+            ]
+        },
+        {
+            Count[ boxes, Cell[ _, "DiscardedMaterial", ___ ], Infinity ],
+            FirstCase[
+                boxes,
+                HoldPattern @ BaseDecode[ b64_String ] :> BinaryDeserialize @ BaseDecode @ b64,
+                $Failed,
+                Infinity
+            ]
+        }
+    ],
+    {
+        1,
+        Column[
+            {
+                RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nBad one." }, ___ ],
+                RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nBad two." }, ___ ]
+            },
+            ___
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Discarded-ToolCalls-Grouped"
+]
+
+(* Tool call openers use the "ToolIconCall<name>" resource for each button state, falling back to the generic icon: *)
+VerificationTest[
+    Union @ Cases[
+        FormatChatOutput @ StringJoin[
+            "TOOLCALL: web_fetcher\n{\n\t\"url\":\"https://example.com\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(abcd1234)\n\n",
+            "TOOLCALL: made_up_tool\n{\n\t\"x\":\"1\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(efgh5678)\n\nDone."
+        ],
+        FEPrivate`FrontEndResource[ "ChatbookExpressions", name_String ][ _ ] :> name,
+        Infinity
+    ],
+    { "ToolIconCallGenericTool", "ToolIconCallWebFetcher" },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCall-Opener-Icons"
 ]
 
 (* ::**************************************************************************************************************:: *)
