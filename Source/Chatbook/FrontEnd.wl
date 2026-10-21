@@ -1181,10 +1181,11 @@ MouseAppearance[
             clickableOpenerRow0[ label, direction, colors[ "Hover"   ], colors[ "Hover"    ] ],
             clickableOpenerRow0[ label, direction, colors[ "Pressed" ], colors[ "Pressed"  ] ]
         ],
-        FEPrivate`Set[ Typeset`var, Not[ Typeset`var ] ],
+        FEPrivate`Set[ var, Not[ var ] ],
         Alignment        -> Left,
         Appearance       -> "Suppressed",
-        BaselinePosition -> Baseline
+        BaselinePosition -> Baseline,
+        Evaluator        -> None
     ],
     "LinkHand"
 ]
