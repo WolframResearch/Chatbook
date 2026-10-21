@@ -193,6 +193,7 @@
 "UIAdvancedToolCallFrequency" -> "Frecuencia de llamadas de herramienta",
 "UIAdvancedChooseAutomatically" -> "Seleccionar de manera autom\[AAcute]tica",
 "UIAdvancedRoles" -> "Roles",
+"UIAdvancedReasoning" -> "Reasoning",
 "UITryEnableChatDialogMainText" -> "Habilitar la funcionalidad de Cuadernos de chat destruir\[AAcute] los estilos privados definidos en este cuaderno, y los reemplazar\[AAcute] con la hoja de estilo compartida Chatbook.",
 "UITryEnableChatDialogConfirm" -> "\[DownQuestion]Est\[AAcute] seguro que desea continuar?",
 "UIMessageManageSubscription" -> "Administrar suscripci\[OAcute]n \[RightGuillemet]",
