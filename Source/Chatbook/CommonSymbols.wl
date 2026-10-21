@@ -1,7 +1,6 @@
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$$attachmentURI;
-`$$endpointSetting;
 `$$ignoredBox;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;

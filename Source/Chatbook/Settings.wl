@@ -157,7 +157,6 @@ $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
 $$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
-$$endpointSetting       = Automatic | "Responses" | "ChatCompletions";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -443,6 +442,7 @@ $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
     "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
+    "ReasoningEfforts"         -> { "None", "Low", "Medium", "High", "XHigh" }, (* "XHigh" is new in GPT-5.2 *)
     "ReplaceUnicodeCharacters" -> True
 |>;
 
