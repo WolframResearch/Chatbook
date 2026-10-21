@@ -1078,8 +1078,8 @@ allowedMultimodalRoles // beginDefinition;
 (* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
 allowedMultimodalRoles[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] := { "User" };
 
-(* A family or service may declare which roles can carry an image; anything undeclared is
-   unrestricted, which is what every provider except OpenAI has been verified to allow: *)
+(* A model family may declare which roles can carry an image (e.g. gpt-4o: user messages only); anything undeclared
+   is unrestricted: *)
 allowedMultimodalRoles[ settings_ ] :=
     Replace[ autoModelSetting[ settings, "MultimodalRoles" ], Except[ { __String } ] -> All ];
 
