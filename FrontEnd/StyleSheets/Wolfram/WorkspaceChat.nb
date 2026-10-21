@@ -62,7 +62,7 @@ Cell[StyleData["Notebook"],
  DefaultNewCellStyle->"AutoMoveToChatInputField",
  Magnification->0.85,
  Background->GrayLevel[1],
- $CellContext`ClosingSaveDialog -> 
+ ClosingSaveDialog -> 
  False,ExpressionUUID->"117dc153-5c80-8746-a6dc-a25203954fc3"],
 
 Cell[StyleData["CellExpression"],
