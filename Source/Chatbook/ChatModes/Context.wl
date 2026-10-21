@@ -308,7 +308,12 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
-        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
+        (* Earlier reasoning helps the model follow the notebook, so reasoning summaries are kept: *)
+        string = ConfirmBy[
+            messagesToString[ messages, "MessageTemplate" -> None, "ReasoningContent" -> "Summary" ],
+            StringQ,
+            "String"
+        ];
 
         $contextPrompt   = processContextPromptString @ string;
         $selectionPrompt = extractSelectionPrompt @ string;
