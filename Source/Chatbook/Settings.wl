@@ -281,8 +281,6 @@ $modelAutoSettings[ "OpenAI", "GPT35" ] = <|
 |>;
 
 $modelAutoSettings[ "OpenAI", Automatic ] = <|
-    (* Images are only accepted in user messages, on both endpoints: *)
-    "MultimodalRoles"            -> { "User" },
     "ToolMethod"                 -> "Service",
     "ToolCallExamplePromptStyle" -> "Basic"
 |>;
@@ -396,6 +394,8 @@ $modelAutoSettings[ Automatic ] = <| |>;
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 128000,
+    (* Rejects an image in a system message ("Image URLs are only allowed for messages with role 'user'"): *)
+    "MultimodalRoles"            -> { "User" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
@@ -518,6 +518,8 @@ $modelAutoSettings[ Automatic, "O1" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
 |>;
@@ -536,6 +538,8 @@ $modelAutoSettings[ Automatic, "O3" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
@@ -547,6 +551,8 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
