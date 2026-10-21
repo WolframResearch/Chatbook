@@ -193,6 +193,7 @@
 "UIAdvancedToolCallFrequency" -> "\:30c4\:30fc\:30eb\:547c\:51fa\:3057\:306e\:983b\:5ea6",
 "UIAdvancedChooseAutomatically" -> "\:81ea\:52d5\:7684\:306b\:9078\:629e\:3059\:308b",
 "UIAdvancedRoles" -> "\:5f79\:5272",
+"UIAdvancedReasoning" -> "Reasoning",
 "UITryEnableChatDialogMainText" -> "\:30c1\:30e3\:30c3\:30c8\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:306e\:6a5f\:80fd\:3092\:6709\:52b9\:306b\:3059\:308b\:3068\:ff0c\:3053\:306e\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:306b\:5b9a\:7fa9\:3055\:308c\:305f\:30b9\:30bf\:30a4\:30eb\:304c\:7834\:68c4\:3055\:308c\:ff0c\:5171\:6709\:306eChatbook\:30b9\:30bf\:30a4\:30eb\:30b7\:30fc\:30c8\:3067\:7f6e\:63db\:3055\:308c\:307e\:3059\:ff0e",
 "UITryEnableChatDialogConfirm" -> "\:7d9a\:884c\:3057\:307e\:3059\:304b\:ff1f",
 "UIMessageManageSubscription" -> "\:30b5\:30d6\:30b9\:30af\:30ea\:30d7\:30b7\:30e7\:30f3\:306e\:7ba1\:7406 \[RightGuillemet]",

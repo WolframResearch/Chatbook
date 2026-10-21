@@ -193,6 +193,7 @@
 "UIAdvancedToolCallFrequency" -> "Fr\[EAcute]quence d\[CloseCurlyQuote]appel de l\[CloseCurlyQuote]outil",
 "UIAdvancedChooseAutomatically" -> "Choisir automatiquement",
 "UIAdvancedRoles" -> "Choisir automatiquement",
+"UIAdvancedReasoning" -> "Reasoning",
 "UITryEnableChatDialogMainText" -> "L\[CloseCurlyQuote]activation de la fonctionnalit\[EAcute] du notebook de chat d\[EAcute]truira les styles priv\[EAcute]s d\[EAcute]finis dans ce notebook et les remplacera par la feuille de style du chatbook partag\[EAcute]e.",
 "UITryEnableChatDialogConfirm" -> "\[CapitalEHat]tes-vous s\[UHat]r de vouloir continuer\[NonBreakingSpace]?",
 "UIMessageManageSubscription" -> "G\[EAcute]rer l\[CloseCurlyQuote]abonnement \[RightGuillemet]",

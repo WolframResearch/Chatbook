@@ -193,6 +193,7 @@
 "UIAdvancedToolCallFrequency" -> "\:B3C4\:AD6C \:D638\:CD9C \:BE48\:B3C4",
 "UIAdvancedChooseAutomatically" -> "\:C790\:B3D9\:C73C\:B85C \:C120\:D0DD",
 "UIAdvancedRoles" -> "\:C5ED\:D560",
+"UIAdvancedReasoning" -> "Reasoning",
 "UITryEnableChatDialogMainText" -> "\:CC44\:D305 \:B178\:D2B8\:BD81 \:AE30\:B2A5\:C744 \:D65C\:C131\:D654\:D558\:BA74 \:C774 \:B178\:D2B8\:BD81\:C5D0 \:C815\:C758\:B41C \:C2A4\:D0C0\:C77C\:C774 \:C0AD\:C81C\:B418\:BA70 \:ACF5\:C720\:B41C Chatbook \:C2A4\:D0C0\:C77C\:C2DC\:D2B8\:B85C \:B300\:CCB4\:B429\:B2C8\:B2E4.",
 "UITryEnableChatDialogConfirm" -> "\:ACC4\:C18D \:D558\:C2DC\:ACA0\:C2B5\:B2C8\:AE4C?",
 "UIMessageManageSubscription" -> "\:AD6C\:B3C5 \:AD00\:B9AC \[RightGuillemet]",
