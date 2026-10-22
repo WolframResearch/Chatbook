@@ -1,8 +1,9 @@
 ---
 name: drive-frontend
 description: >-
-  Drive a real Wolfram front end (WolframNB) to test Chatbook's actual UI: launch a fresh front end on a private
-  Xvfb display (optionally with the development Chatbook loaded) or attach to one that is already running, evaluate
+  Drive a real Wolfram front end (WolframNB) to test Chatbook's actual UI, on Linux or Windows: launch a fresh front
+  end (on Linux on a private Xvfb display; optionally with the development Chatbook loaded) or attach to one that is
+  already running, evaluate
   code in its kernel, list notebooks and cells, take screenshots, and click, type, or press buttons by BoxID,
   text, or screenshot coordinates. Use this whenever a task involves seeing or interacting with Chatbook UI -
   the notebook assistant window, sidebar, chat bar, chat notebooks, output formatting, buttons and menus - for
@@ -19,9 +20,22 @@ since the shell's working directory may change between commands:
 fe=/home/ubuntu/Chatbook/Developer/FrontEndServer/fe.py   # adjust to the repository location
 ```
 
+**On Windows**, use the Bash tool (Git Bash) and call Python explicitly (`python3` there is usually the Microsoft Store
+stub, which the script's shebang would run). Also stop Git Bash from rewriting arguments that start with `/` (it would
+turn `type '/explain'` into `type 'C:/Program Files/Git/explain'`); fe.py accepts both `C:/...` and `/c/...` paths:
+
+```bash
+export MSYS_NO_PATHCONV=1
+fe="python C:/Users/me/Chatbook/Developer/FrontEndServer/fe.py"
+```
+
+Avoid running it from PowerShell: Windows PowerShell 5.1 strips double quotes inside arguments of native commands
+(`$fe eval 'StringLength["a b"]'` arrives as `StringLength[a b]`) and uses the backtick as its escape character. If you
+must, pass code through stdin (`eval -`) or a file (`eval '@code.wl'`, quoted because `@` is an operator there).
+
 ## 1. Get a front end
 
-**Fresh, isolated front end (preferred for testing).** It runs on its own Xvfb display, so it never touches the
+**Fresh front end (preferred for testing).** On Linux it runs on its own Xvfb display, so it never touches the
 user's desktop:
 
 ```bash
@@ -31,6 +45,15 @@ $fe launch              # uses the installed Chatbook paclet instead
 
 It prints the port, e.g. `fe-2400 ... port 2400`. Startup takes 20-60 s. Always `$fe -s PORT stop` when done (it
 quits the front end and its Xvfb). `$fe servers` lists what is running; `$fe servers --prune` cleans up leftovers.
+
+**On Windows there is no private display:** the front end opens on the user's desktop. Its windows come to the front,
+and `click`, `type`, `key`, `move`, `scroll`, `drag`, `focus`, `select`, `ask`, `locate --text/--cell` and screenshots
+(which raise the window, `--cell` included) take over the real mouse pointer and keyboard focus. Only use those while
+the user is away or has agreed to it; otherwise stick to `eval`, `press`, `cells`, `read`, `wait`, and
+`screenshot NB --no-raise` (captures the window in place, also where it is covered, without changing focus; popup menus
+are not included). Mouse commands refuse to click where another application's window covers the point (`--force`
+overrides). While the Windows session is locked, screenshots and input fail with an explanation (`eval`, `press` and
+`screenshot --fe` still work).
 
 **Memory:** each front end (with its kernels) uses about 1 GB. Run as few as possible at once and stop them promptly;
 running a machine out of memory gets unrelated processes killed, which can take down the user's desktop session.
@@ -91,6 +114,11 @@ Notes:
 - Screenshots go to a temp directory (printed); pass `-o` to choose the file. Use `--scale 0.5` for overviews (fewer
   tokens), full scale to read small text. `click --image U,V` maps a point of the *last* screenshot back to the screen.
 - After a click or keystroke that changes the UI, `sleep 0.5`-`1` before the next screenshot.
+- Key names are the X11 keysym names (`Return`, `BackSpace`, `Escape`, `Prior`, `F5`, `KP_Enter`, `comma`, `ctrl+a`,
+  `shift+Return`); on Windows the common ones are supported. `alt` and `meta` are Alt, `win`/`super` the Windows key.
+  On Windows, `type` sends the text as Unicode characters.
+- Negative coordinates (a monitor left of or above the primary one on Windows) need `--`/`=`: `click -- -100,200`,
+  `screenshot --region=-100,0,400,300`.
 - Keyboard input goes to the focused window: `click` into the target, `focus --cell ID`, or `select NB` first.
   **Escape** starts an alias inside a notebook (it is not "cancel"), but it does close open menus and popups.
 - Cell text containing private-use characters is shown with their names, e.g. `\[FreeformPrompt]`.
@@ -154,10 +182,19 @@ LLM call). Don't click the feedback Send button (it posts to Wolfram), sign-in b
 ## 4. Troubleshooting
 
 - *"Timed out ... the kernel is busy"*: an evaluation is running; wait, raise `--timeout`, or use `--preemptive`.
-- *"does not answer pings either"*: the kernel is blocked; `$fe screenshot --screen` to look for a dialog.
+- *"does not answer pings either"*: the kernel is blocked; look for a dialog with `$fe windows` and
+  `$fe screenshot --window ID` (`$fe screenshot --screen` also works, but on Windows it shows the user's whole desktop).
   A launched front end can always be killed with `$fe stop`.
+- *An evaluation never finishes and requests stay queued*: the kernel and the front end can deadlock (seen once, on
+  Windows, when a request arrived as the first chat in a fresh kernel started). Then
+  `$fe --preemptive eval 'MemberQ[Stack[], MathLink`CallFrontEndHeld]'` stays `True`. Abort the evaluation with
+  `$fe key alt+period` while the front end window has the focus (`click X,Y` on it first; neither needs the server).
 - *"Several front end servers are running"* / *"Several notebooks match"*: add `-s PORT` / use a more specific name.
 - *BoxNotFound*: the control may only exist while hovering or while a chat runs, may live in another place
   (`--in sidebar`), or may be missing from the installed Chatbook (use `launch --chatbook`).
 - A located rectangle looks wrong: take a screenshot and use `click --image`.
 - `$fe --json <command>` prints raw results (and errors as JSON).
+- Windows: *"Python was not found ... Microsoft Store"*: you ran `fe.py` directly; use `python .../fe.py`. Code arriving
+  with its double quotes missing: you ran it from PowerShell; use Git Bash, `eval -` or `eval @file.wl`.
+- Windows: *"Windows is not showing this desktop"*: the session is locked (or a UAC prompt is up); ask the user to
+  unlock it, or use `eval`/`press`/`screenshot --fe`.
