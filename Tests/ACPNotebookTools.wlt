@@ -584,6 +584,243 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-LargeCells@@Tests/ACPNotebookTools.wlt:574,1-585,2"
 ]
 
+(* ReadNotebook's conversion keeps its limits: 8000 characters per cell, 1000 per output cell *)
+VerificationTest[
+    {
+        StringLength @ Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ Cell[ StringRepeat[ "word ", 2400 ], "Text" ], "id" ] <= 8100,
+        StringLength @ Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ Cell[ BoxData @ ToBoxes @ Range[ 3000 ], "Output" ], "id" ] <= 1100,
+        Wolfram`Chatbook`ACP`NotebookTools`Private`$readCellOptions
+    },
+    { True, True, <| "MaxCellLength" -> 8000, "MaxOutputLength" -> 1000, "MaxCellBytes" -> 2^20, "Graphics" -> Automatic, "Tool" -> "ReadNotebook" |> },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-ReadLimits@@Tests/ACPNotebookTools.wlt:588,1-597,2"
+]
+
+(* The ReadNotebook conversion runs nothing in a crafted notebook: readCells passes the cells from the front end
+   through acpDefusedCells before CellToString, so an inline WL code template, a video or audio box (also one with an
+   inline InterpretationFunction), a crafted box with an inline InterpretationFunction, a string with linear syntax and
+   a raw data cell no longer run code or import content. A normal box (no inline InterpretationFunction) is unchanged. *)
+VerificationTest[
+    Module[ { dir, path, q, cells, md, normal, files },
+        dir  = CreateDirectory[ ];
+        path = FileNameJoin @ { dir, "ran-" <> ToString @ # } &;
+        q    = ToString[ path @ #, InputForm ] &;
+        cells = {
+            Cell[ BoxData @ TemplateBox[ <| "input" -> RowBox @ { "CreateFile", "[", q[ 1 ], "]" } |>, "ChatbookWLTemplate" ], "Text" ],
+            Cell[ BoxData @ TemplateBox[ { "1" }, "VideoBox1", InterpretationFunction -> Function[ CreateFile[ path[ 2 ] ]; 1 ] ], "Output" ],
+            Cell[ BoxData @ TemplateBox[ { "1" }, "AudioBox1", InterpretationFunction -> Function[ CreateFile[ path[ 3 ] ]; 1 ] ], "Output" ],
+            Cell[ BoxData @ TemplateBox[ { "1", "\"m\"", "meters", "\"Meters\"" }, "Quantity", InterpretationFunction -> Function[ CreateFile[ path[ 4 ] ]; 1 ] ], "Output" ],
+            Cell[ BoxData @ RowBox @ { ToString[ "\"a\\!\\(\\*RowBox[{CreateFile[" <> q[ 5 ] <> "]}]\\)\"", InputForm ] }, "Input" ],
+            Cell[ RawData[ "Cell[BoxData[RowBox[{CreateFile[" <> q[ 6 ] <> "]}]], \"Input\"]" ], "Text" ]
+        };
+        (* readCells runs the cells returned by the front end through acpDefusedCells before cellMarkdown converts them *)
+        md    = Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ #, "id" ] & /@ Wolfram`Chatbook`ACP`Common`acpDefusedCells @ cells;
+        (* a normal Quantity output (no inline InterpretationFunction) is converted the same with or without defusing *)
+        normal = With[ { c = Cell[ BoxData @ ToBoxes @ Quantity[ 3, "Meters" ], "Output" ] },
+            Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ c, "id" ] ===
+                Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ First @ Wolfram`Chatbook`ACP`Common`acpDefusedCells @ { c }, "id" ]
+        ];
+        files = FileNames[ "*", dir ];
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        {
+            files,
+            StringContainsQ[ md[[ 1 ]], "CreateFile" ], (* the template's input is shown as text, not run *)
+            md[[ 2 ]],
+            md[[ 3 ]],
+            StringMatchQ[ md[[ 4 ]], "```wl\nQuantity[1, \"Meters\"]\n```" ], (* inline InterpretationFunction dropped *)
+            normal
+        }
+    ],
+    { { }, True, "```wl\n[video]\n```", "```wl\n[audio]\n```", True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-ReadDefusesCode@@Tests/ACPNotebookTools.wlt:603,1-637,2"
+]
+
+(* Nested constructs are defused too (the rules are applied until nothing changes): a template whose input is a template,
+   a template in the arguments of a box with an inline InterpretationFunction, a box with an InterpretationFunction in
+   the arguments of another, a video box in a template's input; both on the ReadNotebook path and on the attachments'
+   path (notebookTextCells, a notebook's text) *)
+VerificationTest[
+    Module[ { dir, path, q, cf, wl, cells, md, attached, attachedMarkdown, files },
+        dir  = CreateDirectory[ ];
+        path = FileNameJoin @ { dir, "ran-" <> ToString @ # } &;
+        q    = ToString[ path @ #, InputForm ] &;
+        cf   = RowBox @ { "CreateFile", "[", q[ # ], "]" } &;
+        wl   = TemplateBox[ <| "input" -> # |>, "ChatbookWLTemplate" ] &;
+        cells = {
+            Cell[ BoxData @ wl @ wl @ cf[ 1 ], "Text" ],
+            Cell[ BoxData @ TemplateBox[ { wl @ cf[ 2 ] }, "Foo", InterpretationFunction -> (1 &) ], "Output" ],
+            Cell[
+                BoxData @ TemplateBox[
+                    { TemplateBox[ { "1", "\"m\"", "meters", "\"Meters\"" }, "Quantity", InterpretationFunction -> Function[ CreateFile[ path[ 3 ] ]; 1 ] ] },
+                    "Bar",
+                    InterpretationFunction -> (2 &),
+                    DisplayFunction -> (#1 &)
+                ],
+                "Output"
+            ],
+            Cell[ BoxData @ wl @ TemplateBox[ { "1" }, "VideoBox1", InterpretationFunction -> Function[ CreateFile[ path[ 4 ] ]; 1 ] ], "Text" ]
+        };
+        md = Quiet[ Wolfram`Chatbook`ACP`NotebookTools`Private`cellMarkdown[ #, "id" ] & /@ Wolfram`Chatbook`ACP`Common`acpDefusedCells @ cells ];
+        attached = Quiet @ Wolfram`Chatbook`ACP`Attachments`Private`notebookTextCells @ ToString[
+            Notebook @ { Cell[ BoxData @ wl @ wl @ cf[ 5 ], "Text" ], Cell[ BoxData @ TemplateBox[ { wl @ cf[ 6 ] }, "Foo", InterpretationFunction -> (1 &) ], "Output" ] },
+            InputForm
+        ];
+        attachedMarkdown = If[ ListQ @ attached, Quiet[ Wolfram`Chatbook`CellToString /@ attached ], attached ];
+        files = FileNameTake /@ FileNames[ "*", dir ];
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        { files, AllTrue[ md, StringQ ], ListQ @ attached, AllTrue[ Flatten @ { attachedMarkdown }, StringQ ] }
+    ],
+    { { }, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-ReadDefusesNested@@Tests/ACPNotebookTools.wlt:643,1-677,2"
+]
+
+(* The markdown of a notebook for a prompt's attachment (acpNotebookMarkdown): ReadNotebook's conversion without <cell>
+   blocks, ids or labels, no cut per cell, output cells cut at 5000 characters, graphics as the caller says; a total cap
+   leaves the last cells out (or cuts a first cell with text that is too long) with a note, both notes when both
+   happen; a cancelled conversion stops *)
+VerificationTest[
+    Module[ { long, cells, md, output, capped, cut, cancelled },
+        long  = StringRepeat[ "word ", 2400 ];
+        cells = {
+            Cell[ "Spec", "Title" ],
+            Cell[ long, "Text" ],
+            Cell[ BoxData @ RowBox @ { "1", "+", "1" }, "Input", CellLabel -> "In[1]:=" ],
+            Cell[ BoxData @ ToBoxes @ Range[ 3000 ], "Output", CellLabel -> "Out[1]=" ],
+            Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 1 } ], "Output" ]
+        };
+        md        = acpNotebookMarkdown[ cells, <| "Graphics" -> ("[image 7]" &) |> ];
+        output    = acpNotebookMarkdown[ { cells[[ 4 ]] } ][ "Markdown" ];
+        capped    = acpNotebookMarkdown[ cells, <| "MaxCharacters" -> 12100 |> ];
+        cut       = acpNotebookMarkdown[ { Cell[ long, "Text" ], Cell[ "x", "Text" ] }, <| "MaxCharacters" -> 100 |> ];
+        cancelled = acpNotebookMarkdown[ cells, <| "ActiveQ" -> (False &) |> ];
+        {
+            Lookup[ md, { "Cells", "Shown", "Truncated" } ],
+            StringStartsQ[ md[ "Markdown" ], "# Spec\n\n" <> StringTrim @ long <> "\n\n```wl\n1 + 1\n```\n\n" ],
+            StringFreeQ[ md[ "Markdown" ], "<cell" | "In[1]" | "Out[1]" | "[graphics]" ],
+            StringEndsQ[ md[ "Markdown" ], "[image 7]\n```" ],
+            4000 < StringLength @ output <= 5100,
+            Lookup[ capped, { "Shown", "Truncated" } ],
+            StringEndsQ[ capped[ "Markdown" ], "\n\n[The last 2 cells of this notebook are left out: the notebook is too large to attach whole.]" ],
+            StringTake[ cut[ "Markdown" ], 100 ] === StringTake[ long, 100 ],
+            StringEndsQ[ cut[ "Markdown" ], "[The last cell of this notebook is left out: the notebook is too large to attach whole.]" ],
+            StringEndsQ[ acpNotebookMarkdown[ { Cell[ long, "Text" ] }, <| "MaxCharacters" -> 100 |> ][ "Markdown" ], "[The rest of this cell is left out: the notebook is too large to attach whole.]" ],
+            StringEndsQ[
+                acpNotebookMarkdown[ { Cell[ long, "Text" ], Cell[ "x", "Text" ], Cell[ "y", "Text" ] }, <| "MaxCharacters" -> 100 |> ][ "Markdown" ],
+                "\n\n[The rest of this cell is left out: the notebook is too large to attach whole.]\n\n[The last 2 cells of this notebook are left out: the notebook is too large to attach whole.]"
+            ],
+            StringTake[ acpNotebookMarkdown[ { Cell[ "", "Text" ], Cell[ long, "Text" ] }, <| "MaxCharacters" -> 100 |> ][ "Markdown" ], 100 ] === StringTake[ long, 100 ],
+            cancelled
+        }
+    ],
+    { { 5, 5, False }, True, True, True, True, { 3, True }, True, True, True, True, True, True, Failure[ "Cancelled", <| |> ] },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-PromptMarkdown@@Tests/ACPNotebookTools.wlt:683,1-720,2"
+]
+
+(* Notebooks that are attached are read without evaluating anything in them (Attachments.wl's notebookTextCells, which
+   also reads open notebooks from the front end's text of them): code in boxes, interpretation functions, dynamic
+   content, inline code templates (their code is text), videos, strings with linear syntax (also typed), raw data cells
+   and arithmetic run nothing; what is not inert in the cells is inertSymbol[name]. Text with linear syntax outside its
+   strings, or without one Notebook expression, is refused; a front end's file (comments, a cache, cell groups, many
+   comments in strings) is read; the symbols of the parse are removed. *)
+VerificationTest[
+    Block[ { $acpDebugLog = Internal`Bag[ ] },
+        Module[ { dir, path, q, texts, cells, md, result },
+            dir   = CreateDirectory[ ];
+            path  = FileNameJoin @ { dir, "ran-" <> ToString @ # } &;
+            q     = ToString[ path @ #, InputForm ] &;
+            texts = <|
+                "Boxes"     -> "Notebook[{Cell[BoxData[RowBox[{\"a\", CreateFile[" <> q[ 1 ] <> "]}]], \"Input\"]}]",
+                "Template"  -> "Notebook[{Cell[TextData[{\"see \", Cell[BoxData[TemplateBox[<|\"input\" -> RowBox[{\"CreateFile\", \"[\", " <> ToString[ q[ 2 ], InputForm ] <> ", \"]\"}]|>, \"ChatbookWLTemplate\"]]]}], \"Text\"]}]",
+                "Video"     -> "Notebook[{Cell[BoxData[TemplateBox[{\"x\"}, \"VideoBox1\", InterpretationFunction -> Function[CreateFile[" <> q[ 3 ] <> "]; 1]]], \"Output\"]}]",
+                "Linear"    -> "Notebook[{Cell[TextData[{" <> ToString[ "abc \!\(\*RowBox[{CreateFile[" <> q[ 4 ] <> "]}]\) def", InputForm ] <> "}], \"Text\"]}]",
+                "Typed"     -> "Notebook[{Cell[BoxData[" <> ToString[ "\"\\!\" <> ToString[CreateFile[" <> q[ 5 ] <> "]] <> \"\"", InputForm ] <> "], \"Input\"]}]",
+                "Dynamic"   -> "Notebook[{Cell[BoxData[DynamicBox[ToBoxes[If[$OperatingSystem === \"Unix\", CreateFile[" <> q[ 6 ] <> "], 1], StandardForm]]], \"Output\"]}]",
+                "RawData"   -> "Notebook[{Cell[RawData[" <> ToString[ "Cell[BoxData[RowBox[{CreateFile[" <> q[ 7 ] <> "]}]], \"Input\"]", InputForm ] <> "], \"Input\"]}]",
+                "Interpret" -> "Notebook[{Cell[BoxData[TemplateBox[{\"x\"}, \"Foo\", InterpretationFunction -> Function[CreateFile[" <> q[ 8 ] <> "]; 1]]], \"Input\"]}]",
+                "Power"     -> "Notebook[{Cell[BoxData[RowBox[{\"1\", Power[10, Power[10, 10]]}]], \"Input\"]}]",
+                "Outside"   -> "Notebook[{Cell[BoxData[\\!\\(\\*RowBox[{\"x\"}]\\)], \"Input\"]}]",
+                "Statement" -> "Null; CreateFile[" <> q[ 9 ] <> "]; Notebook[{Cell[\"x\", \"Text\"]}]",
+                "FrontEnd"  -> StringJoin[
+                    "(* Content-type: application/vnd.wolfram.mathematica *)\n\n(*** Wolfram Notebook File ***)\n\n(*CacheID: 234*)\n",
+                    "Notebook[{\nCell[CellGroupData[{\nCell[\"Title\", \"Title\",ExpressionUUID->\"a-b\"],\n",
+                    "Cell[\"" <> StringRepeat[ "(* not a comment *) ", 1200 ] <> "\", \"Text\"]\n}, Open  ]]\n},\nWindowSize->{808, 911},\n",
+                    "StyleDefinitions->\"Default.nb\"\n]\n(* End of Notebook Content *)\n\n(* Internal cache information *)\n(*CellTagsOutline\nCellTagsIndex->{}\n*)\n"
+                ]
+            |>;
+            cells  = Wolfram`Chatbook`ACP`Attachments`Private`notebookTextCells /@ texts;
+            md     = If[ ListQ @ #, acpNotebookMarkdown[ # ][ "Markdown" ], # ] & /@ KeyTake[ cells, { "Template", "Video", "Linear", "Typed", "RawData" } ];
+            result = {
+                md,
+                DeleteDuplicates @ Cases[ cells[ "Boxes" ], Wolfram`Chatbook`ACP`Attachments`Private`inertSymbol[ n_ ] :> n, Infinity, Heads -> True ],
+                FreeQ[ cells[ "Power" ], _Integer? (# > 10^6 &) ],
+                KeyTake[ cells, { "Outside", "Statement" } ],
+                MapAt[ StringLength, cells[ "FrontEnd" ], { 2, 1 } ],
+                Block[ { Wolfram`Chatbook`ACP`Attachments`Private`$maxNotebookBytes = 10 }, Wolfram`Chatbook`ACP`Attachments`Private`notebookTextCells[ texts[ "Boxes" ] ] ],
+                FileNames[ "*", dir ],
+                Names[ "Wolfram`Chatbook`ACP`Attachments`Parsed`*" ]
+            };
+            DeleteDirectory[ dir, DeleteContents -> True ];
+            result
+        ]
+    ],
+    {
+        <|
+            "Template" -> s1_String /; StringStartsQ[ s1, "see CreateFile[\"" ],
+            "Video"    -> "```wl\n[video]\n```",
+            "Linear"   -> s2_String /; StringContainsQ[ s2, "\:fffd" ] && StringContainsQ[ s2, "CreateFile" ],
+            "Typed"    -> s3_String /; StringContainsQ[ s3, "\\\:fffd" ],
+            "RawData"  -> s4_String /; StringStartsQ[ s4, "Cell[BoxData[RowBox[{CreateFile[" ]
+        |>,
+        { "System`CreateFile" },
+        True,
+        <| "Outside" -> $Failed, "Statement" -> $Failed |>,
+        { Cell[ "Title", "Title", ExpressionUUID -> "a-b" ], Cell[ 24000, "Text" ] },
+        Failure[ "NotebookTooLarge", KeyValuePattern[ "Size" -> _Integer ] ],
+        { },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-NotebookTextCells@@Tests/ACPNotebookTools.wlt:728,1-787,2"
+]
+
+(* The graphics of a notebook that was read, as the front end rasterizes them (Attachments.wl's displayBoxes): their
+   compressed data decompressed, without dynamic content (a list in a DynamicBox keeps its primitives), tags and options
+   with inert values; graphics with an inert part elsewhere are not rasterized, nor is data that takes too much memory *)
+VerificationTest[
+    Module[ { compressed, text, box, other },
+        compressed = ToString[ Compress @ { { 0., 0. }, { 1., 1. } }, InputForm ];
+        text = StringJoin[
+            "Notebook[{Cell[BoxData[GraphicsBox[{",
+            "{RGBColor[1, 0, 0], DynamicBox[{FEPrivate`If[CurrentValue[\"MouseOver\"], EdgeForm[Thick], {}, {}], RectangleBox[{0, 0}, {1, 1}]}]}, ",
+            "TagBox[LineBox[CompressedData[" <> compressed <> "]], Annotation[#1, \"x\"] & ], ",
+            "StyleBox[DynamicBox[ToBoxes[f[1]]], Selectable -> False]}, ",
+            "{PlotRange -> {{0, 1}, {0, 1}}, Method -> Identity}, ImageSize -> Dynamic[f[2]]]], \"Output\"], ",
+            "Cell[BoxData[GraphicsBox[LineBox[f[3]]]], \"Output\"]}]"
+        ];
+        { box, other } = Cases[ Wolfram`Chatbook`ACP`Attachments`Private`notebookTextCells @ text, _GraphicsBox, Infinity ];
+        {
+            Wolfram`Chatbook`ACP`Attachments`Private`displayBoxes @ box,
+            Wolfram`Chatbook`ACP`Attachments`Private`displayBoxes @ other,
+            Block[ { Wolfram`Chatbook`ACP`Attachments`Private`$maxDecompressedBytes = 1000 },
+                Wolfram`Chatbook`ACP`Attachments`Private`decompressedData @ Compress @ Range[ 10^5 ]
+            ]
+        }
+    ],
+    {
+        GraphicsBox[
+            { { RGBColor[ 1, 0, 0 ], { RectangleBox[ { 0, 0 }, { 1, 1 } ] } }, LineBox[ { { 0., 0. }, { 1., 1. } } ], StyleBox[ { }, Selectable -> False ] },
+            { PlotRange -> { { 0, 1 }, { 0, 1 } } }
+        ],
+        Missing[ "Inert" ],
+        Wolfram`Chatbook`ACP`Attachments`Private`inertSymbol[ "System`CompressedData" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-DisplayBoxes@@Tests/ACPNotebookTools.wlt:792,1-822,2"
+]
+
 (* Expression URIs refer to the kernel's attachments, which the agent can't read *)
 VerificationTest[
     Wolfram`Chatbook`ACP`NotebookTools`Private`replaceExpressionURIs /@ {
@@ -597,7 +834,7 @@ VerificationTest[
         "![x](https://example.com/a.png) and [y](attachment://content-1)"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ExpressionURIs@@Tests/ACPNotebookTools.wlt:588,1-601,2"
+    TestID   -> "ACPNotebookTools-ExpressionURIs@@Tests/ACPNotebookTools.wlt:825,1-838,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -624,7 +861,7 @@ VerificationTest[
         { _Cell }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InertCells@@Tests/ACPNotebookTools.wlt:609,1-628,2"
+    TestID   -> "ACPNotebookTools-InertCells@@Tests/ACPNotebookTools.wlt:846,1-865,2"
 ]
 
 (* Markdown images become links to their sources, in cells of their own (the formatter would import them). This is the
@@ -660,7 +897,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ImageLink@@Tests/ACPNotebookTools.wlt:632,1-664,2"
+    TestID   -> "ACPNotebookTools-ImageLink@@Tests/ACPNotebookTools.wlt:869,1-901,2"
 ]
 
 VerificationTest[
@@ -680,7 +917,7 @@ VerificationTest[
     ][[ All, 2 ]],
     Missing[ "TestSkipped" ] | { "Title", "Section", "Text", "Item", "Input", "ExternalLanguage", "TextTableForm" },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-MarkdownCells@@Tests/ACPNotebookTools.wlt:666,1-684,2"
+    TestID   -> "ACPNotebookTools-MarkdownCells@@Tests/ACPNotebookTools.wlt:903,1-921,2"
 ]
 
 (* Images are never loaded, neither from a file nor from a URL (nothing is imported): they become links *)
@@ -718,7 +955,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-MarkdownCells-Images@@Tests/ACPNotebookTools.wlt:687,1-722,2"
+    TestID   -> "ACPNotebookTools-MarkdownCells-Images@@Tests/ACPNotebookTools.wlt:924,1-959,2"
 ]
 
 (* The special forms of Wolfram Language code are kept as they are written: DateObject expressions are not evaluated
@@ -743,7 +980,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { "Input", "Text" }, False, { }, True, 2, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-MarkdownCells-SpecialForms@@Tests/ACPNotebookTools.wlt:726,1-747,2"
+    TestID   -> "ACPNotebookTools-MarkdownCells-SpecialForms@@Tests/ACPNotebookTools.wlt:963,1-984,2"
 ]
 
 (* The conversion of one call's markdown is stopped after $markdownTimeLimit seconds, and nothing is written *)
@@ -761,7 +998,7 @@ parts, for example a few sections per call.",
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-MarkdownCells-TimeLimit@@Tests/ACPNotebookTools.wlt:750,1-765,2"
+    TestID   -> "ACPNotebookTools-MarkdownCells-TimeLimit@@Tests/ACPNotebookTools.wlt:987,1-1002,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -778,7 +1015,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ToolFailure@@Tests/ACPNotebookTools.wlt:772,1-782,2"
+    TestID   -> "ACPNotebookTools-ToolFailure@@Tests/ACPNotebookTools.wlt:1009,1-1019,2"
 ]
 
 (* Internal failures give a generic error text and are logged *)
@@ -801,7 +1038,7 @@ VerificationTest[
         { "NotebookToolFailed", "NotebookToolFailed", "NotebookToolFailed" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InternalFailure@@Tests/ACPNotebookTools.wlt:785,1-805,2"
+    TestID   -> "ACPNotebookTools-InternalFailure@@Tests/ACPNotebookTools.wlt:1022,1-1042,2"
 ]
 
 (* Without a front end, nothing is listed and the other tools give an error *)
@@ -823,7 +1060,7 @@ VerificationTest[
         "The Wolfram front end is not available in this kernel, so its notebooks can't be reached."
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-NoFrontEnd@@Tests/ACPNotebookTools.wlt:808,1-827,2"
+    TestID   -> "ACPNotebookTools-NoFrontEnd@@Tests/ACPNotebookTools.wlt:1045,1-1064,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -858,7 +1095,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | 6,
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-Setup@@Tests/ACPNotebookTools.wlt:832,1-862,2"
+    TestID   -> "ACPNotebookTools-Setup@@Tests/ACPNotebookTools.wlt:1069,1-1099,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -890,7 +1127,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ListNotebooks@@Tests/ACPNotebookTools.wlt:869,1-894,2"
+    TestID   -> "ACPNotebookTools-ListNotebooks@@Tests/ACPNotebookTools.wlt:1106,1-1131,2"
 ]
 
 (* Notebooks excluded from AI, workspace chats, invisible and deployed notebooks can't be reached, also by their ids *)
@@ -904,7 +1141,245 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { Repeated[ _String? (StringStartsQ[ "No open notebook matches" ]), { 6 } ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ListNotebooks-Excluded@@Tests/ACPNotebookTools.wlt:897,1-908,2"
+    TestID   -> "ACPNotebookTools-ListNotebooks-Excluded@@Tests/ACPNotebookTools.wlt:1134,1-1145,2"
+]
+
+(* A prompt notebook of the ACP window ("ACPPromptNotebook" in its ChatNotebookSettings) is never a source: the notebook
+   tools, the attach menu (acpAttachableNotebooks) and the Notebook Assistant's Sources (not "Usable") leave it out, also
+   after the Notebook Assistant's inclusion toggle; other notebooks can be attached *)
+VerificationTest[
+    nbtWithFE @ Module[ { prompt, state },
+        prompt = nbtNotebook[
+            { Cell[ "my spec", "Text" ] },
+            WindowTitle  -> "NBT Prompt " <> $nbtTag,
+            TaggingRules -> <| "ChatNotebookSettings" -> <| "ACPPromptNotebook" -> True |> |>
+        ];
+        state[ ] := {
+            MemberQ[ Lookup[ Wolfram`Chatbook`ACP`NotebookTools`Private`listedNotebooks[ ], "NotebookObject" ], prompt ],
+            MemberQ[ Lookup[ acpAttachableNotebooks[ ], "NotebookObject" ], prompt ],
+            MemberQ[ Lookup[ SourceNotebookObjectInformation[ ], "NotebookObject" ], prompt ],
+            Lookup[ SelectFirst[ Wolfram`Chatbook`ChatModes`Context`Private`sourceNotebookInformation[ ], #[ "NotebookObject" ] === prompt & ], { "ExclusionReasons", "Usable" } ],
+            nbtText @ nbtCall[ "ReadNotebook", <| "notebook" -> StringTake[ First @ prompt, 8 ] |> ]
+        };
+        {
+            state[ ],
+            ToggleChatInclusion[ prompt, True ];
+            state[ ],
+            MemberQ[ Lookup[ acpAttachableNotebooks[ ], "NotebookObject" ], $nbtA ]
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        { False, False, False, { { "ACPPromptNotebook" }, False }, _String? (StringStartsQ[ "No open notebook matches" ]) },
+        { False, False, False, { { "ACPPromptNotebook" }, False }, _String? (StringStartsQ[ "No open notebook matches" ]) },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-PromptNotebookExcluded@@Tests/ACPNotebookTools.wlt:1150,1-1178,2"
+]
+
+(* A real prompt notebook (PromptNotebook.wl): never listed by the notebook tools or the attach menu, also after the
+   Notebook Assistant's inclusion toggle reset its "ExcludeFromChat"; found as its owner's prompt notebook; its message is
+   the notebook as an attachment (the main link job's conversion: markdown, graphics as images, the <attachment> block) *)
+VerificationTest[
+    nbtWithFE @ Module[ { owner, pop, listed, ref, window, prepared, blocks },
+        owner = NotebookObject[ "acp-nbt-prompt-owner" ];
+        pop   = With[ { nb = Wolfram`Chatbook`ACP`Common`acpPromptNotebook[
+                    owner,
+                    {
+                        Cell[ "Parser", "Section" ],
+                        Cell[ "Handle comments.", "Text" ],
+                        Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 1 } ], "Output" ]
+                    },
+                    <| "WindowMargins" -> Automatic, "WindowSize" -> { 600, 400 } |>
+                ] },
+            nbtNotebook[ First @ nb, Sequence @@ Rest @ nb ]
+        ];
+        listed[ ] := {
+            MemberQ[ Lookup[ Wolfram`Chatbook`ACP`NotebookTools`Private`listedNotebooks[ ], "NotebookObject" ], pop ],
+            MemberQ[ Lookup[ acpAttachableNotebooks[ ], "NotebookObject" ], pop ]
+        };
+        window = <|
+            Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ owner, $TemporaryDirectory, "OpenCode", <| |> ],
+            "Status"       -> "Ready",
+            "Capabilities" -> <| "promptCapabilities" -> <| "image" -> True |> |>
+        |>;
+        ref      = Wolfram`Chatbook`ACP`Common`acpNotebookAttachmentRef @ pop;
+        prepared = Block[ { $acpWindows = <| owner -> window |> },
+            Wolfram`Chatbook`ACP`Common`acpPrepareAttachments[ owner, True &, <| "Text" -> "", "Attachments" -> { <| ref, "Prompt" -> True |> } |> ]
+        ];
+        blocks = acpPromptBlocks[ "", prepared[ "Attachments" ], window[ "Capabilities" ], False ];
+        {
+            listed[ ],
+            ToggleChatInclusion[ pop, True ];
+            { CurrentValue[ pop, { TaggingRules, "ChatNotebookSettings", "ExcludeFromChat" } ], listed[ ] },
+            MemberQ[ Wolfram`Chatbook`ACP`Common`acpPromptNotebooks[ ], pop ],
+            Wolfram`Chatbook`ACP`Common`acpPromptNotebookOf[ owner ] === pop,
+            CurrentValue[ pop, { TaggingRules, "ACPPrompt", "Owner" } ] === owner,
+            KeyTake[ ref, { "Kind", "Notebook", "Cells" } ] === <| "Kind" -> "Notebook", "Notebook" -> pop, "Cells" -> 3 |>,
+            prepared[[ "Attachments", 1, "Ref", "Prompt" ]],
+            blocks[[ All, "type" ]],
+            blocks[[ 1, "text" ]]
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        { False, False },
+        { Inherited, { False, False } },
+        True,
+        True,
+        True,
+        True,
+        True,
+        { "text", "image" },
+        _String? (StringMatchQ[ "<attachment type=\"notebook\" name=\"" ~~ __ ~~ "\">\n## Parser\n\nHandle comments.\n\n```wl\n[image 1]\n```\n</attachment>" ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-PromptNotebookNeverListed@@Tests/ACPNotebookTools.wlt:1183,1-1237,2"
+]
+
+(* The preparation of a message's attachments (Attachments.wl), as its main link job makes it: an open notebook as
+   markdown with its graphics as images, text files, image files (re-encoded), notebook files (parsed, never evaluated;
+   one with linear syntax outside its strings is refused), and binary files refused *)
+VerificationTest[
+    nbtWithFE @ Module[ { dir, nbo, files, ref, prepare, window, ok, results },
+        dir = CreateDirectory[ ];
+        nbo = nbtNotebook[
+            {
+                Cell[ "Attached", "Title" ],
+                Cell[ "Some text", "Text" ],
+                Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 1 } ], "Output" ]
+            },
+            WindowTitle -> "NBT Attach " <> $nbtTag
+        ];
+        files = <|
+            "Text"   -> FileNameJoin @ { dir, "notes.txt" },
+            "Image"  -> FileNameJoin @ { dir, "plot.png" },
+            "Binary" -> FileNameJoin @ { dir, "data.bin" },
+            "NB"     -> FileNameJoin @ { dir, "Other.nb" },
+            "BadNB"  -> FileNameJoin @ { dir, "Bad.nb" }
+        |>;
+        WriteString[ files[ "Text" ], "line one\nline two" ];
+        Close @ files[ "Text" ];
+        Export[ files[ "Image" ], RandomImage[ 1, { 20, 10 } ], "PNG" ];
+        BinaryWrite[ files[ "Binary" ], { 0, 1, 2, 3, 255 }, "Byte" ];
+        Close @ files[ "Binary" ];
+        Put[ Notebook @ { Cell[ "From a file", "Text" ] }, files[ "NB" ] ];
+        WriteString[ files[ "BadNB" ], "Notebook[{Cell[BoxData[\\!\\(\\*TemplateBox[{\"a\"}, \"Foo\", InterpretationFunction -> (($nbtRan = True; #) &)]\\)], \"Input\"]}]" ];
+        Close @ files[ "BadNB" ];
+        ref[ "Notebook" ] := Wolfram`Chatbook`ACP`Attachments`Private`notebookRef @ <| "NotebookObject" -> nbo, "Title" -> "NBT Attach " <> $nbtTag, "File" -> None |>;
+        ref[ kind_ ] := Wolfram`Chatbook`ACP`Attachments`Private`fileRef @ files[ kind ];
+        window = NotebookObject[ "acp-nbt-attach" ];
+        prepare[ refs_List ] := Block[
+            {
+                $acpWindows = <| window -> <|
+                    Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ window, $TemporaryDirectory, "OpenCode", <| |> ],
+                    "Capabilities" -> <| "promptCapabilities" -> <| "image" -> True |> |>,
+                    "Preparing"    -> <| "Token" -> "tok", "StartedAt" -> AbsoluteTime[ ], "Input" -> "x", "Text" -> "x", "Attachments" -> refs |>
+                |> |>
+            },
+            Wolfram`Chatbook`ACP`Attachments`Private`prepareAttachments[ window, "tok", $acpWindows[ window, "Preparing" ] ]
+        ];
+        $nbtRan = False;
+        ok      = prepare[ ref /@ { "Notebook", "Text", "Image", "NB" } ];
+        results = {
+            Lookup[ ok[ "Attachments" ], { "Kind", "Name" } ],
+            StringStartsQ[ ok[ "Attachments" ][[ 1, "Text" ]], "# Attached\n\nSome text\n\n" ] && StringContainsQ[ ok[ "Attachments" ][[ 1, "Text" ]], "[image 1]" ],
+            Lookup[ ok[ "Attachments" ][[ 1, "Images" ]], { "Number", "MimeType" } ],
+            ImageQ @ ImportByteArray[ ok[ "Attachments" ][[ 1, "Images", 1, "Data" ]], "PNG" ],
+            ok[ "Attachments" ][[ 2, "Text" ]],
+            { ok[ "Attachments" ][[ 3, "Text" ]], Lookup[ ok[ "Attachments" ][[ 3, "Images" ]], { "Number", "Width", "Height" } ] },
+            ok[ "Attachments" ][[ 4, "Text" ]],
+            ok[ "Attachments" ][[ 2, "Ref" ]] === ref[ "Text" ],
+            prepare[ { ref[ "Binary" ] } ][ "Notice" ],
+            prepare[ { ref[ "BadNB" ] } ][ "Notice" ],
+            $nbtRan
+        };
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        results
+    ],
+    Missing[ "TestSkipped" ] | {
+        { { "Notebook", "NBT Attach " <> $nbtTag }, { "File", "notes.txt" }, { "File", "plot.png" }, { "File", "Other.nb" } },
+        True,
+        { { 1, "image/png" } },
+        True,
+        "line one\nline two",
+        { "[image 2]", { { 2, 20, 10 } } },
+        "From a file",
+        True,
+        "data.bin can't be attached: only text files, notebooks and images can.",
+        "The notebook file Bad.nb can't be read.",
+        False
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-PrepareAttachments@@Tests/ACPNotebookTools.wlt:1242,1-1314,2"
+]
+
+(* Attached notebooks run nothing that is in them (Attachments.wl, "Reading Notebooks"): a notebook file that the front
+   end saved (comments, a cache, compressed data) is read with its graphics as images; a crafted notebook file, and an
+   open notebook opened from one, give their text (an inline code template's code, "[video]") and their graphics as
+   images, drawn without what is in them (a function as a tag, dynamic content), and run nothing *)
+VerificationTest[
+    nbtWithFE @ Block[ { $acpDebugLog = Internal`Bag[ ] },
+        Module[ { dir, path, q, saved, evilText, evil, evilOpen, opened, window, prepare, results },
+            dir   = CreateDirectory[ ];
+            path  = FileNameJoin @ { dir, "ran-" <> ToString @ # } &;
+            q     = ToString[ path @ #, InputForm ] &;
+            saved = FileNameJoin @ { dir, "Saved.nb" };
+            With[ { nbo = NotebookPut[ Notebook @ { Cell[ "Saved", "Title" ], Cell[ BoxData @ ToBoxes @ Plot[ x, { x, 0, 1 } ], "Output" ] }, Visible -> False ] },
+                NotebookSave[ nbo, saved ];
+                NotebookClose @ nbo
+            ];
+            evilText = StringJoin[
+                "Notebook[{",
+                "Cell[TextData[{\"see \", Cell[BoxData[TemplateBox[<|\"input\" -> RowBox[{\"CreateFile\", \"[\", ", ToString[ q[ 1 ], InputForm ], ", \"]\"}]|>, \"ChatbookWLTemplate\"]]]}], \"Text\"], ",
+                "Cell[BoxData[TemplateBox[{\"x\"}, \"VideoBox1\", InterpretationFunction -> Function[CreateFile[", q[ 2 ], "]; 1]]], \"Output\"], ",
+                "Cell[BoxData[GraphicsBox[{TagBox[DiskBox[{0, 0}], Function[CreateFile[", q[ 3 ], "]]], StyleBox[DynamicBox[ToBoxes[CreateFile[", q[ 4 ], "]]]]}]], \"Output\"]",
+                "}]"
+            ];
+            evil     = FileNameJoin @ { dir, "Evil.nb" };
+            evilOpen = FileNameJoin @ { dir, "EvilOpen.nb" };
+            WriteString[ evil, evilText ];
+            Close @ evil;
+            (* the open one without dynamic content, which a front end might show (and run) itself *)
+            WriteString[ evilOpen, StringReplace[ evilText, ", StyleBox[DynamicBox[ToBoxes[CreateFile[" <> q[ 4 ] <> "]]]]" -> "" ] ];
+            Close @ evilOpen;
+            opened = NotebookOpen[ evilOpen, Visible -> False ];
+            AppendTo[ $nbtNotebooks, opened ];
+            window  = NotebookObject[ "acp-nbt-attach-safe" ];
+            prepare[ refs_List ] := Block[
+                {
+                    $acpWindows = <| window -> <|
+                        Wolfram`Chatbook`ACP`UI`Private`acpInitialWindowRecord[ window, $TemporaryDirectory, "OpenCode", <| |> ],
+                        "Capabilities" -> <| "promptCapabilities" -> <| "image" -> True |> |>
+                    |> |>
+                },
+                Wolfram`Chatbook`ACP`Common`acpPrepareAttachments[ window, True &, <| "Text" -> "", "Attachments" -> refs |> ]
+            ];
+            results = prepare @ {
+                Wolfram`Chatbook`ACP`Attachments`Private`fileRef @ saved,
+                Wolfram`Chatbook`ACP`Attachments`Private`fileRef @ evil,
+                Wolfram`Chatbook`ACP`Attachments`Private`notebookRef @ <| "NotebookObject" -> opened, "Title" -> "EvilOpen.nb", "File" -> evilOpen |>
+            };
+            NotebookClose @ opened;
+            results = {
+                Lookup[ results[ "Attachments" ], "Text" ],
+                Lookup[ Catenate @ Lookup[ results[ "Attachments" ], "Images" ], "Number" ],
+                FileNames[ "ran-*", dir ]
+            };
+            DeleteDirectory[ dir, DeleteContents -> True ];
+            results
+        ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        {
+            "# Saved\n\n```wl\n[image 1]\n```",
+            s1_String /; StringStartsQ[ s1, "see CreateFile[" ] && StringContainsQ[ s1, "[video]" ] && StringContainsQ[ s1, "[image 2]" ],
+            s2_String /; StringStartsQ[ s2, "see CreateFile[" ] && StringContainsQ[ s2, "[video]" ] && StringContainsQ[ s2, "[image 3]" ]
+        },
+        { 1, 2, 3 },
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-PrepareAttachments-Safe@@Tests/ACPNotebookTools.wlt:1320,1-1383,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -943,7 +1418,32 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook@@Tests/ACPNotebookTools.wlt:913,1-947,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook@@Tests/ACPNotebookTools.wlt:1388,1-1422,2"
+]
+
+(* Reading a crafted open notebook through the ReadNotebook tool runs nothing in the user's kernel: a cell with an
+   inline WL code template (CreateFile[...]) and a video box with an inline InterpretationFunction are defused before
+   CellToString. The template's input is shown as text and the video is a placeholder; no file is created. *)
+VerificationTest[
+    nbtWithFE @ Module[ { dir, path, nbo, text, files },
+        dir  = CreateDirectory[ ];
+        path = FileNameJoin @ { dir, "ran-" <> ToString @ # } &;
+        nbo  = nbtNotebook[
+            {
+                Cell[ "Crafted", "Title" ],
+                Cell[ BoxData @ TemplateBox[ <| "input" -> RowBox @ { "CreateFile", "[", ToString[ path @ 1, InputForm ], "]" } |>, "ChatbookWLTemplate" ], "Text" ],
+                Cell[ BoxData @ TemplateBox[ { "1" }, "VideoBox1", InterpretationFunction -> Function[ CreateFile[ path @ 2 ]; 1 ] ], "Output" ]
+            },
+            WindowTitle -> "NBT Crafted " <> $nbtTag
+        ];
+        text  = nbtText @ nbtCall[ "ReadNotebook", <| "notebook" -> nbtID @ nbo |> ];
+        files = FileNames[ "*", dir ];
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        { files, StringContainsQ[ text, "CreateFile" ], StringContainsQ[ text, "[video]" ] }
+    ],
+    Missing[ "TestSkipped" ] | { { }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-ReadNotebookDefusesCode@@Tests/ACPNotebookTools.wlt:1427,1-1447,2"
 ]
 
 (* The user's selection is marked like the Notebook Assistant marks it *)
@@ -966,7 +1466,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-Selection@@Tests/ACPNotebookTools.wlt:950,1-970,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-Selection@@Tests/ACPNotebookTools.wlt:1450,1-1470,2"
 ]
 
 VerificationTest[
@@ -993,7 +1493,7 @@ VerificationTest[
         "The parameter limit must be a positive whole number, not \"0\"."
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-Pages@@Tests/ACPNotebookTools.wlt:972,1-997,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-Pages@@Tests/ACPNotebookTools.wlt:1472,1-1497,2"
 ]
 
 (* A read stops before $readBudget characters of cells (but shows at least one cell); long cells are shortened *)
@@ -1015,7 +1515,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-Budget@@Tests/ACPNotebookTools.wlt:1000,1-1019,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-Budget@@Tests/ACPNotebookTools.wlt:1500,1-1519,2"
 ]
 
 (* Reading changes no state of chats: neither the base prompt that a chat is collecting nor the kernel's attachments *)
@@ -1032,7 +1532,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, <| "General" -> "General" |>, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-ChatState@@Tests/ACPNotebookTools.wlt:1022,1-1036,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-ChatState@@Tests/ACPNotebookTools.wlt:1522,1-1536,2"
 ]
 
 (* Text in a notebook (also its title) that looks like the tags of a read stays text: it can't pass for cells or for the
@@ -1068,7 +1568,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 4, 2, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-InertTags@@Tests/ACPNotebookTools.wlt:1040,1-1072,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-InertTags@@Tests/ACPNotebookTools.wlt:1540,1-1572,2"
 ]
 
 (* The user's selection is found without asking the front end about every cell: selected cells and the cell with the
@@ -1097,7 +1597,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-SelectionScan@@Tests/ACPNotebookTools.wlt:1076,1-1101,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-SelectionScan@@Tests/ACPNotebookTools.wlt:1576,1-1601,2"
 ]
 
 (* A cursor or selected text in an inline cell: SelectedCells gives the inline cell, which is not one of the notebook's
@@ -1184,7 +1684,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-InlineCell@@Tests/ACPNotebookTools.wlt:1108,1-1188,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-InlineCell@@Tests/ACPNotebookTools.wlt:1608,1-1688,2"
 ]
 
 (* In a notebook with more cells than are looked at around the cells read, a cursor before the first or after the last
@@ -1216,7 +1716,7 @@ VerificationTest[
         _String? (StringStartsQ[ "the cursor is between cells 1150 (id " ])
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-CursorAtEnds@@Tests/ACPNotebookTools.wlt:1193,1-1220,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-CursorAtEnds@@Tests/ACPNotebookTools.wlt:1693,1-1720,2"
 ]
 
 (* A read has at most $maxReadLimit cells, and reads no more cells once $readTimeBudget seconds have passed (at least
@@ -1236,7 +1736,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-Limits@@Tests/ACPNotebookTools.wlt:1224,1-1240,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-Limits@@Tests/ACPNotebookTools.wlt:1724,1-1740,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1260,7 +1760,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, False, { _String } },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-Resolve-FileAndPrefix@@Tests/ACPNotebookTools.wlt:1245,1-1264,2"
+    TestID   -> "ACPNotebookTools-Resolve-FileAndPrefix@@Tests/ACPNotebookTools.wlt:1745,1-1764,2"
 ]
 
 VerificationTest[
@@ -1277,7 +1777,7 @@ VerificationTest[
         { _String, _String }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-Resolve-AmbiguousTitle@@Tests/ACPNotebookTools.wlt:1266,1-1281,2"
+    TestID   -> "ACPNotebookTools-Resolve-AmbiguousTitle@@Tests/ACPNotebookTools.wlt:1766,1-1781,2"
 ]
 
 (* Cells with the same UUID (written with the same ExpressionUUID) get longer ids *)
@@ -1313,7 +1813,7 @@ VerificationTest[
         { "first", "third" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-Resolve-SharedCellUUIDs@@Tests/ACPNotebookTools.wlt:1284,1-1317,2"
+    TestID   -> "ACPNotebookTools-Resolve-SharedCellUUIDs@@Tests/ACPNotebookTools.wlt:1784,1-1817,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1340,14 +1840,14 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-CreateNotebook@@Tests/ACPNotebookTools.wlt:1322,1-1344,2"
+    TestID   -> "ACPNotebookTools-CreateNotebook@@Tests/ACPNotebookTools.wlt:1822,1-1844,2"
 ]
 
 VerificationTest[
     nbtWithFE @ nbtText @ nbtCall[ "CreateNotebook", <| "markdown" -> "  " |> ],
     Missing[ "TestSkipped" ] | "The parameter markdown is missing or empty.",
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-CreateNotebook-Empty@@Tests/ACPNotebookTools.wlt:1346,1-1351,2"
+    TestID   -> "ACPNotebookTools-CreateNotebook-Empty@@Tests/ACPNotebookTools.wlt:1846,1-1851,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1367,7 +1867,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { None, { 0, 1 }, None },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-Setup@@Tests/ACPNotebookTools.wlt:1356,1-1371,2"
+    TestID   -> "ACPNotebookTools-InsertCells-Setup@@Tests/ACPNotebookTools.wlt:1856,1-1871,2"
 ]
 
 VerificationTest[
@@ -1400,7 +1900,7 @@ VerificationTest[
         { None, None, None, None, None, { 0, 1 }, None, None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells@@Tests/ACPNotebookTools.wlt:1373,1-1404,2"
+    TestID   -> "ACPNotebookTools-InsertCells@@Tests/ACPNotebookTools.wlt:1873,1-1904,2"
 ]
 
 VerificationTest[
@@ -1411,7 +1911,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { "first" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-EmptyNotebook@@Tests/ACPNotebookTools.wlt:1406,1-1415,2"
+    TestID   -> "ACPNotebookTools-InsertCells-EmptyNotebook@@Tests/ACPNotebookTools.wlt:1906,1-1915,2"
 ]
 
 VerificationTest[
@@ -1425,7 +1925,7 @@ VerificationTest[
         "The parameter position must be \"after\" or \"before\", not \"middle\"."
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-Errors@@Tests/ACPNotebookTools.wlt:1417,1-1429,2"
+    TestID   -> "ACPNotebookTools-InsertCells-Errors@@Tests/ACPNotebookTools.wlt:1917,1-1929,2"
 ]
 
 (* Markdown only: text that looks like a Cell expression or the front end's linear syntax never becomes dynamic content *)
@@ -1445,7 +1945,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { 3, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-MarkdownOnly@@Tests/ACPNotebookTools.wlt:1432,1-1449,2"
+    TestID   -> "ACPNotebookTools-InsertCells-MarkdownOnly@@Tests/ACPNotebookTools.wlt:1932,1-1949,2"
 ]
 
 VerificationTest[
@@ -1455,7 +1955,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | _String? (StringMatchQ[ "The notebook " ~~ __ ~~ " (\"NBT Locked " <> $nbtTag <> "\") is not editable." ]),
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-NotEditable@@Tests/ACPNotebookTools.wlt:1451,1-1459,2"
+    TestID   -> "ACPNotebookTools-InsertCells-NotEditable@@Tests/ACPNotebookTools.wlt:1951,1-1959,2"
 ]
 
 (* The markdown is converted before the notebook's cells are looked at: a cell that the user adds during the conversion
@@ -1476,7 +1976,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { "one", "two", "the user's cell", "the agent's cell" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-InsertCells-ConvertFirst@@Tests/ACPNotebookTools.wlt:1464,1-1480,2"
+    TestID   -> "ACPNotebookTools-InsertCells-ConvertFirst@@Tests/ACPNotebookTools.wlt:1964,1-1980,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1505,7 +2005,7 @@ VerificationTest[
         { None, None, None, None, None, None, { 0, 1 }, None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReplaceCells@@Tests/ACPNotebookTools.wlt:1487,1-1509,2"
+    TestID   -> "ACPNotebookTools-ReplaceCells@@Tests/ACPNotebookTools.wlt:1987,1-2009,2"
 ]
 
 (* Nothing changes if an id is wrong or the markdown can't be used *)
@@ -1525,7 +2025,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReplaceCells-Errors@@Tests/ACPNotebookTools.wlt:1512,1-1529,2"
+    TestID   -> "ACPNotebookTools-ReplaceCells-Errors@@Tests/ACPNotebookTools.wlt:2012,1-2029,2"
 ]
 
 (* A ReadNotebook-then-ReplaceCells round trip leaves a cell's text unchanged: the read escapes the tag-like "&lt;cell"
@@ -1547,7 +2047,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, 1, "Keep & this: &amp; and &lt;cell and Map[#^2 &, M]; and a && B;" },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReadNotebook-ReplaceCells-RoundTrip@@Tests/ACPNotebookTools.wlt:1534,1-1551,2"
+    TestID   -> "ACPNotebookTools-ReadNotebook-ReplaceCells-RoundTrip@@Tests/ACPNotebookTools.wlt:2034,1-2051,2"
 ]
 
 (* The cells are checked after the markdown is converted: a cell that the user makes undeletable during the conversion
@@ -1568,7 +2068,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-ReplaceCells-CheckAfterConversion@@Tests/ACPNotebookTools.wlt:1555,1-1572,2"
+    TestID   -> "ACPNotebookTools-ReplaceCells-CheckAfterConversion@@Tests/ACPNotebookTools.wlt:2055,1-2072,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1586,7 +2086,7 @@ VerificationTest[
         { None, None, None, None, None, { 0, 1 } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-DeleteCells@@Tests/ACPNotebookTools.wlt:1577,1-1590,2"
+    TestID   -> "ACPNotebookTools-DeleteCells@@Tests/ACPNotebookTools.wlt:2077,1-2090,2"
 ]
 
 VerificationTest[
@@ -1605,7 +2105,7 @@ VerificationTest[
         { "kept", "free" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-DeleteCells-Errors@@Tests/ACPNotebookTools.wlt:1592,1-1609,2"
+    TestID   -> "ACPNotebookTools-DeleteCells-Errors@@Tests/ACPNotebookTools.wlt:2092,1-2109,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1622,7 +2122,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-Cleanup@@Tests/ACPNotebookTools.wlt:1614,1-1626,2"
+    TestID   -> "ACPNotebookTools-Cleanup@@Tests/ACPNotebookTools.wlt:2114,1-2126,2"
 ]
 
 (* Messages and failures of isolated code are logged; nothing unexpected may have been logged *)
@@ -1633,7 +2133,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-DebugLog@@Tests/ACPNotebookTools.wlt:1629,1-1637,2"
+    TestID   -> "ACPNotebookTools-DebugLog@@Tests/ACPNotebookTools.wlt:2129,1-2137,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

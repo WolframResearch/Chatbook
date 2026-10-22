@@ -264,11 +264,16 @@ makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
     makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
 
 makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
-    Module[ { label, box },
+    Module[ { label, short, box },
         label = ToBoxes @ thoughtsLabel @ meta;
-        box = If[ StringTrim @ thoughts === "",
-                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
-                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+        short = shortThoughtsText @ thoughts;
+        box = Which[
+                  StringTrim @ thoughts === "",
+                      templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  StringQ @ short,
+                      templateBox[ { formatThoughts @ short, label, meta }, "ShortThoughts" ], (* one line, no opener *)
+                  True,
+                      templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
               ];
         {
             Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],

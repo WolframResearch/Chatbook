@@ -24,9 +24,17 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
 (*Configuration*)
 $unfinishedToolStatus        = "pending" | "in_progress";
 $terminalToolStatus          = "completed" | "failed";
-$significantWaitingTime      = 5;   (* seconds of waiting for approval before it's mentioned in "Worked for" labels *)
+$significantWaitingTime      = 5;   (* seconds of waiting for approval before "Worked for" labels mention it (in a tooltip) *)
 $silenceThreshold            = 5;   (* seconds without events before the activity label says we're waiting for the agent *)
-$maxTitleObjectLength        = 60;
+(* The object of a tool title (a command, pattern, path, ...): the views cut it to the width of the line in the front end
+   (titleView in Rendering.wl), so this only keeps titles of pathological length out of the boxes. Its tooltip shows the
+   object's first lines, up to $maxTitleTooltipLines lines and $maxTitleTooltipLength characters; sentences (the status
+   line's "You declined: ...") show up to $maxActionObjectLength. *)
+$maxTitleObjectLength        = 200;
+$maxTitleTooltipLength       = 1000;
+$maxTitleTooltipLines        = 10;
+$maxActionObjectLength       = 60;
+$titleObjectMarker           = "\:e000"; (* where the object goes in a title's template (private use, not linear syntax) *)
 $defaultAgentName            = "OpenCode";
 
 (* Error texts reported by OpenCode for tool calls that were interrupted by a client action: *)
@@ -117,7 +125,7 @@ $acpStrings = <|
     (* Turn labels *)
     "Working"                      -> "Working",
     "WorkedFor"                    -> "Worked for `time`",
-    "WorkedForWaiting"             -> "Worked for `time` (+`waiting` waiting for approval)",
+    "WorkedForWaitingTooltip"      -> "Plus `waiting` waiting for your approval",
     "StoppedAfter"                 -> "Stopped after `time`",
     "FailedAfter"                  -> "Failed after `time`",
     "Thinking"                     -> "Thinking\[Ellipsis]",
@@ -345,6 +353,7 @@ $acpStrings = <|
     "BadgeCancelled"               -> "Cancelled",
     "BadgeNewFile"                 -> "new file",
     "BadgeContentsWritten"         -> "contents written",
+    "DiffNotAligned"               -> "Some changes are shown as blocks of removed and added lines: the files have too many repeated lines to compare them line by line.",
 
     (* Tool card sections *)
     "SectionInput"                 -> "Input",
@@ -356,6 +365,8 @@ $acpStrings = <|
     "TruncatedEarlierLines"        -> "\[Ellipsis] `n` earlier lines",
     "TruncatedMoreLines"           -> "\[Ellipsis] `n` more lines",
     "TruncatedMoreCharacters"      -> "\[Ellipsis] `n` more characters",
+    "TruncatedEarlierCharacters"   -> "\[Ellipsis] `n` earlier characters",
+    "TruncatedLongValues"          -> "\[Ellipsis] `n` characters left out of long values",
     "ImageUnavailable"             -> "[image]",
     "ScriptComputed"               -> "(computed)",
 
@@ -374,6 +385,16 @@ $acpStrings = <|
     "PermissionAllowOnce"          -> "Allow once",
     "PermissionAllowAlways"        -> "Always allow",
     "PermissionReject"             -> "Reject",
+    "PermissionViewFullDiff"       -> "View full diff",
+    "PermissionViewFullCommand"    -> "View full command",
+    "PermissionViewFullScript"     -> "View full script",
+    "PermissionViewFullTooltip"    -> "Show all of it in a separate window",
+    "PermissionMorePatterns"       -> "and `n` more",
+    "PermissionMoreFilesOne"       -> "and 1 more file",
+    "PermissionMoreFiles"          -> "and `n` more files",
+    "PermissionDetailsLoading"     -> "Loading\[Ellipsis]",
+    "PermissionDetailsContinued"   -> "The rest of the diff as text (`n` more lines):",
+    "PermissionDetailsIncomplete"  -> "Incomplete: loading was interrupted",
     "PermissionAlwaysScopeEdit"    -> "\"Always allow\" lets `agent` make all file edits in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
     "PermissionAlwaysScopeShell"   -> "\"Always allow\" lets `agent` run commands matching `patterns` in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
     "PermissionAlwaysScopeShellRelated" -> "\"Always allow\" lets `agent` run commands matching `patterns` (and the commands nested in this one) in `project` without asking again. `agent` saves this choice, so it also applies to future sessions.",
@@ -1000,8 +1021,10 @@ rawOutputExitCode // endDefinition;
 
 (* Normalized diff items:
      <| "Path" -> _String, "OldText" -> _String|None (None = new file), "NewText" -> _String|None, "Patch" -> _String|None,
-        "Source" -> "Permission"|"Update"|"Metadata"|"RawInput", "Synthesized" -> True|False, "Additions", "Deletions" |>
-   Real diffs (from the permission request, updates, or metadata patches) replace synthesized ones for the same file. *)
+        "Source" -> "Permission"|"Update"|"Metadata"|"RawInput", "Synthesized" -> True|False |>
+   Real diffs (from the permission request, updates, or metadata patches) replace synthesized ones for the same file.
+   Their line counts are not kept here: the reducer runs in reader handlers, which must stay fast, so acpDiffStats
+   computes them when a view needs them (the line diff is cached, see acpLineDiff). *)
 normalizeDiff // beginDefinition;
 
 normalizeDiff[ d_Association, source_String ] := <|
@@ -1854,31 +1877,59 @@ acpFormatDuration // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpWorkedForLabel*)
 
-(* "Worked for 2m 13s", "Worked for 20s (+11m 3s waiting for approval)", "Stopped after 45s", "Failed after 12s". *)
+(* "Worked for 2m 13s" (the time spent waiting for approval is not counted, see acpWorkedForTooltip), "Stopped after
+   45s", "Failed after 12s". *)
 acpWorkedForLabel // beginDefinition;
 
 acpWorkedForLabel[ turn_Association ] := acpWorkedForLabel[ turn, AbsoluteTime[ ] ];
 
 (* Replayed turns (restored sessions, see Sessions.wl) have no timing: just "Worked" *)
-acpWorkedForLabel[ turn_Association, now_? NumberQ ] := Module[ { total, waiting, work },
-    total   = turnDuration[ turn, now ];
-    waiting = waitingDuration[ turn, now ];
-    work    = Max[ 0, total - waiting ];
-    Which[
-        TrueQ @ Lookup[ turn, "Replayed", False ],
-            acpLabel[ "WorkedReplayed" ],
-        turn[ "Error" ] =!= None,
-            acpLabel[ "FailedAfter", <| "time" -> acpFormatDuration @ total |> ],
-        stoppedQ @ turn,
-            acpLabel[ "StoppedAfter", <| "time" -> acpFormatDuration @ total |> ],
-        waiting >= $significantWaitingTime,
-            acpLabel[ "WorkedForWaiting", <| "time" -> acpFormatDuration @ work, "waiting" -> acpFormatDuration @ waiting |> ],
-        True,
-            acpLabel[ "WorkedFor", <| "time" -> acpFormatDuration @ work |> ]
+acpWorkedForLabel[ turn_Association, now_? NumberQ ] := Module[ { total, work },
+    total = turnDuration[ turn, now ];
+    work  = Max[ 0, total - waitingDuration[ turn, now ] ];
+    Switch[ workedForKind @ turn,
+        "Replayed", acpLabel[ "WorkedReplayed" ],
+        "Failed"  , acpLabel[ "FailedAfter" , <| "time" -> acpFormatDuration @ total |> ],
+        "Stopped" , acpLabel[ "StoppedAfter", <| "time" -> acpFormatDuration @ total |> ],
+        "Worked"  , acpLabel[ "WorkedFor"   , <| "time" -> acpFormatDuration @ work  |> ]
     ]
 ];
 
 acpWorkedForLabel // endDefinition;
+
+
+(* Which label a turn gets: "Replayed", "Failed", "Stopped" or "Worked" (the "Worked for" label, the only one with a
+   tooltip). acpWorkedForLabel and acpWorkedForTooltip both use it, so they can't disagree. *)
+workedForKind // beginDefinition;
+
+workedForKind[ turn_Association ] := Which[
+    TrueQ @ Lookup[ turn, "Replayed", False ], "Replayed",
+    turn[ "Error" ] =!= None                 , "Failed",
+    stoppedQ @ turn                          , "Stopped",
+    True                                     , "Worked"
+];
+
+workedForKind // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpWorkedForTooltip*)
+
+(* The tooltip of a "Worked for" label: "Plus 11m 3s waiting for your approval" when the turn waited for approval at
+   least $significantWaitingTime, otherwise None (also for the labels of stopped, failed and replayed turns, which
+   are not "Worked for" labels, see workedForKind). *)
+acpWorkedForTooltip // beginDefinition;
+
+acpWorkedForTooltip[ turn_Association ] := acpWorkedForTooltip[ turn, AbsoluteTime[ ] ];
+
+acpWorkedForTooltip[ turn_Association, now_? NumberQ ] := With[ { waiting = waitingDuration[ turn, now ] },
+    If[ workedForKind @ turn === "Worked" && waiting >= $significantWaitingTime,
+        acpLabel[ "WorkedForWaitingTooltip", <| "waiting" -> acpFormatDuration @ waiting |> ],
+        None
+    ]
+];
+
+acpWorkedForTooltip // endDefinition;
 
 
 turnDuration // beginDefinition;
@@ -1907,7 +1958,17 @@ acpTurnStatusLine // beginDefinition;
 
 acpTurnStatusLine[ turn_Association ] := acpTurnStatusLine[ turn, AbsoluteTime[ ] ];
 
-acpTurnStatusLine[ turn_Association, now_? NumberQ ] := Module[ { agent, declined },
+(* The agent's stop reason, error message and tool input are in it: neutralized (see acpNeutralizeLinearSyntax) *)
+acpTurnStatusLine[ turn_Association, now_? NumberQ ] := acpNeutralizeLinearSyntax @ turnStatusLine[ turn, now ];
+
+acpTurnStatusLine[ _, ___ ] := None;
+
+acpTurnStatusLine // endDefinition;
+
+
+turnStatusLine // beginDefinition;
+
+turnStatusLine[ turn_Association, now_ ] := Module[ { agent, declined },
     agent = agentName @ turn;
     Which[
         ! acpTurnEndedQ @ turn,
@@ -1937,9 +1998,7 @@ acpTurnStatusLine[ turn_Association, now_? NumberQ ] := Module[ { agent, decline
     ]
 ];
 
-acpTurnStatusLine[ _, ___ ] := None;
-
-acpTurnStatusLine // endDefinition;
+turnStatusLine // endDefinition;
 
 
 declinedEntityQ // beginDefinition;
@@ -1957,20 +2016,20 @@ declinedAction // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpToolAction*)
 
-(* Infinitive phrase for a tool call, e.g. "edit hello.txt", "run `ls -la`", "use Wolfram Language Evaluator". *)
+(* Infinitive phrase for a tool call, e.g. "edit hello.txt", "run `ls -la`", "use Wolfram Language Evaluator". It is part
+   of a sentence (the status line), so its object is shorter than a title's (see $maxActionObjectLength); neutralized. *)
 acpToolAction // beginDefinition;
 
 acpToolAction[ tool_Association ] := acpToolAction[ tool, <| |> ];
 
-acpToolAction[ perm: KeyValuePattern[ "Type" -> "Permission" ], turn_ ] :=
-    StringTrim[ acpLabel[ "ToolExternalDirectoryVerb" ] <> " " <> permissionObject[ perm, turn ] ];
+acpToolAction[ perm: KeyValuePattern[ "Type" -> "Permission" ], turn_ ] := acpNeutralizeLinearSyntax @ StringTrim[
+    acpLabel[ "ToolExternalDirectoryVerb" ] <> " " <> objectString[ permissionObject[ perm, turn ], $maxActionObjectLength ]
+];
 
-acpToolAction[ tool_Association, turn_ ] := Module[ { vo },
-    vo = toolVerbObject[ tool, turn ];
-    If[ TrueQ @ vo[ "UseTitle" ],
-        vo[ "Object" ],
-        StringTrim[ vo[ "Verb" ] <> " " <> vo[ "Object" ] ]
-    ]
+acpToolAction[ tool_Association, turn_ ] := Module[ { vo, object },
+    vo     = toolVerbObject[ tool, turn ];
+    object = objectString[ vo[ "Object" ], $maxActionObjectLength ];
+    acpNeutralizeLinearSyntax @ If[ TrueQ @ vo[ "UseTitle" ], object, StringTrim[ vo[ "Verb" ] <> " " <> object ] ]
 ];
 
 acpToolAction // endDefinition;
@@ -1992,12 +2051,28 @@ agentName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpTurnActivityLabel*)
 
-(* One-line description of what the agent is doing, for the "Working" header of a running turn. *)
+(* One-line description of what the agent is doing, for the "Working" header of a running turn (neutralized). *)
 acpTurnActivityLabel // beginDefinition;
 
 acpTurnActivityLabel[ turn_Association ] := acpTurnActivityLabel[ turn, AbsoluteTime[ ] ];
 
-acpTurnActivityLabel[ turn_Association, now_? NumberQ ] := Module[ { agent, retry, running, last, silence },
+acpTurnActivityLabel[ turn_Association, now_? NumberQ ] := Replace[ acpTurnActivity[ turn, now ], parts_Association :> titleString @ parts ];
+
+acpTurnActivityLabel // endDefinition;
+
+
+(* The same, with the title of a tool in parts (see acpToolTitleParts), which the Working header fits on its line: a
+   string or an association of parts *)
+acpTurnActivity // beginDefinition;
+
+acpTurnActivity[ turn_Association, now_? NumberQ ] := Replace[ turnActivity[ turn, now ], s_String :> acpNeutralizeLinearSyntax @ s ];
+
+acpTurnActivity // endDefinition;
+
+
+turnActivity // beginDefinition;
+
+turnActivity[ turn_Association, now_ ] := Module[ { agent, retry, running, last, silence },
     agent   = agentName @ turn;
     retry   = turn[ "RetryInfo" ];
     running = SelectFirst[ Reverse @ entityKeysOfType[ turn, "Tool" ], runningToolQ @ turn[ "Entities", # ] &, None ];
@@ -2013,7 +2088,7 @@ acpTurnActivityLabel[ turn_Association, now_? NumberQ ] := Module[ { agent, retr
         AssociationQ @ retry,
             retryActivityLabel[ retry, now ],
         running =!= None,
-            acpToolTitle[ turn[ "Entities", running ], Automatic, turn ],
+            acpToolTitleParts[ turn[ "Entities", running ], Automatic, turn ],
         silence >= $silenceThreshold,
             acpLabel[
                 If[ turn[ "FirstEventTime" ] === None, "ActivityWaitingForAgentMCP", "ActivityWaitingForAgent" ],
@@ -2022,13 +2097,13 @@ acpTurnActivityLabel[ turn_Association, now_? NumberQ ] := Module[ { agent, retr
         MatchQ[ last, KeyValuePattern[ "Type" -> "Message" ] ],
             acpLabel[ "ActivityWritingAnswer" ],
         MatchQ[ last, KeyValuePattern[ "Type" -> "Tool" ] ],
-            acpToolTitle[ last, Automatic, turn ],
+            acpToolTitleParts[ last, Automatic, turn ],
         True,
             acpLabel[ "ActivityThinking" ]
     ]
 ];
 
-acpTurnActivityLabel // endDefinition;
+turnActivity // endDefinition;
 
 
 runningToolQ // beginDefinition;
@@ -2066,45 +2141,132 @@ retryActivityLabel // endDefinition;
 (* acpToolTitle[ tool ] / acpToolTitle[ tool, tense ] / acpToolTitle[ tool, tense, turn ]
    tense: Automatic (from the tool's state), "Pending" (input not known yet), "Awaiting" (permission pending),
           "Running", "Done", "Failed", "Declined", "Stopped".
-   Commands and patterns are wrapped in backticks, which renderers show as code. *)
+   The title as a string (markdown export, the final cell's data, tests): commands and patterns are wrapped in
+   backticks, which renderers show as code, and the object is shortened to $maxTitleObjectLength characters. The
+   views show acpToolTitleParts instead, which they fit on one line. Neutralized (see acpNeutralizeLinearSyntax). *)
 acpToolTitle // beginDefinition;
 
 acpToolTitle[ tool_Association ] := acpToolTitle[ tool, Automatic, <| |> ];
 acpToolTitle[ tool_Association, tense_ ] := acpToolTitle[ tool, tense, <| |> ];
+acpToolTitle[ tool_Association, tense_, turn_ ] := titleString @ acpToolTitleParts[ tool, tense, turn ];
 
-acpToolTitle[ tool: KeyValuePattern[ "Type" -> "Permission" ], _, turn_ ] :=
-    acpLabel[ "ToolExternalDirectory", <| "object" -> permissionObject[ tool, turn ] |> ];
+acpToolTitle // endDefinition;
 
-acpToolTitle[ tool_Association, Automatic, turn_ ] := acpToolTitle[ tool, toolTense @ tool, turn ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpToolTitleParts*)
 
-acpToolTitle[ tool_Association, tense_String, turn_ ] := Module[ { vo, group, object },
+(* The title in parts, for the views that fit it on one line (titleView in Rendering.wl, which cuts the object in the
+   front end, at its end or, for paths, at its start, and shows the tooltip only when it did):
+     "Prefix", "Suffix"  the text before and after the object (may hold code spans in backticks)
+     "Object"            the command, pattern, path, query, ... ("" if there is none): one line, at most
+                         $maxTitleObjectLength characters
+     "Kind"              "Code" (shown in the code font; in backticks in the string form), "Path" (shortened at its start,
+                         which keeps the file name), "Text" or None
+     "Truncated"         whether "Object" was shortened here (to its first line, or to $maxTitleObjectLength
+                         characters), so that the tooltip is always shown
+     "Tooltip"           the object's first lines (see tooltipText), for the tooltip
+   Every string is the agent's text in part: all are neutralized (acpNeutralizeLinearSyntax). *)
+acpToolTitleParts // beginDefinition;
+
+acpToolTitleParts[ tool_Association ] := acpToolTitleParts[ tool, Automatic, <| |> ];
+acpToolTitleParts[ tool_Association, tense_ ] := acpToolTitleParts[ tool, tense, <| |> ];
+
+acpToolTitleParts[ tool: KeyValuePattern[ "Type" -> "Permission" ], _, turn_ ] := Module[ { object },
+    object = permissionObject[ tool, turn ];
+    titleParts[ acpLabel[ "ToolExternalDirectory", <| "object" -> objectSlot @ object |> ], object ]
+];
+
+acpToolTitleParts[ tool_Association, Automatic, turn_ ] := acpToolTitleParts[ tool, toolTense @ tool, turn ];
+
+acpToolTitleParts[ tool_Association, tense_String, turn_ ] := Module[ { vo, group, object, slot, title },
     vo     = toolVerbObject[ tool, turn ];
     group  = vo[ "Group" ];
     object = vo[ "Object" ];
-    Which[
+    slot   = objectSlot @ object; (* "" if there is no object *)
+    title  = Which[
         (* Agents without OpenCode's "name" field usually send descriptive titles: *)
         vo[ "UseTitle" ],
-            titleWithTense[ object, tense ],
-        tense === "Pending" || (object === "" && MatchQ[ tense, "Running" | "Awaiting" ]),
-            pendingTitle[ group, object ],
+            titleWithTense[ slot, tense ],
+        tense === "Pending" || (slot === "" && MatchQ[ tense, "Running" | "Awaiting" ]),
+            pendingTitle[ group, slot ],
         tense === "Running",
-            If[ group === "Execute" && object === "", acpLabel[ "ToolExecuteRunningCode" ], acpLabel[ "Tool" <> group <> "Running", <| "object" -> object |> ] ],
+            If[ group === "Execute" && slot === "", acpLabel[ "ToolExecuteRunningCode" ], acpLabel[ "Tool" <> group <> "Running", <| "object" -> slot |> ] ],
         tense === "Done",
-            doneTitle[ group, object, tool ],
+            doneTitle[ group, slot, tool ],
         tense === "Awaiting",
-            acpLabel[ "ToolAwaiting" , <| "verb" -> vo[ "Verb" ], "object" -> object |> ],
+            acpLabel[ "ToolAwaiting" , <| "verb" -> vo[ "Verb" ], "object" -> slot |> ],
         tense === "Failed",
-            acpLabel[ "ToolFailed"   , <| "verb" -> vo[ "Verb" ], "object" -> object |> ],
+            acpLabel[ "ToolFailed"   , <| "verb" -> vo[ "Verb" ], "object" -> slot |> ],
         tense === "Declined",
-            acpLabel[ "ToolDeclined" , <| "verb" -> vo[ "Verb" ], "object" -> object |> ],
+            acpLabel[ "ToolDeclined" , <| "verb" -> vo[ "Verb" ], "object" -> slot |> ],
         tense === "Stopped",
-            acpLabel[ "ToolStopped"  , <| "verb" -> vo[ "Verb" ], "object" -> object |> ],
+            acpLabel[ "ToolStopped"  , <| "verb" -> vo[ "Verb" ], "object" -> slot |> ],
         True,
-            doneTitle[ group, object, tool ]
-    ] // StringTrim
+            doneTitle[ group, slot, tool ]
+    ];
+    titleParts[ title, object ]
 ];
 
-acpToolTitle // endDefinition;
+acpToolTitleParts // endDefinition;
+
+
+(* The parts of a title whose template got objectSlot @ object for its object: the text around the marker, the object's
+   first line shortened for its kind (" ..." at its end if it has more lines), and its first lines for the tooltip;
+   neutralized *)
+titleParts // beginDefinition;
+
+titleParts[ title_String, object_ ] := Module[ { pieces, text, shown },
+    pieces = StringSplit[ StringTrim @ title, $titleObjectMarker, All ];
+    If[ ! AssociationQ @ object || Length @ pieces =!= 2,
+        Return[ neutralizeParts @ <| "Prefix" -> StringDelete[ StringTrim @ title, $titleObjectMarker ], "Object" -> "", "Kind" -> None, "Suffix" -> "", "Truncated" -> False, "Tooltip" -> "" |>, Module ]
+    ];
+    text  = firstLine @ object[ "Text" ];
+    shown = shortenObject[ object[ "Kind" ], text, $maxTitleObjectLength ];
+    neutralizeParts @ <|
+        "Prefix"    -> First @ pieces,
+        "Object"    -> shown,
+        "Kind"      -> object[ "Kind" ],
+        "Suffix"    -> Last @ pieces,
+        "Truncated" -> shown =!= text || multiLineQ @ object[ "Text" ],
+        "Tooltip"   -> tooltipText @ object[ "Text" ]
+    |>
+];
+
+titleParts // endDefinition;
+
+
+(* The first lines of an object for its title's tooltip: at most $maxTitleTooltipLines lines ("..." on a line of its own
+   if there are more) and $maxTitleTooltipLength characters *)
+tooltipText // beginDefinition;
+
+tooltipText[ s_String ] := Module[ { lines, shown },
+    lines = StringSplit[ StringTrim @ s, "\n" ];
+    shown = StringRiffle[ Take[ lines, UpTo @ $maxTitleTooltipLines ], "\n" ];
+    shorten[ If[ Length @ lines > $maxTitleTooltipLines, shown <> "\n\[Ellipsis]", shown ], $maxTitleTooltipLength ]
+];
+
+tooltipText // endDefinition;
+
+
+multiLineQ // beginDefinition;
+multiLineQ[ s_String ] := Length @ StringSplit[ StringTrim @ s, "\n" ] > 1;
+multiLineQ // endDefinition;
+
+
+neutralizeParts // beginDefinition;
+neutralizeParts[ parts_Association ] := acpNeutralizeLinearSyntax /@ parts;
+neutralizeParts // endDefinition;
+
+
+(* The string form of title parts (see acpToolTitle): code in backticks (a backtick in it would end the span) *)
+titleString // beginDefinition;
+titleString[ parts_Association ] := StringJoin[
+    parts[ "Prefix" ],
+    If[ parts[ "Kind" ] === "Code" && parts[ "Object" ] =!= "", "`" <> StringReplace[ parts[ "Object" ], "`" -> "'" ] <> "`", parts[ "Object" ] ],
+    parts[ "Suffix" ]
+];
+titleString // endDefinition;
 
 
 pendingTitle // beginDefinition;
@@ -2164,7 +2326,10 @@ newFileQ[ tool_Association ] := AnyTrue[ tool[ "Diffs" ], ! TrueQ @ #[ "Synthesi
 newFileQ // endDefinition;
 
 
-(* Returns <| "Group" -> labelGroup, "Verb" -> infinitive, "Object" -> object string ("" if unknown), "UseTitle" -> bool |> *)
+(* Returns <| "Group" -> labelGroup, "Verb" -> infinitive, "Object" -> object ("" if unknown), "UseTitle" -> bool |>. The
+   object is an association <| "Kind" -> "Code"|"Path"|"Text", "Text" -> the whole text, "Slot" -> what goes into the
+   template's object (with $titleObjectMarker for the object; default: the marker) |>, or a string that is all fixed
+   text (e.g. "the to-do list"). *)
 toolVerbObject // beginDefinition;
 
 toolVerbObject[ tool_Association, turn_ ] := Module[ { name, group, object, useTitle },
@@ -2175,16 +2340,81 @@ toolVerbObject[ tool_Association, turn_ ] := Module[ { name, group, object, useT
         True, "Generic"
     ];
     useTitle = ! StringQ @ name && descriptiveTitleQ @ tool;
-    object   = Replace[ If[ useTitle, tool[ "Title" ], toolObject[ name, group, tool, turn ] ], Except[ _String ] -> "" ];
+    object   = Replace[
+        If[ useTitle, textObject @ tool[ "Title" ], toolObject[ name, group, tool, turn ] ],
+        Except[ _String | KeyValuePattern[ "Text" -> _String ] ] -> ""
+    ];
     <|
         "Group"    -> group,
-        "Verb"     -> toolVerb[ group, object ],
+        "Verb"     -> toolVerb[ group, objectText @ object ],
         "Object"   -> object,
         "UseTitle" -> useTitle
     |>
 ];
 
 toolVerbObject // endDefinition;
+
+
+(* Objects of titles (see toolVerbObject): *)
+codeObject // beginDefinition;
+codeObject[ s_String ] := <| "Kind" -> "Code", "Text" -> s |>;
+codeObject // endDefinition;
+
+pathObject // beginDefinition;
+pathObject[ s_String ] := <| "Kind" -> "Path", "Text" -> s |>;
+pathObject // endDefinition;
+
+textObject // beginDefinition;
+textObject[ s_String ] := <| "Kind" -> "Text", "Text" -> s |>;
+textObject[ s_String, slot_String ] := <| "Kind" -> "Text", "Text" -> s, "Slot" -> slot |>;
+textObject // endDefinition;
+
+(* A query or question: in quotes *)
+quotedObject // beginDefinition;
+quotedObject[ s_String ] := textObject[ s, "\"" <> $titleObjectMarker <> "\"" ];
+quotedObject // endDefinition;
+
+
+(* The text of an object ("" if there is none): *)
+objectText // beginDefinition;
+objectText[ KeyValuePattern[ "Text" -> s_String ] ] := StringTrim @ s;
+objectText[ s_String ] := s;
+objectText[ _ ] := "";
+objectText // endDefinition;
+
+
+(* What a title's template gets for its object ("" if there is none): *)
+objectSlot // beginDefinition;
+objectSlot[ object_Association ] /; objectText @ object === "" := "";
+objectSlot[ object_Association ] := Lookup[ object, "Slot", $titleObjectMarker ];
+objectSlot[ s_String ] := s;
+objectSlot[ _ ] := "";
+objectSlot // endDefinition;
+
+
+(* An object as a string of at most n characters (code in backticks), for the string forms *)
+objectString // beginDefinition;
+
+objectString[ object_Association, n_Integer ] /; objectText @ object === "" := "";
+
+objectString[ object_Association, n_Integer ] := With[ { shown = shortenObject[ object[ "Kind" ], firstLine @ object[ "Text" ], n ] },
+    StringReplace[
+        objectSlot @ object,
+        $titleObjectMarker -> If[ object[ "Kind" ] === "Code", "`" <> StringReplace[ shown, "`" -> "'" ] <> "`", shown ]
+    ]
+];
+
+objectString[ s_String, _ ] := s;
+objectString[ _, _ ] := "";
+
+objectString // endDefinition;
+
+
+(* At most n characters: paths lose their start (keeping the file name), the rest their end *)
+shortenObject // beginDefinition;
+shortenObject[ "Path", s_String, n_Integer ] := shortenPath[ s, n ];
+shortenObject[ _, s_String, n_Integer ] := shorten[ s, n ];
+shortenObject // endDefinition;
 
 
 (* "search for `x`", but "search" when there is no object ("Stopped: search" rather than "Stopped: search for"): *)
@@ -2202,25 +2432,25 @@ descriptiveTitleQ // endDefinition;
 toolObject // beginDefinition;
 
 toolObject[ _, "Read"|"List"|"Edit"|"Write"|"Delete"|"Move", tool_, turn_ ] :=
-    Replace[ toolPath @ tool, { p_String :> displayPath[ p, turn ], _ :> fallbackObject @ tool } ];
+    Replace[ toolPath @ tool, { p_String :> pathObject @ displayPath[ p, turn ], _ :> fallbackObject @ tool } ];
 
 toolObject[ _, "Shell", tool_, _ ] :=
-    Replace[ toolCommand @ tool, { c_String :> codeQuote @ c, _ :> "" } ];
+    Replace[ toolCommand @ tool, { c_String :> codeObject @ c, _ :> "" } ];
 
 toolObject[ _, "Search", tool_, _ ] := Replace[
     rawInputValue[ tool, { "pattern", "query", "regex" } ],
-    { p_String :> codeQuote @ p, _ :> fallbackObject @ tool }
+    { p_String :> codeObject @ p, _ :> fallbackObject @ tool }
 ];
 
 toolObject[ _, "CodeSearch"|"WebSearch"|"Models", tool_, _ ] :=
-    Replace[ rawInputValue[ tool, { "query", "search" } ], { q_String :> quoted @ q, _ :> fallbackObject @ tool } ];
+    Replace[ rawInputValue[ tool, { "query", "search" } ], { q_String :> quotedObject @ q, _ :> fallbackObject @ tool } ];
 
-toolObject[ _, "WebFetch", tool_, _ ] := Replace[ rawInputValue[ tool, { "url" } ], { u_String :> shorten[ u, $maxTitleObjectLength ], _ :> fallbackObject @ tool } ];
-toolObject[ _, "Execute", tool_, _ ] := StringRiffle[ acpExecuteToolNames @ tool, ", " ];
+toolObject[ _, "WebFetch", tool_, _ ] := Replace[ rawInputValue[ tool, { "url" } ], { u_String :> textObject @ u, _ :> fallbackObject @ tool } ];
+toolObject[ _, "Execute", tool_, _ ] := textObject @ StringRiffle[ acpExecuteToolNames @ tool, ", " ];
 
 toolObject[ _, "Subagent", tool_, _ ] := Replace[
     rawInputValue[ tool, { "description", "title" } ],
-    { d_String :> shorten[ d, $maxTitleObjectLength ], _ :> fallbackObject @ tool }
+    { d_String :> textObject @ d, _ :> fallbackObject @ tool }
 ];
 
 (* OpenCode 2.x sends { "id" }, 1.x sent { "name" }; the completed call's metadata has the skill's display name: *)
@@ -2228,18 +2458,20 @@ toolObject[ _, "Skill", tool_, _ ] := FirstCase[
     {
         rawInputValue[ tool, { "name", "id", "skill" } ],
         Replace[ tool[ "RawOutput" ], { KeyValuePattern[ "metadata" -> KeyValuePattern[ "name" -> n_String ] ] :> n, _ -> None } ],
-        fallbackObject @ tool
+        fallbackText @ tool
     },
-    s_String /; StringTrim @ s =!= "" :> shorten[ s, $maxTitleObjectLength ],
+    s_String /; StringTrim @ s =!= "" :> textObject @ s,
     ""
 ];
 
 toolObject[ _, "Question", tool_, _ ] := questionObject @ tool;
 toolObject[ _, "LSP", tool_, turn_ ] := lspObject[ tool, turn ];
-toolObject[ _, "Invalid", tool_, _ ] := Replace[ rawInputValue[ tool, { "tool" } ], { t_String :> codeQuote @ t, _ :> "" } ];
-toolObject[ _, "Todo"|"TodoRead", _, _ ] := acpLabel[ "ToolTodoObject" ];
+toolObject[ _, "Invalid", tool_, _ ] := Replace[ rawInputValue[ tool, { "tool" } ], { t_String :> codeObject @ t, _ :> "" } ];
+(* "the to-do list" is a text object, like a query: the views cut it at its end (and drop "Updated" first) when the line
+   is narrow, rather than clipping the whole title *)
+toolObject[ _, "Todo"|"TodoRead", _, _ ] := textObject @ acpLabel[ "ToolTodoObject" ];
 toolObject[ _, "Think", tool_, _ ] := fallbackObject @ tool;
-toolObject[ _, "Generic", tool_, _ ] := Replace[ tool[ "RawName" ], { n_String :> acpMCPDisplayName @ n, _ :> fallbackObject @ tool } ];
+toolObject[ _, "Generic", tool_, _ ] := Replace[ tool[ "RawName" ], { n_String :> textObject @ acpMCPDisplayName @ n, _ :> fallbackObject @ tool } ];
 toolObject[ ___ ] := "";
 
 toolObject // endDefinition;
@@ -2247,20 +2479,20 @@ toolObject // endDefinition;
 
 (* A descriptive title from the agent (never the bare tool name, which would give titles like "Used skill skill"): *)
 fallbackObject // beginDefinition;
-fallbackObject[ tool_Association ] := Which[
-    StringQ @ tool[ "Title" ] && ! bareTitleQ[ tool[ "Title" ], tool ],
-        shorten[ tool[ "Title" ], $maxTitleObjectLength ],
-    MatchQ[ tool[ "Permission" ], KeyValuePattern[ "Title" -> t_String /; ! bareTitleQ[ t, tool ] ] ],
-        shorten[ tool[ "Permission", "Title" ], $maxTitleObjectLength ],
-    True,
-        ""
-];
+fallbackObject[ tool_Association ] := textObject @ fallbackText @ tool;
 fallbackObject // endDefinition;
 
 
-quoted // beginDefinition;
-quoted[ s_String ] := "\"" <> shorten[ firstLine @ s, $maxTitleObjectLength ] <> "\"";
-quoted // endDefinition;
+fallbackText // beginDefinition;
+fallbackText[ tool_Association ] := Which[
+    StringQ @ tool[ "Title" ] && ! bareTitleQ[ tool[ "Title" ], tool ],
+        tool[ "Title" ],
+    MatchQ[ tool[ "Permission" ], KeyValuePattern[ "Title" -> t_String /; ! bareTitleQ[ t, tool ] ] ],
+        tool[ "Permission", "Title" ],
+    True,
+        ""
+];
+fallbackText // endDefinition;
 
 
 (* OpenCode's question tool: { "questions" -> { <| "header", "question", "options" |>... } } *)
@@ -2271,9 +2503,15 @@ questionObject[ tool_Association ] := Module[ { questions, first, text },
     first     = Replace[ First[ questions, None ], Except[ _Association ] -> <| |> ];
     text      = SelectFirst[ Lookup[ first, { "question", "header" }, None ], StringQ[ # ] && StringTrim[ # ] =!= "" &, None ];
     Which[
-        ! StringQ @ text, fallbackObject @ tool,
-        Length @ questions > 1, acpLabel[ "ToolQuestionMore", <| "question" -> quoted @ text, "n" -> Length @ questions - 1 |> ],
-        True, quoted @ text
+        ! StringQ @ text,
+            fallbackObject @ tool,
+        Length @ questions > 1,
+            textObject[
+                text,
+                acpLabel[ "ToolQuestionMore", <| "question" -> "\"" <> $titleObjectMarker <> "\"", "n" -> Length @ questions - 1 |> ]
+            ],
+        True,
+            quotedObject @ text
     ]
 ];
 
@@ -2287,9 +2525,14 @@ lspObject[ tool_Association, turn_ ] := Module[ { operation, file },
     operation = rawInputValue[ tool, { "operation" } ];
     file      = Replace[ rawInputPath @ tool[ "RawInput" ], p_String :> displayPath[ p, turn ] ];
     Which[
-        StringQ @ operation && StringQ @ file, acpLabel[ "ToolLSPObject", <| "operation" -> codeQuote @ operation, "file" -> file |> ],
-        StringQ @ operation, codeQuote @ operation,
-        StringQ @ file, file,
+        StringQ @ operation && StringQ @ file,
+            <|
+                "Kind" -> "Path",
+                "Text" -> file,
+                "Slot" -> acpLabel[ "ToolLSPObject", <| "operation" -> codeQuote @ operation, "file" -> $titleObjectMarker |> ]
+            |>,
+        StringQ @ operation, codeObject @ operation,
+        StringQ @ file, pathObject @ file,
         True, fallbackObject @ tool
     ]
 ];
@@ -2327,9 +2570,10 @@ rawInputValue[ tool_Association, keys_List ] := If[ AssociationQ @ tool[ "RawInp
 rawInputValue // endDefinition;
 
 
-(* Paths are shown relative to the project directory when possible. A remote agent's paths are POSIX paths, whatever the
-   system of this computer, so their last name is taken by string operations (a backslash is part of a name); a local
-   agent's are this computer's (C:\Users\me\proj on Windows), so FileNameTake takes it: *)
+(* Paths are shown relative to the project directory when possible (whole: titles shorten them at their start, see
+   shortenPath). A remote agent's paths are POSIX paths, whatever the system of this computer, so their last name is
+   taken by string operations (a backslash is part of a name); a local agent's are this computer's (C:\Users\me\proj on
+   Windows), so FileNameTake takes it: *)
 displayPath // beginDefinition;
 
 displayPath[ path_String, turn0_ ] := Module[ { turn, root, name, rel },
@@ -2343,7 +2587,7 @@ displayPath[ path_String, turn0_ ] := Module[ { turn, root, name, rel },
         StringStartsQ[ path, "/" ], name @ path,
         True, path
     ];
-    shorten[ If[ rel === "", path, rel ], $maxTitleObjectLength ]
+    If[ rel === "", path, rel ]
 ];
 
 displayPath // endDefinition;
@@ -2355,7 +2599,7 @@ lastPathName // endDefinition;
 
 
 codeQuote // beginDefinition;
-codeQuote[ s_String ] := "`" <> StringReplace[ shorten[ firstLine @ s, $maxTitleObjectLength ], "`" -> "'" ] <> "`";
+codeQuote[ s_String ] := "`" <> StringReplace[ shorten[ firstLine @ s, $maxActionObjectLength ], "`" -> "'" ] <> "`";
 codeQuote // endDefinition;
 
 
@@ -2367,6 +2611,21 @@ firstLine // endDefinition;
 shorten // beginDefinition;
 shorten[ s_String, n_Integer ] := If[ StringLength @ s > n, StringTake[ s, n - 1 ] <> "\[Ellipsis]", s ];
 shorten // endDefinition;
+
+
+(* At most n characters of a path, keeping its end (the file name): "\[Ellipsis]/ACP/Rendering.wl". The cut is moved to a folder
+   separator after it when that keeps at least half of the characters. *)
+shortenPath // beginDefinition;
+
+shortenPath[ path_String, n_Integer ] /; StringLength @ path <= n := path;
+
+shortenPath[ path_String, n_Integer ] := Module[ { tail, cut },
+    tail = StringTake[ path, -(n - 1) ];
+    cut  = SelectFirst[ StringPosition[ tail, "/" | "\\" ][[ All, 1 ]], # > 1 && StringLength @ tail - # + 1 >= n / 2 &, None ];
+    "\[Ellipsis]" <> If[ IntegerQ @ cut, StringDrop[ tail, cut - 1 ], tail ]
+];
+
+shortenPath // endDefinition;
 
 
 permissionObject // beginDefinition;
@@ -2383,7 +2642,7 @@ permissionObject[ perm_Association, _ ] := Module[ { params, toolCall, path },
         _String,
         ""
     ];
-    shorten[ path, $maxTitleObjectLength ]
+    pathObject @ path
 ];
 permissionObject // endDefinition;
 
@@ -3451,10 +3710,11 @@ acpDiffStats[ KeyValuePattern @ { "Patch" -> patch_String } ] := With[ { rows = 
     { Count[ rows, { "+", _ } ], Count[ rows, { "-", _ } ] }
 ];
 
-acpDiffStats[ KeyValuePattern @ { "OldText" -> old_, "NewText" -> new_ } ] := Module[ { ops },
-    ops = acpLineDiff[ Replace[ old, Except[ _String ] -> "" ], Replace[ new, Except[ _String ] -> "" ] ];
-    { Count[ ops, { "+", _ } ], Count[ ops, { "-", _ } ] }
-];
+(* Rows of a diff view that were made already (e.g. by PermissionDetails.wl), with or without line numbers *)
+acpDiffStats[ KeyValuePattern @ { "Rows" -> rows_List } ] := { Count[ rows, { "+", __ } ], Count[ rows, { "-", __ } ] };
+
+acpDiffStats[ KeyValuePattern @ { "OldText" -> old_, "NewText" -> new_ } ] :=
+    acpLineDiffInfo[ Replace[ old, Except[ _String ] -> "" ], Replace[ new, Except[ _String ] -> "" ] ][ "Stats" ];
 
 acpDiffStats[ _ ] := { 0, 0 };
 
@@ -3505,34 +3765,236 @@ $patchHeaderLine = Alternatives[
 ];
 
 
-(* Line diff: list of { op, line } with op "=", "-" or "+": *)
-acpLineDiff // beginDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpLineDiff*)
 
-acpLineDiff[ old_String, new_String ] := Module[ { a, b },
-    a = splitLines @ old;
-    b = splitLines @ new;
-    Which[
-        a === b, { "=", # } & /@ a,
-        a === { }, { "+", # } & /@ b,
-        b === { }, { "-", # } & /@ a,
-        Length @ a * Length @ b > 4*^6, Join[ { "-", # } & /@ a, { "+", # } & /@ b ],
-        True, Flatten[ alignmentOps /@ SequenceAlignment[ a, b ], 1 ]
+(* Line diff: list of { op, line } with op "=", "-" or "+" (in a changed stretch the removed lines come first).
+
+   OpenCode sends the whole old and new file with every edit, also for an edit of one line, so the lines the two texts
+   have in common at their start and at their end are matched first (on the line lists), and only the lines between
+   them are compared: with LongestCommonSequencePositions, which gives a longest common subsequence (the fewest lines
+   removed and added). It takes time in proportion to the number of pairs of equal lines (equalPairs: quadratic for a
+   file whose lines are all the same), so it is used while that number is within a budget ($lineDiffMatches pairs in
+   all, about 0.2 s). Beyond it the lines that occur exactly once in each text are matched, in an order that both keep
+   (a longest increasing sequence: a patience diff), and each stretch between them is compared as before, while the
+   budget lasts. A stretch that can't be compared then is shown as all its old lines removed and all its new lines
+   added: the diff is correct but not minimal, and acpLineDiffInfo says that it is not "Aligned" (acpDiffView adds a
+   note). The last results are cached (by the texts, which are compared on a hit), so the permission panel, the stats
+   in tool card headers, the opened cards and the final cell share one comparison. *)
+acpLineDiff // beginDefinition;
+acpLineDiff[ old_String, new_String ] := acpLineDiffInfo[ old, new ][ "Ops" ];
+acpLineDiff // endDefinition;
+
+
+(* <| "Ops" -> the line diff, "Stats" -> { additions, deletions }, "Aligned" -> False if a stretch of changed lines was
+   too large to compare line by line |> *)
+acpLineDiffInfo // beginDefinition;
+
+acpLineDiffInfo[ old_String, new_String ] := Replace[
+    cachedLineDiff[ old, new ],
+    _Missing :> cacheLineDiff[ old, new, lineDiffInfo[ splitLines @ old, splitLines @ new ] ]
+];
+
+acpLineDiffInfo // endDefinition;
+
+
+cachedLineDiff // beginDefinition;
+
+(* The texts are compared on a hit: a hash could collide, and the diff of other texts must never be shown *)
+cachedLineDiff[ old_String, new_String ] := Replace[
+    Lookup[ $lineDiffCache, Key @ { Hash @ old, Hash @ new }, Missing[ ] ],
+    {
+        KeyValuePattern @ { "Old" -> o_, "New" -> n_, "Info" -> info_Association } :> If[ o === old && n === new, info, Missing[ ] ],
+        _ -> Missing[ ]
+    }
+];
+
+cachedLineDiff // endDefinition;
+
+
+cacheLineDiff // beginDefinition;
+
+(* At most $maxCachedLineDiffs results, and the oldest are dropped while the entries take more than
+   $maxCachedLineDiffBytes in all (both texts and the diff, which takes much more memory than the texts: a row is a
+   list); the newest result is always kept *)
+cacheLineDiff[ old_String, new_String, info_Association ] := With[ { entry = <| "Old" -> old, "New" -> new, "Info" -> info |> },
+    $lineDiffCache = KeyDrop[ $lineDiffCache, Key @ { Hash @ old, Hash @ new } ];
+    $lineDiffCache[ { Hash @ old, Hash @ new } ] = <| entry, "Bytes" -> ByteCount @ entry |>;
+    While[
+        Length @ $lineDiffCache > 1 && Or[
+            Length @ $lineDiffCache > $maxCachedLineDiffs,
+            Total @ Lookup[ Values @ $lineDiffCache, "Bytes", 0 ] > $maxCachedLineDiffBytes
+        ],
+        $lineDiffCache = Rest @ $lineDiffCache
+    ];
+    info
+];
+
+cacheLineDiff // endDefinition;
+
+If[ ! AssociationQ @ $lineDiffCache, $lineDiffCache = <| |> ];
+$maxCachedLineDiffs     = 16;
+$maxCachedLineDiffBytes = 32*^6; (* memory of the cached entries in all (ByteCount) *)
+$lineDiffMatches        = 2*^6;  (* pairs of equal lines that LongestCommonSequencePositions may look at per diff *)
+$lineDiffSmallPairs     = 1000;  (* stretches with fewer pairs of lines are charged that number, without counting *)
+
+
+lineDiffInfo // beginDefinition;
+
+lineDiffInfo[ a_List, b_List ] := Block[ { $lineDiffBudget = $lineDiffMatches, $lineDiffAligned = True },
+    With[ { ops = If[ a === b, equalOps @ a, lineOps[ a, b, True ] ] },
+        <| "Ops" -> ops, "Stats" -> { Count[ ops, { "+", _ } ], Count[ ops, { "-", _ } ] }, "Aligned" -> $lineDiffAligned |>
     ]
 ];
 
-acpLineDiff // endDefinition;
+lineDiffInfo // endDefinition;
+
+
+(* The common first and last lines, and the lines between them compared (anchors: whether lines that occur once in each
+   text may be matched first, see acpLineDiff; not again in the stretches between them) *)
+lineOps // beginDefinition;
+
+lineOps[ a_List, b_List, anchors_ ] := Module[ { p, s },
+    p = commonPrefixLength[ a, b ];
+    s = commonPrefixLength[ Reverse @ Drop[ a, p ], Reverse @ Drop[ b, p ] ];
+    Join[
+        equalOps @ Take[ a, p ],
+        middleOps[ Take[ a, { p + 1, Length @ a - s } ], Take[ b, { p + 1, Length @ b - s } ], anchors ],
+        equalOps @ Drop[ a, Length @ a - s ]
+    ]
+];
+
+lineOps // endDefinition;
+
+
+commonPrefixLength // beginDefinition;
+
+commonPrefixLength[ a_List, b_List ] := With[ { m = Min[ Length @ a, Length @ b ] },
+    If[ m === 0,
+        0,
+        First @ FirstPosition[ MapThread[ SameQ, { Take[ a, m ], Take[ b, m ] } ], False, { m + 1 }, { 1 }, Heads -> False ] - 1
+    ]
+];
+
+commonPrefixLength // endDefinition;
+
+
+(* The lines between the common first and last lines (they differ at both ends) *)
+middleOps // beginDefinition;
+
+middleOps[ { }, b_List, _ ] := addedOps @ b;
+middleOps[ a_List, { }, _ ] := removedOps @ a;
+
+(* The budget is charged with the pairs of equal lines (counted, unless the product of the lengths, which is at least
+   their number, is small): stretches between anchors take what they need, not what they might *)
+middleOps[ a_List, b_List, anchors_ ] := With[
+    { pairs = If[ Length @ a * Length @ b <= $lineDiffSmallPairs, Length @ a * Length @ b, equalPairs[ a, b ] ] },
+    Which[
+        (* no line in common: removing all and adding all is the diff *)
+        pairs === 0, Join[ removedOps @ a, addedOps @ b ],
+        pairs <= $lineDiffBudget, $lineDiffBudget -= pairs; commonSequenceOps[ a, b ],
+        TrueQ @ anchors, anchoredOps[ a, b ],
+        True, $lineDiffAligned = False; Join[ removedOps @ a, addedOps @ b ]
+    ]
+];
+
+middleOps // endDefinition;
+
+(* Blocked by lineDiffInfo *)
+$lineDiffBudget  = $lineDiffMatches;
+$lineDiffAligned = True;
+
+
+(* The number of pairs of equal lines, which LongestCommonSequencePositions takes time in proportion to *)
+equalPairs // beginDefinition;
+equalPairs[ a_List, b_List ] := With[ { ca = Counts @ a, cb = Counts @ b }, Total[ Values @ ca * Lookup[ cb, Keys @ ca, 0 ] ] ];
+equalPairs // endDefinition;
+
+
+(* A longest common subsequence: its runs of lines that follow each other in both texts are "=", the lines between them
+   are removed and added *)
+commonSequenceOps // beginDefinition;
+
+commonSequenceOps[ a_List, b_List ] := Module[ { positions, ia, jb, starts, lengths, ops = Internal`Bag[ ], pa = 0, pb = 0 },
+    positions = LongestCommonSequencePositions[ a, b ];
+    If[ ! MatchQ[ positions, { { { _Integer, _Integer }.. }, { { _Integer, _Integer }.. } } ],
+        Return[ Join[ removedOps @ a, addedOps @ b ], Module ]
+    ];
+    ia = Flatten[ Range @@@ positions[[ 1 ]] ];
+    jb = Flatten[ Range @@@ positions[[ 2 ]] ];
+    (* runs of matched lines that follow each other in both texts: a run ends where either position jumps *)
+    starts  = If[ Length @ ia < 2,
+        { 1 },
+        Join[ { 1 }, 1 + Flatten @ SparseArray[ Unitize[ Differences @ ia - 1 ] + Unitize[ Differences @ jb - 1 ] ][ "NonzeroPositions" ] ]
+    ];
+    lengths = Differences @ Append[ starts, Length @ ia + 1 ];
+    Do[
+        With[ { i = ia[[ starts[[ k ]] ]], j = jb[[ starts[[ k ]] ]], n = lengths[[ k ]] },
+            Internal`StuffBag[ ops, removedOps @ Take[ a, { pa + 1, i - 1 } ] ];
+            Internal`StuffBag[ ops, addedOps @ Take[ b, { pb + 1, j - 1 } ] ];
+            Internal`StuffBag[ ops, equalOps @ Take[ a, { i, i + n - 1 } ] ];
+            pa = i + n - 1;
+            pb = j + n - 1
+        ],
+        { k, Length @ starts }
+    ];
+    Internal`StuffBag[ ops, removedOps @ Drop[ a, pa ] ];
+    Internal`StuffBag[ ops, addedOps @ Drop[ b, pb ] ];
+    Join @@ Internal`BagPart[ ops, All ]
+];
+
+commonSequenceOps // endDefinition;
+
+
+(* Too many pairs of equal lines: the lines that occur once in each text are matched first (in the longest order that
+   both texts keep), and the stretches between them are compared (lineOps without anchors) *)
+anchoredOps // beginDefinition;
+
+anchoredOps[ a_List, b_List ] := Module[ { ca, cb, unique, flags, ia, jb, sequence, iOf, ops = Internal`Bag[ ], pa = 0, pb = 0 },
+    ca     = Counts @ a;
+    cb     = Counts @ b;
+    unique = Intersection[ Keys @ Select[ ca, # === 1 & ], Keys @ Select[ cb, # === 1 & ] ];
+    If[ unique === { }, $lineDiffAligned = False; Return[ Join[ removedOps @ a, addedOps @ b ], Module ] ];
+    flags    = AssociationThread[ unique -> True ];
+    ia       = Pick[ Range @ Length @ a, Lookup[ flags, a, False ] ];
+    (* the position in b of each of these lines (they occur once there) *)
+    jb       = Lookup[ AssociationThread[ b -> Range @ Length @ b ], a[[ ia ]] ];
+    sequence = LongestOrderedSequence @ jb;
+    iOf      = AssociationThread[ jb -> ia ];
+    Do[
+        With[ { i = iOf[ j ] },
+            Internal`StuffBag[ ops, lineOps[ Take[ a, { pa + 1, i - 1 } ], Take[ b, { pb + 1, j - 1 } ], False ] ];
+            Internal`StuffBag[ ops, { { "=", a[[ i ]] } } ];
+            pa = i;
+            pb = j
+        ],
+        { j, sequence }
+    ];
+    Internal`StuffBag[ ops, lineOps[ Drop[ a, pa ], Drop[ b, pb ], False ] ];
+    Join @@ Internal`BagPart[ ops, All ]
+];
+
+anchoredOps // endDefinition;
+
+
+equalOps // beginDefinition;
+equalOps[ lines_List ] := { "=", # } & /@ lines;
+equalOps // endDefinition;
+
+removedOps // beginDefinition;
+removedOps[ lines_List ] := { "-", # } & /@ lines;
+removedOps // endDefinition;
+
+addedOps // beginDefinition;
+addedOps[ lines_List ] := { "+", # } & /@ lines;
+addedOps // endDefinition;
 
 
 splitLines // beginDefinition;
 splitLines[ "" ] := { };
 splitLines[ s_String ] := StringSplit[ StringDelete[ s, "\n" ~~ EndOfString ], "\n", All ];
 splitLines // endDefinition;
-
-
-alignmentOps // beginDefinition;
-alignmentOps[ { removed_List, added_List } ] := Join[ { "-", # } & /@ removed, { "+", # } & /@ added ];
-alignmentOps[ common_List ] := { "=", # } & /@ common;
-alignmentOps // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -3725,10 +4187,18 @@ acpStripToolOutput // endDefinition;
 (*acpTurnToMarkdown*)
 
 (* Markdown for the final output cell's "CellToStringData" (copy as text, chat history): the visible tail and answer,
-   followed by the status line for turns that did not end normally. *)
+   followed by the status line for turns that did not end normally. The agent's text in it is neutralized, like
+   everything that the views show. *)
 acpTurnToMarkdown // beginDefinition;
 
-acpTurnToMarkdown[ turn_Association ] := Module[ { split, entities, tail, answer, status, parts },
+acpTurnToMarkdown[ turn_Association ] := acpNeutralizeLinearSyntax @ turnMarkdown @ turn;
+
+acpTurnToMarkdown // endDefinition;
+
+
+turnMarkdown // beginDefinition;
+
+turnMarkdown[ turn_Association ] := Module[ { split, entities, tail, answer, status, parts },
     split    = acpTurnSplit @ turn;
     entities = turn[ "Entities" ];
     tail     = StringRiffle[ DeleteCases[ itemMarkdown[ entities[ # ], turn ] & /@ split[ "Tail" ], "" ], "\n\n" ];
@@ -3738,7 +4208,7 @@ acpTurnToMarkdown[ turn_Association ] := Module[ { split, entities, tail, answer
     If[ parts === { } && acpTurnEndedQ @ turn, acpLabel[ "DoneNoReply" ], StringRiffle[ parts, "\n\n" ] ]
 ];
 
-acpTurnToMarkdown // endDefinition;
+turnMarkdown // endDefinition;
 
 
 itemMarkdown // beginDefinition;

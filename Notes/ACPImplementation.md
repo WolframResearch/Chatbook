@@ -71,6 +71,13 @@ These can be revisited:
   that has the function and is the one `Needs` would load, that one is loaded with `Get` instead. An AgentTools that
   already has the function is kept for the kernel session, even when the checkout is newer or was edited. Restart
   the kernel to pick up AgentTools edits.
+* **The queue is a list of messages in click order** (`"QueuedPrompt"`, UI.wl's `acpQueuePrompt`), each with the time
+  of its Send click, rather than one merged message: a message whose attachments were prepared first goes where its
+  click was, and the messages are merged into a turn only when it is sent (`queuedBatch`), as far as they stay within
+  the caps of one message; the rest are the next turns. Giving an over-cap message back instead was the alternative;
+  the user's decision that a prompt notebook's Send "queues exactly like the input field" favoured sending it later.
+* **A session restored from the same folder gives the pending messages back**, as one of another folder, New and a
+  folder change do (`acpReturnPendingMessages`), rather than disabling Restore while a message is being prepared.
 
 ## Measured behaviour (Wolfram 15.0 front end, 15.0.1 kernel)
 
@@ -96,6 +103,11 @@ Measured with experiments; the design depends on them.
 * Inside a ScheduledTask, `Stack[_]` also holds the frames of the main evaluation it interrupted. Code that inspects
   the stack from the pump or a handler (such as internal-failure reporting) must not walk it: it may hold large user
   data.
+* **Front-end evaluable functions.** In a headless front end, with the functions blocked in the kernel,
+  `` MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`If[TrueQ[x], ...]]] `` is evaluated by the front end: `TrueQ` is
+  front-end evaluable (as `CurrentValue`, `FEPrivate`If`, `FEPrivate`SameQ`, `FEPrivate`MatchQ`), `StringQ` is not
+  (the If came back unevaluated). `CurrentValue` of a closed notebook is `$Failed` there. The prompt notebook's docked
+  cell relies on both.
 * `CheckAbort` does not see `TimeConstrained`'s abort; `WithCleanup` does. Use `WithCleanup` for cleanup that must
   also run on a time-out.
 * **What the kernel sees.** In a real front end's kernel, `$Notebooks` is `True` and `$ParentLink` is a `LinkObject`.
@@ -111,9 +123,55 @@ Measured with experiments; the design depends on them.
   when they are box data, and the box constructor (U+F7C8, `\*`) makes it evaluate any box expression in the kernel.
   Box data is what MakeBoxes, ToBoxes, `clickToCopy`, a string in `Cell[BoxData[...]]` and code cells produce. Strings
   in `TextData` and plain string cells are shown as text. Typed ASCII backslashes are inert. `ToExpression[boxes, StandardForm, HoldComplete]` of a `TemplateBox` with an `InterpretationFunction` runs
-  that function: `HoldComplete` does not protect box parsing.
+  that function: `HoldComplete` does not protect box parsing. Nor does it for text: `ToExpression[text, InputForm,
+  HoldComplete]` of a notebook file with `\!\(\*TemplateBox[..., InterpretationFunction -> f]\)` outside its strings
+  runs `f` (verified in 15.0.1), so an attached `.nb` file is only parsed without linear syntax outside its strings and
+  comments (Attachments.wl).
+* **Reading notebooks evaluates them.** Releasing a parsed notebook file from `HoldComplete` evaluates its cells:
+  `Notebook[{Cell[BoxData[RowBox[{"a", CreateFile[f]}]], "Input"]}]` creates `f` (also for the plain text that `Put`
+  writes). `NotebookRead` and `NotebookGet` of an open notebook (here: opened from such a file) do the same: the kernel
+  evaluates the cells the front end returns (verified 15.0.1, headless). `` FrontEnd`ExportPacket[nbo, "NotebookString"] ``
+  returns the notebook as the text of a file without that. CellToString evaluates code in strings and boxes too: a
+  string box with `"\!" <> ...` (typed backslash) or with linear syntax, a `ChatbookWLTemplate`'s input, a video's or
+  audio's interpretation, `DynamicBox[ToBoxes[If[$OperatingSystem === ..., code, ...]]]` and a `RawData` cell all ran
+  `CreateFile` (Serialization.wl). So Attachments.wl reads notebooks as text, makes every symbol that is not inert
+  `inertSymbol[name]` before anything is evaluated, and defuses those strings and boxes ("Reading Notebooks"). The
+  notebook tools' ReadNotebook now defuses the same strings and boxes before CellToString (the shared
+  `acpDefusedCells`, see Open issues); `NotebookRead`'s own evaluation of the cells' option values is not yet addressed.
+* **Graphics boxes hold their arguments.** `GraphicsBox`, `RasterBox` and other boxes are `HoldAll`: a `:>` replacement
+  in them is inserted unevaluated (`decompressedData[...]` stayed in a `LineBox`, and the front end drew an error), so
+  replacements in boxes use `RuleCondition`; a `Sequence[]` in their options stays (use `DeleteCases`). A 15.0 plot is
+  `GraphicsBox[{InterpretationBox[{TagBox[primitives, Annotation...], StyleBox[DynamicBox[(Charting`HighlightActionBox
+  ...&)[...]]]}, ...]}, {options}]` with options as a list; a bar of a `BarChart` is
+  `DynamicBox[{FEPrivate`If[CurrentValue["MouseOver"], ...], RectangleBox[...]}]`. `Uncompress[s, h]` with a
+  `HoldAllComplete` head holds the data, and `MemoryConstrained` stops it (116 KB of compressed text made 240 MB).
+* **Front-end-only Dynamics across notebooks.** A Dynamic that only uses `CurrentValue`, `` FrontEnd`EvaluationNotebook ``,
+  `TrueQ` and `` FEPrivate` `` functions is evaluated by the front end alone (also in a headless front end, without the
+  kernel), and it can read another notebook's TaggingRules through a `NotebookObject` stored in its own:
+  `CurrentValue[CurrentValue[EvaluationNotebook[], {TaggingRules, "ACPPrompt", "Owner"}], {TaggingRules, "ACP", "Busy"}]`.
+  For a closed notebook that gives `$Failed`, which a `PaneSelector` key `$Failed` does not match;
+  `` FEPrivate`MatchQ[x, _String] `` works (verified headless, 15.0). A symbol in it, such as a variable, is held
+  and gives `$Failed` (the front end can't evaluate it). The prompt notebook's docked cell relies on this
+  (PromptNotebook.wl).
 * Aborting the main link from outside: a preemptive `FrontEndTokenExecute["EvaluatorAbort"]` aborted the wrong
   evaluation; a real Alt+. keystroke (`fe.py key alt+period`) works.
+* **The attached input cell is laid out again on every keystroke** (its InputField writes the TaggingRules
+  continuously) and on every update of the window's views: with a 400-row diff grid in the permission panel, typing
+  took 0.3 to 0.55 s per keystroke in a real front end (Linux, Xvfb). A scroll pane with `UpTo[260]` limits only what
+  is shown, not what is laid out. Grid rows cost about a millisecond each to lay out (`Rasterize` with
+  `"BoundingBox"`); a plain string of 2,000 lines about 0.1 s in all. Hence the panel's bounded preview and the
+  details window's text cells (see docs/acp-window.md, "Large requests").
+* **Line diffs:** `SequenceAlignment` on line lists is quadratic in the lines (10,000 lines: about 1 s) and not always
+  minimal (68 of 2,000 random small cases). `LongestCommonSequencePositions` is exact and takes time in proportion to
+  the pairs of equal lines (5,000 lines with 100 changes: 4 ms; 10,000 equal lines: 6.5 s), hence the budget and the
+  anchors of `acpLineDiff`. `LongestOrderedSequence` of 50,000 numbers takes 6 ms.
+* Assigning a span of a list that is not packed (`keep[[a ;; b]] = True` on `ConstantArray[False, n]`) copies the
+  list: `collapseContext` was quadratic that way (40,000 rows: 1 s). A packed 0/1 mask (`ListCorrelate`) takes
+  milliseconds.
+* **bash** (5.x, checked with `bash -c`): `let x=1<<4` starts a here document (the `<<` is read before `let` sees it);
+  a `#` right after `>` starts a comment; `<<"E"OF` has the word `EOF`; a here document without its word line runs to
+  the end of the command. `shellSplitCommands` takes none of these as a comment or a here document, so their words are
+  read as commands: more "Always allow" patterns, never fewer.
 
 ## OpenCode 2.0.26
 
@@ -178,8 +236,10 @@ Measured with experiments; the design depends on them.
   in `FileNames` order. A file passing on its own is not enough. Before relying on CI, run all `Tests/ACP*.wlt` that
   way, then the whole suite (`CurrentChatSettings.wlt` first).
 * Results at the end of this work:
-  * the 12 ACP files in one kernel: 1015/1015;
-  * the whole Chatbook suite: 1645/1646, the failure being the flake below;
+  * the 13 ACP files and `Formatting.wlt` in one kernel, CI-like, under `UsingFrontEnd` (2026-10-22, after the
+    finalization freeze, the front-end-only "Worked for" opener and the cut of titles without an object): 1277/1277, of which the ACP files 1210;
+  * earlier, the whole Chatbook suite: 1645/1646, the failure being the flake below (the last CI-like build, 2026-10-22:
+    1,848 tests in 28 files, no failures);
   * AgentTools: 3543/3543, each file in its own kernel.
 * **Known flaky or pre-existing failures:**
   * CodeCheck `11_03_brackets` hits its 1 s limit on a loaded machine. It also fails on HEAD.
@@ -246,6 +306,19 @@ wait behaviour can only be checked in a real front end.
 * The 15.0.1 SocketListen file descriptor leak should be reported against the kernel.
 * An abort in the last few evaluation steps of `StartMCPSocketServer`'s return can still leave a server running.
   This is documented in AgentTools.
+* **ReadNotebook still gets a crafted notebook's cells from `NotebookRead`.** The CellToString half of the old problem
+  is fixed: `readCells` now runs the cells through the shared `acpDefusedCells` (NotebookTools.wl, also the attachment
+  reader's) before CellToString, so an inline WL code template, a video or audio box, a box with an inline
+  `InterpretationFunction`, a string with linear syntax and a raw data cell no longer run code, also nested in one
+  another (the rules are applied until nothing changes) (see "Reading notebooks
+  evaluates them" above). Two vectors remain: (1) `NotebookRead` returns a cell whose stored option values (e.g.
+  `Background -> (CreateFile[...]; Red)`) the kernel evaluates on receipt because `Cell` is not held — this is shared
+  with the Notebook Assistant's own context reading (`insertSelectionMarkers` reads selected cells with `NotebookRead`
+  too), so it was left unchanged; reading open notebooks as text (`` FrontEnd`ExportPacket[nbo, "NotebookString"] ``,
+  like the attachment reader) would close it for both. (2) Any `DynamicBox` in a read cell is evaluated by CellToString's
+  box fallback (the OS-display construct `DynamicBox[ToBoxes[If[$OperatingSystem === ...]]]` is one case;
+  `acpDefusedCells` does not strip dynamic boxes). Reading open notebooks as text would close this one too. Chatbook's other users of
+  CellToString on notebooks that came from elsewhere have the same exposure.
 * Remote windows would need ssh reverse forwarding to offer the server.
 * Switching `"ACPMCPServer"` between `Automatic` and `True` reconnects a local window even when what is offered stays
   the same.

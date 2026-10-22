@@ -39,6 +39,9 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      when calls wait with no drain running.
    * Without a notebook front end (tests; also under UsingFrontEnd, whose pump tasks see $FrontEnd === Null), and when the
      button can't be used (no window's kernel is known, or it can't be fired), the pump drains the queue itself.
+   * Other ACP work that makes front end calls and can take seconds runs on the main link the same way: acpMainLinkRun
+     queues it as a job ($mcpJobs), which the drain runs after the tool calls (Attachments.wl's preparation of the
+     attachments of a message: notebooks converted to markdown, graphics rasterized).
    * The server runs only while it is used: housekeeping stops it once no connection has had a valid token for
      $mcpIdleStopDelay seconds (the next connect starts it again), and for the rest of the kernel session once the kernel
      holds too many file descriptors (the 15.0.1 kernel leaks some for every connection SocketListen accepts, with or
@@ -84,6 +87,8 @@ waits while the user's own evaluation runs in the front end.";
      $mcpTokens          token -> <| "Window" -> nbo, "Connection" -> conn, "IssuedAt" -> time |>
      $mcpQueue           the queued calls, oldest first: <| "ID", "Run" -> run, "Info" -> info without its "Token",
                          "Caller" -> <| "Window", "Connection" |> of the token (or None), "QueuedAt" -> time |>
+     $mcpJobs            the other main link jobs (acpMainLinkRun), oldest first: <| "ID", "Eval" -> HoldComplete[ eval ],
+                         "Label", "QueuedAt" -> time |>
      $mcpEvaluator       None, or the Evaluator of the ACP windows (this kernel), read when a token is issued in a
                          notebook front end's kernel: the kernel of the pump button
      $mcpIdleSince       None, or the time since which the server has run without a valid token
@@ -91,6 +96,7 @@ waits while the user's own evaluation runs in the front end.";
 If[ ! MatchQ[ $mcpServer, _Association | None ], $mcpServer = None ];
 If[ ! AssociationQ @ $mcpTokens, $mcpTokens = <| |> ];
 If[ ! ListQ @ $mcpQueue, $mcpQueue = { } ];
+If[ ! ListQ @ $mcpJobs, $mcpJobs = { } ];
 If[ ! IntegerQ @ $mcpJobCount, $mcpJobCount = 0 ];
 If[ ! BooleanQ @ $mcpDraining, $mcpDraining = False ];
 If[ ! NumberQ @ $mcpLastKick, $mcpLastKick = 0 ];
@@ -643,12 +649,47 @@ tokenCaller[ _ ] := None;
 tokenCaller // endDefinition;
 
 
-(* Whether the pump must keep running for the MCP server (State.wl's publisherNeededQ): calls wait in the queue (the
-   watchdog may have to trigger the drain again), or the server runs (housekeeping stops it when it is no longer used,
-   and watches the kernel's file descriptors meanwhile) *)
+(* Whether the pump must keep running for the MCP server (State.wl's publisherNeededQ): calls or other main link jobs
+   wait in the queue (the watchdog may have to trigger the drain again), or the server runs (housekeeping stops it when
+   it is no longer used, and watches the kernel's file descriptors meanwhile) *)
 acpMCPPendingQ // beginDefinition;
-acpMCPPendingQ[ ] := $mcpQueue =!= { } || AssociationQ @ $mcpServer;
+acpMCPPendingQ[ ] := waitingQ[ ] || AssociationQ @ $mcpServer;
 acpMCPPendingQ // endDefinition;
+
+
+(* Whether tool calls or other main link jobs wait for the drain *)
+waitingQ // beginDefinition;
+waitingQ[ ] := $mcpQueue =!= { } || $mcpJobs =!= { };
+waitingQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpMainLinkRun*)
+
+(* Queues eval as a main link job of the window nbo's kernel and schedules acpMCPKick: the drain (the pump button's
+   queued evaluation, see acpMCPKick) runs it once the tool calls queued before it have run, inside
+   acpIsolatedAbortable, so that the front end's Dynamics, the pump and ACPLink's readers keep running meanwhile and
+   Alt+. aborts it. A job is taken out of the queue before it runs: an aborted job is not run again (eval cleans up
+   itself, e.g. with WithCleanup). Without a notebook front end the pump runs it. For work that makes front end calls
+   and can take seconds, which no preemptive evaluation may do (Attachments.wl's preparation of a message's
+   attachments). Called from a preemptive evaluation (the Send button): it only queues; the window names the kernel of
+   the pump button (noteEvaluator). *)
+acpMainLinkRun // beginDefinition;
+acpMainLinkRun // Attributes = { HoldRest };
+
+acpMainLinkRun[ nbo_NotebookObject, eval_ ] := acpMainLinkRun[ nbo, eval, "Job" ];
+
+acpMainLinkRun[ nbo_NotebookObject, eval_, label_String ] := (
+    noteEvaluator @ nbo;
+    PreemptProtect @ AppendTo[
+        $mcpJobs,
+        <| "ID" -> ++$mcpJobCount, "Eval" -> HoldComplete @ eval, "Label" -> label, "QueuedAt" -> AbsoluteTime[ ] |>
+    ];
+    acpSchedule @ acpMCPKick[ ];
+    Null
+);
+
+acpMainLinkRun // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -660,7 +701,7 @@ acpMCPPendingQ // endDefinition;
 acpMCPKick // beginDefinition;
 
 acpMCPKick[ ] := Which[
-    $mcpQueue === { } || TrueQ @ $mcpDraining,
+    ! waitingQ[ ] || TrueQ @ $mcpDraining,
         Null,
     notebookFrontEndQ[ ],
         $mcpLastKick = AbsoluteTime[ ];
@@ -822,10 +863,10 @@ acpMCPDrain[ ] := acpIsolatedAbortable @ drainQueue[ "MainLink" ];
 acpMCPDrain // endDefinition;
 
 
-(* Runs the queued calls in order until the queue is empty. One drain runs at a time; calls queued meanwhile are taken
-   by the running one. A call leaves the queue only once it has been dealt with, so a call whose drain was aborted
-   before it started stays queued (and run[] does nothing for a call that was answered already). mode: "MainLink" (the
-   pump button) or "Pump". *)
+(* Runs the queued calls in order until the queue is empty, then the other main link jobs (acpMainLinkRun). One drain
+   runs at a time; calls and jobs queued meanwhile are taken by the running one. A call leaves the queue only once it
+   has been dealt with, so a call whose drain was aborted before it started stays queued (and run[] does nothing for a
+   call that was answered already). mode: "MainLink" (the pump button) or "Pump". *)
 drainQueue // beginDefinition;
 
 drainQueue[ mode_String ] := Module[ { job, claimed = False },
@@ -833,13 +874,17 @@ drainQueue[ mode_String ] := Module[ { job, claimed = False },
        that was made is released: an abort right after the claim would otherwise leave the drain claimed for good *)
     WithCleanup[
         claimed = claimDrain[ ],
-        If[ claimed, While[ AssociationQ[ job = First[ $mcpQueue, None ] ], runQueuedJob[ job, mode ] ] ],
+        If[ claimed,
+            While[ AssociationQ[ job = First[ $mcpQueue, None ] ] || AssociationQ[ job = First[ $mcpJobs, None ] ],
+                If[ KeyExistsQ[ job, "Eval" ], runMainLinkJob[ job, mode ], runQueuedJob[ job, mode ] ]
+            ]
+        ],
         If[ claimed, $mcpDraining = False ]
     ];
     If[ ! claimed, Return[ Null, Module ] ];
     If[ mode === "MainLink", cleanPumpNotebook[ ] ];
     (* a call may have been queued after the loop's last check, while the drain still counted as running: *)
-    If[ $mcpQueue =!= { }, drainQueue @ mode ]
+    If[ waitingQ[ ], drainQueue @ mode ]
 ];
 
 drainQueue // endDefinition;
@@ -863,6 +908,26 @@ runQueuedJob[ job_Association, mode_String ] := (
 );
 
 runQueuedJob // endDefinition;
+
+
+(* A main link job (acpMainLinkRun) leaves the queue before it runs, so an abort (Alt+.) does not make the next drain run
+   it again *)
+runMainLinkJob // beginDefinition;
+
+runMainLinkJob[ job_Association, mode_String ] := Module[ { start },
+    PreemptProtect[ $mcpJobs = DeleteCases[ $mcpJobs, KeyValuePattern[ "ID" -> job[ "ID" ] ] ] ];
+    start = AbsoluteTime[ ];
+    Replace[ job[ "Eval" ], HoldComplete[ eval_ ] :> acpIsolatedAbortable @ eval ];
+    acpLog[ "MainLinkJob", <|
+        "Label"   -> job[ "Label" ],
+        "Mode"    -> mode,
+        "Waited"  -> Round[ start - job[ "QueuedAt" ], 0.001 ],
+        "Seconds" -> Round[ AbsoluteTime[ ] - start, 0.001 ]
+    |> ];
+    Null
+];
+
+runMainLinkJob // endDefinition;
 
 
 (* A call is skipped if it is no longer active (answered, cancelled, its client gone, its server stopped), rejected if
@@ -950,7 +1015,7 @@ mcpHousekeeping // beginDefinition;
 mcpHousekeeping[ ] := (
     If[ $mcpTokens =!= <| |>, pruneTokens[ ] ];
     If[ AssociationQ @ $mcpServer, serverHousekeeping @ AbsoluteTime[ ] ];
-    If[ $mcpQueue =!= { } && ! TrueQ @ $mcpDraining && AbsoluteTime[ ] - $mcpLastKick > $mcpRetriggerDelay,
+    If[ waitingQ[ ] && ! TrueQ @ $mcpDraining && AbsoluteTime[ ] - $mcpLastKick > $mcpRetriggerDelay,
         acpMCPKick[ ]
     ];
     Null

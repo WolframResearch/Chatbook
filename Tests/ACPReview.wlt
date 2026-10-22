@@ -391,21 +391,40 @@ VerificationTest[
     TestID   -> "Button-DirectoryRow@@Tests/ACPReview.wlt:368,1-392,2"
 ]
 
-(* A shorter path leaves room for the button *)
+(* The folder's label gets the room that the button leaves: the label has the whole path (the front end cuts it at its
+   start), and its width (acpFitWidth, the first argument of its fitting DynamicBox) is less the button's text, measured
+   in the front end, and the button's reserve *)
 VerificationTest[
     With[ { dir = FileNameJoin @ { $TemporaryDirectory, StringRepeat[ "abcdefghij", 5 ] } },
-        StringLength /@ Cases[
-            Wolfram`Chatbook`ACP`UI`Private`acpDirectoryRowView[ $owner, <| testWindow[ <| "Status" -> # |> ], "ProjectDirectory" -> dir |> ],
-            Style[ p_String, "WorkspaceChatToolbarTitle", ___ ] :> p,
-            Infinity
+        Module[ { args, widths },
+            (* held: the width is a front end expression (Part of FEPrivate`StringWidth must not be evaluated) *)
+            args = Cases[
+                ToBoxes @ Wolfram`Chatbook`ACP`UI`Private`acpDirectoryRowView[ $owner, <| testWindow[ <| "Status" -> # |> ], "ProjectDirectory" -> dir |> ],
+                DynamicBox[ Function[ _ ][ a__ ], ___ ] :> HoldComplete[ a ],
+                Infinity
+            ];
+            widths = Extract[ #, { 1 }, HoldComplete ] & /@ args;
+            {
+                (* the strings of the boxes, not of their options *)
+                DeleteDuplicates[ Cases[ Extract[ #, { 6 } ] /. (_Rule | _RuleDelayed) -> Nothing, s_String :> StringTrim[ s, "\"" ], { 0, Infinity } ] & /@ args ],
+                DeleteDuplicates @ Cases[ widths, HoldPattern[ FEPrivate`StringWidth ][ s_String, ___ ] :> s, Infinity ],
+                (* the folder does not exist: the warning's reserve too *)
+                ! FreeQ[
+                    widths,
+                    N[
+                        Last @ Wolfram`Chatbook`ACP`UI`Private`$folderRowReserve + Wolfram`Chatbook`ACP`UI`Private`$folderWarningReserve +
+                            If[ # === "Changes", Wolfram`Chatbook`ACP`UI`Private`$reviewButtonReserve, 0 ]
+                    ]
+                ]
+            }
         ] & /@ { "Changes", "Clean" }
     ],
     {
-        { Wolfram`Chatbook`ACP`UI`Private`$acpMaxPathLengthReview },
-        { Wolfram`Chatbook`ACP`UI`Private`$acpMaxPathLength }
+        { { { p1_String } }, { "Review" }, True } /; StringEndsQ[ p1, StringRepeat[ "abcdefghij", 5 ] ],
+        { { { p2_String } }, { }, True } /; StringEndsQ[ p2, StringRepeat[ "abcdefghij", 5 ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Button-DirectoryRowPath@@Tests/ACPReview.wlt:395,1-409,2"
+    TestID   -> "Button-DirectoryRowPath@@Tests/ACPReview.wlt:397,1-428,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -445,7 +464,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Options@@Tests/ACPReview.wlt:414,1-449,2"
+    TestID   -> "Notebook-Options@@Tests/ACPReview.wlt:433,1-468,2"
 ]
 
 VerificationTest[
@@ -468,7 +487,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Cells@@Tests/ACPReview.wlt:451,1-472,2"
+    TestID   -> "Notebook-Cells@@Tests/ACPReview.wlt:470,1-491,2"
 ]
 
 (* Every icon TemplateBox has its style in the private stylesheet, which holds the icon boxes *)
@@ -480,7 +499,7 @@ VerificationTest[
     ],
     { { }, { }, { "ACPReviewIconDirectory", "ACPReviewIconExtBIN", "ACPReviewIconTXT" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-IconStyles@@Tests/ACPReview.wlt:475,1-484,2"
+    TestID   -> "Notebook-IconStyles@@Tests/ACPReview.wlt:494,1-503,2"
 ]
 
 (* The file list: a jump link per file (run by the front end) to the file's cell *)
@@ -495,7 +514,7 @@ VerificationTest[
     ],
     { Table[ "ACPReviewFile-" <> ToString @ i, { i, 15 } ], True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileList@@Tests/ACPReview.wlt:487,1-499,2"
+    TestID   -> "Notebook-FileList@@Tests/ACPReview.wlt:506,1-518,2"
 ]
 
 (* The jump links: a tooltip, and underlined under the mouse like the Open links. The Mouseover is outside the buttons
@@ -516,7 +535,7 @@ VerificationTest[
     ],
     { 15, { 1 }, { True }, True, 15, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileListLinks@@Tests/ACPReview.wlt:503,1-520,2"
+    TestID   -> "Notebook-FileListLinks@@Tests/ACPReview.wlt:522,1-539,2"
 ]
 
 (* The line counts in the list are spaced like in the cards (a Row with a " " separator showed "+1\[Minus]1") *)
@@ -539,7 +558,7 @@ VerificationTest[
         { { "Columns" -> { { 0.5 } }, "Rows" -> { { 0 } } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileListCounts@@Tests/ACPReview.wlt:523,1-543,2"
+    TestID   -> "Notebook-FileListCounts@@Tests/ACPReview.wlt:542,1-562,2"
 ]
 
 (* Files are listed in natural path order in the list and in the cards: folder by folder, ignoring case, numbers by
@@ -567,7 +586,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-FileOrder@@Tests/ACPReview.wlt:547,1-571,2"
+    TestID   -> "Notebook-FileOrder@@Tests/ACPReview.wlt:566,1-590,2"
 ]
 
 (* Status badges and notes *)
@@ -607,7 +626,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-StatusesAndNotes@@Tests/ACPReview.wlt:574,1-611,2"
+    TestID   -> "Notebook-StatusesAndNotes@@Tests/ACPReview.wlt:593,1-630,2"
 ]
 
 (* Diffs: git's hunks, where a removed "-- comment" line ("--- ..." in the patch) is content; untracked text files as
@@ -626,7 +645,7 @@ VerificationTest[
     ],
     { True, True, False, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Diffs@@Tests/ACPReview.wlt:615,1-630,2"
+    TestID   -> "Notebook-Diffs@@Tests/ACPReview.wlt:634,1-649,2"
 ]
 
 (* Diffs in the cards fill the card's width and have line numbers from the hunk headers; deleted files have only old
@@ -649,7 +668,7 @@ VerificationTest[
         { Full }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-DiffLineNumbers@@Tests/ACPReview.wlt:634,1-653,2"
+    TestID   -> "Notebook-DiffLineNumbers@@Tests/ACPReview.wlt:653,1-672,2"
 ]
 
 (* Open links for every file but deleted ones; WL files open in the front end, others in their application or folder *)
@@ -665,7 +684,7 @@ VerificationTest[
     ],
     { 14, { FileNameJoin @ { "/repo", "gone.txt" } }, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenLinks@@Tests/ACPReview.wlt:656,1-669,2"
+    TestID   -> "Notebook-OpenLinks@@Tests/ACPReview.wlt:675,1-688,2"
 ]
 
 (* Cards start open, except binary files *)
@@ -676,7 +695,7 @@ VerificationTest[
     },
     { 15, { "data.bin", "img.bin" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenersSmall@@Tests/ACPReview.wlt:672,1-680,2"
+    TestID   -> "Notebook-OpenersSmall@@Tests/ACPReview.wlt:691,1-699,2"
 ]
 
 (* A long diff starts closed and is rendered when it is first opened (lazily, from data stored in the cell) *)
@@ -710,7 +729,7 @@ VerificationTest[
         { 400, { "399" }, { Full }, True }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-LazyDiff@@Tests/ACPReview.wlt:683,1-714,2"
+    TestID   -> "Notebook-LazyDiff@@Tests/ACPReview.wlt:702,1-733,2"
 ]
 
 (* Many files: all cards start closed *)
@@ -732,7 +751,7 @@ VerificationTest[
     ],
     { 31, { False }, 31 },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-OpenersManyFiles@@Tests/ACPReview.wlt:717,1-736,2"
+    TestID   -> "Notebook-OpenersManyFiles@@Tests/ACPReview.wlt:736,1-755,2"
 ]
 
 (* Files that are not listed, and incomplete git output *)
@@ -755,7 +774,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Truncation@@Tests/ACPReview.wlt:739,1-759,2"
+    TestID   -> "Notebook-Truncation@@Tests/ACPReview.wlt:758,1-778,2"
 ]
 
 (* The diff text kept in a window is bounded: later diffs are not shown *)
@@ -768,7 +787,7 @@ VerificationTest[
     ],
     { "src/a.txt", "tc.txt", "vendor/lib" },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-TextBudget@@Tests/ACPReview.wlt:762,1-772,2"
+    TestID   -> "Notebook-TextBudget@@Tests/ACPReview.wlt:781,1-791,2"
 ]
 
 (* The header: folder, branch, counts, time and a Refresh button that finds its window with EvaluationNotebook[] *)
@@ -785,7 +804,7 @@ VerificationTest[
     ],
     { True, { "On branch main", "15 files changed", "+6", "\[Minus]4" }, True, { { "ReviewRefresh", "EvaluationNotebook[]" } }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Header@@Tests/ACPReview.wlt:775,1-789,2"
+    TestID   -> "Notebook-Header@@Tests/ACPReview.wlt:794,1-808,2"
 ]
 
 VerificationTest[
@@ -795,7 +814,7 @@ VerificationTest[
     },
     { { "HEAD detached at 4b5a6b8" }, { "On branch main", "No commits yet" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-HeaderBranch@@Tests/ACPReview.wlt:791,1-799,2"
+    TestID   -> "Notebook-HeaderBranch@@Tests/ACPReview.wlt:810,1-818,2"
 ]
 
 (* Loading, clean, and the states where nothing can be listed *)
@@ -829,7 +848,7 @@ VerificationTest[
         { 1, "ACPReviewMessage", { "The check was cancelled." } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-States@@Tests/ACPReview.wlt:802,1-833,2"
+    TestID   -> "Notebook-States@@Tests/ACPReview.wlt:821,1-852,2"
 ]
 
 VerificationTest[
@@ -839,7 +858,7 @@ VerificationTest[
     },
     { "Changes", { "No project folder" } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-NoFolder@@Tests/ACPReview.wlt:835,1-843,2"
+    TestID   -> "Notebook-NoFolder@@Tests/ACPReview.wlt:854,1-862,2"
 ]
 
 (* A project folder in a subdirectory of the repository: paths relative to it, original paths outside of it *)
@@ -862,7 +881,7 @@ VerificationTest[
     ],
     { "Changes \[LongDash] src", True, True, { { "ReviewOpenFile", FileNameJoin @ { "/repo", "src", "x.txt" } } } },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-Subdirectory@@Tests/ACPReview.wlt:846,1-866,2"
+    TestID   -> "Notebook-Subdirectory@@Tests/ACPReview.wlt:865,1-885,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -883,7 +902,7 @@ VerificationTest[
     ],
     { False, True, True, True, "", { { "", "" }, { "1", "" }, { "", "1" } }, { Full } },
     SameTest -> MatchQ,
-    TestID   -> "Action-DiffView@@Tests/ACPReview.wlt:871,1-887,2"
+    TestID   -> "Action-DiffView@@Tests/ACPReview.wlt:890,1-906,2"
 ]
 
 (* Open: WL files in the front end, documents in their application, anything else (e.g. scripts) in its folder *)
@@ -907,7 +926,7 @@ VerificationTest[
         { "SystemOpen", "DIR" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-OpenFile@@Tests/ACPReview.wlt:890,1-911,2"
+    TestID   -> "Action-OpenFile@@Tests/ACPReview.wlt:909,1-930,2"
 ]
 
 (* Open never passes a folder with an extension (on macOS, an app bundle would be launched) or a link to one to
@@ -970,7 +989,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-OpenFileBundles@@Tests/ACPReview.wlt:915,1-974,2"
+    TestID   -> "Action-OpenFileBundles@@Tests/ACPReview.wlt:934,1-993,2"
 ]
 
 (* The button opens a window that shows "Loading changes..." and starts a request, or raises the open one *)
@@ -1013,7 +1032,7 @@ VerificationTest[
         { $review, { { $review, None, ExpandFileName @ $TemporaryDirectory } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-ReviewChanges@@Tests/ACPReview.wlt:977,1-1017,2"
+    TestID   -> "Action-ReviewChanges@@Tests/ACPReview.wlt:996,1-1036,2"
 ]
 
 (* Requests: with the owner window's record, with the folder only, or neither *)
@@ -1050,7 +1069,7 @@ VerificationTest[
         { $review }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-Requests@@Tests/ACPReview.wlt:1020,1-1054,2"
+    TestID   -> "Action-Requests@@Tests/ACPReview.wlt:1039,1-1073,2"
 ]
 
 (* Results: only the window's latest request is shown (then the window is scrolled to the top: NotebookPut would leave it
@@ -1061,6 +1080,8 @@ VerificationTest[
         {
             $callLog = { },
             Wolfram`Chatbook`ACP`Review`Private`$reviewWindows = <| $review -> <| "Token" -> "t2" |> |>,
+            (* the small change set is shown in one step also on a loaded machine *)
+            Wolfram`Chatbook`ACP`Review`Private`$reviewStepTime = 10,
             $openWindows         = { $review },
             Notebooks            = $openWindows &,
             NotebookPut          = logCall[ "NotebookPut", ## ] &,
@@ -1102,7 +1123,7 @@ VerificationTest[
         { { }, <| |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "Action-Results@@Tests/ACPReview.wlt:1059,1-1106,2"
+    TestID   -> "Action-Results@@Tests/ACPReview.wlt:1078,1-1127,2"
 ]
 
 (* A large result is shown in steps that each do little work: the rows of the file list, then the notebook with the list
@@ -1148,7 +1169,7 @@ VerificationTest[
     ],
     { 30, 1, 14, { { System`NotebookLocationSpecifier[ CellObject[ "last" ], "After" ], None, AutoScroll -> False } }, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Action-ResultSteps@@Tests/ACPReview.wlt:1111,1-1152,2"
+    TestID   -> "Action-ResultSteps@@Tests/ACPReview.wlt:1132,1-1173,2"
 ]
 
 (* While the next request runs, the header keeps the branch and counts of the changes shown *)
@@ -1173,7 +1194,7 @@ VerificationTest[
     ],
     { False, "t2", "t2", { "On branch main", "15 files changed", "Loading changes\[Ellipsis]" } },
     SameTest -> MatchQ,
-    TestID   -> "Action-RefreshKeepsHeader@@Tests/ACPReview.wlt:1155,1-1177,2"
+    TestID   -> "Action-RefreshKeepsHeader@@Tests/ACPReview.wlt:1176,1-1198,2"
 ]
 
 (* Text from the repository never becomes boxes: the private-use characters of the front end's linear syntax are
@@ -1209,7 +1230,7 @@ VerificationTest[
     ],
     { 2, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "Notebook-LinearSyntax@@Tests/ACPReview.wlt:1183,1-1213,2"
+    TestID   -> "Notebook-LinearSyntax@@Tests/ACPReview.wlt:1204,1-1234,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1296,7 +1317,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-DisplaySafe-Names@@Tests/ACPReview.wlt:1225,1-1300,2"
+    TestID   -> "Review-DisplaySafe-Names@@Tests/ACPReview.wlt:1246,1-1321,2"
 ]
 
 (* A remote folder's header: the host and the path display-safe *)
@@ -1314,7 +1335,7 @@ VerificationTest[
     ],
     { { }, True, True, "Changes \[LongDash] r\:27e6U+202E\:27e7" },
     SameTest -> MatchQ,
-    TestID   -> "Review-DisplaySafe-RemoteHeader@@Tests/ACPReview.wlt:1303,1-1318,2"
+    TestID   -> "Review-DisplaySafe-RemoteHeader@@Tests/ACPReview.wlt:1324,1-1339,2"
 ]
 
 (* A long local folder never pushes Refresh out of the header: the folder is kept from its end (at most
@@ -1336,7 +1357,7 @@ VerificationTest[
     ],
     { 1, True, { _String? (StringEndsQ[ "/folder-15/project" ]) }, { _Integer? (# <= 80 &) }, True },
     SameTest -> MatchQ,
-    TestID   -> "Review-Header-LongFolder@@Tests/ACPReview.wlt:1323,1-1340,2"
+    TestID   -> "Review-Header-LongFolder@@Tests/ACPReview.wlt:1344,1-1361,2"
 ]
 
 (* Diffs, file contents and git's messages: the bidi controls and the line and paragraph separators are shown; tabs,
@@ -1458,7 +1479,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-DisplaySafe-DiffLines@@Tests/ACPReview.wlt:1347,1-1462,2"
+    TestID   -> "Review-DisplaySafe-DiffLines@@Tests/ACPReview.wlt:1368,1-1483,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1504,7 +1525,7 @@ VerificationTest[
         <| "WindowSize" -> { 320, 240 }, "WindowMargins" -> { { 0, Automatic }, { Automatic, 0 } } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Window-Placement@@Tests/ACPReview.wlt:1470,1-1508,2"
+    TestID   -> "Review-Window-Placement@@Tests/ACPReview.wlt:1491,1-1529,2"
 ]
 
 (* The display is the one the ACP window is on (else the first one), its usable area ("Region") or else its full area;
@@ -1543,7 +1564,7 @@ VerificationTest[
         { None, <| "WindowSize" -> { 760, 820 }, "WindowMargins" -> Automatic |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Window-Geometry@@Tests/ACPReview.wlt:1512,1-1547,2"
+    TestID   -> "Review-Window-Geometry@@Tests/ACPReview.wlt:1533,1-1568,2"
 ]
 
 (* The button opens the new window with that geometry *)
@@ -1571,7 +1592,7 @@ VerificationTest[
         { { 760, 820 }, None }
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Window-NewWindow@@Tests/ACPReview.wlt:1550,1-1575,2"
+    TestID   -> "Review-Window-NewWindow@@Tests/ACPReview.wlt:1571,1-1596,2"
 ]
 
 (* A new result keeps the window where it is (NotebookPut alone would center it again); its size is kept by the front
@@ -1617,7 +1638,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Window-KeepsPosition@@Tests/ACPReview.wlt:1579,1-1621,2"
+    TestID   -> "Review-Window-KeepsPosition@@Tests/ACPReview.wlt:1600,1-1642,2"
 ]
 
 (* In a front end (CI runs the tests in one; skipped without): the new window has the size of its geometry and is inside
@@ -1646,7 +1667,7 @@ VerificationTest[
     ],
     { True, True, True, True } | Missing[ "TestSkipped" ],
     SameTest -> MatchQ,
-    TestID   -> "Review-Window-FrontEnd@@Tests/ACPReview.wlt:1625,1-1650,2"
+    TestID   -> "Review-Window-FrontEnd@@Tests/ACPReview.wlt:1646,1-1671,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1656,7 +1677,7 @@ VerificationTest[
     Select[ $acpReviewStrings, ! StringQ @ # || StringLength @ # === 0 & ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Strings-NonEmpty@@Tests/ACPReview.wlt:1655,1-1660,2"
+    TestID   -> "Strings-NonEmpty@@Tests/ACPReview.wlt:1676,1-1681,2"
 ]
 
 (* Every label key used in Review.wl, also the ones made from statuses and notes, has an English default (string
@@ -1679,7 +1700,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Strings-Coverage@@Tests/ACPReview.wlt:1664,1-1683,2"
+    TestID   -> "Strings-Coverage@@Tests/ACPReview.wlt:1685,1-1704,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1747,7 +1768,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { $review, "Changes \[LongDash] repo", 3, True, True, True, { "On branch main", "3 files changed" } },
     SameTest -> MatchQ,
-    TestID   -> "Git-ReviewRequest@@Tests/ACPReview.wlt:1691,1-1751,2"
+    TestID   -> "Git-ReviewRequest@@Tests/ACPReview.wlt:1712,1-1772,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1760,7 +1781,7 @@ VerificationTest[
     MemberQ[ $ContextPath, "Wolfram`ChatbookTests`ACPFakeSSH`" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-LoadFakeSSH@@Tests/ACPReview.wlt:1758,1-1764,2"
+    TestID   -> "ACPReview-LoadFakeSSH@@Tests/ACPReview.wlt:1779,1-1785,2"
 ]
 
 (* The change set of a folder on another computer (Git.wl gives remote change sets a "Remote" and POSIX paths) *)
@@ -1788,7 +1809,7 @@ VerificationTest[
     },
     { 16, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-RemoteDefinitions@@Tests/ACPReview.wlt:1767,1-1792,2"
+    TestID   -> "ACPReview-RemoteDefinitions@@Tests/ACPReview.wlt:1788,1-1813,2"
 ]
 
 (* Remote files have no Open link: they are not on this computer (a local file of the same name must not be opened) *)
@@ -1806,7 +1827,7 @@ VerificationTest[
     ],
     { 16, { }, { True }, "/home/u/repo/src/a.txt", <| "Owner" -> $owner, "Directory" -> "/home/u/repo", "SSH" -> $remoteSettings |>, True },
     SameTest -> MatchQ,
-    TestID   -> "Review-Remote-NoOpenLink@@Tests/ACPReview.wlt:1795,1-1810,2"
+    TestID   -> "Review-Remote-NoOpenLink@@Tests/ACPReview.wlt:1816,1-1831,2"
 ]
 
 (* The header shows a remote folder as host:path, abbreviated with the remote home folder and kept from its end (the
@@ -1845,7 +1866,7 @@ VerificationTest[
     ],
     { "Changes \[LongDash] repo", True, True, True, { True, True, True }, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Review-Remote-HeaderPath@@Tests/ACPReview.wlt:1815,1-1849,2"
+    TestID   -> "Review-Remote-HeaderPath@@Tests/ACPReview.wlt:1836,1-1870,2"
 ]
 
 (* Remote errors: the host in the message, the advice and ssh's own text in the detail *)
@@ -1885,7 +1906,7 @@ VerificationTest[
         { "Git was not found.", "Install Git (https://git-scm.com) to review changes." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Remote-SSHFailedMessage@@Tests/ACPReview.wlt:1852,1-1889,2"
+    TestID   -> "Review-Remote-SSHFailedMessage@@Tests/ACPReview.wlt:1873,1-1910,2"
 ]
 
 (* A refresh without the owner's record (e.g. after a kernel restart) lists the folder with the settings the review
@@ -1920,7 +1941,7 @@ VerificationTest[
     ],
     { "token-r", { { "/home/u/repo", { "ACPReview", $review }, $remoteSettings } }, { "devbox:/home/u/repo" }, $remoteSettings },
     SameTest -> MatchQ,
-    TestID   -> "Review-Remote-RefreshWithoutOwner@@Tests/ACPReview.wlt:1893,1-1924,2"
+    TestID   -> "Review-Remote-RefreshWithoutOwner@@Tests/ACPReview.wlt:1914,1-1945,2"
 ]
 
 (* The same through the fake ssh: the repository is listed on the "remote" host and never looked at on this computer;
@@ -2014,7 +2035,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "Review-Remote-RefreshWithoutOwner-FakeSSH@@Tests/ACPReview.wlt:1928,1-2018,2"
+    TestID   -> "Review-Remote-RefreshWithoutOwner-FakeSSH@@Tests/ACPReview.wlt:1949,1-2039,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2029,7 +2050,7 @@ VerificationTest[
     },
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-Cleanup@@Tests/ACPReview.wlt:2023,1-2033,2"
+    TestID   -> "ACPReview-Cleanup@@Tests/ACPReview.wlt:2044,1-2054,2"
 ]
 
 (* Isolated code swallows messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -2040,7 +2061,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPReview-DebugLog@@Tests/ACPReview.wlt:2036,1-2044,2"
+    TestID   -> "ACPReview-DebugLog@@Tests/ACPReview.wlt:2057,1-2065,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

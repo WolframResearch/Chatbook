@@ -1,0 +1,219 @@
+{
+ "Name": "synthetic_openai_summaries",
+ "Source": "synthetic (OpenAI reasoning summary parts as OpenCode 2.x sends them: one ACP thought message per part, title-only parts back to back and between tools, a part with a title and a body, a 135-character one-liner)",
+ "Prompt": "Add TOML import and export wrappers to the paclet.",
+ "ProjectDirectory": "/project",
+ "Events": [
+  {
+   "t": 1.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s1:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "**Planning TOML import/export"
+    }
+   }
+  },
+  {
+   "t": 1.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s1:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": " wrappers**"
+    }
+   }
+  },
+  {
+   "t": 4.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s1:reasoning:1",
+    "content": {
+     "type": "text",
+     "text": "**Refactoring TOML read/write interface**"
+    }
+   }
+  },
+  {
+   "t": 4.2,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s1:reasoning:2",
+    "content": {
+     "type": "text",
+     "text": "**Redefining TOML read/write functions**"
+    }
+   }
+  },
+  {
+   "t": 5.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_read_1",
+    "name": "read",
+    "title": "read",
+    "kind": "read",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 5.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_read_1",
+    "status": "in_progress",
+    "kind": "read",
+    "title": "read",
+    "locations": [],
+    "rawInput": {
+     "path": "/project/Kernel/TOML.wl"
+    }
+   }
+  },
+  {
+   "t": 5.4,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_read_1",
+    "status": "completed",
+    "locations": [],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Read file Kernel/TOML.wl, lines 1-2\n1: BeginPackage[\"Example`TOML`\"]\n2: EndPackage[]"
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {}
+    }
+   }
+  },
+  {
+   "t": 6.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s2:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "**Adding tests for built-in TOML features**"
+    }
+   }
+  },
+  {
+   "t": 7.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call",
+    "toolCallId": "call_grep_1",
+    "name": "grep",
+    "title": "grep",
+    "kind": "search",
+    "status": "pending",
+    "locations": [],
+    "rawInput": {}
+   }
+  },
+  {
+   "t": 7.1,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_grep_1",
+    "status": "in_progress",
+    "kind": "search",
+    "title": "grep",
+    "locations": [],
+    "rawInput": {
+     "pattern": "ExportTOML"
+    }
+   }
+  },
+  {
+   "t": 7.4,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "tool_call_update",
+    "toolCallId": "call_grep_1",
+    "status": "completed",
+    "locations": [],
+    "content": [
+     {
+      "type": "content",
+      "content": {
+       "type": "text",
+       "text": "Found 2 matches\n/project/Kernel/TOML.wl:\n  Line 12: ExportTOML[file_, data_] := ..."
+      }
+     }
+    ],
+    "rawOutput": {
+     "metadata": {}
+    }
+   }
+  },
+  {
+   "t": 8.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s3:reasoning:0",
+    "content": {
+     "type": "text",
+     "text": "**Planning string escaping improvements**\n\nStrings with quotes and backslashes must be escaped the same way as the built-in TOML export does, so that a round trip gives the same file."
+    }
+   }
+  },
+  {
+   "t": 9.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_thought_chunk",
+    "messageId": "msg_s3:reasoning:1",
+    "content": {
+     "type": "text",
+     "text": "I should compare the output of the new ExportTOML wrapper with the built-in export on each of the sample files before I touch escaping."
+    }
+   }
+  },
+  {
+   "t": 10.0,
+   "Type": "Update",
+   "Update": {
+    "sessionUpdate": "agent_message_chunk",
+    "messageId": "msg_s3",
+    "content": {
+     "type": "text",
+     "text": "Added `ImportTOML` and `ExportTOML` wrappers, with tests."
+    }
+   }
+  },
+  {
+   "t": 10.5,
+   "Type": "Response",
+   "Result": {
+    "stopReason": "end_turn",
+    "usage": {
+     "inputTokens": 1500,
+     "outputTokens": 200,
+     "totalTokens": 1700
+    },
+    "_meta": {}
+   }
+  }
+ ]
+}

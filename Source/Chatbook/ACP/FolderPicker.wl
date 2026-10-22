@@ -263,8 +263,8 @@ acpFolderPickerWindowOf // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpFolderPickerOpen*)
 
-(* "Choose folder..." / "Change..." of a remote window (UI.wl's "ChooseDirectory" action), or Chatbook by itself for a new
-   remote window without a folder ("Automatic" -> True, acpFolderPickerAutoOpen). An open picker is raised. A user open
+(* A click on the folder of a remote window's toolbar ("Choose folder..." without one; UI.wl's "ChooseDirectory" action),
+   or Chatbook by itself for a new remote window without a folder ("Automatic" -> True, acpFolderPickerAutoOpen). An open picker is raised. A user open
    clears the host's failure latch (Remote.wl); an automatic one does nothing while the host is latched, while the
    window shows an error (the toolbar shows it already) or once the window has a folder. The first listing starts at the
    window's folder, else the host's last folder, else the home folder, and lists the nearest folder above it that can be
@@ -1617,7 +1617,7 @@ pickerErrorView[ owner_NotebookObject, error_Association ] /; Lookup[ error, "So
         {
             pickerRedLine @ error[ "Message" ],
             If[ StringQ @ Lookup[ error, "Detail", None ],
-                Style[ acpNeutralizeLinearSyntax @ error[ "Detail" ], FontSize -> 11, FontColor -> $sessionsMuted, LineBreakWithin -> Automatic ],
+                Style[ acpSafeText @ error[ "Detail" ], FontSize -> 11, FontColor -> $sessionsMuted, LineBreakWithin -> Automatic ],
                 Nothing
             ],
             pickerRetryButton @ owner
@@ -1666,7 +1666,7 @@ pickerCopyButton // endDefinition;
 
 
 pickerRedLine // beginDefinition;
-pickerRedLine[ text_String ] := Style[ acpNeutralizeLinearSyntax @ text, FontSize -> 12, FontColor -> acpColor[ "RedText" ], LineBreakWithin -> Automatic ];
+pickerRedLine[ text_String ] := Style[ acpSafeText @ text, FontSize -> 12, FontColor -> acpColor[ "RedText" ], LineBreakWithin -> Automatic ];
 pickerRedLine[ _ ] := Nothing;
 pickerRedLine // endDefinition;
 

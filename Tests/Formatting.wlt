@@ -429,13 +429,104 @@ VerificationTest[
 VerificationTest[
     FirstCase[
         FormatChatOutput[ "<THINKING>fish &amp; chips /\\\\_/\\\\</THINKING>" ],
-        TemplateBox[ { text_, _, ___ }, "ThoughtsOpener" ] :> CellToString @ Cell[ text, "Text" ],
+        TemplateBox[ { text_, _, ___ }, "ShortThoughts" ] :> CellToString @ Cell[ text, "Text" ],
         $Failed,
         Infinity
     ],
     "fish & chips /\\_/\\",
     SameTest -> MatchQ,
     TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML"
+]
+
+(* Thoughts of a single short line are shown as that line (ShortThoughts), without bold that covers the whole line. An
+   unterminated bold title (a thought cut off by a stop) keeps the opener, and full-width characters count as 2.5: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`shortThoughtsText /@ {
+        "**Planning TOML import/export wrappers**",
+        "  __Checking the tests__\n",
+        "** Spaced title **",
+        "Some **bold** text",
+        "**First** and **second**",
+        "**Not closed",
+        "__init",
+        "__init__ is the constructor",
+        "**Title**\n\nBody",
+        "line one\nline two",
+        "",
+        " \n ",
+        StringRepeat[ "x", 75 ],
+        StringRepeat[ "x", 76 ],
+        "**" <> StringRepeat[ "x", 75 ] <> "**",
+        "**" <> StringRepeat[ "x", 76 ] <> "**",
+        StringRepeat[ "\:4e2d", 30 ],
+        StringRepeat[ "\:4e2d", 31 ],
+        "Planning " <> StringRepeat[ "\:30c6", 26 ],
+        "Planning " <> StringRepeat[ "\:30c6", 27 ]
+    },
+    {
+        "Planning TOML import/export wrappers",
+        "Checking the tests",
+        "Spaced title",
+        "Some **bold** text",
+        "**First** and **second**",
+        None,
+        None,
+        "__init__ is the constructor",
+        None,
+        None,
+        None,
+        None,
+        StringRepeat[ "x", 75 ],
+        None,
+        StringRepeat[ "x", 75 ],
+        None,
+        StringRepeat[ "\:4e2d", 30 ],
+        None,
+        "Planning " <> StringRepeat[ "\:30c6", 26 ],
+        None
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ShortThoughtsText"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "<think>\n**Planning the answer**\n</think>\n<think>\nA longer thought.\n\nIt has two paragraphs.\n</think>\nDone." ],
+        TemplateBox[ { text_, _, meta_ }, name: "ShortThoughts" | "ThoughtsOpener" ] :>
+            { name, CellToString @ Cell[ text, "Text" ], FreeQ[ text, FontWeight -> Bold ], meta },
+        Infinity
+    ],
+    {
+        { "ShortThoughts", "Planning the answer", True, <| "Type" -> "Literal" |> },
+        { "ThoughtsOpener", s_String /; StringStartsQ[ s, "A longer thought." ] && StringEndsQ[ s, "It has two paragraphs." ], True, <| "Type" -> "Literal" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Short-Line"
+]
+
+(* The thoughts templates are in the generated files (Developer/Resources/Styles.wl, built with
+   BuildChatbookStylesheet[] and BuildStylesheets["CoreExtensions"]), so that cells with them render in any notebook and
+   their display functions can be inlined: *)
+VerificationTest[
+    Module[ { names, root, defined },
+        names   = { "ThoughtsOpener", "EmptyThoughts", "ShortThoughts" };
+        root    = DirectoryName[ $TestFileName, 2 ];
+        defined = Function[ file,
+            Cases[
+                ToExpression[ ReadString @ FileNameJoin @ Prepend[ file, root ], InputForm, HoldComplete ],
+                Cell[ StyleData[ name: Alternatives @@ names ], ___, TemplateBoxOptions -> { ___, DisplayFunction -> _Function, ___ }, ___ ] :> name,
+                Infinity
+            ]
+        ];
+        {
+            defined @ { "FrontEnd", "StyleSheets", "Chatbook.nb" },
+            defined @ { "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" },
+            Select[ names, MatchQ[ Wolfram`Chatbook`InlineTemplateBoxes @ TemplateBox[ { "", "", <| |> }, # ], TemplateBox[ _, #, DisplayFunction -> _Function ] ] & ]
+        }
+    ],
+    ConstantArray[ { "ThoughtsOpener", "EmptyThoughts", "ShortThoughts" }, 3 ],
+    SameTest -> MatchQ,
+    TestID   -> "Thoughts-Templates-Built"
 ]
 
 VerificationTest[
@@ -710,6 +801,19 @@ VerificationTest[
     { __ },
     SameTest -> MatchQ,
     TestID   -> "Placeholder-Streaming-Partial"
+]
+
+(* While streaming, Wolfram Language code is a string in a "ChatCodeActive" cell, which shows the quotes of its strings
+   like the finished "ChatCode" cell (the chat output templates hide string characters): *)
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "```wl\nx = \"a\"\n```\n", <| "Status" -> "Streaming" |> ],
+        Cell[ BoxData[ _String ], "ChatCodeActive", opts___ ] :> { opts },
+        Infinity
+    ],
+    { { ShowStringCharacters -> True } },
+    SameTest -> MatchQ,
+    TestID   -> "Streaming-WL-Code-ShowsStringCharacters"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
@@ -1336,7 +1440,7 @@ VerificationTest[
     },
     { "unset", "unset", "unset", "unset" },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-DateObject-Options-Not-Evaluated@@Tests/Formatting.wlt:814,1-848,2"
+    TestID   -> "UntrustedContent-DateObject-Options-Not-Evaluated"
 ]
 
 (* A DateObject with a literal option (and with positional arguments only) still formats as a date, so the protection
@@ -1348,7 +1452,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-DateObject-Literal-Option-Still-Formats@@Tests/Formatting.wlt:852,1-860,2"
+    TestID   -> "UntrustedContent-DateObject-Literal-Option-Still-Formats"
 ]
 
 (* An entity whose qualifier list holds arbitrary code (e.g. EntityProperty's third argument) must not be evaluated by
@@ -1363,7 +1467,7 @@ VerificationTest[
     },
     { "unset", True },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-Entity-Qualifier-Not-Evaluated@@Tests/Formatting.wlt:864,1-875,2"
+    TestID   -> "UntrustedContent-Entity-Qualifier-Not-Evaluated"
 ]
 
 (* HTML entities in the model's text are decoded only when they are real named or numeric entities, with their case
@@ -1399,7 +1503,7 @@ VerificationTest[
         "<b>"
     },
     SameTest -> MatchQ,
-    TestID   -> "ImportHTMLEntity-Real-Entities-Only@@Tests/Formatting.wlt:880,1-911,2"
+    TestID   -> "ImportHTMLEntity-Real-Entities-Only"
 ]
 
 (* Code keeps its HTML entities as they are written, in code blocks (also one that is not closed yet) and inline code,
@@ -1427,7 +1531,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim@@Tests/Formatting.wlt:915,1-939,2"
+    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim"
 ]
 
 (* The untrusted-content switch keeps the formatter from importing markdown images (they become links to their source)
@@ -1470,7 +1574,7 @@ VerificationTest[
     ],
     { True, { }, { }, 1, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-Switch-Disables-Effects@@Tests/Formatting.wlt:945,1-982,2"
+    TestID   -> "UntrustedContent-Switch-Disables-Effects"
 ]
 
 (* The front end's linear syntax (private-use characters) in the model's text, in a tool result or in the code of a
@@ -1509,7 +1613,7 @@ VerificationTest[
     ],
     { { }, { False, False, False, False, False, False, False }, { True, True, True, True, True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-Not-Evaluated@@Tests/Formatting.wlt:988,1-1021,2"
+    TestID   -> "UntrustedContent-LinearSyntax-Not-Evaluated"
 ]
 
 (* The characters of linear syntax are also replaced when the formatter makes them from the text, after the text itself
@@ -1542,7 +1646,7 @@ VerificationTest[
         { "\:fffd", "\:fffd", "A", "B" }
     },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-Decoded-Characters@@Tests/Formatting.wlt:1027,1-1054,2"
+    TestID   -> "UntrustedContent-LinearSyntax-Decoded-Characters"
 ]
 
 (* What a tool call shows besides its text: the model's parameters (with the tool's formatter, with clickToCopy, or as
@@ -1584,7 +1688,7 @@ VerificationTest[
         <| "a" -> { "b", 1, None } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-ToolCall-Views@@Tests/Formatting.wlt:1060,1-1096,2"
+    TestID   -> "UntrustedContent-LinearSyntax-ToolCall-Views"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

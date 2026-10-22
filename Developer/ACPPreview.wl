@@ -52,7 +52,8 @@
      * A temporary window record (Status "Running") is registered for the preview notebook so the permission panel and
        the publisher work; it is removed when the replay ends or is stopped.
      * Opener toggles in the live view (Working header, tool cards, thoughts, Details) go through
-       ChatbookAction[ "ACP", "ToggleOpen", ... ] and work as in the real window. *)
+       ChatbookAction[ "ACP", "ToggleOpen", ... ] and work as in the real window. As there, the Working opener starts
+       closed: click its header to see the transcript while it is replayed. *)
 
 (* ::Section::Closed:: *)
 (*Package Header*)

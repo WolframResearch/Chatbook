@@ -1791,7 +1791,8 @@ respondedQ // endDefinition;
 (*acpSendPrompt*)
 
 (* Sends the turn's prompt (session/prompt with a "cb-" string ID); called by UI.wl after it created the turn and set
-   the window "Running". The response is handled by onPromptResponse. *)
+   the window "Running". The prompt's content blocks are the text and the turn's attachments (Attachments.wl's
+   acpPromptBlocks: one text block without attachments). The response is handled by onPromptResponse. *)
 acpSendPrompt // beginDefinition;
 
 acpSendPrompt[ nbo_NotebookObject, turnID_String ] := Catch @ Module[ { window, turn, conn, sid, id, sent },
@@ -1824,7 +1825,15 @@ acpSendPrompt[ nbo_NotebookObject, turnID_String ] := Catch @ Module[ { window, 
         nbo,
         conn,
         "session/prompt",
-        <| "sessionId" -> sid, "prompt" -> { <| "type" -> "text", "text" -> Replace[ Lookup[ turn, "Prompt", "" ], Except[ _String ] -> "" ] |> } |>,
+        <|
+            "sessionId" -> sid,
+            "prompt"    -> acpPromptBlocks[
+                Replace[ Lookup[ turn, "Prompt", "" ], Except[ _String ] -> "" ],
+                Lookup[ turn, "Attachments", { } ],
+                Lookup[ window, "Capabilities", None ],
+                acpRemoteQ @ window
+            ]
+        |>,
         "Prompt",
         <| "TurnID" -> turnID |>,
         id
@@ -2349,6 +2358,7 @@ resetProjectDirectory[ nbo_NotebookObject, dir_, extra_Association ] := (
     ];
     acpFESet[ nbo, "ProjectDirectory", dir ];
     acpFESet[ nbo, "ResumableSessionID", None ];
+    acpFESet[ nbo, "QueuedPrompt", None ]; (* the queued message's copy for kernel restarts (UI.wl) *)
     clearWindowCells @ nbo;
     Null
 );

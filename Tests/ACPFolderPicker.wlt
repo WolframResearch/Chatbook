@@ -612,6 +612,21 @@ VerificationTest[
     TestID   -> "Placement@@Tests/ACPFolderPicker.wlt:580,1-613,2"
 ]
 
+(* With the ACP window's default width (480 points; 600 on macOS, where the picker is 520 wide) the picker is inside the
+   window, also at the display's left edge *)
+VerificationTest[
+    headless @ {
+        acpFolderPickerPlacement[ <| "Left" -> 0, "Width" -> 480, "Top" -> 30, "Height" -> 700 |>, { 0, 1366 }, { 440, 560 } ],
+        acpFolderPickerPlacement[ <| "Left" -> 0, "Width" -> 600, "Top" -> 30, "Height" -> 700 |>, { 0, 1440 }, { 520, 600 } ][ "WindowMargins" ]
+    },
+    {
+        <| "WindowMargins" -> { { 20, Automatic }, { Automatic, 70 } }, "WindowSize" -> { 440, 560 } |>,
+        { { 40, Automatic }, { Automatic, 70 } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Placement-DefaultWidth@@Tests/ACPFolderPicker.wlt:617,1-628,2"
+]
+
 (* The picker window (pure): deployed, never saved, excluded from chat, owner and host key in the TaggingRules, the owner's
    kernel; the path field is an InputField bound to the TaggingRules and outside every Dynamic; the docked cell is
    selectable (typing) and the notebook is not; Escape cancels, closing tells the store; the list cell is tagged *)
@@ -662,7 +677,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Notebook@@Tests/ACPFolderPicker.wlt:618,1-666,2"
+    TestID   -> "Notebook@@Tests/ACPFolderPicker.wlt:633,1-681,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -716,7 +731,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Start-Listing@@Tests/ACPFolderPicker.wlt:676,1-720,2"
+    TestID   -> "Start-Listing@@Tests/ACPFolderPicker.wlt:691,1-735,2"
 ]
 
 (* Navigation: Enter (by key, never by name), Up, Home, Go (relative to the listed folder, absolute, ~, ..), Go with the
@@ -778,7 +793,7 @@ VerificationTest[
         Missing[ "Root" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Navigate@@Tests/ACPFolderPicker.wlt:724,1-782,2"
+    TestID   -> "Navigate@@Tests/ACPFolderPicker.wlt:739,1-797,2"
 ]
 
 (* Folders that can't be listed: an error for the request; the previous listing stays (with the path field's text);
@@ -808,7 +823,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Navigate-Errors@@Tests/ACPFolderPicker.wlt:786,1-812,2"
+    TestID   -> "Navigate-Errors@@Tests/ACPFolderPicker.wlt:801,1-827,2"
 ]
 
 (* The path field shows a folder with a tab or a bidi character display-safe (U+2409, [[U+202E]]); Go with that text
@@ -844,7 +859,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Go-DisplaySafePrefix@@Tests/ACPFolderPicker.wlt:817,1-848,2"
+    TestID   -> "Go-DisplaySafePrefix@@Tests/ACPFolderPicker.wlt:832,1-863,2"
 ]
 
 (* Navigation is debounced: three Up clicks 80 ms apart make one ssh connection, for the last target (three levels up:
@@ -872,7 +887,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { 3, 1, $home <> "/deep/a", "Up" }, { True, True, $home <> "/deep/a" } },
     SameTest -> MatchQ,
-    TestID   -> "Debounce@@Tests/ACPFolderPicker.wlt:854,1-876,2"
+    TestID   -> "Debounce@@Tests/ACPFolderPicker.wlt:869,1-891,2"
 ]
 
 (* "Show hidden" only filters the view (no ssh call) and is persisted (written by the pump); "Show more" pages *)
@@ -891,7 +906,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { 100, 100 }, { True, { True, 50, "Ready" }, True }, False, False, 0 },
     SameTest -> MatchQ,
-    TestID   -> "ShowHidden-ShowMore@@Tests/ACPFolderPicker.wlt:879,1-895,2"
+    TestID   -> "ShowHidden-ShowMore@@Tests/ACPFolderPicker.wlt:894,1-910,2"
 ]
 
 (* The automatic open (a new remote window without a folder) does nothing while the host is latched (sshd's
@@ -937,7 +952,7 @@ VerificationTest[
         Missing[ "NotRemote" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "AutoOpenLatched@@Tests/ACPFolderPicker.wlt:900,1-941,2"
+    TestID   -> "AutoOpenLatched@@Tests/ACPFolderPicker.wlt:915,1-956,2"
 ]
 
 (* The first listing starts at the window's folder: if it is gone, the nearest folder above it is listed, with a notice *)
@@ -958,7 +973,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "Fallback@@Tests/ACPFolderPicker.wlt:944,1-962,2"
+    TestID   -> "Fallback@@Tests/ACPFolderPicker.wlt:959,1-977,2"
 ]
 
 (* A newer request replaces a running one: with a host that signs in slowly (x.slow.test), the first listing is
@@ -987,7 +1002,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { "Ready", $home <> "/other", None }, 1, { "Cancelled", "OK" }, True },
     SameTest -> MatchQ,
-    TestID   -> "Supersede@@Tests/ACPFolderPicker.wlt:966,1-991,2"
+    TestID   -> "Supersede@@Tests/ACPFolderPicker.wlt:981,1-1006,2"
 ]
 
 (* ssh failures: the store shows the error info of the run (the toolbar's messages and hints, no CR, no buttons of its
@@ -1024,7 +1039,7 @@ VerificationTest[
         { { "Error", None }, { "SSHHostNotFound", { } }, True, True, { "FolderPickerRefresh", "FolderPickerCopyError" }, Missing[ "NotReady" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "SSH-Errors@@Tests/ACPFolderPicker.wlt:996,1-1028,2"
+    TestID   -> "SSH-Errors@@Tests/ACPFolderPicker.wlt:1011,1-1043,2"
 ]
 
 (* A listing that takes too long *)
@@ -1046,7 +1061,7 @@ VerificationTest[
         { "FolderPickerRefresh" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Timeout@@Tests/ACPFolderPicker.wlt:1031,1-1050,2"
+    TestID   -> "Timeout@@Tests/ACPFolderPicker.wlt:1046,1-1065,2"
 ]
 
 (* A listing whose run waits for a host slot is not lost: acpRemoteRun bounds the slot wait and the ssh run separately,
@@ -1082,7 +1097,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { "Ready", $home, None }, { }, True, { "OK" }, True },
     SameTest -> MatchQ,
-    TestID   -> "SlotWait-NotLost@@Tests/ACPFolderPicker.wlt:1056,1-1086,2"
+    TestID   -> "SlotWait-NotLost@@Tests/ACPFolderPicker.wlt:1071,1-1101,2"
 ]
 
 (* The picker lists with the window's current SSH settings: fixing "Executable" or "Arguments" for the same host
@@ -1134,7 +1149,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "SameHostSettings@@Tests/ACPFolderPicker.wlt:1092,1-1138,2"
+    TestID   -> "SameHostSettings@@Tests/ACPFolderPicker.wlt:1107,1-1153,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1195,7 +1210,7 @@ VerificationTest[
         $home <> "/proj"
     },
     SameTest -> MatchQ,
-    TestID   -> "Choose@@Tests/ACPFolderPicker.wlt:1148,1-1199,2"
+    TestID   -> "Choose@@Tests/ACPFolderPicker.wlt:1163,1-1214,2"
 ]
 
 (* A folder that can be entered but not listed (mode 111) can't be chosen *)
@@ -1208,7 +1223,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { "Ready", "Unreadable", $home <> "/perm/xonly", { } }, Missing[ "Unreadable" ], True },
     SameTest -> MatchQ,
-    TestID   -> "Choose-Unreadable@@Tests/ACPFolderPicker.wlt:1202,1-1212,2"
+    TestID   -> "Choose-Unreadable@@Tests/ACPFolderPicker.wlt:1217,1-1227,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1248,7 +1263,7 @@ VerificationTest[
     ],
     { None, "~/x", "~", "/srv/app", "~/x", "/srv/b", "/srv/app", "/srv/current", None, "~", { } },
     SameTest -> MatchQ,
-    TestID   -> "Defaults@@Tests/ACPFolderPicker.wlt:1222,1-1252,2"
+    TestID   -> "Defaults@@Tests/ACPFolderPicker.wlt:1237,1-1267,2"
 ]
 
 (* A host switch closes the picker of the old host; a remote host without a last folder leaves the window without one
@@ -1292,7 +1307,7 @@ VerificationTest[
         { $home <> "/proj", None }
     },
     SameTest -> MatchQ,
-    TestID   -> "HostSwitch@@Tests/ACPFolderPicker.wlt:1257,1-1296,2"
+    TestID   -> "HostSwitch@@Tests/ACPFolderPicker.wlt:1272,1-1311,2"
 ]
 
 (* The record of a remote window rebuilt after a kernel restart (from its TaggingRules): the folder is a remote path
@@ -1324,7 +1339,7 @@ VerificationTest[
     ],
     { { "~/proj", "Disconnected", "/home/rebuild", Missing[ "KeyAbsent", "FolderPicker" ] }, { }, None, Inherited },
     SameTest -> MatchQ,
-    TestID   -> "Rebuild@@Tests/ACPFolderPicker.wlt:1301,1-1328,2"
+    TestID   -> "Rebuild@@Tests/ACPFolderPicker.wlt:1316,1-1343,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1473,7 +1488,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Views@@Tests/ACPFolderPicker.wlt:1339,1-1477,2"
+    TestID   -> "Views@@Tests/ACPFolderPicker.wlt:1354,1-1492,2"
 ]
 
 (* Counts in the singular and the plural (templates "...One" for 1 in the text resources): the counts line, "and 1 more
@@ -1537,7 +1552,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Views-CountsAndName@@Tests/ACPFolderPicker.wlt:1482,1-1541,2"
+    TestID   -> "Views-CountsAndName@@Tests/ACPFolderPicker.wlt:1497,1-1556,2"
 ]
 
 (* A navigation error (a typed folder that doesn't exist) keeps the previous listing: the status line still names the
@@ -1570,7 +1585,7 @@ VerificationTest[
     ],
     { True, { True, True, True }, { False, True } },
     SameTest -> MatchQ,
-    TestID   -> "Views-NavigationErrorKeepsName@@Tests/ACPFolderPicker.wlt:1545,1-1574,2"
+    TestID   -> "Views-NavigationErrorKeepsName@@Tests/ACPFolderPicker.wlt:1560,1-1589,2"
 ]
 
 (* An ssh error in the picker: the full error view with "Try again" and a copy button that carries no text: "Copy
@@ -1612,7 +1627,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "Views-SSHErrorCopy@@Tests/ACPFolderPicker.wlt:1580,1-1616,2"
+    TestID   -> "Views-SSHErrorCopy@@Tests/ACPFolderPicker.wlt:1595,1-1631,2"
 ]
 
 (* The header (a docked cell) wraps its lines: the "DockedCell" style turns line breaking off, the cell turns it on, so
@@ -1637,7 +1652,7 @@ VerificationTest[
     ],
     { { Automatic, 0 }, { False }, { True } },
     SameTest -> MatchQ,
-    TestID   -> "Header-Layout@@Tests/ACPFolderPicker.wlt:1621,1-1641,2"
+    TestID   -> "Header-Layout@@Tests/ACPFolderPicker.wlt:1636,1-1656,2"
 ]
 
 (* FE-only: in the picker's header (a docked cell, with its own options) a long fallback notice wraps at the window's
@@ -1670,7 +1685,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Header-Wraps-FEOnly@@Tests/ACPFolderPicker.wlt:1646,1-1674,2"
+    TestID   -> "Header-Wraps-FEOnly@@Tests/ACPFolderPicker.wlt:1661,1-1689,2"
 ]
 
 (* A listing whose result never arrives (a lost continuation): the store stays "Loading" with nothing scheduled, yet the
@@ -1703,13 +1718,13 @@ VerificationTest[
     ],
     { True, True, True, { "Error", None }, { "Timeout", "Listing the folder on testhost took too long." }, False },
     SameTest -> MatchQ,
-    TestID   -> "LostContinuation@@Tests/ACPFolderPicker.wlt:1679,1-1707,2"
+    TestID   -> "LostContinuation@@Tests/ACPFolderPicker.wlt:1694,1-1722,2"
 ]
 
-(* The folder row of a remote window (UI.wl): host:path with the remote home abbreviated, the host and the whole path in
-   the tooltip, warnings for the home folder, the root and a missing folder (from the window's error), and "Change..."
-   runs "ChooseDirectory" (the picker); a local window keeps the front end's directory dialog. Nothing is looked at on
-   this computer for a remote folder. *)
+(* The folder row of a remote window (UI.wl): host:path with the remote home abbreviated (strings in the label's boxes
+   are quoted), the host and the whole path in the tooltip, warnings for the home folder, the root and a missing folder
+   (from the window's error), and the folder (the label is the button) runs "ChooseDirectory" (the picker); a local
+   window keeps the front end's directory dialog. Nothing is looked at on this computer for a remote folder. *)
 VerificationTest[
     headless @ Module[ { nbo, remote, row, local },
         nbo    = NotebookObject[ "acp-picker-folder-row" ];
@@ -1724,8 +1739,8 @@ VerificationTest[
             {
                 With[ { v = row @ remote },
                     {
-                        MemberQ[ stringsIn @ v, "ec2-203-0-113-1\[Ellipsis]:" ],
-                        MemberQ[ stringsIn @ v, "~/projects/app" ],
+                        MemberQ[ StringTrim[ #, "\"" ] & /@ stringsIn @ v, "ec2-203-0-113-1\[Ellipsis]:" ],
+                        MemberQ[ StringTrim[ #, "\"" ] & /@ stringsIn @ v, "~/projects/app" ],
                         MemberQ[ stringsIn @ v, "Project folder on ubuntu@ec2-203-0-113-100.compute-1.amazonaws.com: /remote/u/projects/app" ],
                         actionsIn @ v,
                         FreeQ[ v, _FileNameSetter ]
@@ -1744,7 +1759,7 @@ VerificationTest[
     ],
     { { True, True, True, { "ChooseDirectory" }, True }, True, True, True, True, { }, { False, { "SetProjectDirectory" } } },
     SameTest -> MatchQ,
-    TestID   -> "FolderRow@@Tests/ACPFolderPicker.wlt:1713,1-1748,2"
+    TestID   -> "FolderRow@@Tests/ACPFolderPicker.wlt:1728,1-1763,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1770,7 +1785,7 @@ VerificationTest[
     ],
     { Missing[ "TestSkipped" ] | { Null, None, True }, True, Missing[ "TestSkipped" ] | True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-NoLeftovers@@Tests/ACPFolderPicker.wlt:1755,1-1774,2"
+    TestID   -> "Cleanup-NoLeftovers@@Tests/ACPFolderPicker.wlt:1770,1-1789,2"
 ]
 
 (* Isolated handlers and tasks swallow messages and failures into the debug log; nothing unexpected may have been logged *)
@@ -1784,7 +1799,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-DebugLog@@Tests/ACPFolderPicker.wlt:1777,1-1788,2"
+    TestID   -> "Cleanup-DebugLog@@Tests/ACPFolderPicker.wlt:1792,1-1803,2"
 ]
 
 VerificationTest[
@@ -1806,7 +1821,7 @@ VerificationTest[
     ,
     { False, None, False, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup-Restore@@Tests/ACPFolderPicker.wlt:1790,1-1810,2"
+    TestID   -> "Cleanup-Restore@@Tests/ACPFolderPicker.wlt:1805,1-1825,2"
 ]
 
 (* With a front end (CI's UsingFrontEnd, a notebook), no test wrote the front end's ACP preferences: every persisted
@@ -1820,7 +1835,7 @@ VerificationTest[
     ],
     $fePreferences0,
     SameTest -> SameQ,
-    TestID   -> "Cleanup-FrontEndPreferences@@Tests/ACPFolderPicker.wlt:1815,1-1824,2"
+    TestID   -> "Cleanup-FrontEndPreferences@@Tests/ACPFolderPicker.wlt:1830,1-1839,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
