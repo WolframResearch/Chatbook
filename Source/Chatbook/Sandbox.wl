@@ -45,6 +45,7 @@ $hintMethod               := toolOptionValue[ "WolframLanguageEvaluator", "HintM
 $disabledHints            := toolOptionValue[ "WolframLanguageEvaluator", "DisabledHints"            ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
+$sandboxMemoryConstraint   = Automatic;
 $maxSandboxMessages        = 10;
 $maxMessageParameterLength = 100;
 $toolOutputPageWidth       = 100;
@@ -169,6 +170,7 @@ WolframLanguageToolEvaluate // Options = {
     "IncludeDefinitions"    -> Automatic,
     "Line"                  -> Automatic,
     "MaxCharacterCount"     -> 10000,
+    "MemoryConstraint"      -> Automatic,
     "Method"                -> Automatic,
     "PageWidth"             -> Infinity,
     "PropagateMessages"     -> False,
@@ -238,6 +240,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
             $propagateMessages        = getOption[ "PropagateMessages"    , opts ],
             $readPaths                = getOption[ "AllowedReadPaths"     , opts ],
             $sandboxEvaluationTimeout = getOption[ "TimeConstraint"       , opts ],
+            $sandboxMemoryConstraint  = getOption[ "MemoryConstraint"     , opts ],
             $toolOutputPageWidth      = getOption[ "PageWidth"            , opts ],
             $toolResultStringLength   = getOption[ "MaxCharacterCount"    , opts ],
             $writePaths               = getOption[ "AllowedWritePaths"    , opts ],
@@ -294,6 +297,12 @@ getOption[ "TimeConstraint", $$unspecified ] := Infinity;
 getOption[ "TimeConstraint", time_Integer? Positive ] := time;
 getOption[ "TimeConstraint", Infinity ] := Infinity;
 getOption[ "TimeConstraint", time_ ] := throwFailure[ "InvalidOptionValue", "TimeConstraint", time ];
+
+(* Automatic is resolved in the evaluator kernel, since that's where the memory is used: *)
+getOption[ "MemoryConstraint", $$unspecified ] := Automatic;
+getOption[ "MemoryConstraint", bytes_Integer? Positive ] := Min[ bytes, Developer`$MaxMachineInteger ];
+getOption[ "MemoryConstraint", Infinity ] := Infinity;
+getOption[ "MemoryConstraint", bytes_ ] := throwFailure[ "InvalidOptionValue", "MemoryConstraint", bytes ];
 
 getOption[ "Line", $$unspecified ] := $Line;
 getOption[ "Line", line_Integer? Positive ] := line;
@@ -3084,6 +3093,25 @@ timeConstraintFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*memoryConstraintFailure*)
+memoryConstraintFailure // beginDefinition;
+
+(* An Automatic memory constraint is only resolved in the evaluator kernel, so this gives a function that creates the
+   failure from the number of bytes: *)
+memoryConstraintFailure[ ] := Function[
+    Failure[
+        "MemoryConstraintExceeded",
+        <|
+            "MessageTemplate"   -> "Evaluation exceeded the `1` byte memory limit.",
+            "MessageParameters" -> { #1 }
+        |>
+    ]
+];
+
+memoryConstraintFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*kernelQuitFailure*)
 kernelQuitFailure // beginDefinition;
 
@@ -3108,7 +3136,7 @@ kernelQuitFailure // endDefinition;
     - parses its input string using the evaluator's current $Context, $ContextPath, etc.
     - replaces macro placeholders with their expanded expressions
     - warns about undefined symbols
-    - evaluates the input with a time constraint
+    - evaluates the input with time and memory constraints
     - records In/Out history and increments $Line
     - returns an association describing the result *)
 
@@ -3131,12 +3159,14 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                 history   = ConfirmMatch[ historyOption @ opts, "Full"|"Output"|None, "History" ],
                 time      = Lookup[ opts, "TimeConstraint", Infinity ],
                 fail      = ConfirmMatch[ timeConstraintFailure @ $sandboxEvaluationTimeout, _Failure, "Failure" ],
+                memory    = ConfirmMatch[ $sandboxMemoryConstraint, Automatic|Infinity|_Integer, "Memory" ],
+                memFail   = ConfirmMatch[ memoryConstraintFailure[ ], _Function, "MemoryFailure" ],
                 evaluate  = ConfirmMatch[ segmentEvaluation[ ], _Function, "Evaluation" ],
                 undefined = $undefinedSymbolWarnings,
                 initQ     = $initializationTest
             },
             HoldComplete @ Module[
-                { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentResult },
+                { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentMemory, segmentResult },
 
                 If[ IntegerQ @ start, $Line = start ];
 
@@ -3199,10 +3229,24 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                         Scan[ Print, messages ];
                         undefined @ segmentHeld;
 
+                        (* Leave some of the currently available memory for the rest of the system: *)
+                        segmentMemory = Replace[
+                            If[ memory === Automatic, Quiet @ Ceiling[ 0.95 * MemoryAvailable[ ] ], memory ],
+                            Except[ _Integer? Positive ] -> Infinity
+                        ];
+
                         segmentResult = Replace[
                             HoldComplete @@ {
                                 CheckAbort[
-                                    TimeConstrained[ evaluate @ segmentHeld, time, segmentStop = "TimedOut"; fail ],
+                                    TimeConstrained[
+                                        MemoryConstrained[
+                                            evaluate @ segmentHeld,
+                                            segmentMemory,
+                                            segmentStop = "MemoryExceeded"; memFail @ segmentMemory
+                                        ],
+                                        time,
+                                        segmentStop = "TimedOut"; fail
+                                    ],
                                     segmentStop = "Aborted"; $Aborted
                                 ]
                             },

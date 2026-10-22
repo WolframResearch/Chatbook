@@ -55,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.7.29.4001538253"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.7.34.4001571161"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],

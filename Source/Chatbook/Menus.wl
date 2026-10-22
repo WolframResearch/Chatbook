@@ -953,7 +953,7 @@ Module[ { icon, label, rawLabel },
             RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label }, "ChatMenuItem" ],
             NotebookDelete @ rootMenuCell; eval,
             Appearance -> $suppressButtonAppearance,
-            BoxID      -> "NASidebarMenuItemSetter" <> rawLabel,
+            BoxID      -> "NASidebarMenuItemSetter" <> stringResName[ rawLabel ],
             Evaluator  -> Lookup[ spec, "Evaluator", Automatic ],
             Method     -> Lookup[ spec, "Method", "Queued" ]
         ],
@@ -1028,7 +1028,7 @@ With[
                 ]
             )
         },
-        BoxID  -> "NASidebarMenuItemSubmenuGenerator" <> rawLabel,
+        BoxID  -> "NASidebarMenuItemSubmenuGenerator" <> stringResName[ rawLabel ],
         Method -> "Queued"
     ]
 ]

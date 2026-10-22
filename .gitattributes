@@ -1,3 +1,4 @@
+*.tr text eol=lf
 # Shell scripts that run under /bin/sh on remote machines (and the fake ssh of the tests) must keep LF line endings,
 # also in a Windows checkout with core.autocrlf=true: dash rejects CRLF ("export: LC_ALL\r: bad variable name").
 Assets/RemoteScripts/*.sh text eol=lf
