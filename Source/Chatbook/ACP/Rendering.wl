@@ -12,8 +12,8 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
 
    Live views (rule R6): the active output cell holds one Dynamic that tracks the turn's layout symbol. It renders the
    "Working" header and, while that opener is open (it starts closed), one Dynamic per entity, each tracking that
-   entity's change symbol. Opener state lives in $acpOpen and is toggled by preemptive EventHandlers
-   (ChatbookAction[ "ACP", "ToggleOpen", turnID, key, default ]).
+   entity's change symbol. Opener state lives in $acpOpen and is toggled by preemptive EventHandlers and the tool cards'
+   dividers, preemptive buttons (ChatbookAction[ "ACP", "ToggleOpen", turnID, key, default ]).
    Live views contain no scroll panes and no DynamicModule-state openers. Everything the front end evaluates runs inside
    acpIsolated and renders a harmless placeholder when the kernel-side state is missing (e.g. after a kernel restart).
 
@@ -67,7 +67,6 @@ $labelHoverColor   := color @ "ThinkingOpenerFontHover";
 $toolLabelColor    := color @ "NA_ChatOutputToolCallLabelFont";
 $cardBackground    := color @ "NA_ChatOutputToolCallOpenerBackground";
 $cardFrame         := color @ "NA_ChatOutputToolCallOpenerFrame";
-$cardFrameHover    := color @ "NA_ChatOutputToolCallOpenerFrameHover";
 $amberBackground   := color @ "ErrorMessageNonFatalBackground";
 $amberFrame        := color @ "ErrorMessageNonFatalFrame";
 $amberFont         := color @ "ErrorMessageNonFatalFont";
@@ -1414,17 +1413,15 @@ toolCard // beginDefinition;
 
 (* Header and body as boxes (typeset once): staticOpener writes the header once, above the body's pane *)
 toolCard[ tool_Association, key_, turn_, open0_ ] /; $renderMode === "Final" :=
-    staticOpener[ RawBoxes @ ToBoxes @ toolHeader[ tool, turn ], RawBoxes @ ToBoxes @ toolBody[ tool, key, turn ], TrueQ @ open0, cardStyle @ tool ];
+    staticOpener[ RawBoxes @ ToBoxes @ toolHeader[ tool, turn ], RawBoxes @ ToBoxes @ toolBody[ tool, key, turn ], TrueQ @ open0 ];
 
+(* Live: the kernel keeps the open state ($acpOpen), which the header, the divider and "Hide" toggle *)
 toolCard[ tool_Association, key_, turn_, open0_ ] := Module[ { open, header },
     open   = If[ BooleanQ @ open0, open0, acpOpenQ[ $turnID, key, False ] ];
     header = toggleHandler[ cardHeaderGrid[ toolHeader[ tool, turn ], open ], $turnID, key, False ];
-    Framed[
-        If[ TrueQ @ open,
-            Grid[ { { header }, { toolBody[ tool, key, turn ] } }, Alignment -> { Left, Top }, Spacings -> { 0, 0.6 } ],
-            header
-        ],
-        cardFrameOptions @ cardStyle @ tool
+    cardPane @ If[ TrueQ @ open,
+        Grid[ { { header }, { cardBody[ toolBody[ tool, key, turn ], { $turnID, key } ] } }, Alignment -> { Left, Top }, Spacings -> { 0, 0 } ],
+        header
     ]
 ];
 
@@ -1434,73 +1431,212 @@ toolCard // endDefinition;
 $headerGridOptions := Sequence[
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 },
-    Spacings         -> { 0.4, 0 }
+    Spacings         -> { { 0, 0.2, { 0.4 } }, 0 }
 ];
 
 
-cardStyle // beginDefinition;
-cardStyle[ tool_Association ] := If[ awaitingApprovalQ @ tool, "Awaiting", "Default" ];
-cardStyle // endDefinition;
+(* ShowStringCharacters: a card copied into a notebook whose styles show string characters (Default.nb) shows its
+   strings (the badge, the summary) without quotes, as in the window *)
+$cardBaseStyle = { "Text", FontSize -> 13, LineBreakWithin -> Automatic, ShowStringCharacters -> False };
 
 
-cardFrameOptions // beginDefinition;
-
-cardFrameOptions[ style_ ] := Sequence[
-    Background     -> If[ style === "Awaiting", $amberBackground, $cardBackground ],
-    FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], If[ style === "Awaiting", $amberFrame, $cardFrame ] ],
-    FrameMargins   -> { { 6, 6 }, { 3, 3 } },
-    ImageMargins   -> { { 0, 0 }, { 4, 4 } },
-    RoundingRadius -> 6,
-    (* ShowStringCharacters: a card copied into a notebook whose styles show string characters (Default.nb) shows its
-       strings (the badge, the summary) without quotes, as in the window *)
-    BaseStyle      -> { "Text", FontSize -> 13, LineBreakWithin -> Automatic, ShowStringCharacters -> False }
-];
-
-cardFrameOptions // endDefinition;
+(* A card's place in its cell, with the base style of its text (the cards around it are separated by the lines of the
+   cell, as Chatbook's tool call openers are) *)
+cardPane // beginDefinition;
+cardPane[ expr_ ] := Pane[ expr, BaseStyle -> $cardBaseStyle ];
+cardPane // endDefinition;
 
 
-(* A tool card's header line, the same in live views (toolCard) and final cells (staticOpenerHeader): the header and
-   the opener icon. open is True or False (live), or Dynamic[ Typeset`open ] (final: the icon follows the opener) *)
+(* A tool card's header line, the same in live views (toolCard) and final cells (staticOpenerHeader): the opener's
+   chevron and the header, in the colors of Chatbook's tool call openers (openerStyle). open is True or False (live),
+   Dynamic[ Typeset`open ] (final: the chevron follows the opener), or None (a card without an opener: its chevron's
+   room is left empty, so that its icon lines up with those of the other cards) *)
 cardHeaderGrid // beginDefinition;
-cardHeaderGrid[ header_, open_ ] := Grid[ { { header, openerIcon @ open } }, $headerGridOptions ];
+
+(* Not clickable: no hover colors *)
+cardHeaderGrid[ header_, None ] := Style[ Grid[ { { openerChevron @ None, header } }, $chevronGridOptions ], FontColor -> $openerColors[ "Default" ] ];
+
+cardHeaderGrid[ header_, open_ ] := openerStyle @ Grid[ { { openerChevron @ open, header } }, $chevronGridOptions ];
+
 cardHeaderGrid // endDefinition;
 
 
-openerIcon // beginDefinition;
+(* A chevron and what follows it, as in Chatbook's tool call openers (clickableOpenerRow0) *)
+$chevronGridOptions := Sequence[
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 1 },
+    Spacings         -> { { Automatic, 0.5 }, 0 }
+];
 
-openerIcon[ open_Dynamic ] := PaneSelector[
-    { True -> openerIcon @ True, False -> openerIcon @ False },
+
+(* The opener's chevron: right when closed, down when open (Chatbook's openerRight and openerDown, without a color:
+   they have the color of their line, see openerStyle) *)
+openerChevron // beginDefinition;
+
+openerChevron[ open_Dynamic ] := PaneSelector[
+    { True -> openerChevron @ True, False -> openerChevron @ False },
     open,
     ImageSize        -> Automatic,
     BaselinePosition -> Baseline
 ];
 
-openerIcon[ open_ ] := RawBoxes @ TemplateBox[ { $toolLabelColor }, If[ TrueQ @ open, "DiscardedMaterialCloserIcon", "DiscardedMaterialOpenerIcon" ] ];
+openerChevron[ None ] := Spacer[ { 8, 8 } ];
 
-openerIcon // endDefinition;
+openerChevron[ open_ ] := If[ TrueQ @ open, openerDown, openerRight ][ Nothing ];
+
+openerChevron // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Opener colors*)
+
+(* A card's header (and its "Hide" line) has the colors of Chatbook's tool call openers (openerViewColors[ "Tool" ]):
+   "Default" for its text and icon and "Default2" for its chevron, "Hover" for all of it under the pointer, and
+   "Pressed" while the mouse button is down there. They are options of a StyleBox around the line: FontColor for the
+   text, and the BaseStyle of its graphics for the chevron, which has no color of its own; the icon takes the text's
+   color (toolIconView). Each is a Dynamic that the front end evaluates without the kernel, with the CurrentValue of
+   "MouseOver" (and "MouseButtonTest") of the StyleBox, so the whole line changes together, also in a saved or copied
+   final cell. A Dynamic is not a LightDarkSwitched color (the front end did not draw such a Dynamic's graphics, nor
+   the text of some lines), so there is one for each of them. Chatbook's openers (NotebookTools`Mousedown) instead show
+   one of three copies of the line, which would store each card's title, with its fit DynamicBox, three times (see
+   staticOpener). *)
+$openerColors := openerViewColors[ "Tool" ];
 
 
-awaitingApprovalQ // beginDefinition;
-awaitingApprovalQ[ KeyValuePattern[ "Permission" -> KeyValuePattern[ "Outcome" -> None ] ] ] := True;
-awaitingApprovalQ[ KeyValuePattern @ { "Type" -> "Permission", "Outcome" -> None } ] := True;
-awaitingApprovalQ[ _ ] := False;
-awaitingApprovalQ // endDefinition;
+openerStyle // beginDefinition;
+openerStyle[ expr_ ] := Style[ expr, FontColor -> openerColor[ "Default" ], GraphicsBoxOptions -> { BaseStyle -> openerColor[ "Default2" ] } ];
+openerStyle // endDefinition;
+
+
+(* default: "Default" or "Default2" *)
+openerColor // beginDefinition;
+
+openerColor[ default_String ] := LightDarkSwitched @@ Table[
+    With[
+        {
+            d = openerColorPart[ $openerColors[ default   ], i ],
+            h = openerColorPart[ $openerColors[ "Hover"   ], i ],
+            p = openerColorPart[ $openerColors[ "Pressed" ], i ]
+        },
+        Dynamic[
+            FEPrivate`If[ CurrentValue[ "MouseOver" ], FEPrivate`If[ CurrentValue[ "MouseButtonTest" ], p, h ], d ],
+            Evaluator -> None
+        ]
+    ],
+    { i, 2 }
+];
+
+openerColor // endDefinition;
+
+
+(* The light (1) or dark (2) color of a LightDarkSwitched color: *)
+openerColorPart // beginDefinition;
+openerColorPart[ LightDarkSwitched[ light_, dark_ ], i_Integer ] := { light, dark }[[ i ]];
+openerColorPart[ color_, _Integer ] := color;
+openerColorPart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Card body*)
+
+(* The body of an open card as Chatbook's tool call openers show it: a divider at its left, which closes the card when
+   clicked (as the header does), and a "Hide" line below it. close: "FrontEnd" (final cells: staticOpener's variable)
+   or { turnID, key } (live views: the kernel's open state, toggleHandler). The rows are aligned at their tops, so the
+   divider starts right below the header (aligned on baselines, as Chatbook's, it started at the baseline of the body's
+   first label at magnification 1.5) *)
+cardBody // beginDefinition;
+
+cardBody[ body_, close_ ] := Pane[
+    Grid[
+        {
+            { Item[ dividerButton @ close, ItemMargins -> { { 3.5, 0 }, { 0, 0 } } ], body },
+            { hideLine @ close, SpanFromLeft }
+        },
+        Alignment -> { Left, Top },
+        Spacings  -> { 0.6, 0.5 }
+    ],
+    ImageMargins -> { { 0, 0 }, { 0, 6 } }
+];
+
+cardBody // endDefinition;
+
+
+(* Chatbook's divider (its ninepatch images, which the front end draws as tall as the body) as a button: *)
+dividerButton // beginDefinition;
+
+dividerButton[ "FrontEnd" ] := MouseAppearance[
+    Button[
+        "",
+        FEPrivate`Set[ Typeset`open, False ],
+        Appearance -> openerViewDividerAppearance[ "Tool" ],
+        Evaluator  -> None,
+        Method     -> "Preemptive"
+    ],
+    "LinkHand"
+];
+
+dividerButton[ { id_String, key_ } ] := With[ { k = key },
+    MouseAppearance[
+        Button[
+            "",
+            acpIsolated @ ChatbookAction[ "ACP", "ToggleOpen", id, k, False ],
+            Appearance -> openerViewDividerAppearance[ "Tool" ],
+            Method     -> "Preemptive"
+        ],
+        "LinkHand"
+    ]
+];
+
+dividerButton // endDefinition;
+
+
+(* The "Hide" line below the body, in the colors of a header (openerStyle; its label is a front end resource, as the
+   "Worked for" opener's: workOpenerHide) *)
+hideLine // beginDefinition;
+
+hideLine[ close_ ] := closeHandler[
+    openerStyle @ Grid[
+        { { openerUp @ Nothing, RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ] } },
+        $chevronGridOptions
+    ],
+    close
+];
+
+hideLine // endDefinition;
+
+
+closeHandler // beginDefinition;
+
+closeHandler[ expr_, "FrontEnd" ] := MouseAppearance[
+    EventHandler[
+        expr,
+        { "MouseClicked" :> FEPrivate`Set[ Typeset`open, False ] },
+        Method         -> "Preemptive",
+        PassEventsDown -> Automatic,
+        PassEventsUp   -> True
+    ],
+    "LinkHand"
+];
+
+closeHandler[ expr_, { id_String, key_ } ] := toggleHandler[ expr, id, key, False ];
+
+closeHandler // endDefinition;
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*staticOpener*)
 
 (* Front-end-only opener for the static final cell (state in a DynamicModule variable, toggled without the kernel).
-   The header is written once, in the first row of a grid; the second row is a PaneSelector that shows the body when
-   the card is open and Spacer[ { 0, 0 } ] when it is closed. With RowMinHeight -> 0 and the grid's baseline on the
-   header (BaselinePosition -> { 1, 1 }), the closed card is exactly as tall as the header line, like a closed live
-   card (a grid row is otherwise at least a line high, even when it shows nothing, and the default baseline added a
-   few points at the top). The opener icon next to the header follows the state (a PaneSelector of the two icons,
-   cardHeaderGrid with Dynamic[ Typeset`open ]).
+   The header is written once, in the first row of a grid; the second row is a PaneSelector that shows the body
+   (cardBody) when the card is open and Spacer[ { 0, 0 } ] when it is closed. With RowMinHeight -> 0 and the grid's
+   baseline on the header (BaselinePosition -> { 1, 1 }), the closed card is exactly as tall as the header line, like a
+   closed live card (a grid row is otherwise at least a line high, even when it shows nothing, and the default baseline
+   added a few points at the top). The chevron next to the header follows the state (a PaneSelector of the two
+   chevrons, cardHeaderGrid with Dynamic[ Typeset`open ]).
 
-   Only built-in boxes, Chatbook's opener icon templates and front-end-only Dynamics: the cell renders anywhere,
-   including when it is copied or saved, and the header (with its title's fit DynamicBox and, with a badge, a fit
-   switch) is stored once per card.
+   Only built-in boxes and front-end-only Dynamics: the cell renders anywhere, including when it is copied or saved,
+   and the header (with its title's fit DynamicBox and, with a badge, a fit switch) is stored once per card.
 
    Not a TemplateBox with an inline DisplayFunction (the earlier construct, which also stored the header once): pasting
    a copy of a final cell whose "Worked for" opener was open made the front end spin at 100% CPU (growing memory, never
@@ -1510,33 +1646,29 @@ awaitingApprovalQ // endDefinition;
    stores every card's header, with its fit DynamicBox, twice. *)
 staticOpener // beginDefinition;
 
-staticOpener[ header_, body_, open_, style_ ] := With[
+staticOpener[ header_, body_, open_ ] := With[
     {
-        h     = staticOpenerHeader @ header,
-        b     = Pane[ body, ImageMargins -> { { 0, 0 }, { 0, 6 } } ],
-        init  = TrueQ @ open,
-        frame = cardFrameOptions @ style
+        h    = staticOpenerHeader @ header,
+        b    = cardBody[ body, "FrontEnd" ],
+        init = TrueQ @ open
     },
     DynamicModule[ { Typeset`open = init },
-        Framed[
-            Grid[
+        cardPane @ Grid[
+            {
+                { h },
                 {
-                    { h },
-                    {
-                        PaneSelector[
-                            { True -> b, False -> Spacer[ { 0, 0 } ] },
-                            Dynamic @ Typeset`open,
-                            ImageSize        -> Automatic,
-                            BaselinePosition -> Top
-                        ]
-                    }
-                },
-                Alignment        -> { Left, Top },
-                Spacings         -> { 0, 0 },
-                RowMinHeight     -> 0,
-                BaselinePosition -> { 1, 1 }
-            ],
-            frame
+                    PaneSelector[
+                        { True -> b, False -> Spacer[ { 0, 0 } ] },
+                        Dynamic @ Typeset`open,
+                        ImageSize        -> Automatic,
+                        BaselinePosition -> Top
+                    ]
+                }
+            },
+            Alignment        -> { Left, Top },
+            Spacings         -> { 0, 0 },
+            RowMinHeight     -> 0,
+            BaselinePosition -> { 1, 1 }
         ],
         DynamicModuleValues :> { }
     ]
@@ -1545,16 +1677,18 @@ staticOpener[ header_, body_, open_, style_ ] := With[
 staticOpener // endDefinition;
 
 
-(* The clickable header of a staticOpener, with the opener icon of the current state: a click toggles Typeset`open,
-   the variable of staticOpener's DynamicModule. The toggle uses only the front end's own functions (FEPrivate`Set and
+(* The clickable header of a staticOpener, with the chevron of the current state: a click toggles Typeset`open, the
+   variable of staticOpener's DynamicModule. The toggle uses only the front end's own functions (FEPrivate`Set and
    FEPrivate`If, as Chatbook's DiscardedMaterialOpener), so that the front end runs it without a kernel: with Not, a
-   click in a saved copy with no kernel running started a kernel, and the card did not open. *)
+   click in a saved copy with no kernel running started a kernel, and the card did not open. It runs when the mouse
+   button is released (a "MouseClicked" event, like the click of Chatbook's openers, which are buttons): while it is
+   down, the line has the "Pressed" color (openerStyle). *)
 staticOpenerHeader // beginDefinition;
 
 staticOpenerHeader[ header_ ] := MouseAppearance[
     EventHandler[
         cardHeaderGrid[ header, Dynamic @ Typeset`open ],
-        { "MouseDown" :> FEPrivate`Set[ Typeset`open, FEPrivate`If[ Typeset`open, False, True ] ] },
+        { "MouseClicked" :> FEPrivate`Set[ Typeset`open, FEPrivate`If[ Typeset`open, False, True ] ] },
         Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
     ],
     "LinkHand"
@@ -1580,7 +1714,7 @@ toolHeader[ tool_Association, turn_ ] := Module[ { parts, summary, exitQ, glyph,
         {
             Flatten @ {
                 iconPane @ toolIcon @ tool,
-                Style[ title, FontColor -> $toolLabelColor ],
+                title,
                 If[ summary === "", Nothing, Style[ summary, FontColor -> If[ exitQ, $amberText, $mutedColor ], FontSize -> 12, LineBreakWithin -> False ] ],
                 Replace[ badgeView, None -> Nothing ],
                 glyph
@@ -1595,7 +1729,7 @@ toolHeader // endDefinition;
 
 (* The title and the badge of a card's header (type: "Tool" or "Permission", see headerTitleWidth). When the window is
    so narrow (or magnified) that the title's object would have less than $minObjectWidth points, the front end drops the
-   badge and gives its room to the title (acpFitSwitch), so the status glyph and the opener stay in the card. A title
+   badge and gives its room to the title (acpFitSwitch), so the status glyph stays in the card. A title
    without an object (cut as a whole: wholeTitleObject) keeps its badge only while all of it fits beside the badge, as
    when it was not cut: with the room of an object, "Stopped: ..." kept a "Stopped" badge and lost its verb. Gives
    { title, badge }, the badge None if there is none. *)
@@ -1728,7 +1862,7 @@ titleTooltip // endDefinition;
 $tooltipWidth = 480;
 
 
-(* The width of a title in a card's header: what the line leaves after the card's frame, icon and opener, the summary,
+(* The width of a title in a card's header: what the line leaves after the card's chevron and icon (see $cardReserve), the summary,
    the badge and the status glyph, in the card's place (context: "Live", "Work" in the final cell's "Worked for" opener,
    "Tail" below it; see $cardContext). type: "Tool" (toolHeader) or "Permission" (permissionEntityCell). badgeSpec:
    the badge's { label, style }, None, or "Dropped" (a badge that the front end dropped: headerTitleAndBadge; its empty
@@ -1777,15 +1911,17 @@ glyphTexts // endDefinition;
    and margins, the "Worked for" opener's indentation, and the screen points of the cells around the card (each
    reserves some at its right) and of frame lines. Inside a card everything scales, so these are in points at
    magnification 1: $cardReserve is what a card takes besides its title and the parts that headerTitleWidth adds (the
-   frame, the icon, the opener; a standalone permission card (permissionEntityCell) has no opener: its title's room in a
-   live view was ViewSize - 17 - (52.5 + 34.3 to 34.75) * magnification at 0.85 to 1.5, and 37.25 at 480 points and
-   magnification 2, where tool cards also got about 4 points less than the linear model; 35.5 keeps all of them inside
-   the room with the safety margin), $headerGap the space between two
-   parts of a header, $badgeChrome a badge's frame. $workingReserve is what the Working header takes besides its
-   label's text (the template, the opener's chevron, the progress animation, which magnification does not scale), as
-   { screen points, points at magnification 1 } *)
+   chevron, the icon and the spaces after them: a card has no frame, see cardHeaderGrid; with the room of a "Read ...
+   1 line" title measured in the "Worked for" opener and in a live view at 360, 480 and 600 points and magnifications
+   0.85 to 2, 38.5 leaves 2.35 to 4.08 drawn points of it unused, the same at every width; the framed cards with the
+   opener at their right took 51 and a check mark after the summary. A standalone permission card
+   (permissionEntityCell: the room of a chevron, no opener) takes 35.5: its title's room, measured the same way in a
+   live view, leaves 2.75 to 6.55 drawn points unused),
+   $headerGap the space between two parts of a header, $badgeChrome a badge's frame. $workingReserve is what the
+   Working header takes besides its label's text (the template, the opener's chevron, the progress animation, which
+   magnification does not scale), as { screen points, points at magnification 1 } *)
 $contextReserve    = <| "Live" -> { 17, 52.5 }, "Work" -> { 16.5, 75 }, "Tail" -> { 9.75, 50.25 } |>;
-$cardReserve       = <| "Tool" -> 51, "Permission" -> 35.5 |>;
+$cardReserve       = <| "Tool" -> 38.5, "Permission" -> 35.5 |>;
 $headerGap         = 5.2;
 $badgeChrome       = 11;
 $progressIconWidth = 20;
@@ -1795,85 +1931,177 @@ $workingReserve    = { 13.25, 93 };
 $cardContext = "Live";
 
 
+(* The icon's place in a header, as in Chatbook's tool call openers (toolCallIconPane) *)
 iconPane // beginDefinition;
-iconPane[ icon_ ] := Pane[ icon, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit", BaselinePosition -> Scaled[ 0.2 ], ContentPadding -> False ];
+
+iconPane[ icon_ ] := Pane[
+    icon,
+    Alignment        -> { Left, Center },
+    BaselinePosition -> Scaled[ 0.27 ],
+    ContentPadding   -> False,
+    FrameMargins     -> 0,
+    ImageMargins     -> { { 0, 2 }, { 2, 2 } },
+    ImageSize        -> { 20, 20 },
+    ImageSizeAction  -> "ShrinkToFit"
+];
+
 iconPane // endDefinition;
 
 
-(* The icons are DynamicBoxes of Chatbook's front end resources (chatbookIcon[ name, False ]), not Chatbook's
-   "ToolIcon..." templates, whose DisplayFunction is the same DynamicBox: pasting a copy of a final cell whose "Worked
-   for" opener was open took about 2 s per template icon (a copy of 4 read cards: 7 s with plain frames, 50 s with
-   HEAD's openers; 40 cards never finished), and about half a second for the whole copy without the templates (see
-   docs/acp-window.md, "Tool cards"). *)
+(* The icons of Chatbook's tool call openers (its "ToolIconCall..." function resources) in the color of the header's
+   state (toolIconView), and glyphs of the same kind for the tools Chatbook has none for. An icon is a DynamicBox
+   of a front end resource, not a template: pasting a copy of a final cell whose "Worked for" opener was open took
+   about 2 s per "ToolIcon..." template icon (a copy of 4 read cards: 7 s with plain frames, 50 s with HEAD's openers;
+   40 cards never finished), and about half a second for the whole copy without the templates (see docs/acp-window.md,
+   "Tool cards"). *)
 toolIcon // beginDefinition;
+toolIcon[ tool_Association ] := toolIconView @ toolIconName @ tool;
+toolIcon // endDefinition;
 
-toolIcon[ tool_Association ] := Module[ { name, kind, names },
+
+(* The name of a tool's icon: a "ToolIconCall..." resource's name, "Edit" or "Shell" (editGlyph, shellGlyph), or
+   { "Character", c } *)
+toolIconName // beginDefinition;
+
+toolIconName[ tool_Association ] := Module[ { name, kind, names },
     name = tool[ "Name" ];
     kind = tool[ "Kind" ];
     Which[
         name === "execute",
             names = acpExecuteToolNames @ tool;
             Which[
-                MemberQ[ names, "Wolfram Language Evaluator" ], chatbookIcon[ "ToolIconWolframLanguageEvaluator", False ],
-                MemberQ[ names, "Wolfram|Alpha" | "Wolfram|Alpha Context" ], chatbookIcon[ "ToolIconWolframAlpha", False ],
-                names =!= { } && AllTrue[ names, StringContainsQ[ #, "Context" | "Documentation" ] & ], chatbookIcon[ "ToolIconDocumentationSearcher", False ],
-                True, chatbookIcon[ "WrenchIcon", False ]
+                MemberQ[ names, "Wolfram Language Evaluator" ], "WolframLanguageEvaluator",
+                MemberQ[ names, "Wolfram|Alpha" | "Wolfram|Alpha Context" ], "WolframAlpha",
+                names =!= { } && AllTrue[ names, StringContainsQ[ #, "Context" | "Documentation" ] & ], "DocumentationSearcher",
+                True, "GenericTool"
             ],
         MatchQ[ name, "read" | "list" ] || (name === None && kind === "read"),
-            chatbookIcon[ "ToolIconFileReader", False ],
+            "FileReader",
         MatchQ[ name, "edit" | "write" | "patch" | "multiedit" ] || (name === None && MatchQ[ kind, "edit" | "delete" | "move" ]),
-            $editIcon,
+            "Edit",
         name === "shell" || (name === None && kind === "execute"),
-            chatbookIcon[ "ExternalLanguageIconShell", False ],
+            "Shell",
         MatchQ[ name, "glob" | "grep" | "codesearch" | "models" ] || (name === None && kind === "search"),
-            chatbookIcon[ "ToolIconDocumentationSearcher", False ],
+            "DocumentationSearcher",
         name === "webfetch" || (name === None && kind === "fetch"),
-            chatbookIcon[ "ToolIconWebFetcher", False ],
+            "WebFetcher",
         name === "websearch",
-            chatbookIcon[ "ToolIconWebSearcher", False ],
+            "WebSearcher",
         name === "skill",
-            chatbookIcon[ "ToolIconDocumentationLookup", False ],
+            "DocumentationLookup",
         name === "question",
-            glyphIcon[ "?" ],
+            { "Character", "?" },
         MatchQ[ name, "todowrite" | "todoread" ],
-            glyphIcon[ "\:2611" ],
+            { "Character", "\:2611" },
         name === "subagent",
-            glyphIcon[ "\:21b3" ],
+            { "Character", "\:21b3" },
         name === "lsp",
-            glyphIcon[ "{ }" ],
+            { "Character", "{ }" },
         name === "invalid",
-            glyphIcon[ "\:26a0" ],
+            { "Character", "\:26a0" },
         (* a direct call of an MCP tool: "Name" is lower case (acpCanonicalToolName) *)
         StringQ @ name && StringContainsQ[ name, "WolframLanguageEvaluator", IgnoreCase -> True ],
-            chatbookIcon[ "ToolIconWolframLanguageEvaluator", False ],
+            "WolframLanguageEvaluator",
         StringQ @ name && StringContainsQ[ name, "WolframAlpha", IgnoreCase -> True ],
-            chatbookIcon[ "ToolIconWolframAlpha", False ],
+            "WolframAlpha",
+        (* the notebook tools of the window's MCP server (NotebookTools.wl, e.g. "wolframnotebooks_createnotebook") *)
+        StringQ @ name && StringEndsQ[ name, "_createnotebook" ],
+            "CreateNotebook",
+        StringQ @ name && StringEndsQ[ name, "_listnotebooks" | "_readnotebook" ],
+            "FileReader",
+        StringQ @ name && StringEndsQ[ name, "_insertcells" | "_replacecells" | "_deletecells" ],
+            "Edit",
         True,
-            chatbookIcon[ "WrenchIcon", False ]
+            "GenericTool"
     ]
 ];
 
-toolIcon // endDefinition;
+toolIconName // endDefinition;
 
 
-(* A character in the tool label color, for tools Chatbook has no icon for: *)
+toolIconView // beginDefinition;
+
+(* An icon has the color of the text around it (the header's: openerStyle), which a resource's function gets as its
+   argument, and a glyph as the BaseStyle of its graphics (its lines have no color of their own) *)
+toolIconView[ { "Character", glyph_String } ] := glyphIcon @ glyph;
+toolIconView[ "Edit"  ] := textColorGraphics @ editGlyph @ Nothing;
+toolIconView[ "Shell" ] := textColorGraphics @ shellGlyph @ Nothing;
+
+toolIconView[ name_String ] := With[ { resource = "ToolIconCall" <> name },
+    RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookExpressions", resource ][ CurrentValue[ FontColor ] ]
+];
+
+toolIconView // endDefinition;
+
+
+textColorGraphics // beginDefinition;
+textColorGraphics[ graphics_ ] := Style[ graphics, GraphicsBoxOptions -> { BaseStyle -> Dynamic[ CurrentValue[ FontColor ], Evaluator -> None ] } ];
+textColorGraphics // endDefinition;
+
+
+(* A character in the header's color, for tools that have no icon: *)
 glyphIcon // beginDefinition;
-glyphIcon[ glyph_String ] := Style[ glyph, FontColor -> $toolLabelColor, FontSize -> 13, FontWeight -> Bold, FontFamily -> "Source Sans Pro" ];
+glyphIcon[ glyph_String ] := Style[ glyph, FontSize -> 13, FontWeight -> Bold, FontFamily -> "Source Sans Pro" ];
 glyphIcon // endDefinition;
 
 
-(* Small pencil glyph (Chatbook has no edit icon): *)
-$editIcon := Graphics[
+(* Glyphs in the style of Chatbook's "ToolIconCall..." icons (16 by 16 points, lines of 1 point) for the tools that it
+   has no icon for: a pencil (edits) and a terminal (shell commands) *)
+editGlyph // beginDefinition;
+
+editGlyph[ color_ ] := Graphics[
     {
-        $toolLabelColor,
+        color,
+        AbsoluteThickness[ 1 ],
         CapForm[ "Round" ],
-        AbsoluteThickness[ 2.2 ],
-        Line @ { { 0.3, 0.3 }, { 0.85, 0.85 } },
-        Polygon @ { { 0.1, 0.1 }, { 0.32, 0.2 }, { 0.2, 0.32 } }
+        JoinForm[ "Round" ],
+        Line @ { { 2.5, 2.5 }, { 3.92, 6.74 }, { 11.59, 14.41 }, { 14.41, 11.59 }, { 6.74, 3.92 }, { 2.5, 2.5 } },
+        Line @ { { 3.92, 6.74 }, { 6.74, 3.92 } },
+        Line @ { { 9.59, 12.41 }, { 12.41, 9.59 } }
     },
-    ImageSize -> { 14, 14 },
-    PlotRange -> { { 0, 1 }, { 0, 1 } }
+    AspectRatio      -> 1,
+    ImagePadding     -> 0,
+    ImageSize        -> { 16, 16 },
+    PlotRange        -> { { 0, 16 }, { 0, 16 } },
+    PlotRangePadding -> None
 ];
+
+editGlyph // endDefinition;
+
+
+shellGlyph // beginDefinition;
+
+shellGlyph[ color_ ] := Graphics[
+    {
+        color,
+        AbsoluteThickness[ 1 ],
+        CapForm[ "Round" ],
+        JoinForm[ "Round" ],
+        (* the frame: lines and arcs, which take the color of the graphics' style (an EdgeForm without a color is
+           drawn black) *)
+        Line @ { { { 3.5, 2.5 }, { 12.5, 2.5 } }, { { 14.5, 4.5 }, { 14.5, 11.5 } }, { { 12.5, 13.5 }, { 3.5, 13.5 } }, { { 1.5, 11.5 }, { 1.5, 4.5 } } },
+        Circle[ { 3.5, 4.5 }, 2, { 3.14159, 4.71239 } ],
+        Circle[ { 12.5, 4.5 }, 2, { 4.71239, 6.28319 } ],
+        Circle[ { 12.5, 11.5 }, 2, { 0., 1.5708 } ],
+        Circle[ { 3.5, 11.5 }, 2, { 1.5708, 3.14159 } ],
+        Line @ { { 4.5, 10.5 }, { 7, 8 }, { 4.5, 5.5 } },
+        Line @ { { 8.5, 5.5 }, { 11.5, 5.5 } }
+    },
+    AspectRatio      -> 1,
+    ImagePadding     -> 0,
+    ImageSize        -> { 16, 16 },
+    PlotRange        -> { { 0, 16 }, { 0, 16 } },
+    PlotRangePadding -> None
+];
+
+shellGlyph // endDefinition;
+
+
+awaitingApprovalQ // beginDefinition;
+awaitingApprovalQ[ KeyValuePattern[ "Permission" -> KeyValuePattern[ "Outcome" -> None ] ] ] := True;
+awaitingApprovalQ[ KeyValuePattern @ { "Type" -> "Permission", "Outcome" -> None } ] := True;
+awaitingApprovalQ[ _ ] := False;
+awaitingApprovalQ // endDefinition;
 
 
 (* The badge of a tool card: { label, style } or None *)
@@ -1925,10 +2153,8 @@ statusGlyph[ tool_Association ] := Which[
         If[ $renderMode === "Final", Nothing, chatbookIcon[ "PercolateProgressAnimation", False ] ],
     tool[ "Status" ] === "failed",
         Style[ "\:2717", FontColor -> $redText, FontWeight -> Bold ],
-    tool[ "Status" ] === "completed" && IntegerQ @ tool[ "ExitCode" ] && tool[ "ExitCode" ] =!= 0,
-        Nothing, (* the amber "exit n" summary says it all *)
-    tool[ "Status" ] === "completed",
-        Style[ "\:2713", FontColor -> $greenText, FontWeight -> Bold ],
+    (* A completed tool has no glyph, as in Chatbook's tool call openers: its title says what it did ("Read ...", "Ran
+       ..."), and a command's nonzero exit code is the amber "exit n" summary *)
     True,
         Nothing
 ];
@@ -2460,17 +2686,23 @@ subOpener[ _, _String, labelKey_String, content_ ] /; $renderMode === "Final" :=
     DynamicModule[ { Typeset`open = False },
         PaneSelector[
             {
-                False -> EventHandler[
-                    Row @ { label, " ", openerIcon @ False },
-                    { "MouseDown" :> FEPrivate`Set[ Typeset`open, True ] },
-                    Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
+                False -> MouseAppearance[
+                    EventHandler[
+                        subOpenerRow[ label, False ],
+                        { "MouseClicked" :> FEPrivate`Set[ Typeset`open, True ] },
+                        Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
+                    ],
+                    "LinkHand"
                 ],
                 True -> Column[
                     {
-                        EventHandler[
-                            Row @ { label, " ", openerIcon @ True },
-                            { "MouseDown" :> FEPrivate`Set[ Typeset`open, False ] },
-                            Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
+                        MouseAppearance[
+                            EventHandler[
+                                subOpenerRow[ label, True ],
+                                { "MouseClicked" :> FEPrivate`Set[ Typeset`open, False ] },
+                                Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
+                            ],
+                            "LinkHand"
                         ],
                         c
                     },
@@ -2487,11 +2719,17 @@ subOpener[ _, _String, labelKey_String, content_ ] /; $renderMode === "Final" :=
 subOpener[ key_, name_String, labelKey_String, content_ ] := Module[ { subKey, open, header },
     subKey = Append[ key, name ];
     open   = acpOpenQ[ $turnID, subKey, False ];
-    header = toggleHandler[ Row @ { subOpenerLabel @ labelKey, " ", openerIcon @ open }, $turnID, subKey, False ];
+    header = toggleHandler[ subOpenerRow[ subOpenerLabel @ labelKey, open ], $turnID, subKey, False ];
     If[ open, Column[ { header, content }, Spacings -> 0.3 ], header ]
 ];
 
 subOpener // endDefinition;
+
+
+(* A sub-opener's line: the chevron of its state (as a card's: openerChevron) in the color of its label, and the label *)
+subOpenerRow // beginDefinition;
+subOpenerRow[ label_, open_ ] := Grid[ { { If[ TrueQ @ open, openerDown, openerRight ][ $sectionLabelColor ], label } }, $chevronGridOptions ];
+subOpenerRow // endDefinition;
 
 
 subOpenerLabel // beginDefinition;
@@ -3116,7 +3354,7 @@ $safeDiffLines = False;
 (*permissionEntityCell*)
 
 (* A permission request that doesn't belong to a tool call (e.g. access outside the project directory). The buttons are
-   in the permission panel; this card only shows a passive badge. *)
+   in the permission panel; this card only shows a passive badge. It looks like a closed tool card. *)
 permissionEntityCell // beginDefinition;
 
 permissionEntityCell[ perm_Association, turn_ ] := Module[ { badgeSpec, title, badgeView },
@@ -3129,18 +3367,10 @@ permissionEntityCell[ perm_Association, turn_ ] := Module[ { badgeSpec, title, b
         _          , None
     ];
     { title, badgeView } = headerTitleAndBadge[ acpToolTitleParts[ perm, Automatic, turn ], "Permission", "", badgeSpec, Nothing ];
-    boxCell @ Framed[
-        Grid[
-            {
-                Flatten @ {
-                    iconPane @ chatbookIcon[ "WrenchIcon", False ],
-                    Style[ title, FontColor -> $toolLabelColor ],
-                    Replace[ badgeView, None -> Nothing ]
-                }
-            },
-            $headerGridOptions
-        ],
-        cardFrameOptions @ If[ perm[ "Outcome" ] === None, "Awaiting", "Default" ]
+    (* No opener: the chevron's room is left empty, and the line keeps its default color (cardHeaderGrid) *)
+    boxCell @ cardPane @ cardHeaderGrid[
+        Grid[ { Flatten @ { iconPane @ toolIconView[ "GenericTool" ], title, Replace[ badgeView, None -> Nothing ] } }, $headerGridOptions ],
+        None
     ]
 ];
 

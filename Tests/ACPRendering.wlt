@@ -104,12 +104,25 @@ VerificationTest[
        editable TextData cell too) *)
     acpFinalItems[ cell_Cell ] := First @ Cases[ cell, TemplateBox[ { Cell[ TextData[ items_List ], ___, Editable -> True, ___ ] }, "AssistantMessageBox", ___ ] :> items, Infinity, 1 ];
 
-    (* The tool cards of a final cell (staticOpener): a DynamicModule over the card's frame, whose grid has the clickable
+    (* The tool cards of a final cell (staticOpener): a DynamicModule over the card's pane, whose grid has the clickable
        header in its first row and the PaneSelector of the body in its second *)
     acpFinalToolCards[ boxes_ ] := Cases[
         boxes,
-        d: DynamicModuleBox[ { Typeset`open$$ = _ }, FrameBox[ TagBox[ GridBox[ { { _ }, { _PaneSelectorBox } }, ___ ], "Grid" ], ___ ], ___ ] :> d,
+        d: DynamicModuleBox[ { Typeset`open$$ = _ }, PaneBox[ TagBox[ GridBox[ { { _ }, { _PaneSelectorBox } }, ___ ], "Grid" ], ___ ], ___ ] :> d,
         Infinity
+    ];
+
+    (* The chevrons of Chatbook's tool call openers (openerRight, openerDown and openerUp, with or without a color) *)
+    acpChevron[ "Right" ] := GraphicsBox[ { ___, LineBox[ { { 0, -1 }, { 1, 0 }, { 0, 1 } } ] }, ___ ];
+    acpChevron[ "Down"  ] := GraphicsBox[ { ___, LineBox[ { { -1, 0 }, { 0, -1 }, { 1, 0 } } ] }, ___ ];
+    acpChevron[ "Up"    ] := GraphicsBox[ { ___, LineBox[ { { -1, 0 }, { 0, 1 }, { 1, 0 } } ] }, ___ ];
+    acpChevron[ _       ] := acpChevron[ "Right" ] | acpChevron[ "Down" ] | acpChevron[ "Up" ];
+    (* An open card's body: Chatbook's divider (a button with its ninepatch images) and the "Hide" line's label *)
+    acpDivider   = ButtonBox[ _, ___, Appearance -> { "Default" -> FrontEnd`FileName[ { "Chatbook" }, "VerticalDividerToolDefault.9.png" ], ___ }, ___ ];
+    acpHideLabel = DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingHide" ], ___ ];
+    (* A tool card's icon: one of Chatbook's "ToolIconCall..." function resources, in the color of the text *)
+    acpToolIcon[ name_String ] := With[ { resource = "ToolIconCall" <> name },
+        DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", resource ][ CurrentValue[ FontColor ] ], ___ ]
     ];
 
     (* The final cell's "Worked for" opener (Rendering.wl's workOpenerBoxes): the inline cell, its label's boxes and its
@@ -139,7 +152,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Definitions@@Tests/ACPRendering.wlt:36,1-143,2"
+    TestID   -> "ACPRendering-Definitions@@Tests/ACPRendering.wlt:36,1-156,2"
 ]
 
 VerificationTest[
@@ -169,7 +182,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Definitions-Audit@@Tests/ACPRendering.wlt:145,1-173,2"
+    TestID   -> "ACPRendering-Definitions-Audit@@Tests/ACPRendering.wlt:158,1-186,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -179,7 +192,7 @@ VerificationTest[
     MatchQ[ acpLiveView[ "render-live-1" ], acpTrackingPattern[ acpLayoutSymbol[ "render-live-1" ], Wolfram`Chatbook`ACP`Rendering`Private`liveLayout[ "render-live-1" ] ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveView-TracksLayoutSymbol@@Tests/ACPRendering.wlt:178,1-183,2"
+    TestID   -> "ACPRendering-LiveView-TracksLayoutSymbol@@Tests/ACPRendering.wlt:191,1-196,2"
 ]
 
 (* A turn that is finalized has its live view frozen first (acpFreezeLiveView, see UI.wl's acpFinalizeTurn): it renders
@@ -221,7 +234,7 @@ VerificationTest[
     ],
     { True, True, True, { }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveView-Frozen@@Tests/ACPRendering.wlt:190,1-225,2"
+    TestID   -> "ACPRendering-LiveView-Frozen@@Tests/ACPRendering.wlt:203,1-238,2"
 ]
 
 VerificationTest[
@@ -239,7 +252,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-OneDynamicPerEntity@@Tests/ACPRendering.wlt:227,1-243,2"
+    TestID   -> "ACPRendering-LiveLayout-OneDynamicPerEntity@@Tests/ACPRendering.wlt:240,1-256,2"
 ]
 
 VerificationTest[
@@ -258,7 +271,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-Header@@Tests/ACPRendering.wlt:245,1-262,2"
+    TestID   -> "ACPRendering-LiveLayout-Header@@Tests/ACPRendering.wlt:258,1-275,2"
 ]
 
 VerificationTest[
@@ -268,7 +281,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-ClosedOpener@@Tests/ACPRendering.wlt:264,1-272,2"
+    TestID   -> "ACPRendering-LiveLayout-ClosedOpener@@Tests/ACPRendering.wlt:277,1-285,2"
 ]
 
 (* The Working opener starts closed: without opener state the layout is only the header, with the closed chevron, the
@@ -292,7 +305,7 @@ VerificationTest[
     ],
     { { }, True, True, True, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-ClosedByDefault@@Tests/ACPRendering.wlt:277,1-296,2"
+    TestID   -> "ACPRendering-LiveLayout-ClosedByDefault@@Tests/ACPRendering.wlt:290,1-309,2"
 ]
 
 VerificationTest[
@@ -301,21 +314,21 @@ VerificationTest[
     ],
     RawBoxes[ _? (acpContainsTextQ[ #, "Waiting for your approval" ] && acpContainsTextQ[ #, "Working" ] &) ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WorkingLabel-Activity@@Tests/ACPRendering.wlt:298,1-305,2"
+    TestID   -> "ACPRendering-WorkingLabel-Activity@@Tests/ACPRendering.wlt:311,1-318,2"
 ]
 
 VerificationTest[
     acpWithTurns[ { }, { acpLayoutBoxes[ "render-no-such-turn" ], acpEntityView[ "render-no-such-turn", { "Tool", "x" } ], Wolfram`Chatbook`ACP`Rendering`Private`workingLabel[ "render-no-such-turn" ] } ],
     { _? (acpContainsTextQ[ #, "no longer available" ] &), RawBoxes[ _? (acpContainsTextQ[ #, "no longer available" ] &) ], RawBoxes[ _ ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-MissingTurnPlaceholder@@Tests/ACPRendering.wlt:307,1-312,2"
+    TestID   -> "ACPRendering-MissingTurnPlaceholder@@Tests/ACPRendering.wlt:320,1-325,2"
 ]
 
 VerificationTest[
     acpWithTurns[ { turnC }, acpEntityView[ turnC[ "ID" ], { "Tool", "no-such-tool" } ] ],
     RawBoxes[ "" ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-MissingEntity@@Tests/ACPRendering.wlt:314,1-319,2"
+    TestID   -> "ACPRendering-MissingEntity@@Tests/ACPRendering.wlt:327,1-332,2"
 ]
 
 VerificationTest[
@@ -336,7 +349,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-LiveLayout-SubagentHeader@@Tests/ACPRendering.wlt:321,1-340,2"
+    TestID   -> "ACPRendering-LiveLayout-SubagentHeader@@Tests/ACPRendering.wlt:334,1-353,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -352,14 +365,14 @@ VerificationTest[
                 acpContainsTextQ[ closed, "Awaiting approval" ],
                 acpContainsTextQ[ closed, "+6" ],
                 acpHasToggleQ[ closed, id, key, False ],
-                ! FreeQ[ closed, TemplateBox[ _, "DiscardedMaterialOpenerIcon" ] ],
+                ! FreeQ[ closed, acpChevron[ "Right" ] ] && FreeQ[ closed, acpChevron[ "Down" ] ],
                 FreeQ[ closed, "Changes" ]
             }
         ]
     ],
     { True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Closed@@Tests/ACPRendering.wlt:345,1-363,2"
+    TestID   -> "ACPRendering-ToolCard-Closed@@Tests/ACPRendering.wlt:358,1-376,2"
 ]
 
 VerificationTest[
@@ -372,7 +385,10 @@ VerificationTest[
                 acpContainsTextQ[ open, "main.py" ],
                 acpContainsTextQ[ open, "new file" ],
                 acpContainsTextQ[ open, "def greet():" ],
-                ! FreeQ[ open, TemplateBox[ _, "DiscardedMaterialCloserIcon" ] ],
+                (* the header's chevron points down, and the body has the divider, the "Hide" line with its up chevron and the
+                   closed Details sub-opener's chevron *)
+                ! FreeQ[ open, acpChevron[ "Down" ] ] && ! FreeQ[ open, acpDivider ] && ! FreeQ[ open, acpHideLabel ] &&
+                    ! FreeQ[ open, acpChevron[ "Up" ] ] && ! FreeQ[ open, acpChevron[ "Right" ] ],
                 (* Details sub-opener, closed *)
                 acpContainsTextQ[ open, "Details" ],
                 acpHasToggleQ[ open, id, Append[ key, "Details" ], False ]
@@ -381,7 +397,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Open-Diff@@Tests/ACPRendering.wlt:365,1-385,2"
+    TestID   -> "ACPRendering-ToolCard-Open-Diff@@Tests/ACPRendering.wlt:378,1-401,2"
 ]
 
 VerificationTest[
@@ -403,7 +419,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-ExitCodeAmber@@Tests/ACPRendering.wlt:387,1-407,2"
+    TestID   -> "ACPRendering-ToolCard-ExitCodeAmber@@Tests/ACPRendering.wlt:403,1-423,2"
 ]
 
 VerificationTest[
@@ -415,7 +431,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-DeclinedNeutral@@Tests/ACPRendering.wlt:409,1-419,2"
+    TestID   -> "ACPRendering-ToolCard-DeclinedNeutral@@Tests/ACPRendering.wlt:425,1-435,2"
 ]
 
 VerificationTest[
@@ -427,7 +443,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-StoppedNeutral@@Tests/ACPRendering.wlt:421,1-431,2"
+    TestID   -> "ACPRendering-ToolCard-StoppedNeutral@@Tests/ACPRendering.wlt:437,1-447,2"
 ]
 
 VerificationTest[
@@ -438,7 +454,7 @@ VerificationTest[
             boxes = acpEntityView[ id, key ];
             {
                 acpContainsTextQ[ boxes, "Used Wolfram Language Evaluator" ],
-                ! FreeQ[ boxes, DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ToolIconWolframLanguageEvaluator" ] ] ],
+                ! FreeQ[ boxes, acpToolIcon[ "WolframLanguageEvaluator" ] ],
                 (* each inner WL call is a Chatbook WL code cell *)
                 ! FreeQ[ boxes, Cell[ BoxData[ "2+2" ], "ChatCodeActive", ___ ] ],
                 ! FreeQ[ boxes, Cell[ BoxData[ "Plot[Sin[x], {x, 0, 2 Pi}]" ], "ChatCodeActive", ___ ] ],
@@ -446,8 +462,8 @@ VerificationTest[
                 acpContainsTextQ[ boxes, "sum" ],
                 acpContainsTextQ[ boxes, "Out[1]= 4" ],
                 FreeQ[ boxes, s_String /; StringContainsQ[ s, "system-reminder" ] ] || acpContainsTextQ[ boxes, "Details" ],
-                (* the image is shown inline *)
-                ! FreeQ[ boxes, _RasterBox | _GraphicsBox ],
+                (* the image is shown inline (the openers' chevrons are graphics too) *)
+                ! FreeQ[ DeleteCases[ boxes, acpChevron[ _ ], Infinity ], _RasterBox | _GraphicsBox ],
                 (* the JavaScript is in a collapsed Script section *)
                 acpHasToggleQ[ boxes, id, Append[ key, "Script" ], False ]
             }
@@ -455,7 +471,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Execute@@Tests/ACPRendering.wlt:433,1-459,2"
+    TestID   -> "ACPRendering-ToolCard-Execute@@Tests/ACPRendering.wlt:449,1-475,2"
 ]
 
 VerificationTest[
@@ -468,7 +484,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-Execute-RemindersStripped@@Tests/ACPRendering.wlt:461,1-472,2"
+    TestID   -> "ACPRendering-ToolCard-Execute-RemindersStripped@@Tests/ACPRendering.wlt:477,1-488,2"
 ]
 
 VerificationTest[
@@ -490,7 +506,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-LiveOutputTruncated@@Tests/ACPRendering.wlt:474,1-494,2"
+    TestID   -> "ACPRendering-ToolCard-LiveOutputTruncated@@Tests/ACPRendering.wlt:490,1-510,2"
 ]
 
 VerificationTest[
@@ -509,7 +525,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Live@@Tests/ACPRendering.wlt:496,1-513,2"
+    TestID   -> "ACPRendering-Thought-Live@@Tests/ACPRendering.wlt:512,1-529,2"
 ]
 
 VerificationTest[
@@ -519,7 +535,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Active@@Tests/ACPRendering.wlt:515,1-523,2"
+    TestID   -> "ACPRendering-Thought-Active@@Tests/ACPRendering.wlt:531,1-539,2"
 ]
 
 (* OpenAI summary parts (synthetic_openai_summaries): a finished thought of a single short line is shown as that line
@@ -556,7 +572,7 @@ VerificationTest[
         { { "Refactoring TOML read/write interface" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Live-Short@@Tests/ACPRendering.wlt:528,1-560,2"
+    TestID   -> "ACPRendering-Thought-Live-Short@@Tests/ACPRendering.wlt:544,1-576,2"
 ]
 
 (* A title with a body, or a line that is too long for one line of the window, keeps the opener *)
@@ -571,7 +587,7 @@ VerificationTest[
     ],
     { { True, True }, { True, True } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Live-LongStaysOpener@@Tests/ACPRendering.wlt:563,1-575,2"
+    TestID   -> "ACPRendering-Thought-Live-LongStaysOpener@@Tests/ACPRendering.wlt:579,1-591,2"
 ]
 
 (* The agent's text in a short thought is neutralized (linear syntax) in the live view and the final cell *)
@@ -595,7 +611,7 @@ VerificationTest[
     ],
     { { "ShortThoughts", "ShortThoughts" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Short-Neutralized@@Tests/ACPRendering.wlt:578,1-599,2"
+    TestID   -> "ACPRendering-Thought-Short-Neutralized@@Tests/ACPRendering.wlt:594,1-615,2"
 ]
 
 (* A thought cut off by a stop while its bold title streams ("**Planning the") keeps the opener, which hides its raw
@@ -619,7 +635,7 @@ VerificationTest[
     ],
     { True, True, { "ThoughtsOpener" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Thought-Short-Stopped@@Tests/ACPRendering.wlt:603,1-623,2"
+    TestID   -> "ACPRendering-Thought-Short-Stopped@@Tests/ACPRendering.wlt:619,1-639,2"
 ]
 
 VerificationTest[
@@ -631,7 +647,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Message-Live-TaskList@@Tests/ACPRendering.wlt:625,1-635,2"
+    TestID   -> "ACPRendering-Message-Live-TaskList@@Tests/ACPRendering.wlt:641,1-651,2"
 ]
 
 VerificationTest[
@@ -653,7 +669,7 @@ VerificationTest[
         RawBoxes[ _? (acpContainsTextQ[ #, "Conversation compacted" ] &) ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PlanAndNotice@@Tests/ACPRendering.wlt:637,1-657,2"
+    TestID   -> "ACPRendering-PlanAndNotice@@Tests/ACPRendering.wlt:653,1-673,2"
 ]
 
 VerificationTest[
@@ -662,9 +678,18 @@ VerificationTest[
         turn = acpApplyPermissionRequest[ acpNewTurn @ <| "ID" -> "render-perm", "StartTime" -> $acpBaseTime |>, 4, params, $acpBaseTime + 1 ][ "Turn" ];
         acpWithTurns[ { turn }, acpEntityView[ "render-perm", { "Permission", 4 } ] ]
     ],
-    RawBoxes[ _? (acpContainsTextQ[ #, "Access outside the project: /tmp/outside" ] && acpContainsTextQ[ #, "Awaiting approval" ] && FreeQ[ #, _ButtonBox ] &) ],
+    (* passive, and a line like a closed tool card's: no frame around it (only the badge has one), the chevron's room left
+       empty, Chatbook's generic tool icon, and the default color without hover colors (it can't be opened) *)
+    RawBoxes[
+        _? (
+            acpContainsTextQ[ #, "Access outside the project: /tmp/outside" ] && acpContainsTextQ[ #, "Awaiting approval" ] && FreeQ[ #, _ButtonBox ] &&
+            FreeQ[ #, FrameBox[ _? (! FreeQ[ #, acpToolIcon[ "GenericTool" ] ] &), ___ ] ] && FreeQ[ #, acpChevron[ _ ] ] && ! FreeQ[ #, TemplateBox[ { 8, 8 }, "Spacer2" ] ] &&
+            ! FreeQ[ #, acpToolIcon[ "GenericTool" ] ] && FreeQ[ #, (FontColor | BaseStyle) -> LightDarkSwitched[ _Dynamic, _Dynamic ] ] &&
+            ! FreeQ[ #, FontColor -> LightDarkSwitched[ _RGBColor, _RGBColor ] ] &
+        )
+    ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StandalonePermission-Passive@@Tests/ACPRendering.wlt:659,1-668,2"
+    TestID   -> "ACPRendering-StandalonePermission-Passive@@Tests/ACPRendering.wlt:675,1-693,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -697,31 +722,36 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-Definitions@@Tests/ACPRendering.wlt:673,1-701,2"
+    TestID   -> "ACPRendering-Fit-Definitions@@Tests/ACPRendering.wlt:698,1-726,2"
 ]
 
 (* A long title takes one line: a clipping pane that takes at most the line's width, without line breaks; the summary
-   and the status glyph are outside of it, so they stay visible; live and final *)
+   (of a completed tool) and the status glyph (a failed tool's cross: a completed tool has none) are outside of it, so
+   they stay visible; live and final *)
 VerificationTest[
-    Module[ { tool, live, final },
-        tool  = acpFitTool[ "grep", <| "pattern" -> "SectionRanges|\"Lines\"|parseTOML|formatTOML|generateMCP|buildOutputLines|writeStringToFile" |>, "completed" ];
-        live  = acpFitHeader[ tool, "Live" ];
-        final = acpFitHeader[ tool, "Final" ];
+    Module[ { pattern, failed, completed },
+        pattern   = <| "pattern" -> "SectionRanges|\"Lines\"|parseTOML|formatTOML|generateMCP|buildOutputLines|writeStringToFile" |>;
+        failed    = acpFitTool[ "grep", pattern, "failed" ];
+        completed = acpFitTool[ "grep", pattern, "completed", "RawOutput" -> <| "metadata" -> <| "count" -> 86 |> |> ];
         Flatten @ Table[
-            {
-                Length @ acpFitPanes @ boxes,
-                ! FreeQ[ acpFitPanes @ boxes, ImageSize -> { { 0, Full }, Automatic } ],
-                ! FreeQ[ acpFitPanes @ boxes, LineBreakWithin -> False ],
-                ! FreeQ[ acpFitPanes @ boxes, DynamicBox[ _, Evaluator -> None ] ],
-                FreeQ[ acpFitPanes @ boxes, StyleBox[ "\:2713" | "\"\:2713\"" | "86 files" | "\"86 files\"", ___ ] ],
-                ! FreeQ[ boxes /. PaneBox[ _DynamicBox, ___ ] -> Null, StyleBox[ "\:2713" | "\"\:2713\"", ___ ] ]
-            },
-            { boxes, { live, final } }
+            With[ { boxes = acpFitHeader[ failed, mode ], summary = acpFitHeader[ completed, mode ] },
+                {
+                    Length @ acpFitPanes @ boxes,
+                    ! FreeQ[ acpFitPanes @ boxes, ImageSize -> { { 0, Full }, Automatic } ],
+                    ! FreeQ[ acpFitPanes @ boxes, LineBreakWithin -> False ],
+                    ! FreeQ[ acpFitPanes @ boxes, DynamicBox[ _, Evaluator -> None ] ],
+                    FreeQ[ acpFitPanes @ boxes, StyleBox[ "\:2717" | "\"\:2717\"", ___ ] ],
+                    ! FreeQ[ boxes /. PaneBox[ _DynamicBox, ___ ] -> Null, StyleBox[ "\:2717" | "\"\:2717\"", ___ ] ],
+                    FreeQ[ acpFitPanes @ summary, StyleBox[ "86 matches" | "\"86 matches\"", ___ ] ],
+                    ! FreeQ[ summary /. PaneBox[ _DynamicBox, ___ ] -> Null, StyleBox[ "86 matches" | "\"86 matches\"", ___ ] ]
+                }
+            ],
+            { mode, { "Live", "Final" } }
         ]
     ],
-    { 1, True, True, True, True, True, 1, True, True, True, True, True },
+    { 1, True, True, True, True, True, True, True, 1, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-OneLineTitle@@Tests/ACPRendering.wlt:705,1-725,2"
+    TestID   -> "ACPRendering-Fit-OneLineTitle@@Tests/ACPRendering.wlt:731,1-755,2"
 ]
 
 (* The to-do card's title fits like the others: "the to-do list" is its object, which the front end cuts at its end
@@ -745,7 +775,7 @@ VerificationTest[
     ],
     { { 1, True, True, True, True }, { 1, True, True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-TodoTitle@@Tests/ACPRendering.wlt:729,1-749,2"
+    TestID   -> "ACPRendering-Fit-TodoTitle@@Tests/ACPRendering.wlt:759,1-779,2"
 ]
 
 (* A title without an object ("Preparing a command..." while the input is still coming) is cut as a whole, at its end,
@@ -773,7 +803,7 @@ VerificationTest[
     ],
     { 1, True, 1, True, "", "Preparing a command\[Ellipsis]", "Text", True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-TitleWithoutObject@@Tests/ACPRendering.wlt:753,1-777,2"
+    TestID   -> "ACPRendering-Fit-TitleWithoutObject@@Tests/ACPRendering.wlt:783,1-807,2"
 ]
 
 (* Such a title keeps its badge only while all of it fits beside the badge: the badge's switch leaves room for the
@@ -792,7 +822,7 @@ VerificationTest[
     ],
     { True, "", 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-TitleWithoutObjectBadge@@Tests/ACPRendering.wlt:781,1-796,2"
+    TestID   -> "ACPRendering-Fit-TitleWithoutObjectBadge@@Tests/ACPRendering.wlt:811,1-826,2"
 ]
 
 (* The front end cuts the object: commands and patterns at their end, paths at their start (the file name stays); the
@@ -811,7 +841,7 @@ VerificationTest[
     ],
     { { False }, { True }, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-SidesAndFrontEndOnly@@Tests/ACPRendering.wlt:800,1-815,2"
+    TestID   -> "ACPRendering-Fit-SidesAndFrontEndOnly@@Tests/ACPRendering.wlt:830,1-845,2"
 ]
 
 (* The safety nets, for a width that was computed too large: the line is a grid of the prefix and the object in a
@@ -846,7 +876,7 @@ VerificationTest[
     ],
     { { Left, Left }, { Right, Right }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-ObjectPane@@Tests/ACPRendering.wlt:820,1-850,2"
+    TestID   -> "ACPRendering-Fit-ObjectPane@@Tests/ACPRendering.wlt:850,1-880,2"
 ]
 
 (* In a window too narrow for a card's title, the front end drops the badge and gives its room to the title: the badge
@@ -872,7 +902,7 @@ VerificationTest[
     ],
     { 1, True, True, True, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-NarrowDropsBadge@@Tests/ACPRendering.wlt:855,1-876,2"
+    TestID   -> "ACPRendering-Fit-NarrowDropsBadge@@Tests/ACPRendering.wlt:885,1-906,2"
 ]
 
 (* A dropped badge leaves an empty column in the header's grid, which still takes the grid's spacing: the title's width
@@ -903,7 +933,7 @@ VerificationTest[
     ],
     With[ { gap = Round[ Wolfram`Chatbook`ACP`Rendering`Private`$headerGap, 0.001 ] }, { True, gap, gap, True, gap } ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-DroppedBadgeGap@@Tests/ACPRendering.wlt:881,1-907,2"
+    TestID   -> "ACPRendering-Fit-DroppedBadgeGap@@Tests/ACPRendering.wlt:911,1-937,2"
 ]
 
 (* FE-only: the front end evaluates a switch: the narrow view while the width is less than the minimum, else (also for a
@@ -943,7 +973,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "\"narrow\"" | "narrow", "\"wide\"" | "wide", "\"wide\"" | "wide", 3, 100 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-Switch-FEOnly@@Tests/ACPRendering.wlt:911,1-947,2"
+    TestID   -> "ACPRendering-Fit-Switch-FEOnly@@Tests/ACPRendering.wlt:941,1-977,2"
 ]
 
 (* The tooltip is only in the boxes of the cut text, unless the object was already shortened in the kernel *)
@@ -955,7 +985,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-TooltipWhenCut@@Tests/ACPRendering.wlt:950,1-959,2"
+    TestID   -> "ACPRendering-Fit-TooltipWhenCut@@Tests/ACPRendering.wlt:980,1-989,2"
 ]
 
 (* The Working header's activity and a permission card's title take one line the same way *)
@@ -974,7 +1004,7 @@ VerificationTest[
     ],
     { 1, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-WorkingLabelAndPermission@@Tests/ACPRendering.wlt:962,1-978,2"
+    TestID   -> "ACPRendering-Fit-WorkingLabelAndPermission@@Tests/ACPRendering.wlt:992,1-1008,2"
 ]
 
 (* FE-only: the front end evaluates the fitting expression: a width that leaves room for part of the object cuts it, with
@@ -1039,18 +1069,118 @@ VerificationTest[
         { s4_String /; StringStartsQ[ s4, "say \"a\\b\" x" ] && StringEndsQ[ s4, "x\[Ellipsis]" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-FrontEndCuts-FEOnly@@Tests/ACPRendering.wlt:983,1-1043,2"
+    TestID   -> "ACPRendering-Fit-FrontEndCuts-FEOnly@@Tests/ACPRendering.wlt:1013,1-1073,2"
 ]
 
 (* A direct call of the Wolfram Language Evaluator (OpenCode's name of the MCP tool, lower case in "Name") gets its icon *)
 VerificationTest[
     ! FreeQ[
         acpFitHeader[ acpFitTool[ "Wolfram_WolframLanguageEvaluator", <| "code" -> "1+1" |>, "completed" ], "Live" ],
-        DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ToolIconWolframLanguageEvaluator" ] ]
+        acpToolIcon[ "WolframLanguageEvaluator" ]
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolIcon-DirectEvaluatorCall@@Tests/ACPRendering.wlt:1046,1-1054,2"
+    TestID   -> "ACPRendering-ToolIcon-DirectEvaluatorCall@@Tests/ACPRendering.wlt:1076,1-1084,2"
+]
+
+(* The icons of tool cards are Chatbook's "ToolIconCall..." resources (the icons of its own tool call openers) in the
+   color of the text, and for the tools that Chatbook has none for, glyphs of the same kind (graphics without a color of
+   their own, which take the text's) or a character *)
+VerificationTest[
+    Module[ { icon, glyphQ },
+        icon = Function[ { name, input },
+            FirstCase[ acpFitHeader[ acpFitTool[ name, input, "completed" ], "Live" ], PaneBox[ i_, ___, ImageSize -> { 20, 20 }, ___ ] :> i, None, Infinity ]
+        ];
+        (* graphics with no color of their own (also no EdgeForm or FaceForm, which have a default color) *)
+        glyphQ = MatchQ[
+            StyleBox[
+                _GraphicsBox? (FreeQ[ #, _RGBColor | _GrayLevel | _LightDarkSwitched | _EdgeForm | _FaceForm ] &),
+                GraphicsBoxOptions -> { BaseStyle -> Dynamic[ CurrentValue[ FontColor ], Evaluator -> None ] },
+                ___
+            ]
+        ];
+        {
+            MatchQ[ icon[ "read", <| "filePath" -> "/project/a.wl" |> ], acpToolIcon[ "FileReader" ] ],
+            MatchQ[ icon[ "grep", <| "pattern" -> "x" |> ], acpToolIcon[ "DocumentationSearcher" ] ],
+            MatchQ[ icon[ "webfetch", <| "url" -> "https://example.com" |> ], acpToolIcon[ "WebFetcher" ] ],
+            MatchQ[ icon[ "websearch", <| "query" -> "x" |> ], acpToolIcon[ "WebSearcher" ] ],
+            MatchQ[ icon[ "skill", <| "name" -> "x" |> ], acpToolIcon[ "DocumentationLookup" ] ],
+            MatchQ[ icon[ "WolframNotebooks_CreateNotebook", <| |> ], acpToolIcon[ "CreateNotebook" ] ],
+            MatchQ[ icon[ "WolframNotebooks_ReadNotebook", <| |> ], acpToolIcon[ "FileReader" ] ],
+            MatchQ[ icon[ "made_up_tool", <| |> ], acpToolIcon[ "GenericTool" ] ],
+            (* the pencil (lines only) and the terminal (a frame with rounded corners) *)
+            glyphQ @ icon[ "edit", <| "filePath" -> "/project/a.wl" |> ] && FreeQ[ icon[ "edit", <| "filePath" -> "/project/a.wl" |> ], _CircleBox ],
+            glyphQ @ icon[ "WolframNotebooks_InsertCells", <| |> ] && FreeQ[ icon[ "WolframNotebooks_InsertCells", <| |> ], _CircleBox ],
+            glyphQ @ icon[ "bash", <| "command" -> "ls" |> ] && ! FreeQ[ icon[ "bash", <| "command" -> "ls" |> ], _CircleBox ],
+            (* characters, in the text's color *)
+            MemberQ[ acpBoxStrings @ icon[ #1, <| |> ], #2 ] & @@@ {
+                { "question", "?" }, { "todowrite", "\:2611" }, { "task", "\:21b3" }, { "lsp", "{ }" }, { "invalid", "\:26a0" }
+            },
+            FreeQ[ icon[ "question", <| |> ], FontColor ]
+        }
+    ],
+    { True, True, True, True, True, True, True, True, True, True, True, { True, True, True, True, True }, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ToolIcons-ChatbookToolCallIcons@@Tests/ACPRendering.wlt:1089,1-1125,2"
+]
+
+(* A card's line (and its "Hide" line) has the colors of Chatbook's tool call openers in each state ("Default", or
+   "Default2" for its chevron; "Hover" under the pointer; "Pressed" while the mouse button is down), light and dark, which
+   the front end chooses with the CurrentValue of "MouseOver" and "MouseButtonTest" of the line's StyleBox, with its own
+   functions only (also in a saved or copied final cell): one Dynamic per color, for the text and for the graphics. A
+   completed tool has no check mark: its title says what it did, as Chatbook's "Used ..." does. *)
+VerificationTest[
+    Module[ { tool, boxes, styles, colors, expected },
+        tool   = acpFitTool[ "read", <| "filePath" -> "/project/main.py" |>, "completed" ];
+        boxes  = Block[
+            { Wolfram`Chatbook`ACP`Rendering`Private`$renderMode = "Final", Wolfram`Chatbook`ACP`Rendering`Private`$cardContext = "Work" },
+            ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`staticOpener[
+                RawBoxes @ ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`toolHeader[ tool, $acpFitTurn ],
+                "body",
+                False
+            ]
+        ];
+        styles = Cases[ boxes, StyleBox[ _, ___, FontColor -> c_, ___, GraphicsBoxOptions -> { BaseStyle -> g_ }, ___ ] :> { c, g }, Infinity ];
+        colors = Wolfram`Chatbook`Common`openerViewColors[ "Tool" ];
+        (* the Dynamic of a part's color (default: "Default" or "Default2"), light (1) or dark (2) *)
+        expected = Function[ { default, i },
+            With[ { p = colors[ "Pressed" ][[ i ]], h = colors[ "Hover" ][[ i ]], d = colors[ default ][[ i ]] },
+                Dynamic[ FEPrivate`If[ CurrentValue[ "MouseOver" ], FEPrivate`If[ CurrentValue[ "MouseButtonTest" ], p, h ], d ], Evaluator -> None ]
+            ]
+        ];
+        {
+            (* the header's line and the "Hide" line *)
+            Length @ styles,
+            SameQ @@ styles,
+            ! FreeQ[ Cases[ boxes, StyleBox[ g_, ___, GraphicsBoxOptions -> _, ___ ] :> g, Infinity ], acpHideLabel ],
+            acpKernelSymbols @ styles,
+            styles[[ 1 ]] === {
+                LightDarkSwitched[ expected[ "Default", 1 ], expected[ "Default", 2 ] ],
+                LightDarkSwitched[ expected[ "Default2", 1 ], expected[ "Default2", 2 ] ]
+            },
+            FreeQ[ boxes, "\:2713" | "\"\:2713\"" ]
+        }
+    ],
+    { 2, True, True, { }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ToolCard-OpenerColors@@Tests/ACPRendering.wlt:1132,1-1167,2"
+]
+
+(* An open live card closes from its header, its divider and its "Hide" line: each toggles the kernel's open state *)
+VerificationTest[
+    acpWithTurns[ { turnC },
+        Module[ { key = { "Tool", "call_00_yrtqoymhaqurytxkbimvffbv" }, id = turnC[ "ID" ], open },
+            $acpOpen[ { id, key } ] = True;
+            open = acpEntityView[ id, key ];
+            {
+                MemberQ[ acpActionCalls[ FirstCase[ open, acpDivider, None, Infinity ], "ToggleOpen" ], { id, key, False } ],
+                Count[ acpActionCalls[ open, "ToggleOpen" ], { id, key, False } ]
+            }
+        ]
+    ],
+    { True, 3 },
+    SameTest -> MatchQ,
+    TestID   -> "ACPRendering-ToolCard-LiveCloses@@Tests/ACPRendering.wlt:1170,1-1184,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1080,7 +1210,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-Definitions@@Tests/ACPRendering.wlt:1059,1-1084,2"
+    TestID   -> "ACPRendering-CodeView-Definitions@@Tests/ACPRendering.wlt:1189,1-1214,2"
 ]
 
 (* A long line of Wolfram Language code is shown whole (it was cut at 300 characters, which made it a syntax error), live
@@ -1097,7 +1227,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-WholeLines@@Tests/ACPRendering.wlt:1088,1-1101,2"
+    TestID   -> "ACPRendering-CodeView-WholeLines@@Tests/ACPRendering.wlt:1218,1-1231,2"
 ]
 
 (* Long code: the final cell shows everything up to the cap (2000 lines), the live view its first 20 lines; the note is
@@ -1122,7 +1252,7 @@ VerificationTest[
     ],
     { 20, True, 2000, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-LimitsAndNote@@Tests/ACPRendering.wlt:1106,1-1126,2"
+    TestID   -> "ACPRendering-CodeView-LimitsAndNote@@Tests/ACPRendering.wlt:1236,1-1256,2"
 ]
 
 (* Final views are in panes of limited height that scroll; live views have no scroll panes (R6) *)
@@ -1135,7 +1265,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-HeightLimited@@Tests/ACPRendering.wlt:1129,1-1139,2"
+    TestID   -> "ACPRendering-CodeView-HeightLimited@@Tests/ACPRendering.wlt:1259,1-1269,2"
 ]
 
 (* Shell commands, long input values, outputs and the Details JSON are not cut inside their lines *)
@@ -1160,7 +1290,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-NoLineCut@@Tests/ACPRendering.wlt:1142,1-1164,2"
+    TestID   -> "ACPRendering-CodeView-NoLineCut@@Tests/ACPRendering.wlt:1272,1-1294,2"
 ]
 
 (* The pure limits: whole lines, and a cut inside the first line only when it alone is too long; outputs keep their end *)
@@ -1184,7 +1314,7 @@ VerificationTest[
         <| "Text" -> "efghijklmn", "OmittedLines" -> 1, "OmittedCharacters" -> 4 |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-HeadAndTail@@Tests/ACPRendering.wlt:1167,1-1188,2"
+    TestID   -> "ACPRendering-CodeView-HeadAndTail@@Tests/ACPRendering.wlt:1297,1-1318,2"
 ]
 
 (* The note of what was left out is outside the code block: below a head (the lines left out came after it), above a
@@ -1205,7 +1335,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-NotePlacement@@Tests/ACPRendering.wlt:1192,1-1209,2"
+    TestID   -> "ACPRendering-CodeView-NotePlacement@@Tests/ACPRendering.wlt:1322,1-1339,2"
 ]
 
 (* Details is kept small: the content is left out when it repeats the raw output's text, string values are shortened
@@ -1240,7 +1370,7 @@ VerificationTest[
     ],
     { True, True, False, True, 2001, True, True, <| "Lines" -> 400, "Characters" -> 20000 |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Details-KeptSmall@@Tests/ACPRendering.wlt:1214,1-1244,2"
+    TestID   -> "ACPRendering-Details-KeptSmall@@Tests/ACPRendering.wlt:1344,1-1374,2"
 ]
 
 (* FE-only: Wolfram Language code of a tool call is formatted as it was written: no CodeCheckFix (my_var stays), no grid
@@ -1266,7 +1396,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-CodeView-AsWritten-FEOnly@@Tests/ACPRendering.wlt:1249,1-1270,2"
+    TestID   -> "ACPRendering-CodeView-AsWritten-FEOnly@@Tests/ACPRendering.wlt:1379,1-1400,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1281,7 +1411,7 @@ VerificationTest[
     },
     { 0, 10, 6, 24 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StableSplit-CodeFence@@Tests/ACPRendering.wlt:1275,1-1285,2"
+    TestID   -> "ACPRendering-StableSplit-CodeFence@@Tests/ACPRendering.wlt:1405,1-1415,2"
 ]
 
 VerificationTest[
@@ -1294,7 +1424,7 @@ VerificationTest[
     ],
     { 18, { "First paragraph.", "\n\n", "Second" }, { "First paragraph.", "\n\n", "Second paragraph." } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StreamingTailOnly@@Tests/ACPRendering.wlt:1287,1-1298,2"
+    TestID   -> "ACPRendering-StreamingTailOnly@@Tests/ACPRendering.wlt:1417,1-1428,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1306,7 +1436,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-Edit@@Tests/ACPRendering.wlt:1303,1-1310,2"
+    TestID   -> "ACPRendering-DiffView-Edit@@Tests/ACPRendering.wlt:1433,1-1440,2"
 ]
 
 (* The diff grid draws code as typed: operator substitution is off, so a line's "-", "*" and "->" are not redrawn as a
@@ -1323,7 +1453,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-OperatorSubstitutionOff@@Tests/ACPRendering.wlt:1314,1-1327,2"
+    TestID   -> "ACPRendering-DiffView-OperatorSubstitutionOff@@Tests/ACPRendering.wlt:1444,1-1457,2"
 ]
 
 VerificationTest[
@@ -1332,7 +1462,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-NewFile-RawACP@@Tests/ACPRendering.wlt:1329,1-1336,2"
+    TestID   -> "ACPRendering-DiffView-NewFile-RawACP@@Tests/ACPRendering.wlt:1459,1-1466,2"
 ]
 
 VerificationTest[
@@ -1345,7 +1475,7 @@ VerificationTest[
     ],
     { 10, 2, 1, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ContextAndTruncation@@Tests/ACPRendering.wlt:1338,1-1349,2"
+    TestID   -> "ACPRendering-DiffView-ContextAndTruncation@@Tests/ACPRendering.wlt:1468,1-1479,2"
 ]
 
 VerificationTest[
@@ -1354,7 +1484,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-Patch@@Tests/ACPRendering.wlt:1351,1-1358,2"
+    TestID   -> "ACPRendering-DiffView-Patch@@Tests/ACPRendering.wlt:1481,1-1488,2"
 ]
 
 VerificationTest[
@@ -1363,7 +1493,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ContentsWritten@@Tests/ACPRendering.wlt:1360,1-1367,2"
+    TestID   -> "ACPRendering-DiffView-ContentsWritten@@Tests/ACPRendering.wlt:1490,1-1497,2"
 ]
 
 (* Inside hunks every line is content: a removed "-- comment" line is "--- comment" in the patch. File headers are
@@ -1395,7 +1525,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-PatchRows@@Tests/ACPRendering.wlt:1371,1-1399,2"
+    TestID   -> "ACPRendering-DiffView-PatchRows@@Tests/ACPRendering.wlt:1501,1-1529,2"
 ]
 
 (* "Header" -> False leaves out the path line; "Omitted" lines are added to the "more lines" note *)
@@ -1414,7 +1544,7 @@ VerificationTest[
     ],
     { True, False, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-HeaderAndOmitted@@Tests/ACPRendering.wlt:1402,1-1418,2"
+    TestID   -> "ACPRendering-DiffView-HeaderAndOmitted@@Tests/ACPRendering.wlt:1532,1-1548,2"
 ]
 
 (* The chat's diff views: natural width, no line numbers *)
@@ -1428,7 +1558,7 @@ VerificationTest[
     ],
     { { Automatic }, { { 2, 2, 2, 2 } }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-ChatLayout@@Tests/ACPRendering.wlt:1421,1-1432,2"
+    TestID   -> "ACPRendering-DiffView-ChatLayout@@Tests/ACPRendering.wlt:1551,1-1562,2"
 ]
 
 (* "LineNumbers": old and new line numbers from the hunk headers of patches, counted through line diffs (also across
@@ -1463,7 +1593,7 @@ VerificationTest[
         { { "+", "only", None, None }, { "-", "lines", None, None }, { "@", "@@ bad header @@", None, None }, { "=", "same", None, None } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-LineNumberRows@@Tests/ACPRendering.wlt:1436,1-1467,2"
+    TestID   -> "ACPRendering-DiffView-LineNumberRows@@Tests/ACPRendering.wlt:1566,1-1597,2"
 ]
 
 (* The number columns: narrow, muted, right-aligned, blank where a side has no line; a column without numbers is left
@@ -1516,7 +1646,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-LineNumbersAndFullWidth@@Tests/ACPRendering.wlt:1472,1-1520,2"
+    TestID   -> "ACPRendering-DiffView-LineNumbersAndFullWidth@@Tests/ACPRendering.wlt:1602,1-1650,2"
 ]
 
 (* A line diff that could not compare every changed line (see acpLineDiff) says so; rows made already ("Rows") are shown
@@ -1538,7 +1668,7 @@ VerificationTest[
     ],
     { True, False, { 1, 1 }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DiffView-NotAlignedAndRows@@Tests/ACPRendering.wlt:1524,1-1542,2"
+    TestID   -> "ACPRendering-DiffView-NotAlignedAndRows@@Tests/ACPRendering.wlt:1654,1-1672,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1559,7 +1689,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:1547,1-1563,2"
+    TestID   -> "ACPRendering-FinalCell-Structure@@Tests/ACPRendering.wlt:1677,1-1693,2"
 ]
 
 VerificationTest[
@@ -1576,7 +1706,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:1565,1-1580,2"
+    TestID   -> "ACPRendering-FinalCell-WorkedForOpener@@Tests/ACPRendering.wlt:1695,1-1710,2"
 ]
 
 (* The time spent waiting for approval (12 s of 30 s) is not in the "Worked for" label but in its tooltip: built-in
@@ -1606,7 +1736,7 @@ VerificationTest[
         "\"Worked for 29s\""
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkedForWaitingTooltip@@Tests/ACPRendering.wlt:1584,1-1610,2"
+    TestID   -> "ACPRendering-FinalCell-WorkedForWaitingTooltip@@Tests/ACPRendering.wlt:1714,1-1740,2"
 ]
 
 (* The "Worked for" opener is front-end-only, like the tool cards, in the look of Chatbook's ThoughtsOpener template
@@ -1643,7 +1773,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkOpenerFrontEndOnly@@Tests/ACPRendering.wlt:1618,1-1647,2"
+    TestID   -> "ACPRendering-FinalCell-WorkOpenerFrontEndOnly@@Tests/ACPRendering.wlt:1748,1-1777,2"
 ]
 
 VerificationTest[
@@ -1656,14 +1786,14 @@ VerificationTest[
     },
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:1649,1-1660,2"
+    TestID   -> "ACPRendering-FinalCell-NoKernelState@@Tests/ACPRendering.wlt:1779,1-1790,2"
 ]
 
-(* Tool cards of final cells: a DynamicModule over the card's frame, whose grid has the clickable header in its first
-   row (written once, with an opener icon that follows the state) and in its second a PaneSelector that shows the body
-   (with its Details section) when the card is open and Spacer[ { 0, 0 } ] when it is closed. RowMinHeight -> 0 and the
-   baseline on the header row make a closed card exactly as tall as its header line (a grid row is otherwise a line
-   high even when it shows nothing). *)
+(* Tool cards of final cells: a DynamicModule over the card's pane, whose grid has the clickable header in its first
+   row (written once, with a chevron that follows the state) and in its second a PaneSelector that shows the body (with
+   its Details section, Chatbook's divider and the "Hide" line) when the card is open and Spacer[ { 0, 0 } ] when it is
+   closed. RowMinHeight -> 0 and the baseline on the header row make a closed card exactly as tall as its header line (a
+   grid row is otherwise a line high even when it shows nothing). *)
 VerificationTest[
     Module[ { turns, cards },
         turns = acpReplay /@ { "exp4a_default_perms", "exp4b_turn1_reject", "exp5_A_mcp", "synthetic_cancelled_tools" };
@@ -1677,14 +1807,16 @@ VerificationTest[
                         card,
                         DynamicModuleBox[
                             { _ },
-                            FrameBox[ TagBox[ GridBox[ { { header_ }, { PaneSelectorBox[ panes_, Dynamic[ Typeset`open$$ ], paneOpts___ ] } }, gridOpts___ ], "Grid" ], ___ ],
+                            PaneBox[ TagBox[ GridBox[ { { header_ }, { PaneSelectorBox[ panes_, Dynamic[ Typeset`open$$ ], paneOpts___ ] } }, gridOpts___ ], "Grid" ], ___ ],
                             ___
                         ] :> {
-                            (* the header's icon follows the state; the header is clickable *)
-                            ! FreeQ[ header, PaneSelectorBox[ { True -> TemplateBox[ _, "DiscardedMaterialCloserIcon" ], False -> TemplateBox[ _, "DiscardedMaterialOpenerIcon" ] }, Dynamic[ Typeset`open$$ ], ___ ] ],
-                            ! FreeQ[ header, EventHandlerTag[ { "MouseDown" :> _, ___ } ] ],
+                            (* the header's chevron follows the state; the header is clickable *)
+                            ! FreeQ[ header, PaneSelectorBox[ { True -> acpChevron[ "Down" ], False -> acpChevron[ "Right" ] }, Dynamic[ Typeset`open$$ ], ___ ] ],
+                            ! FreeQ[ header, EventHandlerTag[ { "MouseClicked" :> _, ___ } ] ],
                             (* the body, with its Details section, only in the open pane *)
                             MatchQ[ panes, { True -> PaneBox[ _, ImageMargins -> { { 0, 0 }, { 0, 6 } } ], False -> TemplateBox[ { 0, 0 }, "Spacer2" ] } ],
+                            (* the open pane has Chatbook's divider and the "Hide" line *)
+                            ! FreeQ[ panes, acpDivider ] && ! FreeQ[ panes, acpHideLabel ],
                             FreeQ[ header, Cell[ ___, "ChatCodeBlock" | "ChatPreformatted", ___ ] ],
                             { RowMinHeight, BaselinePosition } /. { gridOpts } /. { RowMinHeight -> 1 },
                             BaselinePosition /. { paneOpts }
@@ -1695,9 +1827,9 @@ VerificationTest[
             ]
         }
     ],
-    { True, { { True, True, True, True, { 0, { 1, 1 } }, Top } } },
+    { True, { { True, True, True, True, True, { 0, { 1, 1 } }, Top } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ToolCardPanes@@Tests/ACPRendering.wlt:1667,1-1701,2"
+    TestID   -> "ACPRendering-FinalCell-ToolCardPanes@@Tests/ACPRendering.wlt:1797,1-1833,2"
 ]
 
 (* A final tool card stores its header once: the title's fit DynamicBox (and, with a badge, its fit switch) is in the
@@ -1715,21 +1847,21 @@ VerificationTest[
             Max[ fitCounts ] >= 1,
             (* every fit DynamicBox of a card is in its header row, which is written once *)
             fitCounts === headerCounts,
-            (* the header row has one click handler, the toggle (the body's are its Details section's) *)
-            Union @ Map[ Count[ #[[ 2, 1, 1, 1, 1 ]], EventHandlerTag[ { "MouseDown" :> _, ___ } ], Infinity ] &, cards ]
+            (* the header row has one click handler, the toggle (the body's are its Details section's and the "Hide" line's) *)
+            Union @ Map[ Count[ #[[ 2, 1, 1, 1, 1 ]], EventHandlerTag[ { ("MouseDown" | "MouseClicked") :> _, ___ } ], Infinity ] &, cards ]
         }
     ],
     { True, True, True, { 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ToolCardFitDynamicOnce@@Tests/ACPRendering.wlt:1705,1-1725,2"
+    TestID   -> "ACPRendering-FinalCell-ToolCardFitDynamicOnce@@Tests/ACPRendering.wlt:1837,1-1857,2"
 ]
 
-(* A final card's header line is the live card's (closed and open), whatever toolHeader gives: one grid
-   (cardHeaderGrid), so a change to it can't reach only one of them. In a final cell the header is written once, and the
-   opener icon next to it is a PaneSelector of the two icons that follows the state; with the icon of a state in its
-   place, the grid is the live card's grid of that state. *)
+(* A final card's header line is the live card's (closed and open), whatever toolHeader gives: one grid in the openers'
+   colors (cardHeaderGrid), so a change to it can't reach only one of them. In a final cell the header is written once,
+   and the chevron before it is a PaneSelector of the two chevrons that follows the state; with the chevron of a state in
+   its place, the line is the live card's line of that state. *)
 VerificationTest[
-    Module[ { turn = acpReplay[ "exp4a_default_perms" ], key, render, final, finalGrid, iconPane, liveClosed, liveOpen },
+    Module[ { turn = acpReplay[ "exp4a_default_perms" ], key, render, final, finalLine, chevronPane, line, liveClosed, liveOpen },
         key    = FirstCase[ turn[ "Order" ], { "Tool", _ } ];
         render = Function[ { mode, open },
             acpWithTurns[ { turn },
@@ -1744,47 +1876,52 @@ VerificationTest[
                 ]
             ]
         ];
-        final     = render[ "Final", False ];
-        finalGrid = FirstCase[ final, g: GridBox[ { { "\"HEADER\"", _PaneSelectorBox } }, ___ ] :> g, None, Infinity ];
-        iconPane  = finalGrid[[ 1, 1, 2 ]];
-        liveClosed = FirstCase[ render[ "Live", False ], g: GridBox[ { { "\"HEADER\"", _ } }, ___ ] :> g, None, Infinity ];
-        liveOpen   = FirstCase[ render[ "Live", True  ], g: GridBox[ { { "\"HEADER\"", _ } }, ___ ] :> g, None, Infinity ];
+        (* the line: its colors' StyleBox around the grid of the chevron and the header *)
+        line        = s: StyleBox[ TagBox[ GridBox[ { { _, "\"HEADER\"" } }, ___ ], "Grid" ], ___ ] :> s;
+        final       = render[ "Final", False ];
+        finalLine   = FirstCase[ final, line, None, Infinity ];
+        chevronPane = finalLine[[ 1, 1, 1, 1, 1 ]];
+        liveClosed  = FirstCase[ render[ "Live", False ], line, None, Infinity ];
+        liveOpen    = FirstCase[ render[ "Live", True  ], line, None, Infinity ];
         {
             (* the header is written once in the whole final card *)
             Count[ final, "\"HEADER\"", Infinity ],
-            (* the icon of each state, in the icon's place, gives the live card's grid of that state *)
-            ReplacePart[ finalGrid, { 1, 1, 2 } -> (False /. First @ iconPane) ] === liveClosed,
-            ReplacePart[ finalGrid, { 1, 1, 2 } -> (True /. First @ iconPane) ] === liveOpen
+            (* the chevron of each state, in the chevron's place, gives the live card's line of that state *)
+            ReplacePart[ finalLine, { 1, 1, 1, 1, 1 } -> (False /. First @ chevronPane) ] === liveClosed,
+            ReplacePart[ finalLine, { 1, 1, 1, 1, 1 } -> (True /. First @ chevronPane) ] === liveOpen
         }
     ],
     { 1, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ToolCardHeaderMatchesLive@@Tests/ACPRendering.wlt:1731,1-1763,2"
+    TestID   -> "ACPRendering-FinalCell-ToolCardHeaderMatchesLive@@Tests/ACPRendering.wlt:1863,1-1897,2"
 ]
 
 (* Final cells have no TemplateBox with an inline DisplayFunction and none of Chatbook's "ToolIcon..." templates: a
    copy of a final cell whose "Worked for" opener was open made the front end spin when it was pasted (the tool cards
    were TemplateBoxes with an inline DisplayFunction: 100% CPU, never finished; a static one still took 36 s for 8
    cards), and each "ToolIcon..." template took about 2 s to paste (40 cards never finished). The icons are DynamicBoxes
-   of Chatbook's front end resources (chatbookIcon), as the shell icon always was. See docs/acp-window.md, "Tool cards". *)
+   of Chatbook's front end resources (its "ToolIconCall..." function resources, in the color of the text). See
+   docs/acp-window.md, "Tool cards". *)
 VerificationTest[
     Module[ { cells },
         cells = acpFinalCell @ acpReplay @ # & /@ { "exp4a_default_perms", "exp4b_turn1_reject", "exp5_A_mcp", "exp5_C_writes", "synthetic_cancelled_tools" };
         {
             Count[ cells, TemplateBox[ __, DisplayFunction -> _, ___ ], Infinity ],
             Count[ cells, TemplateBox[ { }, _String? (StringStartsQ[ "ToolIcon" ]), ___ ], Infinity ],
-            Count[ cells, DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", _String? (StringStartsQ[ "ToolIcon" ]) ], ___ ], Infinity ] > 0
+            Count[ cells, DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", _String? (StringStartsQ[ "ToolIconCall" ]) ][ _ ], ___ ], Infinity ] > 0
         }
     ],
     { 0, 0, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-PasteSafeBoxes@@Tests/ACPRendering.wlt:1770,1-1782,2"
+    TestID   -> "ACPRendering-FinalCell-PasteSafeBoxes@@Tests/ACPRendering.wlt:1905,1-1917,2"
 ]
 
 (* Size regression: a turn of 40 reads with long paths and short outputs finalizes to a cell with one fit DynamicBox
    per tool card (not two) and a ByteCount well below the size with the header in both panes of each card's opener,
-   which held the title's fit DynamicBox twice per card: about 3.8 MB with 80 fit DynamicBoxes (4.2 MB / 753k characters
-   with the current fit boxes). With the header written once it is about 2.6 MB / 489k characters with 40 (see
+   which held the title's fit DynamicBox twice per card: 4.2 MB / 753k characters with the earlier, framed cards, whose
+   cell was 2.6 MB / 489k characters with the header written once. The cards of Chatbook's tool call design (the
+   chevrons, the colors of the openers' states, the divider and the "Hide" line) take about 3,600 characters more each:
+   about 3.4 MB / 633k characters with 40, and the header twice would add as much again as it did then (see
    docs/acp-window.md, "Tool cards"). *)
 VerificationTest[
     Module[ { turn, t, cell },
@@ -1811,14 +1948,14 @@ VerificationTest[
         {
             (* one fit DynamicBox per tool card: the merged duplication (two per card) would double this *)
             Count[ cell, DynamicBox[ _, Evaluator -> None, ___ ], Infinity ],
-            (* comfortably below the 3.8 MB size with the header twice; the measured size is ~2.6 MB, 489k characters *)
-            ByteCount @ cell < 2900000,
-            StringLength @ ToString[ cell, InputForm ] < 520000
+            (* well below the size with the header twice; the measured size is ~3.4 MB, 633k characters *)
+            ByteCount @ cell < 3700000,
+            StringLength @ ToString[ cell, InputForm ] < 680000
         }
     ],
     { 40, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-SizeRegression@@Tests/ACPRendering.wlt:1789,1-1822,2"
+    TestID   -> "ACPRendering-FinalCell-SizeRegression@@Tests/ACPRendering.wlt:1926,1-1959,2"
 ]
 
 (* FE-only: a closed tool card of a final cell is as tall as a closed card of the live view (no empty line below the
@@ -1843,7 +1980,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ClosedToolCardHeight-FEOnly@@Tests/ACPRendering.wlt:1826,1-1847,2"
+    TestID   -> "ACPRendering-FinalCell-ClosedToolCardHeight-FEOnly@@Tests/ACPRendering.wlt:1963,1-1984,2"
 ]
 
 (* FE-only: the "Worked for" opener takes the room of Chatbook's ThoughtsOpener template with the same label and
@@ -1867,7 +2004,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-WorkOpenerSize-FEOnly@@Tests/ACPRendering.wlt:1853,1-1871,2"
+    TestID   -> "ACPRendering-FinalCell-WorkOpenerSize-FEOnly@@Tests/ACPRendering.wlt:1990,1-2008,2"
 ]
 
 VerificationTest[
@@ -1876,7 +2013,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:1873,1-1880,2"
+    TestID   -> "ACPRendering-FinalCell-ThoughtOnly@@Tests/ACPRendering.wlt:2010,1-2017,2"
 ]
 
 (* OpenAI summary parts in the final cell: title-only parts are lines (ShortThoughts, bold removed, Literal metadata,
@@ -1906,7 +2043,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ShortThoughts@@Tests/ACPRendering.wlt:1885,1-1910,2"
+    TestID   -> "ACPRendering-FinalCell-ShortThoughts@@Tests/ACPRendering.wlt:2022,1-2047,2"
 ]
 
 (* When the work was only thinking, the short thoughts are lines at the top of the cell *)
@@ -1924,7 +2061,7 @@ VerificationTest[
     ],
     { "ShortThoughts", "ShortThoughts", "ShortThoughts", "ShortThoughts", "ThoughtsOpener", "ThoughtsOpener" },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-ShortThoughtsOnly@@Tests/ACPRendering.wlt:1913,1-1928,2"
+    TestID   -> "ACPRendering-FinalCell-ShortThoughtsOnly@@Tests/ACPRendering.wlt:2050,1-2065,2"
 ]
 
 VerificationTest[
@@ -1942,7 +2079,7 @@ VerificationTest[
     ],
     { True, True, True, _String? (StringContainsQ[ "_You declined" ]) },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:1930,1-1946,2"
+    TestID   -> "ACPRendering-FinalCell-DeclinedTail@@Tests/ACPRendering.wlt:2067,1-2083,2"
 ]
 
 VerificationTest[
@@ -1951,7 +2088,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:1948,1-1955,2"
+    TestID   -> "ACPRendering-FinalCell-StoppedPartialAnswer@@Tests/ACPRendering.wlt:2085,1-2092,2"
 ]
 
 VerificationTest[
@@ -1960,7 +2097,7 @@ VerificationTest[
     ],
     { True, <| "Code" -> -32603, "Message" -> "Internal error: Model exo-free has been deprecated." |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:1957,1-1964,2"
+    TestID   -> "ACPRendering-FinalCell-Error@@Tests/ACPRendering.wlt:2094,1-2101,2"
 ]
 
 VerificationTest[
@@ -1969,7 +2106,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:1966,1-1973,2"
+    TestID   -> "ACPRendering-FinalCell-RetryNotice@@Tests/ACPRendering.wlt:2103,1-2110,2"
 ]
 
 VerificationTest[
@@ -1982,7 +2119,7 @@ VerificationTest[
         Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:1975,1-1986,2"
+    TestID   -> "ACPRendering-FinalCell-Fallbacks@@Tests/ACPRendering.wlt:2112,1-2123,2"
 ]
 
 VerificationTest[
@@ -1991,7 +2128,7 @@ VerificationTest[
     ],
     Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:1988,1-1995,2"
+    TestID   -> "ACPRendering-FinalCell-NoFrontEndFormatting@@Tests/ACPRendering.wlt:2125,1-2132,2"
 ]
 
 (* FE-only: with a front end, answers are formatted with FormatChatOutput "Finished" (skipped without a front end).
@@ -2022,7 +2159,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, { }, True, True, Cell[ BoxData[ TemplateBox[ { _Cell }, "AssistantMessageBox" ] ], "ChatOutput", ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:2000,1-2026,2"
+    TestID   -> "ACPRendering-FinalCell-FrontEndFormatting-FEOnly@@Tests/ACPRendering.wlt:2137,1-2163,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2049,7 +2186,7 @@ VerificationTest[
     ],
     { True, { }, False, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:2033,1-2053,2"
+    TestID   -> "ACPRendering-ToolCard-DeclinedStoppedNoOutput@@Tests/ACPRendering.wlt:2170,1-2190,2"
 ]
 
 VerificationTest[
@@ -2085,7 +2222,7 @@ VerificationTest[
     ],
     { { "make", "compiling a.c" }, { "File not found: /project/missing.txt" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:2055,1-2089,2"
+    TestID   -> "ACPRendering-ToolCard-StoppedKeepsRealOutput@@Tests/ACPRendering.wlt:2192,1-2226,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2111,7 +2248,7 @@ VerificationTest[
     ],
     { True, True, 6, 1, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:2094,1-2115,2"
+    TestID   -> "ACPRendering-FinalCell-CompletedToolsThenDeclined@@Tests/ACPRendering.wlt:2231,1-2252,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2128,7 +2265,7 @@ VerificationTest[
     },
     { { 1, 1 }, { 12, 8 }, { 480, 300 }, { 144, 360 }, { 480, 360 }, { 480, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:2120,1-2132,2"
+    TestID   -> "ACPRendering-Images-DisplaySize@@Tests/ACPRendering.wlt:2257,1-2269,2"
 ]
 
 (* Small images are shown at their natural size (not stretched), large ones are scaled down *)
@@ -2143,7 +2280,7 @@ VerificationTest[
     ],
     { { { 12, 8 }, { 320, 200 } }, { { 12, 8 }, { 480, 300 } }, { { 1, 1 } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:2135,1-2147,2"
+    TestID   -> "ACPRendering-Images-NaturalSizeCapped@@Tests/ACPRendering.wlt:2272,1-2284,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2169,7 +2306,7 @@ VerificationTest[
     ],
     { { }, { }, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:2152,1-2173,2"
+    TestID   -> "ACPRendering-BoldCode-LiveAndFinal@@Tests/ACPRendering.wlt:2289,1-2310,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2183,7 +2320,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:2178,1-2187,2"
+    TestID   -> "ACPRendering-InlineCells-Final@@Tests/ACPRendering.wlt:2315,1-2324,2"
 ]
 
 VerificationTest[
@@ -2209,7 +2346,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:2189,1-2213,2"
+    TestID   -> "ACPRendering-InlineCells-Live@@Tests/ACPRendering.wlt:2326,1-2350,2"
 ]
 
 VerificationTest[
@@ -2225,7 +2362,7 @@ VerificationTest[
         RawBoxes[ StyleBox[ _, "Text", ___ ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:2215,1-2229,2"
+    TestID   -> "ACPRendering-InlineCells-HeaderAndPlaceholder@@Tests/ACPRendering.wlt:2352,1-2366,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2241,7 +2378,7 @@ VerificationTest[
     MatchQ[ acpPermissionPanel @ acpFakeNotebook, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:2234,1-2245,2"
+    TestID   -> "ACPRendering-PermissionPanel-StableDynamic@@Tests/ACPRendering.wlt:2371,1-2382,2"
 ]
 
 VerificationTest[
@@ -2267,7 +2404,7 @@ VerificationTest[
     ],
     { True, True, True, 3, True, { { acpFakeNotebook, 2, "once" }, { acpFakeNotebook, 2, "always" }, { acpFakeNotebook, 2, "reject" } }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:2247,1-2271,2"
+    TestID   -> "ACPRendering-PermissionPanel-Edit@@Tests/ACPRendering.wlt:2384,1-2408,2"
 ]
 
 VerificationTest[
@@ -2290,7 +2427,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:2273,1-2294,2"
+    TestID   -> "ACPRendering-PermissionPanel-Shell@@Tests/ACPRendering.wlt:2410,1-2431,2"
 ]
 
 VerificationTest[
@@ -2299,7 +2436,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:2296,1-2303,2"
+    TestID   -> "ACPRendering-PermissionPanel-ExternalDirectory@@Tests/ACPRendering.wlt:2433,1-2440,2"
 ]
 
 (* What "Always allow" saves, as OpenCode derives it (patterns per subcommand, directories outside the project) *)
@@ -2333,7 +2470,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:2306,1-2337,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScope@@Tests/ACPRendering.wlt:2443,1-2474,2"
 ]
 
 VerificationTest[
@@ -2349,7 +2486,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:2339,1-2353,2"
+    TestID   -> "ACPRendering-PermissionPanel-AlwaysScopeExternal@@Tests/ACPRendering.wlt:2476,1-2490,2"
 ]
 
 VerificationTest[
@@ -2360,7 +2497,7 @@ VerificationTest[
     },
     { RawBoxes[ "" ], RawBoxes[ "" ], None },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:2355,1-2364,2"
+    TestID   -> "ACPRendering-PermissionPanel-Empty@@Tests/ACPRendering.wlt:2492,1-2501,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2410,7 +2547,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-LargeDefinitions@@Tests/ACPRendering.wlt:2373,1-2414,2"
+    TestID   -> "ACPRendering-PermissionPanel-LargeDefinitions@@Tests/ACPRendering.wlt:2510,1-2551,2"
 ]
 
 (* A new file of 2,000 lines: its first 12 rows, the counts, and the link, whose button names the request by a key (a
@@ -2437,7 +2574,7 @@ VerificationTest[
     ],
     { 12, True, True, True, False, True, 1, True, True, True, 4 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-LargeWritePreview@@Tests/ACPRendering.wlt:2418,1-2441,2"
+    TestID   -> "ACPRendering-PermissionPanel-LargeWritePreview@@Tests/ACPRendering.wlt:2555,1-2578,2"
 ]
 
 (* An edit of one line of a 5,000-line file shows that line, removed and added, with its context (all old lines removed
@@ -2459,7 +2596,7 @@ VerificationTest[
     ],
     { True, True, True, True, False, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-LargeFileEdit@@Tests/ACPRendering.wlt:2445,1-2463,2"
+    TestID   -> "ACPRendering-PermissionPanel-LargeFileEdit@@Tests/ACPRendering.wlt:2582,1-2600,2"
 ]
 
 (* The panel's kernel time for 10,000-line requests (a render took 6 to 10 s before, past the front end's 6 s
@@ -2473,7 +2610,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-Timing@@Tests/ACPRendering.wlt:2467,1-2477,2"
+    TestID   -> "ACPRendering-PermissionPanel-Timing@@Tests/ACPRendering.wlt:2604,1-2614,2"
 ]
 
 (* A patch of five files: the first three diffs and a note of the others *)
@@ -2488,7 +2625,7 @@ VerificationTest[
     ],
     { 3, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ManyFiles@@Tests/ACPRendering.wlt:2480,1-2492,2"
+    TestID   -> "ACPRendering-PermissionPanel-ManyFiles@@Tests/ACPRendering.wlt:2617,1-2629,2"
 ]
 
 (* The panel's diff rows and paths are display-safe: a bidi control shows as a marker, so a line can't look different
@@ -2508,7 +2645,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-SafeDiffRows@@Tests/ACPRendering.wlt:2496,1-2512,2"
+    TestID   -> "ACPRendering-PermissionPanel-SafeDiffRows@@Tests/ACPRendering.wlt:2633,1-2649,2"
 ]
 
 (* A long shell command: its first 12 lines (not cut), a note of the rest and "View full command"; a short one has no
@@ -2534,7 +2671,7 @@ VerificationTest[
         { "echo hello && uname -s" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ShellPreview@@Tests/ACPRendering.wlt:2516,1-2538,2"
+    TestID   -> "ACPRendering-PermissionPanel-ShellPreview@@Tests/ACPRendering.wlt:2653,1-2675,2"
 ]
 
 (* "Always allow" of a shell command: the body of a here document is data, not commands (OpenCode takes only the
@@ -2574,7 +2711,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-HeredocPatterns@@Tests/ACPRendering.wlt:2544,1-2578,2"
+    TestID   -> "ACPRendering-PermissionPanel-HeredocPatterns@@Tests/ACPRendering.wlt:2681,1-2715,2"
 ]
 
 (* "Always allow" names the command OpenCode runs, not a reserved word that stands before it (if/then/fi, a group
@@ -2614,7 +2751,7 @@ VerificationTest[
         <| "Patterns" -> { "echo *" }, "Complete" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ReservedWordsAndRedirections@@Tests/ACPRendering.wlt:2585,1-2618,2"
+    TestID   -> "ACPRendering-PermissionPanel-ReservedWordsAndRedirections@@Tests/ACPRendering.wlt:2722,1-2755,2"
 ]
 
 (* The patterns never leave out a command that the shell runs (and OpenCode saves) behind something that only looks
@@ -2662,7 +2799,7 @@ VerificationTest[
         { { "ls *", "wc *" }, { "cat *", "ls *" }, { "echo *", "grep *" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-HiddenCommands@@Tests/ACPRendering.wlt:2624,1-2666,2"
+    TestID   -> "ACPRendering-PermissionPanel-HiddenCommands@@Tests/ACPRendering.wlt:2761,1-2803,2"
 ]
 
 (* The link's key names the request instance: JSON-RPC ids repeat after a reconnect, so the turn and the arrival time are
@@ -2684,7 +2821,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-InstanceKey@@Tests/ACPRendering.wlt:2670,1-2688,2"
+    TestID   -> "ACPRendering-PermissionPanel-InstanceKey@@Tests/ACPRendering.wlt:2807,1-2825,2"
 ]
 
 (* A turn that ended with a rejected large edit shows that tool card expanded: its diff keeps as many rows as a live card
@@ -2711,7 +2848,7 @@ VerificationTest[
     ],
     { { { "Tool", "call_large" } }, { 40 }, True, 400 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-FinalCell-InterruptedTailDiffCapped@@Tests/ACPRendering.wlt:2692,1-2715,2"
+    TestID   -> "ACPRendering-FinalCell-InterruptedTailDiffCapped@@Tests/ACPRendering.wlt:2829,1-2852,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2760,7 +2897,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptDefinitions@@Tests/ACPRendering.wlt:2724,1-2764,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptDefinitions@@Tests/ACPRendering.wlt:2861,1-2901,2"
 ]
 
 (* The request of the end-to-end run: the headline names the tool, the call's notebook and markdown are shown, and the
@@ -2788,7 +2925,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptE2E@@Tests/ACPRendering.wlt:2768,1-2792,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptE2E@@Tests/ACPRendering.wlt:2905,1-2929,2"
 ]
 
 (* The window title of the notebook, once the pump resolved it (see acpNotebookTitles), with its id *)
@@ -2807,7 +2944,7 @@ VerificationTest[
     ],
     { True, True, <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptNotebookTitle@@Tests/ACPRendering.wlt:2795,1-2811,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptNotebookTitle@@Tests/ACPRendering.wlt:2932,1-2948,2"
 ]
 
 (* The shapes of D2-01: the bracket form, the mixed form, a namespace alias, and decoys in a comment. The headline
@@ -2842,7 +2979,7 @@ VerificationTest[
         { True, True }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptBracketMixedDecoy@@Tests/ACPRendering.wlt:2815,1-2846,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptBracketMixedDecoy@@Tests/ACPRendering.wlt:2952,1-2983,2"
 ]
 
 (* A script whose tools can't be read: a neutral headline (or "and other tools" when some can), and the script, at
@@ -2872,7 +3009,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptUnparseable@@Tests/ACPRendering.wlt:2850,1-2876,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptUnparseable@@Tests/ACPRendering.wlt:2987,1-3013,2"
 ]
 
 (* A decoy (with literal arguments, in a regular expression) and a real edit that the reader can't see (a comment
@@ -2911,7 +3048,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptHiddenCall@@Tests/ACPRendering.wlt:2882,1-2915,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptHiddenCall@@Tests/ACPRendering.wlt:3019,1-3052,2"
 ]
 
 (* A real call with a long markdown literal and an edit hidden after it on the same line (tools.WolframNotebooks
@@ -2942,7 +3079,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptLongLines@@Tests/ACPRendering.wlt:2920,1-2946,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptLongLines@@Tests/ACPRendering.wlt:3057,1-3083,2"
 ]
 
 (* What the user approves is the whole script: when the panel shows only its first lines (or characters), "View full
@@ -2959,7 +3096,7 @@ VerificationTest[
     ],
     { True, 1, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptViewFull@@Tests/ACPRendering.wlt:2950,1-2963,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptViewFull@@Tests/ACPRendering.wlt:3087,1-3100,2"
 ]
 
 (* A direct call of a notebook tool (not in code mode): the same arguments as for a script, and a "command" in its
@@ -2979,7 +3116,7 @@ VerificationTest[
     ],
     { "OpenCode wants to use WolframNotebooks: InsertCells", True, True, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-DirectNotebookTool@@Tests/ACPRendering.wlt:2967,1-2983,2"
+    TestID   -> "ACPRendering-PermissionPanel-DirectNotebookTool@@Tests/ACPRendering.wlt:3104,1-3120,2"
 ]
 
 (* The script, the markdown and the arguments are the agent's: shown as plain strings, with the front end's linear
@@ -2998,7 +3135,7 @@ VerificationTest[
     ],
     { True, True, 2 },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ScriptPlainText@@Tests/ACPRendering.wlt:2987,1-3002,2"
+    TestID   -> "ACPRendering-PermissionPanel-ScriptPlainText@@Tests/ACPRendering.wlt:3124,1-3139,2"
 ]
 
 (* The tool cards show the same arguments: a script's calls while it runs, and a direct call of a notebook tool *)
@@ -3031,7 +3168,7 @@ VerificationTest[
     ],
     { True, True, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolCard-NotebookToolArguments@@Tests/ACPRendering.wlt:3005,1-3035,2"
+    TestID   -> "ACPRendering-ToolCard-NotebookToolArguments@@Tests/ACPRendering.wlt:3142,1-3172,2"
 ]
 
 (* The pump adds the notebooks' titles to a pending request (Connection.wl), and only to one that is still pending *)
@@ -3060,7 +3197,7 @@ VerificationTest[
         { { "5de1d007" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionPanel-ResolveNotebookTitles@@Tests/ACPRendering.wlt:3038,1-3064,2"
+    TestID   -> "ACPRendering-PermissionPanel-ResolveNotebookTitles@@Tests/ACPRendering.wlt:3175,1-3201,2"
 ]
 
 (* acpNotebookTitles resolves the arguments as the tools do: an id (or the start of it) or a title of one of the listed
@@ -3084,14 +3221,14 @@ VerificationTest[
     ],
     { True, True, True } | Missing[ "TestSkipped" ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-NotebookTitles-FrontEnd@@Tests/ACPRendering.wlt:3068,1-3088,2"
+    TestID   -> "ACPRendering-NotebookTitles-FrontEnd@@Tests/ACPRendering.wlt:3205,1-3225,2"
 ]
 
 VerificationTest[
     Block[ { $FrontEnd = Null }, Wolfram`Chatbook`ACP`Common`acpNotebookTitles /@ { { "5de1d007" }, { } } ],
     { <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-NotebookTitles-NoFrontEnd@@Tests/ACPRendering.wlt:3090,1-3095,2"
+    TestID   -> "ACPRendering-NotebookTitles-NoFrontEnd@@Tests/ACPRendering.wlt:3227,1-3232,2"
 ]
 
 VerificationTest[
@@ -3109,7 +3246,7 @@ VerificationTest[
     ],
     { True, True, True, True, { "Reconnect" }, { "ChooseModel", "Reconnect" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:3097,1-3113,2"
+    TestID   -> "ACPRendering-ToolbarStatus@@Tests/ACPRendering.wlt:3234,1-3250,2"
 ]
 
 (* MCP readiness changes don't re-render the status view *)
@@ -3122,7 +3259,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:3116,1-3126,2"
+    TestID   -> "ACPRendering-ToolbarStatus-IgnoresMCPReady@@Tests/ACPRendering.wlt:3253,1-3263,2"
 ]
 
 VerificationTest[
@@ -3138,7 +3275,7 @@ VerificationTest[
     ],
     { True, True, True, True, "" | "\"\"" },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:3128,1-3142,2"
+    TestID   -> "ACPRendering-UsageMeter@@Tests/ACPRendering.wlt:3265,1-3279,2"
 ]
 
 VerificationTest[
@@ -3152,7 +3289,7 @@ VerificationTest[
     ],
     { True, True, { "SignIn" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:3144,1-3156,2"
+    TestID   -> "ACPRendering-ErrorView@@Tests/ACPRendering.wlt:3281,1-3293,2"
 ]
 
 (* "Locate OpenCode..." is a file chooser run by the front end; the chosen file goes to the SetAgentExecutable action *)
@@ -3167,14 +3304,14 @@ VerificationTest[
     ],
     { 1, True, { "Reconnect" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:3159,1-3171,2"
+    TestID   -> "ACPRendering-ErrorView-LocateAgent@@Tests/ACPRendering.wlt:3296,1-3308,2"
 ]
 
 VerificationTest[
     MatchQ[ #, acpWrapperPattern @ acpWindowSymbol @ acpFakeNotebook ] & /@ { acpToolbarStatusView @ acpFakeNotebook, acpUsageMeterView @ acpFakeNotebook },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:3173,1-3178,2"
+    TestID   -> "ACPRendering-WindowViews-StableDynamics@@Tests/ACPRendering.wlt:3310,1-3315,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -3202,7 +3339,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-RemoteDefinitions@@Tests/ACPRendering.wlt:3183,1-3206,2"
+    TestID   -> "ACPRendering-RemoteDefinitions@@Tests/ACPRendering.wlt:3320,1-3343,2"
 ]
 
 (* What the compact error view shows (acpErrorParts): ssh's last line, the hint, older errors' "Detail" split at the
@@ -3243,7 +3380,7 @@ VerificationTest[
         <| "Message" -> "", "Line" -> None, "Details" -> None, "MoreQ" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-ErrorParts@@Tests/ACPRendering.wlt:3210,1-3247,2"
+    TestID   -> "Remote-ErrorParts@@Tests/ACPRendering.wlt:3347,1-3384,2"
 ]
 
 (* The line is cut to 200 characters, the output to its last 12 lines and the details to about 1500 characters; text with
@@ -3265,7 +3402,7 @@ VerificationTest[
     ],
     { 200, True, { "hint", "line 19", "line 30" }, 14, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Remote-ErrorParts-Limits@@Tests/ACPRendering.wlt:3251,1-3269,2"
+    TestID   -> "Remote-ErrorParts-Limits@@Tests/ACPRendering.wlt:3388,1-3406,2"
 ]
 
 (* The toolbar's compact error view: the message and the last line of the output, the buttons on their own row with
@@ -3337,7 +3474,7 @@ VerificationTest[
         { False, False, False, False }, True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-Compact@@Tests/ACPRendering.wlt:3274,1-3341,2"
+    TestID   -> "ACPRendering-ErrorView-Compact@@Tests/ACPRendering.wlt:3411,1-3478,2"
 ]
 
 (* The full view (final cells, the Review and picker windows) wraps its lines too, in any cell, and both views and the
@@ -3362,7 +3499,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-TextStyle@@Tests/ACPRendering.wlt:3346,1-3366,2"
+    TestID   -> "ACPRendering-ErrorView-TextStyle@@Tests/ACPRendering.wlt:3483,1-3503,2"
 ]
 
 (* FE-only: in a docked cell (the toolbar), whose "DockedCell" style turns line breaking off, the compact view wraps a
@@ -3385,7 +3522,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ErrorView-WrapsInDockedCell-FEOnly@@Tests/ACPRendering.wlt:3371,1-3389,2"
+    TestID   -> "ACPRendering-ErrorView-WrapsInDockedCell-FEOnly@@Tests/ACPRendering.wlt:3508,1-3526,2"
 ]
 
 (* B7.5: where "Always allow" applies for a remote window's request, resolved as POSIX paths on the host (~ is the
@@ -3431,7 +3568,7 @@ VerificationTest[
         "/home/u/sibling"
     },
     SameTest -> MatchQ,
-    TestID   -> "Remote-PermissionPaths@@Tests/ACPRendering.wlt:3393,1-3435,2"
+    TestID   -> "Remote-PermissionPaths@@Tests/ACPRendering.wlt:3530,1-3572,2"
 ]
 
 (* The permission panel of a remote window: read /etc, list /var/log, cd ~/other (the known home), paths inside the
@@ -3481,7 +3618,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-PermissionScope-Remote@@Tests/ACPRendering.wlt:3439,1-3485,2"
+    TestID   -> "ACPRendering-PermissionScope-Remote@@Tests/ACPRendering.wlt:3576,1-3622,2"
 ]
 
 (* Resource links of a remote window's turn: a file on the host is shown with its path on the host as a tooltip, not as
@@ -3517,7 +3654,7 @@ VerificationTest[
     ],
     { False, True, True, True, True, False, True, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ResourceLink-Remote@@Tests/ACPRendering.wlt:3489,1-3521,2"
+    TestID   -> "ACPRendering-ResourceLink-Remote@@Tests/ACPRendering.wlt:3626,1-3658,2"
 ]
 
 (* The agent's names, URIs and block types never become boxes of its choice (linear syntax), local and remote turns;
@@ -3546,7 +3683,7 @@ VerificationTest[
     ],
     { ConstantArray[ False, 10 ], { False, False, False, True }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-ResourceLink-LinearSyntax@@Tests/ACPRendering.wlt:3525,1-3550,2"
+    TestID   -> "ACPRendering-ResourceLink-LinearSyntax@@Tests/ACPRendering.wlt:3662,1-3687,2"
 ]
 
 (* The agent's text in tool titles (a search pattern, a shell command, the title of a tool call without a name, an MCP
@@ -3598,7 +3735,7 @@ VerificationTest[
     ],
     { True, False, False, False, False, False, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-AgentText-ToolTitlesNeutralized@@Tests/ACPRendering.wlt:3556,1-3602,2"
+    TestID   -> "ACPRendering-AgentText-ToolTitlesNeutralized@@Tests/ACPRendering.wlt:3693,1-3739,2"
 ]
 
 (* A title is neutralized by the view too, whatever it is given (defense in depth) *)
@@ -3615,7 +3752,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-AgentText-TitleViewNeutralizes@@Tests/ACPRendering.wlt:3605,1-3619,2"
+    TestID   -> "ACPRendering-AgentText-TitleViewNeutralizes@@Tests/ACPRendering.wlt:3742,1-3756,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -3650,7 +3787,7 @@ VerificationTest[
     ],
     { { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UntrustedContent-NoImportOrWolframAlpha@@Tests/ACPRendering.wlt:3632,1-3654,2"
+    TestID   -> "ACPRendering-UntrustedContent-NoImportOrWolframAlpha@@Tests/ACPRendering.wlt:3769,1-3791,2"
 ]
 
 (* With finished Wolfram Language formatting (a front end), neither a DateObject option nor front-end linear syntax in
@@ -3703,7 +3840,7 @@ VerificationTest[
     ],
     { { }, { { }, { }, { } }, { 1, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UntrustedContent-FinishedModeNoEvaluation@@Tests/ACPRendering.wlt:3661,1-3707,2"
+    TestID   -> "ACPRendering-UntrustedContent-FinishedModeNoEvaluation@@Tests/ACPRendering.wlt:3798,1-3844,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -3757,7 +3894,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UserCell-AttachmentChips@@Tests/ACPRendering.wlt:3721,1-3761,2"
+    TestID   -> "ACPRendering-UserCell-AttachmentChips@@Tests/ACPRendering.wlt:3858,1-3898,2"
 ]
 
 (* Names in chips are display-safe (agent text of a restored session: invisible characters shown, the front end's linear
@@ -3777,7 +3914,7 @@ VerificationTest[
     ],
     { False, True, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-UserCell-AttachmentNames@@Tests/ACPRendering.wlt:3766,1-3781,2"
+    TestID   -> "ACPRendering-UserCell-AttachmentNames@@Tests/ACPRendering.wlt:3903,1-3918,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -3811,7 +3948,7 @@ VerificationTest[
         { "a", "\:27e6U+202E\:27e7", "b", "\:27e6U+200F\:27e7", "c" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-SafeText-Markers@@Tests/ACPRendering.wlt:3796,1-3815,2"
+    TestID   -> "ACPRendering-SafeText-Markers@@Tests/ACPRendering.wlt:3933,1-3952,2"
 ]
 
 (* What the user sees of the agent's text shows a bidi control as a marker: the answer, a tool's title and its input, the
@@ -3839,7 +3976,7 @@ VerificationTest[
     ],
     ConstantArray[ { True, True }, 5 ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-AgentText-BidiShownAsMarkers@@Tests/ACPRendering.wlt:3819,1-3843,2"
+    TestID   -> "ACPRendering-AgentText-BidiShownAsMarkers@@Tests/ACPRendering.wlt:3956,1-3980,2"
 ]
 
 (* A title's object is cut by characters and whole markers, never half a marker *)
@@ -3850,7 +3987,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-MarkersCutWhole@@Tests/ACPRendering.wlt:3846,1-3854,2"
+    TestID   -> "ACPRendering-Fit-MarkersCutWhole@@Tests/ACPRendering.wlt:3983,1-3991,2"
 ]
 
 (* Widths are measured at the size the text is drawn at (the font size times the magnification) and divided by the
@@ -3866,7 +4003,7 @@ VerificationTest[
     ],
     { True, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-DrawnSize@@Tests/ACPRendering.wlt:3859,1-3870,2"
+    TestID   -> "ACPRendering-Fit-DrawnSize@@Tests/ACPRendering.wlt:3996,1-4007,2"
 ]
 
 (* FE-only: at magnifications 0.85, 1 and 1.5 the cut text, measured at the size the front end draws it, fits in the width
@@ -3922,7 +4059,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | ConstantArray[ { True, True }, 3 ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-DrawnSize-FEOnly@@Tests/ACPRendering.wlt:3875,1-3926,2"
+    TestID   -> "ACPRendering-Fit-DrawnSize-FEOnly@@Tests/ACPRendering.wlt:4012,1-4063,2"
 ]
 
 (* Magnification scales most of the layout around a title, but not all of it: every cell reserves some screen points at
@@ -3963,15 +4100,17 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-ScreenReserves@@Tests/ACPRendering.wlt:3932,1-3967,2"
+    TestID   -> "ACPRendering-Fit-ScreenReserves@@Tests/ACPRendering.wlt:4069,1-4104,2"
 ]
 
 (* The width of a title against the room that its line got in a real front end (Linux, 96 dpi, the ACPChat stylesheet;
-   measured by drawing the title as a long red text in its clipping pane): a "Read ... 1 line" card in the "Worked for"
-   opener and in a live view, windows of 360, 480 and 600 points (a "ViewSize" 15 points narrower: the scroll bar),
-   magnifications 0.85 to 2. The front end's text widths are those measured there at magnification 1, scaled. A cut
-   title ends inside its room (else its ellipsis is clipped) and at most 8 points before its end (else it is cut with
-   room left): treating the screen points as scaled ones broke both (clipped at 0.85, cut short at 2). *)
+   measured by drawing the title's line as a long red bar in its clipping pane): a "Read ... 1 line" card in the "Worked
+   for" opener and in a live view, windows of 360, 480 and 600 points (a "ViewSize" 15 points narrower: the scroll bar),
+   magnifications 0.85 to 2 (not 360 points at 2 in the opener, where the card is wider than the window). The front end's
+   text widths are those measured there at magnification 1, scaled. A cut title ends inside its room (else its ellipsis
+   is clipped) and at most 8 points before its end (else it is cut with room left): treating the screen points as scaled
+   ones broke both (clipped at 0.85, cut short at 2). Measured for the cards of Chatbook's tool call design (no frame, a
+   chevron before the icon, no check mark after the summary). *)
 VerificationTest[
     Module[ { tool, widthOf, evaluate, rooms },
         tool = acpFitTool[ "read", <| "filePath" -> "/project/main.py" |>, "completed",
@@ -3986,7 +4125,7 @@ VerificationTest[
         evaluate = Function[ { held, w, m },
             m * ReleaseHold[
                 held /. {
-                    HoldPattern[ FEPrivate`StringWidth[ s_String, _ ] ] :> { 0, m * Lookup[ <| "1 line" -> 26.85, "\:2713" -> 9.06 |>, s ] },
+                    HoldPattern[ FEPrivate`StringWidth[ s_String, _ ] ] :> { 0, m * Lookup[ <| "1 line" -> 26.85 |>, s ] },
                     HoldPattern[ FrontEnd`AbsoluteCurrentValue[ "ViewSize" ] ] :> { w - 15, 1000 },
                     HoldPattern[ FrontEnd`AbsoluteCurrentValue[ Magnification ] ] :> m
                 }
@@ -3994,29 +4133,31 @@ VerificationTest[
         ];
         (* { context, window width, magnification, room in drawn points } *)
         rooms = {
-            { "Work", 360, 0.85, 181.5 }, { "Work", 360, 1, 156 }, { "Work", 360, 1.25, 112.5 }, { "Work", 360, 1.5, 70.5 },
-            { "Work", 480, 0.85, 299.25 }, { "Work", 480, 1, 276 }, { "Work", 480, 1.25, 232.5 }, { "Work", 480, 1.5, 190.5 }, { "Work", 480, 2, 103.5 },
-            { "Work", 600, 0.85, 419.25 }, { "Work", 600, 1, 396 }, { "Work", 600, 1.25, 352.5 }, { "Work", 600, 1.5, 310.5 }, { "Work", 600, 2, 223.5 },
-            { "Live", 480, 1, 298.5 }, { "Live", 480, 2, 147.75 }
+            { "Work", 360, 0.85, 204 }, { "Work", 360, 1, 182.25 }, { "Work", 360, 1.25, 146.25 }, { "Work", 360, 1.5, 110.25 },
+            { "Work", 480, 0.85, 324 }, { "Work", 480, 1, 302.25 }, { "Work", 480, 1.25, 266.25 }, { "Work", 480, 1.5, 230.25 }, { "Work", 480, 2, 156.75 },
+            { "Work", 600, 0.85, 444 }, { "Work", 600, 1, 422.25 }, { "Work", 600, 1.25, 386.25 }, { "Work", 600, 1.5, 350.25 }, { "Work", 600, 2, 276.75 },
+            { "Live", 360, 0.85, 222.75 }, { "Live", 360, 1, 204.75 }, { "Live", 360, 1.5, 142.5 }, { "Live", 360, 2, 80.25 },
+            { "Live", 480, 0.85, 342.75 }, { "Live", 480, 1, 324.75 }, { "Live", 480, 1.25, 294 }, { "Live", 480, 2, 200.25 },
+            { "Live", 600, 1, 444.75 }, { "Live", 600, 1.5, 382.5 }
         };
         Select[
             { #1, #2, #3, #4 - evaluate[ widthOf[ If[ #1 === "Live", "Live", "Final" ], #1 ], #2, #3 ] } & @@@ rooms,
-            ! (0 < Last @ # <= 8) &
+            ! TrueQ[ 0 < Last @ # <= 8 ] &
         ]
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-MeasuredRooms@@Tests/ACPRendering.wlt:3975,1-4010,2"
+    TestID   -> "ACPRendering-Fit-MeasuredRooms@@Tests/ACPRendering.wlt:4114,1-4151,2"
 ]
 
 (* The same for a standalone permission card's title (permissionEntityCell: no opener, no summary, no badge), against the
-   rooms measured in a real front end in a live view (Linux, 96 dpi; a red text in the title's clipping pane), in drawn
-   points: the width ends inside the room and at most 8 points before its end. At 480 points and magnification 2 the
-   room was about 2 points (at magnification 1) less than at the other sizes; $cardReserve[ "Permission" ] (35.5, was 32,
-   measured headless) keeps it inside. *)
+   rooms measured in a real front end in a live view (Linux, 96 dpi; a red bar in the title's clipping pane), in drawn
+   points: the width ends inside the room and at most 8 points before its end. *)
 VerificationTest[
     Module[ { width, evaluate, rooms },
-        width    = Extract[ Wolfram`Chatbook`ACP`Rendering`Private`headerTitleWidth[ "Live", "Permission", "", None, Nothing ], { 1 }, HoldComplete ];
+        (* the width, with the front end expressions' pieces released from their holds (as fitDynamic does) *)
+        width    = Extract[ Wolfram`Chatbook`ACP`Rendering`Private`headerTitleWidth[ "Live", "Permission", "", None, Nothing ], { 1 }, HoldComplete ] //.
+            HoldPattern[ Wolfram`Chatbook`ACP`Rendering`Private`feHold[ e_ ] ] :> e;
         evaluate = Function[ { held, w, m },
             m * ReleaseHold[
                 held /. {
@@ -4026,12 +4167,15 @@ VerificationTest[
             ]
         ];
         (* { window width, magnification, room in drawn points } *)
-        rooms = { { 360, 0.85, 254.25 }, { 480, 1, 360.75 }, { 600, 1, 480.75 }, { 600, 1.5, 437.25 }, { 480, 2, 268.5 } };
-        Select[ { #1, #2, #3 - evaluate[ width, #1, #2 ] } & @@@ rooms, ! (0 < Last @ # <= 8) & ]
+        rooms = {
+            { 360, 0.85, 255.75 }, { 360, 1, 241.5 }, { 360, 2, 150.75 }, { 480, 1, 361.5 }, { 480, 1.5, 316.5 },
+            { 480, 2, 270.75 }, { 600, 0.85, 495.75 }, { 600, 1, 481.5 }, { 600, 1.5, 436.5 }, { 600, 2, 390.75 }
+        };
+        Select[ { #1, #2, #3 - evaluate[ width, #1, #2 ] } & @@@ rooms, ! TrueQ[ 0 < Last @ # <= 8 ] & ]
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-MeasuredRooms-Permission@@Tests/ACPRendering.wlt:4017,1-4035,2"
+    TestID   -> "ACPRendering-Fit-MeasuredRooms-Permission@@Tests/ACPRendering.wlt:4156,1-4179,2"
 ]
 
 (* A title's prefix ("Read ", "Searched for ") is dropped in the front end when it would leave the object less room than
@@ -4059,17 +4203,22 @@ VerificationTest[
     ],
     { 1, True, 0, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Fit-PrefixDropped@@Tests/ACPRendering.wlt:4040,1-4063,2"
+    TestID   -> "ACPRendering-Fit-PrefixDropped@@Tests/ACPRendering.wlt:4184,1-4207,2"
 ]
 
-(* The openers of final tool cards, of the "Worked for" opener and of the review window's cards toggle in the front end
-   with its own functions only (FEPrivate`Set and FEPrivate`If, no kernel Set and no Not), so that they open in a saved
-   copy without a running kernel. (The per-thought openers are still Chatbook's ThoughtsOpener template, which needs a
-   kernel there.) *)
+(* The openers of final tool cards (their header toggles, and the divider and the "Hide" line close), of the "Worked for"
+   opener and of the review window's cards toggle in the front end with its own functions only (FEPrivate`Set and
+   FEPrivate`If, no kernel Set and no Not, and the divider's button has no evaluator), so that they open in a saved copy
+   without a running kernel. (The per-thought openers are still Chatbook's ThoughtsOpener template, which needs a kernel
+   there.) *)
 VerificationTest[
     Module[ { card, toggles },
-        card    = ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`staticOpener[ "header", "body", False, "Default" ];
-        toggles = Cases[ card, HoldPattern[ "MouseDown" :> e_ ] :> HoldComplete[ e ], Infinity ];
+        card    = ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`staticOpener[ "header", "body", False ];
+        toggles = Cases[
+            card,
+            HoldPattern[ ("MouseDown" | "MouseClicked") :> e_ ] | HoldPattern[ ButtonFunction :> e_ ] :> HoldComplete[ e ],
+            Infinity
+        ];
         {
             Union @ toggles,
             Union @ Cases[
@@ -4077,16 +4226,19 @@ VerificationTest[
                 HoldPattern[ "MouseClicked" :> e_ ] :> HoldComplete[ e ],
                 Infinity
             ],
-            FreeQ[ DownValues @ Wolfram`Chatbook`ACP`Review`Private`reviewOpenerHeader, HoldPattern @ Not[ Typeset`open ] ]
+            FreeQ[ DownValues @ Wolfram`Chatbook`ACP`Review`Private`reviewOpenerHeader, HoldPattern @ Not[ Typeset`open ] ],
+            (* the divider's button *)
+            Cases[ card, ButtonBox[ ___, Evaluator -> e_, ___ ] :> e, Infinity ]
         }
     ],
     {
-        { HoldComplete @ FEPrivate`Set[ Typeset`open$$, FEPrivate`If[ Typeset`open$$, False, True ] ] },
+        Union @ { HoldComplete @ FEPrivate`Set[ Typeset`open$$, FEPrivate`If[ Typeset`open$$, False, True ] ], HoldComplete @ FEPrivate`Set[ Typeset`open$$, False ] },
         { HoldComplete @ FEPrivate`Set[ Typeset`workOpen$$, FEPrivate`If[ Typeset`workOpen$$, False, True ] ] },
-        True
+        True,
+        { None }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Openers-FrontEndToggles@@Tests/ACPRendering.wlt:4069,1-4090,2"
+    TestID   -> "ACPRendering-Openers-FrontEndToggles@@Tests/ACPRendering.wlt:4214,1-4242,2"
 ]
 
 (* A status line (and a title in its string form) shows no string quotes in a notebook whose stylesheet shows them (a
@@ -4108,7 +4260,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-StatusLine-PlainCopy@@Tests/ACPRendering.wlt:4095,1-4112,2"
+    TestID   -> "ACPRendering-StatusLine-PlainCopy@@Tests/ACPRendering.wlt:4247,1-4264,2"
 ]
 
 (* A direct call of the Wolfram MCP server's evaluator (not in code mode) shows its code as Wolfram Language (Copy and
@@ -4127,7 +4279,7 @@ VerificationTest[
     ],
     { { "Wolfram" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DirectEvaluatorCall-WolframCode@@Tests/ACPRendering.wlt:4116,1-4131,2"
+    TestID   -> "ACPRendering-DirectEvaluatorCall-WolframCode@@Tests/ACPRendering.wlt:4268,1-4283,2"
 ]
 
 (* A replayed turn's thought without text (OpenCode replays an empty reasoning part) is left out of the final cell, not
@@ -4149,7 +4301,7 @@ VerificationTest[
     ],
     { 1, { }, { "EmptyThoughts" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-Replay-EmptyThoughtDropped@@Tests/ACPRendering.wlt:4135,1-4153,2"
+    TestID   -> "ACPRendering-Replay-EmptyThoughtDropped@@Tests/ACPRendering.wlt:4287,1-4305,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -4166,7 +4318,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:4162,1-4170,2"
+    TestID   -> "ACPRendering-DebugLog@@Tests/ACPRendering.wlt:4314,1-4322,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
