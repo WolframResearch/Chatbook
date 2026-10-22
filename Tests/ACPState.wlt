@@ -281,6 +281,43 @@ VerificationTest[
     TestID -> "ACPState-Publish-NoResurrection@@Tests/ACPState.wlt:274,1-282,2"
 ]
 
+(* A turn's views are frozen while it is finalized (acpFreezeTurnViews): its layout symbol is bumped once more (the
+   layout's Dynamic renders the frozen view), and from then on neither its layout nor its entities are published; other
+   turns are; dropping the turn forgets the freeze *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`ACP`State`Private`$symbols     = <| |>,
+            Wolfram`Chatbook`ACP`State`Private`$dirty       = <| |>,
+            Wolfram`Chatbook`ACP`State`Private`$frozenTurns = <| |>,
+            Wolfram`Chatbook`ACP`Common`acpEnsurePublisher  = Null &
+        },
+        Module[ { layout, entity, other, value, before, afterFreeze, afterPublish, frozen },
+            layout = Wolfram`Chatbook`ACP`Common`acpLayoutSymbol[ "acp-state-frozen" ];
+            entity = Wolfram`Chatbook`ACP`Common`acpEntitySymbol[ "acp-state-frozen", { "Message", "m1" } ];
+            other  = Wolfram`Chatbook`ACP`Common`acpEntitySymbol[ "acp-state-other", { "Message", "m1" } ];
+            value  = ReleaseHold /@ { layout, entity, other } &;
+            before = value[ ];
+            (* dirty before the freeze: dropped by it *)
+            Wolfram`Chatbook`ACP`Common`acpMarkDirty[ "acp-state-frozen", { { "Message", "m1" } } ];
+            Wolfram`Chatbook`ACP`Common`acpFreezeTurnViews[ "acp-state-frozen" ];
+            afterFreeze = value[ ] - before;
+            Wolfram`Chatbook`ACP`Common`acpMarkDirty[ "acp-state-frozen", { { "Message", "m1" } } ];
+            Wolfram`Chatbook`ACP`Common`acpMarkLayoutDirty[ "acp-state-frozen" ];
+            Wolfram`Chatbook`ACP`Common`acpMarkDirty[ "acp-state-other", { { "Message", "m1" } } ];
+            Wolfram`Chatbook`ACP`Common`acpPublish[ ];
+            afterPublish = value[ ] - before;
+            frozen = Wolfram`Chatbook`ACP`Common`acpTurnViewsFrozenQ[ "acp-state-frozen" ];
+            Wolfram`Chatbook`ACP`Common`acpTurnDrop[ "acp-state-frozen" ];
+            Wolfram`Chatbook`ACP`Common`acpTurnDrop[ "acp-state-other" ];
+            { afterFreeze, afterPublish, frozen, Wolfram`Chatbook`ACP`Common`acpTurnViewsFrozenQ[ "acp-state-frozen" ] }
+        ]
+    ],
+    { { 1, 0, 0 }, { 1, 0, 1 }, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-FreezeTurnViews@@Tests/ACPState.wlt:287,1-319,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ACPLink*)
@@ -298,7 +335,7 @@ VerificationTest[
     ],
     { { True, True, True }, 0 },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-LoadACPLink-Cached@@Tests/ACPState.wlt:289,1-302,2"
+    TestID   -> "ACPState-LoadACPLink-Cached@@Tests/ACPState.wlt:326,1-339,2"
 ]
 
 VerificationTest[
@@ -311,7 +348,7 @@ VerificationTest[
     ],
     Failure[ "ACPLinkMissing", _ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPState-LoadACPLink-Missing@@Tests/ACPState.wlt:304,1-315,2"
+    TestID   -> "ACPState-LoadACPLink-Missing@@Tests/ACPState.wlt:341,1-352,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -342,7 +379,7 @@ VerificationTest[
     );
     Null,
     Null,
-    TestID -> "ACPState-Restart-Definitions@@Tests/ACPState.wlt:326,1-346,2"
+    TestID -> "ACPState-Restart-Definitions@@Tests/ACPState.wlt:363,1-383,2"
 ]
 
 (* A window this kernel does not know (a new kernel after a restart): the toolbar's Dynamic shows a placeholder whose
@@ -364,7 +401,7 @@ VerificationTest[
     ],
     { Framed, 0, { False, False }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-PlaceholderToolbar@@Tests/ACPState.wlt:350,1-368,2"
+    TestID   -> "ACPState-Restart-PlaceholderToolbar@@Tests/ACPState.wlt:387,1-405,2"
 ]
 
 (* A window this kernel knows (created in this session): the toolbar is built in the Dynamic from the symbols that
@@ -386,7 +423,7 @@ VerificationTest[
     ],
     { Framed, 0, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-KnownWindowToolbar@@Tests/ACPState.wlt:372,1-390,2"
+    TestID   -> "ACPState-Restart-KnownWindowToolbar@@Tests/ACPState.wlt:409,1-427,2"
 ]
 
 (* acpCheckSession after a kernel restart (the TaggingRules name another kernel session): the record and its change
@@ -410,7 +447,7 @@ VerificationTest[
     ],
     { False, { { True, True } }, True, False, "NoDirectory" },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-RecordBeforeUI@@Tests/ACPState.wlt:394,1-414,2"
+    TestID   -> "ACPState-Restart-RecordBeforeUI@@Tests/ACPState.wlt:431,1-451,2"
 ]
 
 (* The placeholder's Initialization (acpInitializeWindow, in the pump) without a kernel restart (e.g. a window whose
@@ -443,7 +480,7 @@ VerificationTest[
     ],
     { { { True, True } }, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-PlaceholderReplaced@@Tests/ACPState.wlt:418,1-447,2"
+    TestID   -> "ACPState-Restart-PlaceholderReplaced@@Tests/ACPState.wlt:455,1-484,2"
 ]
 
 (* A window closed while it still shows the placeholder is forgotten with its placeholder note *)
@@ -459,7 +496,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-ForgetDropsPlaceholder@@Tests/ACPState.wlt:450,1-463,2"
+    TestID   -> "ACPState-Restart-ForgetDropsPlaceholder@@Tests/ACPState.wlt:487,1-500,2"
 ]
 
 (* A kernel restart is logged ("KernelRestart"), so that a rebuild that went wrong can be told from one that never ran *)
@@ -487,7 +524,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-Logged@@Tests/ACPState.wlt:466,1-491,2"
+    TestID   -> "ACPState-Restart-Logged@@Tests/ACPState.wlt:503,1-528,2"
 ]
 
 (* acpRefreshToolbar replaces the toolbar cell among the window's docked cells (also with its tag given in a list, and a
@@ -525,7 +562,7 @@ VerificationTest[
     ],
     { { "Strip", "New" }, { "New" }, None, { { 1, { "Strip" } } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-RefreshToolbar@@Tests/ACPState.wlt:495,1-529,2"
+    TestID   -> "ACPState-Restart-RefreshToolbar@@Tests/ACPState.wlt:532,1-566,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -540,7 +577,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:536,1-544,2"
+    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:573,1-581,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

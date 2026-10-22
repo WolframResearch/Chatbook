@@ -19,6 +19,7 @@ HoldComplete[
     `acpEntitySymbol,
     `acpFE,
     `acpFESet,
+    `acpFreezeTurnViews,
     `acpIsolated,
     `acpIsolatedAbortable,
     `acpLayoutSymbol,
@@ -39,6 +40,7 @@ HoldComplete[
     `acpTurnDrop,
     `acpTurnGet,
     `acpTurnUpdate,
+    `acpTurnViewsFrozenQ,
     `acpWindowDrop,
     `acpWindowGet,
     `acpWindowSet,
@@ -67,6 +69,7 @@ HoldComplete[
     `acpFormatDuration,
     `acpLabel,
     `acpLineDiff,
+    `acpLineDiffInfo, (* also used by Rendering.wl and PermissionDetails.wl (whether a diff is aligned) *)
     `acpMCPDisplayName,
     `acpNewTurn,
     `acpNotebookToolName,
@@ -77,17 +80,24 @@ HoldComplete[
     `acpToolAction,
     `acpToolSummary,
     `acpToolTitle,
+    `acpToolTitleParts,
+    `acpTurnActivity,
     `acpTurnActivityLabel,
     `acpTurnEndedQ,
     `acpTurnSplit,
     `acpTurnStatusLine,
     `acpTurnToMarkdown,
     `acpWorkedForLabel,
+    `acpWorkedForTooltip,
 
     (* ::**************************************************************************************************************:: *)
     (* Rendering.wl *)
     `acpBadge,
     `acpColor,
+    `acpDiffRows, (* used by PermissionDetails.wl *)
+    `acpDiffRowSource,  (* used by PermissionDetails.wl (the rows of a large diff, made in parts) *)
+    `acpDiffSourceRows, (* used by PermissionDetails.wl (the same) *)
+    `acpDiffSourceLineLengths, (* used by PermissionDetails.wl (the same) *)
     `acpDiffView,
     `acpDropRenderCache,
     `acpEntityView,
@@ -95,9 +105,17 @@ HoldComplete[
     `acpErrorParts, (* also used by UI.wl (CopyErrorDetail) *)
     `acpErrorView,
     `acpFinalCell,
+    `acpFitSwitch,
+    `acpFitText,
+    `acpFitWidth,
+    `acpFitWidthSwitch,
+    `acpFreezeLiveView,
     `acpLiveView,
     `acpNeutralizeLinearSyntax,
+    `acpPermissionDetailsData, (* used by PermissionDetails.wl (what the details window shows) *)
+    `acpPermissionKey,         (* used by PermissionDetails.wl (the key of the panel's "View full ..." link) *)
     `acpPermissionPanel,
+    `acpSafeText,              (* the agent's text as it is shown; also used by UI.wl, Review.wl and others *)
     `acpToolbarStatusView,
     `acpUsageMeterView,
 
@@ -280,6 +298,7 @@ HoldComplete[
     `acpFileIconName,
     `acpReviewButton,
     `acpReviewButtonSignature,
+    `acpReviewButtonTexts,  (* used by UI.wl (the folder row's width) *)
     `acpReviewCells,
     `acpReviewChanges,
     `acpReviewDiffView,
@@ -287,6 +306,25 @@ HoldComplete[
     `acpReviewNotebook,
     `acpReviewOpenFile,
     `acpReviewRefresh,
+    (* shared with PermissionDetails.wl *)
+    `acpReviewAppendCells,
+    `acpReviewCellBoxes,
+    `acpReviewEvaluator,
+    `acpReviewFileCard,
+    `acpReviewLazyDiff,
+    `acpReviewPut,
+    `acpReviewSafeLines, (* also used by Rendering.wl (the permission panel's diff rows) *)
+    `acpReviewStyleSheet,
+    `acpReviewWindowGeometry,
+    `acpReviewWindowOptions,
+
+    (* ::**************************************************************************************************************:: *)
+    (* PermissionDetails.wl *)
+    `acpPermissionDetails,
+    `acpPermissionDetailsCloseWindow, (* used by UI.wl (closing the ACP window) *)
+    `acpPermissionDetailsNotebook,
+    `acpPermissionDetailsRecover,     (* used by UI.wl (kernel restarts) *)
+    `acpPermissionDetailsWindowOf,
 
     (* ::**************************************************************************************************************:: *)
     (* Sessions.wl *)
@@ -389,6 +427,9 @@ HoldComplete[
     (* ::**************************************************************************************************************:: *)
     (* NotebookTools.wl *)
     `$acpNotebookEditTools,
+    `acpAttachableNotebooks, (* used by Attachments.wl (the attach menu) *)
+    `acpDefusedCells,        (* used by Attachments.wl (defusing cells before CellToString) *)
+    `acpNotebookMarkdown,    (* used by Attachments.wl (the markdown of an attached notebook) *)
     `acpNotebookTitles, (* used by Connection.wl (the notebooks of a permission request, for the permission panel) *)
     `acpNotebookTools,
 
@@ -403,6 +444,7 @@ HoldComplete[
     `acpMCPEnqueue,           (* the server's "EvaluationFunction" (SocketListen handler) *)
     `acpMCPEnsureServer,      (* used by Connection.wl (acpConnect) *)
     `acpMCPKick,
+    `acpMainLinkRun,          (* used by UI.wl (the main link job that prepares a message's attachments) *)
     `acpMCPPendingQ,          (* used by State.wl (the pump keeps running for queued tool calls and the server) *)
     `acpMCPServer,
     `acpMCPServersParam,      (* used by Connection.wl (session/new, session/load, session/resume) *)
@@ -410,22 +452,79 @@ HoldComplete[
     `acpMCPToolPermissions,   (* used by Agents.wl (OpenCode's permission rules) *)
 
     (* ::**************************************************************************************************************:: *)
+    (* Attachments.wl *)
+    `$acpAttachmentLimits,
+    `acpAddDraftAttachments,    (* used by UI.wl (a message that was not sent gives its attachments back) *)
+    `acpAttachButton,           (* used by UI.wl (the input cell) *)
+    `acpAttachmentRefs,
+    `acpAttachmentRefsOf,
+    `acpAttachmentsAction,      (* used by UI.wl (acpAction) *)
+    `acpAttachmentsArea,        (* used by UI.wl (the input cell) *)
+    `acpByteSizeLabel,
+    `acpDraftAttachments,
+    `acpEncodeImage,
+    `acpFileText,
+    `acpImageFormat,
+    `acpInertAttachmentTags,
+    `acpMessageFitsQ,           (* used by UI.wl (queued messages are merged only as far as they fit into one) *)
+    `acpMessageSize,            (* used by UI.wl (the same) *)
+    `acpNotebookAttachmentRef,  (* used by PromptNotebook.wl (the prompt notebook as an attachment) *)
+    `acpParseAttachmentBlocks,  (* used by Sessions.wl (the replay of a restored session) *)
+    `acpPrepareAttachments,     (* used by PromptNotebook.wl (the main link job of a prompt notebook's message) *)
+    `acpPrepareAttachmentsJob,  (* used by UI.wl (the main link job of a message with attachments) *)
+    `acpPromptBlocks,           (* used by Connection.wl (session/prompt) *)
+    `acpPromptCapabilities,
+    `acpReencodeImage,
+    `acpRenumberImages,         (* used by UI.wl (a merged queued message) *)
+    `acpSetDraftAttachments,
+    `acpUninertAttachmentTags,
+    `acpUserCellExpr,           (* used by UI.wl and Sessions.wl (user cells) *)
+
+    (* ::**************************************************************************************************************:: *)
+    (* PromptNotebook.wl *)
+    `acpCancelPromptNotebookJobs,     (* used by UI.wl (New, a folder change, a host switch) *)
+    `acpNotePromptNotebooks,          (* used by UI.wl (the status of a prompt notebook's message: sent, queued, dropped) *)
+    `acpOpenPromptNotebook,
+    `acpPromptDockedCell,
+    `acpPromptNotebook,
+    `acpPromptNotebookAction,         (* used by UI.wl (acpAction) *)
+    `acpPromptNotebookButton,         (* used by UI.wl (the input cell) *)
+    `acpPromptNotebookCells,
+    `acpPromptNotebookHousekeeping,   (* used by UI.wl (housekeeping) *)
+    `acpPromptNotebookOf,
+    `acpPromptNotebookPlacement,
+    `acpPromptNotebookRecover,        (* used by UI.wl (kernel restarts) *)
+    `acpPromptNotebooks,
+    `acpPromptNotebooksOwnerClosed,   (* used by UI.wl (closing the window) *)
+    `acpPromptNotebookSend,
+    `acpPromptTargetLabel,
+    `acpReplacedPromptAttachments,    (* used by UI.wl (a merged queued message) *)
+    `acpSyncPromptTarget,             (* used by UI.wl (acpUpdateWindowTitle) *)
+
+    (* ::**************************************************************************************************************:: *)
     (* UI.wl *)
     `$acpUIStrings,
     `acpAbbreviatePath,
     `acpActionButton,
     `acpActionCode,
+    `acpCannotSendNotice, (* used by PromptNotebook.wl (Send of a prompt notebook) *)
     `acpChangeProjectDirectory,
     `acpEnsureWindowRecord,
     `acpFinalizeTurn,
     `acpMarkOrphanCells,
     `acpNormalizeDirectory, (* also used by SSH.wl *)
     `acpNewChat,
+    `acpPreparedPrompt, (* used by Attachments.wl (the result of the main link job of a message with attachments) *)
+    `acpQueuedPromptOf, (* used by PromptNotebook.wl (the prompt notebooks of the queued messages) *)
+    `acpReturnPendingMessages, (* used by Sessions.wl (a session restored from the same folder) *)
+    `acpSendPreparedMessage, (* used by PromptNotebook.wl (a prompt notebook's message) *)
     `acpSendQueuedPrompt,
     `acpSetNotice,
     `acpRenderView,
     `acpSyncDerivedView,
+    `acpToolbarButtonLabel, (* also used by Sessions.wl (the Sessions button) *)
     `acpUpdateWindowTitle,
+    `acpWindowDerivedDynamic, (* also used by Attachments.wl (the chips of the draft) *)
     `acpWindowKey,
     `evaluateACPChat
 ];

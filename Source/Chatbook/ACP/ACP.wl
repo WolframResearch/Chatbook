@@ -20,10 +20,13 @@ $subcontexts = {
     "Wolfram`Chatbook`ACP`Git`",
     "Wolfram`Chatbook`ACP`Remote`",
     "Wolfram`Chatbook`ACP`Review`",
+    "Wolfram`Chatbook`ACP`PermissionDetails`",
     "Wolfram`Chatbook`ACP`Sessions`",
     "Wolfram`Chatbook`ACP`FolderPicker`",
     "Wolfram`Chatbook`ACP`NotebookTools`",
     "Wolfram`Chatbook`ACP`MCP`",
+    "Wolfram`Chatbook`ACP`Attachments`",
+    "Wolfram`Chatbook`ACP`PromptNotebook`",
     "Wolfram`Chatbook`ACP`UI`"
 };
 

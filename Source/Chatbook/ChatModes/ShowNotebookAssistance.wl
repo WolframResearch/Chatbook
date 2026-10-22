@@ -888,21 +888,28 @@ setWindowInputAndEvaluate // endDefinition;
 (*attachToLeft*)
 attachToLeft // beginDefinition;
 
-attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
-    Module[ { mag, width, margins, left, bottom, top, displayindex, displayleftedge },
+attachToLeft[ source_NotebookObject, current_NotebookObject ] := attachToLeft[ source, current, Automatic ];
+
+(* baseWidth: the window's width at magnification 1, scaled with the source notebook's magnification; Automatic: the
+   Notebook Assistant's $workspaceChatWidth. A width that is given (the ACP window's) is also capped so that the window
+   fits on its display (attachedWindowWidth). *)
+attachToLeft[ source_NotebookObject, current_NotebookObject, baseWidth_ ] := Enclose[
+    Module[ { mag, width, margins, left, bottom, top, displayindex, display, displayleftedge },
 
         mag     = Replace[ AbsoluteCurrentValue[ source, Magnification ], Except[ _? NumberQ ] :> 1.0 ];
-        width   = Ceiling @ ConfirmBy[ $workspaceChatWidth * mag, NumberQ, "Width" ];
+        width   = Ceiling @ ConfirmBy[ Replace[ baseWidth, Automatic :> $workspaceChatWidth ] * mag, NumberQ, "Width" ];
         margins = ConfirmMatch[ windowMargins @ source, { { _, _ }, { _, _ } }, "Margins" ];
 
         displayindex = NotebookTools`NotebookDisplayIndex[source];
-        displayleftedge = If[IntegerQ[displayindex],
+        display = If[IntegerQ[displayindex],
             Replace[CurrentValue["ConnectedDisplays"][[displayindex]], {
-                {___, "FullRegion" -> {{xmin_, _}, {_, _}}, ___} :> xmin,
-                _ :> 0
+                {___, "FullRegion" -> {{xmin_, xmax_}, {_, _}}, ___} :> {xmin, xmax},
+                _ :> None
             }],
-            0
+            None
         ];
+        displayleftedge = Replace[ display, { { xmin_, _ } :> xmin, _ :> 0 } ];
+        If[ baseWidth =!= Automatic, width = attachedWindowWidth[ baseWidth, mag, display ] ];
 
         left   = margins[[ 1, 1 ]];
         bottom = margins[[ 2, 1 ]];
@@ -940,6 +947,47 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
 ];
 
 attachToLeft // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*attachedWindowWidth*)
+
+(* The width of a window that attachToLeft places (pure): base points scaled by the magnification, at most the width of
+   its display ({ xmin, xmax }, its "FullRegion") less $attachedWindowGap, at least $attachedWindowMinWidth; for an
+   unknown display (None) not capped. *)
+attachedWindowWidth // beginDefinition;
+
+attachedWindowWidth[ base_? NumberQ, mag_? NumberQ, { xmin_? NumberQ, xmax_? NumberQ } ] /; xmax > xmin :=
+    Ceiling @ Min[ base * mag, Max[ $attachedWindowMinWidth, xmax - xmin - $attachedWindowGap ] ];
+
+attachedWindowWidth[ base_? NumberQ, mag_? NumberQ, _ ] := Ceiling[ base * mag ];
+
+attachedWindowWidth // endDefinition;
+
+(* What the window's frame (its left and right borders) and a gap at each edge of the display take: *)
+$attachedWindowGap      = 32;
+$attachedWindowMinWidth = 240;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookDisplayRange*)
+
+(* { xmin, xmax } of the "FullRegion" of the display a notebook is on, as attachToLeft finds it; None if not known *)
+notebookDisplayRange // beginDefinition;
+
+notebookDisplayRange[ nbo_NotebookObject ] := Module[ { index, displays },
+    index    = Quiet @ NotebookTools`NotebookDisplayIndex @ nbo;
+    displays = Quiet @ CurrentValue[ "ConnectedDisplays" ];
+    Replace[
+        If[ IntegerQ @ index && ListQ @ displays && 1 <= index <= Length @ displays, displays[[ index ]], None ],
+        {
+            KeyValuePattern[ "FullRegion" -> { { xmin_? NumberQ, xmax_? NumberQ }, _ } ] :> { xmin, xmax },
+            _ :> None
+        }
+    ]
+];
+
+notebookDisplayRange // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -492,11 +492,16 @@ makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
     makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
 
 makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
-    Module[ { label, box },
+    Module[ { label, short, box },
         label = ToBoxes @ thoughtsLabel @ meta;
-        box = If[ StringTrim @ thoughts === "",
-                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
-                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+        short = shortThoughtsText @ thoughts;
+        box = Which[
+                  StringTrim @ thoughts === "",
+                      templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  StringQ @ short,
+                      templateBox[ { formatThoughts @ short, label, meta }, "ShortThoughts" ], (* one line, no opener *)
+                  True,
+                      templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
               ];
         {
             Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],
@@ -666,6 +671,63 @@ formatThoughts[ thoughts_, trimmed_String ] :=
     ];
 
 formatThoughts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortThoughtsText*)
+
+(* Thoughts that are a single short line, such as the titles that OpenAI's reasoning summaries are often made of
+   ("**Planning the tests**"), are shown as that line with the "ShortThoughts" template instead of an opener that
+   reveals one line. Chatbook's own chat output and the ACP window (ACP/Rendering.wl) both decide with this. Gives the
+   line to show (trimmed, without a bold wrapper that covers the whole line, since the template has its own font) or
+   None. The length limit keeps the line on one line in an ACP window of the default width (480 points at
+   Magnification 0.85, measured with the template's italic Source Sans Pro, 13.5 points, whose characters are 0.40 to
+   0.45 em wide on average: about 80 to 90 characters of text fit inside the "Worked for" opener). *)
+$shortThoughtsLength = 75;
+
+(* Full-width (East Asian) characters are 1 em wide, more than twice an average character of the label font, so each
+   counts as 2.5 characters: a line of up to 30 of them is short, and 36 would fit. These are the wide ranges of Markus
+   Kuhn's wcwidth. *)
+$wideCharacterWidth = 2.5;
+$wideCharacter = RegularExpression @ StringJoin[
+    "[\\x{1100}-\\x{115F}\\x{2E80}-\\x{303E}\\x{3040}-\\x{A4CF}\\x{AC00}-\\x{D7A3}\\x{F900}-\\x{FAFF}\\x{FE30}-\\x{FE4F}",
+    "\\x{FF00}-\\x{FF60}\\x{FFE0}-\\x{FFE6}\\x{20000}-\\x{3FFFD}]"
+];
+
+shortThoughtsText // beginDefinition;
+
+shortThoughtsText[ thoughts_String ] := shortThoughtsText0 @ StringTrim @ StringReplace[
+    StringTrim @ thoughts,
+    {
+        StartOfString ~~ "**" ~~ line: Except[ "*" | "\n" ].. ~~ "**" ~~ EndOfString :> line,
+        StartOfString ~~ "__" ~~ line: Except[ "_" | "\n" ].. ~~ "__" ~~ EndOfString :> line
+    }
+];
+
+shortThoughtsText[ _ ] := None;
+
+shortThoughtsText // endDefinition;
+
+
+shortThoughtsText0 // beginDefinition;
+shortThoughtsText0[ "" ] := None;
+(* An unterminated bold title ("**Planning the", from a thought that was cut off by a stop or an error) keeps the
+   opener, which hides its raw asterisks: *)
+shortThoughtsText0[ line_String ] /; unclosedBoldQ @ line := None;
+shortThoughtsText0[ line_String ] /; thoughtsLineWidth @ line <= $shortThoughtsLength && StringFreeQ[ line, "\n" | "\r" ] := line;
+shortThoughtsText0[ _String ] := None;
+shortThoughtsText0 // endDefinition;
+
+
+unclosedBoldQ // beginDefinition;
+unclosedBoldQ[ line_String ] := AnyTrue[ { "**", "__" }, StringStartsQ[ line, # ] && StringFreeQ[ StringDrop[ line, 2 ], # ] & ];
+unclosedBoldQ // endDefinition;
+
+
+(* The width of a line, in average characters of the label font: *)
+thoughtsLineWidth // beginDefinition;
+thoughtsLineWidth[ line_String ] := StringLength @ line + ( $wideCharacterWidth - 1 ) * StringCount[ line, $wideCharacter ];
+thoughtsLineWidth // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2543,9 +2605,11 @@ makeInteractiveCodeCell[ language_, code_String ] /; linearSyntaxQ @ code :=
     makeInteractiveCodeCell[ language, neutralizeLinearSyntax @ code ];
 
 (* TODO: define template boxes for these *)
+(* ShowStringCharacters as in the finished "ChatCode" cell: the chat output templates hide string characters, which
+   would hide the quotes of the code's strings *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,
-        codeBlockFrame[ Cell[ BoxData @ wlStringToBoxes @ code, "ChatCodeActive" ], code, language ],
+        codeBlockFrame[ Cell[ BoxData @ wlStringToBoxes @ code, "ChatCodeActive", ShowStringCharacters -> True ], code, language ],
         codeBlockFrame[ Cell[ code, "ChatPreformatted" ], code, language ]
     ];
 

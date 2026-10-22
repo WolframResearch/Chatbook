@@ -1917,6 +1917,41 @@ With[ { font1 = color[ "ThinkingOpenerFont" ] },
 ]
 
 
+(* Thoughts that are a single short line (e.g. the title of a reasoning summary part) are shown as that line in the font
+   of the "Thought for ..." labels, without an opener. Same arguments as ThoughtsOpener ({ thoughts, label, meta }), but
+   the label (a duration) is not shown. Small vertical margins, so consecutive short thoughts read as a list: *)
+With[ { font1 = color[ "ThinkingOpenerFont" ] },
+    Cell[
+        StyleData[ "ShortThoughts" ],
+        TemplateBoxOptions -> {
+            DisplayFunction -> Function[
+                StyleBox[
+                    PaneBox[
+                        Cell[
+                            #1,
+                            "Text",
+                            FontColor  -> font1,
+                            FontFamily -> "Source Sans Pro",
+                            FontSize   -> 13.5,
+                            FontSlant  -> "Italic",
+                            Background -> None
+                        ],
+                        Alignment -> Automatic,
+                        ImageSize -> Automatic,
+                        ImageMargins -> { { 0, 0 }, { 3, 3 } },
+                        BaseStyle -> { },
+                        DefaultBaseStyle -> "OpenerView",
+                        BaselinePosition -> Baseline
+                    ],
+                    Deployed -> False,
+                    StripOnInput -> False
+                ]
+            ]
+        }
+    ]
+]
+
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*ThinkingContent*)

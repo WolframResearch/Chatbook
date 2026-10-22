@@ -234,6 +234,23 @@ reviewButtonLabel[ git_Association ] := Grid[
 reviewButtonLabel // endDefinition;
 
 
+(* The texts of the button's label (reviewButtonLabel) with their font options, which UI.wl's folder row measures in the
+   front end to give the folder the room that the button leaves: the label in the toolbar buttons' style, the counts in
+   the toolbar's font (Source Code Pro, measured with the ACPChat stylesheet) *)
+acpReviewButtonTexts // beginDefinition;
+
+acpReviewButtonTexts[ git_Association ] := Join[
+    { { acpLabel[ "ReviewChangesButton" ], $reviewButtonFont } },
+    If[ IntegerQ @ git[ "Added" ] && git[ "Added" ] > 0, { { "+" <> ToString @ git[ "Added" ], $reviewCountFont } }, { } ],
+    If[ IntegerQ @ git[ "Deleted" ] && git[ "Deleted" ] > 0, { { "\[Minus]" <> ToString @ git[ "Deleted" ], $reviewCountFont } }, { } ]
+];
+
+acpReviewButtonTexts // endDefinition;
+
+$reviewButtonFont = { FontFamily -> "Source Sans Pro", FontSize -> 13.5, FontWeight -> "DemiBold" };
+$reviewCountFont  = { FontFamily -> "Source Code Pro", FontSize -> 11, FontWeight -> "Plain" };
+
+
 (* "+a -d" in green and red (zero counts are left out); a list of items *)
 lineCountsView // beginDefinition;
 
@@ -774,11 +791,11 @@ reviewOpensFileQ // endDefinition;
 
 (* The diff of a file in a card: as wide as the card, with line numbers. ChatbookAction["ACP", "ReviewDiffView", data]
    renders the diff of a file whose opener started closed when it is first opened (data is stored in the cell, see
-   reviewDiffData). *)
+   reviewDiffData; the permission details window's data holds the diff's "Rows", see PermissionDetails.wl). *)
 acpReviewDiffView // beginDefinition;
 
 acpReviewDiffView[ data_Association ] := acpDiffView[
-    KeyTake[ data, { "Path", "Patch", "OldText", "NewText" } ],
+    KeyTake[ data, { "Path", "Patch", "OldText", "NewText", "Rows" } ],
     <|
         "MaxLines"    -> $reviewMaxLines,
         "Header"      -> False,
@@ -1345,21 +1362,12 @@ reviewDiffData // endDefinition;
 
 reviewTruncatedText // beginDefinition;
 
-(* Only the kept text is made display-safe (reviewSafeText): a replacement in megabytes of text would take a second. A
-   marker makes a line longer, so a line that grew past $reviewMaxLineLength is cut again, before a marker that would
-   not fit (reviewCutMarkedLine): Rendering.wl cuts longer lines too, and it would leave half a marker. *)
-reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, cut, safe, truncated },
+(* Only the kept text is made display-safe (acpReviewSafeLines): a replacement in megabytes of text would take a
+   second. *)
+reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, truncated },
     lines     = StringSplit[ StringDelete[ text, "\n" ~~ EndOfString ], "\n", All ];
     kept      = Take[ lines, UpTo @ $reviewMaxLines ];
-    cut       = StringRiffle[
-        If[ StringLength[ # ] > $reviewMaxLineLength, StringTake[ #, $reviewMaxLineLength ] <> "\[Ellipsis]", # ] & /@ kept,
-        "\n"
-    ];
-    safe      = reviewSafeText @ cut;
-    truncated = If[ StringLength @ safe === StringLength @ cut,
-        safe,
-        StringRiffle[ reviewCutMarkedLine /@ StringSplit[ safe, "\n", All ], "\n" ]
-    ];
+    truncated = StringRiffle[ acpReviewSafeLines[ kept, $reviewMaxLineLength ], "\n" ];
     Join[
         <| "Path" -> path |>,
         If[ key === "NewText", <| "OldText" -> None, "NewText" -> truncated |>, <| key -> truncated |> ],
@@ -1370,13 +1378,35 @@ reviewTruncatedText[ path_, key_String, text_String ] := Module[ { lines, kept, 
 reviewTruncatedText // endDefinition;
 
 
-(* A display-safe line cut to $reviewMaxLineLength characters and an ellipsis, so that its first $reviewMaxLineLength
-   characters end with a whole marker or with no marker: what Rendering.wl's own cut keeps is then the same. A line
-   that was cut before it was made safe ends with an ellipsis already, which this cut replaces. *)
+(* Lines (of a diff, a file, a command) display-safe (reviewSafeText) and cut to n characters and an ellipsis (n may be
+   Infinity: not cut). A marker makes a line longer, so a line that grew past n characters is cut again, before a marker
+   that would not fit (reviewCutMarkedLine): Rendering.wl cuts longer lines too, and it would leave half a marker. Also
+   used by Rendering.wl (the permission panel's diff rows) and PermissionDetails.wl. *)
+acpReviewSafeLines // beginDefinition;
+
+acpReviewSafeLines[ { }, _ ] := { };
+
+acpReviewSafeLines[ lines: { ___String }, n: _Integer | Infinity ] := Module[ { cut, safe },
+    cut  = StringRiffle[ If[ StringLength[ # ] > n, StringTake[ #, n ] <> "\[Ellipsis]", # ] & /@ lines, "\n" ];
+    safe = reviewSafeText @ cut;
+    If[ StringLength @ safe === StringLength @ cut,
+        StringSplit[ safe, "\n", All ],
+        reviewCutMarkedLine[ #, n ] & /@ StringSplit[ safe, "\n", All ]
+    ]
+];
+
+acpReviewSafeLines // endDefinition;
+
+
+(* A display-safe line cut to n characters and an ellipsis, so that its first n characters end with a whole marker or
+   with no marker: what Rendering.wl's own cut keeps is then the same. A line that was cut before it was made safe ends
+   with an ellipsis already, which this cut replaces. *)
 reviewCutMarkedLine // beginDefinition;
 
-reviewCutMarkedLine[ line_String ] := If[ StringLength @ line > $reviewMaxLineLength,
-    StringDelete[ StringTake[ line, $reviewMaxLineLength ], $reviewPartialMarker ] <> "\[Ellipsis]",
+reviewCutMarkedLine[ line_String ] := reviewCutMarkedLine[ line, $reviewMaxLineLength ];
+
+reviewCutMarkedLine[ line_String, n: _Integer | Infinity ] := If[ StringLength @ line > n,
+    StringDelete[ StringTake[ line, n ], $reviewPartialMarker ] <> "\[Ellipsis]",
     line
 ];
 
@@ -1391,28 +1421,13 @@ $reviewPartialMarker = RegularExpression[ "\\x{27E6}(U(\\+[0-9A-F]*)?)?\\z" ];
 
 (* Text of many lines (diffs, file contents, git's and ssh's messages), display-safe: the bidi controls and the line and
    paragraph separators show as acpRemoteDisplayName shows them ([[U+XXXX]]), so that a line of code can't look
-   different from what it is (the "Trojan Source" trick) and every diff line stays one row. The other characters that
-   acpRemoteDisplayName shows (zero width joiners, variation selectors, ...) are left as they are: they are part of
-   ordinary text, e.g. of emoji. Tabs, line breaks and carriage returns are kept. Then acpNeutralizeLinearSyntax. A
-   literal search for each character (as in acpNeutralizeLinearSyntax) checks megabytes of text in milliseconds; the
-   replacement is slower, so diffs are made safe after they are cut (reviewTruncatedText). *)
+   different from what it is (the "Trojan Source" trick) and every diff line stays one row; then
+   acpNeutralizeLinearSyntax. That is acpSafeText (Rendering.wl), which the ACP window uses for the agent's text too.
+   The replacement is slower than the search, so diffs are made safe after they are cut (reviewTruncatedText). *)
 reviewSafeText // beginDefinition;
-
-reviewSafeText[ s_String ] := acpNeutralizeLinearSyntax @ If[ AnyTrue[ $reviewHiddenCharacters, StringContainsQ[ s, # ] & ],
-    StringReplace[ s, $reviewHiddenCharacterRules ],
-    s
-];
-
+reviewSafeText[ s_String ] := acpSafeText @ s;
 reviewSafeText[ other_ ] := other;
-
 reviewSafeText // endDefinition;
-
-(* ALM, LRM, RLM; the line and paragraph separators; LRE, RLE, PDF, LRO, RLO; LRI, RLI, FSI, PDI *)
-$reviewHiddenCharacters = FromCharacterCode /@ Join[ { 16^^61C, 16^^200E, 16^^200F }, Range[ 16^^2028, 16^^202E ], Range[ 16^^2066, 16^^2069 ] ];
-
-
-(* The markers of acpRemoteDisplayName (made once per session) *)
-$reviewHiddenCharacterRules := $reviewHiddenCharacterRules = Thread[ $reviewHiddenCharacters -> (acpRemoteDisplayName /@ $reviewHiddenCharacters) ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1762,7 +1777,8 @@ reviewOpener[ header_, link_, body_, open_ ] := With[
 reviewOpener // endDefinition;
 
 
-(* Clicking the header (but not the link) toggles Typeset`open, the variable of reviewOpener's DynamicModule *)
+(* Clicking the header (but not the link) toggles Typeset`open, the variable of reviewOpener's DynamicModule, in the
+   front end (see staticOpenerHeader in Rendering.wl) *)
 reviewOpenerHeader // beginDefinition;
 
 reviewOpenerHeader[ header_, link_, open_ ] := Grid[
@@ -1776,7 +1792,7 @@ reviewOpenerHeader[ header_, link_, open_ ] := Grid[
                         BaselinePosition -> { 1, 2 },
                         Spacings         -> { 0.4, 0 }
                     ],
-                    { "MouseDown" :> FEPrivate`Set[ Typeset`open, Not[ Typeset`open ] ] },
+                    { "MouseDown" :> FEPrivate`Set[ Typeset`open, FEPrivate`If[ Typeset`open, False, True ] ] },
                     Method -> "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> True
                 ],
                 "LinkHand"
@@ -1837,13 +1853,15 @@ reviewStyleSheet[ icons_List ] := Notebook[
             StyleData[ "Notebook" ],
             Background -> $reviewBackground
         ],
-        (* Deployed -> False: the text of the cells stays selectable in the deployed notebook *)
+        (* Deployed -> False: the text of the cells stays selectable in the deployed notebook; code, paths and commands
+           are not spell checked *)
         Cell[
             StyleData[ "ACPReviewBase" ],
             Deployed             -> False,
             FontFamily           -> $reviewTextFont,
             FontSize             -> 13,
             FontColor            -> LightDarkSwitched[ GrayLevel[ 0.15 ], GrayLevel[ 0.88 ] ],
+            ShowAutoSpellCheck   -> False,
             ShowStringCharacters -> False,
             LineSpacing          -> { 1.05, 0 },
             PrivateFontOptions   -> { "OperatorSubstitution" -> False },
@@ -1897,6 +1915,90 @@ iconStyle[ name_String ] := With[ { icon = acpFileIcon @ { name } },
 ];
 
 iconStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Shared with PermissionDetails.wl*)
+
+(* The permission details window (PermissionDetails.wl) is a read-only window like the review window: the same
+   stylesheet, placement, cards, display-safe text and lazy rendering of large diffs *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Window*)
+acpReviewStyleSheet // beginDefinition;
+acpReviewStyleSheet[ icons_List ] := reviewStyleSheet @ icons;
+acpReviewStyleSheet // endDefinition;
+
+acpReviewWindowGeometry // beginDefinition;
+acpReviewWindowGeometry[ owner_ ] := reviewWindowGeometry @ owner;
+acpReviewWindowGeometry // endDefinition;
+
+acpReviewWindowOptions // beginDefinition;
+acpReviewWindowOptions[ new_ ] := reviewWindowOptions @ new;
+acpReviewWindowOptions // endDefinition;
+
+acpReviewEvaluator // beginDefinition;
+acpReviewEvaluator[ owner_ ] := reviewEvaluator @ owner;
+acpReviewEvaluator // endDefinition;
+
+acpReviewPut // beginDefinition;
+acpReviewPut[ nbo_NotebookObject, nb_Notebook ] := reviewPut[ nbo, nb ];
+acpReviewPut // endDefinition;
+
+acpReviewAppendCells // beginDefinition;
+acpReviewAppendCells[ nbo_NotebookObject, cells_List ] := reviewAppendCells[ nbo, cells ];
+acpReviewAppendCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cells*)
+
+(* Boxes for the cells of these windows (see reviewCellBoxes) *)
+acpReviewCellBoxes // beginDefinition;
+acpReviewCellBoxes[ expr_ ] := reviewCellBoxes @ expr;
+acpReviewCellBoxes // endDefinition;
+
+
+(* A card like the review window's file cards: a header with the file's icon (the stylesheet must have it, see
+   acpReviewStyleSheet), its path (display-safe), a badge and the line counts, and a front-end-only opener. file:
+   <| "Path", "Badge" -> the badge's text or None, "Added", "Deleted" |>; body: what the open card shows (a lazily
+   rendered diff for a card that starts closed, see acpReviewLazyDiff). *)
+acpReviewFileCard // beginDefinition;
+
+acpReviewFileCard[ file_Association, body_, open_, tag_String ] := Cell[
+    BoxData @ StyleBox[
+        reviewOpenerBoxes[
+            reviewBoxes @ Grid[
+                {
+                    Flatten @ {
+                        reviewIcon @ acpFileIconName @ Replace[ file[ "Path" ], Except[ _String ] -> "" ],
+                        reviewPathView[ Replace[ file[ "Path" ], Except[ _String ] -> "" ], True ],
+                        Replace[ file[ "Badge" ], { b_String :> acpBadge[ b, "Neutral" ], _ -> Nothing } ],
+                        lineCountsView[ file[ "Added" ], file[ "Deleted" ], 12 ]
+                    }
+                },
+                Alignment        -> { Left, Baseline },
+                BaselinePosition -> { 1, 2 },
+                Spacings         -> { 0.5, 0 }
+            ],
+            reviewBoxes @ Spacer[ 0 ],
+            reviewBoxes @ body,
+            open
+        ],
+        "ACPReviewText"
+    ],
+    "ACPReviewFile",
+    CellTags -> { tag }
+];
+
+acpReviewFileCard // endDefinition;
+
+
+(* A diff rendered when its card is first opened (see reviewLazyDiff); data as for acpReviewDiffView *)
+acpReviewLazyDiff // beginDefinition;
+acpReviewLazyDiff[ data_Association ] := reviewLazyDiff @ data;
+acpReviewLazyDiff // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

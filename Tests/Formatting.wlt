@@ -289,13 +289,104 @@ VerificationTest[
 VerificationTest[
     FirstCase[
         FormatChatOutput[ "<THINKING>fish &amp; chips /\\\\_/\\\\</THINKING>" ],
-        TemplateBox[ { text_, _, ___ }, "ThoughtsOpener" ] :> CellToString @ Cell[ text, "Text" ],
+        TemplateBox[ { text_, _, ___ }, "ShortThoughts" ] :> CellToString @ Cell[ text, "Text" ],
         $Failed,
         Infinity
     ],
     "fish & chips /\\_/\\",
     SameTest -> MatchQ,
     TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML@@Tests/Formatting.wlt:289,1-299,2"
+]
+
+(* Thoughts of a single short line are shown as that line (ShortThoughts), without bold that covers the whole line. An
+   unterminated bold title (a thought cut off by a stop) keeps the opener, and full-width characters count as 2.5: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`shortThoughtsText /@ {
+        "**Planning TOML import/export wrappers**",
+        "  __Checking the tests__\n",
+        "** Spaced title **",
+        "Some **bold** text",
+        "**First** and **second**",
+        "**Not closed",
+        "__init",
+        "__init__ is the constructor",
+        "**Title**\n\nBody",
+        "line one\nline two",
+        "",
+        " \n ",
+        StringRepeat[ "x", 75 ],
+        StringRepeat[ "x", 76 ],
+        "**" <> StringRepeat[ "x", 75 ] <> "**",
+        "**" <> StringRepeat[ "x", 76 ] <> "**",
+        StringRepeat[ "\:4e2d", 30 ],
+        StringRepeat[ "\:4e2d", 31 ],
+        "Planning " <> StringRepeat[ "\:30c6", 26 ],
+        "Planning " <> StringRepeat[ "\:30c6", 27 ]
+    },
+    {
+        "Planning TOML import/export wrappers",
+        "Checking the tests",
+        "Spaced title",
+        "Some **bold** text",
+        "**First** and **second**",
+        None,
+        None,
+        "__init__ is the constructor",
+        None,
+        None,
+        None,
+        None,
+        StringRepeat[ "x", 75 ],
+        None,
+        StringRepeat[ "x", 75 ],
+        None,
+        StringRepeat[ "\:4e2d", 30 ],
+        None,
+        "Planning " <> StringRepeat[ "\:30c6", 26 ],
+        None
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ShortThoughtsText@@Tests/Formatting.wlt:303,1-350,2"
+]
+
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "<think>\n**Planning the answer**\n</think>\n<think>\nA longer thought.\n\nIt has two paragraphs.\n</think>\nDone." ],
+        TemplateBox[ { text_, _, meta_ }, name: "ShortThoughts" | "ThoughtsOpener" ] :>
+            { name, CellToString @ Cell[ text, "Text" ], FreeQ[ text, FontWeight -> Bold ], meta },
+        Infinity
+    ],
+    {
+        { "ShortThoughts", "Planning the answer", True, <| "Type" -> "Literal" |> },
+        { "ThoughtsOpener", s_String /; StringStartsQ[ s, "A longer thought." ] && StringEndsQ[ s, "It has two paragraphs." ], True, <| "Type" -> "Literal" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Short-Line@@Tests/Formatting.wlt:352,1-365,2"
+]
+
+(* The thoughts templates are in the generated files (Developer/Resources/Styles.wl, built with
+   BuildChatbookStylesheet[] and BuildStylesheets["CoreExtensions"]), so that cells with them render in any notebook and
+   their display functions can be inlined: *)
+VerificationTest[
+    Module[ { names, root, defined },
+        names   = { "ThoughtsOpener", "EmptyThoughts", "ShortThoughts" };
+        root    = DirectoryName[ $TestFileName, 2 ];
+        defined = Function[ file,
+            Cases[
+                ToExpression[ ReadString @ FileNameJoin @ Prepend[ file, root ], InputForm, HoldComplete ],
+                Cell[ StyleData[ name: Alternatives @@ names ], ___, TemplateBoxOptions -> { ___, DisplayFunction -> _Function, ___ }, ___ ] :> name,
+                Infinity
+            ]
+        ];
+        {
+            defined @ { "DarkModeSupport", "StyleSheets", "Chatbook.nb" },
+            defined @ { "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" },
+            Select[ names, MatchQ[ Wolfram`Chatbook`InlineTemplateBoxes @ TemplateBox[ { "", "", <| |> }, # ], TemplateBox[ _, #, DisplayFunction -> _Function ] ] & ]
+        }
+    ],
+    ConstantArray[ { "ThoughtsOpener", "EmptyThoughts", "ShortThoughts" }, 3 ],
+    SameTest -> MatchQ,
+    TestID   -> "Thoughts-Templates-Built@@Tests/Formatting.wlt:370,1-390,2"
 ]
 
 VerificationTest[
@@ -311,7 +402,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:301,1-315,2"
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:392,1-406,2"
 ]
 
 VerificationTest[
@@ -322,7 +413,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Text-Before-Code@@Tests/Formatting.wlt:317,1-326,2"
+    TestID   -> "Markdown-TextFence-Text-Before-Code@@Tests/Formatting.wlt:408,1-417,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -348,7 +439,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Code-Block-Result@@Tests/Formatting.wlt:334,1-352,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Code-Block-Result@@Tests/Formatting.wlt:425,1-443,2"
 ]
 
 (* Escapes are only removed from the text around tool calls, not from the tool call itself: *)
@@ -363,7 +454,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Raw-Text@@Tests/Formatting.wlt:355,1-367,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Raw-Text@@Tests/Formatting.wlt:446,1-458,2"
 ]
 
 (* Tool calls keep the same line breaks around them as they do in text without escapes: *)
@@ -382,7 +473,7 @@ VerificationTest[
         { "Cost $5: \n", Cell[ _, "InlineToolCall", ___ ], "\n", Cell[ _, "InlineToolCall", ___ ], "\nDone." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Line-Breaks@@Tests/Formatting.wlt:370,1-386,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Line-Breaks@@Tests/Formatting.wlt:461,1-477,2"
 ]
 
 (* A bad tool call is discarded by /retry, and escapes are still handled in the discarded text: *)
@@ -411,7 +502,7 @@ VerificationTest[
         RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:389,1-415,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:480,1-506,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -429,7 +520,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:423,1-433,2"
+    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:514,1-524,2"
 ]
 
 (* Placeholder allows arbitrary label expressions, so these are formatted too by wrapping the already-parsed
@@ -443,7 +534,7 @@ VerificationTest[
     ],
     FrameBox @ RowBox @ { "your", " ", "data" },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:437,1-447,2"
+    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:528,1-538,2"
 ]
 
 (* String labels can contain escaped quotes: *)
@@ -459,7 +550,7 @@ VerificationTest[
     ],
     FrameBox[ "\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:450,1-463,2"
+    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:541,1-554,2"
 ]
 
 (* Placeholder takes at most one argument, so empty or multiple arguments are not valid labels and are left as-is: *)
@@ -467,7 +558,7 @@ VerificationTest[
     StringToBoxes[ "f[Placeholder[a, b], Placeholder[]]", "WL" ],
     boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:466,1-471,2"
+    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:557,1-562,2"
 ]
 
 (* The full formatting path renders the placeholder in finished chat output: *)
@@ -480,7 +571,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:474,1-484,2"
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:565,1-575,2"
 ]
 
 (* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
@@ -494,7 +585,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:487,1-498,2"
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:578,1-589,2"
 ]
 
 (* A placeholder that has not finished streaming in yet is still rendered: *)
@@ -505,7 +596,20 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:501,1-509,2"
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:592,1-600,2"
+]
+
+(* While streaming, Wolfram Language code is a string in a "ChatCodeActive" cell, which shows the quotes of its strings
+   like the finished "ChatCode" cell (the chat output templates hide string characters): *)
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "```wl\nx = \"a\"\n```\n", <| "Status" -> "Streaming" |> ],
+        Cell[ BoxData[ _String ], "ChatCodeActive", opts___ ] :> { opts },
+        Infinity
+    ],
+    { { ShowStringCharacters -> True } },
+    SameTest -> MatchQ,
+    TestID   -> "Streaming-WL-Code-ShowsStringCharacters@@Tests/Formatting.wlt:604,1-613,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
@@ -517,7 +621,7 @@ VerificationTest[
     ],
     "```wl\ndata = Placeholder[\"your data\"];\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:513,1-521,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:617,1-625,2"
 ]
 
 (* Expression labels round-trip through serialization as well: *)
@@ -528,7 +632,7 @@ VerificationTest[
     ],
     "```wl\nDateListPlot[Placeholder[your data]]\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:524,1-532,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:628,1-636,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -541,7 +645,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[1, 0, 0]", "WL" ],
     TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:540,1-545,2"
+    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:644,1-649,2"
 ]
 
 (* Every supported color model is converted: *)
@@ -564,7 +668,7 @@ VerificationTest[
         { "XYZColorSwatchTemplate"      , XYZColor[ 0.5, 0.5, 0.5 ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:548,1-568,2"
+    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:652,1-672,2"
 ]
 
 (* LightDarkSwitched and ThemeColor typeset to their own template boxes rather than a "...ColorSwatchTemplate": *)
@@ -579,7 +683,7 @@ VerificationTest[
         { "LightDarkSwitched1", KeyValuePattern[ "light" -> RGBColor[ 1, 0, 0 ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:571,1-583,2"
+    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:675,1-687,2"
 ]
 
 VerificationTest[
@@ -593,7 +697,7 @@ VerificationTest[
         { "ThemeColorBlended", KeyValuePattern @ { "frac1" -> 0.3, "name1" -> "Foreground", "frac2" -> 0.7, "name2" -> "Background" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:585,1-597,2"
+    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:689,1-701,2"
 ]
 
 (* Swatches are substituted in place inside larger expressions: *)
@@ -614,7 +718,7 @@ VerificationTest[
         "]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:600,1-618,2"
+    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:704,1-722,2"
 ]
 
 (* Arguments that are not literal numbers (symbols, patterns, unevaluated expressions) do not typeset as swatches in the
@@ -623,7 +727,7 @@ VerificationTest[
     StringToBoxes[ "{RGBColor[Red, Green, Blue], Hue[N[1/3]], RGBColor[1, 0], Cases[expr, RGBColor[r_, g_, b_]]}", "WL" ],
     boxes_ /; FreeQ[ boxes, _TemplateBox ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:622,1-627,2"
+    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:726,1-731,2"
 ]
 
 (* When a color is not converted, special boxes inside its arguments are still formatted: *)
@@ -631,7 +735,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[Placeholder[\"red\"], 0, 0]", "WL" ],
     RowBox @ { "RGBColor", "[", RowBox @ { TagBox[ FrameBox[ "\"red\"" ], "Placeholder" ], ",", "0", ",", "0" }, "]" },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:630,1-635,2"
+    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:734,1-739,2"
 ]
 
 (* The full formatting path renders swatches in finished chat output, both in code and in sandbox output rows: *)
@@ -646,7 +750,7 @@ VerificationTest[
         { "Output"  , TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:638,1-650,2"
+    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:742,1-754,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code: *)
@@ -657,7 +761,7 @@ VerificationTest[
     ],
     "```wl\n{RGBColor[1, 0, 0], Hue[0.3], GrayLevel[0.5]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:653,1-661,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:757,1-765,2"
 ]
 
 (* LightDarkSwitched and ThemeColor, including their one-argument and blended variants, round-trip as well: *)
@@ -671,7 +775,7 @@ VerificationTest[
     ],
     "```wl\n{LightDarkSwitched[RGBColor[1, 0, 0], RGBColor[0, 1, 0]], LightDarkSwitched[RGBColor[1, 0, 0]], ThemeColor[\"Background\"], ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:664,1-675,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:768,1-779,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -693,7 +797,7 @@ VerificationTest[
         "ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:682,1-697,2"
+    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:786,1-801,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -713,7 +817,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:707,1-717,2"
+    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:811,1-821,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -726,7 +830,7 @@ VerificationTest[
     Wolfram`Chatbook`Formatting`Private`activeToolProgressIndicator[ ],
     RawBoxes @ TagBox[ _, "ChatbookActiveToolProgress" ],
     SameTest -> MatchQ,
-    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:725,1-730,2"
+    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:829,1-834,2"
 ]
 
 VerificationTest[
@@ -739,7 +843,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:732,1-743,2"
+    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:836,1-847,2"
 ]
 
 VerificationTest[
@@ -755,7 +859,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:745,1-759,2"
+    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:849,1-863,2"
 ]
 
 VerificationTest[
@@ -768,7 +872,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:761,1-772,2"
+    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:865,1-876,2"
 ]
 
 VerificationTest[
@@ -793,7 +897,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:774,1-797,2"
+    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:878,1-901,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -844,7 +948,7 @@ VerificationTest[
     },
     { "unset", "unset", "unset", "unset" },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-DateObject-Options-Not-Evaluated@@Tests/Formatting.wlt:814,1-848,2"
+    TestID   -> "UntrustedContent-DateObject-Options-Not-Evaluated@@Tests/Formatting.wlt:918,1-952,2"
 ]
 
 (* A DateObject with a literal option (and with positional arguments only) still formats as a date, so the protection
@@ -856,7 +960,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-DateObject-Literal-Option-Still-Formats@@Tests/Formatting.wlt:852,1-860,2"
+    TestID   -> "UntrustedContent-DateObject-Literal-Option-Still-Formats@@Tests/Formatting.wlt:956,1-964,2"
 ]
 
 (* An entity whose qualifier list holds arbitrary code (e.g. EntityProperty's third argument) must not be evaluated by
@@ -871,7 +975,7 @@ VerificationTest[
     },
     { "unset", True },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-Entity-Qualifier-Not-Evaluated@@Tests/Formatting.wlt:864,1-875,2"
+    TestID   -> "UntrustedContent-Entity-Qualifier-Not-Evaluated@@Tests/Formatting.wlt:968,1-979,2"
 ]
 
 (* HTML entities in the model's text are decoded only when they are real named or numeric entities, with their case
@@ -907,7 +1011,7 @@ VerificationTest[
         "<b>"
     },
     SameTest -> MatchQ,
-    TestID   -> "ImportHTMLEntity-Real-Entities-Only@@Tests/Formatting.wlt:880,1-911,2"
+    TestID   -> "ImportHTMLEntity-Real-Entities-Only@@Tests/Formatting.wlt:984,1-1015,2"
 ]
 
 (* Code keeps its HTML entities as they are written, in code blocks (also one that is not closed yet) and inline code,
@@ -935,7 +1039,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim@@Tests/Formatting.wlt:915,1-939,2"
+    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim@@Tests/Formatting.wlt:1019,1-1043,2"
 ]
 
 (* The untrusted-content switch keeps the formatter from importing markdown images (they become links to their source)
@@ -978,7 +1082,7 @@ VerificationTest[
     ],
     { True, { }, { }, 1, True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-Switch-Disables-Effects@@Tests/Formatting.wlt:945,1-982,2"
+    TestID   -> "UntrustedContent-Switch-Disables-Effects@@Tests/Formatting.wlt:1049,1-1086,2"
 ]
 
 (* The front end's linear syntax (private-use characters) in the model's text, in a tool result or in the code of a
@@ -1017,7 +1121,7 @@ VerificationTest[
     ],
     { { }, { False, False, False, False, False, False, False }, { True, True, True, True, True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-Not-Evaluated@@Tests/Formatting.wlt:988,1-1021,2"
+    TestID   -> "UntrustedContent-LinearSyntax-Not-Evaluated@@Tests/Formatting.wlt:1092,1-1125,2"
 ]
 
 (* The characters of linear syntax are also replaced when the formatter makes them from the text, after the text itself
@@ -1050,7 +1154,7 @@ VerificationTest[
         { "\:fffd", "\:fffd", "A", "B" }
     },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-Decoded-Characters@@Tests/Formatting.wlt:1027,1-1054,2"
+    TestID   -> "UntrustedContent-LinearSyntax-Decoded-Characters@@Tests/Formatting.wlt:1131,1-1158,2"
 ]
 
 (* What a tool call shows besides its text: the model's parameters (with the tool's formatter, with clickToCopy, or as
@@ -1092,7 +1196,7 @@ VerificationTest[
         <| "a" -> { "b", 1, None } |>
     },
     SameTest -> MatchQ,
-    TestID   -> "UntrustedContent-LinearSyntax-ToolCall-Views@@Tests/Formatting.wlt:1060,1-1096,2"
+    TestID   -> "UntrustedContent-LinearSyntax-ToolCall-Views@@Tests/Formatting.wlt:1164,1-1200,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

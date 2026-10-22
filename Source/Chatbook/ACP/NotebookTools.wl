@@ -628,6 +628,13 @@ listedNotebooks0[ ] := Enclose[
 listedNotebooks0 // endDefinition;
 
 
+(* The notebooks that the user can attach to a prompt (Attachments.wl's attach menu): the ones the tools can reach, front
+   to back, as listedNotebooks gives them. Makes front end calls; { } without a front end. *)
+acpAttachableNotebooks // beginDefinition;
+acpAttachableNotebooks[ ] := listedNotebooks[ ];
+acpAttachableNotebooks // endDefinition;
+
+
 (* Whether a notebook of SourceNotebookObjectInformation[ ] can be listed (deployed ones are left out separately) *)
 listedNotebookQ // beginDefinition;
 
@@ -1184,6 +1191,9 @@ readCells[ entry_Association, cells_List, cursors_List, first_Integer, last_Inte
                     chunk = Range[ i, Min[ i + $readChunk - 1, last ] ];
                     read = notebookRead @ cells[[ chunk, "CellObject" ]];
                     If[ ! MatchQ[ read, { ___Cell } ] || Length @ read =!= Length @ chunk, notebookClosed @ entry ];
+                    (* The notebook may be anything the user has open: defuse what CellToString would evaluate before
+                       converting it, the same way an attached notebook is defused (acpDefusedCells). *)
+                    read = acpDefusedCells @ read;
                     Do[
                         With[ { j = chunk[[ k ]] },
                             If[ j > first && AbsoluteTime[ ] > deadline, Throw[ Null, $budgetTag ] ];
@@ -1332,34 +1342,197 @@ markSelection // endDefinition;
 (*cellMarkdown*)
 
 (* A cell's content as markdown (CellToString), with placeholders for graphics and expression URIs. CellToString takes
-   time in proportion to the size of the boxes, also of the parts it leaves out, so a cell with more than $maxCellBytes
+   time in proportion to the size of the boxes, also of the parts it leaves out, so a cell with more than "MaxCellBytes"
    of boxes (once its graphics are replaced) is read as a note, like a cell that can't be converted (which is also
-   logged): neither delays or fails the whole read. *)
+   logged): neither delays or fails the whole read. The options are ReadNotebook's limits ($readCellOptions) or those of
+   a prompt's attachments (acpNotebookMarkdown): "MaxCellLength" and "MaxOutputLength" (CellToString's
+   "MaxCellStringLength" and "MaxOutputCellStringLength"), "MaxCellBytes", "Graphics" (Automatic: "[graphics]", or a
+   function that gives the text for a GraphicsBox or Graphics3DBox) and "Tool" (for the log). *)
 cellMarkdown // beginDefinition;
 
-cellMarkdown[ cell_Cell, id_String ] :=
-    With[ { plain = cell /. $graphicsRules }, cellMarkdown[ plain, ByteCount @ plain, id ] ];
+cellMarkdown[ cell_Cell, id_String ] := cellMarkdown[ cell, id, $readCellOptions ];
 
-cellMarkdown[ _Cell, bytes_Integer, _String ] /; bytes > $maxCellBytes :=
+cellMarkdown[ cell_Cell, id_String, opts_Association ] :=
+    With[ { plain = graphicsReplaced[ cell, opts[ "Graphics" ] ] }, cellMarkdown[ plain, ByteCount @ plain, id, opts ] ];
+
+cellMarkdown[ _Cell, bytes_Integer, _String, opts_Association ] /; bytes > opts[ "MaxCellBytes" ] :=
     "[this cell is too large to read: " <> ToString @ Ceiling[ bytes / 10^6 ] <> " MB]";
 
-cellMarkdown[ cell_Cell, _Integer, id_String ] := Replace[
+cellMarkdown[ cell_Cell, _Integer, id_String, opts_Association ] := Replace[
     withoutChatState @ catchAlways @ CellToString[
         cell,
         "ContentTypes"              -> { "Text" },
-        "MaxCellStringLength"       -> $maxCellLength,
-        "MaxOutputCellStringLength" -> $maxOutputLength
+        "MaxCellStringLength"       -> opts[ "MaxCellLength" ],
+        "MaxOutputCellStringLength" -> opts[ "MaxOutputLength" ]
     ],
     {
         text_String :> replaceExpressionURIs @ text,
         other_      :> (
-            acpLog[ "NotebookToolFailed", <| "Tool" -> "ReadNotebook", "Cell" -> id, "Value" -> other |> ];
+            acpLog[ "NotebookToolFailed", <| "Tool" -> opts[ "Tool" ], "Cell" -> id, "Value" -> other |> ];
             "[this cell could not be read]"
         )
     }
 ];
 
 cellMarkdown // endDefinition;
+
+(* ReadNotebook's limits *)
+$readCellOptions := <|
+    "MaxCellLength"   -> $maxCellLength,
+    "MaxOutputLength" -> $maxOutputLength,
+    "MaxCellBytes"    -> $maxCellBytes,
+    "Graphics"        -> Automatic,
+    "Tool"            -> "ReadNotebook"
+|>;
+
+
+graphicsReplaced // beginDefinition;
+graphicsReplaced[ cell_Cell, Automatic ] := cell /. $graphicsRules;
+(* RuleCondition: the text is made also in boxes that hold their arguments (e.g. an InterpretationBox) *)
+graphicsReplaced[ cell_Cell, f_ ] := cell /. box: (GraphicsBox|Graphics3DBox)[ ___ ] :> RuleCondition @ f @ box;
+graphicsReplaced // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpDefusedCells*)
+
+(* Cells (as the front end gives them, or as a notebook's text is parsed and made inert) without what CellToString
+   would parse and evaluate: it evaluates an inline WL code template's input (ChatbookWLTemplate), imports a video or
+   audio box, parses a raw data cell, interprets a box with an inline InterpretationFunction (makeExpressionString's
+   ToExpression, e.g. a crafted Quantity or Tabular box), parses a string with linear syntax or with "\!" as two
+   characters, and so on. An open or attached notebook may come from anywhere, so both the ReadNotebook tool
+   (NotebookTools.wl, open notebooks) and the message attachments (Attachments.wl, open notebooks and files) run the
+   cells through this before CellToString. An inline WL template becomes its input boxes (shown as code, not run), a
+   video or audio a placeholder, a raw data cell its text, an inline InterpretationFunction/DisplayFunction is dropped
+   (a normal kernel box carries neither, so its output is unchanged; a crafted one can no longer run code when the box
+   is interpreted), and strings with linear syntax are neutralized. *)
+acpDefusedCells // beginDefinition;
+
+(* some boxes hold their arguments: RuleCondition evaluates the replacements in them; the rules are applied until
+   nothing changes, since what one returns can hold more (a template whose input is a template, a video box in a
+   template's input, a box with an InterpretationFunction in the arguments of another) *)
+acpDefusedCells[ cells_List ] := ReplaceAll[
+    cells //. {
+        TemplateBox[ args_, "ChatbookWLTemplate", ___ ] :> RuleCondition @ Replace[ args, { KeyValuePattern[ "input" -> input_ ] :> input, _ -> "" } ],
+        TemplateBox[ _, "VideoBox1" | "VideoBox2", ___ ] -> "[video]",
+        TemplateBox[ _, "AudioBox1", ___ ] -> "[audio]",
+        Cell[ RawData[ s_String ], rest___ ] :> Cell[ s, rest ],
+        TemplateBox[ args_, name_String, opts___ ] /; ! FreeQ[ { opts }, InterpretationFunction | DisplayFunction ] :>
+            RuleCondition @ TemplateBox[ args, name, Sequence @@ FilterRules[ { opts }, Except[ InterpretationFunction | DisplayFunction ] ] ]
+    },
+    s_String /; StringContainsQ[ s, $$unsafeInString ] :> RuleCondition @ defusedString @ s
+];
+
+acpDefusedCells // endDefinition;
+
+
+defusedString // beginDefinition;
+defusedString[ s_String ] := StringReplace[ acpNeutralizeLinearSyntax @ s, "\\!" -> "\\\:fffd" ];
+defusedString // endDefinition;
+
+$$unsafeInString = RegularExpression[ "\\\\!|[\\x{f7c0}-\\x{f7cd}]" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpNotebookMarkdown*)
+
+(* The markdown of a notebook's cells for a prompt (Attachments.wl): the content of each cell as ReadNotebook gives it
+   (cellMarkdown), without <cell> blocks, ids, labels or selection markers, and with other limits: no cut per cell, output
+   cells cut at $promptOutputLength characters, cells with more than $promptCellBytes of boxes left out with a note. opts:
+     "MaxCharacters" -> the most characters of the result (Infinity): the cells after that are left out, with a note
+                        (a first cell with text that is longer is cut, with a note too);
+     "Graphics"      -> Automatic ("[graphics]") or a function that gives the text for a GraphicsBox or Graphics3DBox
+                        (Attachments.wl rasterizes them as images and gives "[image n]");
+     "ActiveQ"       -> a function checked before each cell: once it gives False, the conversion stops.
+   Gives <| "Markdown", "Cells" (in the notebook), "Shown" (converted), "Truncated" |> or Failure["Cancelled", ...].
+   Makes front end calls (CellToString takes about a second per megabyte of boxes), so it runs on the kernel's main
+   link. *)
+acpNotebookMarkdown // beginDefinition;
+
+acpNotebookMarkdown[ cells_List ] := acpNotebookMarkdown[ cells, <| |> ];
+
+acpNotebookMarkdown[ cells_List, opts_Association ] := Catch[
+    notebookMarkdown[
+        Cases[ cells, _Cell ],
+        <| $promptCellOptions, KeyTake[ opts, { "Graphics" } ] |>,
+        Replace[ Lookup[ opts, "MaxCharacters", Infinity ], Except[ _Integer? Positive ] -> Infinity ],
+        Lookup[ opts, "ActiveQ", True & ]
+    ],
+    $promptCancelTag
+];
+
+acpNotebookMarkdown // endDefinition;
+
+
+notebookMarkdown // beginDefinition;
+
+notebookMarkdown[ cells_List, opts_Association, max_, active_ ] := Module[ { parts, total, shown, cut, note },
+    parts = Internal`Bag[ ];
+    total = 0;
+    shown = 0;
+    cut   = False;
+    Catch[
+        Do[
+            If[ ! TrueQ @ active[ ], Throw[ Failure[ "Cancelled", <| |> ], $promptCancelTag ] ];
+            With[ { text = StringTrim @ cellMarkdown[ DeleteCases[ cell, (CellLabel|CellObject) -> _ ], "prompt", opts ] },
+                Which[
+                    text === "",
+                        shown++,
+                    total + StringLength @ text <= max,
+                        Internal`StuffBag[ parts, text ];
+                        total += StringLength @ text + 2;
+                        shown++,
+                    total === 0,
+                        (* a first cell (with text) that alone is too long is cut *)
+                        Internal`StuffBag[ parts, StringTake[ text, max ] ];
+                        cut = True;
+                        shown++;
+                        Throw[ Null, $promptBudgetTag ],
+                    True,
+                        Throw[ Null, $promptBudgetTag ]
+                ]
+            ],
+            { cell, cells }
+        ],
+        $promptBudgetTag
+    ];
+    (* a cut cell, then the cells that are left out *)
+    note = StringJoin[
+        If[ cut, "\n\n" <> $promptCellCut, "" ],
+        Which[
+            shown === Length @ cells - 1, "\n\n" <> $promptCellLeftOut,
+            shown < Length @ cells      , "\n\n" <> TemplateApply[ $promptCellsLeftOut, { Length @ cells - shown } ],
+            True                        , ""
+        ]
+    ];
+    <|
+        "Markdown"  -> StringRiffle[ Internal`BagPart[ parts, All ], "\n\n" ] <> note,
+        "Cells"     -> Length @ cells,
+        "Shown"     -> shown,
+        "Truncated" -> note =!= ""
+    |>
+];
+
+notebookMarkdown // endDefinition;
+
+$promptOutputLength = 5000;   (* characters of an output cell in a prompt's attachment *)
+$promptCellBytes    = 4 * 2^20; (* larger cells (boxes, graphics replaced) are not converted for a prompt *)
+
+$promptCellOptions := <|
+    "MaxCellLength"   -> Infinity,
+    "MaxOutputLength" -> $promptOutputLength,
+    "MaxCellBytes"    -> $promptCellBytes,
+    "Graphics"        -> Automatic,
+    "Tool"            -> "Attachments"
+|>;
+
+(* Notes for the agent (texts for the agent, not for the user, like the tools' descriptions) *)
+$promptCellsLeftOut = "[The last `1` cells of this notebook are left out: the notebook is too large to attach whole.]";
+$promptCellLeftOut  = "[The last cell of this notebook is left out: the notebook is too large to attach whole.]";
+$promptCellCut      = "[The rest of this cell is left out: the notebook is too large to attach whole.]";
+
+$promptBudgetTag = "Wolfram`Chatbook`ACP`NotebookTools`PromptBudget";
+$promptCancelTag = "Wolfram`Chatbook`ACP`NotebookTools`PromptCancelled";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

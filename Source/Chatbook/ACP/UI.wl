@@ -22,25 +22,44 @@ Needs[ "Wolfram`Chatbook`ACP`Common`"       ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$acpWindowWidth      := $acpWindowWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
+(* The window's width at magnification 1: wider than the Notebook Assistant's ($workspaceChatWidth). attachToLeft scales it
+   with the source notebook's magnification and caps it to the display (attachedWindowWidth), each time the window is
+   shown from a notebook (the width and zoom are reset then, as in the Notebook Assistant). *)
+$acpWindowWidth      := $acpWindowWidth = Switch[ $OperatingSystem, "MacOSX", 600, _, 480 ];
 $acpStyleSheet        = FrontEnd`FileName[ { "Wolfram" }, "ACPChat.nb", CharacterEncoding -> "UTF-8" ];
 $acpDefaultAgent      = "OpenCode";
 $acpFinalizeDebounce  = 0.2;  (* seconds to wait after the end of a turn for trailing updates *)
+(* Finalization waits for the front end to show the frozen live view (acpFrozenViewPendingQ): *)
+$acpFreezeSettle      = 0.15; (* seconds after the frozen view was rendered *)
+$acpFreezeTimeout     = 5;    (* seconds after which the final cell is written without that *)
+$acpFreezePoll        = Quantity[ 50, "Milliseconds" ];
 $acpFinalizeFallback  = 1.0;  (* seconds after which housekeeping finalizes a turn that ended but was not finalized *)
 $acpFinalizeTimeout   = 30;   (* seconds after which housekeeping finishes a turn whose finalization never completed *)
 $acpMaxRecentModels   = 3;
 $acpPreferencesPath   = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "ACP" };
-$acpMaxPathLength     = 42;
-$acpMaxPathLengthReview = 30; (* when the "Review" button is shown in the project folder row *)
+$acpMaxPathLength     = 42;  (* acpAbbreviatePath's default *)
+$acpFolderLabelMaxLength = 200; (* the folder row's label in the kernel (the front end cuts it to the room) *)
 $acpQueuedPreviewSize = 80;
+$acpPrepareTimeout    = 180;  (* seconds after which housekeeping cancels a preparation of attachments (Attachments.wl),
+                                 also of a prompt notebook's message (PromptNotebook.wl) *)
 
 (* UI-owned keys in window records (in addition to the ones described in docs/acp-window.md, "State model"):
      "Settings"     -> explicit ShowNotebookAssistance settings ("ACPAgent", "ACPAgentCommandLine", "ACPModel", ...)
      "Notice"       -> None | String: a transient message shown above the input field; or <| "Text", "Command" |>: a
                        message with a terminal command below it (shown as typed, with "Copy command"; see acpNoticeView)
-     "QueuedPrompt" -> None | String: a prompt typed while a turn was running; sent after the turn is finalized
+     "QueuedPrompt" -> None | { <| "Text" -> String, "Attachments" -> { prepared attachments }, "At" -> time |>... }:
+                       the messages sent while a turn was running, in the order of their Send clicks ("At"); sent after
+                       the turn is finalized, merged into as few turns as the caps of one message allow (see
+                       acpQueuePrompt). A String or one <| "Text", "Attachments" |> is read as one message. Their text and
+                       the references of their attachments are also in the TaggingRules ({"ACP", "QueuedPrompt"}), so a
+                       kernel restart puts them back into the draft.
      "QueuedTurn"   -> None | turnID: a turn that was started before the connection was ready
+     "Attachments"  -> the draft's attachments: references (Attachments.wl), also in the TaggingRules
+     "Preparing"    -> None | <| "Token", "StartedAt", "Input", "Text", "Attachments" (references) |>: a message whose
+                       attachments a main link job prepares (Attachments.wl); also in the TaggingRules
+                       ({"ACP", "PreparingPrompt"}, without the token)
    UI-owned keys in turn records:
+     "Attachments"       -> the prepared attachments of the message (Attachments.wl's acpPromptBlocks sends them)
      "FinalizeClaimed"   -> True once acpFinalizeTurn has started writing the final cell
      "FinalizeClaimedAt" -> AbsoluteTime[ ] of the claim (housekeeping finishes turns stuck in "Finalizing") *)
 
@@ -60,6 +79,7 @@ $acpUIStrings = <|
     "WindowTitleApprovalRemote"      -> "Approval needed \[LongDash] `project` on `host`",
     "NewChat"                        -> "New",
     "NewChatTooltip"                 -> "Start a new chat",
+    "SessionsButtonLabel"            -> "Sessions", (* Sessions.wl's toolbar button; the main row measures it *)
     "ModelMenuDefault"               -> "Model",
     "ModelMenuTooltip"               -> "Model (`billing`)",
     "ModelMenuRecent"                -> "Recent",
@@ -70,9 +90,9 @@ $acpUIStrings = <|
     "MenusDisabledTooltip"           -> "Settings can't be changed while the agent is working",
     "MenusDisabledRestoring"         -> "Settings can't be changed while a session is loading",
     "ProjectDirectoryNone"           -> "No project folder",
-    "ProjectDirectoryChange"         -> "Change\[Ellipsis]",
     "ProjectDirectoryChoose"         -> "Choose folder\[Ellipsis]",
     "ProjectDirectoryTooltip"        -> "Project folder: `path`",
+    "ProjectDirectoryClickToChange"  -> "Click to choose another folder",
     "ProjectDirectoryDialogTitle"    -> "Choose a project folder",
     "ProjectDirectoryWarningHome"    -> "This is your home folder: the agent can read and change everything in it.",
     "ProjectDirectoryWarningRoot"    -> "This is a filesystem root: the agent can read and change everything in it.",
@@ -83,14 +103,80 @@ $acpUIStrings = <|
     "ProjectDirectoryWarningRootRemote"    -> "This is the root folder of `host`: the agent can read and change everything on it.",
     "ProjectDirectoryWarningMissingRemote" -> "This folder doesn't exist on `host`.",
     "InputFieldHint"                 -> "Ask `agent` to do something\[Ellipsis]",
+    "AttachButtonTooltip"            -> "Attach notebooks or files",
+    "AttachMenuNotebooks"            -> "Open notebooks",
+    "AttachMenuNoNotebooks"          -> "No notebooks are open.",
+    "AttachMenuMoreNotebooks"        -> "and `n` more",
+    "AttachMenuFile"                 -> "File\[Ellipsis]",
+    "AttachMenuFileLocal"            -> "File on this computer\[Ellipsis]",
+    "AttachFileDialogTitle"          -> "Attach files",
+    "AttachmentRemove"               -> "Remove",
+    "AttachmentNotebook"             -> "Notebook",
+    "AttachmentFile"                 -> "File",
+    "AttachmentImage"                -> "Image",
+    "AttachmentCells"                -> "`n` cells",
+    "AttachmentCellsOne"             -> "1 cell",
+    "AttachmentImages"               -> "`n` images",
+    "AttachmentImagesOne"            -> "1 image",
+    "AttachmentBytes"                -> "`n` bytes",
+    "AttachmentKilobytes"            -> "`n` kB",
+    "AttachmentMegabytes"            -> "`n` MB",
+    "AttachmentsPreparing"           -> "Preparing `n` attachments\[Ellipsis]",
+    "AttachmentsPreparingOne"        -> "Preparing the attachment\[Ellipsis]",
+    "UserCellAttachmentNotebook"     -> "[Attached notebook: `name`]",
+    "UserCellAttachmentFile"         -> "[Attached file: `name`]",
+    "UserCellAttachmentImage"        -> "[Attached image: `name`]",
+    "PromptNotebookButtonTooltip"    -> "Write the message in a notebook",
+    "PromptNotebookTitle"            -> "Prompt notebook",
+    "PromptNotebookTarget"           -> "`agent` \[CenterDot] `folder`",
+    "PromptNotebookNoFolder"         -> "no project folder",
+    "PromptNotebookNotLinked"        -> "Not linked to an agent window",
+    "PromptNotebookOpenWindow"       -> "Open agent window",
+    "PromptNotebookOpenWindowTooltip" -> "Show the agent window and link this notebook to it",
+    "PromptNotebookSend"             -> "Send",
+    "PromptNotebookSendTooltip"      -> "Send the whole notebook as one message",
+    "PromptNotebookCancel"           -> "Cancel",
+    "PromptNotebookHint"             -> "Send sends the whole notebook as one message. The notebook stays open, so you can change it and send it again.",
+    "PromptNotebookWorking"          -> "`agent` is working: Send queues the message.",
+    "PromptNotebookPreparing"        -> "Preparing the message\[Ellipsis]",
+    "PromptNotebookQueued"           -> "Queued: sent when `agent` is done.",
+    "PromptNotebookSent"             -> "Sent at `time`.",
+    "PromptNotebookNotSent"          -> "Not sent.",
+    "PromptNotebookNotSentReason"    -> "Not sent. `reason`",
+    "PromptNotebookRetargeted"       -> "This notebook now goes to `target`. Click Send again to send it there.",
+    "PromptNotebookNoWindow"         -> "No agent window is open.",
+    "PromptNotebookEmpty"            -> "The notebook is empty.",
+    "PromptNotebookFailed"           -> "The notebook could not be converted.",
+    "PromptNotebookRemoved"          -> "The queued message was removed.",
+    "PromptNotebookNewChat"          -> "The agent window switched to another chat.",
+    "PromptNotebookTimeout"          -> "Preparing the message took too long.",
+    "PromptNotebookInterrupted"      -> "The kernel was restarted.",
+    "PromptNotebookWindowClosed"     -> "The agent window was closed.",
     "QueuedPrompt"                   -> "Queued, sent when the agent is done: `text`",
     "QueuedPromptRestoring"          -> "Queued, sent when the session is loaded: `text`",
     "QueuedPromptCancel"             -> "Remove the queued message",
+    "QueuedPromptAttachments"        -> "+`n` attachments",
+    "QueuedPromptAttachmentsOne"     -> "+1 attachment",
     "NoticeDismiss"                  -> "Dismiss",
     "PlanModeBadge"                  -> "Plan mode",
     "NoticeNoDirectory"              -> "Choose a project folder first.",
     "NoticeCannotSend"               -> "Can't send the message: `reason`",
     "NoticeNotConnected"             -> "the agent is not connected.",
+    "NoticePreparing"                -> "The attachments of the last message are still being prepared.",
+    "NoticeAttachmentClosed"         -> "The notebook `name` is no longer open: remove it from the attachments or open it again.",
+    "NoticeAttachmentMissing"        -> "The file `name` can't be read.",
+    "NoticeAttachmentUnreadable"     -> "The notebook file `name` can't be read.",
+    "NoticeAttachmentNotebookUnreadable" -> "The notebook `name` can't be read.",
+    "NoticeAttachmentBinary"         -> "`name` can't be attached: only text files, notebooks and images can.",
+    "NoticeAttachmentTooLarge"       -> "`name` is too large to attach (`size`; at most `max`).",
+    "NoticeAttachmentsTooLarge"      -> "The attachments are too large to send in one message (`size`; at most `max`).",
+    "NoticeAttachmentImage"          -> "The image `name` can't be read.",
+    "NoticeAttachmentNoImages"       -> "`agent` does not accept images, so `name` can't be attached.",
+    "NoticeAttachmentTooManyImages"  -> "A message can have at most `max` images.",
+    "NoticeAttachmentsFailed"        -> "The attachments could not be prepared, so the message was not sent.",
+    "NoticeAttachmentsTimeout"       -> "Preparing the attachments took too long, so the message was not sent.",
+    "NoticePendingPromptRestored"    -> "The kernel was restarted: the message that was waiting to be sent is back in the input field.",
+    "NoticeMessageReturned"          -> "The chat changed, so the message that was waiting to be sent is back in the input field.",
     "NoticeDirectoryWhileRunning"    -> "The project folder can't be changed while the agent is working.",
     "NoticeDirectoryWhileRestoring"  -> "The project folder can't be changed while a session is loading.",
     "NoticeChooseModel"              -> "Choose another model from the model menu above.",
@@ -158,6 +244,24 @@ $$sessionsWindowAction = Alternatives[
     "SessionsToggleProject"
 ];
 
+(* The "+" button, its menu and the chips of the draft's attachments (Attachments.wl) *)
+$$attachmentsAction = Alternatives[
+    "AttachFiles",
+    "AttachMenu",
+    "AttachNotebook",
+    "RemoveAttachment",
+    "ShowAttachment"
+];
+
+(* The button that opens the prompt notebook, and the buttons of its docked cell (PromptNotebook.wl), whose notebook
+   argument is the prompt notebook *)
+$$promptNotebookAction = Alternatives[
+    "OpenPromptNotebook",
+    "PromptNotebookCancel",
+    "PromptNotebookOpenWindow",
+    "PromptNotebookSend"
+];
+
 (* Buttons and keys of the remote folder picker (FolderPicker.wl) *)
 $$folderPickerAction = Alternatives[
     "FolderPickerCancel",
@@ -180,6 +284,7 @@ acpAction0[ "Stop"               , nbo_NotebookObject                  ] := acpS
 acpAction0[ "NewChat"            , nbo_NotebookObject                  ] := acpNewChat @ nbo;
 acpAction0[ "ToggleOpen"         , args___                             ] := acpToggleOpen @ args;
 acpAction0[ "PermissionResponse" , nbo_NotebookObject, args__          ] := acpPermissionResponseAction[ nbo, args ];
+acpAction0[ "PermissionDetails"  , nbo_NotebookObject, key_String      ] := acpPermissionDetails[ nbo, key ];
 acpAction0[ "SetConfigOption"    , nbo_NotebookObject, id_String, val_ ] := acpSetConfigOptionAction[ nbo, id, val ];
 acpAction0[ "SetProjectDirectory", nbo_NotebookObject, dir_            ] := acpSetProjectDirectoryAction[ nbo, dir ];
 acpAction0[ "Reconnect"          , nbo_NotebookObject                  ] := acpReconnectAction @ nbo;
@@ -205,11 +310,16 @@ acpAction0[ "SessionsClosed"     , nbo_NotebookObject                  ] := acpS
 acpAction0[ "ToggleSessions"     , nbo_NotebookObject                  ] := acpToggleSessions @ nbo;
 acpAction0[ name: $$sessionsWindowAction, nbo_NotebookObject, args___ ] := acpSessionsWindowAction[ name, nbo, args ];
 acpAction0[ name: $$folderPickerAction, nbo_NotebookObject, args___ ] := acpFolderPickerAction[ name, nbo, args ];
+acpAction0[ name: $$attachmentsAction, nbo_NotebookObject, args___ ] := acpAttachmentsAction[ name, nbo, args ];
+acpAction0[ name: $$promptNotebookAction, nbo_NotebookObject ] := acpPromptNotebookAction[ name, nbo ];
 acpAction0[ name_, args___ ] := (acpLog[ "UnknownAction", { name, args } ]; Missing[ "UnknownAction", name ]);
 acpAction0 // endDefinition;
 
 (* The action names handled by acpAction (used by tests) *)
 $acpActionNames = {
+    "AttachFiles",
+    "AttachMenu",
+    "AttachNotebook",
     "CancelQueuedPrompt",
     "ChooseDirectory",
     "ChooseModel",
@@ -234,8 +344,14 @@ $acpActionNames = {
     "LocateAgent",
     "NewChat",
     "NewSessionIn",
+    "OpenPromptNotebook",
+    "PermissionDetails",
     "PermissionResponse",
+    "PromptNotebookCancel",
+    "PromptNotebookOpenWindow",
+    "PromptNotebookSend",
     "Reconnect",
+    "RemoveAttachment",
     "RestoreSession",
     "ReviewChanges",
     "ReviewDiffView",
@@ -256,6 +372,7 @@ $acpActionNames = {
     "SetAgentExecutable",
     "SetConfigOption",
     "SetProjectDirectory",
+    "ShowAttachment",
     "SignIn",
     "Stop",
     "ToggleErrorDetail",
@@ -355,11 +472,11 @@ acpCreateWindow[ source_, settings_Association ] := Enclose[
         SetOptions[ nbo, Visible -> True ];
 
         If[ MatchQ[ source, _NotebookObject ],
-            ConfirmMatch[ attachToLeft[ source, nbo ], _NotebookObject, "Attached" ],
+            ConfirmMatch[ attachToLeft[ source, nbo, $acpWindowWidth ], _NotebookObject, "Attached" ],
             SetOptions[
                 nbo,
                 WindowMargins -> { { 0, Automatic }, { Automatic, 0 } },
-                WindowSize    -> { $acpWindowWidth, Automatic }
+                WindowSize    -> { attachedWindowWidth[ $acpWindowWidth, 1, notebookDisplayRange @ nbo ], Automatic }
             ];
             SetSelectedNotebook @ nbo
         ];
@@ -537,6 +654,8 @@ acpInitialWindowRecord[ nbo_NotebookObject, dir_, agent_String, settings_Associa
     "Notice"             -> None,
     "QueuedPrompt"       -> None,
     "QueuedTurn"         -> None,
+    "Attachments"        -> { },
+    "Preparing"          -> None,
     "Restore"            -> None,
     "PendingRestore"     -> None
 |>;
@@ -572,7 +691,7 @@ acpRebuildWindowRecord // beginDefinition;
 (* The settings come first: a remote window's folder is a remote path, stored already normalized, so it is taken as it
    is ("Raw": a folder name may end in a space), and a ~ folder (the launch never reached it) stays one (see
    acpDefaultProjectDirectory) *)
-acpRebuildWindowRecord[ nbo_NotebookObject ] := Module[ { settings, ssh, dir, agent, record },
+acpRebuildWindowRecord[ nbo_NotebookObject ] := Module[ { settings, ssh, dir, agent, record, rebuilt = False, window },
     settings = acpPersistedWindowSettings @ acpFE[ nbo, "Settings", <| |> ];
     ssh      = acpSettingsSSH @ settings;
     dir      = If[ ssh === None,
@@ -583,11 +702,43 @@ acpRebuildWindowRecord[ nbo_NotebookObject ] := Module[ { settings, ssh, dir, ag
     record   = acpInitialWindowRecord[ nbo, dir, agent, settings ];
     record[ "Status" ] = If[ acpValidProjectDirectoryQ[ dir, ssh ], "Disconnected", "NoDirectory" ];
     record[ "ResumableSessionID" ] = Replace[ acpFE[ nbo, "ResumableSessionID", None ], Except[ _String ] -> None ];
+    (* the draft's attachments (Attachments.wl) *)
+    record[ "Attachments" ] = acpAttachmentRefs @ acpFE[ nbo, "Attachments", { } ];
     acpEnsureWindowSymbols @ nbo;
-    acpWindowUpdate[ nbo, Function[ old, If[ KeyExistsQ[ old, "Status" ], old, Join[ old, record ] ] ] ]
+    window = acpWindowUpdate[ nbo, Function[ old, If[ KeyExistsQ[ old, "Status" ], old, rebuilt = True; Join[ old, record ] ] ] ];
+    (* a message that was queued or prepared when the kernel quit goes back into the draft *)
+    If[ rebuilt && restorePendingPrompts @ nbo, acpWindowGet @ nbo, window ]
 ];
 
 acpRebuildWindowRecord // endDefinition;
+
+
+(* The messages of the TaggingRules ({"ACP", "PreparingPrompt"}, then {"ACP", "QueuedPrompt"}, which was sent before it)
+   that a quit kernel did not send: their text goes back into the input field (before what was typed since) and their
+   attachments into the draft, with a notice. True if there was one. *)
+restorePendingPrompts // beginDefinition;
+
+restorePendingPrompts[ nbo_NotebookObject ] := Module[ { pending, given },
+    pending = Select[ persistedPrompt /@ { acpFE[ nbo, "PreparingPrompt", None ], acpFE[ nbo, "QueuedPrompt", None ] }, AssociationQ ];
+    If[ pending === { }, Return[ False, Module ] ];
+    (* a prompt notebook's message stays in its notebook (PromptNotebook.wl), whose status says why it was not sent *)
+    given = acpGiveBackDraft[ nbo, #, acpLabel[ "PromptNotebookInterrupted" ] ] & /@ pending;
+    acpFESet[ nbo, "PreparingPrompt", None ];
+    acpFESet[ nbo, "QueuedPrompt", None ];
+    If[ MemberQ[ given, True ], acpSetNotice[ nbo, acpLabel[ "NoticePendingPromptRestored" ] ] ];
+    True
+];
+
+restorePendingPrompts // endDefinition;
+
+
+(* A message of the TaggingRules: <| "Input" (what was typed; boxes or a string), "Text", "Attachments" (references) |>;
+   the front end may give an association back as rules *)
+persistedPrompt // beginDefinition;
+persistedPrompt[ rules: { ___Rule } ] := persistedPrompt @ Association @ rules;
+persistedPrompt[ prompt_Association ] /; StringQ @ Lookup[ prompt, "Text", None ] || Lookup[ prompt, "Attachments", { } ] =!= { } := prompt;
+persistedPrompt[ _ ] := None;
+persistedPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -621,7 +772,7 @@ acpEnsureWindowSymbols[ nbo_NotebookObject ] := (
 
 acpEnsureWindowSymbols // endDefinition;
 
-$acpDerivedViewNames = { "ConfigMenus", "DirectoryRow", "Footer", "InputArea", "NewChat" };
+$acpDerivedViewNames = { "Attachments", "ConfigMenus", "DirectoryRow", "Footer", "InputArea", "NewChat" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -629,7 +780,7 @@ $acpDerivedViewNames = { "ConfigMenus", "DirectoryRow", "Footer", "InputArea", "
 acpReuseWindow // beginDefinition;
 
 acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
-    Module[ { window, plan, dir, notices, dirChanged, changed, result },
+    Module[ { window, plan, dir, notices, dirChanged, changed, result, queued },
         acpCheckSession @ nbo;
         window  = ConfirmBy[ acpEnsureWindowRecord @ nbo, AssociationQ, "Window" ];
         plan    = ConfirmBy[ acpReusePlan[ source, window, settings ], AssociationQ, "Plan" ];
@@ -645,7 +796,9 @@ acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
         dirChanged = False;
         Which[
             TrueQ @ plan[ "Switch" ],
+                queued = acpQueuedPromptOf @ acpWindowGet[ nbo, "QueuedPrompt", None ];
                 acpResetProjectDirectory[ nbo, dir ];
+                acpReturnPendingMessages[ nbo, queued ];
                 acpDirectoryChanged @ nbo;
                 (* a remote host without a folder: its folder picker opens (FolderPicker.wl) *)
                 acpFolderPickerAutoOpen @ nbo;
@@ -664,7 +817,7 @@ acpReuseWindow[ source_, nbo_NotebookObject, settings_Association ] := Enclose[
         If[ notices =!= { }, acpSetNotice[ nbo, StringRiffle[ notices, " " ] ] ];
 
         If[ MatchQ[ source, _NotebookObject ],
-            ConfirmMatch[ attachToLeft[ source, nbo ], _NotebookObject, "Attached" ],
+            ConfirmMatch[ attachToLeft[ source, nbo, $acpWindowWidth ], _NotebookObject, "Attached" ],
             SetSelectedNotebook @ nbo;
             moveToChatInputField[ nbo, True ]
         ];
@@ -787,7 +940,7 @@ keepFolderQ // endDefinition;
 unusableDirectoryNotice // beginDefinition;
 
 unusableDirectoryNotice[ dir_String, None ] :=
-    acpLabel[ "NoticeDirectoryMissing", <| "path" -> acpNeutralizeLinearSyntax @ acpAbbreviatePath[ dir, None ] |> ];
+    acpLabel[ "NoticeDirectoryMissing", <| "path" -> acpRemoteDisplayName @ acpAbbreviatePath[ dir, None ] |> ];
 
 unusableDirectoryNotice[ dir_String, ssh_ ] := acpLabel[
     "NoticeInvalidRemoteDirectory",
@@ -929,7 +1082,9 @@ acpCloseWindow[ nbo_NotebookObject ] := (
     acpIsolated @ acpDisconnect[ nbo, "WindowClosed" ];
     acpIsolated @ acpSessionsCloseWindow @ nbo;
     acpIsolated @ acpFolderPickerCloseWindow @ nbo;
+    acpIsolated @ acpPermissionDetailsCloseWindow @ nbo;
     Quiet @ NotebookClose @ nbo;
+    acpIsolated @ acpPromptNotebooksOwnerClosed @ nbo;
     acpForgetWindow @ nbo
 );
 
@@ -993,7 +1148,7 @@ acpInitializeWindow // endDefinition;
 (*acpWindowClosed*)
 
 (* NotebookEventActions "WindowClose" (preemptive): only schedule the cleanup (which also closes the window's Sessions
-   window and folder picker). *)
+   window, folder picker and permission details window; its prompt notebooks stay open, see PromptNotebook.wl). *)
 acpWindowClosed // beginDefinition;
 
 acpWindowClosed[ nbo_NotebookObject ] := (
@@ -1001,7 +1156,9 @@ acpWindowClosed[ nbo_NotebookObject ] := (
         acpDisconnect[ nbo, "WindowClosed" ];
         acpForgetWindow @ nbo;
         acpSessionsCloseWindow @ nbo;
-        acpFolderPickerCloseWindow @ nbo
+        acpFolderPickerCloseWindow @ nbo;
+        acpPermissionDetailsCloseWindow @ nbo;
+        acpPromptNotebooksOwnerClosed @ nbo
     ];
     Null
 );
@@ -1043,6 +1200,8 @@ acpUpdateWindowTitle[ nbo_NotebookObject, window_Association ] := Module[ { titl
         $windowTitles[ nbo ] = title;
         Quiet @ SetOptions[ nbo, WindowTitle -> title ]
     ];
+    (* the target that the docked cells of the window's prompt notebooks show (PromptNotebook.wl) follows too *)
+    acpSyncPromptTarget[ nbo, window ];
     title
 ];
 
@@ -1051,7 +1210,8 @@ acpUpdateWindowTitle[ _, _Missing ] := Null;
 acpUpdateWindowTitle // endDefinition;
 
 
-(* The project folder can come from the agent (a session restored from the Sessions window): its name is neutralized.
+(* The project folder can come from the agent (a session restored from the Sessions window): its name is display-safe
+   (acpRemoteDisplayName, as the folder label shows it).
    A remote window's title names the host (short form); its folder is a POSIX path on that host, whose name is taken
    with string operations (FileNameTake would read it as a path of this computer). *)
 acpWindowTitleString // beginDefinition;
@@ -1075,10 +1235,10 @@ acpWindowTitleString[ dir_String, agent_, approval_, ssh: Except[ None ] ] := ac
 ];
 
 acpWindowTitleString[ dir_String, agent_, True, None ] :=
-    acpLabel[ "WindowTitleApproval", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
+    acpLabel[ "WindowTitleApproval", <| "project" -> acpRemoteDisplayName @ FileNameTake @ dir, "agent" -> agent |> ];
 
 acpWindowTitleString[ dir_String, agent_, _, None ] :=
-    acpLabel[ "WindowTitleProject", <| "project" -> acpNeutralizeLinearSyntax @ FileNameTake @ dir, "agent" -> agent |> ];
+    acpLabel[ "WindowTitleProject", <| "project" -> acpRemoteDisplayName @ FileNameTake @ dir, "agent" -> agent |> ];
 
 acpWindowTitleString[ _, agent_, _, _ ] :=
     acpLabel[ "WindowTitleNoProject", <| "agent" -> agent |> ];
@@ -1280,7 +1440,7 @@ acpNewChatButton[ nbo_NotebookObject ] := acpNewChatButton[ nbo, acpWindowGet @ 
 
 acpNewChatButton[ nbo_NotebookObject, window_ ] := acpActionButton[
     blueHueButtonAppearance[
-        acpToolbarButtonLabel[ "WorkspaceToolbarIconNew", acpLabel[ "NewChat" ], acpLabel[ "NewChatTooltip" ] ],
+        acpToolbarButtonLabel[ "WorkspaceToolbarIconNew", acpLabel[ "NewChat" ], acpLabel[ "NewChatTooltip" ], True ],
         { Automatic, 24 },
         { { 5, 5 }, { 0, 0 } }
     ],
@@ -1296,18 +1456,35 @@ acpNewChatButton // endDefinition;
 (*acpToolbarButtonLabel*)
 acpToolbarButtonLabel // beginDefinition;
 
-acpToolbarButtonLabel[ iconName_String, label_, tooltip_ ] := Tooltip[
-    Grid[
-        { { chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ], label } },
-        Alignment        -> { Left, Baseline },
-        BaselinePosition -> { 1, 2 },
-        BaseStyle        -> "NotebookAssistant`Sidebar`ToolbarButtonLabel",
-        Spacings         -> { 0.3, 0 }
+acpToolbarButtonLabel[ iconName_String, label_, tooltip_ ] := acpToolbarButtonLabel[ iconName, label, tooltip, False ];
+
+(* collapsible: True for New and Sessions in the main row, which show only their icons (the tooltip says what they do)
+   while the row is too narrow for their labels (toolbarNarrowWidth), so the menus stay in the window *)
+acpToolbarButtonLabel[ iconName_String, label_, tooltip_, collapsible_ ] := Tooltip[
+    If[ TrueQ @ collapsible,
+        Style[
+            acpFitSwitch[ toolbarNarrowWidth[ ], $minModelLabelWidth, toolbarButtonGrid[ iconName, None ], toolbarButtonGrid[ iconName, label ] ],
+            "NotebookAssistant`Sidebar`ToolbarButtonLabel"
+        ],
+        toolbarButtonGrid[ iconName, label ]
     ],
     tooltip
 ];
 
 acpToolbarButtonLabel // endDefinition;
+
+
+toolbarButtonGrid // beginDefinition;
+
+toolbarButtonGrid[ iconName_String, label_ ] := Grid[
+    { { chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ], If[ label === None, Nothing, label ] } },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, If[ label === None, 1, 2 ] },
+    BaseStyle        -> "NotebookAssistant`Sidebar`ToolbarButtonLabel",
+    Spacings         -> { 0.3, 0 }
+];
+
+toolbarButtonGrid // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1338,10 +1515,15 @@ acpConfigMenusView // beginDefinition;
 
 acpConfigMenusView[ nbo_NotebookObject ] := acpConfigMenusView[ nbo, acpWindowGet @ nbo ];
 
-acpConfigMenusView[ nbo_NotebookObject, window_Association ] := Module[ { enabled, menus },
+(* The main row can't shrink: the model's name takes one line, cut at its end to the room that New, Sessions and the
+   other menus leave (modelLabelWidth), and in a narrow or magnified window New and Sessions show only their icons
+   (toolbarNarrowWidth), so a long name or a narrow window doesn't push the effort menu out of the window (unless the
+   window is very narrow, e.g. 360 points at magnification 2). *)
+acpConfigMenusView[ nbo_NotebookObject, window_Association ] := Module[ { enabled, others, menus },
     enabled = ! acpRunningQ @ window && ! acpRestoringQ @ window;
+    others  = DeleteCases[ acpConfigMenuLabel[ window, # ] & /@ { "mode", "thought_level" }, None ];
     menus = {
-        acpModelMenu[ nbo, window, enabled ],
+        acpModelMenu[ nbo, window, enabled, modelLabelWidth @ others ],
         acpModeMenu[ nbo, window, enabled ],
         acpEffortMenu[ nbo, window, enabled ]
     };
@@ -1351,6 +1533,81 @@ acpConfigMenusView[ nbo_NotebookObject, window_Association ] := Module[ { enable
 acpConfigMenusView[ _, _ ] := Spacer[ 0 ];
 
 acpConfigMenusView // endDefinition;
+
+
+(* The label of the mode or effort menu ("mode", "thought_level"), None if the menu is not shown (as acpModeMenu and
+   acpEffortMenu decide) *)
+acpConfigMenuLabel // beginDefinition;
+
+acpConfigMenuLabel[ window_Association, category_String ] := Replace[
+    acpConfigOption[ window, category ],
+    {
+        opt_Association :> With[ { options = acpConfigOptionValues @ opt },
+            If[ Length @ options < 2, None, acpOptionName[ acpConfigCurrentValue[ window, opt ], options ] ]
+        ],
+        _ -> None
+    }
+];
+
+acpConfigMenuLabel // endDefinition;
+
+
+(* The width available to the model's name (acpFitWidth): what the main row leaves after New and Sessions (with their
+   labels, unless the row is narrow: see toolbarNarrowWidth), the other menus (their labels measured in the menus' font,
+   which is the model label's and the buttons' labels'), the menus' frames and chevrons, and the spacings. The reserves
+   were measured in a real front end (see acpFitWidth and docs/acp-window.md, "The toolbar"). *)
+modelLabelWidth // beginDefinition;
+
+modelLabelWidth[ others: { ___String } ] := acpFitWidthSwitch[
+    toolbarNarrowWidth[ ],
+    $minModelLabelWidth,
+    mainRowRoom[ others, { } ],
+    mainRowRoom[ others, { acpLabel[ "NewChat" ], acpLabel[ "SessionsButtonLabel" ] } ]
+];
+
+modelLabelWidth // endDefinition;
+
+
+mainRowRoom // beginDefinition;
+mainRowRoom[ others_List, labels_List ] := acpFitWidth[
+    { $toolbarScreenReserve, $mainRowReserve + (Length @ others + 1) * $menuReserve + Length @ labels * $buttonLabelReserve },
+    { #, { } } & /@ Join[ labels, others ]
+];
+mainRowRoom // endDefinition;
+
+
+(* What the main row leaves for the model's name with New's and Sessions' labels and two other menus whose labels are
+   $menuLabelsAllowance points wide in all: while that is less than $minModelLabelWidth points (a narrow or magnified
+   window), New and Sessions show only their icons. The buttons are in other views than the menus and don't know the
+   menus' labels, hence the typical width; the model menu uses the same test for its width, so it always knows whether
+   the labels are shown. *)
+toolbarNarrowWidth // beginDefinition;
+
+toolbarNarrowWidth[ ] := acpFitWidth[
+    { $toolbarScreenReserve, $mainRowReserve + 3 * $menuReserve + 2 * $buttonLabelReserve + $menuLabelsAllowance },
+    { { acpLabel[ "NewChat" ], { } }, { acpLabel[ "SessionsButtonLabel" ], { } } }
+];
+
+toolbarNarrowWidth // endDefinition;
+
+(* The layout of the main row, measured in a real front end at window widths of 360 to 600 points and magnifications
+   from 0.85 to 2 (see acpFitWidth: the toolbar is a docked cell, whose "ViewSize" is the window's whole width): the
+   row takes $toolbarScreenReserve screen points, which magnification does not scale, and in points at magnification 1
+   $mainRowReserve besides the texts of its buttons and menus (the toolbar's margins, the icons and frames of New and
+   Sessions, the spacings), $menuReserve for a menu besides its label (its frame, the chevron, the space before the
+   next menu), and $buttonLabelReserve for each of New's and Sessions' labels that is shown (the space before it) *)
+$toolbarScreenReserve = 3;
+(* The largest width (points) of the model menu's label: never reached (the name is cut to the room in the row), but a
+   number rather than Full (see acpModelMenu) *)
+$menuLabelMaxWidth    = 4000;
+$mainRowReserve       = 41;
+$menuReserve          = 27;
+$buttonLabelReserve   = 5.2;
+
+(* The least room for the model's name (points) with New's and Sessions' labels shown, and the typical width of the mode
+   and effort menus' labels together (e.g. "Build" and "Medium") *)
+$minModelLabelWidth  = 40;
+$menuLabelsAllowance = 80;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1407,11 +1664,14 @@ acpConfigCurrentValue // endDefinition;
 (*acpModelMenu*)
 acpModelMenu // beginDefinition;
 
-acpModelMenu[ nbo_, window_Association, enabled_ ] :=
-    acpModelMenu[ nbo, window, enabled, acpConfigOption[ window, "model" ] ];
+(* width: the width available to the model's name (modelLabelWidth), or None: the name is not cut *)
+acpModelMenu[ nbo_, window_Association, enabled_ ] := acpModelMenu[ nbo, window, enabled, None ];
 
-acpModelMenu[ nbo_, window_, enabled_, opt_Association ] := Module[
-    { id, current, options, values, failed, recent, groups, items, billing },
+acpModelMenu[ nbo_, window_Association, enabled_, width_ ] :=
+    acpModelMenu[ nbo, window, enabled, width, acpConfigOption[ window, "model" ] ];
+
+acpModelMenu[ nbo_, window_, enabled_, width_, opt_Association ] := Module[
+    { id, current, options, values, failed, recent, groups, items, billing, name, tooltip },
 
     id      = Lookup[ opt, "id", "model" ];
     current = acpConfigCurrentValue[ window, opt ];
@@ -1444,16 +1704,31 @@ acpModelMenu[ nbo_, window_, enabled_, opt_Association ] := Module[
         ]
     };
 
+    name    = acpModelShortName[ current, options ];
+    tooltip = If[ TrueQ @ enabled, acpLabel[ "ModelMenuTooltip", <| "billing" -> billing |> ], acpMenusDisabledTooltip @ window ];
+
     acpMenu[
-        acpModelShortName[ current, options ],
+        (* one line, cut at its end to the room in the row; a name that was cut is in the tooltip. The clipping panes
+           get a numeric largest width: inside the ActionMenu, Full is about 376 points whatever the room in the row,
+           so a name cut to a wider room lost its ellipsis there (acpFitText's "MaxWidth") *)
+        If[ width === None,
+            name,
+            acpFitText @ <|
+                "Object"   -> name,
+                "Side"     -> Right,
+                "Width"    -> width,
+                "Tooltip"  -> Column @ { name, tooltip },
+                "MaxWidth" -> $menuLabelMaxWidth
+            |>
+        ],
         items,
-        If[ TrueQ @ enabled, acpLabel[ "ModelMenuTooltip", <| "billing" -> billing |> ], acpMenusDisabledTooltip @ window ],
+        tooltip,
         enabled,
         "ACPModelMenu"
     ]
 ];
 
-acpModelMenu[ _, _, _, _Missing ] := Nothing;
+acpModelMenu[ _, _, _, _, _Missing ] := Nothing;
 
 acpModelMenu // endDefinition;
 
@@ -1486,7 +1761,8 @@ acpModelShortName // beginDefinition;
 
 acpModelShortName[ value_String, options_List ] := Module[ { name },
     name = FirstCase[ options, KeyValuePattern @ { "value" -> value, "name" -> n_String } :> n, value ];
-    If[ StringContainsQ[ name, "/" ], Last @ StringSplit[ name, "/", 2 ], name ]
+    (* the name comes from the agent (an option's "name", or the model value): neutralize its linear syntax *)
+    acpSafeText @ If[ StringContainsQ[ name, "/" ], Last @ StringSplit[ name, "/", 2 ], name ]
 ];
 
 acpModelShortName[ _, _ ] := acpLabel[ "ModelMenuDefault" ];
@@ -1504,7 +1780,8 @@ acpProviderLabel[ provider_String, opts_List ] := Module[ { billing },
     Which[
         MatchQ[ billing, { _String } ], First @ billing,
         provider === "", acpLabel[ "ModelMenuOtherProvider" ],
-        True, Lookup[ $acpProviderNames, ToLowerCase @ provider, provider ]
+        (* an unknown provider is the agent's own string (the model value's prefix): neutralize its linear syntax *)
+        True, Lookup[ $acpProviderNames, ToLowerCase @ provider, acpSafeText @ provider ]
     ]
 ];
 
@@ -1556,7 +1833,7 @@ acpModeMenu[ nbo_, window_, enabled_, opt_Association ] := Module[ { id, current
         ] /@ options,
         If[ TrueQ @ enabled,
             Replace[
-                FirstCase[ options, KeyValuePattern @ { "value" -> current, "description" -> d_String } :> d, None ],
+                FirstCase[ options, KeyValuePattern @ { "value" -> current, "description" -> d_String } :> acpSafeText @ d, None ],
                 None :> acpLabel[ "ModeMenuTooltip" ]
             ],
             acpMenusDisabledTooltip @ window
@@ -1595,7 +1872,7 @@ acpEffortMenu[ nbo_, window_, enabled_, opt_Association ] := Module[ { id, curre
             ]
         ] /@ options,
         If[ TrueQ @ enabled,
-            Replace[ Lookup[ opt, "description", None ], Except[ _String ] :> acpLabel[ "EffortMenuTooltip" ] ],
+            Replace[ acpSafeText @ Lookup[ opt, "description", None ], Except[ _String ] :> acpLabel[ "EffortMenuTooltip" ] ],
             acpMenusDisabledTooltip @ window
         ],
         enabled,
@@ -1610,20 +1887,24 @@ acpEffortMenu // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Menu Helpers*)
+(* The menu button's label: an agent-provided option name (or the value), so its linear syntax is neutralized *)
 acpOptionName // beginDefinition;
-acpOptionName[ value_, options_List ] := FirstCase[ options, KeyValuePattern @ { "value" -> value, "name" -> n_String } :> n, ToString @ value ];
+acpOptionName[ value_, options_List ] := acpSafeText @ FirstCase[ options, KeyValuePattern @ { "value" -> value, "name" -> n_String } :> n, ToString @ value ];
 acpOptionName // endDefinition;
 
 
 acpCheckedLabel // beginDefinition;
 
+(* The label and description can be an agent-provided option name or description (mode, effort), so their linear syntax
+   is neutralized (a no-op on a non-string label, such as the model menu's unavailable note, whose agent text is
+   already neutralized by acpModelShortName) *)
 acpCheckedLabel[ label_, checked_ ] := Row @ {
     Style[ "\[Checkmark]", ShowContents -> TrueQ @ checked ],
     " ",
-    Style[ label, PrivateFontOptions -> { "OperatorSubstitution" -> False } ]
+    Style[ acpSafeText @ label, PrivateFontOptions -> { "OperatorSubstitution" -> False } ]
 };
 
-acpCheckedLabel[ label_, checked_, description_String ] := Tooltip[ acpCheckedLabel[ label, checked ], description ];
+acpCheckedLabel[ label_, checked_, description_String ] := Tooltip[ acpCheckedLabel[ label, checked ], acpSafeText @ description ];
 
 acpCheckedLabel[ label_, checked_, _ ] := acpCheckedLabel[ label, checked ];
 
@@ -1718,12 +1999,15 @@ acpSetPreference // endDefinition;
 (* ::Subsection::Closed:: *)
 (*acpDirectoryRow*)
 
-(* Folder icon + abbreviated project directory + "Review" (Review.wl; only while the project folder has uncommitted
-   changes) + "Change..." (FE-native directory dialog; the setter runs the "SetProjectDirectory" action, disabled while a
-   turn is running). The folder takes the room the buttons leave (a Fit column), and a folder that is still too wide
-   for it (wide letters, a narrow window) is drawn smaller: it never pushes "Change..." out of the window, and its own
-   name stays visible (cutting it off at the right edge would lose the name first). A warning about the folder sits
-   in its own column before it, so it is never shrunk or cut. *)
+(* Folder icon + the project folder, which is the control that changes it + "Review" (Review.wl; only while the project
+   folder has uncommitted changes). The folder is a button (acpFolderControl): a local window's opens the front end's
+   directory dialog (its setter runs the "SetProjectDirectory" action), a remote window's the remote folder picker
+   (the "ChooseDirectory" action, FolderPicker.wl); disabled while a turn runs or a session loads. Without a folder it
+   reads "Choose folder...". The path takes one line: as much of it as fits in the room that the row leaves, cut at its
+   start by the front end (acpFitText, folderLabelWidth), so the folder's own name stays visible; a remote window's
+   host stays whole. The control is in a Fit column whose pane draws a label that is still too wide smaller (the
+   safety net, if a width is off), so "Review" always stays in the window. A warning about the folder sits in its own
+   column before it, so it is never shrunk or cut. *)
 acpDirectoryRow // beginDefinition;
 
 acpDirectoryRow[ nbo_NotebookObject ] :=
@@ -1737,7 +2021,7 @@ acpDirectoryRowSignature // beginDefinition;
    missing folder from the window's error *)
 acpDirectoryRowSignature[ window_Association ] := {
     Lookup[ window, "ProjectDirectory", None ],
-    acpRunningQ @ window || acpRestoringQ @ window,
+    directoryBusyReason @ window,
     acpReviewButtonSignature @ window,
     acpWindowHostKey @ window,
     acpWindowRemoteHome @ window,
@@ -1751,28 +2035,22 @@ acpDirectoryRowView // beginDefinition;
 
 acpDirectoryRowView[ nbo_NotebookObject ] := acpDirectoryRowView[ nbo, acpWindowGet @ nbo ];
 
-acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { ssh, dir, running, warning, review, max, label },
-    ssh     = acpWindowSSH @ window;
+acpDirectoryRowView[ nbo_NotebookObject, window_Association ] := Module[ { dir, warning, review, width },
     dir     = Replace[ Lookup[ window, "ProjectDirectory", None ], Except[ _String ] -> None ];
-    running = acpRunningQ @ window || acpRestoringQ @ window;
     warning = acpDirectoryWarning[ dir, window ];
     review  = acpReviewButton[ nbo, window ];
-    max     = If[ review === Nothing, $acpMaxPathLength, $acpMaxPathLengthReview ];
-    label   = If[ ssh === None,
-        localDirectoryLabel[ dir, max ],
-        remoteDirectoryLabel[ dir, ssh, acpWindowRemoteHome @ window, max ]
-    ];
+    width   = folderLabelWidth[ StringQ @ warning, If[ review === Nothing, None, acpGitSummary @ window ] ];
     Grid[
         { {
             Pane[ $acpFolderIcon, ImageMargins -> { { 6, 2 }, { 0, 0 } } ],
             If[ StringQ @ warning, Tooltip[ $acpWarningIcon, warning ], Nothing ],
+            (* the pane takes at most the room that the Fit column gets (a pane of Full width made the column wider than
+               that in a narrow, magnified window, and pushed "Review" out of it) *)
             Item[
-                Pane[ label, ImageSize -> { Full, Automatic }, ImageSizeAction -> "ShrinkToFit" ],
+                Pane[ acpFolderControl[ nbo, window, dir, width ], ImageSize -> { { 0, Full }, Automatic }, ImageSizeAction -> "ShrinkToFit" ],
                 ItemSize -> Fit
             ],
-            review,
-            (* invalid stored SSH settings: no folder can be chosen until the settings are fixed *)
-            If[ FailureQ @ ssh, Nothing, acpDirectorySetter[ nbo, dir, running, ssh =!= None ] ]
+            review
         } },
         Alignment -> { Left, Center },
         Spacings  -> { 0.25, 0 }
@@ -1784,48 +2062,251 @@ acpDirectoryRowView[ _, _ ] := Spacer[ 0 ];
 acpDirectoryRowView // endDefinition;
 
 
-(* The folder can come from the agent (a session restored from the Sessions window): display-safe, as remote folders
-   and the review window show it (a bidi control or another invisible character as a visible marker). Paths are shown
-   as they are typed ($pathTextOptions: no operator substitution, which draws "-" as a long minus sign). *)
-localDirectoryLabel // beginDefinition;
-
-localDirectoryLabel[ dir_String, max_ ] := Tooltip[
-    Style[ acpRemoteDisplayName @ acpAbbreviatePath[ dir, max ], "WorkspaceChatToolbarTitle", FontSize -> 12, $pathTextOptions ],
-    acpLabel[ "ProjectDirectoryTooltip", <| "path" -> acpRemoteDisplayName @ dir |> ]
+(* None, or the key of the reason why the folder can't be changed now *)
+directoryBusyReason // beginDefinition;
+directoryBusyReason[ window_Association ] := Which[
+    acpRestoringQ @ window, "NoticeDirectoryWhileRestoring",
+    acpRunningQ @ window  , "NoticeDirectoryWhileRunning",
+    True                  , None
 ];
+directoryBusyReason // endDefinition;
 
-localDirectoryLabel[ _, _ ] := Style[ acpLabel[ "ProjectDirectoryNone" ], "WorkspaceChatToolbarTitle", FontSize -> 12, FontSlant -> Italic ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acpFolderControl*)
 
-localDirectoryLabel // endDefinition;
+(* The folder's control with its tooltip, which is outside the control, so it also shows while the control is disabled:
+   the folder's path (or that there is none), and a muted line: "Click to choose another folder", or why the folder
+   can't be changed now. Invalid stored SSH settings: the folder's label only, since no folder can be chosen until the
+   settings are fixed. *)
+acpFolderControl // beginDefinition;
 
-
-(* host:path, e.g. "ec2-203-0-113-100:~/projects/app" (the host in its short form, muted; the path abbreviated with the
-   remote home and kept from its end), with the host and the whole path in the tooltip. Remote text only reaches boxes
-   through acpRemoteDisplayName. Invalid stored settings show the host "?". *)
-remoteDirectoryLabel // beginDefinition;
-
-remoteDirectoryLabel[ dir_String, ssh_, home_, max_ ] := Module[ { host, path },
-    { host, path } = acpRemoteFolderLabel[ remoteShortHost @ ssh, dir, home, Replace[ max, Except[ _Integer ] -> $acpMaxPathLength ] ];
+acpFolderControl[ nbo_NotebookObject, window_Association, dir_, width_ ] := Module[ { ssh, busy, appearance },
+    ssh  = acpWindowSSH @ window;
+    busy = directoryBusyReason @ window;
+    If[ FailureQ @ ssh,
+        Return[ Tooltip[ plainFolderFrame @ folderLabel[ dir, window, width, Inherited ], folderTooltipLine[ dir, ssh ] ], Module ]
+    ];
+    appearance = folderControlAppearance[ dir, window, width, busy === None ];
     Tooltip[
-        Row @ {
-            Style[ acpRemoteDisplayName @ host <> ":", "WorkspaceChatToolbarTitle", FontSize -> 12, FontColor -> acpColor[ "Muted" ], $pathTextOptions ],
-            Style[ path, "WorkspaceChatToolbarTitle", FontSize -> 12, $pathTextOptions ]
-        },
-        acpLabel[ "ProjectDirectoryTooltipRemote", <| "host" -> acpRemoteDisplayName @ remoteHostLabel @ ssh, "path" -> acpRemoteDisplayName @ dir |> ]
+        If[ ssh === None,
+            localFolderSetter[ nbo, appearance, busy === None ],
+            (* ImageSize -> Automatic: a button in the row's full-width pane would take its whole width (and center the
+               label in it) *)
+            acpActionButton[
+                appearance,
+                { "ChooseDirectory", nbo },
+                BoxID     -> "ACPChooseDirectory",
+                Enabled   -> busy === None,
+                ImageSize -> Automatic
+            ]
+        ],
+        folderTooltip[ dir, ssh, busy ]
     ]
 ];
 
-remoteDirectoryLabel[ _, ssh_, _, _ ] := Style[
-    acpLabel[ "ProjectDirectoryNoneRemote", <| "host" -> acpRemoteDisplayName @ remoteShortHost @ ssh |> ],
+acpFolderControl // endDefinition;
+
+
+(* A local window's folder is chosen with the front end's directory dialog (rule R1: the front end runs the dialog, so
+   nothing in the kernel waits for it); the setter runs the "SetProjectDirectory" action *)
+localFolderSetter // beginDefinition;
+
+localFolderSetter[ nbo_NotebookObject, appearance_, enabled_ ] := With[
+    {
+        setter = Function[
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ACP", "SetProjectDirectory", nbo, # ]
+        ]
+    },
+    FileNameSetter[
+        Dynamic[ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ACP", "ProjectDirectory" } ], setter ],
+        "Directory",
+        Appearance  -> appearance,
+        Enabled     -> TrueQ @ enabled,
+        ImageSize   -> Automatic,
+        WindowTitle -> acpLabel[ "ProjectDirectoryDialogTitle" ]
+    ]
+];
+
+localFolderSetter // endDefinition;
+
+
+(* The look of the control: the folder's label with the toolbar buttons' hover frame and background, and the path in
+   the buttons' blue under the mouse (the color is given inside the label's own style: the color of the
+   "WorkspaceChatToolbarTitle" style would win over an outer one). Disabled: the label in the same frame without a
+   hover look. Without a folder: "Choose folder...", in the buttons' style. *)
+folderControlAppearance // beginDefinition;
+
+folderControlAppearance[ dir_String, window_, width_, True ] := blueHueButtonAppearance[
+    {
+        folderLabel[ dir, window, width, Inherited ],
+        folderLabel[ dir, window, width, color @ "NA_BlueHueButtonIcon" ],
+        folderLabel[ dir, window, width, color @ "NA_BlueHueButtonIcon" ]
+    },
+    { Automatic, 22 },
+    { { 5, 5 }, { 0, 0 } }
+];
+
+folderControlAppearance[ dir_String, window_, width_, False ] := plainFolderFrame @ folderLabel[ dir, window, width, Inherited ];
+
+folderControlAppearance[ None, _, _, enabled_ ] := With[
+    {
+        label = Style[
+            acpLabel[ "ProjectDirectoryChoose" ],
+            "NotebookAssistant`Sidebar`ToolbarButtonLabel",
+            FontColor -> If[ TrueQ @ enabled, Inherited, GrayLevel[ 0.6 ] ]
+        ]
+    },
+    If[ TrueQ @ enabled, blueHueButtonAppearance[ label, { Automatic, 22 }, { { 5, 5 }, { 0, 0 } } ], plainFolderFrame @ label ]
+];
+
+folderControlAppearance // endDefinition;
+
+
+(* The frame of blueHueButtonAppearance's default look (the same size), without the hover look *)
+plainFolderFrame // beginDefinition;
+
+plainFolderFrame[ label_ ] := Framed[
+    label,
+    Alignment      -> { Center, Center },
+    Background     -> None,
+    FrameMargins   -> { { 5, 5 }, { 0, 0 } },
+    FrameStyle     -> None,
+    ImageSize      -> { Automatic, 22 },
+    RoundingRadius -> 4
+];
+
+plainFolderFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*folderLabel*)
+
+(* The folder's label: the path, or host:path for a remote window (e.g. "ec2-203-0-113-100:~/projects/app": the host in
+   its short form, muted and whole; the path abbreviated with the remote home folder). The folder can come from the
+   agent (a session restored from the Sessions window), and remote text only reaches boxes through
+   acpRemoteDisplayName: the path is display-safe, as the review window shows it (a bidi control or another invisible
+   character as a visible marker), before anything is cut, and a marker is a piece that the front end cuts whole
+   (folderLabelPieces). The front end cuts the path at its start to the room that the row leaves (acpFitText with the
+   width of folderLabelWidth); the kernel only keeps a pathological path to $acpFolderLabelMaxLength pieces. Paths are
+   drawn as they are typed (no operator substitution, which draws "-" as a long minus sign). pathColor: the path's
+   color (Inherited: the title color of the toolbar). *)
+folderLabel // beginDefinition;
+
+folderLabel[ dir_String, window_Association, width_, pathColor_ ] := Module[ { ssh, host, path },
+    ssh = acpWindowSSH @ window;
+    { host, path } = If[ ssh === None,
+        { None, acpRemoteDisplayName @ acpAbbreviatePath[ dir, None ] },
+        MapAt[
+            acpRemoteDisplayName,
+            acpRemoteFolderLabel[ remoteShortHost @ ssh, dir, acpWindowRemoteHome @ window, $acpFolderLabelMaxLength ],
+            1
+        ]
+    ];
+    Style[
+        acpFitText @ <|
+            "Prefix"      -> If[ StringQ @ host, { { host <> ":", { FontColor -> acpColor[ "Muted" ] } } }, { } ],
+            "Object"      -> folderLabelPieces @ path,
+            "ObjectStyle" -> If[ pathColor === Inherited, { }, { FontColor -> pathColor } ],
+            "Side"        -> Left,
+            "Width"       -> width,
+            "Tooltip"     -> None,
+            "DropPrefix"  -> False
+        |>,
+        "WorkspaceChatToolbarTitle",
+        FontSize -> 12,
+        $pathTextOptions
+    ]
+];
+
+(* Invalid stored settings without a folder *)
+folderLabel[ None, window_Association, _, _ ] := Style[
+    acpLabel[ "ProjectDirectoryNoneRemote", <| "host" -> acpRemoteDisplayName @ remoteShortHost @ acpWindowSSH @ window |> ],
     "WorkspaceChatToolbarTitle",
     FontSize  -> 12,
     FontSlant -> Italic
 ];
 
-remoteDirectoryLabel // endDefinition;
+folderLabel // endDefinition;
+
+
+(* The pieces of a display-safe path that are cut whole: its characters, and acpRemoteDisplayName's markers; at most
+   $acpFolderLabelMaxLength of them, the end kept *)
+folderLabelPieces // beginDefinition;
+
+folderLabelPieces[ path_String ] := Module[ { pieces },
+    pieces = Flatten @ Replace[
+        StringSplit[ path, m: ("\:27e6U+" ~~ Repeated[ HexadecimalCharacter, { 4, 6 } ] ~~ "\:27e7") :> Hold[ m ] ],
+        { Hold[ m_String ] :> m, s_String :> Characters @ s },
+        { 1 }
+    ];
+    If[ Length @ pieces > $acpFolderLabelMaxLength, Prepend[ Take[ pieces, 1 - $acpFolderLabelMaxLength ], "\[Ellipsis]" ], pieces ]
+];
+
+folderLabelPieces // endDefinition;
+
+
+(* The width available to the folder's label (acpFitWidth): what the row leaves after the folder icon, a warning, the
+   Review button (with its text and counts, measured in their fonts) and the control's frame. The reserves were
+   measured in a real front end (see docs/acp-window.md, "The toolbar"). *)
+folderLabelWidth // beginDefinition;
+
+folderLabelWidth[ warning_, git_ ] := acpFitWidth[
+    $folderRowReserve + { 0, If[ TrueQ @ warning, $folderWarningReserve, 0 ] + If[ AssociationQ @ git, $reviewButtonReserve, 0 ] },
+    If[ AssociationQ @ git, acpReviewButtonTexts @ git, { } ]
+];
+
+folderLabelWidth // endDefinition;
+
+
+(* The tooltip of the control (see acpFolderControl). Paths are drawn as typed (no operator substitution). *)
+folderTooltip // beginDefinition;
+
+folderTooltip[ dir_, ssh_, busy_ ] := Style[
+    Column[
+        {
+            folderTooltipLine[ dir, ssh ],
+            Which[
+                StringQ @ busy, Style[ acpLabel @ busy, FontColor -> acpColor[ "Muted" ] ],
+                StringQ @ dir , Style[ acpLabel[ "ProjectDirectoryClickToChange" ], FontColor -> acpColor[ "Muted" ] ],
+                True          , Nothing
+            ]
+        },
+        Spacings -> 0.2
+    ],
+    PrivateFontOptions -> { "OperatorSubstitution" -> False }
+];
+
+folderTooltip // endDefinition;
+
+
+(* "Project folder: path", "Project folder on user@host: path", or that there is none *)
+folderTooltipLine // beginDefinition;
+
+folderTooltipLine[ dir_String, None ] :=
+    acpLabel[ "ProjectDirectoryTooltip", <| "path" -> acpRemoteDisplayName @ dir |> ];
+
+folderTooltipLine[ dir_String, ssh_ ] :=
+    acpLabel[ "ProjectDirectoryTooltipRemote", <| "host" -> acpRemoteDisplayName @ remoteHostLabel @ ssh, "path" -> acpRemoteDisplayName @ dir |> ];
+
+folderTooltipLine[ _, None ] := acpLabel[ "ProjectDirectoryNone" ];
+
+folderTooltipLine[ _, ssh_ ] := acpLabel[ "ProjectDirectoryNoneRemote", <| "host" -> acpRemoteDisplayName @ remoteShortHost @ ssh |> ];
+
+folderTooltipLine // endDefinition;
 
 
 $pathTextOptions := Sequence[ LineBreakWithin -> False, PrivateFontOptions -> { "OperatorSubstitution" -> False } ];
+
+(* The layout of the folder row, measured like the main row's (see $mainRowReserve): $folderRowReserve is what the row
+   takes besides the label's text, as { screen points, points at magnification 1 } (the folder icon, the spacings, the
+   control's frame, and a right margin like the menus' above it, so the label ends where the main row does),
+   $folderWarningReserve a warning, $reviewButtonReserve the Review button besides its texts (its frame, the spacings
+   between its parts), both in points at magnification 1 *)
+$folderRowReserve     = { 2.25, 35 };
+$folderWarningReserve = 12;
+$reviewButtonReserve  = 24;
 
 
 remoteShortHost // beginDefinition;
@@ -1844,54 +2325,6 @@ windowErrorCode // beginDefinition;
 windowErrorCode[ window_Association ] := Lookup[ Replace[ Lookup[ window, "Error", None ], Except[ _Association ] -> <| |> ], "Code", None ];
 windowErrorCode[ _ ] := None;
 windowErrorCode // endDefinition;
-
-
-(* "Change..." / "Choose folder...": a local window's folder is chosen with the front end's directory dialog (the setter
-   runs the "SetProjectDirectory" action); a remote window's folder in the remote folder picker ("ChooseDirectory"
-   action, FolderPicker.wl). Disabled while a turn runs or a session loads. *)
-acpDirectorySetter // beginDefinition;
-
-acpDirectorySetter[ nbo_NotebookObject, dir_, running_ ] := acpDirectorySetter[ nbo, dir, running, False ];
-
-acpDirectorySetter[ nbo_NotebookObject, dir_, running_, True ] := acpActionButton[
-    directorySetterLabel[ dir, running ],
-    { "ChooseDirectory", nbo },
-    BoxID   -> "ACPChooseDirectory",
-    Enabled -> ! TrueQ @ running
-];
-
-acpDirectorySetter[ nbo_NotebookObject, dir_, running_, _ ] := With[
-    {
-        setter = Function[
-            Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ACP", "SetProjectDirectory", nbo, # ]
-        ]
-    },
-    FileNameSetter[
-        Dynamic[ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ACP", "ProjectDirectory" } ], setter ],
-        "Directory",
-        Appearance  -> directorySetterLabel[ dir, running ],
-        Enabled     -> ! TrueQ @ running,
-        WindowTitle -> acpLabel[ "ProjectDirectoryDialogTitle" ]
-    ]
-];
-
-acpDirectorySetter // endDefinition;
-
-
-directorySetterLabel // beginDefinition;
-
-directorySetterLabel[ dir_, running_ ] := blueHueButtonAppearance[
-    Style[
-        acpLabel @ If[ StringQ @ dir, "ProjectDirectoryChange", "ProjectDirectoryChoose" ],
-        "NotebookAssistant`Sidebar`ToolbarButtonLabel",
-        FontColor -> If[ TrueQ @ running, GrayLevel[ 0.6 ], Inherited ]
-    ],
-    { Automatic, 22 },
-    { { 5, 5 }, { 0, 0 } }
-];
-
-directorySetterLabel // endDefinition;
 
 
 (* None | warning text. A remote window's folder is never looked at on this computer: it is the remote home folder (or
@@ -2041,12 +2474,15 @@ acpChatInputCell[ location: "Top"|"Bottom", nbo_NotebookObject ] := Cell[
             Grid[
                 {
                     { acpInputTopArea @ nbo },
+                    { acpAttachmentsArea @ nbo }, (* Attachments.wl: the chips of the draft *)
                     {
                         Framed[
                             Grid[
-                                { { acpInputField @ nbo, acpSendStopButton @ nbo } },
+                                (* the prompt notebook's button (PromptNotebook.wl) next to Send *)
+                                { { acpAttachButton @ nbo, acpInputField @ nbo, acpPromptNotebookButton @ nbo, acpSendStopButton @ nbo } },
                                 Alignment        -> { Left, Baseline },
-                                BaselinePosition -> { 1, 1 },
+                                BaselinePosition -> { 1, 2 },
+                                ItemSize         -> { { Automatic, Fit, Automatic, Automatic } },
                                 Spacings         -> { 0, 0 }
                             ],
                             $inputFieldFrameOptions
@@ -2230,11 +2666,25 @@ acpInputAreaView // endDefinition;
 
 acpQueuedPromptView // beginDefinition;
 
-(* While a session is restored, a prompt waits for it (see evaluateACPChat) *)
-acpQueuedPromptView[ nbo_, prompt_String, restoring_ ] := acpInputNote[
-    If[ TrueQ @ restoring,
-        acpLabel[ "QueuedPromptRestoring", <| "text" -> acpPreview @ prompt |> ],
-        acpLabel[ "QueuedPrompt", <| "text" -> acpPreview @ prompt |> ]
+(* a message without attachments, or the messages of the queue as one *)
+acpQueuedPromptView[ nbo_, prompt: _String | { __ }, restoring_ ] := acpQueuedPromptView[ nbo, acpQueuedPromptOf @ prompt, restoring ];
+
+(* While a session is restored, a prompt waits for it (see evaluateACPChat). A message with attachments says how many
+   ("+2 attachments") *)
+acpQueuedPromptView[ nbo_, KeyValuePattern @ { "Text" -> text_String, "Attachments" -> attachments_List }, restoring_ ] := acpInputNote[
+    StringRiffle[
+        {
+            StringTrim @ If[ TrueQ @ restoring,
+                acpLabel[ "QueuedPromptRestoring", <| "text" -> acpPreview @ text |> ],
+                acpLabel[ "QueuedPrompt", <| "text" -> acpPreview @ text |> ]
+            ],
+            Switch[ Length @ attachments,
+                0, Nothing,
+                1, acpLabel[ "QueuedPromptAttachmentsOne" ],
+                _, acpLabel[ "QueuedPromptAttachments", <| "n" -> Length @ attachments |> ]
+            ]
+        },
+        " "
     ],
     acpActionButton[ $acpCloseGlyph, { "CancelQueuedPrompt", nbo }, BoxID -> "ACPCancelQueuedPrompt" ],
     acpLabel[ "QueuedPromptCancel" ]
@@ -2248,7 +2698,7 @@ acpQueuedPromptView // endDefinition;
 acpNoticeView // beginDefinition;
 
 acpNoticeView[ nbo_, notice_String ] := acpInputNote[
-    acpNeutralizeLinearSyntax @ notice,
+    acpSafeText @ notice,
     acpActionButton[ $acpCloseGlyph, { "DismissNotice", nbo }, BoxID -> "ACPDismissNotice" ],
     acpLabel[ "NoticeDismiss" ]
 ];
@@ -2259,8 +2709,8 @@ acpNoticeView[ nbo_, notice_String ] := acpInputNote[
 acpNoticeView[ nbo_, KeyValuePattern @ { "Text" -> text_String, "Command" -> command_String } ] := acpInputNote[
     Column[
         {
-            acpNeutralizeLinearSyntax @ text,
-            Style[ acpNeutralizeLinearSyntax @ command, FontFamily -> "Source Code Pro", FontSize -> 11 ],
+            acpSafeText @ text,
+            Style[ acpSafeText @ command, FontFamily -> "Source Code Pro", FontSize -> 11 ],
             Tooltip[
                 acpActionButton[
                     sessionsButtonLabel[ acpLabel[ "NoticeCopyCommand" ], "Secondary" ],
@@ -2487,18 +2937,20 @@ acpWindowKey // endDefinition;
 (* Send button / Return key (preemptive, fast): writes the user and active output cells and sends the prompt. While a
    turn is running the prompt is queued; while connecting, the turn starts and is sent when the connection is ready.
    While a session is restored (Sessions.wl), the prompt is queued too: its user cell must come after the restored
-   transcript, which is written when the session has loaded. *)
+   transcript, which is written when the session has loaded. A message with attachments (the draft, Attachments.wl) is
+   prepared first, on the main link (acpPrepareMessage); it may have no typed text. *)
 evaluateACPChat // beginDefinition;
 
 evaluateACPChat[ nbo_NotebookObject ] := Enclose[
-    Catch @ Module[ { window, input, prompt, status },
+    Catch @ Module[ { window, input, draft, prompt, status },
 
         acpCheckSession @ nbo;
         window = ConfirmBy[ acpEnsureWindowRecord @ nbo, AssociationQ, "Window" ];
         input  = acpFE[ nbo, "Input", "" ];
-        If[ ! validInputStringQ @ input, Throw @ Null ];
+        draft  = acpDraftAttachments @ window;
+        If[ ! validInputStringQ @ input && draft === { }, Throw @ Null ];
 
-        prompt = ConfirmBy[ acpInputString @ input, StringQ, "Prompt" ];
+        prompt = If[ validInputStringQ @ input, ConfirmBy[ acpInputString @ input, StringQ, "Prompt" ], "" ];
         status = Lookup[ window, "Status", "Disconnected" ];
 
         Which[
@@ -2510,7 +2962,17 @@ evaluateACPChat[ nbo_NotebookObject ] := Enclose[
                 acpSetNotice[ nbo, acpLabel[ "NoticeCannotSend", <| "reason" -> acpErrorMessage @ window |> ] ];
                 Throw @ Null,
 
-            acpRunningQ @ window || acpRestoringQ @ window,
+            (* one message is prepared at a time; the typed text stays in the input field *)
+            acpPreparingQ @ window,
+                acpSetNotice[ nbo, acpLabel[ "NoticePreparing" ] ];
+                Throw @ Null,
+
+            draft =!= { },
+                acpPrepareMessage[ nbo, If[ validInputStringQ @ input, input, "" ], prompt, draft ];
+                Throw @ Null,
+
+            (* also behind messages that wait in the queue (e.g. for the connection): they were sent before *)
+            acpRunningQ @ window || acpRestoringQ @ window || acpQueuedPromptQ @ Lookup[ window, "QueuedPrompt", None ],
                 acpQueuePrompt[ nbo, prompt ];
                 Throw @ Null
         ];
@@ -2524,19 +2986,243 @@ evaluateACPChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Messages with Attachments*)
+
+(* Send with attachments (preemptive, fast): the input and the draft are taken (and given back if the message is not
+   sent, see acpGiveBackDraft), the window is busy at once (Stop instead of Send: no second send), and a main link job
+   prepares the attachments (Attachments.wl's acpPrepareAttachmentsJob, queued with MCP.wl's acpMainLinkRun): converting
+   notebooks and rasterizing graphics make front end calls and take time, which no preemptive evaluation may do. The
+   message is kept in the TaggingRules ({"ACP", "PreparingPrompt"}) until the job is done, so a kernel restart gives it
+   back (R8). *)
+acpPrepareMessage // beginDefinition;
+
+acpPrepareMessage[ nbo_NotebookObject, input_, prompt_String, refs_List ] := With[ { token = createUUID[ ] },
+    acpWindowUpdate[
+        nbo,
+        <|
+            #,
+            "Preparing"   -> <| "Token" -> token, "StartedAt" -> AbsoluteTime[ ], "Input" -> input, "Text" -> prompt, "Attachments" -> refs |>,
+            "Attachments" -> { },
+            "Notice"      -> None
+        |> &
+    ];
+    acpFESet[ nbo, "PreparingPrompt", <| "Input" -> input, "Text" -> prompt, "Attachments" -> refs |> ];
+    acpFESet[ nbo, "Attachments", { } ];
+    acpFESet[ nbo, "Input", "" ];
+    acpFESet[ nbo, "Busy", True ];
+    acpMainLinkRun[ nbo, acpPrepareAttachmentsJob[ nbo, token ], "Attachments" ];
+    acpPublish[ ];
+    token
+];
+
+acpPrepareMessage // endDefinition;
+
+
+acpPreparingQ // beginDefinition;
+acpPreparingQ[ window_Association ] := AssociationQ @ Lookup[ window, "Preparing", None ];
+acpPreparingQ[ _ ] := False;
+acpPreparingQ // endDefinition;
+
+
+(* The result of the main link job (in the pump): <| "Attachments" -> prepared |> or a Failure with a "Notice". The
+   preparation is claimed first (Stop, New and the timeout cancel it, and its result is then dropped). A failure gives
+   the draft back with the failure's notice; otherwise the turn starts, or is queued while one runs (or a session loads),
+   like a message without attachments, and also behind a queued message that was sent before it. A message queued
+   meanwhile that was sent after it (a prompt notebook's, see acpSendPreparedMessage) follows its turn. *)
+acpPreparedPrompt // beginDefinition;
+
+acpPreparedPrompt[ nbo_NotebookObject, token_String, result_ ] := Catch @ Module[ { prep = None, window, status, turnID },
+    (* a window that was closed meanwhile has no record: none is created for it (housekeeping would make front end
+       calls for it for good) *)
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ] && MatchQ[ Lookup[ w, "Preparing", None ], KeyValuePattern[ "Token" -> token ] ],
+                prep = w[ "Preparing" ]; <| w, "Preparing" -> None |>,
+                Missing[ "NotClaimed" ]
+            ]
+        ]
+    ];
+    If[ ! AssociationQ @ prep, Throw @ Null ];
+    acpFESet[ nbo, "PreparingPrompt", None ];
+    window = acpWindowGet @ nbo;
+    status = Lookup[ window, "Status", "Disconnected" ];
+
+    Which[
+        ! MatchQ[ result, KeyValuePattern[ "Attachments" -> _List ] ],
+            preparationFailed[ nbo, prep, preparationNotice @ result ],
+
+        status === "NoDirectory",
+            preparationFailed[ nbo, prep, acpLabel[ "NoticeNoDirectory" ] ],
+
+        status === "Error",
+            preparationFailed[ nbo, prep, acpLabel[ "NoticeCannotSend", <| "reason" -> acpErrorMessage @ window |> ] ],
+
+        acpRunningQ @ window || acpRestoringQ @ window || acpQueuedBeforeQ[ window, sentAt @ prep ],
+            acpQueuePrompt[ nbo, prep[ "Text" ], result[ "Attachments" ], sentAt @ prep ],
+
+        True,
+            turnID = acpCatchAll[
+                Module[ { input = prep[ "Input" ] },
+                    acpStartTurn[ nbo, Dynamic @ input, prep[ "Text" ], status, Automatic, result[ "Attachments" ] ]
+                ],
+                (acpLog[ "PreparedPromptFailed", <| "Value" -> #1, "Tag" -> #2 |> ]; $Failed) &
+            ];
+            If[ ! StringQ @ turnID && ! acpRunningQ @ acpWindowGet @ nbo, preparationFailed[ nbo, prep, None ] ];
+            turnID
+    ]
+];
+
+acpPreparedPrompt // endDefinition;
+
+
+preparationNotice // beginDefinition;
+preparationNotice[ failure_Failure ] := Replace[ failure[ "Notice" ], Except[ _String ] :> acpLabel[ "NoticeAttachmentsFailed" ] ];
+preparationNotice[ _ ] := acpLabel[ "NoticeAttachmentsFailed" ];
+preparationNotice // endDefinition;
+
+
+(* The time of a prepared message's Send click *)
+sentAt // beginDefinition;
+sentAt[ prep_Association ] := Replace[ Lookup[ prep, "StartedAt", None ], Except[ _? NumberQ ] :> AbsoluteTime[ ] ];
+sentAt // endDefinition;
+
+
+(* The message was not sent: its text and attachments go back to the input field, the window is idle again (unless a
+   turn runs) *)
+preparationFailed // beginDefinition;
+
+preparationFailed[ nbo_NotebookObject, prep_Association, notice_ ] := (
+    acpGiveBackDraft[ nbo, prep ];
+    If[ StringQ @ notice, acpSetNotice[ nbo, notice ] ];
+    If[ ! acpRunningQ @ acpWindowGet @ nbo,
+        acpFESet[ nbo, "Busy", False ];
+        acpSchedule[ settleBusyFlag @ nbo, Quantity[ 500, "Milliseconds" ] ]
+    ];
+    (* a message queued behind this one (sent after it, see acpSendPreparedMessage) no longer waits for it *)
+    acpSchedule @ acpKickQueue @ nbo;
+    acpPublish[ ];
+    Null
+);
+
+preparationFailed // endDefinition;
+
+
+(* Stop, New, a folder or host change, a restored session and housekeeping's timeout: the preparation is dropped (the
+   job's result will be ignored) and the message goes back to the input field. True if there was one. A window without a
+   record (closed) gets none. *)
+acpCancelPreparation // beginDefinition;
+
+acpCancelPreparation[ nbo_NotebookObject, notice_ ] := Module[ { prep = None },
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ] && AssociationQ @ Lookup[ w, "Preparing", None ],
+                prep = w[ "Preparing" ]; <| w, "Preparing" -> None |>,
+                Missing[ "NotClaimed" ] (* never a partial record for a window without one *)
+            ]
+        ]
+    ];
+    If[ ! AssociationQ @ prep, Return[ False, Module ] ];
+    acpFESet[ nbo, "PreparingPrompt", None ];
+    preparationFailed[ nbo, prep, notice ];
+    True
+];
+
+acpCancelPreparation // endDefinition;
+
+
+(* A message that was not sent goes back: its text (or what was typed, boxes too) before the input field's text, and its
+   attachments into the draft (references, or the references of prepared attachments). A prompt notebook's message
+   (PromptNotebook.wl) stays in its notebook, which is still open: the notebook's status says that it was not sent, and
+   why (reason: a text, or None). True if anything went back to the input field or the draft. *)
+acpGiveBackDraft // beginDefinition;
+
+acpGiveBackDraft[ nbo_NotebookObject, prompt_Association ] := acpGiveBackDraft[ nbo, prompt, None ];
+
+acpGiveBackDraft[ nbo_NotebookObject, prompt_Association, reason_ ] := Module[ { input, attachments, refs },
+    input       = Lookup[ prompt, "Input", Lookup[ prompt, "Text", "" ] ];
+    attachments = Replace[ Lookup[ prompt, "Attachments", { } ], Except[ _List ] -> { } ];
+    refs        = Join[ acpAttachmentRefs @ attachments, acpAttachmentRefsOf @ attachments ];
+    acpNotePromptNotebooks[ nbo, refs, "NotSent", reason ];
+    refs = DeleteCases[ refs, KeyValuePattern[ "Prompt" -> True ] ];
+    If[ validInputStringQ @ input, acpRestoreInput[ nbo, input ] ];
+    acpAddDraftAttachments[ nbo, refs ];
+    validInputStringQ @ input || refs =!= { }
+];
+
+acpGiveBackDraft // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpSendPreparedMessage*)
+
+(* A prompt notebook's message (PromptNotebook.wl), whose attachments a main link job prepared (in the pump): sent like
+   a prepared message of the input field (acpPreparedPrompt), or queued while a turn runs or a session loads, without
+   touching the input field: the user cell is an addressed write after the last cell. The messages of a window go in the
+   order of their Send clicks (at: this one's): it is also queued while a message of the input field that was sent
+   before it is being prepared (that one's turn starts first) or a message sent before it is queued. Gives "Sent" (the
+   turn started, or waits for the connection), "Queued", or a Failure with a "Notice". *)
+acpSendPreparedMessage // beginDefinition;
+
+acpSendPreparedMessage[ nbo_NotebookObject, attachments: { __Association } ] := acpSendPreparedMessage[ nbo, attachments, AbsoluteTime[ ] ];
+
+acpSendPreparedMessage[ nbo_NotebookObject, attachments: { __Association }, at_? NumberQ ] := Catch @ Module[
+    { window, notice, status, turnID },
+    window = acpEnsureWindowRecord @ nbo;
+    notice = acpCannotSendNotice @ window;
+    If[ StringQ @ notice, Throw @ Failure[ "NotSent", <| "MessageTemplate" -> "The message was not sent.", "Notice" -> notice |> ] ];
+    status = Lookup[ window, "Status", "Disconnected" ];
+    If[ Or[ acpRunningQ @ window, acpRestoringQ @ window, preparingSince @ window < at, acpQueuedBeforeQ[ window, at ] ],
+        acpQueuePrompt[ nbo, "", attachments, at ];
+        Throw @ "Queued"
+    ];
+    turnID = acpCatchAll[
+        Module[ { text = "" }, acpStartTurn[ nbo, Dynamic @ text, "", status, Automatic, attachments ] ],
+        (acpLog[ "PreparedPromptFailed", <| "Value" -> #1, "Tag" -> #2 |> ]; $Failed) &
+    ];
+    If[ StringQ @ turnID,
+        "Sent",
+        Failure[ "NotSent", <| "MessageTemplate" -> "The message was not sent.", "Notice" -> None |> ]
+    ]
+];
+
+acpSendPreparedMessage // endDefinition;
+
+
+(* Why the window can't send a message now (no project folder, an error), or None *)
+acpCannotSendNotice // beginDefinition;
+
+acpCannotSendNotice[ window_Association ] := Switch[ Lookup[ window, "Status", "Disconnected" ],
+    "NoDirectory", acpLabel[ "NoticeNoDirectory" ],
+    "Error"      , acpLabel[ "NoticeCannotSend", <| "reason" -> acpErrorMessage @ window |> ],
+    _            , None
+];
+
+acpCannotSendNotice[ _ ] := None;
+
+acpCannotSendNotice // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*acpStartTurn*)
 
 (* Writes the user cell (shared with the notebook assistance window), the active output cell with the live view, and
    creates the turn. The prompt is sent now if the agent is ready, otherwise the turn is queued until it is.
    With anchor None (Send button) the user cell is written at the selection like in the notebook assistance window;
-   otherwise (queued prompts, sent from scheduled tasks while the user may be typing or selecting) it is written after
-   anchor (a cell, or Automatic for the last cell) without touching the selection. *)
+   otherwise (queued prompts and prepared messages, sent from scheduled tasks while the user may be typing or selecting)
+   it is written after anchor (a cell, or Automatic for the last cell) without touching the selection, and shows the
+   value of inputSpec. attachments: the message's prepared attachments (Attachments.wl), sent with the prompt and shown
+   as chips in the user cell. *)
 acpStartTurn // beginDefinition;
 
 acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_ ] :=
     acpStartTurn[ nbo, inputSpec, prompt, status, None ];
 
-acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anchor_ ] := Enclose[
+acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anchor_ ] :=
+    acpStartTurn[ nbo, inputSpec, prompt, status, anchor, { } ];
+
+acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anchor_, attachments_List ] := Enclose[
     Module[ { window, turnID, userCell, turn, outCell, sendNow },
 
         window  = ConfirmBy[ acpWindowGet @ nbo, AssociationQ, "Window" ];
@@ -2544,18 +3230,19 @@ acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anc
         sendNow = status === "Ready";
 
         (* Clears the input and moves the input field to the bottom: *)
-        userCell = ConfirmMatch[ acpWriteUserCell[ nbo, inputSpec, prompt, anchor ], _CellObject, "UserCell" ];
+        userCell = ConfirmMatch[ acpWriteUserCell[ nbo, inputSpec, prompt, anchor, attachments ], _CellObject, "UserCell" ];
 
         turn = ConfirmBy[
             acpNewTurn @ <|
-                "ID"         -> turnID,
-                "Notebook"   -> nbo,
-                "SessionID"  -> Lookup[ window, "SessionID", None ],
-                "Prompt"     -> prompt,
-                "InputCell"  -> userCell,
-                "OutputCell" -> None,
-                "Remote"     -> acpTurnRemote @ window,
-                "StartTime"  -> AbsoluteTime[ ]
+                "ID"          -> turnID,
+                "Notebook"    -> nbo,
+                "SessionID"   -> Lookup[ window, "SessionID", None ],
+                "Prompt"      -> prompt,
+                "Attachments" -> attachments,
+                "InputCell"   -> userCell,
+                "OutputCell"  -> None,
+                "Remote"      -> acpTurnRemote @ window,
+                "StartTime"   -> AbsoluteTime[ ]
             |>,
             AssociationQ,
             "Turn"
@@ -2585,6 +3272,8 @@ acpStartTurn[ nbo_NotebookObject, inputSpec_Dynamic, prompt_String, status_, anc
             If[ status =!= "Connecting", acpEnsureConnected @ nbo ]
         ];
 
+        (* the status of a prompt notebook whose message this is (PromptNotebook.wl) *)
+        acpNotePromptNotebooks[ nbo, attachments, "Sent" ];
         acpPublish[ ];
         turnID
     ],
@@ -2598,32 +3287,44 @@ acpStartTurn // endDefinition;
 (*acpWriteUserCell*)
 acpWriteUserCell // beginDefinition;
 
-acpWriteUserCell[ nbo_NotebookObject, inputSpec_Dynamic, _, None ] :=
+acpWriteUserCell[ nbo_NotebookObject, inputSpec_Dynamic, prompt_, anchor_ ] :=
+    acpWriteUserCell[ nbo, inputSpec, prompt, anchor, { } ];
+
+acpWriteUserCell[ nbo_NotebookObject, inputSpec_Dynamic, _, None, { } ] :=
     writeWorkspaceChatInputCell[ nbo, inputSpec ];
 
-acpWriteUserCell[ nbo_NotebookObject, _, prompt_String, anchor_ ] :=
-    acpWriteUserCellAddressed[ nbo, prompt, anchor ];
+(* The addressed write shows the value of inputSpec (what was typed: boxes, or the queued prompt's text) *)
+acpWriteUserCell[ nbo_NotebookObject, Dynamic[ input_ ], prompt_String, anchor_, attachments_List ] :=
+    acpWriteUserCellAddressed[ nbo, Replace[ input, Except[ _String? StringQ | _? (validInputStringQ) ] -> prompt ], anchor, attachments ];
 
 acpWriteUserCell // endDefinition;
 
 
 (* The user cell is written after anchor (or after the last cell) with an addressed write: no SelectionMove, no
    selection-based NotebookWrite, no scrolling, so it never lands inside a cell the user clicked into. The input field is
-   not touched (a queued prompt was already taken from it). *)
+   not touched (a queued prompt was already taken from it). input: what the cell shows (a string, or the boxes of the
+   input field); attachments: the message's (chips after the text, Attachments.wl's acpUserCellExpr). *)
 acpWriteUserCellAddressed // beginDefinition;
 
-acpWriteUserCellAddressed[ nbo_NotebookObject, prompt_String, anchor_ ] := Enclose[
+acpWriteUserCellAddressed[ nbo_NotebookObject, input_, anchor_ ] := acpWriteUserCellAddressed[ nbo, input, anchor, { } ];
+
+acpWriteUserCellAddressed[ nbo_NotebookObject, input_, anchor_, attachments_List ] := Enclose[
     Module[ { location, uuid, cell, cellObject },
         location = If[ MatchQ[ anchor, _CellObject ] && acpCellExistsQ @ anchor, anchor, Last[ Cells @ nbo, None ] ];
 
         (* An empty window has no cell to write after (and nothing the selection could be inside of): *)
-        If[ ! MatchQ[ location, _CellObject ],
-            Return[ Module[ { text = prompt }, writeWorkspaceChatInputCell[ nbo, Dynamic @ text ] ], Module ]
+        If[ ! MatchQ[ location, _CellObject ] && attachments === { },
+            Return[ Module[ { text = input }, writeWorkspaceChatInputCell[ nbo, Dynamic @ text ] ], Module ]
         ];
 
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
-        cell = ConfirmMatch[ workspaceChatInputCellExpr[ prompt, uuid ], _Cell, "Cell" ];
-        contextBlock @ NotebookWrite[ System`NotebookLocationSpecifier[ location, "After" ], cell, None, AutoScroll -> False ];
+        cell = ConfirmMatch[ acpUserCellExpr[ input, attachments, uuid ], _Cell, "Cell" ];
+        If[ MatchQ[ location, _CellObject ],
+            contextBlock @ NotebookWrite[ System`NotebookLocationSpecifier[ location, "After" ], cell, None, AutoScroll -> False ],
+            (* an empty window, as writeWorkspaceChatInputCell writes there *)
+            SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+            contextBlock @ NotebookWrite[ nbo, cell ]
+        ];
         moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
         setCurrentValue[ cellObject, CellTags, { } ];
@@ -2685,19 +3386,174 @@ acpActiveCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Queued Prompts*)
 
-(* A prompt sent while a turn is running is queued and sent after the turn is finalized. *)
+(* A message sent while a turn is running (or a session loads) is queued and sent after the turn is finalized. The queue
+   is a list of messages in the order of their Send clicks ("At"; a message whose attachments were prepared first goes
+   where its click was, see acpQueuedBeforeQ): <| "Text", "Attachments" (prepared, Attachments.wl), "At" |>. When the
+   queue is sent (acpSendQueuedPrompt), its messages are merged into one: the texts are joined with a blank line, the
+   attachments appended, their images numbered again (each message numbers its own from 1). As many messages are merged
+   as stay within the caps of one message (Attachments.wl's acpMessageFitsQ: the bytes and images that one ACP message
+   of the window may have, as for the attachments of one message), at least one; the others are sent after that turn, in
+   order. A prompt notebook's new message replaces its queued one. The queued messages are also kept in the TaggingRules
+   (their text and the references of their attachments, as one message; acpPersistQueuedPrompt), so that a kernel
+   restart gives them back. Typed text (evaluateACPChat) leaves the input field; a prepared message (with attachments,
+   or a prompt notebook's) was taken from it before, or never was in it, so the input field, where the next message may
+   be typed meanwhile, is not touched. at: the time of the message's Send click. *)
 acpQueuePrompt // beginDefinition;
 
 acpQueuePrompt[ nbo_NotebookObject, prompt_String ] := (
-    acpWindowUpdate[
-        nbo,
-        <| #, "QueuedPrompt" -> If[ StringQ @ #[ "QueuedPrompt" ], #[ "QueuedPrompt" ] <> "\n\n" <> prompt, prompt ] |> &
-    ];
+    acpQueuePrompt[ nbo, prompt, { } ];
     acpFESet[ nbo, "Input", "" ];
     acpPublish[ ]
 );
 
+acpQueuePrompt[ nbo_NotebookObject, prompt_String, attachments_List ] := acpQueuePrompt[ nbo, prompt, attachments, AbsoluteTime[ ] ];
+
+acpQueuePrompt[ nbo_NotebookObject, prompt_String, attachments_List, at_? NumberQ ] := Module[ { window },
+    window = acpWindowUpdate[ nbo, <| #, "QueuedPrompt" -> queueMessage[ #[ "QueuedPrompt" ], prompt, attachments, at ] |> & ];
+    acpPersistQueuedPrompt[ nbo, Lookup[ window, "QueuedPrompt", None ] ];
+    (* the status of a prompt notebook whose message this is (PromptNotebook.wl) *)
+    acpNotePromptNotebooks[ nbo, attachments, "Queued" ];
+    acpKickQueue @ nbo;
+    acpPublish[ ]
+];
+
 acpQueuePrompt // endDefinition;
+
+
+(* The queue with a new message, after those sent before it. A prompt notebook's new message replaces its queued one
+   (Send again while it is queued, PromptNotebook.wl): the agent never gets the notebook twice. *)
+queueMessage // beginDefinition;
+
+queueMessage[ old_, prompt_String, attachments_List, at_ ] := Module[ { messages },
+    messages = DeleteCases[
+        <| #, "Attachments" -> acpReplacedPromptAttachments[ #[ "Attachments" ], attachments ] |> & /@ acpQueuedMessages @ old,
+        KeyValuePattern @ { "Text" -> "", "Attachments" -> { } }
+    ];
+    Insert[
+        messages,
+        <| "Text" -> prompt, "Attachments" -> attachments, "At" -> at |>,
+        LengthWhile[ messages, #[ "At" ] <= at & ] + 1
+    ]
+];
+
+queueMessage // endDefinition;
+
+
+(* The messages of the queue (see acpQueuePrompt), in order; a String or one <| "Text", "Attachments" |> is one message
+   (sent before any other) *)
+acpQueuedMessages // beginDefinition;
+
+acpQueuedMessages[ prompt_String ] := { <| "Text" -> prompt, "Attachments" -> { }, "At" -> 0 |> };
+
+acpQueuedMessages[ prompt: KeyValuePattern @ { "Text" -> _String, "Attachments" -> _List } ] := { <| "At" -> 0, Association @ prompt |> };
+
+acpQueuedMessages[ messages_List ] := Cases[
+    messages,
+    message: KeyValuePattern @ { "Text" -> _String, "Attachments" -> _List } :> <| "At" -> 0, Association @ message |>
+];
+
+acpQueuedMessages[ _ ] := { };
+
+acpQueuedMessages // endDefinition;
+
+
+(* The queued messages as one <| "Text", "Attachments" |> (what the note above the input field shows, what Cancel and a
+   new chat give back, what the TaggingRules keep), or None *)
+acpQueuedPromptOf // beginDefinition;
+acpQueuedPromptOf[ prompt_ ] := Replace[ acpQueuedMessages @ prompt, { { } -> None, messages_ :> mergeMessages @ messages } ];
+acpQueuedPromptOf // endDefinition;
+
+
+mergeMessages // beginDefinition;
+
+mergeMessages[ messages_List ] := <|
+    "Text"        -> StringRiffle[ Select[ Lookup[ messages, "Text", "" ], StringLength[ # ] > 0 & ], "\n\n" ],
+    "Attachments" -> Catenate @ Lookup[ messages, "Attachments", { } ]
+|>;
+
+mergeMessages // endDefinition;
+
+
+(* Whether a message of the queue was sent before time t (the Send click of a message whose attachments were prepared
+   meanwhile, which then goes after it) *)
+acpQueuedBeforeQ // beginDefinition;
+acpQueuedBeforeQ[ window_Association, t_ ] := AnyTrue[ acpQueuedMessages @ Lookup[ window, "QueuedPrompt", None ], #[ "At" ] < t & ];
+acpQueuedBeforeQ[ _, _ ] := False;
+acpQueuedBeforeQ // endDefinition;
+
+
+(* The time of the Send click of the message whose attachments are being prepared (Infinity if there is none): a
+   message sent after it waits for it *)
+preparingSince // beginDefinition;
+
+preparingSince[ window_Association ] := Replace[
+    Lookup[ window, "Preparing", None ],
+    { KeyValuePattern[ "StartedAt" -> t_? NumberQ ] :> t, _ :> Infinity }
+];
+
+preparingSince[ _ ] := Infinity;
+
+preparingSince // endDefinition;
+
+
+(* The next turn of the queue: { the message (the first messages, merged as far as they stay within the caps of one
+   message of the window; their images numbered again), the messages that stay queued }, or None if the first message
+   was sent after the Send click of a message that is being prepared (it waits for that one) *)
+queuedBatch // beginDefinition;
+
+queuedBatch[ window_Association, messages: { __Association } ] := Module[ { ready, sizes, n },
+    ready = LengthWhile[ messages, #[ "At" ] < preparingSince @ window & ];
+    If[ ready === 0, Return[ None, Module ] ];
+    sizes = acpMessageSize[ #[ "Text" ], #[ "Attachments" ] ] & /@ Take[ messages, ready ];
+    n     = Max[ 1, LengthWhile[ Accumulate @ sizes, acpMessageFitsQ[ window, # ] & ] ];
+    {
+        <| #, "Attachments" -> acpRenumberImages @ #[ "Attachments" ] |> & @ mergeMessages @ Take[ messages, n ],
+        Drop[ messages, n ]
+    }
+];
+
+queuedBatch[ _, _ ] := None;
+
+queuedBatch // endDefinition;
+
+
+(* After a message was queued while no turn runs (it waits for one that was sent before it, see acpQueuedBeforeQ): the
+   queue is sent when the window is ready, and a window that lost its connection connects again, as Send does *)
+acpKickQueue // beginDefinition;
+
+acpKickQueue[ nbo_NotebookObject ] := With[ { window = acpWindowGet @ nbo },
+    If[ AssociationQ @ window && acpQueuedPromptQ @ Lookup[ window, "QueuedPrompt", None ] && ! acpRunningQ @ window && ! acpRestoringQ @ window,
+        Switch[ Lookup[ window, "Status", None ],
+            "Ready"       , acpSchedule @ acpSendQueuedPrompt @ nbo,
+            "Disconnected", acpEnsureConnected @ nbo,
+            _             , Null
+        ]
+    ];
+    Null
+];
+
+acpKickQueue // endDefinition;
+
+
+(* The queued messages in the TaggingRules (R8), as one: their text and the references of their attachments, never
+   their content *)
+acpPersistQueuedPrompt // beginDefinition;
+
+acpPersistQueuedPrompt[ nbo_NotebookObject, prompt_ ] := acpFESet[
+    nbo,
+    "QueuedPrompt",
+    Replace[
+        acpQueuedPromptOf @ prompt,
+        q_Association :> <| "Text" -> q[ "Text" ], "Attachments" -> acpAttachmentRefsOf @ q[ "Attachments" ] |>
+    ]
+];
+
+acpPersistQueuedPrompt // endDefinition;
+
+
+acpQueuedPromptQ // beginDefinition;
+acpQueuedPromptQ[ prompt_ ] := acpQueuedMessages @ prompt =!= { };
+acpQueuedPromptQ // endDefinition;
 
 
 acpCancelQueuedPrompt // beginDefinition;
@@ -2705,57 +3561,91 @@ acpCancelQueuedPrompt // beginDefinition;
 acpCancelQueuedPrompt[ nbo_NotebookObject ] := Module[ { prompt },
     acpCheckSession @ nbo;
     acpEnsureWindowRecord @ nbo;
-    prompt = acpWindowGet[ nbo, "QueuedPrompt", None ];
+    prompt = acpQueuedPromptOf @ acpWindowGet[ nbo, "QueuedPrompt", None ];
     acpWindowSet[ nbo, "QueuedPrompt", None ];
-    (* Give the text back if the input field is empty: *)
-    If[ StringQ @ prompt && ! validInputStringQ @ acpFE[ nbo, "Input", "" ], acpFESet[ nbo, "Input", prompt ] ];
+    acpPersistQueuedPrompt[ nbo, None ];
+    (* Give the text back (before anything typed since) and the attachments into the draft (a prompt notebook's message
+       stays in its notebook): *)
+    If[ AssociationQ @ prompt, acpGiveBackDraft[ nbo, prompt, acpLabel[ "PromptNotebookRemoved" ] ] ];
     acpPublish[ ]
 ];
 
 acpCancelQueuedPrompt // endDefinition;
 
 
-(* Sends the queued prompt as a new turn (runs in a scheduled task after finalization, or from housekeeping). The user
-   cell is written after anchor (the output cell of the turn that was just finalized) or after the last cell. *)
+(* Sends the next turn of the queue (runs in a scheduled task after finalization, or from housekeeping): its first
+   messages, as many as fit into one message (queuedBatch); the others stay queued for the turn after it. The user cell
+   is written after anchor (the output cell of the turn that was just finalized) or after the last cell. *)
 acpSendQueuedPrompt // beginDefinition;
 
 acpSendQueuedPrompt[ nbo_NotebookObject ] := acpSendQueuedPrompt[ nbo, Automatic ];
 
-acpSendQueuedPrompt[ nbo_NotebookObject, anchor_ ] := Catch @ Module[ { window, prompt, claimed, result },
+acpSendQueuedPrompt[ nbo_NotebookObject, anchor_ ] := Catch @ Module[ { window, raw, batch, prompt, rest, claimed, result },
     window = acpWindowGet @ nbo;
     If[ ! AssociationQ @ window, Throw @ Null ];
-    prompt = Lookup[ window, "QueuedPrompt", None ];
-    If[ ! StringQ @ prompt || acpRunningQ @ window || acpRestoringQ @ window || Lookup[ window, "Status" ] =!= "Ready", Throw @ Null ];
+    raw = Lookup[ window, "QueuedPrompt", None ];
+    If[ ! acpQueuedPromptQ @ raw || acpRunningQ @ window || acpRestoringQ @ window || Lookup[ window, "Status" ] =!= "Ready", Throw @ Null ];
     If[ ! acpNotebookExistsQ @ nbo, Throw @ Null ];
+    batch = queuedBatch[ window, acpQueuedMessages @ raw ];
+    If[ batch === None, Throw @ Null ];
+    { prompt, rest } = batch;
+    rest = If[ rest === { }, None, rest ];
 
-    (* Claim the prompt so it is sent only once: *)
+    (* Claim the turn's messages so they are sent only once: *)
     claimed = False;
     acpWindowUpdate[
         nbo,
         Function[ w,
-            If[ Lookup[ w, "QueuedPrompt" ] === prompt && ! acpRunningQ @ w && ! acpRestoringQ @ w,
-                claimed = True; <| w, "QueuedPrompt" -> None |>,
+            If[ Lookup[ w, "QueuedPrompt" ] === raw && ! acpRunningQ @ w && ! acpRestoringQ @ w,
+                claimed = True; <| w, "QueuedPrompt" -> rest |>,
                 w
             ]
         ]
     ];
     If[ ! claimed, Throw @ Null ];
+    acpPersistQueuedPrompt[ nbo, rest ];
 
     result = acpCatchAll[
-        Module[ { text = prompt }, acpStartTurn[ nbo, Dynamic @ text, prompt, "Ready", Replace[ anchor, None -> Automatic ] ] ],
+        Module[ { text = prompt[ "Text" ] },
+            acpStartTurn[ nbo, Dynamic @ text, prompt[ "Text" ], "Ready", Replace[ anchor, None -> Automatic ], prompt[ "Attachments" ] ]
+        ],
         (acpLog[ "QueuedPromptFailed", <| "Value" -> #1, "Tag" -> #2 |> ]; $Failed) &
     ];
 
-    (* The prompt was claimed but no turn was started: give it back in the input field, so it is not lost (putting it
-       back into the queue would make housekeeping retry it every tick). *)
-    If[ ! StringQ @ result && ! acpRunningQ @ acpWindowGet @ nbo, acpRestoreInput[ nbo, prompt ] ];
+    (* The messages were claimed but no turn was started: they go back to the input field (and their attachments to the
+       draft), with those still queued after them, so that none is lost or sent before them (putting them back into the
+       queue would make housekeeping retry them every tick). *)
+    If[ ! StringQ @ result && ! acpRunningQ @ acpWindowGet @ nbo,
+        acpGiveBackDraft[ nbo, mergeMessages @ Prepend[ takeQueue @ nbo, prompt ] ]
+    ];
     result
 ];
 
 acpSendQueuedPrompt // endDefinition;
 
 
-(* Puts text back into the window's input field (before anything typed since) *)
+(* Takes the window's queue (its messages) *)
+takeQueue // beginDefinition;
+
+takeQueue[ nbo_NotebookObject ] := Module[ { taken = { } },
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ],
+                taken = acpQueuedMessages @ Lookup[ w, "QueuedPrompt", None ]; <| w, "QueuedPrompt" -> None |>,
+                Missing[ "NotFound" ]
+            ]
+        ]
+    ];
+    If[ taken =!= { }, acpPersistQueuedPrompt[ nbo, None ] ];
+    taken
+];
+
+takeQueue // endDefinition;
+
+
+(* Puts text back into the window's input field (before anything typed since); typed boxes (e.g. of a message whose
+   attachments could not be prepared) go back into an empty field, or as text before typed text *)
 acpRestoreInput // beginDefinition;
 
 acpRestoreInput[ nbo_NotebookObject, text_String ] := With[ { input = acpFE[ nbo, "Input", "" ] },
@@ -2765,6 +3655,14 @@ acpRestoreInput[ nbo_NotebookObject, text_String ] := With[ { input = acpFE[ nbo
         True                      , acpLog[ "QueuedPromptNotRestored", text ] (* never overwrite typed boxes *)
     ];
     acpPublish[ ]
+];
+
+acpRestoreInput[ nbo_NotebookObject, boxes_ ] := With[ { input = acpFE[ nbo, "Input", "" ] },
+    If[ ! validInputStringQ @ input,
+        acpFESet[ nbo, "Input", boxes ];
+        acpPublish[ ],
+        Replace[ acpCatchAll @ acpInputString @ boxes, { text_String :> acpRestoreInput[ nbo, text ], _ :> acpLog[ "QueuedPromptNotRestored", boxes ] } ]
+    ]
 ];
 
 acpRestoreInput // endDefinition;
@@ -2843,10 +3741,18 @@ acpEndTurnLocally // endDefinition;
 (* Replaces the active output cell of a turn that has ended with the static final cell, resets the busy state, drops
    the live view state, and sends a queued prompt. Scheduled by Connection.wl when the prompt response arrives, with a
    housekeeping fallback (below). Idempotent: the first call claims the turn ("FinalizeClaimed") under PreemptProtect.
-   Waits until $acpFinalizeDebounce seconds after the end of the turn, to absorb trailing updates. *)
+   Waits until $acpFinalizeDebounce seconds after the end of the turn, to absorb trailing updates.
+
+   The cell is not replaced at once: the front end may be evaluating the live view's Dynamics (with "Working" open, one
+   per entity, which it evaluates one by one as it formats new ones), and a NotebookWrite that replaces a cell while
+   the front end waits for one of its Dynamics in the middle of formatting it makes the front end fail an assertion
+   ("overcounted formatting", CellControl.cpp) and crash. The scheduled task that finalizes holds the kernel, so a
+   Dynamic the front end asks for meanwhile always waits for it. So the live view is frozen first (Rendering.wl's
+   acpFreezeLiveView: no more change publication for the turn, and its layout shows the same boxes without Dynamics),
+   and acpWriteFinalCell writes the final cell once the front end has shown the frozen view. *)
 acpFinalizeTurn // beginDefinition;
 
-acpFinalizeTurn[ turnID_String ] := Catch @ Module[ { turn, delay, claimed, nbo, cell, final },
+acpFinalizeTurn[ turnID_String ] := Catch @ Module[ { turn, delay, claimed, cell },
 
     turn = acpTurnGet @ turnID;
     If[ ! AssociationQ @ turn || TrueQ @ turn[ "FinalizeClaimed" ], Throw @ Null ];
@@ -2860,12 +3766,55 @@ acpFinalizeTurn[ turnID_String ] := Catch @ Module[ { turn, delay, claimed, nbo,
     claimed = AssociationQ @ acpTurnUpdate[ turnID, acpClaimFinalize ];
     If[ ! claimed, Throw @ Null ];
 
-    (* Once the turn is claimed nothing else finalizes it, so everything below must always end in acpFinishTurnState:
-       rendering and writing are guarded against any Throw (an untagged Throw would otherwise only be caught by the outer
-       Catch and wedge the window in "Running"). *)
+    (* Once the turn is claimed nothing else finalizes it, so everything below must always end in acpFinishTurnState
+       (acpWriteFinalCell, or the housekeeping fallback, acpForceFinishTurn) *)
+    cell = acpTurnGet[ turnID, "OutputCell", None ];
+    If[ acpCellExistsQ @ cell && ! FailureQ @ acpCatchAll @ acpFreezeLiveView @ turnID,
+        acpTurnUpdate[ turnID, <| "Turn" -> <| #, "FrozenAt" -> AbsoluteTime[ ] |>, "Changed" -> { }, "Layout" -> False |> & ]
+    ];
+    acpWriteFinalCell @ turnID
+];
+
+acpFinalizeTurn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpWriteFinalCell*)
+
+(* The second step of acpFinalizeTurn: once the front end has shown the frozen live view (or after $acpFreezeTimeout
+   seconds), renders the final cell and writes it over the active output cell, then finishes the turn's state. Until
+   then it schedules itself again. Writes once ("FinalWriteClaimed").
+   The front end does not evaluate the Dynamics of a cell that is scrolled out of view, so it never shows the frozen view
+   of such a cell. Then the final cell is rendered in one evaluation and written in a later one: the pump task holds the
+   kernel while it renders (seconds for a large turn), and if the user scrolls the cell into view meanwhile, the front
+   end's evaluation of the frozen view waits for the kernel and must be done (and settled) before the cell is replaced.
+   A frozen view that was shown has no Dynamic the front end could ask for, so it is replaced in the same evaluation. *)
+acpWriteFinalCell // beginDefinition;
+
+acpWriteFinalCell[ turnID_String ] := Catch @ Module[ { turn, nbo, cell, final },
+
     turn = acpTurnGet @ turnID;
-    nbo  = Lookup[ turn, "Notebook" ];
-    cell = Lookup[ turn, "OutputCell" ];
+    If[ ! AssociationQ @ turn || ! TrueQ @ turn[ "FinalizeClaimed" ] || TrueQ @ turn[ "FinalWriteClaimed" ], Throw @ Null ];
+
+    If[ acpFrozenViewPendingQ[ turn, AbsoluteTime[ ] ],
+        acpSchedule[ acpWriteFinalCell @ turnID, $acpFreezePoll ];
+        Throw @ Null
+    ];
+
+    (* Rendering and writing are guarded against any Throw (an untagged Throw would otherwise only be caught by the
+       outer Catch and wedge the window in "Running"). *)
+    nbo   = Lookup[ turn, "Notebook" ];
+    cell  = Lookup[ turn, "OutputCell" ];
+    final = Lookup[ turn, "FinalCell", None ];
+
+    If[ final === None && acpFrozenViewUnshownQ @ turn && acpCellExistsQ @ cell,
+        final = Replace[ acpCatchAll @ acpRenderFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ];
+        acpTurnUpdate[ turnID, <| "Turn" -> <| #, "FinalCell" -> final |>, "Changed" -> { }, "Layout" -> False |> & ];
+        acpSchedule[ acpWriteFinalCell @ turnID, $acpFreezePoll ];
+        Throw @ Null
+    ];
+
+    If[ ! AssociationQ @ acpTurnUpdate[ turnID, acpClaimFinalWrite ], Throw @ Null ];
 
     (* The cell or window is gone (window closed, New chat, ...): just drop the state *)
     If[ ! acpCellExistsQ @ cell,
@@ -2873,7 +3822,7 @@ acpFinalizeTurn[ turnID_String ] := Catch @ Module[ { turn, delay, claimed, nbo,
         Throw @ Null
     ];
 
-    final = Replace[ acpCatchAll @ acpRenderFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ];
+    If[ final === None, final = Replace[ acpCatchAll @ acpRenderFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ] ];
 
     AbortProtect @ WithCleanup[
         acpCatchAll[ contextBlock @ NotebookWrite[ cell, final, None, AutoScroll -> False ], (acpLog[ "FinalCellWriteFailed", { turnID, ## } ]; $Failed) & ],
@@ -2884,7 +3833,46 @@ acpFinalizeTurn[ turnID_String ] := Catch @ Module[ { turn, delay, claimed, nbo,
     If[ MatchQ[ nbo, _NotebookObject ], acpSendQueuedPrompt[ nbo, cell ] ]
 ];
 
-acpFinalizeTurn // endDefinition;
+acpWriteFinalCell // endDefinition;
+
+
+(* Whether acpWriteFinalCell waits for the front end. The live view was frozen ("FrozenAt"), and
+     * the front end has rendered the frozen view ("FrozenViewShownAt", Rendering.wl) less than $acpFreezeSettle seconds
+       ago (at most until twice $acpFreezeTimeout after the freeze), or
+     * it has not rendered it yet, and the freeze was less than $acpFreezeTimeout seconds ago.
+   A rendering of the frozen view is followed by the front end formatting static boxes only, which needs no kernel, and
+   no symbol of the turn changes any more, so nothing makes the front end evaluate one of the cell's Dynamics while it is
+   replaced. *)
+acpFrozenViewPendingQ // beginDefinition;
+
+acpFrozenViewPendingQ[ turn_Association, now_? NumberQ ] := With[
+    {
+        frozen = acpAbsoluteTime @ Lookup[ turn, "FrozenAt", None ],
+        shown  = acpAbsoluteTime @ Lookup[ turn, "FrozenViewShownAt", None ]
+    },
+    NumberQ @ frozen && If[ NumberQ @ shown,
+        now - shown < $acpFreezeSettle && now - frozen < 2 * $acpFreezeTimeout,
+        now - frozen < $acpFreezeTimeout
+    ]
+];
+
+acpFrozenViewPendingQ // endDefinition;
+
+
+acpFrozenViewUnshownQ // beginDefinition;
+acpFrozenViewUnshownQ[ turn_Association ] := NumberQ @ acpAbsoluteTime @ Lookup[ turn, "FrozenAt", None ] && ! NumberQ @ acpAbsoluteTime @ Lookup[ turn, "FrozenViewShownAt", None ];
+acpFrozenViewUnshownQ // endDefinition;
+
+
+acpClaimFinalWrite // beginDefinition;
+
+acpClaimFinalWrite[ turn_Association ] :=
+    If[ TrueQ @ turn[ "FinalWriteClaimed" ],
+        Null,
+        <| "Turn" -> <| turn, "FinalWriteClaimed" -> True |>, "Changed" -> { }, "Layout" -> False |>
+    ];
+
+acpClaimFinalWrite // endDefinition;
 
 
 acpClaimFinalize // beginDefinition;
@@ -3020,7 +4008,8 @@ acpFinishTurnState[ turnID_String, nbo_NotebookObject ] := Module[ { pending, wi
                 |>
             ]
         ];
-        If[ Lookup[ window, "CurrentTurn", None ] === None,
+        (* not while the attachments of a message are prepared: Stop, which cancels that, stays (acpPrepareMessage) *)
+        If[ Lookup[ window, "CurrentTurn", None ] === None && ! acpPreparingQ @ window,
             acpFESet[ nbo, "Busy", False ];
             acpSchedule[ settleBusyFlag @ nbo, Quantity[ 500, "Milliseconds" ] ]
         ];
@@ -3067,7 +4056,8 @@ acpPendingPermissions // endDefinition;
 (*acpStopAction*)
 
 (* Stop button (preemptive). A turn that was never sent (still waiting for the connection) is ended locally;
-   otherwise Connection.wl cancels the prompt. *)
+   otherwise Connection.wl cancels the prompt. Without a turn, Stop cancels the preparation of a message with attachments
+   (its text and attachments go back to the input field). *)
 acpStopAction // beginDefinition;
 
 acpStopAction[ nbo_NotebookObject ] := Catch @ Module[ { window, turnID },
@@ -3075,8 +4065,9 @@ acpStopAction[ nbo_NotebookObject ] := Catch @ Module[ { window, turnID },
     window = acpEnsureWindowRecord @ nbo;
     turnID = Lookup[ window, "CurrentTurn", None ];
 
-    (* Nothing is running (e.g. the kernel was restarted): reset the flag *)
+    (* Nothing is running (e.g. the kernel was restarted, or attachments are prepared): reset the flag *)
     If[ ! StringQ @ turnID || ! AssociationQ @ acpTurnGet @ turnID,
+        acpCancelPreparation[ nbo, None ];
         acpFESet[ nbo, "Busy", False ];
         Throw @ Null
     ];
@@ -3104,7 +4095,19 @@ acpNewChat[ nbo_NotebookObject ] := Catch[
     acpCheckSession @ nbo;
     If[ acpRestoringQ @ acpEnsureWindowRecord @ nbo, Throw @ Null ];
     If[ acpRunningQ @ acpWindowGet @ nbo, acpStopAction @ nbo ];
+    (* a message whose attachments are being prepared goes back to the input field, like typed text it stays *)
+    acpCancelPreparation[ nbo, None ];
+    (* a queued message is dropped; a prompt notebook's says so in its notebook, as one that is being prepared does
+       (PromptNotebook.wl) *)
+    acpNotePromptNotebooks[
+        nbo,
+        Lookup[ Replace[ acpQueuedPromptOf @ acpWindowGet[ nbo, "QueuedPrompt", None ], None -> <| |> ], "Attachments", { } ],
+        "NotSent",
+        acpLabel[ "PromptNotebookNewChat" ]
+    ];
+    acpCancelPromptNotebookJobs[ nbo, acpLabel[ "PromptNotebookNewChat" ] ];
     acpWindowUpdate[ nbo, <| #, "QueuedPrompt" -> None, "Notice" -> None, "Turns" -> { } |> & ];
+    acpPersistQueuedPrompt[ nbo, None ];
     NotebookDelete @ Cells @ nbo;
     CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "ConversationUUID" } ] = createUUID[ ];
     moveChatInputToTop @ nbo;
@@ -3181,14 +4184,53 @@ acpChangeProjectDirectory // beginDefinition;
 
 acpChangeProjectDirectory[ nbo_NotebookObject, dir_String ] := acpChangeProjectDirectory[ nbo, dir, <| |> ];
 
-acpChangeProjectDirectory[ nbo_NotebookObject, dir_String, extra_Association ] := With[
-    { result = If[ extra === <| |>, acpSetProjectDirectory[ nbo, dir ], acpSetProjectDirectory[ nbo, dir, extra ] ] },
+acpChangeProjectDirectory[ nbo_NotebookObject, dir_String, extra_Association ] := Module[ { queued, result },
+    (* the reset of the folder drops the queued message *)
+    queued = acpQueuedPromptOf @ acpWindowGet[ nbo, "QueuedPrompt", None ];
+    result = If[ extra === <| |>, acpSetProjectDirectory[ nbo, dir ], acpSetProjectDirectory[ nbo, dir, extra ] ];
     acpSetNotice[ nbo, None ];
+    If[ StringQ @ result, acpReturnPendingMessages[ nbo, queued ] ];
     acpDirectoryChanged @ nbo;
     result
 ];
 
 acpChangeProjectDirectory // endDefinition;
+
+
+(* A new chat in another folder or on another host (the reset dropped the queued message, queued: taken before it), or a
+   restored session (Sessions.wl): the messages that were not sent yet are not sent to it. The one whose attachments are
+   being prepared and the queued one go back to the input field (their text before what was typed since, the queued one
+   first: it was sent first; their attachments into the draft), with a notice; the messages of prompt notebooks stay in
+   their notebooks, whose status says so, also those that are being prepared (PromptNotebook.wl). *)
+acpReturnPendingMessages // beginDefinition;
+
+(* A session restored from the same folder (Sessions.wl): nothing resets the window, so the queued message is taken
+   here *)
+acpReturnPendingMessages[ nbo_NotebookObject ] := Module[ { queued = None },
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ],
+                queued = acpQueuedPromptOf @ Lookup[ w, "QueuedPrompt", None ]; <| w, "QueuedPrompt" -> None |>,
+                Missing[ "NotFound" ]
+            ]
+        ]
+    ];
+    If[ AssociationQ @ queued, acpPersistQueuedPrompt[ nbo, None ] ];
+    acpReturnPendingMessages[ nbo, queued ]
+];
+
+acpReturnPendingMessages[ nbo_NotebookObject, queued_ ] := Module[ { returned },
+    returned = {
+        acpCancelPreparation[ nbo, None ],
+        If[ AssociationQ @ queued, acpGiveBackDraft[ nbo, queued, acpLabel[ "PromptNotebookNewChat" ] ], False ]
+    };
+    acpCancelPromptNotebookJobs[ nbo, acpLabel[ "PromptNotebookNewChat" ] ];
+    If[ MemberQ[ returned, True ], acpSetNotice[ nbo, acpLabel[ "NoticeMessageReturned" ] ] ];
+    Null
+];
+
+acpReturnPendingMessages // endDefinition;
 
 
 (* After the folder changed (a new chat): the input field goes to the top of the empty window, the title follows *)
@@ -3396,10 +4438,14 @@ acpRefreshWindowUI[ nbo_NotebookObject ] := Module[ { location },
     NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
     attachWorkspaceChatInput[ nbo, location ];
     acpRefreshToolbar @ nbo;
-    (* An open Sessions window and folder picker are rebuilt too (Sessions.wl, FolderPicker.wl); scheduled, so the window
-       record exists by then *)
+    (* An open Sessions window and folder picker are rebuilt too (Sessions.wl, FolderPicker.wl), the status of a
+       message of a prompt notebook that the old kernel prepared or queued is reset (PromptNotebook.wl), and a permission
+       details window that the old kernel was writing says that it is incomplete (PermissionDetails.wl); scheduled, so
+       the window record exists by then *)
     acpSchedule @ acpSessionsRecover @ nbo;
     acpSchedule @ acpFolderPickerRecover @ nbo;
+    acpSchedule @ acpPromptNotebookRecover @ nbo;
+    acpSchedule @ acpPermissionDetailsRecover @ nbo;
     Null
 ];
 
@@ -3435,9 +4481,16 @@ acpWindowHousekeeping[ nbo_NotebookObject, window_Association ] := acpIsolated[
             { id_String, "Error"|"NoDirectory" } :> acpFailQueuedTurn[ nbo, id ]
         }
     ];
-    If[ StringQ @ Lookup[ window, "QueuedPrompt", None ] && Lookup[ window, "Status" ] === "Ready" && ! acpRunningQ @ window,
+    If[ acpQueuedPromptQ @ Lookup[ window, "QueuedPrompt", None ] && Lookup[ window, "Status" ] === "Ready" && ! acpRunningQ @ window,
         acpSchedule @ acpSendQueuedPrompt @ nbo
     ];
+    (* a preparation of attachments that never finished (e.g. its job waits behind a long evaluation of the user's): *)
+    If[ MatchQ[ Lookup[ window, "Preparing", None ], KeyValuePattern[ "StartedAt" -> t_? NumberQ /; AbsoluteTime[ ] - t > $acpPrepareTimeout ] ],
+        acpLog[ "PreparationTimeout", <| "Notebook" -> nbo |> ];
+        acpCancelPreparation[ nbo, acpLabel[ "NoticeAttachmentsTimeout" ] ]
+    ];
+    (* ... and the same for the messages of the window's prompt notebooks (PromptNotebook.wl) *)
+    acpPromptNotebookHousekeeping[ nbo, $acpPrepareTimeout ];
     (* New agent settings given while a turn was running (acpApplyWindowSettings): *)
     If[ TrueQ @ Lookup[ window, "ReconnectRequested", False ] && ! acpRunningQ @ window && ! acpRestoringQ @ window,
         acpWindowSet[ nbo, "ReconnectRequested", False ];

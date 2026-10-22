@@ -18,9 +18,10 @@ Needs[ "Wolfram`Chatbook`Common`" ];
         </think>
 
     The id refers to an entry in `$reasoningData`, which holds the signature and some metadata. This data is also kept in
-    the third argument of the "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts" template boxes (which are serialized when
-    constructing chat messages from cells) and in the attachments of saved chats, so it can be restored in a new kernel
-    session.
+    the third argument of the "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts"/"ShortThoughts" template boxes (which are
+    serialized when constructing chat messages from cells) and in the attachments of saved chats, so it can be restored
+    in a new kernel session. A summary that is a single short line (often just a bold title) is shown as that line with
+    "ShortThoughts" instead of an opener (shortThoughtsText in Formatting.wl).
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -207,8 +208,8 @@ restoreReasoningData // endDefinition;
 (*reasoningMetadata*)
 reasoningMetadata // beginDefinition;
 
-(* Converts think tag attributes into the metadata stored in "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts" template
-   boxes: *)
+(* Converts think tag attributes into the metadata stored in "ThinkingOpener"/"ThoughtsOpener"/"EmptyThoughts"/
+   "ShortThoughts" template boxes: *)
 reasoningMetadata[ attributes_String ] :=
     reasoningMetadata @ thinkTagAttributes @ attributes;
 

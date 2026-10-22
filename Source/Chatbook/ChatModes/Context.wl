@@ -142,11 +142,15 @@ exclusionReason[ info_Association ] := Enclose[
 exclusionReason // endDefinition;
 
 
+(* "ACPPromptNotebook": a prompt notebook of the ACP window (its "ChatNotebookSettings" have "ACPPromptNotebook" -> True)
+   is never a source notebook: unlike "Excluded" it is not "Usable", so the Notebook Assistant's Sources overlay does not
+   list it (and can't include it again), and the ACP window's notebook tools and attach menu never reach it *)
 $exclusionTests = <|
     "Excluded"      -> Function[ #[ "ChatNotebookSettings", "ExcludeFromChat" ] === True ],
     "Invisible"     -> Function[ #[ "Visible" ] === False ],
     "WindowFrame"   -> Function[ MatchQ[ #[ "WindowFrame" ], Except[ "Normal" ] ] ],
-    "WorkspaceChat" -> Function[ #[ "ChatNotebookSettings", "WorkspaceChat" ] ]
+    "WorkspaceChat" -> Function[ #[ "ChatNotebookSettings", "WorkspaceChat" ] ],
+    "ACPPromptNotebook" -> Function[ TrueQ @ #[ "ChatNotebookSettings", "ACPPromptNotebook" ] ]
 |>;
 
 (* ::**************************************************************************************************************:: *)

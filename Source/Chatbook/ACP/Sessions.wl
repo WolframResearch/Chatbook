@@ -65,7 +65,7 @@ $acpSessionsStrings = <|
     "SessionsBusyPermission"     -> "Answer the pending approval request first",
     "SessionsBusyConnecting"     -> "Wait until `agent` is connected",
     "SessionsBusyRestoring"      -> "Restoring\[Ellipsis]",
-    "SessionsButtonTooltip"      -> "Sessions",
+    "SessionsButtonTooltip"      -> "Browse saved sessions",
     "SessionsWindowTitle"        -> "Sessions",
     "SessionsTitle"              -> "Sessions",
     "SessionsRefresh"            -> "Refresh the list",
@@ -116,8 +116,8 @@ If[ ! AssociationQ @ $restoreJobs, $restoreJobs = <| |> ];
                     advertise sessionCapabilities.list) | "NotConnected" (the window has no connection)
      "Items"     -> the sessions of the last complete listing, newest first:
                     <| "SessionID", "Cwd" (both as the agent sent them: pass them unchanged to the actions, never make
-                    boxes of them without acpNeutralizeLinearSyntax), "Title" (neutralized, or None), "UpdatedAt"
-                    (AbsoluteTime or None), "Hidden" (never-used or child session) |>
+                    boxes of them without acpNeutralizeLinearSyntax), "Title" (display-safe, acpSafeText, or None),
+                    "UpdatedAt" (AbsoluteTime or None), "Hidden" (never-used or child session) |>
      "ListedAt"  -> AbsoluteTime of the last complete listing, or None
      "Error"     -> None | <| "Code", "Message" |> of the last failed listing
      "Stale"     -> True if a listing is wanted (housekeeping lists while "Open")
@@ -639,7 +639,7 @@ sessionItem[ row_Association ] := Module[ { id, cwd, title, updated },
     title = Replace[
         Lookup[ row, "title", None ],
         {
-            t_String /; StringLength @ StringTrim @ t > 0 :> acpNeutralizeLinearSyntax @ StringTake[ StringTrim @ t, UpTo[ $acpSessionTitleMaxLength ] ],
+            t_String /; StringLength @ StringTrim @ t > 0 :> acpSafeText @ StringTake[ StringTrim @ t, UpTo[ $acpSessionTitleMaxLength ] ],
             _ -> None
         }
     ];
@@ -813,6 +813,9 @@ samePathQ // endDefinition;
        instead of resuming its own; if the load fails (error or timeout), it resumes its own session (or creates one);
      * another folder: the project folder changes (disconnect, clear, reconnect) and the new connection loads the
        session instead of creating one; if the load fails, it creates a new session there.
+   Either way the restored session is another chat, which the messages that were not sent yet don't go to: the queued
+   one and the one being prepared go back to the input field, a prompt notebook's is not sent (UI.wl's
+   acpReturnPendingMessages).
    The session's listed cwd is passed to session/load unchanged (OpenCode requires its exact directory). Refused while
    the window is busy (acpSessionsBusyState); the current session is a no-op ("Current"). A remote window's folders are
    on its host: they are never looked at on this computer (a folder that is gone there shows up as the launch's
@@ -858,6 +861,11 @@ acpRestoreSession[ nbo_NotebookObject, sid_String, cwd_String ] := Catch @ Modul
         True,
             acpChangeProjectDirectory[ nbo, cwd, <| "PendingRestore" -> <| "SessionID" -> sid, "Cwd" -> cwd |> |> ]
     ];
+    (* The restored session is another chat, also in the same folder: the messages that were not sent yet (a queued one,
+       one whose attachments are being prepared, those of prompt notebooks) don't go to it, as for a session of another
+       folder (acpChangeProjectDirectory does that); after the restore started, whose reset of the notice would hide
+       the notice that says so *)
+    If[ sameQ, acpReturnPendingMessages @ nbo ];
     acpPublish[ ];
     "Restoring"
 ];
@@ -1050,7 +1058,7 @@ acpReplayRanges // endDefinition;
    "SessionID", "ProjectDirectory", "Remote" (acpTurnRemote), "AgentName", "StartTime". *)
 acpReplayTurn // beginDefinition;
 
-acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = { }, attachments = { } },
+acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = { }, attachments = { }, parsed },
     t    = Replace[ Lookup[ props, "StartTime", None ], Except[ _? NumberQ ] :> AbsoluteTime[ ] ];
     turn = acpNewTurn @ <| props, "Prompt" -> "", "StartTime" -> t, "Status" -> "Done", "Replayed" -> True |>;
     Do[
@@ -1059,7 +1067,7 @@ acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = {
                 replayPromptPart @ Lookup[ u, "content", None ],
                 {
                     { "Text", s_String } :> AppendTo[ texts, s ],
-                    { "Attachment", s_String } :> AppendTo[ attachments, s ]
+                    { "Attachment", a_Association } :> AppendTo[ attachments, a ]
                 }
             ],
             t += 0.001;
@@ -1067,8 +1075,14 @@ acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = {
         ],
         { u, Select[ updates, AssociationQ ] }
     ];
-    turn[ "Prompt" ] = StringTrim[
-        StringJoin[ texts ] <> If[ attachments === { }, "", "\n" <> StringRiffle[ ("[" <> # <> "]") & /@ attachments, "\n" ] ]
+    (* The attachments of a message sent from this window are blocks of its text (Attachments.wl), and their images the
+       image chunks after it; other content blocks (e.g. of a session made in OpenCode's own interface) are attachments
+       of their own. The user cell shows them as chips. *)
+    parsed = acpParseAttachmentBlocks @ StringJoin @ texts;
+    turn[ "Prompt" ] = StringTrim @ parsed[ "Text" ];
+    turn[ "Attachments" ] = Join[
+        parsed[ "Attachments" ],
+        If[ parsed[ "Attachments" ] === { }, attachments, DeleteCases[ attachments, KeyValuePattern[ "Kind" -> "Image" ] ] ]
     ];
     turn = Replace[
         acpApplyTurnEnd[ turn, <| "StopReason" -> "end_turn" |>, t + 0.001 ],
@@ -1080,24 +1094,44 @@ acpReplayTurn[ updates_List, props_Association ] := Module[ { t, turn, texts = {
 acpReplayTurn // endDefinition;
 
 
-(* { "Text", text } | { "Attachment", name } | None for an ACP content block of a user message *)
+(* { "Text", text } | { "Attachment", <| "Kind", "Name" |> } | None for an ACP content block of a user message. Text with
+   an audience (OpenCode's synthetic parts, such as embedded context for the model) is not the user's text. A name from a
+   URI is its last part, percent-decoded; "Kind" is "Image" for image blocks, else "File". *)
 replayPromptPart // beginDefinition;
+replayPromptPart[ KeyValuePattern @ { "type" -> "text", "annotations" -> KeyValuePattern[ "audience" -> _ ] } ] := None;
 replayPromptPart[ KeyValuePattern @ { "type" -> "text", "text" -> s_String } ] := { "Text", s };
-replayPromptPart[ c: KeyValuePattern[ "type" -> _String ] ] := Replace[
+replayPromptPart[ c: KeyValuePattern[ "type" -> type_String ] ] := Replace[
     SelectFirst[
         {
-            Lookup[ c, "name", None ],
-            Lookup[ c, "filename", None ],
-            Lookup[ c, "uri", None ],
-            Lookup[ Replace[ Lookup[ c, "resource", <| |> ], Except[ _Association ] -> <| |> ], "uri", None ]
+            { "Name", Lookup[ c, "name", None ] },
+            { "Name", Lookup[ c, "filename", None ] },
+            { "URI" , Lookup[ c, "uri", None ] },
+            { "URI" , Lookup[ Replace[ Lookup[ c, "resource", <| |> ], Except[ _Association ] -> <| |> ], "uri", None ] }
         },
-        StringQ[ # ] && StringLength[ # ] > 0 &,
+        StringQ[ #[[ 2 ]] ] && StringLength[ #[[ 2 ]] ] > 0 &,
         None
     ],
-    { s_String :> { "Attachment", FileNameTake @ s }, _ -> None }
+    {
+        { from_, s_String } :> { "Attachment", <| "Kind" -> If[ type === "image", "Image", "File" ], "Name" -> replayAttachmentName[ from, s ] |> },
+        _ :> If[ type === "image", { "Attachment", <| "Kind" -> "Image", "Name" -> "image" |> }, None ]
+    }
 ];
 replayPromptPart[ _ ] := None;
 replayPromptPart // endDefinition;
+
+
+replayAttachmentName // beginDefinition;
+
+replayAttachmentName[ "Name", s_String ] := FileNameTake @ s;
+
+replayAttachmentName[ "URI", s_String ] := Module[ { path, name },
+    path = StringDelete[ s, ("?" | "#") ~~ ___ ];
+    name = Last[ StringSplit[ path, "/" ], path ];
+    (* only %XX sequences: URLDecode would also read "+" as a space (form encoding) *)
+    Replace[ Quiet @ URLDecode @ StringReplace[ name, "+" -> "%2B" ], Except[ _String? (StringLength[ # ] > 0 &) ] -> name ]
+];
+
+replayAttachmentName // endDefinition;
 
 
 (* Failed tools whose output is the agent's text for a declined or interrupted call (e.g. "The user declined this tool
@@ -1251,7 +1285,10 @@ restoreTurnCells[ job_Association, i_Integer ] := Module[ { range, turn, cells }
         |>
     ];
     cells = {
-        If[ StringLength @ turn[ "Prompt" ] > 0, restoreUserCell @ turn[ "Prompt" ], Nothing ],
+        If[ StringLength @ turn[ "Prompt" ] > 0 || turn[ "Attachments" ] =!= { },
+            restoreUserCell[ turn[ "Prompt" ], turn[ "Attachments" ] ],
+            Nothing
+        ],
         Replace[ acpCatchAll @ acpFinalCell @ turn, Except[ _Cell ] :> acpFinalCell @ <| |> ]
     };
     acpDropRenderCache @ turn[ "ID" ];
@@ -1261,11 +1298,14 @@ restoreTurnCells[ job_Association, i_Integer ] := Module[ { range, turn, cells }
 restoreTurnCells // endDefinition;
 
 
-(* The user message cell of a replayed prompt (like a live user cell, without the cell tag that finds a new cell) *)
+(* The user message cell of a replayed prompt (like a live user cell, without the cell tag that finds a new cell), with
+   the chips of its attachments (Attachments.wl; their names are made display-safe there) *)
 restoreUserCell // beginDefinition;
 
-restoreUserCell[ prompt_String ] := Replace[
-    workspaceChatInputCellExpr[ acpNeutralizeLinearSyntax @ prompt, "acp-replay-input" ],
+restoreUserCell[ prompt_String ] := restoreUserCell[ prompt, { } ];
+
+restoreUserCell[ prompt_String, attachments_List ] := Replace[
+    acpUserCellExpr[ acpSafeText @ prompt, attachments, "acp-replay-input" ],
     Cell[ a___, CellTags -> _, b___ ] :> Cell[ a, b ]
 ];
 
@@ -1647,16 +1687,14 @@ acpSessionsRebuildWindow // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Toolbar Button*)
 
-(* The icon-only "Sessions" button in the ACP window's toolbar (UI.wl's acpToolbarMainRow): opens the Sessions window
+(* The "Sessions" button in the ACP window's toolbar (UI.wl's acpToolbarMainRow), with the icon and label of the Notebook
+   Assistant's History button (icon and text, like New; only the icon in a narrow main row): opens the Sessions window
    beside the ACP window, or closes it if it is open. *)
 acpSessionsButton // beginDefinition;
 
 acpSessionsButton[ nbo_NotebookObject ] := acpActionButton[
     blueHueButtonAppearance[
-        Tooltip[
-            chatbookIcon[ "WorkspaceToolbarIconHistory", False, color @ "NA_BlueHueButtonIcon" ],
-            acpLabel[ "SessionsButtonTooltip" ]
-        ],
+        acpToolbarButtonLabel[ "WorkspaceToolbarIconHistory", acpLabel[ "SessionsButtonLabel" ], acpLabel[ "SessionsButtonTooltip" ], True ],
         { Automatic, 24 },
         { { 5, 5 }, { 0, 0 } }
     ],
@@ -1980,22 +2018,11 @@ sessionsFrameWidth[ _, _, _ ] := 0;
 sessionsFrameWidth // endDefinition;
 
 
-(* { xmin, xmax } of the display the window is on (as attachToLeft finds it). If that is not known, the display is
-   assumed to end at the window's right edge, so the ACP window is never moved off an unknown display. *)
+(* { xmin, xmax } of the display the window is on (notebookDisplayRange, as attachToLeft finds it). If that is not
+   known, the display is assumed to end at the window's right edge, so the ACP window is never moved off an unknown
+   display. *)
 sessionsDisplayRange // beginDefinition;
-
-sessionsDisplayRange[ nbo_NotebookObject, right_ ] := Module[ { index, displays },
-    index    = Quiet @ NotebookTools`NotebookDisplayIndex @ nbo;
-    displays = Quiet @ CurrentValue[ "ConnectedDisplays" ];
-    Replace[
-        If[ IntegerQ @ index && ListQ @ displays && 1 <= index <= Length @ displays, displays[[ index ]], None ],
-        {
-            KeyValuePattern[ "FullRegion" -> { { xmin_? NumberQ, xmax_? NumberQ }, _ } ] :> { xmin, xmax },
-            _ :> { 0, Max[ right, 0 ] }
-        }
-    ]
-];
-
+sessionsDisplayRange[ nbo_NotebookObject, right_ ] := Replace[ notebookDisplayRange @ nbo, None :> { 0, Max[ right, 0 ] } ];
 sessionsDisplayRange // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2004,7 +2031,8 @@ sessionsDisplayRange // endDefinition;
 
 (* The Sessions window (pure): one content cell; the options of a deployed list window (no cell brackets, selection,
    insertion point or editing, never saved), excluded from the Notebook Assistant's notebook context
-   (ExcludeFromChat), with the ACP window's kernel, magnification and background. geometry: see acpSessionsGeometry. *)
+   (ExcludeFromChat), with the ACP window's kernel, magnification (when it opens; its own magnification menu changes it
+   later) and background. geometry: see acpSessionsGeometry. *)
 acpSessionsNotebook // beginDefinition;
 
 acpSessionsNotebook[ owner_NotebookObject, geometry_Association ] := Notebook[
@@ -2031,7 +2059,7 @@ acpSessionsNotebook[ owner_NotebookObject, geometry_Association ] := Notebook[
         Selectable              -> False,
         ShowCellBracket         -> False,
         StyleDefinitions        -> "Default.nb",
-        WindowElements          -> { "VerticalScrollBar" },
+        WindowElements          -> { "VerticalScrollBar", "MagnificationPopUp" },
         WindowFrameElements     -> { "CloseBox", "ResizeArea" },
         WindowToolbars          -> { }
     }
@@ -3293,7 +3321,7 @@ agentMessage // beginDefinition;
 
 agentMessage[ message_, key_String ] := acpConnectionLabel[
     key,
-    <| "message" -> acpNeutralizeLinearSyntax @ StringTake[ Replace[ message, Except[ _String ] -> "" ], UpTo[ 500 ] ] |>
+    <| "message" -> acpSafeText @ StringTake[ Replace[ message, Except[ _String ] -> "" ], UpTo[ 500 ] ] |>
 ];
 
 agentMessage // endDefinition;

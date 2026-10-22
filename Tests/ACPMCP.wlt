@@ -130,6 +130,7 @@ VerificationTest[
             Wolfram`Chatbook`ACP`MCP`Private`$mcpServer         = $mcpFakeServer,
             Wolfram`Chatbook`ACP`MCP`Private`$mcpTokens         = <| |>,
             Wolfram`Chatbook`ACP`MCP`Private`$mcpQueue          = { },
+            Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs           = { },
             Wolfram`Chatbook`ACP`MCP`Private`$mcpDraining       = False,
             Wolfram`Chatbook`ACP`MCP`Private`$mcpLastKick       = 0,
             Wolfram`Chatbook`ACP`MCP`Private`$mcpEvaluator      = None,
@@ -265,7 +266,7 @@ VerificationTest[
     Null,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Definitions@@Tests/ACPMCP.wlt:44,1-269,2"
+    TestID   -> "ACPMCP-Definitions@@Tests/ACPMCP.wlt:44,1-270,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -313,7 +314,7 @@ VerificationTest[
         { True, False }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-EnabledQ@@Tests/ACPMCP.wlt:278,1-317,2"
+    TestID   -> "ACPMCP-EnabledQ@@Tests/ACPMCP.wlt:279,1-318,2"
 ]
 
 (* OpenCode asks before the tools that change open notebooks: its permission names are <server>_<tool>, with characters
@@ -338,14 +339,14 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-ToolPermissions@@Tests/ACPMCP.wlt:321,1-342,2"
+    TestID   -> "ACPMCP-ToolPermissions@@Tests/ACPMCP.wlt:322,1-343,2"
 ]
 
 VerificationTest[
     Keys @ acpMCPToolPermissions[ ] === ("WolframNotebooks_" <> # & /@ $acpNotebookEditTools),
     True,
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-ToolPermissions-EditTools@@Tests/ACPMCP.wlt:344,1-349,2"
+    TestID   -> "ACPMCP-ToolPermissions-EditTools@@Tests/ACPMCP.wlt:345,1-350,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -385,7 +386,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-ServersParam-Entry@@Tests/ACPMCP.wlt:357,1-389,2"
+    TestID   -> "ACPMCP-ServersParam-Entry@@Tests/ACPMCP.wlt:358,1-390,2"
 ]
 
 (* No entry: the agent does not support HTTP MCP servers (or did not say), a remote window (its agent can't reach this
@@ -421,7 +422,7 @@ VerificationTest[
     ],
     { { { }, { }, { }, { }, { } }, { }, { }, { }, { 1, { } }, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-ServersParam-None@@Tests/ACPMCP.wlt:393,1-425,2"
+    TestID   -> "ACPMCP-ServersParam-None@@Tests/ACPMCP.wlt:394,1-426,2"
 ]
 
 (* A command line that runs another program than the agent's (here env, which could drop OPENCODE_CONFIG_CONTENT and
@@ -446,7 +447,7 @@ VerificationTest[
     ],
     { None, { }, True, { $mcpEntryPattern } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-ServersParam-CommandLine@@Tests/ACPMCP.wlt:430,1-450,2"
+    TestID   -> "ACPMCP-ServersParam-CommandLine@@Tests/ACPMCP.wlt:431,1-451,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -475,7 +476,7 @@ VerificationTest[
     ],
     { True, { None, None, None }, True, 1, 20 },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Token-Issue@@Tests/ACPMCP.wlt:457,1-479,2"
+    TestID   -> "ACPMCP-Token-Issue@@Tests/ACPMCP.wlt:458,1-480,2"
 ]
 
 (* Only a valid token's connection is authorized; the handler also calls the function with None (no header) *)
@@ -483,7 +484,7 @@ VerificationTest[
     withMCPState[ acpMCPAuthorizedQ /@ { None, "", "abc", 42, Missing[ ] } ],
     { False, False, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Token-Unknown@@Tests/ACPMCP.wlt:482,1-487,2"
+    TestID   -> "ACPMCP-Token-Unknown@@Tests/ACPMCP.wlt:483,1-488,2"
 ]
 
 (* Every way a connection ends revokes its token: another connection, a failed connection (connectionFailedRecord),
@@ -509,7 +510,7 @@ VerificationTest[
     ],
     { { True, True, True, True, True }, { False, False, False, False, True }, True, None },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Token-Revoked@@Tests/ACPMCP.wlt:492,1-513,2"
+    TestID   -> "ACPMCP-Token-Revoked@@Tests/ACPMCP.wlt:493,1-514,2"
 ]
 
 (* Turning "ACPMCPServer" off revokes the connection's token at once (the window only reconnects after a running turn):
@@ -550,7 +551,7 @@ VerificationTest[
         "off-1"
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Token-SettingOffRevokes@@Tests/ACPMCP.wlt:518,1-554,2"
+    TestID   -> "ACPMCP-Token-SettingOffRevokes@@Tests/ACPMCP.wlt:519,1-555,2"
 ]
 
 (* The token is a secret: it is in no window record (nor the parameter's result anywhere but the request) *)
@@ -567,7 +568,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Token-NotInRecord@@Tests/ACPMCP.wlt:557,1-571,2"
+    TestID   -> "ACPMCP-Token-NotInRecord@@Tests/ACPMCP.wlt:558,1-572,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -596,7 +597,7 @@ VerificationTest[
         { <| "Tool" -> "ListNotebooks", "Mode" -> "Pump", "Status" -> "OK", "Waited" -> _? NumberQ, "Seconds" -> _? NumberQ |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-Drain@@Tests/ACPMCP.wlt:578,1-600,2"
+    TestID   -> "ACPMCP-Queue-Drain@@Tests/ACPMCP.wlt:579,1-601,2"
 ]
 
 (* Calls run in the order they were queued, one after the other, and the status says what run[] gave *)
@@ -616,7 +617,33 @@ VerificationTest[
     ],
     { { "A", "B", "C", "D" }, { { "A", "OK" }, { "B", "Error" }, { "C", "Error" }, { "D", "NotRun" } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-Order@@Tests/ACPMCP.wlt:603,1-620,2"
+    TestID   -> "ACPMCP-Queue-Order@@Tests/ACPMCP.wlt:604,1-621,2"
+]
+
+(* Other main link jobs (acpMainLinkRun: the preparation of a message's attachments) are run by the same drain, after the
+   tool calls; a job leaves the queue before it runs, and the pump keeps running while one waits *)
+VerificationTest[
+    withMCPState @ Module[ { w, token, t0 = AbsoluteTime[ ], jobs = { }, waiting },
+        $mcpRuns = { };
+        w     = mcpWindow[ <| |>, "Connection" -> "conn-q9" ];
+        token = Wolfram`Chatbook`ACP`MCP`Private`issueToken[ w, "conn-q9" ];
+        PreemptProtect[
+            acpMainLinkRun[ w, AppendTo[ jobs, { "J1", $mcpRuns, Length @ Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs } ], "TestJob" ];
+            acpMCPEnqueue[ fakeRun[ "A" ], fakeInfo[ "A", token ] ];
+            acpMainLinkRun[ w, AppendTo[ jobs, { "J2", $mcpRuns, Length @ Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs } ] ];
+            waiting = Wolfram`Chatbook`ACP`MCP`Private`waitingQ[ ]
+        ];
+        {
+            waiting,
+            mcpWait[ Length @ jobs === 2 && Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs === { } && ! Wolfram`Chatbook`ACP`MCP`Private`$mcpDraining ],
+            jobs,
+            Lookup[ mcpLogSince[ t0, "MainLinkJob" ], { "Label", "Mode" } ],
+            Wolfram`Chatbook`ACP`MCP`Private`waitingQ[ ]
+        }
+    ],
+    { True, True, { { "J1", { "A" }, 1 }, { "J2", { "A" }, 0 } }, { { "TestJob", "Pump" }, { "Job", "Pump" } }, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPMCP-Queue-MainLinkJobs@@Tests/ACPMCP.wlt:625,1-647,2"
 ]
 
 (* A call whose connection has ended is rejected without running it; one that is no longer active (answered,
@@ -645,7 +672,7 @@ VerificationTest[
         { <| "Tool" -> "Inactive" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-RejectAndSkip@@Tests/ACPMCP.wlt:624,1-649,2"
+    TestID   -> "ACPMCP-Queue-RejectAndSkip@@Tests/ACPMCP.wlt:651,1-676,2"
 ]
 
 (* An internal error never leaves the agent waiting: the call is answered with an error, and the drain goes on *)
@@ -667,7 +694,7 @@ VerificationTest[
     ],
     { { "After" }, { { "Throws", "The tool call failed because of an internal error in Chatbook." } }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-InternalError@@Tests/ACPMCP.wlt:652,1-671,2"
+    TestID   -> "ACPMCP-Queue-InternalError@@Tests/ACPMCP.wlt:679,1-698,2"
 ]
 
 (* run[] gives a Failure for an internal error in AgentTools while it claimed or answered the call: a call that is still
@@ -693,7 +720,7 @@ VerificationTest[
         { { "Active", "Error" }, { "Answered", "Error" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-RunFailure@@Tests/ACPMCP.wlt:675,1-697,2"
+    TestID   -> "ACPMCP-Queue-RunFailure@@Tests/ACPMCP.wlt:702,1-724,2"
 ]
 
 (* The queue never holds the bearer token: a tool's internal failure during a drain is logged (as "NotebookToolFailed",
@@ -730,7 +757,7 @@ VerificationTest[
     ],
     { { "ReadNotebook" }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-TokenNotInStack@@Tests/ACPMCP.wlt:702,1-734,2"
+    TestID   -> "ACPMCP-Queue-TokenNotInStack@@Tests/ACPMCP.wlt:729,1-761,2"
 ]
 
 (* The pump keeps running while calls wait (only they decide it here: no dirty symbols, background runs, windows or
@@ -760,7 +787,7 @@ VerificationTest[
     ],
     { True, True, Null, Null, 1, { }, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-PumpAlive@@Tests/ACPMCP.wlt:738,1-764,2"
+    TestID   -> "ACPMCP-Queue-PumpAlive@@Tests/ACPMCP.wlt:765,1-791,2"
 ]
 
 (* An abort (Alt+.) at any point of a drain never leaves it claimed, which would stop every later drain: the claim is
@@ -783,7 +810,7 @@ VerificationTest[
     ],
     { 0, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-DrainAbortReleases@@Tests/ACPMCP.wlt:769,1-787,2"
+    TestID   -> "ACPMCP-Queue-DrainAbortReleases@@Tests/ACPMCP.wlt:796,1-814,2"
 ]
 
 (* The watchdog: calls that wait with no drain running are drained again once the last trigger is older than
@@ -808,7 +835,7 @@ VerificationTest[
     ],
     { { }, { "Stranded" } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Queue-Watchdog@@Tests/ACPMCP.wlt:792,1-812,2"
+    TestID   -> "ACPMCP-Queue-Watchdog@@Tests/ACPMCP.wlt:819,1-839,2"
 ]
 
 (* Only a notebook front end's kernel fires the pump button: a plain kernel has no front end, and UsingFrontEnd's
@@ -824,7 +851,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { False, Missing[ "NoFrontEnd" ] } | { False, { True, True, False } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-NotebookFrontEndQ@@Tests/ACPMCP.wlt:816,1-828,2"
+    TestID   -> "ACPMCP-NotebookFrontEndQ@@Tests/ACPMCP.wlt:843,1-855,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -856,7 +883,7 @@ VerificationTest[
         TaggingRules -> <| "ACPMCPPump" -> <| "KernelSessionID" -> $SessionID |>, "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |> |>
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-PumpNotebook-Expression@@Tests/ACPMCP.wlt:836,1-860,2"
+    TestID   -> "ACPMCP-PumpNotebook-Expression@@Tests/ACPMCP.wlt:863,1-887,2"
 ]
 
 (* In a front end (the button is never fired here): the notebook is made with its button's BoxObject; it is invisible,
@@ -904,7 +931,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-PumpNotebook-FrontEnd@@Tests/ACPMCP.wlt:865,1-908,2"
+    TestID   -> "ACPMCP-PumpNotebook-FrontEnd@@Tests/ACPMCP.wlt:892,1-935,2"
 ]
 
 (* The pump button's kernel is never guessed: in a notebook front end's kernel, the first window that gets a token
@@ -959,7 +986,7 @@ VerificationTest[
         { "Pump", "Pump" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-PumpNotebook-Evaluator@@Tests/ACPMCP.wlt:914,1-963,2"
+    TestID   -> "ACPMCP-PumpNotebook-Evaluator@@Tests/ACPMCP.wlt:941,1-990,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1001,7 +1028,7 @@ VerificationTest[
         { <| "Reason" -> "Idle" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-IdleStop@@Tests/ACPMCP.wlt:972,1-1005,2"
+    TestID   -> "ACPMCP-Server-IdleStop@@Tests/ACPMCP.wlt:999,1-1032,2"
 ]
 
 (* The file descriptor guard: the limit is the soft limit of open files, at most select()'s FD_SETSIZE (1024). Above 75%
@@ -1050,7 +1077,7 @@ VerificationTest[
         { <| "FileDescriptors" -> 800, "Limit" -> 1024 |>, <| "FileDescriptors" -> 800, "Limit" -> 1024 |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-FdGuard@@Tests/ACPMCP.wlt:1010,1-1054,2"
+    TestID   -> "ACPMCP-Server-FdGuard@@Tests/ACPMCP.wlt:1037,1-1081,2"
 ]
 
 (* The kernel's file descriptors are counted where /proc/self/fd exists (Linux), and nowhere else *)
@@ -1064,7 +1091,7 @@ VerificationTest[
         { None, 1024 }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-FdCount@@Tests/ACPMCP.wlt:1057,1-1068,2"
+    TestID   -> "ACPMCP-Server-FdCount@@Tests/ACPMCP.wlt:1084,1-1095,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1081,7 +1108,7 @@ VerificationTest[
     },
     Missing[ "TestSkipped" ] | { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-AgentTools@@Tests/ACPMCP.wlt:1075,1-1085,2"
+    TestID   -> "ACPMCP-AgentTools@@Tests/ACPMCP.wlt:1102,1-1112,2"
 ]
 
 (* A loaded AgentTools that is too old (e.g. the installed one, which a front end's kernel loads at startup) is replaced
@@ -1138,7 +1165,7 @@ VerificationTest[
         { <| "Version" -> None |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-AgentTools-Reload@@Tests/ACPMCP.wlt:1090,1-1142,2"
+    TestID   -> "ACPMCP-AgentTools-Reload@@Tests/ACPMCP.wlt:1117,1-1169,2"
 ]
 
 (* One server per kernel: started once, then reused; its start logs only the port *)
@@ -1163,7 +1190,7 @@ VerificationTest[
         { <| "Port" -> _Integer |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-Start@@Tests/ACPMCP.wlt:1145,1-1167,2"
+    TestID   -> "ACPMCP-Server-Start@@Tests/ACPMCP.wlt:1172,1-1194,2"
 ]
 
 (* A server that stopped running (e.g. deleted by hand) is replaced at the next connect *)
@@ -1175,7 +1202,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-Restart@@Tests/ACPMCP.wlt:1170,1-1179,2"
+    TestID   -> "ACPMCP-Server-Restart@@Tests/ACPMCP.wlt:1197,1-1206,2"
 ]
 
 (* Over HTTP: initialize (instructions, Chatbook's version), the six tools, a tool call through the queue, and 401s for
@@ -1227,7 +1254,7 @@ VerificationTest[
         { 401, 401, 401, 401 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-HTTP@@Tests/ACPMCP.wlt:1183,1-1231,2"
+    TestID   -> "ACPMCP-Server-HTTP@@Tests/ACPMCP.wlt:1210,1-1258,2"
 ]
 
 (* An idle server is stopped (its listener closes) and the next connect starts a new one *)
@@ -1241,7 +1268,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { False, None, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Server-IdleStopRestart@@Tests/ACPMCP.wlt:1234,1-1245,2"
+    TestID   -> "ACPMCP-Server-IdleStopRestart@@Tests/ACPMCP.wlt:1261,1-1272,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1285,7 +1312,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Ready", 1, { $mcpEntryPattern }, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-SessionNew@@Tests/ACPMCP.wlt:1254,1-1289,2"
+    TestID   -> "ACPMCP-Agent-SessionNew@@Tests/ACPMCP.wlt:1281,1-1316,2"
 ]
 
 (* The agent calls the server like OpenCode: initialize (then notifications/initialized), tools/list, a tool call
@@ -1328,7 +1355,7 @@ VerificationTest[
         { }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-Tools@@Tests/ACPMCP.wlt:1293,1-1332,2"
+    TestID   -> "ACPMCP-Agent-Tools@@Tests/ACPMCP.wlt:1320,1-1359,2"
 ]
 
 (* A reconnect resumes the session with the new connection's token; the old one is revoked *)
@@ -1350,7 +1377,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { { $mcpEntryPattern }, True, { False, True }, True, 401 },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-Resume@@Tests/ACPMCP.wlt:1335,1-1354,2"
+    TestID   -> "ACPMCP-Agent-Resume@@Tests/ACPMCP.wlt:1362,1-1381,2"
 ]
 
 (* The agent exits: its connection's token is revoked *)
@@ -1365,7 +1392,7 @@ VerificationTest[
     ),
     Missing[ "TestSkipped" ] | { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-ExitRevokes@@Tests/ACPMCP.wlt:1357,1-1369,2"
+    TestID   -> "ACPMCP-Agent-ExitRevokes@@Tests/ACPMCP.wlt:1384,1-1396,2"
 ]
 
 (* No server: the setting is off (no token either), or the agent does not support HTTP MCP servers *)
@@ -1398,7 +1425,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "Ready", { { } }, { }, "Ready", { { } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-NoServer@@Tests/ACPMCP.wlt:1372,1-1402,2"
+    TestID   -> "ACPMCP-Agent-NoServer@@Tests/ACPMCP.wlt:1399,1-1429,2"
 ]
 
 (* A command line that runs another program than the agent's (here env, starting the mock agent) gets no server and no
@@ -1434,7 +1461,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | Missing[ "NoEnv" ] | { "Ready", { { } }, { }, "Ready", { { $mcpEntryPattern } }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Agent-CommandLine@@Tests/ACPMCP.wlt:1407,1-1438,2"
+    TestID   -> "ACPMCP-Agent-CommandLine@@Tests/ACPMCP.wlt:1434,1-1465,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1464,7 +1491,7 @@ VerificationTest[
     },
     { None, <| |>, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-Cleanup@@Tests/ACPMCP.wlt:1443,1-1468,2"
+    TestID   -> "ACPMCP-Cleanup@@Tests/ACPMCP.wlt:1470,1-1495,2"
 ]
 
 (* Isolated code swallows messages and failures into the debug log: nothing unexpected may have been logged (the
@@ -1482,7 +1509,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPMCP-DebugLog@@Tests/ACPMCP.wlt:1473,1-1486,2"
+    TestID   -> "ACPMCP-DebugLog@@Tests/ACPMCP.wlt:1500,1-1513,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

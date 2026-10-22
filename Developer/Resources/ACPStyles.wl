@@ -4,8 +4,8 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 (* Styles for agent (ACP) windows: Wolfram/ACPChat.nb inherits Wolfram/WorkspaceChat.nb and only replaces the
    notebook-level setup (docked cells, settings, event actions) and makes ChatInput cells inert.
-   Templates are not defined here: ACP cells use the standard UserMessageBox, AssistantMessageBox[Active] and
-   ThoughtsOpener templates, so copied/converted cells render anywhere. *)
+   Templates are not defined here: ACP cells use the standard UserMessageBox, AssistantMessageBox[Active],
+   ThoughtsOpener and ShortThoughts templates, so copied/converted cells render anywhere. *)
 
 color = Wolfram`Chatbook`Common`color;
 

@@ -37,6 +37,7 @@ If[ ! AssociationQ @ $acpTurns  , $acpTurns   = <| |> ];
 If[ ! AssociationQ @ $acpOpen   , $acpOpen    = <| |> ];
 If[ ! AssociationQ @ $symbols   , $symbols    = <| |> ];
 If[ ! AssociationQ @ $dirty     , $dirty      = <| |> ];
+If[ ! AssociationQ @ $frozenTurns, $frozenTurns = <| |> ]; (* turn ID -> time its live views were frozen *)
 If[ ! AssociationQ @ $housekeeping, $housekeeping = <| |> ];
 If[ ! MatchQ[ $acpDebugLog, _Internal`Bag ], $acpDebugLog = Internal`Bag[ ] ];
 
@@ -192,7 +193,8 @@ acpTurnDrop[ id_String ] := (
     PreemptProtect[
         KeyDropFrom[ $acpTurns, id ];
         $acpOpen = KeySelect[ $acpOpen, ! MatchQ[ #, { id, ___ } ] & ];
-        $dirty   = KeySelect[ $dirty  , ! MatchQ[ #, { "Layout", id } | { "Entity", id, _ } ] & ]
+        $dirty   = KeySelect[ $dirty  , ! MatchQ[ #, { "Layout", id } | { "Entity", id, _ } ] & ];
+        KeyDropFrom[ $frozenTurns, id ]
     ];
     dropSymbols @ { "Layout", id };
     dropSymbols @ { "Entity", id, _ };
@@ -339,14 +341,57 @@ acpPublish // endDefinition;
 
 bumpSymbol // beginDefinition;
 
+(* The views of a frozen turn are not bumped any more (acpFreezeTurnViews). *)
+bumpSymbol[ spec_ ] := If[ ! frozenSpecQ @ spec, bumpSymbol0 @ spec ];
+
+bumpSymbol // endDefinition;
+
+
+frozenSpecQ // beginDefinition;
+frozenSpecQ[ { "Layout", id_String } | { "Entity", id_String, _ } ] := KeyExistsQ[ $frozenTurns, id ];
+frozenSpecQ[ _ ] := False;
+frozenSpecQ // endDefinition;
+
+
+bumpSymbol0 // beginDefinition;
+
 (* Only symbols that exist are bumped: a view that is created later reads the current state anyway, and a dropped
    symbol must not be created again by a publish that raced with acpTurnDrop. *)
-bumpSymbol[ spec_ ] := Replace[
+bumpSymbol0[ spec_ ] := Replace[
     Lookup[ $symbols, Key @ spec, None ],
     HoldComplete[ s_Symbol ] :> (s = If[ IntegerQ @ s, s + 1, 1 ])
 ];
 
-bumpSymbol // endDefinition;
+bumpSymbol0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpFreezeTurnViews*)
+
+(* Freezes the live views of a turn that is being finalized (UI.wl's acpFinalizeTurn, see docs/acp-window.md,
+   "Finalization"): the turn's layout and entity symbols are not bumped any more, so the front end has no reason to
+   evaluate any of the turn's Dynamics again, except once: the layout symbol is bumped here a last time, and the
+   layout's Dynamic then renders the frozen view, the same boxes without Dynamics (Rendering.wl's liveLayout).
+   Replacing a cell while the front end evaluates one of its Dynamics (it waits for the kernel in the middle of
+   formatting the cell) makes it fail an assertion ("overcounted formatting") and, with many such Dynamics, crash. *)
+acpFreezeTurnViews // beginDefinition;
+
+acpFreezeTurnViews[ id_String ] := (
+    PreemptProtect[
+        $frozenTurns[ id ] = AbsoluteTime[ ];
+        $dirty = KeySelect[ $dirty, ! MatchQ[ #, { "Layout", id } | { "Entity", id, _ } ] & ]
+    ];
+    bumpSymbol0 @ { "Layout", id };
+    Null
+);
+
+acpFreezeTurnViews // endDefinition;
+
+
+acpTurnViewsFrozenQ // beginDefinition;
+acpTurnViewsFrozenQ[ id_String ] := KeyExistsQ[ $frozenTurns, id ];
+acpTurnViewsFrozenQ[ _ ] := False;
+acpTurnViewsFrozenQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
