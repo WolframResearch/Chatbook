@@ -1387,7 +1387,7 @@ emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
 
         previous  = ConfirmBy[ $emulatedStopBuffer, StringQ, "Buffer" ];
         buffer    = $emulatedStopBuffer = previous <> text;
-        positions = dropReasoningPositions[ buffer, StringPosition[ buffer, stop ] ];
+        positions = dropReasoningPositions[ buffer, newStopTokenPositions[ buffer, StringLength @ text, stop ] ];
 
         If[ positions === { },
             (* No stop token appears in the response so far, so continue streaming normally: *)
@@ -1413,6 +1413,28 @@ emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
 ];
 
 emulatedStopTokenTrim // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*newStopTokenPositions*)
+
+(* Gives the positions of stop tokens that end within the last `n` characters of `buffer` (the newly received text).
+   The rest of the buffer was already checked by previous calls without triggering a stop, so any stop tokens there are
+   within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can only grow, and
+   completing a partial opening tag starts a span that extends past the old end), so they don't need to be found again.
+   This keeps the cost per chunk independent of the length of the response. *)
+newStopTokenPositions // beginDefinition;
+
+(* If a stop was already triggered, the rest of the buffer may have stop tokens outside of reasoning text: *)
+newStopTokenPositions[ buffer_String, n_Integer, stop_ ] /; TrueQ @ $emulatedStopTriggered :=
+    StringPosition[ buffer, stop ];
+
+newStopTokenPositions[ buffer_String, n_Integer, stop: { __String } ] :=
+    With[ { k = Min[ StringLength @ buffer, n + Max[ 0, Max[ StringLength /@ stop ] - 1 ] ] },
+        StringPosition[ StringTake[ buffer, -k ], stop ] + StringLength @ buffer - k
+    ];
+
+newStopTokenPositions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
