@@ -31,6 +31,9 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 (*Initialization*)
 $buffer = "";
 
+(* The last dynamic content that was found to have no split points (see `splitDynamicContent`): *)
+$dynamicSplitChecked = None;
+
 (* State for emulated stop tokens (used when the model does not support server-side stop tokens): *)
 $emulatedStopBuffer        = "";
 $emulatedStopTriggered     = False;
@@ -913,6 +916,7 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
+    $dynamicSplitChecked   = None;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
     resetReasoningStream[ ];
@@ -1413,7 +1417,7 @@ emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
 
         previous  = ConfirmBy[ $emulatedStopBuffer, StringQ, "Buffer" ];
         buffer    = $emulatedStopBuffer = previous <> text;
-        positions = dropReasoningPositions[ buffer, StringPosition[ buffer, stop ] ];
+        positions = dropReasoningPositions[ buffer, newStopTokenPositions[ buffer, StringLength @ text, stop ] ];
 
         If[ positions === { },
             (* No stop token appears in the response so far, so continue streaming normally: *)
@@ -1439,6 +1443,28 @@ emulatedStopTokenTrim[ container_, text_String, stop: { __String } ] := Enclose[
 ];
 
 emulatedStopTokenTrim // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*newStopTokenPositions*)
+
+(* Gives the positions of stop tokens that end within the last `n` characters of `buffer` (the newly received text).
+   The rest of the buffer was already checked by previous calls without triggering a stop, so any stop tokens there are
+   within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can only grow, and
+   completing a partial opening tag starts a span that extends past the old end), so they don't need to be found again.
+   This keeps the cost per chunk independent of the length of the response. *)
+newStopTokenPositions // beginDefinition;
+
+(* If a stop was already triggered, the rest of the buffer may have stop tokens outside of reasoning text: *)
+newStopTokenPositions[ buffer_String, n_Integer, stop_ ] /; TrueQ @ $emulatedStopTriggered :=
+    StringPosition[ buffer, stop ];
+
+newStopTokenPositions[ buffer_String, n_Integer, stop: { __String } ] :=
+    With[ { k = Min[ StringLength @ buffer, n + Max[ 0, Max[ StringLength /@ stop ] - 1 ] ] },
+        StringPosition[ StringTake[ buffer, -k ], stop ] + StringLength @ buffer - k
+    ];
+
+newStopTokenPositions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1618,7 +1644,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     With[ { newContent = appendStringContent[ container[ "DynamicContent" ], text ] },
         If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, insufficientVersionQ[ "DynamicSplit" ], $cloudNotebooks ],
             (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
-            With[ { splitString = DeleteCases[ StringSplit[ newContent, $dynamicSplitRules ], "" ] },
+            With[ { splitString = splitDynamicContent @ newContent },
                 If[ Length @ splitString > 1,
                     writeDynamicChunkAsStatic[ StringJoin @ Most @ splitString, container[ "DynamicBoxObject" ] ];
                     container[ "DynamicContent" ] = Last @ splitString
@@ -1648,6 +1674,67 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
 writeChunk0 // endDefinition;
 
 $chunkDebug = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*splitDynamicContent*)
+
+(* Splits dynamic content at completed code blocks, images, and tool calls (see `$dynamicSplitRules`), so that the
+   completed parts can be written as static content. The dynamic content can be the entire response so far, so the
+   full split is skipped whenever it's clear that the content has no split points (see `dynamicSplitSkipQ`). *)
+splitDynamicContent // beginDefinition;
+
+splitDynamicContent[ content_String ] :=
+    If[ dynamicSplitSkipQ[ content, $dynamicSplitChecked ],
+        $dynamicSplitChecked = content;
+        DeleteCases[ { content }, "" ]
+        ,
+        With[ { split = StringSplit[ content, $dynamicSplitRules, All ] },
+            (* With All, any match gives at least three parts, so a single part means there are no split points: *)
+            $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
+            DeleteCases[ split, "" ]
+        ]
+    ];
+
+splitDynamicContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicSplitSkipQ*)
+
+(* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
+   (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
+   "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
+   has no split points either. *)
+dynamicSplitSkipQ // beginDefinition;
+
+dynamicSplitSkipQ[ content_String, checked_String ] /; StringStartsQ[ content, checked ] :=
+    With[
+        {
+            (* The text after `checked`, plus enough of `checked` to include a delimiter that ends after it: *)
+            tail = StringTake[
+                content,
+                -Min[ StringLength @ content, StringLength @ content - StringLength @ checked + $dynamicSplitOverlap ]
+            ]
+        },
+        (* Separate checks for each literal string are much faster than a single check with alternatives: *)
+        ! Or[
+            StringContainsQ[ tail, "```" ],
+            StringContainsQ[ tail, "ENDRESULT" ],
+            And[
+                StringContainsQ[ tail, ")" ],
+                StringContainsQ[ content, "![" ] || StringContainsQ[ content, "ENDRESULT(" ]
+            ]
+        ]
+    ];
+
+dynamicSplitSkipQ[ content_String, _ ] :=
+    False;
+
+dynamicSplitSkipQ // endDefinition;
+
+(* The longest delimiter that can end a match is "ENDRESULT": *)
+$dynamicSplitOverlap = StringLength[ "ENDRESULT" ] - 1;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
