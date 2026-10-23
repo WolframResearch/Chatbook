@@ -133,6 +133,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `attachInlineChatInput;
 `attachMenuCell;
 `attachWorkspaceChatInput;
+`autoAssistPossibleQ;
 `autoAssistQ;
 `autoCorrect;
 `autoModelSetting;
