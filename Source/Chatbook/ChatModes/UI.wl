@@ -2805,7 +2805,14 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             ]
                         },
                         {
-                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, None ], Alignment -> Left ]
+                            (*
+                                The display reads Chatbook globals that change on every catchTop call and during chats
+                                (e.g. catchTop and $currentSettingsCache), so only track thisNB in the kernel. Front end
+                                values it reads (TaggingRules, Notebooks[], InputNotebook[], etc.) are still tracked. *)
+                            Item[
+                                Dynamic[ focusedNotebookDisplay[ thisNB, None ], TrackedSymbols :> { thisNB } ],
+                                Alignment -> Left
+                            ]
                         }
                     },
                     Alignment -> { Left, Baseline },

@@ -217,6 +217,21 @@ VerificationTest[
     TestID   -> "FocusedNotebookDisplay-WorkspaceChat-NoNotebooks"
 ]
 
+(* The Dynamic in the attached input cell only tracks its notebook variable in the kernel: *)
+VerificationTest[
+    Cases[
+        Wolfram`Chatbook`ChatModes`UI`Private`attachedWorkspaceChatInputCell /@ { "Top", "Bottom" },
+        DynamicBox[
+            ToBoxes[ Wolfram`Chatbook`ChatModes`Common`focusedNotebookDisplay[ nbo_Symbol, None ], StandardForm ],
+            TrackedSymbols :> { nbo_Symbol }
+        ] :> True,
+        Infinity
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TrackedSymbols"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Sidebar*)
