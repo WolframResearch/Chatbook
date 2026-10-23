@@ -29,7 +29,8 @@ evaluateWorkspaceChat // beginDefinition;
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
     Catch @ Module[ { text, uuid, cell, cellObject },
 
-        If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
+        (* $WorkspaceChatInput is a kernel-side copy of the input field text, so it is cleared along with the input: *)
+        If[ ! validInputStringQ @ input, input = $WorkspaceChatInput = ""; Throw @ Null ];
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
@@ -42,7 +43,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
             CellTags -> uuid
         ];
 
-        input = "";
+        input = $WorkspaceChatInput = "";
         SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
         NotebookWrite[ nbo, cell ];
         moveChatInputToBottom @ nbo;
