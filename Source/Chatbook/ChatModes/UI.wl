@@ -2681,6 +2681,7 @@ attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose
             Throw @ ConfirmMatch[ First[ current, $Failed ], _CellObject, "CurrentCell" ]
         ];
 
+        saveWorkspaceChatInput @ current;
         NotebookDelete @ current;
 
         attached = ConfirmMatch[
@@ -2707,11 +2708,11 @@ attachWorkspaceChatInput // endDefinition;
 workspaceInputField // beginDefinition;
 
 (* FieldHint implemented as an Overlay such that it can appear while the text caret is present in an empty field *)
-workspaceInputField[ Dynamic[ cachedChatInput_ ] ] :=
+workspaceInputField[ Dynamic[ input_ ] ] :=
 Overlay[
     {
         InputField[
-            Dynamic[ $WorkspaceChatInput, Function[ cachedChatInput = $WorkspaceChatInput = # ] ], (* store a local copy of the text in case the kernel was quit *)
+            Dynamic @ input,
             Boxes,
             Alignment        -> { Automatic, Baseline },
             Appearance       -> "Frameless",
@@ -2736,7 +2737,7 @@ Overlay[
                 Spacer @ 0,
                 StripOnInput -> True
             ] },
-            RawBoxes @ DynamicBox @ If[ cachedChatInput === "", fieldHintBoxes, "" ]
+            RawBoxes @ DynamicBox @ If[ input === "", fieldHintBoxes, "" ]
         ]
     },
     { 1, 2 },
@@ -2753,7 +2754,7 @@ workspaceInputField // endDefinition;
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
-    BoxData @ ToBoxes @ DynamicModule[ { thisNB, cachedSessionID = $SessionID, cachedChatInput = "", kernelWasQuitQ = False },
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB, thisCell, cachedSessionID = $SessionID, kernelWasQuitQ = False },
         EventHandler[
             Pane[
                 Grid[
@@ -2762,22 +2763,22 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             Framed[
                                 Grid[
                                     { {
-                                        workspaceInputField[ Dynamic @ cachedChatInput ],
+                                        (* the text is stored in the cell's TaggingRules, so typing does not need the kernel *)
+                                        workspaceInputField[ Dynamic @ CurrentValue[ thisCell, { TaggingRules, "ChatInputString" } ] ],
                                         (* no need to templatize an attached cell as it is ephemeral *)
                                         PaneSelector[
                                             {
                                                 None -> Button[
                                                     blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
                                                     Needs[ "Wolfram`Chatbook`" -> None ];
-                                                    (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
+                                                    (* in case kernel was quit *)
                                                     If[ kernelWasQuitQ,
                                                         If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                                        If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
                                                         kernelWasQuitQ = False ];
                                                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                                                         "EvaluateWorkspaceChat",
                                                         thisNB,
-                                                        Dynamic @ $WorkspaceChatInput
+                                                        Dynamic @ CurrentValue[ thisCell, { TaggingRules, "ChatInputString" } ]
                                                     ],
                                                     Appearance   -> "Suppressed",
                                                     BoxID        -> "NASendChatButton",
@@ -2826,29 +2827,76 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
             {
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
+                    (* in case kernel was quit *)
                     If[ kernelWasQuitQ,
                         If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                        If[ $WorkspaceChatInput =!= cachedChatInput, $WorkspaceChatInput = cachedChatInput ];
                         kernelWasQuitQ = False ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
-                        Dynamic @ $WorkspaceChatInput
+                        Dynamic @ CurrentValue[ thisCell, { TaggingRules, "ChatInputString" } ]
                     ]
                 )
             },
             Method -> "Queued"
         ],
-        Initialization :> (thisNB = EvaluationNotebook[ ]; kernelWasQuitQ = cachedSessionID =!= $SessionID; cachedSessionID = $SessionID)
+        Initialization :> (thisNB = EvaluationNotebook[ ]; thisCell = EvaluationCell[ ]; kernelWasQuitQ = cachedSessionID =!= $SessionID; cachedSessionID = $SessionID)
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
     CellTags      -> location,
     Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
-    Selectable    -> True
+    Selectable    -> True,
+    TaggingRules  -> <| "ChatInputString" -> $WorkspaceChatInput |>
 ];
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*workspaceChatInput*)
+(*
+    The text of the input field is stored in the TaggingRules of the attached input cell, so typing does not need the
+    kernel. $WorkspaceChatInput is a kernel-side copy of this text: it is updated when the text is set programmatically
+    (e.g. the "Input" option of ShowNotebookAssistance), when it is submitted (cleared), and when the input cell is
+    re-attached (e.g. for a new chat or a chat loaded from history). Newly attached input cells start with its value.
+*)
+workspaceChatInput // beginDefinition;
+
+workspaceChatInput[ nbo_NotebookObject ] :=
+    workspaceChatInput @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], None ];
+
+workspaceChatInput[ cell_CellObject ] :=
+    Dynamic @ CurrentValue[ cell, { TaggingRules, "ChatInputString" } ];
+
+(* The input cell has not been attached yet, so it will start with this value: *)
+workspaceChatInput[ None ] :=
+    Dynamic @ $WorkspaceChatInput;
+
+workspaceChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*saveWorkspaceChatInput*)
+(* Copies the text of the input cell to $WorkspaceChatInput before the cell is removed, so a re-attached cell keeps it: *)
+saveWorkspaceChatInput // beginDefinition;
+
+saveWorkspaceChatInput[ nbo_NotebookObject ] :=
+    saveWorkspaceChatInput @ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
+
+saveWorkspaceChatInput[ { } | $Failed ] :=
+    Null;
+
+saveWorkspaceChatInput[ { cell_CellObject, ___ } ] :=
+    saveWorkspaceChatInput[ cell, CurrentValue[ cell, { TaggingRules, "ChatInputString" } ] ];
+
+(* The cell does not store its text, e.g. it was attached by an older version of Chatbook: *)
+saveWorkspaceChatInput[ cell_CellObject, Inherited | $Failed ] :=
+    Null;
+
+saveWorkspaceChatInput[ cell_CellObject, input_ ] :=
+    $WorkspaceChatInput = input;
+
+saveWorkspaceChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2898,6 +2946,7 @@ moveChatInputToTop[ nbo_NotebookObject ] :=
     Catch @ Module[ { attached },
         attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Bottom" ];
         If[ attached === { }, Throw @ Null ];
+        saveWorkspaceChatInput @ attached;
         NotebookDelete @ attached;
         ChatbookAction[ "AttachWorkspaceChatInput", nbo, Top ]
     ];
@@ -2913,6 +2962,7 @@ moveChatInputToBottom[ nbo_NotebookObject ] :=
     Catch @ Module[ { attached },
         attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
         If[ attached === { }, Throw @ Null ];
+        saveWorkspaceChatInput @ attached;
         NotebookDelete @ attached;
         ChatbookAction[ "AttachWorkspaceChatInput", nbo, Bottom ]
     ];
@@ -4743,6 +4793,7 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
         cells = ConfirmMatch[ ChatMessageToCell[ messages, "Workspace" ], { __Cell }, "Cells" ];
         cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
         ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
+        saveWorkspaceChatInput @ nbo;
         NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ];
 
         WithCleanup[

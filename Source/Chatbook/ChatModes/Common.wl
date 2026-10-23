@@ -23,7 +23,8 @@ HoldComplete[
     `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
-    `validInputStringQ
+    `validInputStringQ,
+    `workspaceChatInput
 ];
 
 EndPackage[ ];

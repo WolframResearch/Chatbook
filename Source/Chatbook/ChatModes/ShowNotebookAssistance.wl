@@ -769,9 +769,12 @@ setNotebookAssistanceEvaluator // endDefinition;
 (*setWindowInputAndEvaluate*)
 setWindowInputAndEvaluate // beginDefinition;
 
-setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] := (
-    If[ validInputStringQ @ input, $WorkspaceChatInput = input ];
-    If[ TrueQ @ evaluate, ChatbookAction[ "EvaluateWorkspaceChat", nbo, Dynamic @ $WorkspaceChatInput ] ];
+setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] :=
+    setWindowInputAndEvaluate[ nbo, input, evaluate, workspaceChatInput @ nbo ];
+
+setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_, Dynamic[ chatInput_ ] ] := (
+    If[ validInputStringQ @ input, chatInput = $WorkspaceChatInput = input ];
+    If[ TrueQ @ evaluate, ChatbookAction[ "EvaluateWorkspaceChat", nbo, Dynamic @ chatInput ] ];
     nbo
 );
 
