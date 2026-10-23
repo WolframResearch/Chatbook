@@ -115,6 +115,23 @@ llmSynthesize0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*llmSynthesizeCacheKey*)
+(* Identifies the request that llmSynthesize[ prompt, evaluator ] would send, so callers can reuse responses: *)
+llmSynthesizeCacheKey // beginDefinition;
+
+llmSynthesizeCacheKey[ prompt: $$llmPrompt, evaluator0_Association ] := Enclose[
+    Module[ { evaluator, auth },
+        evaluator = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+        auth      = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+        Hash @ { prompt, evaluator, auth, If[ auth === "LLMKit", $CloudUserID, None ] }
+    ],
+    throwInternalFailure
+];
+
+llmSynthesizeCacheKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*llmSynthesizeSubmit*)
 llmSynthesizeSubmit // beginDefinition;
 

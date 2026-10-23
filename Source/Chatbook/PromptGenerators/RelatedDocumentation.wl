@@ -54,6 +54,9 @@ $unfilteredItemsPerSource = 25;
 
 $filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
+(* Maximum number of filtering responses that are kept for reuse when identical instructions are sent again: *)
+$filterSnippetsCacheSize = 64;
+
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
@@ -560,7 +563,7 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
                 setServiceCaller[
-                    llmSynthesize[
+                    cachedFilterSnippetsResponse[
                         instructions,
                         Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
                     ],
@@ -730,6 +733,52 @@ Here is the chat transcript:
 %%Transcript%%
 </transcript>\
 ", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedFilterSnippetsResponse*)
+(* Snippet IDs are stable within a session, so exact repeats (e.g. regenerating a response) produce identical
+   instructions, and the previous response can be reused instead of waiting for another one from the LLM: *)
+cachedFilterSnippetsResponse // beginDefinition;
+
+cachedFilterSnippetsResponse[ instructions_String, config_Association ] := Enclose[
+    Module[ { key, response },
+        key = ConfirmBy[ llmSynthesizeCacheKey[ instructions, config ], IntegerQ, "Key" ];
+        response = Lookup[ $filterSnippetsResponseCache, key ];
+        If[ StringQ @ response,
+            LogChatTiming[ response, "FilterSnippetsCacheHit" ],
+            response = llmSynthesize[ instructions, config ];
+            If[ StringQ @ response, cacheFilterSnippetsResponse[ key, response ] ];
+            response
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* Not cacheable, so this is handled by llmSynthesize as before: *)
+cachedFilterSnippetsResponse[ instructions_, config_ ] :=
+    llmSynthesize[ instructions, config ];
+
+cachedFilterSnippetsResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cacheFilterSnippetsResponse*)
+cacheFilterSnippetsResponse // beginDefinition;
+
+cacheFilterSnippetsResponse[ key_Integer, response_String ] := (
+    If[ ! AssociationQ @ $filterSnippetsResponseCache, $filterSnippetsResponseCache = <| |> ];
+    $filterSnippetsResponseCache[ key ] = response;
+    (* Evict the oldest entries: *)
+    If[ Length @ $filterSnippetsResponseCache > $filterSnippetsCacheSize,
+        $filterSnippetsResponseCache = Take[ $filterSnippetsResponseCache, -$filterSnippetsCacheSize ]
+    ];
+    response
+);
+
+cacheFilterSnippetsResponse // endDefinition;
+
+$filterSnippetsResponseCache = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
