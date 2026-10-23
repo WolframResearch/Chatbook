@@ -54,6 +54,10 @@ $unfilteredItemsPerSource = 25;
 
 $filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
 
+(* Filtering is optional, so don't let a slow or failing filter request hold up (or abort) the chat: *)
+$filterSnippetsTimeConstraint = 6;
+$filterSnippetsMaxAttempts    = 2;
+
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
@@ -345,8 +349,10 @@ toSource // endDefinition;
 (*relatedDocumentationPrompt*)
 relatedDocumentationPrompt // beginDefinition;
 
-relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
-    Catch @ Module[ { results, filtered, string },
+relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter0_, filterCount_ ] := Enclose[
+    Catch @ Module[ { filter, results, filtered, string },
+
+        filter = filter0;
 
         results = ConfirmMatch[
             RelatedDocumentation[ messages, "Results", count ],
@@ -360,8 +366,19 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         filtered = ConfirmMatch[
             filterSnippets[ messages, results, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
-            { ___String },
+            { ___String } | _Failure,
             "Filtered"
+        ];
+
+        (* If filtering failed (e.g. it timed out), use the top unfiltered results and the unfiltered header instead: *)
+        If[ FailureQ @ filtered,
+            filtered = ConfirmMatch[
+                Take[ filterSnippets[ messages, results, False, filterCount ], UpTo[ filterCount ] ] //
+                    LogChatTiming @ { "FilterSnippetsFallback", First @ filtered },
+                { ___String },
+                "Unfiltered"
+            ];
+            filter = False
         ];
 
         string = StringTrim @ StringRiffle[ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
@@ -557,20 +574,28 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             "Prompt"
         ];
 
-        response = StringTrim @ ConfirmBy[
+        response = ConfirmMatch[
             LogChatTiming[
                 setServiceCaller[
                     llmSynthesize[
                         instructions,
-                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ],
+                        TimeConstraint   -> $filterSnippetsTimeConstraint,
+                        "MaxAttempts"    -> $filterSnippetsMaxAttempts,
+                        "ReturnFailures" -> True
                     ],
                     "RelatedDocumentation"
                 ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
-            StringQ,
+            _String | _Failure,
             "Response"
         ];
+
+        (* Let relatedDocumentationPrompt fall back to unfiltered results: *)
+        If[ FailureQ @ response, Throw @ response ];
+
+        response = StringTrim @ response;
 
         If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
