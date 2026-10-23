@@ -366,7 +366,9 @@ VerificationTest[
     Block[
         {
             Wolfram`Chatbook`LLMUtilities`Private`$llmSynthesizeAuthentication = "LLMKit",
-            Wolfram`Chatbook`Common`llmKitCheck = Function[ Wolfram`Chatbook`Common`throwFailureToChatOutput @ $authFailure ]
+            Wolfram`Chatbook`Common`llmKitCheck = Function[ Wolfram`Chatbook`Common`throwFailureToChatOutput @ $authFailure ],
+            (* Make sure the request is actually sent instead of reusing a response from an earlier test: *)
+            Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$filterSnippetsResponseCache = <| |>
         },
         RelatedDocumentation[ $query, "Prompt", "FilterResults" -> True, "MaxItems" -> 5, "FilteredCount" -> 5 ]
     ],
