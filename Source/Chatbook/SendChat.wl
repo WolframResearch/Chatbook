@@ -1206,12 +1206,15 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             toolFormatter = getToolFormatter @ settings,
             stop          = makeStopTokens @ settings,
             emulatedStop  = emulatedStopTokens @ settings,
-            responses     = settings[ "RequestMethod" ] === "Responses"
+            responses     = settings[ "RequestMethod" ] === "Responses",
+            (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
             taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ],
-            stopEmulation       = MatchQ[ emulatedStop, { __String } ]
+            stopEmulation       = MatchQ[ emulatedStop, { __String } ],
+            recordFirstToken    = timeToFirstTokenHandler @ startTime
         },
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
@@ -1221,14 +1224,11 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
+                        $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
                     },
-                    If[ ! NumberQ @ $timeToFirstToken,
-                        $timeToFirstToken = AbsoluteTime[ ] - $chatStartTime;
-                        addHandlerArguments[ "TimeToFirstToken" -> Quantity[ $timeToFirstToken, "Seconds" ] ];
-                    ];
                     (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
                     If[ ! (stopEmulation && $emulatedStopTriggered),
                         With[
@@ -1243,6 +1243,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                             Internal`StuffBag[ $debugLog, $lastStatus = as ];
                             checkFinishReason[ as ];
                             writeChunk[ as, Dynamic @ container, cellObject ];
+                            recordFirstToken @ as;
                             If[ stopEmulation && $emulatedStopTriggered,
                                 (* An emulated stop token was just detected, so end the streaming task now and
                                    process the response the same way the "TaskFinished" handler would have: *)
@@ -1266,6 +1267,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
+                        $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
@@ -1287,6 +1289,34 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*timeToFirstTokenHandler*)
+
+(* Gives a function to call with each body chunk after it has been written. For the first chunk that wrote any content
+   to the output, it records the time since `start` (the start of the chat action) as the "TimeToFirstToken" handler
+   argument, and logs a "TimeToFirstToken" timing entry whose "ChatTime" is the same value. Since $ChatHandlerData is
+   reset for each chat, this happens once per chat, so handlers created for tool call responses do not record it. *)
+timeToFirstTokenHandler // beginDefinition;
+
+timeToFirstTokenHandler[ start_Real ] :=
+    Module[ { pending = ! MatchQ[ $ChatHandlerData, KeyValuePattern[ "TimeToFirstToken" -> _ ] ] },
+        Function[
+            If[ pending && MatchQ[ #[ "ExtractedBodyChunks" ], { __String } ],
+                pending = False;
+                (* Get the time before evaluating Quantity, which can take a while to load on first use: *)
+                With[ { time = AbsoluteTime[ ] - start },
+                    LogChatTiming[
+                        addHandlerArguments[ "TimeToFirstToken" -> Quantity[ time, "Seconds" ] ],
+                        "TimeToFirstToken"
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+timeToFirstTokenHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
