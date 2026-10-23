@@ -129,8 +129,9 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_, policy_Ass
             TimeConstraint -> Max[ deadline - AbsoluteTime[ ], 0 ]
         ];
 
-        (* If the deadline passed before the callback was called, taskWaitYield has already removed the task: *)
-        If[ result === $Failed && AbsoluteTime[ ] >= deadline,
+        (* If the deadline passed before the callback was called, taskWaitYield has already removed the task.
+           Don't compare AbsoluteTime[ ] to the deadline here, since the system clock can be set back while waiting: *)
+        If[ result === $Failed && deadline < Infinity,
             llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
         ];
 

@@ -122,6 +122,55 @@ VerificationTest[
     TestID   -> "LLMSynthesize-TimeConstraint"
 ]
 
+(* The time constraint is a single deadline for all attempts: *)
+VerificationTest[
+    Block[
+        {
+            submitCount = 0,
+            firedCount  = 0,
+            (* The first attempt gets an invalid response right away, and the retry doesn't respond in time: *)
+            Wolfram`Chatbook`Common`llmSynthesizeSubmit = Function[
+                { prompt, evaluator, callback },
+                With[ { first = ++submitCount === 1 },
+                    $lastMockTask = SessionSubmit @ ScheduledTask[
+                        firedCount++; callback[ If[ first, $invalidResponse, "Late" ], <| |> ],
+                        { If[ first, 0.01, 5 ] }
+                    ]
+                ]
+            ]
+        },
+        Module[ { time, result },
+            { time, result } = AbsoluteTiming @ Wolfram`Chatbook`Common`llmSynthesize[
+                "Hi",
+                <| |>,
+                TimeConstraint   -> 2,
+                "MaxAttempts"    -> 2,
+                "ReturnFailures" -> True
+            ];
+            { result, time, submitCount }
+        ]
+    ],
+    { Failure[ "TimedOut", _ ], _? (Between[ { 1.9, 3.5 } ]), 2 },
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesize-TimeConstraint-Retry"
+]
+
+(* A timeout should still give a failure if the system clock is set back while waiting: *)
+VerificationTest[
+    Block[
+        {
+            submitCount  = 0,
+            firedCount   = 0,
+            AbsoluteTime = 0 &,
+            Wolfram`Chatbook`Common`llmSynthesizeSubmit = mockSubmit[ 2, "Late" ]
+        },
+        Wolfram`Chatbook`Common`llmSynthesize[ "Hi", <| |>, TimeConstraint -> 0.25, "ReturnFailures" -> True ]
+    ],
+    Failure[ "TimedOut", _ ],
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesize-TimeConstraint-ClockChange"
+]
+
 VerificationTest[
     Block[
         {
