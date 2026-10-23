@@ -111,7 +111,8 @@ StartFrontEndServer[ port_, opts: OptionsPattern[ ] ] := Enclose[
             "Port"            -> actualPort,
             "Token"           -> token,
             "KernelPID"       -> $ProcessID,
-            "FrontEndPID"     -> $ParentProcessID,
+            (* $ParentProcessID is 0 on Windows; fe.py then finds the front end as the kernel's parent process: *)
+            "FrontEndPID"     -> Replace[ $ParentProcessID, Except[ _Integer? Positive ] -> Null ],
             "Display"         -> Replace[ Environment[ "DISPLAY" ], $Failed -> Null ],
             "Version"         -> $VersionNumber,
             "SystemID"        -> $SystemID,

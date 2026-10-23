@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """End-to-end smoke test for the front end server and fe.py.
 
-Launches a fresh front end on a private Xvfb display, exercises the client commands against it, and stops it again.
-Needs Xvfb and a licensed Wolfram installation. Takes about a minute.
+Launches a fresh front end, exercises the client commands against it, and stops it again. Needs a licensed Wolfram
+installation, and on Linux Xvfb (the front end runs on a private display). On Windows the front end opens on the
+desktop and the test uses the real mouse and keyboard, so leave the computer alone meanwhile. Takes about a minute.
 
-    python3 Developer/FrontEndServer/test_fe.py            # launch, test, stop
+    python3 Developer/FrontEndServer/test_fe.py            # launch, test, stop (Windows: python ...)
     python3 Developer/FrontEndServer/test_fe.py -s 2400    # test an already running server (left running)
 """
 
@@ -40,7 +41,7 @@ class Runner:
 
     def fe(self, *args, check=True, timeout=240, stdin=None):
         cmd = FE + (["-s", str(self.server)] if self.server else []) + list(args)
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=stdin)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=timeout, input=stdin)
         if check and proc.returncode != 0:
             raise AssertionError(f"{' '.join(args)} failed ({proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}")
         return proc.stdout.strip()
@@ -48,7 +49,7 @@ class Runner:
     def fails(self, *args):
         """Run a command that is expected to fail; return its error output."""
         cmd = FE + (["-s", str(self.server)] if self.server else []) + list(args)
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=240)
         if proc.returncode == 0:
             raise AssertionError(f"{' '.join(args)} unexpectedly succeeded: {proc.stdout.strip()}")
         return proc.stderr
@@ -82,6 +83,12 @@ def click_covered(r):
         expect(r.eval("Global`fetestPressed"), "13")
     finally:
         r.fe("close", cover)
+
+
+def region_clipped(r):
+    """A region that starts left of the screen (whose origin is not 0,0 on every Windows setup) is clipped to it."""
+    left, top = json.loads(r.fe("--json", "screenshot", "--screen", "--scale", "0.25"))["origin"]
+    expect(json.loads(r.fe("--json", "screenshot", f"--region={left - 10},{top},100,100"))["width"], 90)
 
 
 def duplicate_titles(r):
@@ -144,7 +151,7 @@ def run_tests(r):
     r.test("missing code file", lambda: expect("File not found" in r.fails("eval", "@/nonexistent/code.wl"), True))
     r.test("JSON errors", lambda: expect(json.loads(subprocess.run(
         FE + (["-s", str(r.server)] if r.server else []) + ["--json", "cells", "No Such Notebook"],
-        capture_output=True, text=True).stdout)["errorType"], "NotebookNotFound"))
+        capture_output=True, text=True, encoding="utf-8").stdout)["errorType"], "NotebookNotFound"))
     r.test("unknown key", lambda: expect("Unknown key name" in r.fails("key", "ctrl+NoSuchKey"), True))
     r.test("wait for idle", lambda: (r.fe("eval", "--cell", "--no-wait", "Pause[2]"), r.fe("wait")))
 
@@ -172,8 +179,7 @@ def run_tests(r):
     r.test("docked cells are listed", lambda: expect(
         any(c["style"] == "DockedCell" for c in json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))), True))
     r.test("duplicate titles are ambiguous", lambda: duplicate_titles(r))
-    r.test("region clipped to the screen", lambda: expect(
-        json.loads(r.fe("--json", "screenshot", "--region", "-10,0,100,100"))["width"], 90))
+    r.test("region clipped to the screen", lambda: region_clipped(r))
     r.test("oversized request is refused", lambda: expect(oversized_request(r), "RequestTooLarge"))
     r.test("read an attached cell", lambda: r.fe(
         "read", json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))[0]["ref"]))
@@ -195,7 +201,7 @@ def main():
 
     launched = None
     if not args.server:
-        out = subprocess.run(FE + ["--json", "launch"], capture_output=True, text=True, timeout=300)
+        out = subprocess.run(FE + ["--json", "launch"], capture_output=True, text=True, encoding="utf-8", timeout=300)
         if out.returncode != 0:
             print("launch failed:", out.stderr or out.stdout)
             return 1
@@ -206,7 +212,7 @@ def main():
         run_tests(runner)
     finally:
         if launched:
-            subprocess.run(FE + ["-s", str(launched), "stop"], capture_output=True, text=True, timeout=60)
+            subprocess.run(FE + ["-s", str(launched), "stop"], capture_output=True, text=True, encoding="utf-8", timeout=60)
     print(f"\n{'FAILED: ' + ', '.join(runner.failures) if runner.failures else 'all tests passed'}")
     return 1 if runner.failures else 0
 
