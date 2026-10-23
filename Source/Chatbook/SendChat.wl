@@ -1612,12 +1612,18 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     ]
 );
 
-writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
-     Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ];
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := (
+    (* Only keep the most recent unexpected chunks: *)
+    If[ Internal`BagLength @ $chunkDebug >= $maxChunkDebugSize,
+        $chunkDebug = Internal`Bag @ Internal`BagPart[ $chunkDebug, -Floor[ $maxChunkDebugSize / 2 ] ;; ]
+    ];
+    Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ]
+);
 
 writeChunk0 // endDefinition;
 
-$chunkDebug = Internal`Bag[ ];
+$chunkDebug        = Internal`Bag[ ];
+$maxChunkDebugSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
