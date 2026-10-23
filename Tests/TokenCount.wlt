@@ -158,6 +158,22 @@ VerificationTest[
     TestID   -> "SeparateTokenizers"
 ]
 
+VerificationTest[
+    Module[ { settings, text, calls, count },
+        settings = tokenizerSettings[ "gpt-4o" ];
+        text     = "A cached count does not apply the tokenizer again";
+        (* Counts the same text three times and returns the counts and the number of times the tokenizer was applied: *)
+        count[ ] := Block[
+            { calls = 0, Wolfram`Chatbook`ChatMessages`Private`applyTokenizer0 = (calls++; #1[ #2 ]) & },
+            { Table[ Wolfram`Chatbook`ChatMessages`Private`tokenCount[ settings, text ], 3 ], calls }
+        ];
+        { withoutTokenCountCache @ count[ ], withTokenCountCache @ count[ ] }
+    ],
+    { { { n_Integer, n_, n_ }, 3 }, { { n_, n_, n_ }, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "CacheHitSkipsTokenizer"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Custom Tokenizers*)

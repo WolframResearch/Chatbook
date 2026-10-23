@@ -750,6 +750,7 @@ tokenCountCacheKey // beginDefinition;
 
 (* Token counts are deterministic for a given tokenizer and string, so they can be reused across chats. Counts are only
    cached for named tokenizers, since a custom tokenizer function might not give the same result for the same input.
+   This relies on entries in $cachedTokenizers never being replaced once they are set.
    Other content (e.g. images) is not cached, since image token counts are already memoized and hashing large images
    can cost more than counting them: *)
 tokenCountCacheKey[ as_Association, tokenizer_, content_String ] :=
