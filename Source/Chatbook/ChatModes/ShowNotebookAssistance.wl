@@ -773,8 +773,12 @@ setNotebookAssistanceEvaluator // endDefinition;
 (*setWindowInputAndEvaluate*)
 setWindowInputAndEvaluate // beginDefinition;
 
+(* Avoid looking up the input cell (a front end call) when there is nothing to set or evaluate: *)
 setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] :=
-    setWindowInputAndEvaluate[ nbo, input, evaluate, workspaceChatInput @ nbo ];
+    If[ validInputStringQ @ input || TrueQ @ evaluate,
+        setWindowInputAndEvaluate[ nbo, input, evaluate, workspaceChatInput @ nbo ],
+        nbo
+    ];
 
 setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_, Dynamic[ chatInput_ ] ] := (
     If[ validInputStringQ @ input, chatInput = $WorkspaceChatInput = input ];

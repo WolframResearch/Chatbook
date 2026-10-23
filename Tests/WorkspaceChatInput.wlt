@@ -284,6 +284,28 @@ VerificationTest[
     TestID   -> "SetWindowInput-NoInput"
 ]
 
+(* Opening a window without input does not look up the input cell, which would need the front end: *)
+VerificationTest[
+    Internal`InheritedBlock[ { Cells },
+        Unprotect @ Cells;
+        Cells[ ___ ] := ($testCellsCalls++; { });
+        Block[ { $WorkspaceChatInput = "Draft", $testCellsCalls = 0 },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setWindowInputAndEvaluate[
+                    $testNotebook,
+                    "",
+                    False
+                ],
+                $testCellsCalls,
+                $WorkspaceChatInput
+            }
+        ]
+    ],
+    { NotebookObject[ "ChatbookTestWorkspaceChat" ], 0, "Draft" },
+    SameTest -> MatchQ,
+    TestID   -> "SetWindowInput-NoInput-NoLookup"
+]
+
 (* "EvaluateInput" -> True submits the text of the input cell: *)
 VerificationTest[
     withTestInputCell[
