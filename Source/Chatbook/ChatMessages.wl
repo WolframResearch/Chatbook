@@ -31,6 +31,7 @@ $tokenPressure               = 0.0;
 $reservedTokens              = 500; (* TODO: determine this at submit time *)
 $cellStringBudget            = Automatic;
 $initialCellStringBudget     = $defaultMaxCellStringLength;
+$maxTokenCountCacheSize      = 5000;
 $$validMessageResult         = _Association? AssociationQ | _Missing | Nothing;
 $$validMessageResults        = $$validMessageResult | { $$validMessageResult ... };
 
@@ -725,15 +726,57 @@ tokenCount[ as_, messages_List ] :=
     ];
 
 tokenCount[ as_Association, message_ ] := Enclose[
-    Module[ { tokenizer, content },
+    Module[ { tokenizer, content, key },
         tokenizer = getTokenizer @ as;
         content = ConfirmBy[ messageContent @ message, validContentQ, "Content" ];
-        Length @ ConfirmMatch[ applyTokenizer[ tokenizer, content ], _List, "TokenCount" ]
+        key = tokenCountCacheKey[ as, tokenizer, content ];
+        Lookup[
+            $tokenCountCache,
+            Key @ key,
+            cacheTokenCount[ key, Length @ ConfirmMatch[ applyTokenizer[ tokenizer, content ], _List, "TokenCount" ] ]
+        ]
     ],
     throwInternalFailure
 ];
 
 tokenCount // endDefinition;
+
+$tokenCountCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*tokenCountCacheKey*)
+tokenCountCacheKey // beginDefinition;
+
+(* Token counts are deterministic for a given tokenizer and string, so they can be reused across chats. Counts are only
+   cached for named tokenizers, since a custom tokenizer function might not give the same result for the same input.
+   Other content (e.g. images) is not cached, since image token counts are already memoized and hashing large images
+   can cost more than counting them: *)
+tokenCountCacheKey[ as_Association, tokenizer_, content_String ] :=
+    With[ { name = as[ "TokenizerName" ] },
+        { name, Hash @ content } /; StringQ @ name && $cachedTokenizers[ name ] === tokenizer
+    ];
+
+tokenCountCacheKey[ as_, tokenizer_, content_ ] := None;
+
+tokenCountCacheKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheTokenCount*)
+cacheTokenCount // beginDefinition;
+
+cacheTokenCount[ None, count_Integer ] := count;
+
+cacheTokenCount[ key_, count_Integer ] := (
+    If[ Length @ $tokenCountCache >= $maxTokenCountCacheSize,
+        (* Keep the cache from growing without bound by discarding the oldest half of the entries: *)
+        $tokenCountCache = Take[ $tokenCountCache, -Floor[ $maxTokenCountCacheSize / 2 ] ]
+    ];
+    $tokenCountCache[ key ] = count
+);
+
+cacheTokenCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
