@@ -2042,6 +2042,14 @@ boxToString[ FormBox[
     ___
 ] ] := "TeX";
 
+(* Formatted assistant math keeps the TeX it was created from, so serialize that directly instead of exporting the boxes
+   with serializeTraditionalForm (which is slow, especially the first time in a session): *)
+boxToString[ FormBox[
+    box: TemplateBox[ KeyValuePattern[ "input" -> _String ], "TeXAssistantTemplate", ___ ],
+    TraditionalForm,
+    ___
+] ] := boxToString @ box;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*FormBox*)
