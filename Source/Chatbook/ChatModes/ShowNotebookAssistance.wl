@@ -670,6 +670,8 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
         movedLastChatToSourcesIndicatorQ = MatchQ[ current, _NotebookObject ] && Cells[ current ] =!= {};
 
         If[ TrueQ @ new,
+            (* keep any unsent text of the input field for the new window: *)
+            If[ MatchQ[ current, _NotebookObject ], saveWorkspaceChatInput @ current ];
             Quiet @ NotebookClose @ current;
             current = Missing[ "NotFound" ]
         ];
@@ -733,6 +735,8 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
         ];
 
         If[ TrueQ @ new,
+            (* keep any unsent text of the input field for the new window: *)
+            If[ MatchQ[ current, _NotebookObject ], saveWorkspaceChatInput @ current ];
             Quiet @ NotebookClose @ current;
             current = Missing[ "NotFound" ]
         ];

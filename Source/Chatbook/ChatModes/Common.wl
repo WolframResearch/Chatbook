@@ -18,6 +18,7 @@ HoldComplete[
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,
+    `saveWorkspaceChatInput,
     `scrollInlineChat,
     `sidebarCellObject,
     `sidebarScrollingCell,

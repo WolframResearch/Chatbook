@@ -2857,8 +2857,9 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
 (*
     The text of the input field is stored in the TaggingRules of the attached input cell, so typing does not need the
     kernel. $WorkspaceChatInput is a kernel-side copy of this text: it is updated when the text is set programmatically
-    (e.g. the "Input" option of ShowNotebookAssistance), when it is submitted (cleared), and when the input cell is
-    re-attached (e.g. for a new chat or a chat loaded from history). Newly attached input cells start with its value.
+    (e.g. the "Input" option of ShowNotebookAssistance), when it is submitted (cleared), when the input cell is
+    re-attached (e.g. for a new chat or a chat loaded from history), and when ShowNotebookAssistance replaces the window
+    with a new one ("NewChat"). Newly attached input cells start with its value.
 *)
 workspaceChatInput // beginDefinition;
 
@@ -2877,7 +2878,7 @@ workspaceChatInput // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*saveWorkspaceChatInput*)
-(* Copies the text of the input cell to $WorkspaceChatInput before the cell is removed, so a re-attached cell keeps it: *)
+(* Copies the text of the input cell to $WorkspaceChatInput before the cell or its window is removed, so it is kept: *)
 saveWorkspaceChatInput // beginDefinition;
 
 saveWorkspaceChatInput[ nbo_NotebookObject ] :=

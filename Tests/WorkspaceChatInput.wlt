@@ -45,6 +45,33 @@ withTestInputCell[ cells_List, eval_ ] :=
         ]
     ];
 
+(* Like withTestInputCell, but the current assistant window is the given one, a new window is $testNewNotebook (which
+   has no input cell yet), and windows closed with NotebookClose are stored in $testClosed: *)
+$testNewNotebook = NotebookObject[ "ChatbookTestWorkspaceChatNew" ];
+
+Attributes[ withTestNewWindow ] = { HoldRest };
+withTestNewWindow[ current_, cells_List, eval_ ] :=
+    withTestInputCell[
+        cells,
+        Internal`InheritedBlock[
+            {
+                Wolfram`Chatbook`ChatModes`Common`createWorkspaceChat,
+                Wolfram`Chatbook`ChatModes`Common`findCurrentWorkspaceChat,
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setNotebookAssistanceEvaluator
+            },
+            Clear[
+                Wolfram`Chatbook`ChatModes`Common`createWorkspaceChat,
+                Wolfram`Chatbook`ChatModes`Common`findCurrentWorkspaceChat,
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setNotebookAssistanceEvaluator
+            ];
+            Wolfram`Chatbook`ChatModes`Common`findCurrentWorkspaceChat[ "NotebookAssistance" ] := current;
+            Wolfram`Chatbook`ChatModes`Common`createWorkspaceChat[ ] := $testNewNotebook;
+            Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setNotebookAssistanceEvaluator[ _ ] := Null;
+            Cells[ $testNewNotebook, AttachedCell -> True, CellStyle -> "ChatInputField" ] := { };
+            Block[ { NotebookClose = ($testClosed = #1;) & }, eval ]
+        ]
+    ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*attachedWorkspaceChatInputCell*)
@@ -142,7 +169,7 @@ VerificationTest[
     withTestInputCell[
         { $testInputCell },
         Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft" },
-            Wolfram`Chatbook`ChatModes`UI`Private`saveWorkspaceChatInput @ $testNotebook;
+            Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ $testNotebook;
             $WorkspaceChatInput
         ]
     ],
@@ -155,7 +182,7 @@ VerificationTest[
     withTestInputCell[
         { $testInputCell },
         Block[ { $WorkspaceChatInput = "", $testInputCellValue = RowBox @ { "Draft", " ", "text" } },
-            Wolfram`Chatbook`ChatModes`UI`Private`saveWorkspaceChatInput @ { $testInputCell };
+            Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ { $testInputCell };
             $WorkspaceChatInput
         ]
     ],
@@ -169,7 +196,7 @@ VerificationTest[
     withTestInputCell[
         { $testInputCell },
         Block[ { $WorkspaceChatInput = "Draft", $testInputCellValue = Inherited },
-            Wolfram`Chatbook`ChatModes`UI`Private`saveWorkspaceChatInput @ $testNotebook;
+            Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ $testNotebook;
             $WorkspaceChatInput
         ]
     ],
@@ -182,7 +209,7 @@ VerificationTest[
     withTestInputCell[
         { },
         Block[ { $WorkspaceChatInput = "Draft" },
-            Wolfram`Chatbook`ChatModes`UI`Private`saveWorkspaceChatInput @ $testNotebook;
+            Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ $testNotebook;
             $WorkspaceChatInput
         ]
     ],
@@ -304,6 +331,108 @@ VerificationTest[
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], Hold @ $WorkspaceChatInput, "Hello" },
     SameTest -> MatchQ,
     TestID   -> "SetWindowInput-Evaluate-NoCell"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*showNotebookAssistanceWindow*)
+
+(* Replacing the open window with a new one ("NewChat") keeps the unsent text for the input cell of the new window: *)
+VerificationTest[
+    withTestNewWindow[
+        $testNotebook,
+        { $testInputCell },
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft", $testClosed = None },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                    None,
+                    "",
+                    False,
+                    True
+                ],
+                $testClosed,
+                $WorkspaceChatInput,
+                Cases[
+                    Wolfram`Chatbook`ChatModes`UI`Private`attachedWorkspaceChatInputCell[ "Top" ],
+                    HoldPattern[ TaggingRules -> tags_ ] :> tags
+                ]
+            }
+        ]
+    ],
+    {
+        NotebookObject[ "ChatbookTestWorkspaceChatNew" ],
+        NotebookObject[ "ChatbookTestWorkspaceChat" ],
+        "Draft",
+        { <| "ChatInputString" -> "Draft" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-KeepsInput"
+]
+
+(* The "Input" option still replaces the unsent text: *)
+VerificationTest[
+    withTestNewWindow[
+        $testNotebook,
+        { $testInputCell },
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft", $testClosed = None },
+            Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                None,
+                "Hello",
+                False,
+                True
+            ];
+            { $testClosed, $WorkspaceChatInput }
+        ]
+    ],
+    { NotebookObject[ "ChatbookTestWorkspaceChat" ], "Hello" },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-Input"
+]
+
+(* Without an open window there is nothing to keep: *)
+VerificationTest[
+    withTestNewWindow[
+        Missing[ "NotFound" ],
+        { },
+        Block[ { $WorkspaceChatInput = "Earlier", $testClosed = None },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                    None,
+                    "",
+                    False,
+                    True
+                ],
+                $WorkspaceChatInput
+            }
+        ]
+    ],
+    { NotebookObject[ "ChatbookTestWorkspaceChatNew" ], "Earlier" },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-NoWindow"
+]
+
+(* Reusing the open window leaves $WorkspaceChatInput alone: *)
+VerificationTest[
+    withTestNewWindow[
+        $testNotebook,
+        { $testInputCell },
+        Block[ { $WorkspaceChatInput = "Earlier", $testInputCellValue = "Draft", $testClosed = None },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                    None,
+                    "",
+                    False,
+                    False
+                ],
+                $testClosed,
+                $WorkspaceChatInput,
+                $testInputCellValue
+            }
+        ]
+    ],
+    { NotebookObject[ "ChatbookTestWorkspaceChat" ], None, "Earlier", "Draft" },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-ReuseWindow"
 ]
 
 (* ::**************************************************************************************************************:: *)
