@@ -1990,6 +1990,10 @@ makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ langua
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
 
+unescapePlainTextCodeBlock // beginDefinition;
+unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];
+unescapePlainTextCodeBlock // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cachedCodeBlockCell*)
@@ -2009,10 +2013,6 @@ cachedCodeBlockCell[ language_String, code_String ] :=
     ];
 
 cachedCodeBlockCell // endDefinition;
-
-unescapePlainTextCodeBlock // beginDefinition;
-unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];
-unescapePlainTextCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
