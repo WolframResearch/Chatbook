@@ -1356,7 +1356,11 @@ LogChatTiming[ eval_, tag_String ] := (
 
 LogChatTiming // endExportedDefinition;
 
-$timingLog = Internal`Bag[ ];
+$timingLog        = Internal`Bag[ ];
+$nestedChatTiming = False;
+
+(* Top-level entries kept in $timingLog (the oldest half is dropped when this is exceeded): *)
+$maxTimingLogSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1379,7 +1383,7 @@ logChatTiming[ eval_, tag_String ] :=
         now    = chatTime[ ];
         absNow = AbsoluteTime[ ];
 
-        Block[ { $timingLog = Internal`Bag[ ] },
+        Block[ { $timingLog = Internal`Bag[ ], $nestedChatTiming = True },
             fullTime = First @ AbsoluteTiming[ result = eval ];
             innerTimings = Internal`BagPart[ $timingLog, All ];
         ];
@@ -1397,10 +1401,20 @@ logChatTiming[ eval_, tag_String ] :=
                 "ChildTimings"       -> innerTimings
             |> ];
 
+        (* Only top-level entries are trimmed, since nested ones are needed for the parent's "UsedTiming": *)
+        If[ ! $nestedChatTiming && Internal`BagLength @ $timingLog > $maxTimingLogSize, trimTimingLog[ ] ];
+
         result
     ];
 
 logChatTiming // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trimTimingLog*)
+trimTimingLog // beginDefinition;
+trimTimingLog[ ] := $timingLog = Internal`Bag @ Internal`BagPart[ $timingLog, -Floor[ $maxTimingLogSize / 2 ] ;; ];
+trimTimingLog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

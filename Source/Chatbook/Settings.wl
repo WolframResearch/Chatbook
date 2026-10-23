@@ -2117,7 +2117,12 @@ absoluteCurrentValue // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*mergeChatSettings*)
 mergeChatSettings // beginDefinition;
-mergeChatSettings[ a_List ] := mergeChatSettings[ a ] = mergeChatSettings0 @ a //. $mergeSettingsDispatch;
+
+mergeChatSettings[ a_List ] := Replace[
+    cachedMergedChatSettings @ a,
+    _cachedMergedChatSettings :> cacheMergedChatSettings[ a, mergeChatSettings0 @ a //. $mergeSettingsDispatch ]
+];
+
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
@@ -2139,6 +2144,28 @@ $mergeSettingsDispatch := $mergeSettingsDispatch = Dispatch @ Flatten @ {
 };
 
 (* TODO: need to apply special merging/inheritance for things like "Prompts" *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheMergedChatSettings*)
+cacheMergedChatSettings // beginDefinition;
+
+(*
+    Results are stored as DownValues of `cachedMergedChatSettings`, since that's faster to look up than an Association.
+    Each chat brings new inputs (e.g. a new ConversationUUID), so the cache starts over whenever it gets too large.
+*)
+cacheMergedChatSettings[ key_List, merged_ ] := (
+    If[ ++$mergedChatSettingsCacheSize > $maxMergedChatSettingsCacheSize,
+        Clear @ cachedMergedChatSettings;
+        $mergedChatSettingsCacheSize = 1
+    ];
+    cachedMergedChatSettings[ key ] = merged
+);
+
+cacheMergedChatSettings // endDefinition;
+
+$mergedChatSettingsCacheSize    = 0;
+$maxMergedChatSettingsCacheSize = 500;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
