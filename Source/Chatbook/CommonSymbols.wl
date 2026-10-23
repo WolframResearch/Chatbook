@@ -232,6 +232,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getProcessingFunction;
 `getProcessingFunctions;
 `getServiceData;
+`getServiceIcon;
 `getServiceModelList;
 `getSidebarPrompt;
 `getSkillsPrompt;
