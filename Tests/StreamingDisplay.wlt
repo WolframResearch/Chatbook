@@ -238,8 +238,24 @@ VerificationTest[
     TestID   -> "ActiveDynamic-TracksTrigger"
 ]
 
+(* The display state must be local to each output cell: *)
 VerificationTest[
-    Module[ { container, dm, body, opts, calls = 0, scrolls = 0, results },
+    Module[ { container, dm },
+        container = <| "DynamicContent" -> None, "FullContent" -> "", "UUID" -> "test" |>;
+        dm = Wolfram`Chatbook`SendChat`Private`activeAIAssistantDynamicModule[ container, <| |>, None, #1 &, True ];
+        Replace[
+            dm,
+            Verbatim[ DynamicModule ][ { vars___ }, ___ ] :>
+                Cases[ HoldComplete @ vars, HoldPattern[ s_Symbol = _ ] | s_Symbol :> SymbolName @ Unevaluated @ s ]
+        ]
+    ],
+    _List? (SubsetQ[ #, { "cachedDynamicOutput", "displayedContentHash", "scrollPending" } ] &),
+    SameTest -> MatchQ,
+    TestID   -> "ActiveDynamic-LocalVariables"
+]
+
+VerificationTest[
+    Module[ { container, dm, body, opts, calls = 0, scrolls = 0, tick, results },
         container = <| "DynamicContent" -> None, "FullContent" -> "", "UUID" -> "test" |>;
         dm = Wolfram`Chatbook`SendChat`Private`activeAIAssistantDynamicModule[ container, <| |>, None, #1 &, True ];
         { body, opts } = activeDynamic @ dm;
@@ -247,42 +263,46 @@ VerificationTest[
             {
                 Wolfram`Chatbook`SendChat`Private`cachedDynamicOutput,
                 Wolfram`Chatbook`SendChat`Private`displayedContentHash = None,
+                Wolfram`Chatbook`SendChat`Private`scrollPending        = False,
                 Wolfram`Chatbook`SendChat`Private`finishedSignal       = False,
                 Wolfram`Chatbook`SendChat`Private`scrollToEnd          = (scrolls++) &,
                 Wolfram`Chatbook`SendChat`Private`dynamicTextDisplay   = Function[ Null, calls++; { "Formatted", #1[ "DynamicContent" ] }, HoldFirst ]
             },
+            (* Evaluates the Dynamic once and returns its output with the running format and scroll counts: *)
+            tick = Function[ { ReleaseHold @ body, calls, scrolls } ];
             results = {
                 (* Waiting for content: *)
-                ReleaseHold @ body,
-                ReleaseHold @ body,
+                tick[ ],
+                tick[ ],
+                tick[ ],
                 (* Streaming: *)
                 container[ "DynamicContent" ] = "Hello";
-                ReleaseHold @ body,
-                ReleaseHold @ body,
-                ReleaseHold @ body,
+                tick[ ],
+                tick[ ],
+                tick[ ],
                 container[ "DynamicContent" ] = "Hello world";
-                ReleaseHold @ body,
-                ReleaseHold @ body,
+                tick[ ],
+                tick[ ],
                 (* Finished: *)
                 container[ "FinishedCell" ] = Cell[ "Hello world" ];
-                ReleaseHold @ body
+                tick[ ]
             };
-            { results, calls, scrolls, Wolfram`Chatbook`SendChat`Private`finishedSignal }
+            { results, Wolfram`Chatbook`SendChat`Private`finishedSignal }
         ]
     ],
     {
         {
-            { "Formatted", None },
-            { "Formatted", None },
-            { "Formatted", "Hello" },
-            { "Formatted", "Hello" },
-            { "Formatted", "Hello" },
-            { "Formatted", "Hello world" },
-            { "Formatted", "Hello world" },
-            { "Formatted", "Hello world" }
+            (* Each change is formatted and scrolled once, scrolled once more on the next tick, and then left alone: *)
+            { { "Formatted", None }, 1, 1 },
+            { { "Formatted", None }, 1, 2 },
+            { { "Formatted", None }, 1, 2 },
+            { { "Formatted", "Hello" }, 2, 3 },
+            { { "Formatted", "Hello" }, 2, 4 },
+            { { "Formatted", "Hello" }, 2, 4 },
+            { { "Formatted", "Hello world" }, 3, 5 },
+            { { "Formatted", "Hello world" }, 3, 6 },
+            { { "Formatted", "Hello world" }, 3, 6 }
         },
-        3,
-        3,
         True
     },
     SameTest -> MatchQ,
@@ -298,6 +318,7 @@ VerificationTest[
             {
                 Wolfram`Chatbook`SendChat`Private`cachedDynamicOutput,
                 Wolfram`Chatbook`SendChat`Private`displayedContentHash = None,
+                Wolfram`Chatbook`SendChat`Private`scrollPending        = False,
                 Wolfram`Chatbook`SendChat`Private`finishedSignal       = False,
                 Wolfram`Chatbook`SendChat`Private`scrollToEnd          = Null &,
                 Wolfram`Chatbook`SendChat`Private`dynamicTextDisplay   = Function[ Null, calls++; Failure[ "Test", <| |> ], HoldFirst ]
