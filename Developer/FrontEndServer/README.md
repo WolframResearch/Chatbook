@@ -93,6 +93,10 @@ has recipes for Chatbook's UI.
 
 * **Protocol.** Newline-delimited JSON over TCP on 127.0.0.1:
   `{"id", "token", "command", "args", "deadline", "preemptive"}` → `{"id", "ok", "result" | "error", "errorType"}`.
+  A connection can carry any number of requests. `fe.py` sends all requests of a command (and its keep-alive pings)
+  over one connection, because the kernel's socket library does not free everything a connection used when the
+  client hangs up: on Windows each connection keeps about 4 handles, and the server stops answering after a few hundred
+  connections. Clients that make many requests should reuse one `Server` object.
 * **Registry.** Each server writes `<port>.json` (mode 0600, including a random access token) to
   `$UserBaseDirectory/ApplicationData/ChatbookFrontEndServer/Servers/` (mode 0700). `fe.py` discovers servers there and
   sends the token with each request; requests without the right token are rejected. `fe.py launch` also writes
