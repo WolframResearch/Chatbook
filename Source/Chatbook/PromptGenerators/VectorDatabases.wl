@@ -546,10 +546,11 @@ vectorDBDirectoryQ0 // endDefinition;
 (*downloadVectorDatabases*)
 downloadVectorDatabases // beginDefinition;
 
+(* Both of these need a condition, since a definition without patterns or conditions is always tried first: *)
 downloadVectorDatabases[ ] /; ! $allowDownload :=
     Throw[ Missing[ "DownloadDisabled" ], $vdbTag ];
 
-downloadVectorDatabases[ ] :=
+downloadVectorDatabases[ ] /; $allowDownload :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
