@@ -1002,9 +1002,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         Grid[
             {
                 checkTemplateBoxes @ Which[
-                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "WorkspaceChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
-                    TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
                         codeBlockButtons[ lang, EvaluationCell[ ], False ]
@@ -1112,7 +1112,8 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            targetNotebookLabel @ EvaluationNotebook[ ]
+            (* Finding the target notebook scans all open notebooks, so wait until the tooltip is shown: *)
+            With[ { nbo = EvaluationNotebook[ ] }, Dynamic @ targetNotebookLabel @ nbo ]
         ]
     ];
 
