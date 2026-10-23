@@ -462,6 +462,26 @@ VerificationTest[
     TestID   -> "FilterSnippetsCache-Disabled"
 ]
 
+(* Hits still resolve the filtering configuration, so a non-LLMKit authentication still turns off LLMKit for the chat: *)
+VerificationTest[
+    withMockFilterLLM @ Block[ { Wolfram`Chatbook`Common`$llmKitService = "LLMKitOpenAI" },
+        Table[
+            Wolfram`Chatbook`Common`withChatState[
+                Wolfram`Chatbook`Common`$llmKit = True;
+                {
+                    cachedFilterResponse[ "instructions 1", <| "Authentication" -> Verbatim @ Automatic |> ],
+                    Wolfram`Chatbook`Common`$llmKit,
+                    $filterCalls
+                }
+            ],
+            2
+        ]
+    ],
+    { { "Computational\n5 Mock-1", False, 1 }, { "Computational\n5 Mock-1", False, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-AuthenticationSideEffect"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*llmSynthesizeCacheKey*)
@@ -504,6 +524,23 @@ VerificationTest[
     False,
     SameTest -> MatchQ,
     TestID   -> "LLMSynthesizeCacheKey-Service"
+]
+
+(* LLMKit requests are made for the signed-in user, so responses are not reused across cloud accounts: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$llmKit = True, Wolfram`Chatbook`Common`$llmKitService = "LLMKitOpenAI" },
+        SameQ[
+            Block[ { $CloudUserID = "user1@example.com" },
+                Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+            ],
+            Block[ { $CloudUserID = "user2@example.com" },
+                Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+            ]
+        ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesizeCacheKey-CloudUser"
 ]
 
 (* ::**************************************************************************************************************:: *)
