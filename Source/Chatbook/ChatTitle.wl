@@ -15,7 +15,6 @@ $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
 $tokenLengthMultiplier  = 3.0;
 $defaultEvaluator       = <| "Model" -> <| "Service" -> Automatic, "Name" -> "gpt-4.1-nano" |> |>;
-$titleInBackground      = False;
 
 $titlePrompt := "\
 Please come up with a meaningful window title for the current chat conversation using no more than \
@@ -122,7 +121,7 @@ GenerateChatTitleAsynchronous // endExportedDefinition;
 generateChatTitleInBackground // beginDefinition;
 
 generateChatTitleInBackground[ messages: $$chatMessages, callback_, opts: OptionsPattern[ GenerateChatTitleAsynchronous ] ] :=
-    Block[ { $titleInBackground = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
+    Block[ { $backgroundHandlers = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
 
 generateChatTitleInBackground // endDefinition;
 
@@ -189,7 +188,7 @@ generateChatTitleAsync // endDefinition;
 (*postProcessChatTitle*)
 postProcessChatTitle // beginDefinition;
 
-postProcessChatTitle[ maxLength_ ] /; TrueQ @ $titleInBackground :=
+postProcessChatTitle[ maxLength_ ] /; TrueQ @ $backgroundHandlers :=
     Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None }, postProcessChatTitle[ maxLength, ## ] ] &;
 
 postProcessChatTitle[ maxLength_ ] :=

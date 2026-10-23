@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$attachments;
 `$autoOpen;
 `$availableServices;
+`$backgroundHandlers;
 `$basePrompt;
 `$basePromptComponents;
 `$baseStyle;

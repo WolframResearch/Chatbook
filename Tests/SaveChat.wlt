@@ -101,6 +101,35 @@ VerificationTest[
         eval
     ];
 
+    (* Simulates LLMServices`ChatSubmit instead, so the response handlers of llmSynthesizeSubmit are used: *)
+    mockChatSubmit[ messages_, config_, opts___ ] := Module[ { task },
+        AppendTo[ $mockChatSubmitHandlers, Lookup[ { opts }, HandlerFunctions ] ];
+        task = SessionSubmit @ ScheduledTask[ Null, { 3600 } ];
+        AppendTo[ $mockTitleTasks, task ];
+        task
+    ];
+
+    respondChatSubmit[ i_Integer, chunk_, status_Integer ] :=
+        With[ { handlers = $mockChatSubmitHandlers[[ i ]] },
+            handlers[ "BodyChunkReceived" ][ <| "BodyChunkProcessed" -> chunk, "StatusCode" -> status |> ];
+            handlers[ "TaskFinished" ][ <| "StatusCode" -> status |> ]
+        ];
+
+    withMockChatSubmit // Attributes = { HoldFirst };
+    withMockChatSubmit[ eval_ ] := Block[
+        {
+            LLMServices`ChatSubmit                                = mockChatSubmit,
+            Wolfram`Chatbook`Common`$llmKit                       = False,
+            Wolfram`Chatbook`Storage`Private`$backgroundTitles    = True,
+            Wolfram`Chatbook`Storage`Private`$generatedTitleCache = <| |>,
+            Wolfram`Chatbook`Storage`Private`$titleTasks          = <| |>,
+            Wolfram`Chatbook`Storage`Private`$titleTargets        = <| |>,
+            Wolfram`Chatbook`Storage`Private`$deferredTitles      = <| |>,
+            $mockChatSubmitHandlers = { }
+        },
+        eval
+    ];
+
     (* Reads the title from everywhere it is saved: *)
     savedTitleState[ uuid_String ] := Module[ { dirs, dir, meta, data, index, vectors },
         dirs = FileNames[
@@ -331,6 +360,38 @@ VerificationTest[
     { "NotThrown", 3, expectedTitleState[ "Untitled Chat", 4 ], 4 },
     SameTest -> MatchQ,
     TestID   -> "AutoSave-FailureFallback"
+]
+
+VerificationTest[
+    withMockChatSubmit @ Module[ { uuid, chatTask, thrown },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        (* An API error response arrives while another chat is running: *)
+        chatTask = SessionSubmit @ ScheduledTask[ Null, { 3600 } ];
+        AppendTo[ $mockTitleTasks, chatTask ];
+        thrown = Block[ { Wolfram`Chatbook`Common`$lastTask = chatTask },
+            Wolfram`Chatbook`Common`catchTop[
+                respondChatSubmit[
+                    1,
+                    Failure[ "APIError", <| "MessageTemplate" -> "Test error", "StatusCode" -> 429 |> ],
+                    429
+                ];
+                "NotThrown"
+            ]
+        ];
+        (* The error is not thrown into that chat, its task is not removed, and the title is retried: *)
+        respondChatSubmit[ 2, "Title H", 200 ];
+        {
+            thrown,
+            chatTask[ "TaskStatus" ],
+            Length @ $mockChatSubmitHandlers,
+            savedTitleState @ uuid,
+            Wolfram`Chatbook`Storage`Private`$titleTasks
+        }
+    ],
+    { "NotThrown", Except[ "Removed" ], 2, expectedTitleState[ "Title H", 2 ], <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-APIErrorResponse"
 ]
 
 VerificationTest[
