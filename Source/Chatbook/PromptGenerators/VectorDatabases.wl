@@ -1484,8 +1484,10 @@ disableUSearchIndex // beginDefinition;
 
 disableUSearchIndex[ name_String, reason_ ] := (
     $usearchIndexCache = KeyDrop[ $usearchIndexCache, name ];
-    (* Keep the reason for debugging, but make sure it doesn't hold on to an index handle: *)
-    $usearchIndexFailures[ name ] = reason /. _? ManagedLibraryExpressionQ -> Missing[ "Released" ];
+    (* Keep the reason for debugging, but make sure it doesn't hold on to an index handle (failures can contain held
+       code, so the test must not evaluate the parts that it checks): *)
+    $usearchIndexFailures[ name ] =
+        reason /. h_ /; ManagedLibraryExpressionQ @ Unevaluated @ h :> Missing[ "Released" ];
     Missing[ "Disabled" ]
 ) // LogChatTiming[ { "DisableUSearchIndex", name } ];
 

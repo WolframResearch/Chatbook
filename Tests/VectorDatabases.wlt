@@ -423,6 +423,48 @@ VerificationTest[
 ]
 
 VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
+        },
+        Module[ { evaluated = False, handle },
+            handle = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[
+                "NeuralNetRepositoryURIs",
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
+                    "VectorDatabaseObject"
+                ]
+            ][ "Handle" ];
+            (* Failure reasons must not keep index handles, and held code in them must not be evaluated: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`disableUSearchIndex[
+                "NeuralNetRepositoryURIs",
+                Failure[ "Test", <| "Handle" -> handle, "HeldTest" -> Hold[ evaluated = True ] |> ]
+            ];
+            {
+                ManagedLibraryExpressionQ @ handle,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache,
+                evaluated
+            }
+        ]
+    ],
+    {
+        True,
+        <|
+            "NeuralNetRepositoryURIs" -> Failure[
+                "Test",
+                <| "Handle" -> Missing[ "Released" ], "HeldTest" -> Hold[ _Set ] |>
+            ]
+        |>,
+        <| |>,
+        False
+    },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-DisableReason"
+]
+
+VerificationTest[
     {
         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`catchUSearch[
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchFunctions[ "ToNumericArray" ][
