@@ -48,6 +48,12 @@ getFocusedNotebook // endDefinition;
 (*focusedNotebookDisplay*)
 focusedNotebookDisplay // beginDefinition;
 
+(*
+    The sidebar only shows the context checkbox, so it only needs the notebook scan below to check whether any notebook
+    is included. Skip the scan in the usual case where the sidebar's own notebook is included. *)
+focusedNotebookDisplay[ nbo_NotebookObject, sidebarCell_CellObject ] /; includedNotebookQ @ nbo :=
+    sidebarFocusedNotebookDisplay @ sidebarCell;
+
 focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
     Catch @ Module[ { locked, notebooks, info, current, focused, label },
 
@@ -69,10 +75,10 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
             focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current.
             This tagging is not needed for the sidebar assistant. Avoid dirtying notebooks with the sidebar assistant. *)
         If[ ! MatchQ[ appContainer, _CellObject ],
-            setCurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" }, Lookup[ focused, "WindowTitle", None ] ] ];
+            setFocusWindowTitle[ chatNB, Lookup[ focused, "WindowTitle", None ] ] ];
 
         If[ MatchQ[ appContainer, _CellObject ],
-            Pane[ focusedNotebookDisplay0 @ appContainer, Alignment -> { Center, Baseline }, ImageSize -> Scaled[ 1 ] ]
+            sidebarFocusedNotebookDisplay @ appContainer
             ,
             Pane[
                 Grid[
@@ -122,6 +128,14 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
 ];
 
 focusedNotebookDisplay // endDefinition;
+
+
+sidebarFocusedNotebookDisplay // beginDefinition;
+
+sidebarFocusedNotebookDisplay[ sidebarCell_CellObject ] :=
+    Pane[ focusedNotebookDisplay0 @ sidebarCell, Alignment -> { Center, Baseline }, ImageSize -> Scaled[ 1 ] ];
+
+sidebarFocusedNotebookDisplay // endDefinition;
 
 
 focusedNotebookDisplay0 // beginDefinition;
@@ -186,6 +200,21 @@ $disableNotebookFocusLabel := $disableNotebookFocusLabel = Tooltip[
     chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ],
     tr[ "WorkspaceFocusIndicatorDisableTooltip" ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setFocusWindowTitle*)
+setFocusWindowTitle // beginDefinition;
+
+(*
+    Only write the title when it has changed, since focusedNotebookDisplay runs on every update of the focus indicator.
+    Read the current value inside Refresh[ ..., None ] so that the enclosing Dynamic does not depend on it. *)
+setFocusWindowTitle[ nbo_, title_ ] :=
+    If[ Refresh[ CurrentValue[ nbo, { TaggingRules, "FocusWindowTitle" } ], None ] =!= title,
+        setCurrentValue[ nbo, { TaggingRules, "FocusWindowTitle" }, title ]
+    ];
+
+setFocusWindowTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
