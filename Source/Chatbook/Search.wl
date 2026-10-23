@@ -11,6 +11,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Configuration*)
 $rootStorageName    = "Search";
 $chatSearchIndex    = None;
+$chatSearchData     = <| |>;
 $searchIndexVersion = 1;
 
 (* ::**************************************************************************************************************:: *)
@@ -38,20 +39,15 @@ SearchChats // endDefinition;
 searchChats // beginDefinition;
 
 searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
-    Catch @ Module[ { index, flat, values, vectors, embedding, idx, results },
+    Catch @ Module[ { index, data, values, nearest, embedding, idx, results },
 
         If[ query === "", Throw @ { } ];
-        index = Values @ ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
+        index = ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
+        data  = ConfirmMatch[ getChatSearchData[ appName, index ], { _List, _NearestFunction } | None, "Data" ];
 
-        flat = ConfirmMatch[
-            Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ index, 1 ],
-            { { _Association, _NumericArray }... },
-            "Flat"
-        ];
+        If[ data === None, Throw @ { } ];
 
-        If[ flat === { }, Throw @ { } ];
-
-        { values, vectors } = ConfirmMatch[ Transpose @ flat, { _, _ }, "Transpose" ];
+        { values, nearest } = data;
 
         embedding = ConfirmBy[
             getEmbedding[ query, "CacheEmbeddings" -> TrueQ @ cache ],
@@ -60,7 +56,7 @@ searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
         ];
 
         idx = ConfirmMatch[
-            Nearest[ Normal @ vectors -> "Index", Normal @ embedding, Floor[ 2*max+1 ] ],
+            nearest[ Normal @ embedding, Floor[ 2*max+1 ] ],
             { ___Integer },
             "Nearest"
         ];
@@ -73,6 +69,51 @@ searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
 ];
 
 searchChats // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getChatSearchData*)
+(* Returns the flattened index values and a NearestFunction for their vectors, or None if there are no vectors.
+   The result is cached for the most recently searched app and reused for as long as its index is unchanged.
+   Any change to the index (add, remove, rebuild, or load from disk) makes it differ from the cached index,
+   so the cache entry stops matching without each of those writers needing to invalidate it. While the index
+   is unchanged, the SameQ check is cheap since both sides are the same expression. *)
+getChatSearchData // beginDefinition;
+
+getChatSearchData[ appName_String, index_Association ] :=
+    With[ { cached = $chatSearchData[ appName ] },
+        cached[ "Data" ] /; AssociationQ @ cached && cached[ "Index" ] === index
+    ];
+
+getChatSearchData[ appName_String, index_Association ] := Enclose[
+    Catch @ Module[ { flat, values, vectors, nearest },
+
+        flat = ConfirmMatch[
+            Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ Values @ index, 1 ],
+            { { _Association, _NumericArray }... },
+            "Flat"
+        ];
+
+        If[ flat === { }, Throw @ None ];
+
+        { values, vectors } = ConfirmMatch[ Transpose @ flat, { _, _ }, "Transpose" ];
+
+        (* A packed array of reals gives the same results, but the NearestFunction then retains a third of the memory: *)
+        nearest = ConfirmMatch[
+            Nearest[ N @ Developer`ToPackedArray[ Normal @ vectors ] -> "Index" ],
+            _NearestFunction,
+            "Nearest"
+        ];
+
+        (* Only one app is cached at a time to limit memory use: *)
+        $chatSearchData = <| appName -> <| "Index" -> index, "Data" -> { values, nearest } |> |>;
+
+        { values, nearest }
+    ],
+    throwInternalFailure
+];
+
+getChatSearchData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
