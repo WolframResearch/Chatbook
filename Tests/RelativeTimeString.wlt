@@ -238,6 +238,22 @@ VerificationTest[
     TestID   -> "RelativeTimeString-NamedDays-Midnight"
 ]
 
+VerificationTest[
+    (* The "this morning" interval always comes from the current day. Version 1.0.0 of the resource function caches it
+       on first use for the rest of the session, so after the first two rows it gives "13 hours ago", "this morning"
+       and "this morning" for the last three: *)
+    relativeTimeMismatches @ {
+        { { 2026, 10, 21, 15, 0, 0 }, { 2026, 10, 18, 15, 0, 0 }, "3 days ago" },
+        { { 2026, 10, 21, 15, 0, 0 }, { 2026, 10, 21, 5, 0, 0 }, "this morning" },
+        { { 2026, 10, 21, 22, 0, 0 }, { 2026, 10, 21, 9, 0, 0 }, "this morning" },
+        { { 2026, 10, 23, 15, 0, 0 }, { 2026, 10, 21, 5, 0, 0 }, "2 days ago" },
+        { { 2026, 10, 26, 15, 0, 0 }, { 2026, 10, 21, 6, 0, 0 }, "last week" }
+    },
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "RelativeTimeString-NamedDays-ThisMorningNotCached"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Time Zones*)
