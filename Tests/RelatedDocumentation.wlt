@@ -287,3 +287,23 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-SessionSubmit@@Tests/RelatedDocumentation.wlt:281,1-289,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*DocumentationLookup*)
+VerificationTest[
+    $DefaultTools[ "DocumentationLookup" ][ <| "ids" -> "AstroGraphics" |> ],
+    _String? (StringContainsQ[ "# AstroGraphics\n\nAstroGraphics[" ]),
+    SameTest -> MatchQ,
+    TestID   -> "DocumentationLookup-Markdown@@Tests/RelatedDocumentation.wlt:294,1-299,2"
+]
+
+VerificationTest[
+    StringSplit[
+        $DefaultTools[ "DocumentationLookup" ][ <| "ids" -> { "Plot", "paclet:ref/ListPlot" } |> ],
+        "\n\n======\n\n"
+    ],
+    { _String? (StringStartsQ[ "# Plot\n" ]), _String? (StringStartsQ[ "# ListPlot\n" ]) },
+    SameTest -> MatchQ,
+    TestID   -> "DocumentationLookup-Markdown-Multiple@@Tests/RelatedDocumentation.wlt:301,1-309,2"
+]
