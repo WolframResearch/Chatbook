@@ -530,6 +530,25 @@ VerificationTest[
     TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat"
 ]
 
+(* Sources used for citations are still added when the response comes from the cache: *)
+VerificationTest[
+    withMockFilterLLM[
+        Wolfram`Chatbook`Common`withChatState @ Module[ { messages, sources1, sources2 },
+            messages = { <| "Role" -> "User", "Content" -> "How do I make a 3D plot of a surface?" |> };
+            RelatedDocumentation[ messages, "Prompt", "FilterResults" -> True, "MaxItems" -> 20 ];
+            sources1 = Wolfram`Chatbook`Common`$sources;
+            Wolfram`Chatbook`Common`$sources = <| |>;
+            RelatedDocumentation[ messages, "Prompt", "FilterResults" -> True, "MaxItems" -> 20 ];
+            sources2 = Wolfram`Chatbook`Common`$sources;
+            { $filterCalls, sources1 === sources2, sources1 }
+        ],
+        $mockSelectionLLM
+    ],
+    { 1, True, _Association? (Length @ # > 0 &) },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Sources"
+]
+
 VerificationTest[
     withMockFilterLLM[
         Module[ { prompt1, prompt2 },
