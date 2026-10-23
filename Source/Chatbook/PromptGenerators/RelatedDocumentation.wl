@@ -18,6 +18,7 @@ $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-con
 $streamableSnippetBaseURL      = "https://www.wolframcloud.com/obj/wolframai-content/StreamableSnippets";
 $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
 $streamableSnippetTypes        = { "Documentation", "ResourceSystem" };
+$allowSnippetDownload          = True;
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
@@ -1413,7 +1414,12 @@ getStreamableSnippetsMetadata // endDefinition;
 downloadStreamableSnippets // beginDefinition;
 
 
-downloadStreamableSnippets[ ] := Enclose[
+(* Both of these need a condition, since a definition without patterns or conditions is always tried first: *)
+downloadStreamableSnippets[ ] /; ! $allowSnippetDownload :=
+    Throw[ Missing[ "DownloadDisabled" ], $snippetDownloadTag ];
+
+
+downloadStreamableSnippets[ ] /; $allowSnippetDownload := Enclose[
     Module[ { dir, queue, result },
 
         dir = $localStreamableSnippetsDirectory;
@@ -1545,6 +1551,72 @@ loadStreamIndex[ name_String ] := Enclose[
 ];
 
 loadStreamIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeStreamableSnippets*)
+initializeStreamableSnippets // beginDefinition;
+
+(* Loads the snippet indexes if the snippets are already installed. This never starts a download. *)
+initializeStreamableSnippets[ ] :=
+    Block[ { $allowSnippetDownload = False },
+        Catch[ Length /@ AssociationMap[ loadStreamIndex, $streamableSnippetTypes ], $snippetDownloadTag ]
+    ];
+
+initializeStreamableSnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Initialization*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*initializeRelatedDocumentation*)
+initializeRelatedDocumentation // beginDefinition;
+
+(* Loads vector databases and snippet indexes ahead of time, so the first search in a session does not have to wait
+   for them. Failures are ignored here, since the first real search handles them as usual. *)
+initializeRelatedDocumentation[ settings_ ] := <|
+    "VectorDatabases" -> LogChatTiming[
+        Quiet @ catchAlways @ initializeVectorDatabases @ initializationVectorDBNames @ settings,
+        "InitializeVectorDatabases"
+    ],
+    "SnippetIndexes" -> LogChatTiming[
+        Quiet @ catchAlways @ initializeStreamableSnippets[ ],
+        "InitializeSnippetIndexes"
+    ]
+|>;
+
+initializeRelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializationVectorDBNames*)
+initializationVectorDBNames // beginDefinition;
+
+initializationVectorDBNames[ settings_ ] := DeleteDuplicates @ Flatten @ {
+    "SourceSelector",
+    toSource /@ $defaultSources,
+    (* Only the RelatedWolframAlphaResults prompt generator needs this one: *)
+    If[ wolframAlphaResultsQ @ settings, "WolframAlphaQueries", { } ]
+};
+
+initializationVectorDBNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframAlphaResultsQ*)
+wolframAlphaResultsQ // beginDefinition;
+
+wolframAlphaResultsQ[ KeyValuePattern[ "PromptGenerators" -> generators_List ] ] := MemberQ[
+    generators,
+    "RelatedWolframAlphaResults" |
+        HoldPattern @ LLMPromptGenerator[ KeyValuePattern[ "Name" -> "RelatedWolframAlphaResults" ], ___ ]
+];
+
+wolframAlphaResultsQ[ _ ] := False;
+
+wolframAlphaResultsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -2876,14 +2876,70 @@ $workspaceChatInitialized = False;
 initializeWorkspaceChat // beginDefinition;
 
 initializeWorkspaceChat[ ] := LogChatTiming[
-    LogChatTiming[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
-    LogChatTiming[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
-    LogChatTiming[ $llmKitService, "InitializeLLMKitService" ];
-    $workspaceChatInitialized = True,
+    Module[ { settings },
+        initializationStep[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
+        initializationStep[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
+        initializationStep[ $llmKitService, "InitializeLLMKitService" ];
+        settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
+        initializationStep[ initializeRelatedDocumentation @ settings, "InitializeRelatedDocumentation" ];
+        $workspaceChatInitialized = True
+    ],
     "InitializeWorkspaceChat"
 ];
 
 initializeWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializationStep*)
+initializationStep // beginDefinition;
+initializationStep // Attributes = { HoldFirst };
+
+(* Evaluates a step as a chat would, but restores any global chat state afterwards and ignores failures, so that
+   initialization never interferes with other chats or shows errors to the user: *)
+initializationStep[ eval_, tag_String ] := LogChatTiming[
+    Quiet @ catchAlways @ Block[
+        {
+            $ChatHandlerData = $ChatHandlerData,
+            $lastCellObject  = $lastCellObject,
+            $lastTask        = $lastTask,
+            $tokenBudgetLog  = $tokenBudgetLog
+        },
+        withChatState @ eval
+    ],
+    tag
+];
+
+initializationStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeWorkspaceChatSettings*)
+initializeWorkspaceChatSettings // beginDefinition;
+
+initializeWorkspaceChatSettings[ ] :=
+    initializeWorkspaceChatSettings @ cloudAuthenticatedQ[ ];
+
+(* The default model needs LLMKit, which requires being signed in: *)
+initializeWorkspaceChatSettings[ False ] :=
+    Missing[ "NotAuthenticated" ];
+
+(* Resolves the settings used by the notebook assistant and loads the tokenizer for the resolved model: *)
+initializeWorkspaceChatSettings[ True ] := Enclose[
+    Module[ { settings, tokenizer },
+        settings = ConfirmBy[
+            resolveAutoSettings @ mergeChatSettings @ { $defaultChatSettings, $notebookAssistanceWorkspaceSettings },
+            AssociationQ,
+            "Settings"
+        ];
+        tokenizer = ConfirmMatch[ getTokenizer @ settings, Except[ $$unspecified ], "Tokenizer" ];
+        ConfirmMatch[ tokenizer[ "Hello" ], _List, "Tokens" ];
+        settings
+    ],
+    throwInternalFailure
+];
+
+initializeWorkspaceChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

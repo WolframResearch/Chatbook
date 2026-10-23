@@ -8,6 +8,7 @@ HoldComplete[
     `$inputFieldOptions,
     `$inputFieldOuterBackground,
     `$inputFieldPaneMargins,
+    `$notebookAssistanceWorkspaceSettings,
     `createWorkspaceChat,
     `evaluateAttachedInlineChat,
     `findCurrentWorkspaceChat,

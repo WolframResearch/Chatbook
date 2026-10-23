@@ -560,10 +560,11 @@ vectorDBDirectoryQ0 // endDefinition;
 (*downloadVectorDatabases*)
 downloadVectorDatabases // beginDefinition;
 
+(* Both of these need a condition, since a definition without patterns or conditions is always tried first: *)
 downloadVectorDatabases[ ] /; ! $allowDownload :=
     Throw[ Missing[ "DownloadDisabled" ], $vdbTag ];
 
-downloadVectorDatabases[ ] :=
+downloadVectorDatabases[ ] /; $allowDownload :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
@@ -787,8 +788,52 @@ inVectorDBDirectory // endDefinition;
 (* ::Subsection::Closed:: *)
 (*initializeVectorDatabases*)
 initializeVectorDatabases // beginDefinition;
-initializeVectorDatabases[ ] := Block[ { $allowDownload = False }, Catch[ getVectorDB /@ $vectorDBNames, $vdbTag ] ];
+
+initializeVectorDatabases[ ] :=
+    initializeVectorDatabases @ $vectorDBNames;
+
+(* Loads the given vector databases and searches each one once, so that the first real search does not have to wait
+   for them. This never starts a download: if the databases are not installed yet, the first real search downloads them
+   as usual. *)
+initializeVectorDatabases[ names: $$dbNames ] := Enclose[
+    Block[ { $allowDownload = False },
+        Catch[
+            Module[ { vector },
+                vector = ConfirmMatch[ getEmbedding[ "Hello" ], _NumericArray, "EmbeddingVector" ];
+                catchAlways @ initializeVectorDatabase[ #, vector ] & /@ names
+            ],
+            $vdbTag
+        ]
+    ],
+    throwInternalFailure
+];
+
 initializeVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeVectorDatabase*)
+initializeVectorDatabase // beginDefinition;
+
+initializeVectorDatabase[ name_String, vector_NumericArray ] := Enclose[
+    Module[ { vectorDB },
+        vectorDB = ConfirmMatch[ getVectorDB[ name ][ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
+        ConfirmMatch[
+            inVectorDBDirectory @ VectorDatabaseSearch[
+                vectorDB,
+                vector,
+                { "Index", "Distance" },
+                MaxItems -> $maxNeighbors
+            ],
+            { ___Association },
+            "Search"
+        ];
+        name
+    ] // LogChatTiming[ { "InitializeVectorDatabase", name } ],
+    throwInternalFailure
+];
+
+initializeVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
