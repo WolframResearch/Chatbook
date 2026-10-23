@@ -123,6 +123,28 @@ def oversized_request(r):
     return json.loads(data.decode().split("\n")[0])["errorType"]
 
 
+def many_requests(r):
+    """More requests than the server could take connections: one Server object sends them all over one connection."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        for i in range(600):
+            if i % 3 == 0:
+                server.request("ping")
+            else:
+                fe.Server.preemptive = i % 3 == 2
+                try:
+                    expect(server.evaluate(str(i))["result"], str(i))
+                finally:
+                    fe.Server.preemptive = False
+        # A queued request that waits for a busy kernel keeps pinging over the same connection:
+        expect(server.evaluate("Pause[3]; 42", timeout=30)["result"], "42")
+    finally:
+        server.close()
+    expect(r.eval("1 + 1"), "2")
+
+
 def run_tests(r):
     r.test("ping and info", lambda: json.loads(r.fe("--json", "info"))["Port"])
     r.test("evaluate", lambda: expect(r.eval("1 + 1"), "2"))
@@ -154,6 +176,7 @@ def run_tests(r):
         capture_output=True, text=True, encoding="utf-8").stdout)["errorType"], "NotebookNotFound"))
     r.test("unknown key", lambda: expect("Unknown key name" in r.fails("key", "ctrl+NoSuchKey"), True))
     r.test("wait for idle", lambda: (r.fe("eval", "--cell", "--no-wait", "Pause[2]"), r.fe("wait")))
+    r.test("many requests on one connection", lambda: many_requests(r))
 
     r.eval(TEST_NOTEBOOK)
     time.sleep(1)
