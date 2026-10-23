@@ -1110,7 +1110,8 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            targetNotebookLabel @ EvaluationNotebook[ ]
+            (* Finding the target notebook scans all open notebooks, so wait until the tooltip is shown: *)
+            With[ { nbo = EvaluationNotebook[ ] }, Dynamic @ targetNotebookLabel @ nbo ]
         ]
     ];
 
