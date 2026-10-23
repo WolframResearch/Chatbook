@@ -70,9 +70,10 @@ VerificationTest[
                 HoldPattern[ Wolfram`Chatbook`Common`resolveAutoSettings[ s_ /; ! inner ] ] :>
                     (resolveCount++; Block[ { inner = True }, Wolfram`Chatbook`Common`resolveAutoSettings @ s ])
             ];
+            (* SendChat is private to the Actions package (there is no Wolfram`Chatbook`SendChat): *)
             Block[
                 {
-                    Wolfram`Chatbook`SendChat = Function[
+                    Wolfram`Chatbook`Actions`Private`SendChat = Function[
                         sent = True;
                         sendArguments = { ##, Wolfram`Chatbook`$AutomaticAssistance };
                         Null
@@ -264,6 +265,40 @@ VerificationTest[
     KeyValuePattern @ { True -> _Integer? Positive, False -> _Integer? Positive },
     SameTest -> MatchQ,
     TestID   -> "AIAutoAssist-DecisionEquivalence-Coverage"
+]
+
+(* Delayed values, values that are merged with persona values, and settings that are already resolved: *)
+VerificationTest[
+    Map[
+        Function[ settings, { fullyResolvedDecision @ settings, First @ autoAssistResult @ settings } ],
+        {
+            <| Wolfram`Chatbook`Common`$defaultChatSettings, "Assistance" :> True |>,
+            <| Wolfram`Chatbook`Common`$defaultChatSettings, "Assistance" :> False |>,
+            <| Wolfram`Chatbook`Common`$defaultChatSettings, "Assistance" -> "True" |>,
+            <|
+                Wolfram`Chatbook`Common`$defaultChatSettings,
+                "LLMEvaluator" -> <| "Name" -> "AIAutoAssistTestPersonaInline", "Assistance" :> True |>
+            |>,
+            <|
+                Wolfram`Chatbook`Common`$defaultChatSettings,
+                "Assistance"   -> True,
+                "LLMEvaluator" -> <| "Name" -> "AIAutoAssistTestPersonaInline", "Assistance" -> ParentList |>
+            |>,
+            <| Wolfram`Chatbook`Common`$defaultChatSettings, "Assistance" -> True, "ResolvedAutoSettings" -> True |>,
+            <| Wolfram`Chatbook`Common`$defaultChatSettings, "ResolvedAutoSettings" -> True |>
+        }
+    ],
+    {
+        { True , True  },
+        { False, False },
+        { False, False },
+        { True , True  },
+        { True , True  },
+        { True , True  },
+        { False, False }
+    },
+    SameTest -> SameQ,
+    TestID   -> "AIAutoAssist-DecisionEquivalence-EdgeCases"
 ]
 
 (* ::**************************************************************************************************************:: *)
