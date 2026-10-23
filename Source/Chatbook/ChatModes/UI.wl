@@ -2895,22 +2895,32 @@ initializeWorkspaceChat // endDefinition;
 initializationStep // beginDefinition;
 initializationStep // Attributes = { HoldFirst };
 
-(* Evaluates a step as a chat would, but restores any global chat state afterwards and ignores failures, so that
-   initialization never interferes with other chats or shows errors to the user: *)
-initializationStep[ eval_, tag_String ] := LogChatTiming[
-    Quiet @ catchAlways @ Block[
-        {
-            $ChatHandlerData = $ChatHandlerData,
-            $lastCellObject  = $lastCellObject,
-            $lastTask        = $lastTask,
-            $tokenBudgetLog  = $tokenBudgetLog
-        },
-        withChatState @ eval
-    ],
-    tag
-];
+(* Ignores failures, so that initialization never shows errors to the user: *)
+initializationStep[ eval_, tag_String ] :=
+    LogChatTiming[ Quiet @ catchAlways @ eval, tag ];
 
 initializationStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withIsolatedChatState*)
+withIsolatedChatState // beginDefinition;
+withIsolatedChatState // Attributes = { HoldFirst };
+
+(* Evaluates as a chat would, but restores any global chat state afterwards, so that initialization does not
+   overwrite the state of other chats. Asynchronous handlers of a chat that is streaming at the same time can run
+   during this evaluation and would see this state instead of their own, so only use it where chat state is needed: *)
+withIsolatedChatState[ eval_ ] := Block[
+    {
+        $ChatHandlerData = $ChatHandlerData,
+        $lastCellObject  = $lastCellObject,
+        $lastTask        = $lastTask,
+        $tokenBudgetLog  = $tokenBudgetLog
+    },
+    withChatState @ eval
+];
+
+withIsolatedChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2928,7 +2938,10 @@ initializeWorkspaceChatSettings[ False ] :=
 initializeWorkspaceChatSettings[ True ] := Enclose[
     Module[ { settings, tokenizer },
         settings = ConfirmBy[
-            resolveAutoSettings @ mergeChatSettings @ { $defaultChatSettings, $notebookAssistanceWorkspaceSettings },
+            withIsolatedChatState @ resolveAutoSettings @ mergeChatSettings @ {
+                $defaultChatSettings,
+                $notebookAssistanceWorkspaceSettings
+            },
             AssociationQ,
             "Settings"
         ];
