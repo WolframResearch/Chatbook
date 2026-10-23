@@ -17,6 +17,7 @@ VerificationTest[
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+(* :!CodeAnalysis::Disable::KeyExistsQNestedKeyPath:: *)
 
 (* Session caches and logs must stay bounded without changing any results. *)
 
@@ -199,6 +200,84 @@ VerificationTest[
     { True, <| "chunk" -> "chunk25", "other" -> <| "i" -> 25 |> |> },
     SameTest -> MatchQ,
     TestID   -> "ChunkDebug-Bounded"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Vector Database Caches*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$vectorDBSearchCache*)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBSearchCache        = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxVectorDBSearchCacheSize = 10
+        },
+        Do[
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`cacheVectorDBResult[
+                db,
+                "prompt " <> ToString @ i,
+                <| "Values" -> { db, i } |>
+            ],
+            { i, 25 },
+            { db, { "DocumentationURIs", "FunctionRepositoryURIs" } }
+        ];
+        {
+            Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBSearchCache <= 10,
+            (* Recent results are returned from the cache: *)
+            Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "DocumentationURIs", "prompt 25", All ],
+            Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "FunctionRepositoryURIs", "prompt 25", "Values" ],
+            KeyExistsQ[
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBSearchCache,
+                { "DocumentationURIs", "prompt 1" }
+            ]
+        }
+    ],
+    { True, <| "Values" -> { "DocumentationURIs", 25 } |>, { "FunctionRepositoryURIs", 25 }, False },
+    SameTest -> MatchQ,
+    TestID   -> "VectorDBSearchCache-Bounded"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$embeddingCache*)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache        = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxEmbeddingCacheSize = 10,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$cacheEmbeddings       = True,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings,
+            vector, expected, computed = { }
+        },
+        (* Use a deterministic stand-in for the embedding model: *)
+        vector = Function[ s, N @ Join[ { StringLength @ s, Mod[ Hash @ s, 101 ] }, ConstantArray[ 1, 382 ] ] ];
+        expected = Function[ s, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`toTinyVector @ vector @ s ];
+        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings[ strings_List ] := (
+            computed = Join[ computed, strings ];
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`cacheEmbedding[ #, vector @ # ] & /@ strings
+        );
+        Module[ { batches, results, single },
+            batches = Partition[ Table[ "string " <> ToString @ i, { i, 24 } ], 3 ];
+            results = Wolfram`Chatbook`Common`getEmbeddings /@ batches;
+            (* A call with more strings than the cache size still gives every embedding: *)
+            single = Wolfram`Chatbook`Common`getEmbeddings @ Table[ "long " <> ToString @ i, { i, 15 } ];
+            {
+                results === Map[ expected, batches, { 2 } ],
+                single === expected /@ Table[ "long " <> ToString @ i, { i, 15 } ],
+                Length @ computed,
+                (* Cached embeddings are not recomputed: *)
+                Wolfram`Chatbook`Common`getEmbeddings @ { "long 15", "long 14" } === expected /@ { "long 15", "long 14" },
+                Length @ computed,
+                Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache <= 10 + 15
+            }
+        ]
+    ],
+    { True, True, 39, True, 39, True },
+    SameTest -> MatchQ,
+    TestID   -> "EmbeddingCache-Bounded"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

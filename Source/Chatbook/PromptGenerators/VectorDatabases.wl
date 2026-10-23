@@ -126,6 +126,10 @@ $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic;
 
+(* Maximum number of cached search results and embeddings (the oldest half is dropped when exceeded): *)
+$maxVectorDBSearchCacheSize = 100;
+$maxEmbeddingCacheSize      = 1000;
+
 
 $conversationVectorSearchPenalty = 1.0;
 
@@ -874,7 +878,7 @@ vectorDBSearch[ { }, prompt_, prop_ ] :=
 
 (* Cached results: *)
 vectorDBSearch[ dbName: $$dbName, prompt_String, All ] :=
-    With[ { result = $vectorDBSearchCache[ dbName, prompt ] },
+    With[ { result = $vectorDBSearchCache[ { dbName, prompt } ] },
         result /; AssociationQ @ result
     ];
 
@@ -934,7 +938,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 
         (* Cache and verify: *)
         cacheVectorDBResult[ dbName, prompt, result ];
-        ConfirmAssert[ $vectorDBSearchCache[ dbName, prompt ] === result, "CacheCheck" ];
+        ConfirmAssert[ $vectorDBSearchCache[ { dbName, prompt } ] === result, "CacheCheck" ];
 
         result
     ],
@@ -1230,10 +1234,13 @@ insertContextPrompt // endDefinition;
 (*cacheVectorDBResult*)
 cacheVectorDBResult // beginDefinition;
 
+(* Each result is large (about 200 KB), so only the most recent searches are kept: *)
 cacheVectorDBResult[ dbName: $$dbName, prompt_String, data_Association ] := (
     If[ ! AssociationQ @ $vectorDBSearchCache, $vectorDBSearchCache = <| |> ];
-    If[ ! AssociationQ @ $vectorDBSearchCache[ dbName ], $vectorDBSearchCache[ dbName ] = <| |> ];
-    $vectorDBSearchCache[ dbName, prompt ] = data
+    If[ Length @ $vectorDBSearchCache >= $maxVectorDBSearchCacheSize,
+        $vectorDBSearchCache = Take[ $vectorDBSearchCache, -Floor[ $maxVectorDBSearchCacheSize / 2 ] ]
+    ];
+    $vectorDBSearchCache[ { dbName, prompt } ] = data
 );
 
 cacheVectorDBResult // endDefinition;
@@ -1281,6 +1288,10 @@ getEmbeddings0 // beginDefinition;
 
 getEmbeddings0[ strings: { __String } ] := Enclose[
     Module[ { notCached },
+        (* Drop the oldest embeddings before checking what's cached, so the lookup below cannot miss: *)
+        If[ Length @ $embeddingCache >= $maxEmbeddingCacheSize,
+            $embeddingCache = Take[ $embeddingCache, -Floor[ $maxEmbeddingCacheSize / 2 ] ]
+        ];
         notCached = Select[ strings, ! KeyExistsQ[ $embeddingCache, # ] & ];
         ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
         ConfirmMatch[ Lookup[ $embeddingCache, strings ], { __NumericArray }, "Result" ]
