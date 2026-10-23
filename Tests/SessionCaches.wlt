@@ -280,4 +280,30 @@ VerificationTest[
     TestID   -> "EmbeddingCache-Bounded"
 ]
 
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache        = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxEmbeddingCacheSize = 10,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$cacheEmbeddings       = True,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings,
+            vector, expected, strings
+        },
+        vector = Function[ s, N @ Join[ { StringLength @ s, Mod[ Hash @ s, 101 ] }, ConstantArray[ 1, 382 ] ] ];
+        expected = Function[ s, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`toTinyVector @ vector @ s ];
+        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings[ new_List ] := (
+            (* Simulate a preemptive evaluation that trims the cache while embeddings are being computed: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache = <| |>;
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`cacheEmbedding[ #, vector @ # ] & /@ new
+        );
+        strings = Table[ "string " <> ToString @ i, { i, 8 } ];
+        Wolfram`Chatbook`Common`getEmbeddings @ Take[ strings, 5 ];
+        (* Cached embeddings that are evicted in the middle of the call are still returned: *)
+        Wolfram`Chatbook`Common`getEmbeddings @ strings === expected /@ strings
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "EmbeddingCache-PreemptiveTrim"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

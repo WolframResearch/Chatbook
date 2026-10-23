@@ -1287,14 +1287,20 @@ getEmbeddings // endDefinition;
 getEmbeddings0 // beginDefinition;
 
 getEmbeddings0[ strings: { __String } ] := Enclose[
-    Module[ { notCached },
-        (* Drop the oldest embeddings before checking what's cached, so the lookup below cannot miss: *)
+    Module[ { cache, notCached, vectors },
+        (* Drop the oldest embeddings when the cache is full: *)
         If[ Length @ $embeddingCache >= $maxEmbeddingCacheSize,
             $embeddingCache = Take[ $embeddingCache, -Floor[ $maxEmbeddingCacheSize / 2 ] ]
         ];
-        notCached = Select[ strings, ! KeyExistsQ[ $embeddingCache, # ] & ];
-        ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
-        ConfirmMatch[ Lookup[ $embeddingCache, strings ], { __NumericArray }, "Result" ]
+        (* Look up results in a snapshot, since a preemptive evaluation could trim the cache before this finishes: *)
+        cache     = $embeddingCache;
+        notCached = Select[ strings, ! KeyExistsQ[ cache, # ] & ];
+        vectors   = ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        ConfirmMatch[
+            Lookup[ Join[ cache, AssociationThread[ notCached, vectors ] ], strings ],
+            { __NumericArray },
+            "Result"
+        ]
     ],
     throwInternalFailure
 ];
