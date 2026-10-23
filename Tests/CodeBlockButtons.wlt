@@ -125,10 +125,39 @@ VerificationTest[
         "FocusedNotebook" -> NotebookObject[ "user" ]
     |>;
 
+    (* Chat notebook with a chat delimiter that has its own settings: *)
+    $chatNotebookModel = <|
+        "Notebooks" -> <|
+            NotebookObject[ "chat" ] -> <|
+                "Settings" -> <| "LLMEvaluator" -> "CodeAssistant" |>,
+                "Cells"    -> { CellObject[ "c1" ], CellObject[ "c2" ], CellObject[ "c3" ], CellObject[ "c4" ] }
+            |>
+        |>,
+        "Cells" -> <|
+            CellObject[ "c1" ]   -> <| "Style" -> "ChatInput", "Notebook" -> NotebookObject[ "chat" ] |>,
+            CellObject[ "c2" ]   -> <| "Style" -> "ChatDelimiter", "Notebook" -> NotebookObject[ "chat" ], "Settings" -> <| "Model" -> "gpt-4o" |> |>,
+            CellObject[ "c3" ]   -> <| "Style" -> "ChatInput", "Notebook" -> NotebookObject[ "chat" ] |>,
+            CellObject[ "c4" ]   -> <| "Style" -> "ChatOutput", "Notebook" -> NotebookObject[ "chat" ] |>,
+            CellObject[ "code" ] -> <| "Style" -> "ChatCodeBlock", "Notebook" -> NotebookObject[ "chat" ], "Parent" -> CellObject[ "c4" ] |>
+        |>,
+        "EvaluationCell"  -> CellObject[ "code" ],
+        "FocusedNotebook" -> NotebookObject[ "chat" ]
+    |>;
+
     (* Renders the button grid for a Wolfram Language code block: *)
     renderGrid[ ] := Wolfram`Chatbook`Common`floatingButtonGrid[ Cell[ "Plot[Sin[x], {x, 0, 10}]", "ChatCode" ], "Wolfram" ];
 
     buttonActions[ grid_ ] := Cases[ grid, Button[ _, action_, ___ ] :> HoldForm @ action, Infinity ];
+
+    containerSettings[ ] :=
+        With[ { cell = Wolfram`Chatbook`Common`topParentCell @ EvaluationCell[ ] },
+            Wolfram`Chatbook`Common`currentChatContainerSetting[ cell, # ] & /@ { "WorkspaceChat", "SidebarChat" }
+        ];
+
+    fullSettings[ ] :=
+        With[ { cell = Wolfram`Chatbook`Common`topParentCell @ EvaluationCell[ ] },
+            CurrentChatSettings[ cell, # ] & /@ { "WorkspaceChat", "SidebarChat" }
+        ];
     ,
     Null,
     SameTest -> MatchQ,
@@ -224,6 +253,71 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "Sidebar-Button-Actions"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Notebooks*)
+
+(* Deciding which buttons to show does not search the notebook for a chat delimiter: *)
+VerificationTest[
+    Block[ { $calls = <| |> },
+        withFakeFrontEnd[ $chatNotebookModel, { buttonActions @ renderGrid[ ], $calls } ]
+    ],
+    {
+        {
+            HoldForm @ Wolfram`Chatbook`Common`insertCodeBelow[ CellObject[ "code" ], True ],
+            HoldForm @ Wolfram`Chatbook`Common`insertCodeBelow[ CellObject[ "code" ], False ],
+            HoldForm @ Wolfram`Chatbook`Formatting`Private`copyCodeBlock @ CellObject[ "code" ]
+        },
+        <| |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ChatNotebook-Button-Actions"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*currentChatContainerSetting*)
+
+(* Gives the same values as CurrentChatSettings for cells in each kind of chat container: *)
+VerificationTest[
+    Table[
+        withFakeFrontEnd[ model, containerSettings[ ] === fullSettings[ ] ],
+        {
+            model,
+            {
+                $workspaceModel,
+                $sidebarModel,
+                $chatNotebookModel,
+                (* Explicit values on the cell itself take precedence: *)
+                <| $workspaceModel, "Cells" -> <| $workspaceModel[ "Cells" ], CellObject[ "na2" ] -> <| "Style" -> "ChatOutput", "Notebook" -> NotebookObject[ "na" ], "Settings" -> <| "WorkspaceChat" -> False |> |> |> |>,
+                <| $sidebarModel, "Cells" -> <| $sidebarModel[ "Cells" ], CellObject[ "sbOut" ] -> <| $sidebarModel[ "Cells", CellObject[ "sbOut" ] ], "Settings" -> <| "SidebarChat" -> False |> |> |> |>,
+                (* A notebook can also mark itself as a sidebar chat: *)
+                <| $chatNotebookModel, "Notebooks" -> <| NotebookObject[ "chat" ] -> <| $chatNotebookModel[ "Notebooks", NotebookObject[ "chat" ] ], "Settings" -> <| "SidebarChat" -> True |> |> |> |>
+            }
+        }
+    ],
+    { True, True, True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CurrentChatContainerSetting-Matches-CurrentChatSettings"
+]
+
+VerificationTest[
+    withFakeFrontEnd[ #, containerSettings[ ] ] & /@ { $workspaceModel, $sidebarModel, $chatNotebookModel },
+    { { True, Inherited }, { Inherited, True }, { Inherited, Inherited } },
+    SameTest -> MatchQ,
+    TestID   -> "CurrentChatContainerSetting-Values"
+]
+
+VerificationTest[
+    Block[ { $calls = <| |> },
+        withFakeFrontEnd[ $chatNotebookModel, containerSettings[ ] ];
+        $calls
+    ],
+    <| |>,
+    SameTest -> MatchQ,
+    TestID   -> "CurrentChatContainerSetting-No-Delimiter-Search"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

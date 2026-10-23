@@ -1000,9 +1000,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         Grid[
             {
                 checkTemplateBoxes @ Which[
-                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "WorkspaceChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
-                    TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
                         codeBlockButtons[ lang, EvaluationCell[ ], False ]
