@@ -238,4 +238,78 @@ VerificationTest[
     TestID   -> "ActiveDynamic-TracksTrigger"
 ]
 
+VerificationTest[
+    Module[ { container, dm, body, opts, calls = 0, scrolls = 0, results },
+        container = <| "DynamicContent" -> None, "FullContent" -> "", "UUID" -> "test" |>;
+        dm = Wolfram`Chatbook`SendChat`Private`activeAIAssistantDynamicModule[ container, <| |>, None, #1 &, True ];
+        { body, opts } = activeDynamic @ dm;
+        Block[
+            {
+                Wolfram`Chatbook`SendChat`Private`cachedDynamicOutput,
+                Wolfram`Chatbook`SendChat`Private`displayedContentHash = None,
+                Wolfram`Chatbook`SendChat`Private`finishedSignal       = False,
+                Wolfram`Chatbook`SendChat`Private`scrollToEnd          = (scrolls++) &,
+                Wolfram`Chatbook`SendChat`Private`dynamicTextDisplay   = Function[ Null, calls++; { "Formatted", #1[ "DynamicContent" ] }, HoldFirst ]
+            },
+            results = {
+                (* Waiting for content: *)
+                ReleaseHold @ body,
+                ReleaseHold @ body,
+                (* Streaming: *)
+                container[ "DynamicContent" ] = "Hello";
+                ReleaseHold @ body,
+                ReleaseHold @ body,
+                ReleaseHold @ body,
+                container[ "DynamicContent" ] = "Hello world";
+                ReleaseHold @ body,
+                ReleaseHold @ body,
+                (* Finished: *)
+                container[ "FinishedCell" ] = Cell[ "Hello world" ];
+                ReleaseHold @ body
+            };
+            { results, calls, scrolls, Wolfram`Chatbook`SendChat`Private`finishedSignal }
+        ]
+    ],
+    {
+        {
+            { "Formatted", None },
+            { "Formatted", None },
+            { "Formatted", "Hello" },
+            { "Formatted", "Hello" },
+            { "Formatted", "Hello" },
+            { "Formatted", "Hello world" },
+            { "Formatted", "Hello world" },
+            { "Formatted", "Hello world" }
+        },
+        3,
+        3,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ActiveDynamic-UnchangedContent"
+]
+
+VerificationTest[
+    Module[ { container, dm, body, opts, calls = 0 },
+        container = <| "DynamicContent" -> "Hello", "FullContent" -> "Hello", "UUID" -> "test" |>;
+        dm = Wolfram`Chatbook`SendChat`Private`activeAIAssistantDynamicModule[ container, <| |>, None, #1 &, True ];
+        { body, opts } = activeDynamic @ dm;
+        Block[
+            {
+                Wolfram`Chatbook`SendChat`Private`cachedDynamicOutput,
+                Wolfram`Chatbook`SendChat`Private`displayedContentHash = None,
+                Wolfram`Chatbook`SendChat`Private`finishedSignal       = False,
+                Wolfram`Chatbook`SendChat`Private`scrollToEnd          = Null &,
+                Wolfram`Chatbook`SendChat`Private`dynamicTextDisplay   = Function[ Null, calls++; Failure[ "Test", <| |> ], HoldFirst ]
+            },
+            (* Failed formatting is not cached, so it is retried on the next update: *)
+            Do[ ReleaseHold @ body, { 3 } ];
+            calls
+        ]
+    ],
+    3,
+    SameTest -> MatchQ,
+    TestID   -> "ActiveDynamic-FailureNotCached"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

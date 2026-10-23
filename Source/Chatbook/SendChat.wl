@@ -3037,19 +3037,27 @@ activeAIAssistantDynamicModule[
     reformat_,
     HoldComplete[ trigger_Symbol ]
 ] :=
-DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, displayedContentHash = None, scrollToEnd = Function[ Null ] },
     DynamicWrapper[
         PaneSelector[
             {
                 "Active" -> Dynamic[
                     (* The chunk handlers can request an immediate update via the trigger (see updateDynamicDisplay): *)
                     trigger;
-                    If[ KeyExistsQ[ container, "FinishedCell" ],
-                        finishedSignal = True;
-                        cachedDynamicOutput
-                        ,
-                        scrollToEnd[ ];
-                        cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
+                    With[ { contentHash = Hash @ container[ "DynamicContent" ] },
+                        Which[
+                            KeyExistsQ[ container, "FinishedCell" ],
+                                finishedSignal = True;
+                                cachedDynamicOutput,
+                            (* Nothing changed since the last update, so there's nothing to reformat or scroll: *)
+                            contentHash === displayedContentHash,
+                                cachedDynamicOutput,
+                            True,
+                                scrollToEnd[ ];
+                                cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ];
+                                displayedContentHash = If[ FailureQ @ cachedDynamicOutput, None, contentHash ];
+                                cachedDynamicOutput
+                        ]
                     ],
                     TrackedSymbols :> { trigger },
                     UpdateInterval -> 0.5
