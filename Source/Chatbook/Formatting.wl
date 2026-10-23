@@ -26,7 +26,9 @@ $wlCodeString = Longest @ Alternatives[
     "WL"
 ];
 
-$resultCellCache = <| |>;
+$resultCellCache         = <| |>;
+$staticCodeBlockCache    = <| |>;
+$useStaticCodeBlockCache = False;
 
 sectionStyle[ 1 ] := "Title";
 sectionStyle[ 2 ] := "Section";
@@ -1981,10 +1983,32 @@ $stringFormatRules = {
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
 makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] /; $useStaticCodeBlockCache && ! TrueQ @ $dynamicText :=
+    cachedCodeBlockCell[ language, code ];
 makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ language :=
     makeInteractiveCodeCell[ "Plaintext", unescapePlainTextCodeBlock @ stripCodePadding @ code ];
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedCodeBlockCell*)
+cachedCodeBlockCell // beginDefinition;
+
+(* Code blocks are formatted when they're written as static content during streaming, and again when the final cell is
+   written. The non-dynamic formatting (which includes a front end round trip for Wolfram Language code) gives the same
+   result both times, so it's cached for the current response. The key includes the globals that formatting uses: *)
+cachedCodeBlockCell[ language_String, code_String ] :=
+    With[ { key = { language, code, $SidebarChat, $WorkspaceChat, $InlineChat, $cloudNotebooks } },
+        Lookup[
+            $staticCodeBlockCache,
+            Key @ key,
+            $staticCodeBlockCache[ key ] =
+                Block[ { $useStaticCodeBlockCache = False }, makeCodeBlockCell[ language, code ] ]
+        ]
+    ];
+
+cachedCodeBlockCell // endDefinition;
 
 unescapePlainTextCodeBlock // beginDefinition;
 unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];

@@ -23,6 +23,78 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Definitions*)
 VerificationTest[
+    $codeBlockResponse = StringJoin[
+        "Define the matrix with `m = {{2, -1}, {-1, 2}}` first:\n\n",
+        "```wl\nm = {{2, -1}, {-1, 2}};\nEigenvalues[m]\n```\n\n",
+        "This is what an evaluation looks like:\n\n",
+        "```wl\nIn[1]:= Eigenvalues[m]\nOut[1]= {3, 1}\n```\n\n",
+        "The same thing in Python:\n\n",
+        "```python\nimport numpy as np\nprint(np.linalg.eigvals([[2, -1], [-1, 2]]))\n```\n\n",
+        "As JSON:\n\n```json\n{\"matrix\": [[2, -1], [-1, 2]]}\n```\n\n",
+        "And as plain text:\n\n```\nlambda = 3, 1\n```\n\n",
+        "That's all."
+    ];
+
+    $formatSettings = <|
+        "AutoFormat" -> True,
+        "ToolMethod" -> Automatic,
+        "Data"       -> <| "Messages" -> { <| "Role" -> "User", "Content" -> "How do I get eigenvalues?" |> } |>
+    |>;
+
+    (* Evaluates `eval` without a front end. Notebook writes are collected in $staticWrites, and the front end parses
+       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount: *)
+    withoutFrontEnd // Attributes = { HoldFirst };
+    withoutFrontEnd[ eval_ ] := Block[
+        {
+            Wolfram`Chatbook`Formatting`Private`reparseBoxStructurePacket = ($reparseCount++; #1) &,
+            Wolfram`Chatbook`Common`usingFrontEnd = Identity,
+            Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> $formatSettings |>,
+            NotebookRead  = Null &,
+            NotebookWrite = (Internal`StuffBag[ $staticWrites, #2 ]; Null) &,
+            $reparseCount = 0,
+            $staticWrites = Internal`Bag[ ]
+        },
+        eval
+    ];
+
+    (* Replicates the static writes that are made while a response streams in, giving the static cells that were
+       written and the full response string: *)
+    streamResponse[ text_String ] := Module[ { dynamic = None, full = None, split },
+        Scan[
+            Function[
+                dynamic = Wolfram`Chatbook`SendChat`Private`appendStringContent[ dynamic, #1 ];
+                full    = Wolfram`Chatbook`SendChat`Private`appendStringContent[ full, #1 ];
+                split   = DeleteCases[ StringSplit[ dynamic, Wolfram`Chatbook`Common`$dynamicSplitRules ], "" ];
+                If[ Length @ split > 1,
+                    Wolfram`Chatbook`SendChat`Private`writeDynamicChunkAsStatic[
+                        StringJoin @ Most @ split,
+                        BoxObject[ FrontEndObject[ ], 1 ]
+                    ];
+                    dynamic = Last @ split
+                ]
+            ],
+            StringPartition[ text, UpTo[ 5 ] ]
+        ];
+        { Internal`BagPart[ $staticWrites, All ], StringTrim @ full }
+    ];
+
+    (* The final chat output cell: *)
+    finalCell[ text_String ] :=
+        Wolfram`Chatbook`SendChat`Private`reformatCell[ $formatSettings, text, Inherited, True, None, Inherited, { }, "id" ];
+
+    (* Evaluates `eval` as if there was no static code block cache: *)
+    withoutCodeBlockCache // Attributes = { HoldFirst };
+    withoutCodeBlockCache[ eval_ ] := Block[
+        {
+            Wolfram`Chatbook`Formatting`Private`cachedCodeBlockCell = Function[
+                Block[ { Wolfram`Chatbook`Common`$useStaticCodeBlockCache = False },
+                    Wolfram`Chatbook`Formatting`Private`makeCodeBlockCell[ #1, #2 ]
+                ]
+            ]
+        },
+        eval
+    ];
+
     (* Debug log entries as they're received from a server: *)
     contentChunk[ text_String ] := <|
         "BodyChunk"          -> "data: "<>Developer`WriteRawJSONString[ <| "choices" -> { <| "delta" -> <| "content" -> text |> |> } |>, "Compact" -> True ]<>"\n\n",
@@ -59,6 +131,105 @@ VerificationTest[
     Null,
     SameTest -> MatchQ,
     TestID   -> "Definitions"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Static Code Block Cache*)
+
+(* Code blocks are formatted when they're written as static content during streaming, and the final cell reuses that
+   formatting instead of doing it again: *)
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        streamResponse @ $codeBlockResponse;
+        Keys @ Wolfram`Chatbook`Common`$staticCodeBlockCache
+    ],
+    {
+        { "wl", "m = {{2, -1}, {-1, 2}};\nEigenvalues[m]", False, False, False, False },
+        { "wl", "In[1]:= Eigenvalues[m]\nOut[1]= {3, 1}", False, False, False, False },
+        { "Python", "import numpy as np\nprint(np.linalg.eigvals([[2, -1], [-1, 2]]))", False, False, False, False },
+        { "json", "{\"matrix\": [[2, -1], [-1, 2]]}", False, False, False, False },
+        { "", "lambda = 3, 1", False, False, False, False }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Populated-While-Streaming"
+]
+
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        Module[ { writes, full, cached, uncached, cachedParses, uncachedParses, sizes },
+            { writes, full } = streamResponse @ $codeBlockResponse;
+            sizes = { Length @ Wolfram`Chatbook`Common`$staticCodeBlockCache };
+            $reparseCount = 0;
+            cached = finalCell @ full;
+            cachedParses = $reparseCount;
+            AppendTo[ sizes, Length @ Wolfram`Chatbook`Common`$staticCodeBlockCache ];
+            $reparseCount = 0;
+            uncached = withoutCodeBlockCache @ finalCell @ full;
+            uncachedParses = $reparseCount;
+            {
+                sizes,
+                cached === uncached,
+                (* The three Wolfram Language code parses are skipped for the final cell: *)
+                uncachedParses - cachedParses,
+                Count[ cached, Cell[ _, "ChatCodeBlock", ___ ], Infinity ],
+                FreeQ[ cached, _Missing | _Failure | $Failed ]
+            }
+        ]
+    ],
+    { { 5, 5 }, True, 3, 5, True },
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Final-Cell-Identical"
+]
+
+VerificationTest[
+    withoutFrontEnd @ Module[ { cachedWrites, uncachedWrites },
+        Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+            streamResponse @ $codeBlockResponse;
+            $staticWrites = Internal`Bag[ ];
+            (* All code blocks are now cached: *)
+            cachedWrites = First @ streamResponse @ $codeBlockResponse
+        ];
+        $staticWrites = Internal`Bag[ ];
+        uncachedWrites = withoutCodeBlockCache @ First @ streamResponse @ $codeBlockResponse;
+        { Length @ cachedWrites, cachedWrites === uncachedWrites }
+    ],
+    { 5, True },
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Static-Writes-Identical"
+]
+
+(* The cache is only used for chat output, so other formatting is unaffected: *)
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        FormatChatOutput @ $codeBlockResponse;
+        FormatChatOutput[ $codeBlockResponse, <| "Status" -> "Streaming" |> ];
+        Wolfram`Chatbook`Common`$staticCodeBlockCache
+    ],
+    <| |>,
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Unused-Elsewhere"
+]
+
+VerificationTest[
+    withoutFrontEnd @ Block[
+        {
+            Wolfram`Chatbook`Common`$staticCodeBlockCache    = <| |>,
+            Wolfram`Chatbook`Common`$useStaticCodeBlockCache = True
+        },
+        Module[ { notebook, sidebar },
+            notebook = Block[ { $SidebarChat = False }, FormatChatOutput[ "```python\nprint(1)\n```" ] ];
+            sidebar  = Block[ { $SidebarChat = True  }, FormatChatOutput[ "```python\nprint(1)\n```" ] ];
+            {
+                Length @ Wolfram`Chatbook`Common`$staticCodeBlockCache,
+                Cases[ notebook, TemplateBox[ _, name_String ] :> name, Infinity ],
+                Cases[ sidebar, TemplateBox[ _, name_String ] :> name, Infinity ]
+            }
+        ]
+    ],
+    { 2, { "ChatCodeBlockTemplate" }, { "NotebookAssistant`Sidebar`ChatCodeBlockTemplate" } },
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Separate-Chat-Modes"
 ]
 
 (* ::**************************************************************************************************************:: *)

@@ -234,6 +234,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         If[ ! TrueQ @ $cloudNotebooks, CurrentChatSettings[ cellObj, "Data" ] = data ];
 
         $resultCellCache = <| |>;
+        $staticCodeBlockCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
         (* If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
@@ -359,6 +360,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         ];
 
         $resultCellCache = <| |>;
+        $staticCodeBlockCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
         If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
@@ -1763,7 +1765,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
                 ReplaceAll[
-                    Block[ { $dynamicText = False }, reformatTextData @ static ],
+                    Block[ { $dynamicText = False, $useStaticCodeBlockCache = True }, reformatTextData @ static ],
                     {
                         TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
                             If[ TrueQ @ $highlightDynamicContent,
@@ -3395,7 +3397,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
 
-        content = Block[ { $customToolFormatter = toolFormatter },
+        content = Block[ { $customToolFormatter = toolFormatter, $useStaticCodeBlockCache = True },
             ConfirmMatch[
                 If[ TrueQ @ settings[ "AutoFormat" ],
                     conformToTextData @ formatter[ string, settings ],
