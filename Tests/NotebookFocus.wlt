@@ -109,6 +109,39 @@ VerificationTest[
     TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation"
 ]
 
+(* Same check through the real notebookInformation code, with only the front end primitives stubbed: *)
+VerificationTest[
+    Module[ { notebooks, settings, acv },
+        notebooks = $defaultNotebooks[[ All, "NotebookObject" ]];
+        settings  = <|
+            $chatNB     -> <| "WorkspaceChat" -> True |>,
+            $excludedNB -> { "ExcludeFromChat" -> True },
+            $userNB2    -> <| "Model" -> "TestModel" |>
+        |>;
+        acv[ nbos_List, spec_ ] := acv[ #, spec ] & /@ nbos;
+        acv[ nbo_NotebookObject, Visible ] := nbo =!= $hiddenNB;
+        acv[ nbo_NotebookObject, WindowFrame ] := If[ nbo === $paletteNB, "Palette", "Normal" ];
+        acv[ nbo_NotebookObject, { TaggingRules, "ChatNotebookSettings" } ] := Lookup[ settings, nbo, Inherited ];
+        acv[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] := { "Model" -> "DefaultModel" };
+        Block[
+            {
+                Notebooks            = notebooks &,
+                NotebookInformation  = { "WindowTitle" -> "Title", "ModifiedInMemory" -> False } &,
+                AbsoluteCurrentValue = acv,
+                SelectedNotebook     = $userNB1 &,
+                InputNotebook        = $userNB1 &
+            },
+            {
+                Wolfram`Chatbook`ChatModes`Common`includedNotebookQ /@ notebooks,
+                Lookup[ Association[ #NotebookObject -> #Included & /@ SourceNotebookObjectInformation[ ] ], notebooks, False ]
+            }
+        ]
+    ],
+    { { False, True, False, False, False, True }, { False, True, False, False, False, True } },
+    SameTest -> MatchQ,
+    TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation-FrontEndStubs"
+]
+
 VerificationTest[
     withFocusStubs @ Wolfram`Chatbook`ChatModes`Common`includedNotebookQ @ $closedNB,
     False,
