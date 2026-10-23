@@ -2575,7 +2575,7 @@ infoTaggedQ[ ___ ] := False;
 untaggedQ // ClearAll;
 untaggedQ[ as_Association? AssociationQ ] := untaggedQ @ as[ "FullContent" ];
 untaggedQ[ s0_String? StringQ ] /; $alwaysOpen :=
-    With[ { s = StringDelete[ $lastUntagged = s0, Whitespace ] },
+    With[ { s = nonWhitespacePrefix[ $lastUntagged = s0 ] },
         Or[ StringStartsQ[ s, Except[ "[" ] ],
             StringLength @ s >= $maxTagLength && ! StringStartsQ[ s, $$tagPrefix, IgnoreCase -> True ]
         ]
@@ -2589,8 +2589,29 @@ untaggedQ[ ___ ] := False;
 taggedQ // ClearAll;
 taggedQ[ s_ ] := taggedQ[ s, $$severityTag ];
 taggedQ[ as_Association? AssociationQ, tag_ ] := taggedQ[ as[ "FullContent" ], tag ];
-taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ StringDelete[ s, Whitespace ], "["~~tag~~"]", IgnoreCase -> True ];
+taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ nonWhitespacePrefix @ s, "["~~tag~~"]", IgnoreCase -> True ];
 taggedQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonWhitespacePrefix*)
+(* The tag checks above run on the full response for every chunk, but only need the start of
+   StringDelete[ s, Whitespace ]. This gives a prefix of that string with at least 2 * $maxTagLength characters
+   (or all of them if there are fewer), which is enough for the tag patterns and the length check in untaggedQ,
+   without copying and scanning the whole response. *)
+nonWhitespacePrefix // beginDefinition;
+
+nonWhitespacePrefix[ s_String ] := nonWhitespacePrefix[ s, 4 * $maxTagLength ];
+
+nonWhitespacePrefix[ s_String, n_Integer ] :=
+    With[ { prefix = StringDelete[ StringTake[ s, UpTo[ n ] ], Whitespace ] },
+        If[ StringLength @ prefix >= 2 * $maxTagLength || n >= StringLength @ s,
+            prefix,
+            nonWhitespacePrefix[ s, 2 * n ]
+        ]
+    ];
+
+nonWhitespacePrefix // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
