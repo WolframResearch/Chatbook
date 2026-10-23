@@ -4428,7 +4428,8 @@ makeHistorySearchResults // beginDefinition;
 
 makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := Dynamic[
     showSearchResults[ nbo, appContainer, appName, query ],
-    TrackedSymbols :> { query }
+    SynchronousUpdating -> False, (* searching should not block typing in the search field *)
+    TrackedSymbols      :> { query }
 ];
 
 makeHistorySearchResults // endDefinition;
