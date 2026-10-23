@@ -15,6 +15,7 @@ $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
 $tokenLengthMultiplier  = 3.0;
 $defaultEvaluator       = <| "Model" -> <| "Service" -> Automatic, "Name" -> "gpt-4.1-nano" |> |>;
+$titleInBackground      = False;
 
 $titlePrompt := "\
 Please come up with a meaningful window title for the current chat conversation using no more than \
@@ -113,6 +114,20 @@ GenerateChatTitleAsynchronous // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*generateChatTitleInBackground*)
+(* Like GenerateChatTitleAsynchronous, but for titles that are generated in the background (e.g. for auto-saved chats).
+   Handlers of asynchronous tasks can run in the middle of other evaluations (such as the next chat), so failures are
+   passed to the callback instead of being thrown, no messages are issued, and the state of the current chat (e.g.
+   $lastTask and $lastCellObject) is left alone. *)
+generateChatTitleInBackground // beginDefinition;
+
+generateChatTitleInBackground[ messages: $$chatMessages, callback_, opts: OptionsPattern[ GenerateChatTitleAsynchronous ] ] :=
+    Block[ { $titleInBackground = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
+
+generateChatTitleInBackground // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*generateChatTitleAsync*)
 generateChatTitleAsync // beginDefinition;
 
@@ -173,6 +188,9 @@ generateChatTitleAsync // endDefinition;
 (* ::Subsection::Closed:: *)
 (*postProcessChatTitle*)
 postProcessChatTitle // beginDefinition;
+
+postProcessChatTitle[ maxLength_ ] /; TrueQ @ $titleInBackground :=
+    Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None }, postProcessChatTitle[ maxLength, ## ] ] &;
 
 postProcessChatTitle[ maxLength_ ] :=
     postProcessChatTitle[ maxLength, ## ] &;

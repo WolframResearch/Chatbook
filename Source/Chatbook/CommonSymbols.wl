@@ -215,6 +215,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `formatSpeechInput;
 `formatToolCallExample;
 `functionTemplateBoxes;
+`generateChatTitleInBackground;
 `getAvailableServiceNames;
 `getBoxObjectFromBoxID;
 `getChatConversationData;
