@@ -674,6 +674,10 @@ AIAutoAssist[ cell_CellObject ] :=
         ]
     ];
 
+(* This runs after every input evaluation, so avoid entering the chat state and fully resolving settings unless
+   assistance could be enabled: *)
+AIAutoAssist[ cell_CellObject, _NotebookObject ] /; ! autoAssistPossibleQ @ currentChatSettings @ cell := Null;
+
 AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withChatState @
     Module[ { settings },
         settings = resolveAutoSettings @ currentChatSettings @ cell;
