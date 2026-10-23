@@ -121,6 +121,21 @@ VerificationTest[
     TestID   -> "ServiceIcon-CachedServiceTable-Unknown"
 ]
 
+(* Calls made while $availableServices is building the table see the temporarily empty table: *)
+VerificationTest[
+    withoutServiceCache @ Block[ { Wolfram`Chatbook`Services`Private`getAvailableServices },
+        Wolfram`Chatbook`Services`Private`getAvailableServices[ ] := {
+            Wolfram`Chatbook`Services`Private`$buildingServiceTable,
+            Wolfram`Chatbook`Common`$availableServices,
+            Wolfram`Chatbook`Common`serviceIcon /@ Complement[ $serviceNames, $builtInIconNames ]
+        };
+        Wolfram`Chatbook`Common`$availableServices
+    ],
+    { True, <| |>, { "".. } },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceIcon-DuringServiceTableBuild"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*getServiceIcon*)
@@ -219,6 +234,31 @@ VerificationTest[
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
     TestID   -> "GetServiceIcon-LiteralModelLists-FullTable"
+]
+
+(* Unexpected service information (e.g. a failure from LLMServiceInformation) also uses the full table as usual: *)
+VerificationTest[
+    withoutServiceCache[
+        {
+            Wolfram`Chatbook`Common`getServiceIcon[ "Plain", $Failed ],
+            AssociationQ @ Wolfram`Chatbook`Common`$serviceCache
+        }
+    ],
+    { Missing[ "KeyAbsent", "Plain" ], True },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-1"
+]
+
+VerificationTest[
+    withoutServiceCache[
+        {
+            Wolfram`Chatbook`Common`getServiceIcon[ "Plain", <| "Plain" -> "P" |> ],
+            AssociationQ @ Wolfram`Chatbook`Common`$serviceCache
+        }
+    ],
+    { Missing[ "KeyAbsent", "Plain" ], True },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-2"
 ]
 
 (* ::**************************************************************************************************************:: *)
