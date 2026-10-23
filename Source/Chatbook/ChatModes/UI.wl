@@ -2441,10 +2441,12 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                 Alignment -> { Automatic, Center },
                 Spacings  -> 0.2
             ],
+            (* asynchronous initialization is a queued (main link) evaluation, so a queued submit from the chat input
+               (Enter key or send button) waits until chat initialization below has finished *)
             SynchronousInitialization :> False,
             Initialization :> If[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ] === { } || Not @ TrueQ @ $workspaceChatInitialized,
                 withLoadingOverlay[ { nbo, None } ] @ (
-                    (* create the chat input cell first, then initialize chat *)
+                    (* create the chat input cell and move the cursor into it first, so the user can start typing *)
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     With[ { chatInputCell = Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                                 "AttachWorkspaceChatInput",
@@ -2452,11 +2454,12 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                                 If[ Cells[ nbo ] =!= { }, Bottom, Top ]
                             ]
                         },
-                        If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
                     ];
                     restoreVerticalScrollbar @ nbo
-                )
+                );
+                (* then initialize chat (most costly step) without the loading overlay, showing progress in the top stripe *)
+                If[ Not @ TrueQ @ $workspaceChatInitialized, withWorkspaceGlobalProgress[ nbo, initializeWorkspaceChat[ ] ] ]
             ]
         ],
         Background   -> color @ "NA_Toolbar",
