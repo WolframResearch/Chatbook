@@ -206,4 +206,37 @@ VerificationTest[
     TestID   -> "ChatHandlers-ToolCallResponse"
 ]
 
+(* The "TaskFinished" handler also uses the start of the chat action, e.g. for timing entries logged while processing
+   the response after the chat action has returned: *)
+VerificationTest[
+    withTTFTData @ Module[ { settings, handlers, start, seen, entries },
+        settings = <|
+            $ttftSettings,
+            "HandlerFunctions" -> <|
+                "TaskFinished" -> Function[
+                    seen = Wolfram`Chatbook`Common`$chatStartTime;
+                    Wolfram`Chatbook`LogChatTiming[ Null, "TTFTTaskFinished" ];
+                    (* Skip the rest of the response processing: *)
+                    Throw[ Null, Wolfram`Chatbook`Common`$catchTopTag ]
+                ]
+            |>
+        |>;
+        handlers = Wolfram`Chatbook`Common`catchTop[
+            start = Wolfram`Chatbook`Common`$chatStartTime;
+            Wolfram`Chatbook`SendChat`Private`chatHandlers[ $ttftContainer, None, settings ]
+        ];
+        Pause[ 0.3 ];
+        handlers[ "TaskFinished" ][ <| "TaskStatus" -> "Finished", "EventName" -> "TaskFinished" |> ];
+        entries = Cases[
+            Internal`BagPart[ Wolfram`Chatbook`Common`$timingLog, All ],
+            KeyValuePattern[ "Tag" -> "TTFTTaskFinished" ],
+            Infinity
+        ];
+        { seen === start, Length @ entries, 0.25 <= entries[[ 1, "ChatTime" ]] < 1.0 }
+    ],
+    { True, 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "ChatHandlers-TaskFinished-StartTime"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
