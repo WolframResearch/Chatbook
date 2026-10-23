@@ -3494,7 +3494,7 @@ attachAssistantMessageButtons // beginDefinition;
 attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
 
 attachAssistantMessageButtons[ cell_CellObject ] :=
-    attachAssistantMessageButtons[ cell, Or @@ Lookup[ CurrentChatSettings @ cell, { "WorkspaceChat", "SidebarChat" }, False, TrueQ ] ];
+    attachAssistantMessageButtons[ cell, workspaceOrSidebarChatQ @ cell ];
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
     Catch @ Module[ { cell, includeFeedback, attached, sidebarCellQ },
@@ -3504,7 +3504,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         sidebarCellQ = cellTaggedQ[ cell, "SidebarTopCell" ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
-        includeFeedback = StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
+        includeFeedback = chatDataQ @ cell;
 
         (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
@@ -3534,10 +3534,40 @@ attachAssistantMessageButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*workspaceOrSidebarChatQ*)
+workspaceOrSidebarChatQ // beginDefinition;
+
+workspaceOrSidebarChatQ[ cell_CellObject ] := Or[
+    (* These flags are normally inherited from the notebook or the sidebar cell, so try a single lookup for each first: *)
+    TrueQ @ AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } ],
+    TrueQ @ AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ],
+    (* Otherwise, resolve the full chat settings for the cell (e.g. to account for chat delimiters): *)
+    Or @@ Lookup[ CurrentChatSettings @ cell, { "WorkspaceChat", "SidebarChat" }, False, TrueQ ]
+];
+
+workspaceOrSidebarChatQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatDataQ*)
+chatDataQ // beginDefinition;
+
+chatDataQ[ cell_CellObject ] := Or[
+    (* Avoids transferring the encoded chat data (which contains the full message history) just to check for it: *)
+    TrueQ @ CurrentValue[ cell, { TaggingRules, "HasChatData" } ],
+    (* Cells written before the "HasChatData" flag was added: *)
+    StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ]
+];
+
+chatDataQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*assistantMessageButtons*)
 assistantMessageButtons // beginDefinition;
 
-assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
+(* The boxes only depend on the arguments, so they are cached instead of rerunning ToBoxes on every hover: *)
+assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] := assistantMessageButtons[ includeFeedback, sidebarCellQ ] =
     ToBoxes @ DynamicModule[ { Typeset`cell },
         Grid[
             { {
