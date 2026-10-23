@@ -1844,6 +1844,14 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
         processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ];
         If[ FailureQ @ processed, throwTop @ writeErrorCell[ cell, processed ] ];
+
+        (* The body data is only needed to detect errors, and none of the error checks below can match a response that
+           has content and an OK status, so extracting the body data can be skipped in that case: *)
+        If[ processed =!= "" && ! MatchQ[ as[ "StatusCode" ], Except[ 100|200, _Integer ] ],
+            setLastFullResponseData[ log, processed ];
+            Throw @ writeReformattedCell[ settings, container, cell ]
+        ];
+
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
@@ -1865,6 +1873,21 @@ writeResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*setLastFullResponseData*)
+setLastFullResponseData // beginDefinition;
+
+(* This is only used for debugging, so the body data is extracted when it's first inspected: *)
+setLastFullResponseData[ log_List, processed_ ] := (
+    $lastFullResponseData := $lastFullResponseData = Replace[
+        extractBodyData @ log,
+        { body_, data_ } :> <| "Body" -> body, "Processed" -> processed, "Data" -> data |>
+    ];
+);
+
+setLastFullResponseData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*extractBodyData*)
 extractBodyData // beginDefinition;
 
@@ -1883,7 +1906,7 @@ extractBodyData[ log_List ] := Enclose[
         ];
 
         chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
-        folded = Fold[ StringJoin, "", chunks ];
+        folded = StringJoin @ chunks;
         data   = Quiet @ Developer`ReadRawJSONString @ folded;
 
         If[ AssociationQ @ data, Throw @ { folded, data } ];
