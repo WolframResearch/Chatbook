@@ -128,6 +128,8 @@ VerificationTest[
     TestID   -> "InitializationStep-Failure"
 ]
 
+(* Steps do not change the chat state, since asynchronous handlers of a chat that is streaming at the same time run
+   during the step and need to see and update their own state: *)
 VerificationTest[
     Block[
         {
@@ -137,9 +139,48 @@ VerificationTest[
         },
         {
             Wolfram`Chatbook`ChatModes`UI`Private`initializationStep[
-                Wolfram`Chatbook`Common`addHandlerArguments[ "Key" -> "Changed" ];
-                { Wolfram`Chatbook`Common`$lastTask, Wolfram`Chatbook`Common`$lastCellObject },
+                Wolfram`Chatbook`Common`$lastTask = "NewTask";
+                { Wolfram`Chatbook`Common`$lastCellObject, Wolfram`Chatbook`$ChatHandlerData },
                 "Test"
+            ],
+            Wolfram`Chatbook`Common`$lastTask
+        }
+    ],
+    { { "Cell", <| "Key" -> "Value" |> }, "NewTask" },
+    SameTest -> MatchQ,
+    TestID   -> "InitializationStep-ChatState"
+]
+
+VerificationTest[
+    Module[ { seen = None },
+        Block[ { Wolfram`Chatbook`Common`$lastTask = "Task" },
+            SessionSubmit @ ScheduledTask[ seen = Wolfram`Chatbook`Common`$lastTask, { 0.1 } ];
+            Wolfram`Chatbook`ChatModes`UI`Private`initializationStep[
+                TimeConstrained[ While[ seen === None, Pause[ 0.01 ] ], 10 ],
+                "Test"
+            ];
+            seen
+        ]
+    ],
+    "Task",
+    SameTest -> MatchQ,
+    TestID   -> "InitializationStep-AsynchronousChatState"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withIsolatedChatState*)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$lastTask       = "Task",
+            Wolfram`Chatbook`Common`$lastCellObject = "Cell",
+            Wolfram`Chatbook`$ChatHandlerData       = <| "Key" -> "Value" |>
+        },
+        {
+            Wolfram`Chatbook`ChatModes`UI`Private`withIsolatedChatState[
+                Wolfram`Chatbook`Common`addHandlerArguments[ "Key" -> "Changed" ];
+                { Wolfram`Chatbook`Common`$lastTask, Wolfram`Chatbook`Common`$lastCellObject }
             ],
             Wolfram`Chatbook`Common`$lastTask,
             Wolfram`Chatbook`Common`$lastCellObject,
@@ -148,14 +189,14 @@ VerificationTest[
     ],
     { { None, None }, "Task", "Cell", <| "Key" -> "Value" |> },
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-RestoresChatState"
+    TestID   -> "WithIsolatedChatState-RestoresChatState"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*initializeWorkspaceChatSettings*)
 VerificationTest[
-    Wolfram`Chatbook`Common`withChatState @ Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChatSettings[ ],
+    Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChatSettings[ ],
     If[ $CloudUserID === None,
         Missing[ "NotAuthenticated" ],
         KeyValuePattern @ {
