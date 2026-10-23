@@ -307,3 +307,255 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "DocumentationLookup-Markdown-Multiple@@Tests/RelatedDocumentation.wlt:301,1-309,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*FilterSnippets Response Cache*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* The LLM is mocked in these tests, and LLMKit is disabled so that no network requests are made for filtering: *)
+cachedFilterResponse[ args___ ] :=
+    Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`cachedFilterSnippetsResponse[ args ];
+
+$filterCalls = 0;
+
+$mockFilterLLM = Function[ { prompt, config }, "Computational\n5 Mock-" <> ToString[ ++$filterCalls ] ];
+
+(* Selects the first two snippet IDs that are listed in the instructions: *)
+$mockSelectionLLM = Function[ { prompt, config },
+    $filterCalls++;
+    StringJoin[
+        "Computational\n",
+        StringRiffle[
+            "5 " <> # & /@ Take[
+                StringSplit[ Last @ StringSplit[ prompt, "These are the available snippet IDs:\n" ], "\n" ],
+                UpTo[ 2 ]
+            ],
+            "\n"
+        ]
+    ]
+];
+
+withMockFilterLLM // Attributes = { HoldFirst };
+
+withMockFilterLLM[ eval_ ] := withMockFilterLLM[ eval, $mockFilterLLM ];
+
+withMockFilterLLM[ eval_, mock_ ] := Block[
+    {
+        Wolfram`Chatbook`Common`llmSynthesize = mock,
+        Wolfram`Chatbook`Common`$llmKit = False,
+        Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$filterSnippetsResponseCache = <| |>,
+        $filterCalls = 0
+    },
+    eval
+];
+
+filterCacheHits[ log_Internal`Bag ] :=
+    Length @ Cases[ Internal`BagPart[ log, All ], KeyValuePattern[ "Tag" -> "FilterSnippetsCacheHit" ], Infinity ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cachedFilterSnippetsResponse*)
+VerificationTest[
+    withMockFilterLLM @ {
+        cachedFilterResponse[ "instructions 1", <| |> ],
+        cachedFilterResponse[ "instructions 1", <| |> ],
+        $filterCalls
+    },
+    { "Computational\n5 Mock-1", "Computational\n5 Mock-1", 1 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-Repeat"
+]
+
+VerificationTest[
+    withMockFilterLLM @ Block[ { Wolfram`Chatbook`Common`$timingLog = Internal`Bag[ ] },
+        cachedFilterResponse[ "instructions 1", <| |> ];
+        cachedFilterResponse[ "instructions 1", <| |> ];
+        filterCacheHits @ Wolfram`Chatbook`Common`$timingLog
+    ],
+    1,
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-Repeat-Timing"
+]
+
+VerificationTest[
+    withMockFilterLLM @ {
+        cachedFilterResponse[ "instructions 1", <| |> ],
+        cachedFilterResponse[ "instructions 2", <| |> ],
+        cachedFilterResponse[ "instructions 2", <| |> ],
+        $filterCalls
+    },
+    { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-DifferentInstructions"
+]
+
+VerificationTest[
+    withMockFilterLLM @ {
+        cachedFilterResponse[ "instructions 1", <| |> ],
+        cachedFilterResponse[ "instructions 1", <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |> ],
+        cachedFilterResponse[ "instructions 1", <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |> ],
+        $filterCalls
+    },
+    { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-DifferentModel"
+]
+
+VerificationTest[
+    withMockFilterLLM[
+        {
+            Catch[ cachedFilterResponse[ "instructions 1", <| |> ], "MockFailure" ],
+            cachedFilterResponse[ "instructions 1", <| |> ],
+            cachedFilterResponse[ "instructions 1", <| |> ],
+            $filterCalls
+        },
+        Function[ { prompt, config },
+            If[ ++$filterCalls === 1, Throw[ "Failed", "MockFailure" ], "Computational\n5 Mock-" <> ToString @ $filterCalls ]
+        ]
+    ],
+    { "Failed", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-FailureNotCached"
+]
+
+VerificationTest[
+    withMockFilterLLM[
+        {
+            cachedFilterResponse[ "instructions 1", <| |> ],
+            cachedFilterResponse[ "instructions 1", <| |> ],
+            cachedFilterResponse[ "instructions 1", <| |> ],
+            $filterCalls
+        },
+        Function[ { prompt, config },
+            If[ ++$filterCalls === 1, $Failed, "Computational\n5 Mock-" <> ToString @ $filterCalls ]
+        ]
+    ],
+    { $Failed, "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-NonStringNotCached"
+]
+
+VerificationTest[
+    withMockFilterLLM @ Module[ { cache, first },
+        Do[ cachedFilterResponse[ "instructions " <> ToString @ i, <| |> ], { i, 70 } ];
+        cache = Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$filterSnippetsResponseCache;
+        first = cachedFilterResponse[ "instructions 1", <| |> ];
+        { Length @ cache, cachedFilterResponse[ "instructions 70", <| |> ], first, $filterCalls }
+    ],
+    { 64, "Computational\n5 Mock-70", "Computational\n5 Mock-71", 71 },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-Bounded"
+]
+
+VerificationTest[
+    withMockFilterLLM @ Block[
+        { Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`$filterSnippetsCacheSize = 0 },
+        cachedFilterResponse[ "instructions 1", <| |> ];
+        cachedFilterResponse[ "instructions 1", <| |> ];
+        $filterCalls
+    ],
+    2,
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-Disabled"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmSynthesizeCacheKey*)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$llmKit = False },
+        {
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ],
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+        }
+    ],
+    { key_Integer, key_Integer },
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesizeCacheKey-Stable"
+]
+
+(* The same model through a different authentication path is a different request: *)
+VerificationTest[
+    SameQ[
+        Block[ { Wolfram`Chatbook`Common`$llmKit = True, Wolfram`Chatbook`Common`$llmKitService = "OpenAI" },
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+        ],
+        Block[ { Wolfram`Chatbook`Common`$llmKit = False },
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+        ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesizeCacheKey-Authentication"
+]
+
+VerificationTest[
+    SameQ[
+        Block[ { Wolfram`Chatbook`Common`$llmKit = True, Wolfram`Chatbook`Common`$llmKitService = "LLMKitOpenAI" },
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+        ],
+        Block[ { Wolfram`Chatbook`Common`$llmKit = True, Wolfram`Chatbook`Common`$llmKitService = "LLMKitAnthropic" },
+            Wolfram`Chatbook`Common`llmSynthesizeCacheKey[ "instructions", <| |> ]
+        ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesizeCacheKey-Service"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*RelatedDocumentation*)
+VerificationTest[
+    withMockFilterLLM[
+        Module[ { messages, prompt1, data1, calls1, prompt2, data2, hits },
+            messages = { <| "Role" -> "User", "Content" -> "How do I make a 3D plot of a surface?" |> };
+            prompt1  = RelatedDocumentation[ messages, "Prompt", "FilterResults" -> True, "MaxItems" -> 20 ];
+            data1    = $ChatHandlerData[ "RelatedDocumentation" ];
+            calls1   = $filterCalls;
+            Block[ { Wolfram`Chatbook`Common`$timingLog = Internal`Bag[ ] },
+                prompt2 = RelatedDocumentation[ messages, "Prompt", "FilterResults" -> True, "MaxItems" -> 20 ];
+                hits    = filterCacheHits @ Wolfram`Chatbook`Common`$timingLog
+            ];
+            data2 = $ChatHandlerData[ "RelatedDocumentation" ];
+            { calls1, $filterCalls, hits, prompt1 === prompt2, data1 === data2, prompt1, data1[ "Filtered" ] }
+        ],
+        $mockSelectionLLM
+    ],
+    { 1, 1, 1, True, True, _String? (StringStartsQ[ "IMPORTANT: " ]), { __String } },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat"
+]
+
+VerificationTest[
+    withMockFilterLLM[
+        Module[ { prompt1, prompt2 },
+            prompt1 = RelatedDocumentation[
+                { <| "Role" -> "User", "Content" -> "How do I make a 3D plot of a surface?" |> },
+                "Prompt",
+                "FilterResults" -> True,
+                "MaxItems"      -> 20
+            ];
+            prompt2 = RelatedDocumentation[
+                {
+                    <| "Role" -> "User"     , "Content" -> "How do I make a 3D plot of a surface?"         |>,
+                    <| "Role" -> "Assistant", "Content" -> "Use Plot3D[Sin[x y], {x, -2, 2}, {y, -2, 2}]." |>,
+                    <| "Role" -> "User"     , "Content" -> "Can I color it by height?"                     |>
+                },
+                "Prompt",
+                "FilterResults" -> True,
+                "MaxItems"      -> 20
+            ];
+            { $filterCalls, prompt1, prompt2 }
+        ],
+        $mockSelectionLLM
+    ],
+    { 2, _String, _String },
+    SameTest -> MatchQ,
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-DifferentTranscript"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
