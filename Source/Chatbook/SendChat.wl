@@ -1638,13 +1638,20 @@ appendStringContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoCorrect*)
 autoCorrect // beginDefinition;
-autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
+
+(* The Moonshot tool call rule is tried at every whitespace position, which makes it about as expensive as all the
+   other rules combined, so it's only included when the string contains the text that the rule requires: *)
+autoCorrect[ string_String ] /; StringContainsQ[ string, "<|tool_calls_section_begin|>" ] :=
+    StringReplace[ string, $llmAutoCorrectRules ];
+
+autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRulesNoMoonshot ];
+
 autoCorrect // endDefinition;
 
 
 $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
-$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+$llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
@@ -1676,7 +1683,11 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters,
+    $longNameCharacters
+};
+
+$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    $llmAutoCorrectRulesNoMoonshot,
     toolCalls: StringExpression[
         WhitespaceCharacter...,
         "<|tool_calls_section_begin|>",
@@ -3947,6 +3958,7 @@ errorBoxes[ as___ ] :=
 addToMXInitialization[
     $autoSettingKeyPriority;
     $llmAutoCorrectRules;
+    $llmAutoCorrectRulesNoMoonshot;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
