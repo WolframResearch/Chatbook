@@ -252,6 +252,36 @@ VerificationTest[
     TestID   -> "WriteResult-Normal-Response"
 ]
 
+(* The body data is not extracted for a successful response until the debug data is inspected: *)
+VerificationTest[
+    Module[ { calls = 0, container = <| "FullContent" -> "", "DynamicContent" -> "" |>, result, before, data },
+        Block[
+            {
+                Wolfram`Chatbook`SendChat`Private`$debugLog             = Internal`Bag @ { contentChunk[ "Hi" ], $taskFinished },
+                Wolfram`Chatbook`SendChat`Private`$lastFullResponseData = None,
+                Wolfram`Chatbook`SendChat`Private`extractBodyData       = (calls++; { "body", Missing[ "NotAvailable" ] }) &,
+                Wolfram`Chatbook`SendChat`Private`writeErrorCell        = (result = { "Error", #2 }; Null) &,
+                Wolfram`Chatbook`Common`writeReformattedCell            = (result = "Reformatted"; Null) &,
+                Wolfram`Chatbook`$AutomaticAssistance                   = False,
+                Wolfram`Chatbook`$ChatNotebookEvaluation                = True
+            },
+            Wolfram`Chatbook`SendChat`Private`writeResult[
+                <| "BypassResponseChecking" -> False |>,
+                Unevaluated @ container,
+                CellObject[ 1 ],
+                <| "StatusCode" -> 200 |>
+            ];
+            before = calls;
+            data = Wolfram`Chatbook`SendChat`Private`$lastFullResponseData;
+            data = Wolfram`Chatbook`SendChat`Private`$lastFullResponseData;
+            { result, before, data, calls }
+        ]
+    ],
+    { "Reformatted", 0, <| "Body" -> "body", "Processed" -> "Hi", "Data" -> Missing[ "NotAvailable" ] |>, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "WriteResult-Normal-Response-Lazy-Body-Data"
+]
+
 VerificationTest[
     responseResult[ { $taskFinished }, 200 ],
     { { "Error", KeyValuePattern @ { "StatusCode" -> 200, "Error" -> "ServerResponseEmpty" } }, _ },
