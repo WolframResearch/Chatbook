@@ -1591,7 +1591,9 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
             With[ { splitString = DeleteCases[ StringSplit[ newContent, $dynamicSplitRules ], "" ] },
                 If[ Length @ splitString > 1,
                     writeDynamicChunkAsStatic[ StringJoin @ Most @ splitString, container[ "DynamicBoxObject" ] ];
-                    container[ "DynamicContent" ] = Last @ splitString
+                    container[ "DynamicContent" ] = Last @ splitString;
+                    (* The display still includes the content that was just written as static, so it should refresh: *)
+                    container[ "DynamicUpdatePending" ] = True
                     ,
                     container[ "DynamicContent" ] = newContent
                 ]
@@ -1609,7 +1611,9 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         infoTaggedQ @ container, processInfoCell[ container, cell ],
         untaggedQ @ container, openChatCell @ cell,
         True, Null
-    ]
+    ];
+
+    updateDynamicDisplay @ container
 );
 
 writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
@@ -1618,6 +1622,46 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
 writeChunk0 // endDefinition;
 
 $chunkDebug = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*updateDynamicDisplay*)
+(* The streaming output display polls the container on a fixed interval (see activeAIAssistantDynamicModule).
+   This refreshes it right away at a few key moments: when the first visible text arrives and after content was
+   written as static (to avoid showing that part twice). Refreshes are triggered at most every
+   `$dynamicTriggerInterval` seconds; a request made too soon stays pending until a later chunk. *)
+$dynamicTriggerInterval = 0.1;
+
+updateDynamicDisplay // beginDefinition;
+updateDynamicDisplay // Attributes = { HoldFirst };
+
+updateDynamicDisplay[ container_ ] :=
+    updateDynamicDisplay[ container, container[ "DynamicTrigger" ] ];
+
+updateDynamicDisplay[ container_, HoldComplete[ trigger_Symbol ] ] :=
+    If[ TrueQ @ Or[
+            (* Show the first visible text as soon as it arrives (the trigger has not fired yet): *)
+            trigger === 0 && visibleTextQ @ container[ "DynamicContent" ],
+            (* Otherwise only refresh for a pending request, at most once per interval: *)
+            TrueQ @ container[ "DynamicUpdatePending" ] && AbsoluteTime[ ] - trigger >= $dynamicTriggerInterval
+        ],
+        container[ "DynamicUpdatePending" ] = False;
+        trigger = AbsoluteTime[ ]
+    ];
+
+(* There's no trigger to update (e.g. cloud notebooks or headless chats): *)
+updateDynamicDisplay[ container_, _ ] :=
+    Null;
+
+updateDynamicDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*visibleTextQ*)
+visibleTextQ // beginDefinition;
+visibleTextQ[ text_String ] := StringContainsQ[ text, Except[ WhitespaceCharacter ] ];
+visibleTextQ[ _ ] := False;
+visibleTextQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2981,19 +3025,25 @@ activeAIAssistantDynamicModule // beginDefinition;
 
 activeAIAssistantDynamicModule // Attributes = { HoldFirst };
 
+activeAIAssistantDynamicModule[ container_, settings_, task_, formatter_, reformat_ ] :=
+    activeAIAssistantDynamicModule[ container, settings, task, formatter, reformat, createDynamicTrigger @ container ];
+
 (* Let the writeResult function do the final rewrite of the cell; it also ensures the cell is editable before rewrite *)
 activeAIAssistantDynamicModule[
     container_,
     settings_,
     task_,
     formatter_,
-    reformat_
+    reformat_,
+    HoldComplete[ trigger_Symbol ]
 ] :=
 DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, scrollToEnd = Function[ Null ] },
     DynamicWrapper[
         PaneSelector[
             {
                 "Active" -> Dynamic[
+                    (* The chunk handlers can request an immediate update via the trigger (see updateDynamicDisplay): *)
+                    trigger;
                     If[ KeyExistsQ[ container, "FinishedCell" ],
                         finishedSignal = True;
                         cachedDynamicOutput
@@ -3001,7 +3051,7 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
                         scrollToEnd[ ];
                         cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                     ],
-                    TrackedSymbols :> { },
+                    TrackedSymbols :> { trigger },
                     UpdateInterval -> 0.5
                 ],
                 "DeleteMe"   -> Spacer @ 0,                   (* hide content while we wait for the cell to delete *)
@@ -3047,6 +3097,21 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
 ];
 
 activeAIAssistantDynamicModule // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createDynamicTrigger*)
+(* Creates a symbol for this chat's output display to track, which `updateDynamicDisplay` sets to request an update. *)
+createDynamicTrigger // beginDefinition;
+createDynamicTrigger // Attributes = { HoldFirst };
+
+createDynamicTrigger[ container_ ] := Module[ { trigger },
+    trigger = 0;
+    If[ AssociationQ @ container, container[ "DynamicTrigger" ] = HoldComplete @ trigger ];
+    HoldComplete @ trigger
+];
+
+createDynamicTrigger // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
