@@ -134,6 +134,29 @@ VerificationTest[
     TestID   -> "TeX-Serialization-Skips-TeX-Export"
 ]
 
+(* The same holds for math in tables and headings: *)
+VerificationTest[
+    Module[ { count = 0, strings },
+        strings = Block[
+            { Wolfram`Chatbook`Serialization`Private`serializeTraditionalForm = (count++; "EXPORTED") & },
+            CellToString @ Cell[ FormatChatOutput[ # ][[ 1, 1 ]], "ChatOutput" ] & /@ {
+                "| a | b |\n|---|---|\n| $z^2$ | $\\frac{1}{2}$ |",
+                "### Heading with $\\pi r^2$\n\nmore"
+            }
+        ];
+        { strings, count }
+    ],
+    {
+        {
+            _String? (StringContainsQ[ "| $$z^2$$ | $$\\frac{1}{2}$$ |" ]),
+            "### Heading with $$\\pi r^2$$\n\nmore"
+        },
+        0
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Table-And-Heading"
+]
+
 (* TeX boxes that do not have their TeX source still go through TeX export: *)
 VerificationTest[
     Module[ { count = 0, string },
