@@ -3037,7 +3037,7 @@ activeAIAssistantDynamicModule[
     reformat_,
     HoldComplete[ trigger_Symbol ]
 ] :=
-DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, displayedContentHash = None, scrollToEnd = Function[ Null ] },
+DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, topCell, finishedSignal = False, cachedDynamicOutput, displayedContentHash = None, scrollPending = False, scrollToEnd = Function[ Null ] },
     DynamicWrapper[
         PaneSelector[
             {
@@ -3049,13 +3049,16 @@ DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID, dmBox, 
                             KeyExistsQ[ container, "FinishedCell" ],
                                 finishedSignal = True;
                                 cachedDynamicOutput,
-                            (* Nothing changed since the last update, so there's nothing to reformat or scroll: *)
+                            (* Nothing changed since the last update, so there's nothing to reformat: *)
                             contentHash === displayedContentHash,
+                                (* Scrolling happens before new output is displayed, so scroll once more after it: *)
+                                If[ TrueQ @ scrollPending, scrollPending = False; scrollToEnd[ ] ];
                                 cachedDynamicOutput,
                             True,
                                 scrollToEnd[ ];
                                 cachedDynamicOutput = catchTop @ dynamicTextDisplay[ container, formatter, reformat ];
                                 displayedContentHash = If[ FailureQ @ cachedDynamicOutput, None, contentHash ];
+                                scrollPending = True;
                                 cachedDynamicOutput
                         ]
                     ],
