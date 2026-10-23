@@ -1504,8 +1504,10 @@ def resolve_point(server, d, args):
             raise CLIError("No previous screenshot; take one with `fe.py screenshot` first")
         u, v = parse_point(args.image)
         scale = state.get("scale") or 1.0
-        if state.get("window") and d.geometry(state["window"]):
-            d.activate(state["window"])  # it may be covered (e.g. after `screenshot --no-raise`)
+        # On Windows, the window may be covered (`screenshot --no-raise` captures its own content). An X11 screenshot
+        # shows the screen as it is, so raising the window there would make the click land on something else:
+        if WINDOWS and state.get("window") and d.geometry(state["window"]):
+            d.activate(state["window"])
             time.sleep(0.3)
         return state["x"] + u / scale, state["y"] + v / scale
     if getattr(args, "box", None) or getattr(args, "text", None) or getattr(args, "cell", None):
