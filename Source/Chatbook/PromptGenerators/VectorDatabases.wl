@@ -122,6 +122,9 @@ $cacheEmbeddings = True;
 (* Keep one memory-mapped index per vector database instead of re-opening it on every search: *)
 $cacheUSearchIndexes = True;
 
+(* Release the memory-mapped indexes after this many seconds without a search: *)
+$usearchIndexIdleTime = 300;
+
 $embeddingDimension      = 384;
 $maxNeighbors            = 250;
 $maxEmbeddingDistance    = 150.0;
@@ -207,9 +210,11 @@ $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
 
 (* Persistent USearch index handles used by vectorDatabaseSearch: *)
-$usearchIndexCache    = <| |>;
-$usearchIndexVerified = <| |>;
-$usearchIndexFailures = <| |>;
+$usearchIndexCache       = <| |>;
+$usearchIndexVerified    = <| |>;
+$usearchIndexFailures    = <| |>;
+$usearchIndexLastUsed    = 0;
+$usearchIndexReleaseTask = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1265,7 +1270,7 @@ cacheVectorDBResult // endDefinition;
 vectorDatabaseSearch // beginDefinition;
 
 vectorDatabaseSearch[ name_String, db: $$vectorDatabase, vector_NumericArray, n_Integer ] :=
-    vectorDatabaseSearch[ name, db, vector, n, getUSearchIndex[ name, db ] ];
+    vectorDatabaseSearch[ name, db, vector, n, touchUSearchIndex @ getUSearchIndex[ name, db ] ];
 
 (* No usable index handle: *)
 vectorDatabaseSearch[ name_, db_, vector_, n_, _Missing ] :=
@@ -1493,6 +1498,62 @@ disableUSearchIndex // endDefinition;
 releaseUSearchIndexes // beginDefinition;
 releaseUSearchIndexes[ ] := ($usearchIndexCache = <| |>;);
 releaseUSearchIndexes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*touchUSearchIndex*)
+(*
+    Index handles are released after $usearchIndexIdleTime seconds without a search, so that an idle kernel does not
+    keep the index files memory-mapped indefinitely. On Windows, a memory-mapped file cannot be replaced, which would
+    prevent another kernel from updating the vector databases.
+*)
+touchUSearchIndex // beginDefinition;
+
+touchUSearchIndex[ index_Association ] := (
+    $usearchIndexLastUsed = AbsoluteTime[ ];
+    If[ ! MatchQ[ $usearchIndexReleaseTask, _TaskObject ], scheduleUSearchIndexRelease @ $usearchIndexIdleTime ];
+    index
+);
+
+touchUSearchIndex[ other_ ] := other;
+
+touchUSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scheduleUSearchIndexRelease*)
+scheduleUSearchIndexRelease // beginDefinition;
+
+(* ScheduledTask does not accept arbitrary-precision numbers (e.g. from AbsoluteTime[ ]), so this uses whole seconds: *)
+scheduleUSearchIndexRelease[ seconds_? NumberQ ] /; Positive @ seconds :=
+    $usearchIndexReleaseTask = Replace[
+        Quiet @ SessionSubmit @ ScheduledTask[ Quiet @ releaseIdleUSearchIndexes[ ], { Ceiling @ seconds } ],
+        Except[ _TaskObject ] -> None
+    ];
+
+(* Handles are kept for the rest of the session when $usearchIndexIdleTime is not a positive number: *)
+scheduleUSearchIndexRelease[ _ ] := Null;
+
+scheduleUSearchIndexRelease // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*releaseIdleUSearchIndexes*)
+releaseIdleUSearchIndexes // beginDefinition;
+
+releaseIdleUSearchIndexes[ ] := (
+    $usearchIndexReleaseTask = None;
+    releaseIdleUSearchIndexes[ $usearchIndexIdleTime - (AbsoluteTime[ ] - $usearchIndexLastUsed) ]
+);
+
+(* Used recently, so check again later: *)
+releaseIdleUSearchIndexes[ remaining_? Positive ] :=
+    scheduleUSearchIndexRelease @ remaining;
+
+releaseIdleUSearchIndexes[ _ ] :=
+    releaseUSearchIndexes[ ];
+
+releaseIdleUSearchIndexes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

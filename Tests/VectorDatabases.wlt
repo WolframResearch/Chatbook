@@ -530,4 +530,105 @@ VerificationTest[
     TestID   -> "FastVectorSearch-ReleaseBeforeUnpack"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Idle Release*)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache       = <| "Test" -> <| |> |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexLastUsed    = 0,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask = None,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexIdleTime    = 300
+        },
+        Module[ { scheduled, recent, idle },
+
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`touchUSearchIndex[ <| |> ];
+            scheduled = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask;
+            TaskRemove @ scheduled;
+
+            (* Used recently, so the handles are kept and the check is rescheduled: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`releaseIdleUSearchIndexes[ ];
+            recent = {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask
+            };
+            TaskRemove @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask;
+
+            (* Not used for longer than $usearchIndexIdleTime, so the handles are released: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexLastUsed = AbsoluteTime[ ] - 301;
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`releaseIdleUSearchIndexes[ ];
+            idle = {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask
+            };
+
+            { scheduled, recent, idle }
+        ]
+    ],
+    { _TaskObject, { <| "Test" -> <| |> |>, _TaskObject }, { <| |>, None } },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-IdleRelease"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache       = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified    = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures    = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexLastUsed    = 0,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask = None,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexIdleTime    = 0.25
+        },
+        With[
+            {
+                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
+                    "VectorDatabaseObject"
+                ],
+                vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
+            },
+            Module[ { search, before, after, again },
+                search = Function[
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
+                        "NeuralNetRepositoryURIs",
+                        db,
+                        vector,
+                        250
+                    ]
+                ];
+                search[ ];
+                before = Keys @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache;
+                (* Scheduled tasks run while the kernel is paused: *)
+                Pause[ 2 ];
+                after = Keys @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache;
+                (* A released handle is reopened on the next search and does not need to be verified again: *)
+                again = {
+                    search[ ] === Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch[
+                        db,
+                        vector,
+                        250
+                    ],
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexVerifiedQ[
+                        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache[
+                            "NeuralNetRepositoryURIs"
+                        ]
+                    ]
+                };
+                Quiet @ TaskRemove @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask;
+                {
+                    before,
+                    after,
+                    again,
+                    Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures
+                }
+            ]
+        ]
+    ],
+    { { "NeuralNetRepositoryURIs" }, { }, { True, True }, 1, <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-IdleRelease-Task"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
