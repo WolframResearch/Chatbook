@@ -79,6 +79,7 @@
 "FormattingThinkingCompleteSingular" -> "\:601D\:8003\:4E86\:4E00\:4E0B",
 "FormattingThinkingCompleteFallback" -> "\:601D\:8003\:5B8C\:6210",
 "FormattingHide" -> "\:9690\:85CF",
+"FormattingDiscardedMaterial" -> "Discarded material",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:ff1a",
