@@ -254,6 +254,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `importDataURI;
 `initFETaskWidget;
 `initializeProgressContainer;
+`initializeRelatedDocumentation;
 `initTools;
 `inlineExpressionURIs;
 `insertCodeBelow;

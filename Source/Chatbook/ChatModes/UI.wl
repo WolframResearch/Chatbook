@@ -2879,14 +2879,83 @@ $workspaceChatInitialized = False;
 initializeWorkspaceChat // beginDefinition;
 
 initializeWorkspaceChat[ ] := LogChatTiming[
-    LogChatTiming[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
-    LogChatTiming[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
-    LogChatTiming[ $llmKitService, "InitializeLLMKitService" ];
-    $workspaceChatInitialized = True,
+    Module[ { settings },
+        initializationStep[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
+        initializationStep[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
+        initializationStep[ $llmKitService, "InitializeLLMKitService" ];
+        settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
+        initializationStep[ initializeRelatedDocumentation @ settings, "InitializeRelatedDocumentation" ];
+        $workspaceChatInitialized = True
+    ],
     "InitializeWorkspaceChat"
 ];
 
 initializeWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializationStep*)
+initializationStep // beginDefinition;
+initializationStep // Attributes = { HoldFirst };
+
+(* Ignores failures, so that initialization never shows errors to the user: *)
+initializationStep[ eval_, tag_String ] :=
+    LogChatTiming[ Quiet @ catchAlways @ eval, tag ];
+
+initializationStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withIsolatedChatState*)
+withIsolatedChatState // beginDefinition;
+withIsolatedChatState // Attributes = { HoldFirst };
+
+(* Evaluates as a chat would, but restores any global chat state afterwards, so that initialization does not
+   overwrite the state of other chats. Asynchronous handlers of a chat that is streaming at the same time can run
+   during this evaluation and would see this state instead of their own, so only use it where chat state is needed: *)
+withIsolatedChatState[ eval_ ] := Block[
+    {
+        $ChatHandlerData = $ChatHandlerData,
+        $lastCellObject  = $lastCellObject,
+        $lastTask        = $lastTask,
+        $tokenBudgetLog  = $tokenBudgetLog
+    },
+    withChatState @ eval
+];
+
+withIsolatedChatState // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeWorkspaceChatSettings*)
+initializeWorkspaceChatSettings // beginDefinition;
+
+initializeWorkspaceChatSettings[ ] :=
+    initializeWorkspaceChatSettings @ cloudAuthenticatedQ[ ];
+
+(* The default model needs LLMKit, which requires being signed in: *)
+initializeWorkspaceChatSettings[ False ] :=
+    Missing[ "NotAuthenticated" ];
+
+(* Resolves the settings used by the notebook assistant and loads the tokenizer for the resolved model: *)
+initializeWorkspaceChatSettings[ True ] := Enclose[
+    Module[ { settings, tokenizer },
+        settings = ConfirmBy[
+            withIsolatedChatState @ resolveAutoSettings @ mergeChatSettings @ {
+                $defaultChatSettings,
+                $notebookAssistanceWorkspaceSettings
+            },
+            AssociationQ,
+            "Settings"
+        ];
+        tokenizer = ConfirmMatch[ getTokenizer @ settings, Except[ $$unspecified ], "Tokenizer" ];
+        ConfirmMatch[ tokenizer[ "Hello" ], _List, "Tokens" ];
+        settings
+    ],
+    throwInternalFailure
+];
+
+initializeWorkspaceChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
