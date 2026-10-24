@@ -871,6 +871,25 @@ resolveAutoSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*autoAssistPossibleQ*)
+(* A cheap check that only gives False if "Assistance" cannot resolve to True in `resolveAutoSettings @ settings`: *)
+autoAssistPossibleQ // beginDefinition;
+
+autoAssistPossibleQ[ settings_Association ] := Or[
+    TrueQ @ settings[ "Assistance" ],
+    (* Persona values take precedence over the given settings: *)
+    With[ { persona = getLLMEvaluator @ settings }, AssociationQ @ persona && TrueQ @ persona[ "Assistance" ] ],
+    (* An Automatic value resolves to False unless there's a model-specific default: *)
+    ! FreeQ[ $modelAutoSettings, _Association? (KeyExistsQ[ "Assistance" ]) ]
+];
+
+(* Let resolveAutoSettings handle anything else: *)
+autoAssistPossibleQ[ _ ] := True;
+
+autoAssistPossibleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inheritModelSettings*)
 inheritModelSettings // beginDefinition;
 

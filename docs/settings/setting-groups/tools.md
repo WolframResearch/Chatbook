@@ -119,6 +119,8 @@ Skills whose `"Location"` is not a directory containing a `SKILL.md` file (e.g.,
 
 Built-in skills live in `Assets/Skills/<name>/SKILL.md` and are declared as the `"Skills"` asset in `PacletInfo.wl`. They are loaded by `getBuiltInSkills` and available as `$DefaultSkills`, an association of skill names to `LLMSkill` objects. Parsed skills are cached until their `SKILL.md` file is modified.
 
+Importing a skill is slow (the first YAML import loads the importer), so `getSkills` only imports the built-in skills that the setting can use (`builtInSkillPattern`): `Automatic` skips the directories of `$optInSkills`, names only import the matching directories, `All` imports everything, and `None` doesn't look for built-in skills at all. Built-in skills are selected by directory name before they are imported, so a built-in skill's `name` must match its directory name (checked by the `BuiltInSkills-NamesMatchDirectories` test).
+
 The parser is lenient: it strips a byte order mark, normalizes line endings, and retries YAML with unquoted colons in values (e.g. `description: Use when: ...`) as block scalars. The name falls back to the directory name. A skill without a description is skipped.
 
 Skills listed in `$optInSkills` are excluded from `Automatic`, so they are only used when requested by name or with `All`:
