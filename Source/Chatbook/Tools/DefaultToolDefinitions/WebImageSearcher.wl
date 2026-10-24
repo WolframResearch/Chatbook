@@ -13,6 +13,7 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
     toolDefaultData[ "WebImageSearcher" ],
     "ShortName"          -> "img_search",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
+    "CallIcon"           -> toolCallIconResource[ "WebImageSearcher" ],
     "Description"        -> "Search the web for images.",
     "Function"           -> webImageSearch,
     "FormattingFunction" -> toolAutoFormatter,

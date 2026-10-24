@@ -241,6 +241,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getTokenizer;
 `getTokenizerName;
 `getToolByName;
+`getToolCallIcon;
+`toolCallIconResource;
 `getToolDisplayName;
 `getToolFormattingFunction;
 `getToolIcon;
