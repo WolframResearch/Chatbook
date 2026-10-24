@@ -160,7 +160,7 @@ sendChatHeadless // endDefinition;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cellExpr, cellObj, container, task },
+    Module[ { settings, cells0, cells, target, messages, data, deferData, persona, cellTags, cellExpr, cellObj, container, task },
 
         resolveInlineReferences @ evalCell;
 
@@ -231,7 +231,11 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        If[ ! TrueQ @ $cloudNotebooks, CurrentChatSettings[ cellObj, "Data" ] = data ];
+
+        (* A synchronous submit can process the entire response before returning, which may need the data from the
+           output cell (e.g. StopChat), so writing it is only deferred until after submitting for async requests: *)
+        deferData = asyncChatSubmitQ @ settings;
+        If[ ! deferData, writeChatOutputData[ cellObj, data ] ];
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -266,6 +270,8 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
 
         addHandlerArguments[ "Task" -> task ];
 
+        (* Nothing needs the data until the response arrives, so this keeps the front end write off the TTFT path: *)
+        If[ deferData, writeChatOutputData[ cellObj, data ] ];
         CurrentChatSettings[ cellObj, "CellObject" ] = cellObj;
         CurrentChatSettings[ cellObj, "Task"       ] = task;
 
@@ -405,6 +411,32 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*asyncChatSubmitQ*)
+asyncChatSubmitQ // beginDefinition;
+
+(* True if chatSubmit only starts the request, so the response is processed later by the task's handler functions: *)
+asyncChatSubmitQ[ settings_Association ] := And[
+    ! TrueQ @ settings[ "ForceSynchronous" ],
+    MatchQ[ settings[ "ProcessingFunctions", "ChatSubmit" ], $$unspecified ]
+];
+
+asyncChatSubmitQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeChatOutputData*)
+writeChatOutputData // beginDefinition;
+
+(* Cloud notebooks do not use the "Data" property so we skip storing it: *)
+writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
+
+writeChatOutputData[ cell_CellObject, data_Association ] :=
+    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = data, "WriteChatOutputData" ];
+
+writeChatOutputData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
