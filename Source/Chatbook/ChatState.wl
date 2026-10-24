@@ -80,6 +80,7 @@ withChatState[ eval_ ] :=
             $progressContainer            = None,
             $showProgressText             = $showProgressText,
             $receivedToolCall             = False,
+            $reasoningOpen                = False,
             $thinkingStart                = None,
             $thinkingEnd                  = None,
             $useRasterCache               = True,

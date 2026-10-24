@@ -1074,21 +1074,16 @@ makeMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
-allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+
+(* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
+allowedMultimodalRoles[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] := { "User" };
+
+(* A model family may declare which roles can carry an image (e.g. gpt-4o: user messages only); anything undeclared
+   is unrestricted: *)
+allowedMultimodalRoles[ settings_ ] :=
+    Replace[ autoModelSetting[ settings, "MultimodalRoles" ], Except[ { __String } ] -> All ];
+
 allowedMultimodalRoles // endDefinition;
-
-
-allowedMultimodalRoles0 // beginDefinition;
-
-allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
-    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
-        { "User" },
-        All
-    ];
-
-allowedMultimodalRoles0[ _Missing ] := All;
-
-allowedMultimodalRoles0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
