@@ -95,14 +95,18 @@ $builtInSkillsDirectory := $thisPaclet[ "AssetLocation", "Skills" ];
 (*getBuiltInSkills*)
 getBuiltInSkills // beginDefinition;
 
-getBuiltInSkills[ ] := getBuiltInSkills @ $builtInSkillsDirectory;
+getBuiltInSkills[ ] := getBuiltInSkills @ _String;
 
-getBuiltInSkills[ dir_String? DirectoryQ ] := Association @ Cases[
-    importSkill /@ FileNames[ $skillFileName, dir, { 2 } ],
+(* Importing skills is slow, so only skills whose directory name matches the pattern are imported: *)
+getBuiltInSkills[ Verbatim[ Alternatives ][ ] ] := <| |>;
+getBuiltInSkills[ pattern_ ] := getBuiltInSkills[ $builtInSkillsDirectory, pattern ];
+
+getBuiltInSkills[ dir_String? DirectoryQ, pattern_ ] := Association @ Cases[
+    importSkill /@ Select[ FileNames[ $skillFileName, dir, { 2 } ], MatchQ[ FileNameTake[ #, { -2 } ], pattern ] & ],
     skill: $$llmSkill :> skillName @ skill -> skill
 ];
 
-getBuiltInSkills[ _ ] := <| |>;
+getBuiltInSkills[ _, _ ] := <| |>;
 
 getBuiltInSkills // endDefinition;
 
@@ -522,7 +526,7 @@ resolveSkills // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getSkills*)
 getSkills // beginDefinition;
-getSkills[ spec_ ] := getSkills[ spec, $DefaultSkills ];
+getSkills[ spec_ ] := getSkills[ spec, getBuiltInSkills @ builtInSkillPattern @ spec ];
 getSkills[ spec_, builtIn_Association ] := Values @ Association @ toSkillRules[ spec, builtIn ];
 getSkills // endDefinition;
 
@@ -543,6 +547,20 @@ skillRule[ name_String, skill: $$llmSkill ] /; StringQ @ Lookup[ skillData @ ski
 skillRule[ name_String, Missing[ "NotFound" ] ] := (messagePrint[ "SkillNotFound", name ]; { });
 skillRule[ _, skill_ ] := (messagePrint[ "InvalidSkillSpecification", skill ]; { });
 skillRule // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*builtInSkillPattern*)
+(* Gives a pattern for the names of the built-in skills that toSkillRules can use for a specification, so that other
+   built-in skills don't need to be imported. This relies on built-in skill directories being named after their skills. *)
+builtInSkillPattern // beginDefinition;
+builtInSkillPattern[ Automatic|Inherited|ParentList ] := Except[ Alternatives @@ $optInSkills, _String ];
+builtInSkillPattern[ All ] := _String;
+builtInSkillPattern[ specs_List ] := Flatten[ Alternatives @@ builtInSkillPattern /@ specs, Infinity, Alternatives ];
+builtInSkillPattern[ name_String ] := name;
+(* None, LLMSkill objects, and invalid specifications don't use built-in skills: *)
+builtInSkillPattern[ _ ] := Alternatives[ ];
+builtInSkillPattern // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
