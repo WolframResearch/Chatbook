@@ -74,14 +74,38 @@ llmChat // endDefinition;
 (*llmSynthesize*)
 llmSynthesize // beginDefinition;
 
+(* By default, llmSynthesize waits indefinitely, retries invalid responses up to three times, and writes failures to the
+   chat output. Callers can instead limit the total time spent waiting for a response (measured from when the first
+   request is submitted) and the number of attempts, and use "ReturnFailures" -> True to handle failures themselves. *)
+llmSynthesize // Options = {
+    TimeConstraint   -> Infinity,
+    "MaxAttempts"    -> 4,
+    "ReturnFailures" -> False
+};
+
 llmSynthesize[ prompt: $$llmPrompt ] :=
     llmSynthesize[ prompt, <| |> ];
 
-llmSynthesize[ prompt: $$llmPrompt, evaluator_Association ] := Enclose[
-    ConfirmMatch[
-        llmSynthesize0[ prompt, evaluator, 1 ],
-        If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ], _String, Except[ "", _String ] ],
-        "Result"
+llmSynthesize[ prompt: $$llmPrompt, evaluator_Association, opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { policy, expected },
+
+        policy = <|
+            "TimeConstraint" -> ConfirmMatch[ OptionValue[ TimeConstraint ], $$size, "TimeConstraint" ],
+            "MaxAttempts"    -> ConfirmMatch[ OptionValue[ "MaxAttempts" ], _Integer? Positive, "MaxAttempts" ],
+            "ReturnFailures" -> TrueQ @ OptionValue[ "ReturnFailures" ],
+            "Deadline"       -> None
+        |>;
+
+        expected = If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ],
+                       _String,
+                       Except[ "", _String ]
+                   ];
+
+        ConfirmMatch[
+            Catch[ llmSynthesize0[ prompt, evaluator, 1, policy ], $llmSynthesizeFailureTag ],
+            If[ policy[ "ReturnFailures" ], expected | _Failure, expected ],
+            "Result"
+        ]
     ],
     throwInternalFailure
 ];
@@ -91,19 +115,33 @@ llmSynthesize // endDefinition;
 
 llmSynthesize0 // beginDefinition;
 
-llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclose[
-    Module[ { result, callback, task },
+llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_, policy_Association ] := Enclose[
+    Module[ { result, callback, task, deadline, pause },
         result = $Failed;
         callback = Function[ result = # ];
         task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
-        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
-        taskWaitYield @ ConfirmMatch[ task, _TaskObject, "Task" ];
+        If[ FailureQ @ task, llmSynthesizeFailure[ policy, task ] ];
+
+        (* The deadline is set when the first request is submitted and applies to all attempts: *)
+        deadline = Replace[ policy[ "Deadline" ], None :> AbsoluteTime[ ] + policy[ "TimeConstraint" ] ];
+        taskWaitYield[
+            ConfirmMatch[ task, _TaskObject, "Task" ],
+            TimeConstraint -> Max[ deadline - AbsoluteTime[ ], 0 ]
+        ];
+
+        (* If the deadline passed before the callback was called, taskWaitYield has already removed the task: *)
+        If[ result === $Failed && AbsoluteTime[ ] >= deadline,
+            llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
+        ];
 
         If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ]
             ,
-            If[ attempt > 3, throwFailureToChatOutput @ result ];
-            Pause[ Exp @ attempt / E ];
-            llmSynthesize0[ prompt, evaluator, attempt + 1 ]
+            pause = Exp @ attempt / E;
+            If[ attempt >= policy[ "MaxAttempts" ] || AbsoluteTime[ ] + pause >= deadline,
+                llmSynthesizeFailure[ policy, result ]
+            ];
+            Pause @ pause;
+            llmSynthesize0[ prompt, evaluator, attempt + 1, <| policy, "Deadline" -> deadline |> ]
             ,
             result
         ]
@@ -112,6 +150,19 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclos
 ];
 
 llmSynthesize0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*llmSynthesizeFailure*)
+llmSynthesizeFailure // beginDefinition;
+
+llmSynthesizeFailure[ KeyValuePattern[ "ReturnFailures" -> True ], failure_Failure ] :=
+    Throw[ failure, $llmSynthesizeFailureTag ];
+
+llmSynthesizeFailure[ _Association, failure_ ] :=
+    throwFailureToChatOutput @ failure;
+
+llmSynthesizeFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -253,6 +304,21 @@ makeInvalidResponseFailure[ data_List ] := Failure[
 ];
 
 makeInvalidResponseFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTimedOutFailure*)
+makeTimedOutFailure // beginDefinition;
+
+makeTimedOutFailure[ timeConstraint_ ] := Failure[
+    "TimedOut",
+    <|
+        "MessageTemplate"   -> "The server did not respond within `1` seconds. Please try again later.",
+        "MessageParameters" -> { timeConstraint }
+    |>
+];
+
+makeTimedOutFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
