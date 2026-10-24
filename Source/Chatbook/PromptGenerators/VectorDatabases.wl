@@ -119,6 +119,12 @@ $vectorDBNames  := $vectorDBNames = Keys @ $vectorDatabases;
 $allowDownload   = True;
 $cacheEmbeddings = True;
 
+(* Keep one memory-mapped index per vector database instead of re-opening it on every search: *)
+$cacheUSearchIndexes = True;
+
+(* Release the memory-mapped indexes after this many seconds without a search: *)
+$usearchIndexIdleTime = 300;
+
 $embeddingDimension      = 384;
 $maxNeighbors            = 250;
 $maxEmbeddingDistance    = 150.0;
@@ -202,6 +208,13 @@ vectorDBNameQ // endDefinition;
 (*Cache*)
 $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
+
+(* Persistent USearch index handles used by vectorDatabaseSearch: *)
+$usearchIndexCache       = <| |>;
+$usearchIndexVerified    = <| |>;
+$usearchIndexFailures    = <| |>;
+$usearchIndexLastUsed    = 0;
+$usearchIndexReleaseTask = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -495,6 +508,7 @@ getVectorDBDirectory[ ] := Enclose[
 
         If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
             (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
+            releaseUSearchIndexes[ ];
             Quiet @ DeleteDirectory[
                 ChatbookFilesDirectory[ "VectorDatabases", "EnsureDirectory" -> False ],
                 DeleteContents -> True
@@ -654,6 +668,8 @@ unpackVectorDatabase[ zip_String? FileExistsQ ] := Enclose[
         version = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "Version" ];
         root = ConfirmBy[ DirectoryName @ zip, DirectoryQ, "RootDirectory" ];
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, name }, DirectoryQ, "Directory" ];
+        (* Memory-mapped index files cannot be overwritten on Windows: *)
+        releaseUSearchIndexes[ ];
         res = ConfirmMatch[ ExtractArchive[ zip, dir, OverwriteTarget -> True ], { __? FileExistsQ }, "Extracted" ];
         versionFile = FileNameJoin @ { dir, "Version.wl" };
         Put[ version, versionFile ];
@@ -938,11 +954,11 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
         embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
 
         close = ConfirmMatch[
-            inVectorDBDirectory @ VectorDatabaseSearch[
+            vectorDatabaseSearch[
+                dbName,
                 vectorDB,
                 embeddingVector,
-                { "Index", "Distance" },
-                MaxItems -> $maxNeighbors
+                $maxNeighbors
             ] // LogChatTiming[ "VectorDatabaseSearch" ],
             { ___Association },
             "PositionsAndDistances"
@@ -1282,6 +1298,361 @@ cacheVectorDBResult[ dbName: $$dbName, prompt_String, data_Association ] := (
 );
 
 cacheVectorDBResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*vectorDatabaseSearch*)
+(*
+    Gives the same result as `VectorDatabaseSearch[ db, vector, { "Index", "Distance" }, MaxItems -> n ]`.
+
+    For file-backed USearch databases, VectorDatabaseSearch creates a new index and memory-maps (IndexView) the entire
+    index file on every search, which takes 0.1-0.3 seconds for the larger databases. Instead, we keep one index handle
+    per database and search it the same way that SemanticSearch's FindNearest does.
+
+    The first search with each database file is checked against VectorDatabaseSearch, and the fast path is permanently
+    disabled for a database on any mismatch or error.
+*)
+vectorDatabaseSearch // beginDefinition;
+
+vectorDatabaseSearch[ name_String, db: $$vectorDatabase, vector_NumericArray, n_Integer ] :=
+    vectorDatabaseSearch[ name, db, vector, n, touchUSearchIndex @ getUSearchIndex[ name, db ] ];
+
+(* No usable index handle: *)
+vectorDatabaseSearch[ name_, db_, vector_, n_, _Missing ] :=
+    standardVectorDatabaseSearch[ db, vector, n ];
+
+(* The index handle has already been checked against VectorDatabaseSearch: *)
+vectorDatabaseSearch[ name_, db_, vector_, n_, index_Association ] /; usearchIndexVerifiedQ @ index :=
+    With[ { result = usearchIndexSearch[ index, vector, n ] },
+        If[ MatchQ[ result, { ___Association } ],
+            result,
+            disableUSearchIndex[ name, result ];
+            standardVectorDatabaseSearch[ db, vector, n ]
+        ]
+    ];
+
+(* First search with this database file, so make sure that the results are identical to VectorDatabaseSearch: *)
+vectorDatabaseSearch[ name_, db_, vector_, n_, index_Association ] :=
+    Module[ { expected, result },
+        expected = standardVectorDatabaseSearch[ db, vector, n ];
+        result   = usearchIndexSearch[ index, vector, n ];
+        Which[
+            result =!= expected,
+                disableUSearchIndex[
+                    name,
+                    Failure[ "USearchIndexMismatch", <| "Expected" -> expected, "Actual" -> result |> ]
+                ],
+            MatchQ[ expected, { __Association } ],
+                $usearchIndexVerified[ usearchIndexKey @ index ] = True
+        ];
+        expected
+    ];
+
+vectorDatabaseSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*standardVectorDatabaseSearch*)
+standardVectorDatabaseSearch // beginDefinition;
+
+standardVectorDatabaseSearch[ db_, vector_, n_ ] :=
+    inVectorDBDirectory @ VectorDatabaseSearch[ db, vector, { "Index", "Distance" }, MaxItems -> n ];
+
+standardVectorDatabaseSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getUSearchIndex*)
+getUSearchIndex // beginDefinition;
+
+(* Never keep index handles while building the MX file or when disabled by $cacheUSearchIndexes: *)
+getUSearchIndex[ name_String, db_ ] /; TrueQ @ $mxFlag || ! TrueQ @ $cacheUSearchIndexes :=
+    Missing[ "NotAvailable" ];
+
+getUSearchIndex[ name_String, db_ ] /; KeyExistsQ[ $usearchIndexFailures, name ] :=
+    Missing[ "Disabled" ];
+
+getUSearchIndex[ name_String, db_ ] :=
+    With[ { index = $usearchIndexCache[ name ] },
+        index /; usearchIndexValidQ[ index, db ]
+    ];
+
+getUSearchIndex[ name_String, db_ ] :=
+    Module[ { index },
+        (* Release the previous handle (if any) before creating a new one: *)
+        $usearchIndexCache = KeyDrop[ $usearchIndexCache, name ];
+        index = createUSearchIndex @ db;
+        If[ AssociationQ @ index,
+            $usearchIndexCache[ name ] = index,
+            disableUSearchIndex[ name, index ]
+        ]
+    ] // LogChatTiming[ "CreateUSearchIndex" ];
+
+getUSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usearchIndexValidQ*)
+(* An index handle is invalidated when the database is replaced or its index file changes (e.g. after a download): *)
+usearchIndexValidQ // beginDefinition;
+
+usearchIndexValidQ[ index_Association, db_ ] := TrueQ @ And[
+    index[ "VectorDatabaseObject" ] === db,
+    index[ "Directory" ] === $vectorDBDirectory,
+    Quiet @ FileDate @ index[ "File" ] === index[ "FileDate" ]
+];
+
+usearchIndexValidQ[ _, _ ] := False;
+
+usearchIndexValidQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usearchIndexVerifiedQ*)
+usearchIndexVerifiedQ // beginDefinition;
+usearchIndexVerifiedQ[ index_Association ] := TrueQ @ $usearchIndexVerified @ usearchIndexKey @ index;
+usearchIndexVerifiedQ // endDefinition;
+
+
+usearchIndexKey // beginDefinition;
+usearchIndexKey[ index_Association ] := Lookup[ index, { "VectorDatabaseObject", "File", "FileDate" } ];
+usearchIndexKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createUSearchIndex*)
+createUSearchIndex // beginDefinition;
+
+createUSearchIndex[ db_ ] := catchUSearch @ Enclose[
+    Module[ { functions, data, dimensions, location, file, date, handle },
+
+        functions = ConfirmBy[ $usearchFunctions, AssociationQ, "Functions" ];
+
+        (* This is the same data that VectorDatabaseSearch retrieves for FindNearest: *)
+        data = ConfirmBy[
+            inVectorDBDirectory @ functions[ "RetrieveFromDatabase" ][
+                db,
+                {
+                    "DatabaseType",
+                    "Dimensions",
+                    "DistanceFunction",
+                    "FeatureExtractor",
+                    "VectorDatabase",
+                    "VectorDatabaseInfo",
+                    "WorkingPrecision"
+                }
+            ],
+            AssociationQ,
+            "Data"
+        ];
+
+        (* Only use the fast path for the kind of database that it replicates: *)
+        ConfirmAssert[ data[ "DatabaseType"     ] === "USearch"           , "DatabaseType"       ];
+        ConfirmAssert[ data[ "WorkingPrecision" ] === "Integer8"          , "WorkingPrecision"   ];
+        ConfirmAssert[ data[ "DistanceFunction" ] === EuclideanDistance   , "DistanceFunction"   ];
+        ConfirmAssert[ MatchQ[ data[ "FeatureExtractor" ], Identity|None ], "FeatureExtractor"   ];
+        ConfirmAssert[ AssociationQ @ data[ "VectorDatabaseInfo" ]        , "VectorDatabaseInfo" ];
+
+        dimensions = ConfirmMatch[ data[ "Dimensions" ], { _Integer? Positive, _Integer? Positive }, "Dimensions" ];
+        location   = ConfirmMatch[ data[ "VectorDatabase" ], File[ _String ], "Location" ];
+        file       = ConfirmBy[ inVectorDBDirectory @ ExpandFileName @ First @ location, FileExistsQ, "File" ];
+        date       = ConfirmMatch[ FileDate @ file, _DateObject, "FileDate" ];
+
+        handle = ConfirmBy[
+            functions[ "deserializeIndex" ][ File @ file, data[ "VectorDatabaseInfo" ], "Read" ],
+            ManagedLibraryExpressionQ,
+            "Handle"
+        ];
+
+        <|
+            "VectorDatabaseObject" -> db,
+            "Directory"            -> $vectorDBDirectory,
+            "File"                 -> file,
+            "FileDate"             -> date,
+            "Dimensions"           -> dimensions,
+            "WorkingPrecision"     -> data[ "WorkingPrecision" ],
+            "Functions"            -> functions,
+            "Handle"               -> handle
+        |>
+    ],
+    # &
+];
+
+createUSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usearchIndexSearch*)
+(* Replicates FindNearest from SemanticSearch (VectorDatabase/OperationsUSearch.wl) using a persistent index handle: *)
+usearchIndexSearch // beginDefinition;
+
+usearchIndexSearch[ index_Association, vector_NumericArray, n_Integer ] := catchUSearch @ Enclose[
+    Module[ { functions, handle, precision, size, dimension, vec, count, indices, elements },
+
+        functions           = index[ "Functions"        ];
+        handle              = index[ "Handle"           ];
+        precision           = index[ "WorkingPrecision" ];
+        { size, dimension } = index[ "Dimensions"       ];
+
+        vec = ConfirmBy[ Normal @ vector, VectorQ[ #, RealValuedNumericQ ] &, "Vector" ];
+        ConfirmAssert[ Length @ vec === dimension, "Dimension" ];
+
+        count = Clip[ n, { 1, size } ];
+
+        indices = ConfirmMatch[
+            Normal @ functions[ "IndexSearch" ][ handle, functions[ "ToNumericArray" ][ vec, precision ], count ],
+            { ___Integer },
+            "Indices"
+        ];
+
+        indices = Take[ indices, UpTo[ count ] ];
+
+        elements =
+            If[ indices === { },
+                { },
+                ConfirmBy[ Normal @ functions[ "IndexGetVectors" ][ handle, indices, precision ], MatrixQ, "Elements" ]
+            ];
+
+        ConfirmAssert[ Length @ elements === Length @ indices, "LengthCheck" ];
+
+        MapThread[ <| "Index" -> #1, "Distance" -> EuclideanDistance[ vec, #2 ] |> &, { indices, elements } ]
+    ],
+    # &
+];
+
+usearchIndexSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*disableUSearchIndex*)
+disableUSearchIndex // beginDefinition;
+
+disableUSearchIndex[ name_String, reason_ ] := (
+    $usearchIndexCache = KeyDrop[ $usearchIndexCache, name ];
+    (* Keep the reason for debugging, but make sure it doesn't hold on to an index handle (failures can contain held
+       code, so the test must not evaluate the parts that it checks): *)
+    $usearchIndexFailures[ name ] =
+        reason /. h_ /; ManagedLibraryExpressionQ @ Unevaluated @ h :> Missing[ "Released" ];
+    Missing[ "Disabled" ]
+) // LogChatTiming[ { "DisableUSearchIndex", name } ];
+
+disableUSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*releaseUSearchIndexes*)
+(* Index files stay memory-mapped as long as there's a handle, so this needs to be called before replacing them: *)
+releaseUSearchIndexes // beginDefinition;
+releaseUSearchIndexes[ ] := ($usearchIndexCache = <| |>;);
+releaseUSearchIndexes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*touchUSearchIndex*)
+(*
+    Index handles are released after $usearchIndexIdleTime seconds without a search, so that an idle kernel does not
+    keep the index files memory-mapped indefinitely. On Windows, a memory-mapped file cannot be replaced, which would
+    prevent another kernel from updating the vector databases.
+*)
+touchUSearchIndex // beginDefinition;
+
+touchUSearchIndex[ index_Association ] := (
+    $usearchIndexLastUsed = AbsoluteTime[ ];
+    If[ ! MatchQ[ $usearchIndexReleaseTask, _TaskObject ], scheduleUSearchIndexRelease @ $usearchIndexIdleTime ];
+    index
+);
+
+touchUSearchIndex[ other_ ] := other;
+
+touchUSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scheduleUSearchIndexRelease*)
+scheduleUSearchIndexRelease // beginDefinition;
+
+(* ScheduledTask does not accept arbitrary-precision numbers (e.g. from AbsoluteTime[ ]), so this uses whole seconds: *)
+scheduleUSearchIndexRelease[ seconds_? NumberQ ] /; Positive @ seconds :=
+    $usearchIndexReleaseTask = Replace[
+        Quiet @ SessionSubmit @ ScheduledTask[ Quiet @ releaseIdleUSearchIndexes[ ], { Ceiling @ seconds } ],
+        Except[ _TaskObject ] -> None
+    ];
+
+(* Handles are kept for the rest of the session when $usearchIndexIdleTime is not a positive number: *)
+scheduleUSearchIndexRelease[ _ ] := Null;
+
+scheduleUSearchIndexRelease // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*releaseIdleUSearchIndexes*)
+releaseIdleUSearchIndexes // beginDefinition;
+
+releaseIdleUSearchIndexes[ ] := (
+    $usearchIndexReleaseTask = None;
+    releaseIdleUSearchIndexes[ $usearchIndexIdleTime - (AbsoluteTime[ ] - $usearchIndexLastUsed) ]
+);
+
+(* Used recently, so check again later: *)
+releaseIdleUSearchIndexes[ remaining_? Positive ] :=
+    scheduleUSearchIndexRelease @ remaining;
+
+releaseIdleUSearchIndexes[ _ ] :=
+    releaseUSearchIndexes[ ];
+
+releaseIdleUSearchIndexes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*catchUSearch*)
+(* Uncaught failures from SemanticSearch internals would otherwise abort the evaluation: *)
+catchUSearch // beginDefinition;
+catchUSearch // Attributes = { HoldFirst };
+
+catchUSearch[ eval_ ] := Quiet @ Catch[
+    GeneralUtilities`CatchFailure @ eval,
+    _,
+    Failure[ "USearchException", <| "Value" -> #1, "Tag" -> #2 |> ] &
+];
+
+catchUSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$usearchFunctions*)
+$usearchFunctions := getUSearchFunctions[ ];
+
+getUSearchFunctions // beginDefinition;
+
+getUSearchFunctions[ ] := Enclose[
+    Module[ { names, functions },
+
+        Needs[ "SemanticSearch`" -> None ];
+
+        names = <|
+            "deserializeIndex"     -> "SemanticSearch`PackageScope`deserializeIndex",
+            "IndexGetVectors"      -> "SemanticSearch`PackageScope`IndexGetVectors",
+            "IndexSearch"          -> "SemanticSearch`PackageScope`IndexSearch",
+            "RetrieveFromDatabase" -> "SemanticSearch`PackageScope`RetrieveFromDatabase",
+            "ToNumericArray"       -> "SemanticSearch`PackageScope`ToNumericArray"
+        |>;
+
+        ConfirmAssert[
+            AllTrue[
+                Append[ Values @ names, "GeneralUtilities`CatchFailure" ],
+                NameQ @ # && ToExpression[ #, InputForm, System`Private`HasAnyEvaluationsQ ] &
+            ],
+            "Defined"
+        ];
+
+        functions = Symbol /@ names;
+
+        If[ TrueQ @ $mxFlag, functions, getUSearchFunctions[ ] = functions ]
+    ],
+    # &
+];
+
+getUSearchFunctions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
