@@ -58,6 +58,10 @@ $filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-n
 (* Maximum number of filtering responses that are kept for reuse when identical instructions are sent again: *)
 $filterSnippetsCacheSize = 64;
 
+(* Filtering is optional, so don't let a slow or failing filter request hold up (or abort) the chat: *)
+$filterSnippetsTimeConstraint = 6;
+$filterSnippetsMaxAttempts    = 2;
+
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
 
@@ -349,8 +353,10 @@ toSource // endDefinition;
 (*relatedDocumentationPrompt*)
 relatedDocumentationPrompt // beginDefinition;
 
-relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
-    Catch @ Module[ { results, filtered, string },
+relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter0_, filterCount_ ] := Enclose[
+    Catch @ Module[ { filter, results, filtered, string },
+
+        filter = filter0;
 
         results = ConfirmMatch[
             RelatedDocumentation[ messages, "Results", count ],
@@ -364,8 +370,19 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         filtered = ConfirmMatch[
             filterSnippets[ messages, results, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
-            { ___String },
+            { ___String } | _Failure,
             "Filtered"
+        ];
+
+        (* If filtering failed (e.g. it timed out), use the top unfiltered results and the unfiltered header instead: *)
+        If[ FailureQ @ filtered,
+            filtered = ConfirmMatch[
+                Take[ filterSnippets[ messages, results, False, filterCount ], UpTo[ filterCount ] ] //
+                    LogChatTiming @ { "FilterSnippetsFallback", First @ filtered },
+                { ___String },
+                "Unfiltered"
+            ];
+            filter = False
         ];
 
         string = StringTrim @ StringRiffle[ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
@@ -561,20 +578,28 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             "Prompt"
         ];
 
-        response = StringTrim @ ConfirmBy[
+        response = ConfirmMatch[
             LogChatTiming[
                 setServiceCaller[
                     cachedFilterSnippetsResponse[
                         instructions,
-                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ],
+                        TimeConstraint   -> $filterSnippetsTimeConstraint,
+                        "MaxAttempts"    -> $filterSnippetsMaxAttempts,
+                        "ReturnFailures" -> True
                     ],
                     "RelatedDocumentation"
                 ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
-            StringQ,
+            _String | _Failure,
             "Response"
         ];
+
+        (* Let relatedDocumentationPrompt fall back to unfiltered results: *)
+        If[ FailureQ @ response, Throw @ response ];
+
+        response = StringTrim @ response;
 
         If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
@@ -742,13 +767,13 @@ Here is the chat transcript:
    instructions, and the previous response can be reused instead of waiting for another one from the LLM: *)
 cachedFilterSnippetsResponse // beginDefinition;
 
-cachedFilterSnippetsResponse[ instructions_String, config_Association ] := Enclose[
+cachedFilterSnippetsResponse[ instructions_String, config_Association, opts: OptionsPattern[ llmSynthesize ] ] := Enclose[
     Module[ { key, response },
         key = ConfirmBy[ llmSynthesizeCacheKey[ instructions, config ], IntegerQ, "Key" ];
         response = Lookup[ $filterSnippetsResponseCache, key ];
         If[ StringQ @ response,
             LogChatTiming[ response, "FilterSnippetsCacheHit" ],
-            response = llmSynthesize[ instructions, config ];
+            response = llmSynthesize[ instructions, config, opts ];
             If[ StringQ @ response, cacheFilterSnippetsResponse[ key, response ] ];
             response
         ]
@@ -757,8 +782,8 @@ cachedFilterSnippetsResponse[ instructions_String, config_Association ] := Enclo
 ];
 
 (* Not cacheable, so this is handled by llmSynthesize as before: *)
-cachedFilterSnippetsResponse[ instructions_, config_ ] :=
-    llmSynthesize[ instructions, config ];
+cachedFilterSnippetsResponse[ instructions_, config_, opts: OptionsPattern[ llmSynthesize ] ] :=
+    llmSynthesize[ instructions, config, opts ];
 
 cachedFilterSnippetsResponse // endDefinition;
 
