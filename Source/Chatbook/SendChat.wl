@@ -1700,13 +1700,20 @@ appendStringContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoCorrect*)
 autoCorrect // beginDefinition;
-autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
+
+(* The Moonshot tool call rule is tried at every whitespace position, which makes it about as expensive as all the
+   other rules combined, so it's only included when the string contains the text that the rule requires: *)
+autoCorrect[ string_String ] /; StringContainsQ[ string, "<|tool_calls_section_begin|>" ] :=
+    StringReplace[ string, $llmAutoCorrectRules ];
+
+autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRulesNoMoonshot ];
+
 autoCorrect // endDefinition;
 
 
 $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
-$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+$llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
@@ -1738,7 +1745,11 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters,
+    $longNameCharacters
+};
+
+$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    $llmAutoCorrectRulesNoMoonshot,
     toolCalls: StringExpression[
         WhitespaceCharacter...,
         "<|tool_calls_section_begin|>",
@@ -2637,7 +2648,7 @@ infoTaggedQ[ ___ ] := False;
 untaggedQ // ClearAll;
 untaggedQ[ as_Association? AssociationQ ] := untaggedQ @ as[ "FullContent" ];
 untaggedQ[ s0_String? StringQ ] /; $alwaysOpen :=
-    With[ { s = StringDelete[ $lastUntagged = s0, Whitespace ] },
+    With[ { s = nonWhitespacePrefix[ $lastUntagged = s0 ] },
         Or[ StringStartsQ[ s, Except[ "[" ] ],
             StringLength @ s >= $maxTagLength && ! StringStartsQ[ s, $$tagPrefix, IgnoreCase -> True ]
         ]
@@ -2651,8 +2662,29 @@ untaggedQ[ ___ ] := False;
 taggedQ // ClearAll;
 taggedQ[ s_ ] := taggedQ[ s, $$severityTag ];
 taggedQ[ as_Association? AssociationQ, tag_ ] := taggedQ[ as[ "FullContent" ], tag ];
-taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ StringDelete[ s, Whitespace ], "["~~tag~~"]", IgnoreCase -> True ];
+taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ nonWhitespacePrefix @ s, "["~~tag~~"]", IgnoreCase -> True ];
 taggedQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonWhitespacePrefix*)
+(* The tag checks above run on the full response for every chunk, but only need the start of
+   StringDelete[ s, Whitespace ]. This gives a prefix of that string with at least 2 * $maxTagLength characters
+   (or all of them if there are fewer), which is enough for the tag patterns and the length check in untaggedQ,
+   without copying and scanning the whole response. *)
+nonWhitespacePrefix // beginDefinition;
+
+nonWhitespacePrefix[ s_String ] := nonWhitespacePrefix[ s, 4 * $maxTagLength ];
+
+nonWhitespacePrefix[ s_String, n_Integer ] :=
+    With[ { prefix = StringDelete[ StringTake[ s, UpTo[ n ] ], Whitespace ] },
+        If[ StringLength @ prefix >= 2 * $maxTagLength || n >= StringLength @ s,
+            prefix,
+            nonWhitespacePrefix[ s, 2 * n ]
+        ]
+    ];
+
+nonWhitespacePrefix // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3988,6 +4020,7 @@ errorBoxes[ as___ ] :=
 addToMXInitialization[
     $autoSettingKeyPriority;
     $llmAutoCorrectRules;
+    $llmAutoCorrectRulesNoMoonshot;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
