@@ -8,8 +8,10 @@ on:
       - completed
     branches: [main]
 
+# Scope the group to this workflow: workflow_run and workflow_dispatch runs use refs/heads/main as github.ref,
+# so a group of just ${{ github.ref }} would let these workflows cancel each other.
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -21,6 +23,8 @@ env:
 
 jobs:
   Build:
+    # A cancelled or failed version increment also completes the triggering workflow, but there is nothing new to release:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
