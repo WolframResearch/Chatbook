@@ -271,6 +271,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `llmChat;
 `llmKitCheck;
 `llmSynthesize;
+`llmSynthesizeCacheKey;
 `llmSynthesizeSubmit;
 `logUsage;
 `makeBoxesInputMoreTextLike;
