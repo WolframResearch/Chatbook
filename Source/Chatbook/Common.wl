@@ -140,7 +140,8 @@ $versionRequirements = <|
     "TrackScrollingWhenPlaced" -> 14.0
 |>;
 
-$mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
+(* Delayed so that loading the MX file gives False: $BuildingMX is only set while building it and isn't saved in it *)
+$mxFlag := TrueQ @ Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
 
 $resourceVersions = <|
