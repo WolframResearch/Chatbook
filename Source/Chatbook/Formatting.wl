@@ -1876,6 +1876,9 @@ toolCallStringFreeQ // endDefinition;
 (* Defines safe points to split content into static/dynamic parts. These patterns must be different from
    `$textDataFormatRules`, since there will be no additional formatting passes once static content is written.
    Therefore, some of the patterns that would match up to `EndOfString` must instead be explicitly terminated here.
+
+   While streaming, the split is skipped if new text can't complete a match (see `dynamicSplitSkipQ` in SendChat.wl).
+   This relies on every match ending with "```", "ENDRESULT", or ")", so it needs to be updated if that changes.
 *)
 $dynamicSplitRules = {
     (* Code blocks *)
