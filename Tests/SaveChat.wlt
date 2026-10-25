@@ -84,6 +84,14 @@ VerificationTest[
         SessionSubmit @ ScheduledTask[ callback[ "Timed Title", <| "StatusCode" -> 200 |> ], { 0.2 } ]
     );
 
+    (* Fails like a request whose LLMKit check failed (see llmKitCheck): *)
+    mockTitleSubmitCheckFailure[ prompt_, evaluator_, callback_ ] :=
+        Wolfram`Chatbook`Common`throwFailureToChatOutput @ Failure[ "LLMKitCheck", <| "MessageTemplate" -> "Test" |> ];
+
+    (* Returns something that isn't a task, which is an internal failure: *)
+    mockTitleSubmitInvalid[ prompt_, evaluator_, callback_ ] :=
+        $Failed;
+
     withMockTitles // Attributes = { HoldFirst };
     withMockTitles[ eval_ ] := Block[
         {
@@ -206,6 +214,35 @@ VerificationTest[
     { expectedTitleState[ "Title A", 2 ], "Title A", 1 },
     SameTest -> MatchQ,
     TestID   -> "AutoSave-TitleCallback"
+]
+
+VerificationTest[
+    withMockTitles @ Module[ { uuid, before },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        before = Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger;
+        respondTitle[ 1, "Title A" ];
+        (* The callback refreshes the history list, so it shows the new title: *)
+        Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger > before
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-TitleCallbackUpdatesHistory"
+]
+
+VerificationTest[
+    withMockTitles @ Module[ { first, second, result },
+        first  = CreateUUID[ ];
+        second = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ first, "AutoSaveOnly" -> True ];
+        respondTitle[ 1, "Title A" ];
+        (* The title for these messages is cached, so another chat with the same messages uses it right away: *)
+        result = SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ second, "AutoSaveOnly" -> True ];
+        { result[ "ConversationTitle" ], Length @ $mockTitleCallbacks, savedTitleState @ second }
+    ],
+    { "Title A", 1, expectedTitleState[ "Title A", 2 ] },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-CachedTitle"
 ]
 
 VerificationTest[
@@ -335,6 +372,21 @@ VerificationTest[
 ]
 
 VerificationTest[
+    withMockTitles @ Module[ { uuid, title },
+        uuid = CreateUUID[ ];
+        (* Too long for the first attempt (MaxLength 50), but not for the retry (MaxLength 60): *)
+        title = "Comparing Interpolation Methods for Irregularly Scattered Measurement Data";
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        respondTitle[ 1, title ];
+        respondTitle[ 2, title ];
+        { Length @ $mockTitleCallbacks, savedTitleState @ uuid }
+    ],
+    { 2, expectedTitleState[ "Comparing Interpolation Methods for Irregularly Scattered Measurement Data", 2 ] },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-RetryMaxLength"
+]
+
+VerificationTest[
     withMockTitles @ Module[ { uuid, settings, thrown },
         uuid     = CreateUUID[ ];
         settings = titleTestSettings @ uuid;
@@ -395,6 +447,57 @@ VerificationTest[
 ]
 
 VerificationTest[
+    withMockChatSubmit @ Module[ { uuid },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        (* A response that can't be processed is an internal failure, which issues no messages and is retried: *)
+        respondChatSubmit[ 1, Failure[ "BodyChunkProcessingFailure", <| "MessageTemplate" -> "Test" |> ], 200 ];
+        respondChatSubmit[ 2, "Title H", 200 ];
+        { Length @ $mockChatSubmitHandlers, savedTitleState @ uuid, Wolfram`Chatbook`Storage`Private`$titleTasks }
+    ],
+    { 2, expectedTitleState[ "Title H", 2 ], <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-UnexpectedResponse"
+]
+
+VerificationTest[
+    withMockTitles @ Module[ { uuid, chatTask, thrown },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        (* The retry can't be submitted, and the callback runs while another chat is running: *)
+        chatTask = SessionSubmit @ ScheduledTask[ Null, { 3600 } ];
+        AppendTo[ $mockTitleTasks, chatTask ];
+        thrown = Block[
+            {
+                Wolfram`Chatbook`Common`$lastTask            = chatTask,
+                Wolfram`Chatbook`Common`llmSynthesizeSubmit = mockTitleSubmitCheckFailure
+            },
+            Wolfram`Chatbook`Common`catchTop[ respondTitle[ 1, "Not a\ntitle" ]; "NotThrown" ]
+        ];
+        (* The failure is not thrown into that chat, its task is not removed, and the saved title is kept: *)
+        { thrown, chatTask[ "TaskStatus" ], Length @ $mockTitleCallbacks, savedTitleState @ uuid }
+    ],
+    { "NotThrown", Except[ "Removed" ], 1, expectedTitleState[ "Untitled Chat", 2 ] },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-RetrySubmitFailure"
+]
+
+VerificationTest[
+    withMockTitles @ Module[ { uuid, thrown },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        (* Internal failures in the callback issue no messages and are not thrown into the evaluation it interrupted: *)
+        thrown = Block[ { Wolfram`Chatbook`Common`llmSynthesizeSubmit = mockTitleSubmitInvalid },
+            Wolfram`Chatbook`Common`catchTop[ respondTitle[ 1, "Not a\ntitle" ]; "NotThrown" ]
+        ];
+        { thrown, savedTitleState @ uuid }
+    ],
+    { "NotThrown", expectedTitleState[ "Untitled Chat", 2 ] },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-CallbackInternalFailure"
+]
+
+VerificationTest[
     withMockTitles @ Module[ { uuid },
         uuid = CreateUUID[ ];
         SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
@@ -420,6 +523,23 @@ VerificationTest[
     expectedTitleState[ "Custom Title", 2 ],
     SameTest -> MatchQ,
     TestID   -> "AutoSave-TitleChangedInMeantime"
+]
+
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir, file, state },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        (* A save with a different title is in progress: it has written the metadata, but not the data yet: *)
+        dir  = ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ];
+        file = FileNameJoin @ { Last @ FileNames[ "*_" <> uuid, dir ], "metadata.wxf" };
+        Developer`WriteWXFFile[ file, <| Developer`ReadWXFFile @ file, "ConversationTitle" -> "Custom Title" |> ];
+        respondTitle[ 1, "Title G" ];
+        state = savedTitleState @ uuid;
+        { state[ "Title" ], state[ "DataTitle" ] }
+    ],
+    { "Custom Title", "Untitled Chat" },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-TitleChangedDuringSave"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -454,6 +574,24 @@ VerificationTest[
     { False, "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
     TestID   -> "AutoSave-NoFrontEnd"
+]
+
+VerificationTest[
+    With[ { q = Wolfram`Chatbook`Storage`Private`backgroundTitleQ, settings = titleTestSettings @ CreateUUID[ ] },
+        Block[ { Wolfram`Chatbook`Storage`Private`$autoSaving = True },
+            (* With the default $backgroundTitles, auto-saves only generate titles in the background with a front end,
+               not in the cloud, and only for chats that have a ConversationUUID: *)
+            {
+                Block[ { $Notebooks = True , $CloudEvaluation = False }, q @ settings ],
+                Block[ { $Notebooks = True , $CloudEvaluation = True  }, q @ settings ],
+                Block[ { $Notebooks = False, $CloudEvaluation = False }, q @ settings ],
+                Block[ { $Notebooks = True , $CloudEvaluation = False }, q @ KeyDrop[ settings, "ConversationUUID" ] ]
+            }
+        ]
+    ],
+    { True, False, False, False },
+    SameTest -> MatchQ,
+    TestID   -> "AutoSave-BackgroundTitleQ"
 ]
 
 (* ::**************************************************************************************************************:: *)
