@@ -367,7 +367,7 @@ processRequest[ request_Association ] := Module[ { id, command, result, timing }
     ];
 
     { timing, result } = AbsoluteTiming @ CheckAll[
-        Catch[ $commands[ command ][ request[ "args" ] ], $commandTag ],
+        Block[ { $preemptiveRequest = TrueQ @ request[ "preemptive" ] }, Catch[ $commands[ command ][ request[ "args" ] ], $commandTag ] ],
         Function[ { value, interrupt }, If[ interrupt === Hold[ ], value, commandFailure[ "Interrupted", "The command was interrupted: " <> inputString[ interrupt, 500 ], <| |> ] ] ]
     ];
 
@@ -465,7 +465,8 @@ pump[ ] := (
             While[ $queue =!= { },
                 With[ { item = First @ $queue },
                     $queue = Rest @ $queue;
-                    sendResponse[ item[[ 1 ]], processRequest @ item[[ 2 ]] ]
+                    sendResponse[ item[[ 1 ]], processRequest @ item[[ 2 ]] ];
+                    runAfterResponse[ ]
                 ]
             ],
             $pumping = False
@@ -476,6 +477,10 @@ pump[ ] := (
     ]
 );
 
+(* A command can leave an action to run once its response has been sent (see "linkSnooper"): *)
+$afterResponse = None;
+runAfterResponse[ ] := With[ { action = $afterResponse }, $afterResponse = None; If[ action =!= None, action[ ] ] ];
+
 
 (* ::Subsection::Closed:: *)
 (*Pump notebook*)
@@ -485,9 +490,15 @@ If[ ! MatchQ[ $pumpBox, _BoxObject ], $pumpBox = None ];
 If[ ! MatchQ[ $pumpNotebook, _NotebookObject ], $pumpNotebook = None ];
 
 createPump[ ] := Enclose[
-    Module[ { nb, box },
+    Module[ { evaluator, nb, box },
         ConfirmAssert @ frontEndReadyQ[ ];
         Quiet @ NotebookClose @ $pumpNotebook;
+        (* Started from an init file, this kernel's evaluator is the default one; still name it, so that the pump keeps
+           evaluating here when the default evaluator changes (as it does while "linkSnooper" moves the server): *)
+        evaluator = Replace[
+            $pumpEvaluator,
+            Automatic :> Replace[ Quiet @ CurrentValue[ "RunningEvaluator" ], Except[ _String? (StringLength[ # ] > 0 &) ] -> Automatic ]
+        ];
         nb = ConfirmMatch[
             NotebookPut @ Notebook[
                 {
@@ -495,7 +506,7 @@ createPump[ ] := Enclose[
                         BoxData @ ButtonBox[
                             "\"Front End Server Pump\"",
                             ButtonFunction :> Wolfram`ChatbookFrontEndServer`Private`pump[ ],
-                            Evaluator      -> $pumpEvaluator,
+                            Evaluator      -> evaluator,
                             Method         -> "Queued",
                             BoxID          -> "FrontEndServerPump"
                         ],
@@ -505,7 +516,7 @@ createPump[ ] := Enclose[
                 Visible       -> False,
                 Saveable      -> False,
                 (* A notebook's Evaluator must be a kernel name; Automatic would make the front end complain: *)
-                If[ StringQ @ $pumpEvaluator, Evaluator -> $pumpEvaluator, Nothing ],
+                If[ StringQ @ evaluator, Evaluator -> evaluator, Nothing ],
                 WindowTitle   -> "Front End Server Pump",
                 TaggingRules  -> <| "FrontEndServerPump" -> True |>
             ],
@@ -668,6 +679,7 @@ $commands[ "info" ] = Function @ Module[ { info = FrontEndServerInformation[ ] }
         info,
         "FrontEndVersion"  -> Quiet @ CurrentValue[ $FrontEnd, "FrontEndVersion" ],
         "KernelVersion"    -> $Version,
+        "Evaluator"        -> Quiet @ CurrentValue[ "RunningEvaluator" ],
         "ChatbookVersion"  -> chatbookVersion[ ],
         "ChatbookLocation" -> chatbookLocation[ ],
         "Notebooks"        -> Length @ Select[ userNotebooks[ ], visibleQ ]
@@ -1446,6 +1458,183 @@ $commands[ "rasterize" ] = Function[ args,
         <| "path" -> file, "width" -> ImageDimensions[ image ][[ 1 ]], "height" -> ImageDimensions[ image ][[ 2 ]] |>
     ]
 ];
+
+
+(* ::Subsection::Closed:: *)
+(*MathLink logging*)
+
+
+(* Log the MathLink traffic between the front end and a kernel to a file: J/Link's LinkSnooper sits between them and
+   prints every packet (see LinkSnooperLog.java). This adds an evaluator whose kernel the front end launches through
+   LinkSnooper. It is set for the front end session only, so it is not saved with the preferences. (The "Local"
+   evaluator itself cannot be redirected: the front end ignores changes to its MLOpenArguments while it runs.)
+
+   With "mode" -> "Kernel", the new evaluator also becomes the session's default evaluator (the one of every notebook
+   that does not set its own), and the server moves into its kernel once the response has been sent: this server stops,
+   the front end starts the new kernel, whose init file (Init.wl, from `fe.py launch`) starts the server again on the
+   same port and with the same token, and this kernel quits. *)
+
+$linkSnooperProgram = FileNameJoin @ { $packageDirectory, "LinkSnooperLog.java" };
+$linkSnooperLinks = { "main", "pre", "serv" };
+$handOffTimeout = 120;
+
+$commands[ "linkSnooper" ] = Function[ args,
+    Module[ { log, name, mode, interval, links, timeout },
+        log      = linkSnooperPath[ "log", requireArg[ args, "log" ] ];
+        name     = Lookup[ args, "evaluator", "LinkSnooperLog" ];
+        mode     = Lookup[ args, "mode", "Kernel" ];
+        interval = Lookup[ args, "pollInterval", 1 ];
+        links    = Lookup[ args, "links", "main,pre,serv" ];
+        timeout  = Lookup[ args, "timeout", $handOffTimeout ];
+
+        If[ ! StringQ @ name || ! StringMatchQ[ name, RegularExpression[ "[A-Za-z0-9 _()-]+" ] ],
+            commandError[ "InvalidArgument", "\"evaluator\" must be a name made of letters, digits, spaces, and -_()." ]
+        ];
+        (* An evaluator whose kernel failed to start stays unusable for the rest of the front end session (its
+           evaluations wait forever), so every call adds an evaluator with a new name: *)
+        name = newEvaluatorName @ name;
+        If[ ! MemberQ[ { "Kernel", "Evaluator" }, mode ],
+            commandError[ "InvalidArgument", "\"mode\" must be \"Kernel\" or \"Evaluator\"." ]
+        ];
+        If[ ! IntegerQ @ interval || ! 0 <= interval <= 1000,
+            commandError[ "InvalidArgument", "\"pollInterval\" must be a number of milliseconds from 0 to 1000." ]
+        ];
+        If[ ! StringQ @ links || links === "" || ! SubsetQ[ $linkSnooperLinks, StringSplit[ links, "," ] ],
+            commandError[ "InvalidArgument", "\"links\" must be a comma-separated list of main, pre, and serv." ]
+        ];
+        If[ ! NumericQ @ timeout || ! 0 < timeout <= 3600,
+            commandError[ "InvalidArgument", "\"timeout\" must be a number of seconds from 0 to 3600." ]
+        ];
+        If[ ! FileExistsQ @ $linkSnooperProgram,
+            commandError[ "FileNotFound", "LinkSnooperLog.java is missing from " <> $packageDirectory <> "." ]
+        ];
+        If[ mode === "Kernel" && StringContainsQ[ evaluatorArguments @ Quiet @ CurrentValue[ "RunningEvaluator" ], "LinkSnooper" ],
+            commandError[ "AlreadySnooping", "This kernel already runs through LinkSnooper." ]
+        ];
+        If[ mode === "Kernel",
+            If[ ! TrueQ @ $FrontEndServer[ "Launched" ],
+                commandError[
+                    "NotLaunched",
+                    "Only a server started by Init.wl (fe.py launch) can move to a new kernel, since that kernel has to " <>
+                    "start it again; use mode \"Evaluator\" and set the Evaluator option of notebooks instead."
+                ]
+            ];
+            If[ TrueQ @ $preemptiveRequest || ! TrueQ @ $pumping,
+                commandError[ "Preemptive", "Moving the server to a new kernel cannot be done in a preemptive request." ]
+            ]
+        ];
+
+        setSessionEvaluator[ name, linkSnooperArguments[ log, interval, links ] ];
+        If[ mode === "Kernel",
+            With[ { previous = CurrentValue[ $FrontEndSession, Evaluator ] },
+                SetOptions[ $FrontEndSession, Evaluator -> name ];
+                $afterResponse = handOffServer[ name, previous, timeout ] &
+            ]
+        ];
+        <| "evaluator" -> name, "log" -> log, "mode" -> mode, "kernelPID" -> $ProcessID |>
+    ]
+];
+
+
+(* The front end fills in `javaw`, `jlinkjar` and `wolframkernel`, and quotes with {oq} (around the whole command line)
+   and {iq} (inside it). File names in the command line must not contain quotes, braces or backquotes; on Windows they
+   use forward slashes, since backslashes may be taken as escapes: *)
+linkSnooperArguments[ log_String, interval_Integer, links_String ] := StringJoin[
+    "-LinkMode Launch -LinkName {oq}{iq}`javaw`{iq} -classpath {iq}`jlinkjar`{iq} {iq}",
+    linkSnooperPath[ "program", linkSnooperProgram @ log ],
+    "{iq} {iq}",
+    log,
+    "{iq} -nowindow -timestamps -pollinterval ",
+    ToString @ interval,
+    " -links ",
+    links,
+    " -kernelname {iq}`wolframkernel`{iq}{oq}"
+];
+
+(* LinkSnooperLog.java as the command line can give it: if the checkout's path cannot be (see below), a copy next to
+   the log, whose path has been checked already: *)
+linkSnooperProgram[ log_String ] /; $OperatingSystem === "Windows" && ! systemEncodableQ @ $linkSnooperProgram :=
+    Quiet @ CopyFile[
+        $linkSnooperProgram,
+        FileNameJoin @ { DirectoryName @ log, "LinkSnooperLog.java" },
+        OverwriteTarget -> True
+    ];
+
+linkSnooperProgram[ _ ] := $linkSnooperProgram;
+
+(* On Windows, the front end starts the evaluator's command line through the system code page, where other characters
+   are lost, and Java then fails before it has opened the log (with nowhere to show its error): *)
+linkSnooperPath[ what_, path_String ] /; $OperatingSystem === "Windows" && ! systemEncodableQ @ path := commandError[
+    "InvalidArgument",
+    "The " <> what <> " path has characters that the system character encoding (" <> $SystemCharacterEncoding <>
+        ") cannot represent, and the front end passes the command line that starts LinkSnooper in that encoding: " <>
+        inputString[ path, 300 ]
+];
+
+linkSnooperPath[ what_, path_String ] /; StringFreeQ[ path, Characters[ "\"'`{}" ] ] &&
+    StringMatchQ[ path, ("/" | "\\\\" | (LetterCharacter ~~ ":" ~~ ("/" | "\\"))) ~~ ___ ] &&
+    DirectoryQ @ DirectoryName @ path :=
+        If[ $OperatingSystem === "Windows", StringReplace[ path, "\\" -> "/" ], path ];
+
+linkSnooperPath[ what_, path_ ] := commandError[
+    "InvalidArgument",
+    "The " <> what <> " path must be absolute, in an existing directory, and free of quotes, braces and backquotes: " <>
+        inputString[ path, 300 ]
+];
+
+systemEncodableQ[ path_String ] := FreeQ[ ToCharacterCode[ path, $SystemCharacterEncoding ], None ];
+
+
+(* Evaluators added in $FrontEndSession are not saved with the preferences (in $FrontEnd they would be): *)
+setSessionEvaluator[ name_String, arguments_String ] := SetOptions[
+    $FrontEndSession,
+    EvaluatorNames -> Append[ evaluatorNames[ ], name -> { "AutoStartOnLaunch" -> False, "MLOpenArguments" -> arguments } ]
+];
+
+evaluatorNames[ ] := Cases[ Quiet @ CurrentValue[ $FrontEndSession, EvaluatorNames ], _[ _String, _List ] ];
+
+(* "LinkSnooperLog", or "LinkSnooperLog 2", ... if the front end already has an evaluator of that name: *)
+newEvaluatorName[ base_String ] := Module[ { names = Keys @ evaluatorNames[ ], i = 1 },
+    NestWhile[ base <> " " <> ToString[ ++i ] &, base, MemberQ[ names, # ] & ]
+];
+
+evaluatorArguments[ name_String ] := Replace[
+    FirstCase[ evaluatorNames[ ], _[ name, options_ ] :> Lookup[ options, "MLOpenArguments", "" ], "" ],
+    Except[ _String ] -> ""
+];
+
+evaluatorArguments[ _ ] := "";
+
+
+(* Runs once the "linkSnooper" response has been sent. If the server does not show up in the new kernel in time (e.g.
+   because Java or the kernel failed to start; LinkSnooper's errors are in its log), this kernel takes it back and
+   restores the default evaluator. *)
+handOffServer[ name_String, previous_, timeout_ ] := Module[ { info = $FrontEndServer, file },
+    file = info[ "RegistryFile" ];
+    StopFrontEndServer[ ];
+    FrontEndExecute @ FrontEndToken[ "EvaluatorStart", name ];
+    If[ waitForServer[ file, timeout ], Quit[ ] ];
+    Which[
+        ! FailureQ @ StartFrontEndServer[ info[ "Port" ], "Host" -> info[ "Host" ], "Token" -> info[ "Token" ], "Name" -> info[ "Name" ] ],
+            SetOptions[ $FrontEndSession, Evaluator -> previous ],
+        (* The port is taken: by the new kernel's server, which came up just now? *)
+        waitForServer[ file, 30 ],
+            Quit[ ]
+    ]
+];
+
+waitForServer[ file_, timeout_ ] := Module[ { deadline = AbsoluteTime[ ] + timeout },
+    While[ ! serverMovedQ @ file && AbsoluteTime[ ] < deadline, Pause[ 0.5 ] ];
+    serverMovedQ @ file
+];
+
+(* StopFrontEndServer deleted the registry file, so the file is written again by the server in the new kernel: *)
+serverMovedQ[ file_String ] := FileExistsQ @ file && MatchQ[
+    Quiet @ Import[ file, "RawJSON" ],
+    KeyValuePattern[ "KernelPID" -> pid_Integer /; pid =!= $ProcessID ]
+];
+
+serverMovedQ[ _ ] := False;
 
 
 (* ::Section::Closed:: *)
