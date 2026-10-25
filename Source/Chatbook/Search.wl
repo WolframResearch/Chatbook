@@ -74,7 +74,7 @@ searchChats // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getChatSearchData*)
 (* Returns the flattened index values and a NearestFunction for their vectors, or None if there are no vectors.
-   The result is cached for the most recently searched app and reused for as long as its index is unchanged.
+   A result other than None is cached for the most recently searched app and reused while its index is unchanged.
    Any change to the index (add, remove, rebuild, or load from disk) makes it differ from the cached index,
    so the cache entry stops matching without each of those writers needing to invalidate it. While the index
    is unchanged, the SameQ check is cheap since both sides are the same expression. *)
@@ -98,7 +98,7 @@ getChatSearchData[ appName_String, index_Association ] := Enclose[
 
         { values, vectors } = ConfirmMatch[ Transpose @ flat, { _, _ }, "Transpose" ];
 
-        (* A packed array of reals gives the same results, but the NearestFunction then retains a third of the memory: *)
+        (* Packed reals give the same results, but the NearestFunction then retains a third of the memory: *)
         nearest = ConfirmMatch[
             Nearest[ N @ Developer`ToPackedArray[ Normal @ vectors ] -> "Index" ],
             _NearestFunction,
