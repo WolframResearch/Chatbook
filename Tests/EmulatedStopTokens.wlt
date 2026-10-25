@@ -835,7 +835,8 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*gpt-6*)
 
-(* gpt-6 models get the same settings as gpt-5.4 and later, which do not support stop tokens: *)
+(* gpt-6 models get the gpt-5.6 settings, which inherit those of gpt-5.4 and later, so they do not support stop
+   tokens: *)
 VerificationTest[
     Wolfram`Chatbook`Models`Private`chooseModelFamily /@ {
         "gpt-6",
@@ -847,16 +848,16 @@ VerificationTest[
         "gpt-5"
     },
     {
-        "GPT54Plus",
-        "GPT54Plus",
-        "GPT54Plus",
-        "GPT54Plus",
-        "GPT54Plus",
-        "GPT54Plus",
+        "GPT56Plus",
+        "GPT56Plus",
+        "GPT56Plus",
+        "GPT56Plus",
+        "GPT56Plus",
+        "GPT56Plus",
         "GPT5"
     },
     SameTest -> MatchQ,
-    TestID   -> "ChooseModelFamily-GPT6"
+    TestID   -> "ChooseModelFamily-GPT6@@Tests/EmulatedStopTokens.wlt:840,1-861,2"
 ]
 
 VerificationTest[
@@ -870,7 +871,7 @@ VerificationTest[
     ] /@ { "gpt-6", "gpt-6.0", "gpt-5.6" },
     ConstantArray[ Missing[ "NotSupported" ], { 3, 3 } ],
     SameTest -> MatchQ,
-    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters"
+    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters@@Tests/EmulatedStopTokens.wlt:863,1-875,2"
 ]
 
 VerificationTest[
@@ -880,7 +881,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "StopTokensSupportedQ-GPT6"
+    TestID   -> "StopTokensSupportedQ-GPT6@@Tests/EmulatedStopTokens.wlt:877,1-885,2"
 ]
 
 (* No "stop" parameter is sent for gpt-6, so the stop tokens are emulated instead: *)
@@ -899,7 +900,7 @@ VerificationTest[
     ],
     { _Missing, { "\n/exec" } },
     SameTest -> MatchQ,
-    TestID   -> "StopTokens-GPT6-NotSent"
+    TestID   -> "StopTokens-GPT6-NotSent@@Tests/EmulatedStopTokens.wlt:888,1-904,2"
 ]
 
 VerificationTest[
@@ -914,7 +915,7 @@ VerificationTest[
     ],
     <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>, "MaxTokens" -> 250 |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-GPT6"
+    TestID   -> "DropModelUnsupportedParameters-GPT6@@Tests/EmulatedStopTokens.wlt:906,1-919,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
