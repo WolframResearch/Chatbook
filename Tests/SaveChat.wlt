@@ -562,18 +562,20 @@ VerificationTest[
     withMockTitles @ Block[
         {
             Wolfram`Chatbook`Common`llmSynthesizeSubmit        = mockTitleSubmitTimed,
-            Wolfram`Chatbook`Storage`Private`$backgroundTitles = Automatic
+            Wolfram`Chatbook`Storage`Private`$backgroundTitles = Automatic,
+            (* The tests can run with a front end (e.g. in CI), so simulate a kernel without one: *)
+            $Notebooks = False
         },
         Module[ { uuid, result },
             uuid   = CreateUUID[ ];
             (* Without a front end, the callback might never run, so auto-saves wait for the title: *)
             result = SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
-            { $Notebooks, result[ "ConversationTitle" ], savedTitleState[ uuid ][ "Title" ] }
+            { result[ "ConversationTitle" ], savedTitleState[ uuid ][ "Title" ] }
         ]
     ],
-    { False, "Timed Title", "Timed Title" },
+    { "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-NoFrontEnd@@Tests/SaveChat.wlt:561,1-577,2"
+    TestID   -> "AutoSave-NoFrontEnd@@Tests/SaveChat.wlt:561,1-579,2"
 ]
 
 VerificationTest[
@@ -591,7 +593,7 @@ VerificationTest[
     ],
     { True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-BackgroundTitleQ@@Tests/SaveChat.wlt:579,1-595,2"
+    TestID   -> "AutoSave-BackgroundTitleQ@@Tests/SaveChat.wlt:581,1-597,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -602,7 +604,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:600,1-606,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:602,1-608,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
