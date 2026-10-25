@@ -19,6 +19,7 @@ Run "fe.py <command> -h" for details on each command.
 import argparse
 import contextlib
 import getpass
+import hashlib
 import json
 import os
 import re
@@ -72,8 +73,13 @@ def state_dir():
     # Same directory as the server uses for its own images ($TemporaryDirectory/ChatbookFrontEndServer-$Username):
     path = os.path.join(tempfile.gettempdir(), "ChatbookFrontEndServer-" + getpass.getuser())
     os.makedirs(path, mode=0o700, exist_ok=True)
-    if hasattr(os, "getuid") and os.stat(path).st_uid != os.getuid():
-        raise CLIError(f"{path} belongs to another user; refusing to use it")
+    if hasattr(os, "getuid"):
+        status = os.stat(path)
+        if status.st_uid != os.getuid():
+            raise CLIError(f"{path} belongs to another user; refusing to use it")
+        # The server may have created it (for images) with default permissions; the logs and screenshots are private:
+        if (status.st_mode & 0o777) != 0o700:
+            os.chmod(path, 0o700)
     return path
 
 
@@ -95,6 +101,8 @@ def win_kernel32():
     kernel32.CreateToolhelp32Snapshot.restype = wt.HANDLE
     kernel32.CreateToolhelp32Snapshot.argtypes = [wt.DWORD, wt.DWORD]
     kernel32.CloseHandle.argtypes = [wt.HANDLE]
+    kernel32.GetShortPathNameW.restype = wt.DWORD
+    kernel32.GetShortPathNameW.argtypes = [wt.LPCWSTR, wt.LPWSTR, wt.DWORD]
     return kernel32
 
 
@@ -108,6 +116,41 @@ def win_process(pid):
     finally:
         if handle:
             kernel32.CloseHandle(handle)
+
+
+def win_short_path(path):
+    """The 8.3 short form of an existing path on Windows (the path itself if it has none)."""
+    import ctypes
+    kernel32 = win_kernel32()
+    size = kernel32.GetShortPathNameW(path, None, 0)  # including the terminating null
+    buffer = ctypes.create_unicode_buffer(size)
+    return buffer.value if size and 0 < kernel32.GetShortPathNameW(path, buffer, size) < size else path
+
+
+def in_code_page(text):
+    """Whether text can be written in the Windows system code page (without best-fit replacements)."""
+    try:
+        text.encode("mbcs")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def command_line_path(path):
+    """A file in the state directory as the front end can pass it on the command line of a program it starts (the
+    LinkSnooper of `snoop`). On Windows, that command line goes through the system code page, so a directory whose
+    path has other characters (e.g. from the user name) is given by its 8.3 short name."""
+    if WINDOWS and not in_code_page(path):
+        directory, name = os.path.split(path)
+        path = os.path.join(win_short_path(directory), name)
+        if not in_code_page(path):
+            # (Windows gives no short name to a name that already fits 8.3 after best-fit mapping, e.g. "Łukasz".)
+            raise CLIError(f"Cannot log to {directory}: its path has characters outside the system code page that 8.3 "
+                           f"short names do not avoid. The front end passes the command line that starts LinkSnooper "
+                           f"(Java) in that code page, so Java would not find the log. Run all fe.py commands with the "
+                           f"temp directory (TMPDIR, which Git Bash sets, or else TEMP) and, if your user name has "
+                           f"such characters, LOGNAME set to plain names.")
+    return path
 
 
 def pid_alive(pid):
@@ -725,18 +768,19 @@ def prune_orphans(live_ports):
             os.remove(path)
     # MathLink logs (`snoop`): the records of servers that are gone, and logs that have not been written to for a day
     # (unless a running server's record names it: LinkSnooper only writes when there is traffic). On Windows, a log
-    # that LinkSnooper has open cannot be deleted.
+    # that LinkSnooper has open cannot be deleted. (Logs are compared by file name, since a record may give the
+    # directory by its short name: see command_line_path.)
     directory = state_dir()
     in_use = set()
     for name in os.listdir(directory):
         match = re.match(r"linksnooper-(\d+)\.json$", name)
         if match and int(match.group(1)) in live_ports:
-            in_use.add((read_json(os.path.join(directory, name)) or {}).get("log"))
+            in_use.add(os.path.basename((read_json(os.path.join(directory, name)) or {}).get("log") or ""))
         elif match:
             remove_quietly(os.path.join(directory, name))
     for name in os.listdir(directory):
         path = os.path.join(directory, name)
-        if (re.match(r"linksnooper-\d+-.+\.log$", name) and path not in in_use
+        if (re.match(r"linksnooper-\d+-.+\.log$", name) and name not in in_use
                 and time.time() - os.path.getmtime(path) > 86400 and remove_quietly(path)):
             remove_quietly(path + ".cursor")
 
@@ -1342,13 +1386,19 @@ def cmd_reload(args):
 # ---------------------------------------------------------------------------------------------------------------------
 
 def snoop_state_path(port):
-    """The log that `snoop` set up for the server on a port (tied to that server by its token)."""
+    """The log that `snoop` set up for the server on a port (tied to that server by its token's hash)."""
     return os.path.join(state_dir(), f"linksnooper-{port}.json")
+
+
+def token_hash(token):
+    """What the `snoop` state file keeps of the server's token (which would let anyone who reads it run code in the
+    server's kernel)."""
+    return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
 
 
 def snoop_state(server):
     state = read_json(snoop_state_path(server.port))
-    return state if isinstance(state, dict) and state.get("token") == server.token else None
+    return state if isinstance(state, dict) and state.get("tokenHash") == token_hash(server.token) else None
 
 
 def start_snooping(server, links="main,pre,serv", poll_interval=1, evaluator_only=False, timeout=120):
@@ -1361,7 +1411,8 @@ def start_snooping(server, links="main,pre,serv", poll_interval=1, evaluator_onl
         raise CLIError("Only the kernel of a front end that fe.py launched can be replaced by one that runs through "
                        "LinkSnooper (that kernel has to start the server again). Use --evaluator-only, and give the "
                        "notebooks to watch that Evaluator.")
-    log = os.path.join(state_dir(), f"linksnooper-{server.port}-{time.strftime('%Y%m%d-%H%M%S')}.log")
+    name = f"linksnooper-{server.port}-{time.strftime('%Y%m%d-%H%M%S')}.log"
+    log = command_line_path(os.path.join(state_dir(), name))
     old_kernel = server.info.get("KernelPID")
     if not evaluator_only:
         # The registry file is missing while the server moves: keep `servers --prune` from taking the front end for
@@ -1371,9 +1422,10 @@ def start_snooping(server, links="main,pre,serv", poll_interval=1, evaluator_onl
     result = server.request("linkSnooper", {"log": log, "links": links, "pollInterval": poll_interval,
                                             "mode": "Evaluator" if evaluator_only else "Kernel", "timeout": timeout})
     # Recorded right away, so that `linklog` finds the log also when something goes wrong below:
-    with open(snoop_state_path(server.port), "w") as f:
-        json.dump({"token": server.token, "log": log, "evaluator": result.get("evaluator"), "mode": result.get("mode"),
-                   "time": time.time()}, f)
+    fd = os.open(snoop_state_path(server.port), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump({"tokenHash": token_hash(server.token), "log": log, "evaluator": result.get("evaluator"),
+                   "mode": result.get("mode"), "time": time.time()}, f)
     if not evaluator_only:
         # This server stops, the front end starts the new kernel, Init.wl starts the server there, and the old kernel
         # quits. If the new kernel's server does not show up within the timeout, the old kernel starts its own again.

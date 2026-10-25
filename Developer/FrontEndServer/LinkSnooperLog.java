@@ -27,6 +27,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +60,14 @@ public class LinkSnooperLog {
         if (args.length < 1) {
             System.err.println("Usage: java -classpath JLink.jar LinkSnooperLog.java LOGFILE [LinkSnooper arguments]");
             System.exit(2);
+        }
+        // Only the owner may read the log, where the file system has POSIX permissions (an existing log keeps its
+        // own; on Windows, the log is in the per-user temp directory):
+        try {
+            Files.createFile(Paths.get(args[0]),
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        } catch (FileAlreadyExistsException | UnsupportedOperationException e) {
+            // append to it, or create it with the default permissions
         }
         FileOutputStream file = new FileOutputStream(args[0], true);
         PrintStream log = new RedactingStream(new ActivityStream(file));
@@ -244,9 +256,10 @@ public class LinkSnooperLog {
 
     // Replaces secrets in the log by "<redacted NAME>". A value is learned when it shows up where it is known to be a
     // secret, and from then on redacted wherever it appears:
-    //  - the activation key, password and machine ID: values of Rule["ActivationKey", "..."] etc. in the front end's
-    //    reply with the license's activation record (Rule["ActivationKey", ...] and Rule["MachineID", ...]), which the
-    //    front end sends to every kernel it starts before anything else could show them;
+    //  - the activation key, password and machine ID: the string values (or lists of strings) of each
+    //    Rule["ActivationKey", ...], Rule["Password", ...] etc. in any reply of the front end to the kernel, such as
+    //    the license's activation record, which the front end sends to every kernel it starts before anything else
+    //    could show them;
     //  - Wolfram Cloud authentication tokens: the strings in the front end's reply to the kernel's
     //    CallPacket[FrontEnd`WolframCloud`GetAuthentication[]] (the ReturnPacket on the same link that is not part of
     //    an evaluation or call nested in between), the long strings in the kernel's
@@ -259,12 +272,16 @@ public class LinkSnooperLog {
         static final String[] RECORD_KEYS = {"ActivationKey", "Password", "MachineID", "LicenseID"};
         static final int MIN_SECRET = 6;   // shorter values would redact unrelated text
         static final int MIN_TOKEN = 64;   // long strings in ConnectionEstablished are tokens, not names or URLs
+        // The activation record has a few values; many more Rule["Password", ...] etc. are user data (e.g. a table in a
+        // notebook), and each learned value makes every line slower to redact:
+        static final int MAX_RECORD_VALUES = 32;
         // Shapes of activation keys and machine IDs ('9': a digit, 'A': a digit or capital letter); both 16 long:
         static final String[][] SHAPES = {{"9999-9999-AAAAAA", "ActivationKey"}, {"9999-99999-99999", "MachineID"}};
 
         static final Map<String, String> secrets = new HashMap<>();  // value -> name
         static List<String> longestFirst = new ArrayList<>();        // the values, so that no part of one is replaced
         static final Map<String, Integer> awaitingToken = new HashMap<>(); // link -> nesting since GetAuthentication
+        static int recordValues = 0;                                       // values learned by learnRuleValues
 
         static synchronized String redact(String line, Line parsed) {
             if (line == null) {
@@ -325,8 +342,7 @@ public class LinkSnooperLog {
         }
 
         static void learnFrom(String line, Line p) {
-            if (p.toKernel && p.is(line, "ReturnPacket[") && line.contains("Rule[\"ActivationKey\", \"")
-                    && line.contains("Rule[\"MachineID\", \"")) {
+            if (p.toKernel && p.is(line, "ReturnPacket[") && line.contains("Rule[\"")) {
                 for (String key : RECORD_KEYS) {
                     learnRuleValues(line, key);
                 }
@@ -360,12 +376,29 @@ public class LinkSnooperLog {
             }
         }
 
+        // Learns the values of Rule["KEY", "..."], and the strings of list values: Rule["KEY", {"...", "..."}] (up to
+        // the first element that is not a string).
         static void learnRuleValues(String line, String key) {
-            String rule = "Rule[\"" + key + "\", \"";
+            String rule = "Rule[\"" + key + "\", ";
             for (int at = line.indexOf(rule); at >= 0; at = line.indexOf(rule, at + 1)) {
-                int start = at + rule.length() - 1, end = stringEnd(line, start);
-                if (end > 0) {
-                    learn(line.substring(start + 1, end - 1), key, MIN_SECRET);
+                int start = at + rule.length();
+                boolean list = line.startsWith("{", start);
+                if (list) {
+                    start++;
+                }
+                while (line.startsWith("\"", start)) {
+                    int end = stringEnd(line, start);
+                    if (end < 0) {
+                        break;
+                    }
+                    String value = line.substring(start + 1, end - 1);
+                    if (recordValues < MAX_RECORD_VALUES && learn(value, key, MIN_SECRET)) {
+                        recordValues++;
+                    }
+                    if (!list || !line.startsWith(", ", end)) {
+                        break;
+                    }
+                    start = end + 2;
                 }
             }
         }
@@ -410,12 +443,15 @@ public class LinkSnooperLog {
             return -1;
         }
 
-        static void learn(String value, String name, int minLength) {
+        // Whether the value is new:
+        static boolean learn(String value, String name, int minLength) {
             if (value.length() >= minLength && !value.contains("<redacted ") && !secrets.containsKey(value)) {
                 secrets.put(value, name);
                 longestFirst = new ArrayList<>(secrets.keySet());
                 longestFirst.sort(Comparator.comparingInt(String::length).reversed());
+                return true;
             }
+            return false;
         }
     }
 

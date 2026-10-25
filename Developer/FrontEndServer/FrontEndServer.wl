@@ -1541,7 +1541,7 @@ $commands[ "linkSnooper" ] = Function[ args,
    use forward slashes, since backslashes may be taken as escapes: *)
 linkSnooperArguments[ log_String, interval_Integer, links_String ] := StringJoin[
     "-LinkMode Launch -LinkName {oq}{iq}`javaw`{iq} -classpath {iq}`jlinkjar`{iq} {iq}",
-    linkSnooperPath[ "program", $linkSnooperProgram ],
+    linkSnooperPath[ "program", linkSnooperProgram @ log ],
     "{iq} {iq}",
     log,
     "{iq} -nowindow -timestamps -pollinterval ",
@@ -1549,6 +1549,26 @@ linkSnooperArguments[ log_String, interval_Integer, links_String ] := StringJoin
     " -links ",
     links,
     " -kernelname {iq}`wolframkernel`{iq}{oq}"
+];
+
+(* LinkSnooperLog.java as the command line can give it: if the checkout's path cannot be (see below), a copy next to
+   the log, whose path has been checked already: *)
+linkSnooperProgram[ log_String ] /; $OperatingSystem === "Windows" && ! systemEncodableQ @ $linkSnooperProgram :=
+    Quiet @ CopyFile[
+        $linkSnooperProgram,
+        FileNameJoin @ { DirectoryName @ log, "LinkSnooperLog.java" },
+        OverwriteTarget -> True
+    ];
+
+linkSnooperProgram[ _ ] := $linkSnooperProgram;
+
+(* On Windows, the front end starts the evaluator's command line through the system code page, where other characters
+   are lost, and Java then fails before it has opened the log (with nowhere to show its error): *)
+linkSnooperPath[ what_, path_String ] /; $OperatingSystem === "Windows" && ! systemEncodableQ @ path := commandError[
+    "InvalidArgument",
+    "The " <> what <> " path has characters that the system character encoding (" <> $SystemCharacterEncoding <>
+        ") cannot represent, and the front end passes the command line that starts LinkSnooper in that encoding: " <>
+        inputString[ path, 300 ]
 ];
 
 linkSnooperPath[ what_, path_String ] /; StringFreeQ[ path, Characters[ "\"'`{}" ] ] &&
@@ -1561,6 +1581,8 @@ linkSnooperPath[ what_, path_ ] := commandError[
     "The " <> what <> " path must be absolute, in an existing directory, and free of quotes, braces and backquotes: " <>
         inputString[ path, 300 ]
 ];
+
+systemEncodableQ[ path_String ] := FreeQ[ ToCharacterCode[ path, $SystemCharacterEncoding ], None ];
 
 
 (* Evaluators added in $FrontEndSession are not saved with the preferences (in $FrontEnd they would be): *)

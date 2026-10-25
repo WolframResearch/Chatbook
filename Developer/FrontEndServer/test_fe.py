@@ -12,6 +12,7 @@ desktop and the test uses the real mouse and keyboard, so leave the computer alo
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -140,6 +141,9 @@ def snooping(r):
     r.fe("eval", "--cell", "$ActivationKey")  # (its output is not printed)
     expect(r.eval(f'With[{{key = $ActivationKey}}, StringQ[key] && StringLength[key] >= 6 && '
                   f'StringContainsQ[ReadString["{log}"], key]]'), "False")
+    # All of the record's values are learned and redacted (the password has no shape it could be recognized by):
+    with open(log, encoding="utf-8", errors="replace") as f:
+        expect(re.search(r'Rule\["(ActivationKey|Password|MachineID)", \{?"(?!<redacted |")', f.read()), None)
     expect("AlreadySnooping" in r.fails("snoop"), True)
 
 

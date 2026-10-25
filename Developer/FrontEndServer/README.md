@@ -151,7 +151,12 @@ fe.py's queued requests: everything from the front end's evaluation of the serve
 socket handler, and their front end calls (`-Serv-`) are not left out. `--path` prints the log file's name, for `grep`
 or reading it directly. Logs are named `<temp>/ChatbookFrontEndServer-<user>/linksnooper-<port>-<time>.log`; `stop`
 leaves the log in place (read it with `linklog --file`), and `servers --prune` deletes logs that have not been written
-to for a day (except the current log of a running server).
+to for a day (except the current log of a running server). The file that ties a log to its server
+(`linksnooper-<port>.json`) is private and keeps only a hash of the server's token, and on Linux and macOS `fe.py` makes
+the directory private (0700). On Windows, the front end passes the command line that starts LinkSnooper through the
+system code page, so a log directory whose path has other characters (from the user name or `TEMP`) is given by its 8.3
+short name (`snoop` fails at once if it has none), and if the Chatbook checkout is in such a directory, the server runs
+a copy of `LinkSnooperLog.java` placed next to the log.
 
 How it works:
 
@@ -191,7 +196,8 @@ Costs and caveats:
   activation record with its activation key and password (the front end sends it to every new kernel) and the Wolfram
   Cloud authentication token (`FrontEnd`WolframCloud`GetAuthentication[]`, e.g. for a notebook assistant chat).
   `LinkSnooperLog.java` redacts those before writing. It learns their values as they pass: `ActivationKey`, `Password`
-  and `MachineID` from the front end's reply that holds the activation record, and tokens from the front end's reply to
+  and `MachineID` from the front end's replies to the kernel (`Rule["Password", "..."]` etc., as in the activation
+  record; so such values in notebook data are redacted too), and tokens from the front end's reply to
   the kernel's `GetAuthentication` call, from the kernel's `FrontEnd`WolframCloud`ConnectionEstablished[..., {token}]`
   call, and from token-shaped strings (`Compress` output) in its other `FrontEnd`WolframCloud` calls. From then on it
   writes `<redacted Password>` etc. wherever they appear (`$ActivationKey` evaluated in a cell, too); strings shaped like
@@ -204,12 +210,13 @@ Costs and caveats:
 * **Not logged:** the front end's sandboxed "System" kernel (some Chatbook controls evaluate there), kernels of other
   evaluators, and errors before LinkSnooper has opened its log (a Java compile error, an unwritable log file). On
   Linux those go to the front end's output (`frontend-<port>.log` in the temp directory for launched front ends); on
-  Windows, where the front end starts `javaw`, they are probably lost: run the evaluator's command line by hand
-  (`CurrentValue[$FrontEndSession, EvaluatorNames]`) to see them.
+  Windows, where the front end starts `javaw`, they are lost (`frontend-<port>.log` stays empty): run the evaluator's
+  command line by hand (`CurrentValue[$FrontEndSession, EvaluatorNames]`) to see them.
 * **Failed starts.** An evaluator whose kernel failed to start stays unusable for the rest of the front end session
   (evaluations in it wait forever), so each `snoop` adds an evaluator with a new name.
-* **Windows** is untested: the front end runs `javaw` there, and file names in the evaluator's command line are
-  written with forward slashes.
+* **Windows** (tested with Windows 11 and Wolfram 15.0): the front end runs `javaw` there, and file names in the
+  evaluator's command line are written with forward slashes. The kernel that runs through LinkSnooper has a minimized
+  "Wolfram Kernel" window on the taskbar, since LinkSnooper starts it without `-noicon`.
 
 ## Windows
 
