@@ -16,11 +16,15 @@
 (**)
 (*WOLFRAMINIT is inherited by every kernel the front end (or its kernels) launch, so only the main kernel of a front end*)
 (*starts a server: the front end's "-sandbox" system kernel and kernels without a front end (subkernels, sandboxes) are skipped.*)
+(*With a fixed port (CHATBOOK_FE_SERVER_PORT, which `fe.py launch` sets), other kernels of the same front end (e.g. of an*)
+(*evaluator added by `fe.py snoop --evaluator-only`) find the port taken by its server and leave it at that; without*)
+(*one, each of them starts a server of its own. When `fe.py snoop` moves the server to a new kernel, that kernel starts*)
+(*it again.*)
 
 
 If[ $FrontEnd =!= Null && ! MemberQ[ $CommandLine, "-sandbox" ] && ! TrueQ @ Wolfram`ChatbookFrontEndServer`Private`$autoStarted,
     Wolfram`ChatbookFrontEndServer`Private`$autoStarted = True;
-    Module[ { env, chatbook, result },
+    Module[ { env, chatbook, port, token, start, servedQ, result },
         env = Function[ name, Replace[ Environment @ name, Except[ s_String /; StringLength[ s ] > 0 ] -> Automatic ] ];
 
         Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "FrontEndServer.wl" };
@@ -30,12 +34,31 @@ If[ $FrontEnd =!= Null && ! MemberQ[ $CommandLine, "-sandbox" ] && ! TrueQ @ Wol
             Quiet[ PacletDirectoryLoad @ chatbook; Get[ "Wolfram`Chatbook`" ] ]
         ];
 
-        result = Wolfram`ChatbookFrontEndServer`StartFrontEndServer[
-            Replace[ env[ "CHATBOOK_FE_SERVER_PORT" ], s_String :> ToExpression @ s ],
-            "Token" -> env[ "CHATBOOK_FE_SERVER_TOKEN" ],
+        port  = Replace[ env[ "CHATBOOK_FE_SERVER_PORT" ], s_String :> ToExpression @ s ];
+        token = env[ "CHATBOOK_FE_SERVER_TOKEN" ];
+        start = Function @ Wolfram`ChatbookFrontEndServer`StartFrontEndServer[
+            port,
+            "Token" -> token,
             "Name"  -> env[ "CHATBOOK_FE_SERVER_NAME" ]
         ];
 
-        If[ FailureQ @ result, Print[ "Failed to start front end server: ", result ] ]
+        (* Whether another kernel of this front end runs the server (its registry file has this front end's token): *)
+        servedQ = Function @ And[
+            IntegerQ @ port,
+            StringQ @ token,
+            MatchQ[
+                Quiet @ Import[
+                    FileNameJoin @ { Wolfram`ChatbookFrontEndServer`$FrontEndServerRegistryDirectory, ToString @ port <> ".json" },
+                    "RawJSON"
+                ],
+                KeyValuePattern[ "Token" -> token ]
+            ]
+        ];
+
+        result = start[ ];
+        (* The kernel that hands the server over to this one may not have closed the port yet: *)
+        Do[ If[ FailureQ @ result && IntegerQ @ port && ! servedQ[ ], Pause[ 1 ]; result = start[ ] ], { 5 } ];
+
+        If[ FailureQ @ result && ! servedQ[ ], Print[ "Failed to start front end server: ", result ] ]
     ]
 ];

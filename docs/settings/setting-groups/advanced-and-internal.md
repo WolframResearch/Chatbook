@@ -31,6 +31,8 @@ Additional tokenizers are loaded on demand from `.wxf` files in the `Assets/Toke
 
 The resolved tokenizer is applied via `applyTokenizer` in `tokenCount` (`ChatMessages.wl`), which tokenizes message content and returns the token list length.
 
+Counts for text content are memoized for the session in `$tokenCountCache`, keyed by `{tokenizerName, Hash[content]}`. A count is only memoized when `"TokenizerName"` names a registered tokenizer in `$cachedTokenizers` that is the same as the tokenizer being applied, so custom tokenizer functions and image content are always counted directly. When the cache reaches `$maxTokenCountCacheSize` (5000) entries, the oldest half is discarded.
+
 ### Serialization
 
 Explicitly dropped from saved notebook settings via `toSmallSettings` (`SendChat.wl`, `KeyDrop[as, {"OpenAIKey", "Tokenizer"}]`) because tokenizer functions cannot be serialized. Serialized to a name-based reference (`<| "_Object" -> "Tokenizer", "Data" -> name |>`) in `Feedback.wl` for diagnostic reporting.

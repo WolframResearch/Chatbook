@@ -128,6 +128,22 @@ VerificationTest[
     TestID   -> "BuiltInSkills-TestSkill-Directory@@Tests/Skills.wlt:124,1-129,2"
 ]
 
+(* Built-in skills are selected by directory name before they are imported, so names must match directory names: *)
+VerificationTest[
+    Select[
+        FileNames[ "SKILL.md", $skillsAssetDirectory, { 2 } ],
+        Function[
+            file,
+            Wolfram`Chatbook`Skills`Private`parseSkillMarkdown[
+                Wolfram`Chatbook`Skills`Private`readSkillText @ file
+            ][ "Frontmatter", "name" ] =!= FileNameTake[ file, { -2 } ]
+        ]
+    ],
+    { },
+    SameTest -> SameQ,
+    TestID   -> "BuiltInSkills-NamesMatchDirectories"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing*)
@@ -359,6 +375,141 @@ VerificationTest[
     { },
     SameTest -> SameQ,
     TestID   -> "ResolveSkills-ToolsDisabled@@Tests/Skills.wlt:357,1-362,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Lazy Built-in Skills*)
+(* Importing a skill is slow (the first YAML import loads the importer), so built-in skills are only imported when the
+   specification can use them: *)
+VerificationTest[
+    importedBuiltInSkills // ClearAll;
+
+    (* Gives the names of the resolved skills and the directory names of the skill files that were imported: *)
+    importedBuiltInSkills[ spec_ ] := Module[ { imported = { } },
+        Internal`InheritedBlock[ { Wolfram`Chatbook`Skills`Private`importSkill },
+            PrependTo[
+                DownValues @ Wolfram`Chatbook`Skills`Private`importSkill,
+                HoldPattern @ Wolfram`Chatbook`Skills`Private`importSkill[ file_String ] :>
+                    Null /; (AppendTo[ imported, FileNameTake[ file, { -2 } ] ]; False)
+            ];
+            {
+                Wolfram`Chatbook`Skills`Private`skillName /@ Wolfram`Chatbook`Skills`Private`getSkills @ spec,
+                imported
+            }
+        ]
+    ];
+
+    $automaticBuiltInSkills = DeleteCases[ Keys @ $DefaultSkills, Alternatives @@ Wolfram`Chatbook`Skills`Private`$optInSkills ];
+
+    MemberQ[ Wolfram`Chatbook`Skills`Private`$optInSkills, "test-skill" ],
+    True,
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-Definitions"
+]
+
+VerificationTest[
+    importedBuiltInSkills /@ { Automatic, Inherited, ParentList },
+    ConstantArray[ { $automaticBuiltInSkills, $automaticBuiltInSkills }, 3 ],
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-Automatic-SkipsOptIn"
+]
+
+VerificationTest[
+    importedBuiltInSkills /@ { "test-skill", { "test-skill" }, { None, { "test-skill" } } },
+    ConstantArray[ { { "test-skill" }, { "test-skill" } }, 3 ],
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-Names"
+]
+
+VerificationTest[
+    importedBuiltInSkills @ All,
+    { Keys @ $DefaultSkills, Keys @ $DefaultSkills },
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-All"
+]
+
+(* Specifications that can't use built-in skills don't look for them: *)
+VerificationTest[
+    Module[ { touched = False },
+        Block[ { Wolfram`Chatbook`Skills`Private`$builtInSkillsDirectory },
+            Wolfram`Chatbook`Skills`Private`$builtInSkillsDirectory := (touched = True; $Failed);
+            {
+                Wolfram`Chatbook`Skills`Private`getSkills /@ { None, { }, { None }, { $sampleSkill } },
+                touched
+            }
+        ]
+    ],
+    { { { }, { }, { }, { $sampleSkill } }, False },
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-None"
+]
+
+(* Resolving skills gives the same result as importing all built-in skills first: *)
+VerificationTest[
+    $fakeBuiltInSkillsDir = FileNameJoin @ { $tempRoot, "built-in" };
+    Scan[
+        writeTestFile[
+            FileNameJoin @ { $fakeBuiltInSkillsDir, #, "SKILL.md" },
+            "---\nname: " <> # <> "\ndescription: The " <> # <> " skill.\n---\nBody of " <> # <> "\n"
+        ] &,
+        { "alpha-skill", "beta-skill", "opt-in-skill" }
+    ];
+    writeTestFile[ FileNameJoin @ { $fakeBuiltInSkillsDir, "broken-skill", "SKILL.md" }, "---\nname: broken-skill\n---\n" ];
+
+    Block[
+        {
+            Wolfram`Chatbook`Skills`Private`$builtInSkillsDirectory = $fakeBuiltInSkillsDir,
+            Wolfram`Chatbook`Skills`Private`$optInSkills            = { "opt-in-skill" }
+        },
+        {
+            Keys @ $DefaultSkills,
+            Select[
+                {
+                    Automatic,
+                    Inherited,
+                    ParentList,
+                    None,
+                    All,
+                    { },
+                    "alpha-skill",
+                    "opt-in-skill",
+                    { "opt-in-skill", Automatic },
+                    { Automatic, "opt-in-skill", "beta-skill" },
+                    { $sampleSkill, ParentList },
+                    { { "opt-in-skill" }, All },
+                    { None, $sampleSkill }
+                },
+                Wolfram`Chatbook`Skills`Private`getSkills[ # ] =!=
+                    Wolfram`Chatbook`Skills`Private`getSkills[ #, $DefaultSkills ] &
+            ]
+        }
+    ],
+    { { "alpha-skill", "beta-skill", "opt-in-skill" }, { } },
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-SameResult"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Skills`Private`$builtInSkillsDirectory = $fakeBuiltInSkillsDir,
+            Wolfram`Chatbook`Skills`Private`$optInSkills            = { "opt-in-skill" }
+        },
+        importedBuiltInSkills /@ { Automatic, None, "opt-in-skill", { "beta-skill", "opt-in-skill" }, All }
+    ],
+    {
+        { { "alpha-skill", "beta-skill" }, { "alpha-skill", "beta-skill", "broken-skill" } },
+        { { }, { } },
+        { { "opt-in-skill" }, { "opt-in-skill" } },
+        { { "beta-skill", "opt-in-skill" }, { "beta-skill", "opt-in-skill" } },
+        {
+            { "alpha-skill", "beta-skill", "opt-in-skill" },
+            { "alpha-skill", "beta-skill", "broken-skill", "opt-in-skill" }
+        }
+    },
+    SameTest -> SameQ,
+    TestID   -> "LazyBuiltInSkills-ImportedSkills"
 ]
 
 (* ::**************************************************************************************************************:: *)

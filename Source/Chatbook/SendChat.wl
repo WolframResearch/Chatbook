@@ -163,7 +163,7 @@ sendChatHeadless // endDefinition;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cellExpr, cellObj, container, task },
+    Module[ { settings, cells0, cells, target, messages, data, deferData, persona, cellTags, cellExpr, cellObj, container, task },
 
         resolveInlineReferences @ evalCell;
 
@@ -234,9 +234,14 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        If[ ! TrueQ @ $cloudNotebooks, CurrentChatSettings[ cellObj, "Data" ] = data ];
+
+        (* A synchronous submit can process the entire response before returning, which may need the data from the
+           output cell (e.g. StopChat), so writing it is only deferred until after submitting for async requests: *)
+        deferData = asyncChatSubmitQ @ settings;
+        If[ ! deferData, writeChatOutputData[ cellObj, data ] ];
 
         $resultCellCache = <| |>;
+        $staticCodeBlockCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
         (* If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
@@ -269,6 +274,8 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
 
         addHandlerArguments[ "Task" -> task ];
 
+        (* Nothing needs the data until the response arrives, so this keeps the front end write off the TTFT path: *)
+        If[ deferData, writeChatOutputData[ cellObj, data ] ];
         CurrentChatSettings[ cellObj, "CellObject" ] = cellObj;
         CurrentChatSettings[ cellObj, "Task"       ] = task;
 
@@ -362,6 +369,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         ];
 
         $resultCellCache = <| |>;
+        $staticCodeBlockCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
         If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
@@ -408,6 +416,32 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*asyncChatSubmitQ*)
+asyncChatSubmitQ // beginDefinition;
+
+(* True if chatSubmit only starts the request, so the response is processed later by the task's handler functions: *)
+asyncChatSubmitQ[ settings_Association ] := And[
+    ! TrueQ @ settings[ "ForceSynchronous" ],
+    MatchQ[ settings[ "ProcessingFunctions", "ChatSubmit" ], $$unspecified ]
+];
+
+asyncChatSubmitQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeChatOutputData*)
+writeChatOutputData // beginDefinition;
+
+(* Cloud notebooks do not use the "Data" property so we skip storing it: *)
+writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
+
+writeChatOutputData[ cell_CellObject, data_Association ] :=
+    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = data, "WriteChatOutputData" ];
+
+writeChatOutputData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1210,12 +1244,15 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             toolFormatter = getToolFormatter @ settings,
             stop          = makeStopTokens @ settings,
             emulatedStop  = emulatedStopTokens @ settings,
-            responses     = settings[ "RequestMethod" ] === "Responses"
+            responses     = settings[ "RequestMethod" ] === "Responses",
+            (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
             taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ],
-            stopEmulation       = MatchQ[ emulatedStop, { __String } ]
+            stopEmulation       = MatchQ[ emulatedStop, { __String } ],
+            recordFirstToken    = timeToFirstTokenHandler @ startTime
         },
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
@@ -1225,14 +1262,11 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
+                        $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
                     },
-                    If[ ! NumberQ @ $timeToFirstToken,
-                        $timeToFirstToken = AbsoluteTime[ ] - $chatStartTime;
-                        addHandlerArguments[ "TimeToFirstToken" -> Quantity[ $timeToFirstToken, "Seconds" ] ];
-                    ];
                     (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
                     If[ ! (stopEmulation && $emulatedStopTriggered),
                         With[
@@ -1247,6 +1281,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                             Internal`StuffBag[ $debugLog, $lastStatus = as ];
                             checkFinishReason[ as ];
                             writeChunk[ as, Dynamic @ container, cellObject ];
+                            recordFirstToken @ as;
                             If[ stopEmulation && $emulatedStopTriggered,
                                 (* An emulated stop token was just detected, so end the streaming task now and
                                    process the response the same way the "TaskFinished" handler would have: *)
@@ -1270,6 +1305,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
+                        $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
                         $settings            = settings
@@ -1291,6 +1327,34 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*timeToFirstTokenHandler*)
+
+(* Gives a function to call with each body chunk after it has been written. For the first chunk that wrote any content
+   to the output, it records the time since `start` (the start of the chat action) as the "TimeToFirstToken" handler
+   argument, and logs a "TimeToFirstToken" timing entry whose "ChatTime" is the same value. Since $ChatHandlerData is
+   reset for each chat, this happens once per chat, so handlers created for tool call responses do not record it. *)
+timeToFirstTokenHandler // beginDefinition;
+
+timeToFirstTokenHandler[ start_Real ] :=
+    Module[ { pending = ! MatchQ[ $ChatHandlerData, KeyValuePattern[ "TimeToFirstToken" -> _ ] ] },
+        Function[
+            If[ pending && MatchQ[ #[ "ExtractedBodyChunks" ], { __String } ],
+                pending = False;
+                (* Get the time before evaluating Quantity, which can take a while to load on first use: *)
+                With[ { time = AbsoluteTime[ ] - start },
+                    LogChatTiming[
+                        addHandlerArguments[ "TimeToFirstToken" -> Quantity[ time, "Seconds" ] ],
+                        "TimeToFirstToken"
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+timeToFirstTokenHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1418,10 +1482,14 @@ emulatedStopTokenTrim // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*newStopTokenPositions*)
 
-(* Gives the positions of stop tokens that end within the last `n` characters of `buffer` (the newly received text).
-   The rest of the buffer was already checked by previous calls without triggering a stop, so any stop tokens there are
-   within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can only grow, and
-   completing a partial opening tag starts a span that extends past the old end), so they don't need to be found again.
+(* Gives the positions of stop tokens in the newly received text: the last `n` characters of `buffer`, plus the
+   preceding `Max[ StringLength /@ stop ] - 1` characters, so that a token that starts before the new text and ends in
+   it is found too. The rest of the buffer was already checked by previous calls without triggering a stop, so any stop
+   tokens there are within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can
+   only grow, and completing a partial opening tag starts a span that extends past the old end), so they don't need to
+   be found again. The result can still include such older tokens if they are shorter than the longest stop token and
+   lie within the overlap (e.g. "/exec" with "ENDTOOLCALL"); `dropReasoningPositions` removes them like any other stop
+   token in reasoning text.
    This keeps the cost per chunk independent of the length of the response. *)
 newStopTokenPositions // beginDefinition;
 
@@ -1635,7 +1703,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         errorTaggedQ @ container, processErrorCell[ container, cell ],
         warningTaggedQ @ container, processWarningCell[ container, cell ],
         infoTaggedQ @ container, processInfoCell[ container, cell ],
-        untaggedQ @ container, openChatCell @ cell,
+        untaggedQ @ container, openChatCellOnce[ container, cell ],
         True, Null
     ];
 
@@ -1679,7 +1747,8 @@ splitDynamicContent // endDefinition;
 (* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
    (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
    "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
-   has no split points either. *)
+   has no split points either. See `$dynamicSplitRules` in Formatting.wl for everything this relies on, including the
+   conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
 dynamicSplitSkipQ // beginDefinition;
 
 dynamicSplitSkipQ[ content_String, checked_String ] /; StringStartsQ[ content, checked ] :=
@@ -1769,13 +1838,20 @@ appendStringContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoCorrect*)
 autoCorrect // beginDefinition;
-autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
+
+(* The Moonshot tool call rule is tried at every whitespace position, which takes about a quarter to a third of the
+   time of a call on typical markdown, so it's only included when the string contains the text that the rule requires: *)
+autoCorrect[ string_String ] /; StringContainsQ[ string, "<|tool_calls_section_begin|>" ] :=
+    StringReplace[ string, $llmAutoCorrectRules ];
+
+autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRulesNoMoonshot ];
+
 autoCorrect // endDefinition;
 
 
 $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
-$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+$llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
@@ -1807,7 +1883,13 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
-    $longNameCharacters,
+    $longNameCharacters
+};
+
+(* Add new rules to $llmAutoCorrectRulesNoMoonshot, not here: autoCorrect only uses these rules for strings that contain
+   "<|tool_calls_section_begin|>". *)
+$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    $llmAutoCorrectRulesNoMoonshot,
     toolCalls: StringExpression[
         WhitespaceCharacter...,
         "<|tool_calls_section_begin|>",
@@ -1894,7 +1976,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
                 ReplaceAll[
-                    Block[ { $dynamicText = False }, reformatTextData @ static ],
+                    Block[ { $dynamicText = False, $useStaticCodeBlockCache = True }, reformatTextData @ static ],
                     {
                         TemplateBox[ c_, "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", rest___ ] :>
                             If[ TrueQ @ $highlightDynamicContent,
@@ -1975,6 +2057,14 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
         processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ];
         If[ FailureQ @ processed, throwTop @ writeErrorCell[ cell, processed ] ];
+
+        (* The body data is only needed to detect errors, and none of the error checks below can match a response that
+           has content and an OK status, so extracting the body data can be skipped in that case: *)
+        If[ processed =!= "" && ! MatchQ[ as[ "StatusCode" ], Except[ 100|200, _Integer ] ],
+            setLastFullResponseData[ log, processed ];
+            Throw @ writeReformattedCell[ settings, container, cell ]
+        ];
+
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
@@ -1996,6 +2086,21 @@ writeResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*setLastFullResponseData*)
+setLastFullResponseData // beginDefinition;
+
+(* This is only used for debugging, so the body data is extracted when it's first inspected: *)
+setLastFullResponseData[ log_List, processed_ ] := (
+    $lastFullResponseData := $lastFullResponseData = Replace[
+        extractBodyData @ log,
+        { body_, data_ } :> <| "Body" -> body, "Processed" -> processed, "Data" -> data |>
+    ];
+);
+
+setLastFullResponseData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*extractBodyData*)
 extractBodyData // beginDefinition;
 
@@ -2014,7 +2119,7 @@ extractBodyData[ log_List ] := Enclose[
         ];
 
         chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
-        folded = Fold[ StringJoin, "", chunks ];
+        folded = StringJoin @ chunks;
         data   = Quiet @ Developer`ReadRawJSONString @ folded;
 
         If[ AssociationQ @ data, Throw @ { folded, data } ];
@@ -2706,7 +2811,7 @@ infoTaggedQ[ ___ ] := False;
 untaggedQ // ClearAll;
 untaggedQ[ as_Association? AssociationQ ] := untaggedQ @ as[ "FullContent" ];
 untaggedQ[ s0_String? StringQ ] /; $alwaysOpen :=
-    With[ { s = StringDelete[ $lastUntagged = s0, Whitespace ] },
+    With[ { s = nonWhitespacePrefix[ $lastUntagged = s0 ] },
         Or[ StringStartsQ[ s, Except[ "[" ] ],
             StringLength @ s >= $maxTagLength && ! StringStartsQ[ s, $$tagPrefix, IgnoreCase -> True ]
         ]
@@ -2720,8 +2825,29 @@ untaggedQ[ ___ ] := False;
 taggedQ // ClearAll;
 taggedQ[ s_ ] := taggedQ[ s, $$severityTag ];
 taggedQ[ as_Association? AssociationQ, tag_ ] := taggedQ[ as[ "FullContent" ], tag ];
-taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ StringDelete[ s, Whitespace ], "["~~tag~~"]", IgnoreCase -> True ];
+taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ nonWhitespacePrefix @ s, "["~~tag~~"]", IgnoreCase -> True ];
 taggedQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonWhitespacePrefix*)
+(* The tag checks above run on the full response for every chunk, but only need the start of
+   StringDelete[ s, Whitespace ]. This gives a prefix of that string with at least 2 * $maxTagLength characters
+   (or all of them if there are fewer), which is enough for the tag patterns and the length check in untaggedQ,
+   without copying and scanning the whole response. *)
+nonWhitespacePrefix // beginDefinition;
+
+nonWhitespacePrefix[ s_String ] := nonWhitespacePrefix[ s, 4 * $maxTagLength ];
+
+nonWhitespacePrefix[ s_String, n_Integer ] :=
+    With[ { prefix = StringDelete[ StringTake[ s, UpTo[ n ] ], Whitespace ] },
+        If[ StringLength @ prefix >= 2 * $maxTagLength || n >= StringLength @ s,
+            prefix,
+            nonWhitespacePrefix[ s, 2 * n ]
+        ]
+    ];
+
+nonWhitespacePrefix // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2818,6 +2944,23 @@ openChatCell[ cell_CellObject ] :=
     ];
 
 openChatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*openChatCellOnce*)
+openChatCellOnce // beginDefinition;
+openChatCellOnce // Attributes = { HoldFirst };
+
+(* Opening is a no-op once the cell is open, so skip the synchronous front end calls on every subsequent chunk: *)
+openChatCellOnce[ container_Symbol? AssociationQ, cell_ ] /; container[ "OpenedCell" ] === cell :=
+    Null;
+
+openChatCellOnce[ container_Symbol? AssociationQ, cell_ ] := (
+    openChatCell @ cell;
+    container[ "OpenedCell" ] = cell;
+);
+
+openChatCellOnce // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -3535,7 +3678,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
 
-        content = Block[ { $customToolFormatter = toolFormatter },
+        content = Block[ { $customToolFormatter = toolFormatter, $useStaticCodeBlockCache = True },
             ConfirmMatch[
                 If[ TrueQ @ settings[ "AutoFormat" ],
                     conformToTextData @ formatter[ string, settings ],
@@ -4089,6 +4232,7 @@ errorBoxes[ as___ ] :=
 addToMXInitialization[
     $autoSettingKeyPriority;
     $llmAutoCorrectRules;
+    $llmAutoCorrectRulesNoMoonshot;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -1926,7 +1926,7 @@ serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", False ];
 serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , False ];
 
 (* Otherwise look in registered service info for an icon: *)
-serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];
+serviceIcon[ service_String ] := Replace[ getServiceIcon @ service, $$unspecified -> "" ];
 
 serviceIcon // endDefinition;
 
