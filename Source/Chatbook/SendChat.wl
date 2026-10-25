@@ -1418,10 +1418,14 @@ emulatedStopTokenTrim // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*newStopTokenPositions*)
 
-(* Gives the positions of stop tokens that end within the last `n` characters of `buffer` (the newly received text).
-   The rest of the buffer was already checked by previous calls without triggering a stop, so any stop tokens there are
-   within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can only grow, and
-   completing a partial opening tag starts a span that extends past the old end), so they don't need to be found again.
+(* Gives the positions of stop tokens in the newly received text: the last `n` characters of `buffer`, plus the
+   preceding `Max[ StringLength /@ stop ] - 1` characters, so that a token that starts before the new text and ends in
+   it is found too. The rest of the buffer was already checked by previous calls without triggering a stop, so any stop
+   tokens there are within reasoning text. Appending text never removes text from a reasoning span (an unclosed span can
+   only grow, and completing a partial opening tag starts a span that extends past the old end), so they don't need to
+   be found again. The result can still include such older tokens if they are shorter than the longest stop token and
+   lie within the overlap (e.g. "/exec" with "ENDTOOLCALL"); `dropReasoningPositions` removes them like any other stop
+   token in reasoning text.
    This keeps the cost per chunk independent of the length of the response. *)
 newStopTokenPositions // beginDefinition;
 
@@ -1675,7 +1679,8 @@ splitDynamicContent // endDefinition;
 (* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
    (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
    "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
-   has no split points either. *)
+   has no split points either. See `$dynamicSplitRules` in Formatting.wl for everything this relies on, including the
+   conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
 dynamicSplitSkipQ // beginDefinition;
 
 dynamicSplitSkipQ[ content_String, checked_String ] /; StringStartsQ[ content, checked ] :=

@@ -1878,7 +1878,14 @@ toolCallStringFreeQ // endDefinition;
    Therefore, some of the patterns that would match up to `EndOfString` must instead be explicitly terminated here.
 
    While streaming, the split is skipped if new text can't complete a match (see `dynamicSplitSkipQ` in SendChat.wl).
-   This relies on every match ending with "```", "ENDRESULT", or ")", so it needs to be updated if that changes.
+   That relies on all of the following, so it needs to be updated if any of them change:
+   - Every match ends with "```", "ENDRESULT", or ")", and no delimiter that ends a match is longer than
+     `$dynamicSplitOverlap + 1` characters.
+   - A match that ends with ")" is only possible when the content contains "![" or "ENDRESULT(".
+   - No pattern looks past the end of its match, and conditions only depend on the matched text. The exceptions are
+     the conditions of the code block and simple tool call rules, which also depend on
+     `$ChatHandlerData[ "ToolShortNames" ]`. If that changed while a response streams, a split could be delayed, which
+     only affects the streaming display.
 *)
 $dynamicSplitRules = {
     (* Code blocks *)
