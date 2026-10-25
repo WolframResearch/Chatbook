@@ -1669,7 +1669,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         errorTaggedQ @ container, processErrorCell[ container, cell ],
         warningTaggedQ @ container, processWarningCell[ container, cell ],
         infoTaggedQ @ container, processInfoCell[ container, cell ],
-        untaggedQ @ container, openChatCell @ cell,
+        untaggedQ @ container, openChatCellOnce[ container, cell ],
         True, Null
     ]
 );
@@ -2749,6 +2749,23 @@ openChatCell[ cell_CellObject ] :=
     ];
 
 openChatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*openChatCellOnce*)
+openChatCellOnce // beginDefinition;
+openChatCellOnce // Attributes = { HoldFirst };
+
+(* Opening is a no-op once the cell is open, so skip the synchronous front end calls on every subsequent chunk: *)
+openChatCellOnce[ container_Symbol? AssociationQ, cell_ ] /; container[ "OpenedCell" ] === cell :=
+    Null;
+
+openChatCellOnce[ container_Symbol? AssociationQ, cell_ ] := (
+    openChatCell @ cell;
+    container[ "OpenedCell" ] = cell;
+);
+
+openChatCellOnce // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
