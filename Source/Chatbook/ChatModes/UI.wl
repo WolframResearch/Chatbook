@@ -2764,8 +2764,10 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                     { {
                                         workspaceInputField[ Dynamic @ cachedChatInput ],
                                         (* no need to templatize an attached cell as it is ephemeral *)
-                                        (* use explicit keys for both buttons: the front end keeps animating the stop button's
-                                           spinner when it's in the default pane, even while hidden, which burns CPU when idle *)
+                                        (* use explicit keys for both buttons: the front end keeps animating the stop
+                                           button's spinner in the default pane even while it's hidden, which burns CPU
+                                           when idle. With no default pane, nothing shows for a value that matches no
+                                           key, so use =!=, which always gives True or False *)
                                         PaneSelector[
                                             {
                                                 False -> Button[
