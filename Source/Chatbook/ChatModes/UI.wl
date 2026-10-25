@@ -3566,7 +3566,12 @@ chatDataQ // endDefinition;
 (*assistantMessageButtons*)
 assistantMessageButtons // beginDefinition;
 
-(* The boxes only depend on the arguments, so they are cached instead of rerunning ToBoxes on every hover: *)
+(*
+    The boxes are cached instead of rerunning ToBoxes on every hover. Besides the arguments, they only depend on
+    $CloudEvaluation (through tr, mouseDown and chatbookIcon) and on the version (through color), which don't change
+    during a desktop session. Everything else in them is resolved by the front end (front end resources and
+    LightDarkSwitched colors), so anything else they start to depend on has to be part of the cache key.
+*)
 assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] := assistantMessageButtons[ includeFeedback, sidebarCellQ ] =
     ToBoxes @ DynamicModule[ { Typeset`cell },
         Grid[

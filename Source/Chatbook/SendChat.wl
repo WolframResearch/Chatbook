@@ -3543,7 +3543,8 @@ makeReformattedCellTaggingRules // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*hasChatData*)
 hasChatData // beginDefinition;
-(* A small flag that lets UI code check for "ChatData" without transferring it from the front end: *)
+(* A small flag that lets UI code check for "ChatData" without transferring it from the front end. chatDataQ trusts
+   it, so code that removes "ChatData" from a cell must also remove this flag: *)
 hasChatData[ _String ] := True;
 hasChatData[ _ ] := Inherited;
 hasChatData // endDefinition;
