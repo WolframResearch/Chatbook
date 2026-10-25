@@ -121,8 +121,11 @@ GenerateChatTitleAsynchronous // endExportedDefinition;
    to the caller's catchTop. *)
 generateChatTitleInBackground // beginDefinition;
 
-generateChatTitleInBackground[ messages: $$chatMessages, callback_, opts: OptionsPattern[ GenerateChatTitleAsynchronous ] ] :=
-    Block[ { $backgroundHandlers = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
+generateChatTitleInBackground[
+    messages: $$chatMessages,
+    callback_,
+    opts: OptionsPattern[ GenerateChatTitleAsynchronous ]
+] := Block[ { $backgroundHandlers = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
 
 generateChatTitleInBackground // endDefinition;
 
@@ -190,7 +193,10 @@ generateChatTitleAsync // endDefinition;
 postProcessChatTitle // beginDefinition;
 
 postProcessChatTitle[ maxLength_ ] /; TrueQ @ $backgroundHandlers :=
-    Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None }, postProcessChatTitle[ maxLength, ## ] ] &;
+    Quiet @ catchAlways @ Block[
+        { $lastTask = None, $lastCellObject = None },
+        postProcessChatTitle[ maxLength, ## ]
+    ] &;
 
 postProcessChatTitle[ maxLength_ ] :=
     postProcessChatTitle[ maxLength, ## ] &;
