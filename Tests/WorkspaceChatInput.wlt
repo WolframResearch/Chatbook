@@ -46,8 +46,11 @@ withTestInputCell[ cells_List, eval_ ] :=
     ];
 
 (* Like withTestInputCell, but the current assistant window is the given one, a new window is $testNewNotebook (which
-   has no input cell yet), and windows closed with NotebookClose are stored in $testClosed: *)
-$testNewNotebook = NotebookObject[ "ChatbookTestWorkspaceChatNew" ];
+   has no input cell yet), and windows closed with NotebookClose are stored in $testClosed. $testSourceNotebook is the
+   user notebook that the notebook toolbar button and the Window menu command give, and the current window has no
+   chat cells: *)
+$testNewNotebook    = NotebookObject[ "ChatbookTestWorkspaceChatNew" ];
+$testSourceNotebook = NotebookObject[ "ChatbookTestUserNotebook" ];
 
 Attributes[ withTestNewWindow ] = { HoldRest };
 withTestNewWindow[ current_, cells_List, eval_ ] :=
@@ -66,7 +69,9 @@ withTestNewWindow[ current_, cells_List, eval_ ] :=
             ];
             Wolfram`Chatbook`ChatModes`Common`findCurrentWorkspaceChat[ "NotebookAssistance" ] := current;
             Wolfram`Chatbook`ChatModes`Common`createWorkspaceChat[ ] := $testNewNotebook;
+            Wolfram`Chatbook`ChatModes`Common`createWorkspaceChat[ $testSourceNotebook ] := $testNewNotebook;
             Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setNotebookAssistanceEvaluator[ _ ] := Null;
+            Cells[ current ] := { };
             Cells[ $testNewNotebook, AttachedCell -> True, CellStyle -> "ChatInputField" ] := { };
             Block[ { NotebookClose = ($testClosed = #1;) & }, eval ]
         ]
@@ -218,6 +223,30 @@ VerificationTest[
     TestID   -> "SaveWorkspaceChatInput-NoCell"
 ]
 
+(* A failed lookup is not copied, since new input cells would show it: *)
+VerificationTest[
+    withTestInputCell[
+        { $testInputCell },
+        Block[ { $WorkspaceChatInput = "Draft", $testInputCellValue = $Failed },
+            Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ $testNotebook;
+            $WorkspaceChatInput
+        ]
+    ],
+    "Draft",
+    SameTest -> MatchQ,
+    TestID   -> "SaveWorkspaceChatInput-Failed"
+]
+
+VerificationTest[
+    Block[ { $WorkspaceChatInput = "Draft" },
+        Wolfram`Chatbook`ChatModes`Common`saveWorkspaceChatInput @ $Failed;
+        $WorkspaceChatInput
+    ],
+    "Draft",
+    SameTest -> MatchQ,
+    TestID   -> "SaveWorkspaceChatInput-CellsFailed"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*setWindowInputAndEvaluate*)
@@ -355,6 +384,33 @@ VerificationTest[
     TestID   -> "SetWindowInput-Evaluate-NoCell"
 ]
 
+(* "EvaluateInput" -> True without "Input" submits the unsent text of the input cell: *)
+VerificationTest[
+    withTestInputCell[
+        { $testInputCell },
+        Internal`InheritedBlock[ { Wolfram`Chatbook`Common`evaluateWorkspaceChat },
+            Clear @ Wolfram`Chatbook`Common`evaluateWorkspaceChat;
+            Wolfram`Chatbook`Common`evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input_ ] ] :=
+                ($testSubmitted = { nbo, Hold @ input, input };);
+            Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft", $testSubmitted = None },
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`setWindowInputAndEvaluate[
+                    $testNotebook,
+                    "",
+                    True
+                ];
+                $testSubmitted
+            ]
+        ]
+    ],
+    {
+        NotebookObject[ "ChatbookTestWorkspaceChat" ],
+        Hold @ CurrentValue[ CellObject[ "ChatbookTestWorkspaceChatInput" ], { TaggingRules, "ChatInputString" } ],
+        "Draft"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "SetWindowInput-Evaluate-NoInput"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*showNotebookAssistanceWindow*)
@@ -455,6 +511,223 @@ VerificationTest[
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], None, "Earlier", "Draft" },
     SameTest -> MatchQ,
     TestID   -> "NewChatWindow-ReuseWindow"
+]
+
+(* The same with a source notebook, as given by the notebook toolbar button and the Window menu command: *)
+VerificationTest[
+    withTestNewWindow[
+        $testNotebook,
+        { $testInputCell },
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft", $testClosed = None },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                    $testSourceNotebook,
+                    "",
+                    False,
+                    True
+                ],
+                $testClosed,
+                $WorkspaceChatInput,
+                Cases[
+                    Wolfram`Chatbook`ChatModes`UI`Private`attachedWorkspaceChatInputCell[ "Top" ],
+                    HoldPattern[ TaggingRules -> tags_ ] :> tags
+                ]
+            }
+        ]
+    ],
+    {
+        NotebookObject[ "ChatbookTestWorkspaceChatNew" ],
+        NotebookObject[ "ChatbookTestWorkspaceChat" ],
+        "Draft",
+        { <| "ChatInputString" -> "Draft" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-SourceNotebook-KeepsInput"
+]
+
+VerificationTest[
+    withTestNewWindow[
+        Missing[ "NotFound" ],
+        { },
+        Block[ { $WorkspaceChatInput = "Earlier", $testClosed = None },
+            {
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[
+                    $testSourceNotebook,
+                    "",
+                    False,
+                    True
+                ],
+                $WorkspaceChatInput
+            }
+        ]
+    ],
+    { NotebookObject[ "ChatbookTestWorkspaceChatNew" ], "Earlier" },
+    SameTest -> MatchQ,
+    TestID   -> "NewChatWindow-SourceNotebook-NoWindow"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Re-attaching the input cell*)
+
+(* Like withTestInputCell, but $testInputCell is attached at the given location ("Top" or "Bottom") until it's deleted
+   with NotebookDelete, and the cell given to AttachCell is stored in $testAttached together with its location: *)
+Attributes[ withTestAttachedInput ] = { HoldRest };
+withTestAttachedInput[ location_String, eval_ ] :=
+    withTestInputCell[
+        { },
+        Block[
+            {
+                $testAttachedCells = { $testInputCell },
+                $testAttached      = None,
+                NotebookDelete     = Function[
+                    $testAttachedCells = Complement[ $testAttachedCells, Flatten @ { # } ];
+                    If[ ListQ @ #, Null & /@ #, Null ]
+                ],
+                AttachCell = Function[
+                    $testAttached = { #2, #3 };
+                    CellObject[ "ChatbookTestWorkspaceChatInputNew" ]
+                ]
+            },
+            Cells[ $testNotebook, AttachedCell -> True, CellStyle -> "ChatInputField" ] := $testAttachedCells;
+            Cells[ $testNotebook, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> location ] :=
+                $testAttachedCells;
+            Cells[ $testNotebook, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> _String ] := { };
+            DownValues[ CurrentValue ] = Prepend[
+                DownValues @ CurrentValue,
+                HoldPattern @ CurrentValue[ cells: { ___CellObject }, CellTags ] :>
+                    ConstantArray[ { location }, Length @ cells ]
+            ];
+            eval
+        ]
+    ];
+
+(* New Chat moves the input cell to the top, which keeps the unsent text: *)
+VerificationTest[
+    withTestAttachedInput[
+        "Bottom",
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft" },
+            {
+                Wolfram`Chatbook`ChatModes`Common`moveChatInputToTop @ $testNotebook,
+                $testAttachedCells,
+                $WorkspaceChatInput,
+                $testAttached
+            }
+        ]
+    ],
+    {
+        CellObject[ "ChatbookTestWorkspaceChatInputNew" ],
+        { },
+        "Draft",
+        { Cell[ ___, CellTags -> "Top", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Top }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "MoveChatInputToTop-KeepsInput"
+]
+
+(* The first message moves the input cell to the bottom, which keeps any text typed after submitting: *)
+VerificationTest[
+    withTestAttachedInput[
+        "Top",
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft" },
+            {
+                Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom @ $testNotebook,
+                $testAttachedCells,
+                $WorkspaceChatInput,
+                $testAttached
+            }
+        ]
+    ],
+    {
+        CellObject[ "ChatbookTestWorkspaceChatInputNew" ],
+        { },
+        "Draft",
+        { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "MoveChatInputToBottom-KeepsInput"
+]
+
+(* Attaching the input cell at a new location (e.g. from the Initialization of the docked cell) keeps the text: *)
+VerificationTest[
+    withTestAttachedInput[
+        "Top",
+        Block[ { $WorkspaceChatInput = "", $testInputCellValue = "Draft" },
+            {
+                Wolfram`Chatbook`Common`attachWorkspaceChatInput[ $testNotebook, Bottom ],
+                $testAttachedCells,
+                $WorkspaceChatInput,
+                $testAttached
+            }
+        ]
+    ],
+    {
+        CellObject[ "ChatbookTestWorkspaceChatInputNew" ],
+        { },
+        "Draft",
+        { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AttachWorkspaceChatInput-KeepsInput"
+]
+
+(* Loading a chat from history replaces the input cell, which keeps the unsent text: *)
+VerificationTest[
+    withTestAttachedInput[
+        "Top",
+        Internal`InheritedBlock[
+            {
+                Wolfram`Chatbook`Common`moveToChatInputField,
+                Wolfram`Chatbook`Common`setCurrentValue,
+                Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell,
+                Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay
+            },
+            Clear[
+                Wolfram`Chatbook`Common`moveToChatInputField,
+                Wolfram`Chatbook`Common`setCurrentValue,
+                Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell,
+                Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay
+            ];
+            Wolfram`Chatbook`Common`moveToChatInputField[ ___ ] := Null;
+            Wolfram`Chatbook`Common`setCurrentValue[ ___ ] := Null;
+            Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[ ___ ] := Null;
+            Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay[ _ ] := Identity;
+            Cells[ $testNotebook ] := { };
+            Block[
+                {
+                    LoadChat = <|
+                        "ConversationUUID"  -> "ChatbookTestConversation",
+                        "ConversationTitle" -> "Test",
+                        "Messages"          -> { <| "Role" -> "User", "Content" -> "Hello" |> }
+                    |> &,
+                    ChatMessageToCell   = { Cell[ "Hello", "ChatInput" ] } &,
+                    CurrentChatSettings,
+                    SelectionMove       = Null &,
+                    NotebookWrite       = Null &,
+                    $WorkspaceChatInput = "",
+                    $testInputCellValue = "Draft"
+                },
+                {
+                    Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                        $testNotebook,
+                        None,
+                        "ChatbookTestConversation"
+                    ],
+                    $testAttachedCells,
+                    $WorkspaceChatInput,
+                    $testAttached
+                }
+            ]
+        ]
+    ],
+    {
+        Null,
+        { },
+        "Draft",
+        { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "LoadConversation-KeepsInput"
 ]
 
 (* ::**************************************************************************************************************:: *)
