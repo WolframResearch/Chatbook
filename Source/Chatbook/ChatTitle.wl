@@ -115,9 +115,10 @@ GenerateChatTitleAsynchronous // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*generateChatTitleInBackground*)
 (* Like GenerateChatTitleAsynchronous, but for titles that are generated in the background (e.g. for auto-saved chats).
-   Handlers of asynchronous tasks can run in the middle of other evaluations (such as the next chat), so failures are
-   passed to the callback instead of being thrown, no messages are issued, and the state of the current chat (e.g.
-   $lastTask and $lastCellObject) is left alone. *)
+   Handlers of asynchronous tasks can run in the middle of other evaluations (such as the next chat), so failures in
+   handling the response are passed to the callback instead of being thrown, no messages are issued, and the state of
+   the current chat (e.g. $lastTask and $lastCellObject) is left alone. A request that can't be submitted still throws
+   to the caller's catchTop. *)
 generateChatTitleInBackground // beginDefinition;
 
 generateChatTitleInBackground[ messages: $$chatMessages, callback_, opts: OptionsPattern[ GenerateChatTitleAsynchronous ] ] :=

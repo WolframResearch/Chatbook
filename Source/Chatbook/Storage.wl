@@ -20,7 +20,7 @@ $defaultConversationTitle   = "Untitled Chat";
 $maxChatItems               = Infinity;
 $timestampPrefixLength      = 7; (* good for about 1000 years *)
 $$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
-$backgroundTitles           = Automatic; (* auto-saves don't wait for new titles (Automatic: only with a front end) *)
+$backgroundTitles           = Automatic; (* auto-saves don't wait for new titles (Automatic: see backgroundTitleQ) *)
 
 $metaKeys = { "AppName", "ConversationTitle", "ConversationUUID", "Date", "Version" };
 
@@ -764,7 +764,9 @@ generateTitleCached0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*backgroundTitleQ*)
-(* Titles can only be generated in the background if the callback is able to run later, which requires a front end: *)
+(* Only auto-saves of chats with a ConversationUUID generate titles in the background, since the UUID identifies the
+   saved chat to update later. The callback also has to be able to run after the save returns, so with the default
+   $backgroundTitles (Automatic), this requires a front end and is not done in the cloud: *)
 backgroundTitleQ // beginDefinition;
 
 backgroundTitleQ[ KeyValuePattern[ "ConversationUUID" -> _String ] ] :=
@@ -778,8 +780,9 @@ backgroundTitleQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*generateTitleInBackground*)
-(* Returns the cached title if available. Otherwise, starts generating a new title and returns the previously saved
-   title for this chat, which gets replaced in the saved files once the new title is ready. *)
+(* Returns the cached title if available. Otherwise, starts generating a new title (unless a request for the same
+   messages is still running) and returns the previously saved title for this chat, which gets replaced in the saved
+   files once the new title is ready. Only the latest save of each chat gets the title (see applyBackgroundTitle). *)
 generateTitleInBackground // beginDefinition;
 
 generateTitleInBackground[ messages_List, settings_Association ] := Enclose[
@@ -856,7 +859,10 @@ submitBackgroundTitle[ hash_Integer, messages_List, attempt_Integer, llmKitSetti
                     <| "LLMKit" -> $llmKit, "LLMKitService" -> If[ TrueQ @ $llmKit, $llmKitService, None ] |>
                 ]
             |>,
-            (* The request could not be submitted, so handle it like a failed response: *)
+            (* GenerateChatTitleAsynchronous only returns a failure when it's not called within catchTop. Here (in the
+               auto-save or the callback), a request that can't be submitted is thrown to that catchTop instead, which
+               fails the auto-save, or keeps the saved title if it was the retry. This handles a returned failure like
+               a failed response: *)
             callback @ task
         ]
     ];

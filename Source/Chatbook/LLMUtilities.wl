@@ -20,7 +20,8 @@ $defaultLLMSynthesizeEvaluator :=
 
 $defaultConfigPersona = "WolframAIAssistant";
 
-(* Handlers of requests that are submitted while this is True can run in the middle of other evaluations: *)
+(* True while submitting requests whose handlers can run in the middle of other evaluations (see
+   generateChatTitleInBackground), so that errors in handling their responses don't affect the current chat: *)
 $backgroundHandlers = False;
 
 $defaultConfigSettings = <|
@@ -402,7 +403,7 @@ extractBodyChunks0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*extractBodyChunksInBackground*)
 (* The handler might have interrupted another chat, so errors (e.g. API errors) are not written to its output or thrown
-   into it, but returned as failures and passed to the callback instead: *)
+   into it and issue no messages, but are returned as failures and passed to the callback instead: *)
 extractBodyChunksInBackground // beginDefinition;
 
 extractBodyChunksInBackground[ data_ ] :=
