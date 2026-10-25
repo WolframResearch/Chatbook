@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/CodeBlockButtons.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/CodeBlockButtons.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -161,7 +161,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/CodeBlockButtons.wlt:25,1-165,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -176,7 +176,7 @@ VerificationTest[
     ],
     0,
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Render-Does-Not-Find-Focused-Notebook"
+    TestID   -> "Workspace-Render-Does-Not-Find-Focused-Notebook@@Tests/CodeBlockButtons.wlt:172,1-180,2"
 ]
 
 (* Instead, the tooltip is a dynamic for the assistant window that is evaluated when the tooltip is shown: *)
@@ -187,7 +187,7 @@ VerificationTest[
     ],
     { HoldForm @ Wolfram`Chatbook`Formatting`Private`targetNotebookLabel @ NotebookObject[ "na" ] },
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Tooltip-Is-Dynamic"
+    TestID   -> "Workspace-Tooltip-Is-Dynamic@@Tests/CodeBlockButtons.wlt:183,1-191,2"
 ]
 
 (* The label reads Chatbook symbols that change on every catchTop call, so it must only track front end values: *)
@@ -202,7 +202,7 @@ VerificationTest[
     ],
     { HoldForm @ { TrackedSymbols :> { } } },
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Tooltip-TrackedSymbols"
+    TestID   -> "Workspace-Tooltip-TrackedSymbols@@Tests/CodeBlockButtons.wlt:194,1-206,2"
 ]
 
 (* At that point, it gives the same label as before, naming the focused notebook: *)
@@ -221,7 +221,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Tooltip-Names-Focused-Notebook"
+    TestID   -> "Workspace-Tooltip-Names-Focused-Notebook@@Tests/CodeBlockButtons.wlt:209,1-225,2"
 ]
 
 VerificationTest[
@@ -231,7 +231,7 @@ VerificationTest[
     ],
     Wolfram`Chatbook`Common`tr[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" ],
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Tooltip-Without-Focused-Notebook"
+    TestID   -> "Workspace-Tooltip-Without-Focused-Notebook@@Tests/CodeBlockButtons.wlt:227,1-235,2"
 ]
 
 VerificationTest[
@@ -241,7 +241,7 @@ VerificationTest[
         HoldForm @ Wolfram`Chatbook`Common`insertCodeBelow[ CellObject[ "code" ], True ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Workspace-Button-Actions"
+    TestID   -> "Workspace-Button-Actions@@Tests/CodeBlockButtons.wlt:237,1-245,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -267,7 +267,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "Sidebar-Button-Actions"
+    TestID   -> "Sidebar-Button-Actions@@Tests/CodeBlockButtons.wlt:250,1-271,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -288,7 +288,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ChatNotebook-Button-Actions"
+    TestID   -> "ChatNotebook-Button-Actions@@Tests/CodeBlockButtons.wlt:278,1-292,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -315,14 +315,14 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatContainerSetting-Matches-CurrentChatSettings"
+    TestID   -> "CurrentChatContainerSetting-Matches-CurrentChatSettings@@Tests/CodeBlockButtons.wlt:299,1-319,2"
 ]
 
 VerificationTest[
     withFakeFrontEnd[ #, containerSettings[ ] ] & /@ { $workspaceModel, $sidebarModel, $chatNotebookModel },
     { { True, Inherited }, { Inherited, True }, { Inherited, Inherited } },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatContainerSetting-Values"
+    TestID   -> "CurrentChatContainerSetting-Values@@Tests/CodeBlockButtons.wlt:321,1-326,2"
 ]
 
 VerificationTest[
@@ -332,7 +332,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatContainerSetting-No-Delimiter-Search"
+    TestID   -> "CurrentChatContainerSetting-No-Delimiter-Search@@Tests/CodeBlockButtons.wlt:328,1-336,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
