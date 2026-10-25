@@ -183,11 +183,26 @@ VerificationTest[
 VerificationTest[
     withFakeFrontEnd[
         $workspaceModel,
-        Cases[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel ] :> HoldForm @ label, Infinity ]
+        Cases[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel, ___ ] :> HoldForm @ label, Infinity ]
     ],
     { HoldForm @ Wolfram`Chatbook`Formatting`Private`targetNotebookLabel @ NotebookObject[ "na" ] },
     SameTest -> MatchQ,
     TestID   -> "Workspace-Tooltip-Is-Dynamic"
+]
+
+(* The label reads Chatbook symbols that change on every catchTop call, so it must only track front end values: *)
+VerificationTest[
+    withFakeFrontEnd[
+        $workspaceModel,
+        Cases[
+            renderGrid[ ],
+            Dynamic[ _Wolfram`Chatbook`Formatting`Private`targetNotebookLabel, opts___ ] :> HoldForm @ { opts },
+            Infinity
+        ]
+    ],
+    { HoldForm @ { TrackedSymbols :> { } } },
+    SameTest -> MatchQ,
+    TestID   -> "Workspace-Tooltip-TrackedSymbols"
 ]
 
 (* At that point, it gives the same label as before, naming the focused notebook: *)
@@ -196,7 +211,7 @@ VerificationTest[
         withFakeFrontEnd[
             $workspaceModel,
             {
-                FirstCase[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel ] :> label, $Failed, Infinity ],
+                FirstCase[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel, ___ ] :> label, $Failed, Infinity ],
                 Lookup[ $calls, "GetFocusedNotebook", 0 ]
             }
         ]
@@ -212,7 +227,7 @@ VerificationTest[
 VerificationTest[
     withFakeFrontEnd[
         <| $workspaceModel, "FocusedNotebook" -> None |>,
-        FirstCase[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel ] :> label, $Failed, Infinity ]
+        FirstCase[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel, ___ ] :> label, $Failed, Infinity ]
     ],
     Wolfram`Chatbook`Common`tr[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" ],
     SameTest -> MatchQ,
@@ -238,7 +253,7 @@ VerificationTest[
             $sidebarModel,
             {
                 buttonActions @ renderGrid[ ],
-                Cases[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel ] :> HoldForm @ label, Infinity ],
+                Cases[ renderGrid[ ], Dynamic[ label_Wolfram`Chatbook`Formatting`Private`targetNotebookLabel, ___ ] :> HoldForm @ label, Infinity ],
                 $calls
             }
         ]
