@@ -298,6 +298,26 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*History Search Results*)
+
+(* The results update asynchronously, so that searching does not block typing in the search field: *)
+VerificationTest[
+    Wolfram`Chatbook`ChatModes`UI`Private`makeHistorySearchResults[
+        NotebookObject[ "search-test" ],
+        None,
+        $testApp,
+        Dynamic @ $historySearchTestQuery
+    ],
+    Dynamic[
+        _Wolfram`Chatbook`ChatModes`UI`Private`showSearchResults,
+        OrderlessPatternSequence[ SynchronousUpdating -> False, TrackedSymbols :> { $historySearchTestQuery } ]
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "HistorySearch-AsynchronousResults"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cleanup*)
 VerificationTest[
     cleanupSearchTests[ ];
