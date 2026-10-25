@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/WriteResult.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/WriteResult.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -130,7 +130,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/WriteResult.wlt:25,1-134,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -152,7 +152,7 @@ VerificationTest[
         { "", "lambda = 3, 1", False, False, False, False }
     },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Populated-While-Streaming"
+    TestID   -> "StaticCodeBlockCache-Populated-While-Streaming@@Tests/WriteResult.wlt:142,1-156,2"
 ]
 
 VerificationTest[
@@ -179,7 +179,7 @@ VerificationTest[
     ],
     { { 5, 5 }, True, 3, 5, True },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Final-Cell-Identical"
+    TestID   -> "StaticCodeBlockCache-Final-Cell-Identical@@Tests/WriteResult.wlt:158,1-183,2"
 ]
 
 VerificationTest[
@@ -196,7 +196,7 @@ VerificationTest[
     ],
     { 5, True },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Static-Writes-Identical"
+    TestID   -> "StaticCodeBlockCache-Static-Writes-Identical@@Tests/WriteResult.wlt:185,1-200,2"
 ]
 
 (* The cache is only used for chat output, so other formatting is unaffected: *)
@@ -208,7 +208,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Unused-Elsewhere"
+    TestID   -> "StaticCodeBlockCache-Unused-Elsewhere@@Tests/WriteResult.wlt:203,1-212,2"
 ]
 
 VerificationTest[
@@ -229,7 +229,30 @@ VerificationTest[
     ],
     { 2, { "ChatCodeBlockTemplate" }, { "NotebookAssistant`Sidebar`ChatCodeBlockTemplate" } },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Separate-Chat-Modes"
+    TestID   -> "StaticCodeBlockCache-Separate-Chat-Modes@@Tests/WriteResult.wlt:214,1-233,2"
+]
+
+(* Streaming formatting gives different code blocks, so it must not use or fill the cache, even when it runs while the
+   cache is enabled for a static write (e.g. a preemptive update of the streaming display). The streaming result cache
+   is cleared so that the code blocks are formatted here: *)
+VerificationTest[
+    withoutFrontEnd @ Block[
+        {
+            Wolfram`Chatbook`Common`$resultCellCache         = <| |>,
+            Wolfram`Chatbook`Common`$staticCodeBlockCache    = <| |>,
+            Wolfram`Chatbook`Common`$useStaticCodeBlockCache = True
+        },
+        Module[ { streaming },
+            streaming = FormatChatOutput[ $codeBlockResponse, <| "Status" -> "Streaming" |> ];
+            {
+                Count[ streaming, Cell[ _, "ChatCodeBlock", ___ ], Infinity ],
+                Wolfram`Chatbook`Common`$staticCodeBlockCache
+            }
+        ]
+    ],
+    { 5, <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "StaticCodeBlockCache-Not-Used-While-Streaming@@Tests/WriteResult.wlt:238,1-256,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -249,7 +272,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Normal-Response"
+    TestID   -> "WriteResult-Normal-Response@@Tests/WriteResult.wlt:261,1-276,2"
 ]
 
 (* The body data is not extracted for a successful response until the debug data is inspected: *)
@@ -279,14 +302,14 @@ VerificationTest[
     ],
     { "Reformatted", 0, <| "Body" -> "body", "Processed" -> "Hi", "Data" -> Missing[ "NotAvailable" ] |>, 1 },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Normal-Response-Lazy-Body-Data"
+    TestID   -> "WriteResult-Normal-Response-Lazy-Body-Data@@Tests/WriteResult.wlt:279,1-306,2"
 ]
 
 VerificationTest[
     responseResult[ { $taskFinished }, 200 ],
     { { "Error", KeyValuePattern @ { "StatusCode" -> 200, "Error" -> "ServerResponseEmpty" } }, _ },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Empty-Response"
+    TestID   -> "WriteResult-Empty-Response@@Tests/WriteResult.wlt:308,1-313,2"
 ]
 
 VerificationTest[
@@ -302,7 +325,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-JSON"
+    TestID   -> "WriteResult-Error-JSON@@Tests/WriteResult.wlt:315,1-329,2"
 ]
 
 VerificationTest[
@@ -321,7 +344,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-JSON-Split-Chunks"
+    TestID   -> "WriteResult-Error-JSON-Split-Chunks@@Tests/WriteResult.wlt:331,1-348,2"
 ]
 
 VerificationTest[
@@ -340,7 +363,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Event-Stream"
+    TestID   -> "WriteResult-Error-Event-Stream@@Tests/WriteResult.wlt:350,1-367,2"
 ]
 
 VerificationTest[
@@ -363,7 +386,7 @@ VerificationTest[
         KeyValuePattern[ "Processed" -> "" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-HTML"
+    TestID   -> "WriteResult-Error-HTML@@Tests/WriteResult.wlt:369,1-390,2"
 ]
 
 VerificationTest[
@@ -386,7 +409,7 @@ VerificationTest[
         KeyValuePattern[ "Processed" -> "" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-XML"
+    TestID   -> "WriteResult-Error-XML@@Tests/WriteResult.wlt:392,1-413,2"
 ]
 
 (* A body without content that parses as XML data is an error even if the status code is OK: *)
@@ -405,7 +428,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Parsed-XML"
+    TestID   -> "WriteResult-Error-Parsed-XML@@Tests/WriteResult.wlt:416,1-432,2"
 ]
 
 (* A response with content is still an error if the status code is not OK: *)
@@ -427,7 +450,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Status-Code"
+    TestID   -> "WriteResult-Error-Status-Code@@Tests/WriteResult.wlt:435,1-454,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
