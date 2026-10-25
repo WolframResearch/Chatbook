@@ -51,7 +51,6 @@ Many settings default to `Automatic`, meaning they are resolved at runtime based
 | `"Model"` | `$DefaultModel` | The LLM model specification. |
 | `"Authentication"` | `Automatic` | Authentication method for the LLM service. |
 | `"EnableLLMServices"` | `Automatic` | Whether Chatbook uses the `LLMServices` framework for LLM communication. |
-| `"Endpoint"` | `Automatic` | Which API endpoint chat requests use: OpenAI's Responses endpoint or the legacy chat completions endpoint. |
 | `"Multimodal"` | `Automatic` | Whether multimodal (image) input is supported, controlling whether graphics and images in notebook cells are encoded and included in messages sent to the LLM. |
 | `"RequestMethod"` | `Automatic` | Which API endpoint is used for chat requests: `"ChatCompletions"` or `"Responses"`. |
 

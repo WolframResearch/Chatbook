@@ -103,12 +103,13 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 | `"ToolCallExamplePromptStyle"` | `Automatic` | Use the default example prompt style. |
 | `"ToolMethod"` | `Verbatim @ Automatic` | Required for hybrid tool calling; `Verbatim` prevents `Automatic` from resolving further down the hierarchy. |
 
-> **Since this case study was written**, the `GPT54Plus` family moved to OpenAI's Responses
-> endpoint, where reasoning and tool calling do coexist, and its `"Reasoning"` value is now a real
-> effort level rather than `Missing["NotSupported"]`. The reasoning here explains why the value was
-> originally disabled; it is no longer the shipped configuration. See
-> [`"Reasoning"`](../settings/setting-groups/llm-parameters.md#reasoning) and
-> [`"Endpoint"`](../settings/setting-groups/model-and-service.md#endpoint).
+> **Since this case study was written**, GPT-5 models opt in to OpenAI's Responses endpoint
+> (`"EnableResponses"` on the `GPT5` family, which every later family inherits), where reasoning and
+> tool calling do coexist. `GPT54Plus` now declares `"Reasoning" -> "None"` for chat completions and
+> `"ResponsesReasoning" -> "Medium"` for the Responses endpoint, instead of `Missing["NotSupported"]`.
+> The reasoning here explains why the value was originally disabled; it is no longer the shipped
+> configuration. See [`"Reasoning"`](../settings/setting-groups/llm-parameters.md#reasoning) and
+> [`"RequestMethod"`](../settings/setting-groups/model-and-service.md#requestmethod).
 
 ---
 
