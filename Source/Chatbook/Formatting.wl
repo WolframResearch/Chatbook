@@ -1110,7 +1110,8 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            (* Finding the target notebook scans all open notebooks, so wait until the tooltip is shown: *)
+            (* In the assistant window, finding the target notebook can scan all open notebooks (the sidebar uses its
+               own notebook), so wait until the tooltip is shown: *)
             With[ { nbo = EvaluationNotebook[ ] }, Dynamic @ targetNotebookLabel @ nbo ]
         ]
     ];
