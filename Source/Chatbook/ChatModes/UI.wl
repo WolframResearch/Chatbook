@@ -2763,7 +2763,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             Framed[
                                 Grid[
                                     { {
-                                        (* the text is stored in the cell's TaggingRules, so typing does not need the kernel *)
+                                        (* the text is stored in the cell's TaggingRules, so typing does not need the
+                                           kernel once the Initialization below has set thisCell *)
                                         workspaceInputField[ Dynamic @ CurrentValue[ thisCell, { TaggingRules, "ChatInputString" } ] ],
                                         (* no need to templatize an attached cell as it is ephemeral *)
                                         PaneSelector[
@@ -2890,7 +2891,8 @@ saveWorkspaceChatInput[ { } | $Failed ] :=
 saveWorkspaceChatInput[ { cell_CellObject, ___ } ] :=
     saveWorkspaceChatInput[ cell, CurrentValue[ cell, { TaggingRules, "ChatInputString" } ] ];
 
-(* The cell does not store its text, e.g. it was attached by an older version of Chatbook: *)
+(* The cell does not store its text (e.g. it was attached by an older version of Chatbook), or it can't be read. Either
+   way the value is not copied, since new input cells start with $WorkspaceChatInput: *)
 saveWorkspaceChatInput[ cell_CellObject, Inherited | $Failed ] :=
     Null;
 
