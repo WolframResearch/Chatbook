@@ -154,7 +154,8 @@ $exclusionTests = <|
 (*includedNotebookQ*)
 includedNotebookQ // beginDefinition;
 
-(* Gives True if nbo would be "Included" in SourceNotebookObjectInformation[ ], without getting info for other notebooks: *)
+(* Gives True if nbo would be "Included" in SourceNotebookObjectInformation[ ], without getting info for other
+   notebooks: *)
 includedNotebookQ[ nbo_NotebookObject ] :=
     MatchQ[ notebookInformation @ { nbo }, { info_Association /; exclusionReason @ info === None } ];
 
