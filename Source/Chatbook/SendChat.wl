@@ -1639,8 +1639,8 @@ appendStringContent // endDefinition;
 (*autoCorrect*)
 autoCorrect // beginDefinition;
 
-(* The Moonshot tool call rule is tried at every whitespace position, which makes it about as expensive as all the
-   other rules combined, so it's only included when the string contains the text that the rule requires: *)
+(* The Moonshot tool call rule is tried at every whitespace position, which takes about a quarter to a third of the
+   time of a call on typical markdown, so it's only included when the string contains the text that the rule requires: *)
 autoCorrect[ string_String ] /; StringContainsQ[ string, "<|tool_calls_section_begin|>" ] :=
     StringReplace[ string, $llmAutoCorrectRules ];
 
@@ -1686,6 +1686,8 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     $longNameCharacters
 };
 
+(* Add new rules to $llmAutoCorrectRulesNoMoonshot, not here: autoCorrect only uses these rules for strings that contain
+   "<|tool_calls_section_begin|>". *)
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     $llmAutoCorrectRulesNoMoonshot,
     toolCalls: StringExpression[
