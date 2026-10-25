@@ -185,6 +185,32 @@ VerificationTest[
     TestID   -> "SetFocusWindowTitle-Unset"
 ]
 
+(* The current title is only read inside Refresh[ ..., None ], so the focus indicator's Dynamic doesn't depend on it: *)
+VerificationTest[
+    withFocusStubs[
+        Module[ { reads = { }, untracked = False },
+            Block[
+                {
+                    Refresh      = Function[ Null, If[ #2 === None, Block[ { untracked = True }, #1 ], #1 ], HoldAll ],
+                    CurrentValue = Function[ AppendTo[ reads, { #2, untracked } ]; currentValueStub[ ## ] ]
+                },
+                Wolfram`Chatbook`ChatModes`NotebookFocus`Private`setFocusWindowTitle[ $chatNB, "Notebook A.nb" ];
+                Wolfram`Chatbook`ChatModes`NotebookFocus`Private`setFocusWindowTitle[ $chatNB, "Notebook B.nb" ]
+            ];
+            { reads, $writes[[ All, 3 ]] }
+        ],
+        $defaultNotebooks,
+        Inherited,
+        <| $chatNB -> "Notebook A.nb" |>
+    ],
+    {
+        { { { TaggingRules, "FocusWindowTitle" }, True }, { { TaggingRules, "FocusWindowTitle" }, True } },
+        { "Notebook B.nb" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "SetFocusWindowTitle-UntrackedRead"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*focusedNotebookDisplay*)
