@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/AssistantMessageButtons.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/AssistantMessageButtons.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -65,7 +65,7 @@ VerificationTest[
         ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "HoverTestStubs-Definition"
+    TestID   -> "HoverTestStubs-Definition@@Tests/AssistantMessageButtons.wlt:29,1-69,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -80,7 +80,7 @@ VerificationTest[
     ],
     { True, { { "ACV", { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } } } },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOrSidebarChatQ-Workspace"
+    TestID   -> "WorkspaceOrSidebarChatQ-Workspace@@Tests/AssistantMessageButtons.wlt:76,1-84,2"
 ]
 
 VerificationTest[
@@ -96,7 +96,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOrSidebarChatQ-Sidebar"
+    TestID   -> "WorkspaceOrSidebarChatQ-Sidebar@@Tests/AssistantMessageButtons.wlt:86,1-100,2"
 ]
 
 (* Regular chat notebooks fall back to resolving the full settings: *)
@@ -107,7 +107,7 @@ VerificationTest[
     ],
     { False, { { "ACV", _ }, { "ACV", _ }, "CurrentChatSettings" } },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOrSidebarChatQ-ChatNotebook"
+    TestID   -> "WorkspaceOrSidebarChatQ-ChatNotebook@@Tests/AssistantMessageButtons.wlt:103,1-111,2"
 ]
 
 (* A value that is not inherited (e.g. from a chat delimiter) is still found by the full settings resolution: *)
@@ -118,7 +118,7 @@ VerificationTest[
     ],
     { True, { { "ACV", _ }, { "ACV", _ }, "CurrentChatSettings" } },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOrSidebarChatQ-Fallback"
+    TestID   -> "WorkspaceOrSidebarChatQ-Fallback@@Tests/AssistantMessageButtons.wlt:114,1-122,2"
 ]
 
 (* The result is the same as the full settings resolution that was used before, for every combination of values where
@@ -170,7 +170,7 @@ VerificationTest[
     ],
     { _Integer? (# > 50 &), { True } },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOrSidebarChatQ-SameAsFullSettings"
+    TestID   -> "WorkspaceOrSidebarChatQ-SameAsFullSettings@@Tests/AssistantMessageButtons.wlt:127,1-174,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -185,7 +185,7 @@ VerificationTest[
     ],
     { True, { { "CV", { TaggingRules, "HasChatData" } } } },
     SameTest -> MatchQ,
-    TestID   -> "ChatDataQ-Flag"
+    TestID   -> "ChatDataQ-Flag@@Tests/AssistantMessageButtons.wlt:181,1-189,2"
 ]
 
 (* Cells written before the flag was added: *)
@@ -196,7 +196,7 @@ VerificationTest[
     ],
     { True, { { "CV", { TaggingRules, "HasChatData" } }, { "CV", { TaggingRules, "ChatData" } } } },
     SameTest -> MatchQ,
-    TestID   -> "ChatDataQ-NoFlag"
+    TestID   -> "ChatDataQ-NoFlag@@Tests/AssistantMessageButtons.wlt:192,1-200,2"
 ]
 
 (* Cells that were restored from chat history have neither: *)
@@ -207,7 +207,7 @@ VerificationTest[
     ],
     { False, { { "CV", { TaggingRules, "HasChatData" } }, { "CV", { TaggingRules, "ChatData" } } } },
     SameTest -> MatchQ,
-    TestID   -> "ChatDataQ-NoChatData"
+    TestID   -> "ChatDataQ-NoChatData@@Tests/AssistantMessageButtons.wlt:203,1-211,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -223,14 +223,14 @@ VerificationTest[
     ],
     KeyValuePattern @ { "CellToStringData" -> "Hi there", "ChatData" -> _String, "HasChatData" -> True },
     SameTest -> MatchQ,
-    TestID   -> "ReformattedCellTaggingRules-HasChatData"
+    TestID   -> "ReformattedCellTaggingRules-HasChatData@@Tests/AssistantMessageButtons.wlt:216,1-227,2"
 ]
 
 VerificationTest[
     BinaryDeserialize @ BaseDecode @ $testReformattedRules[ "ChatData" ],
     KeyValuePattern[ "Data" -> KeyValuePattern[ "Messages" -> { _, KeyValuePattern @ { "Role" -> "Assistant", "Content" -> "Hi there" } } ] ],
     SameTest -> MatchQ,
-    TestID   -> "ReformattedCellTaggingRules-ChatData"
+    TestID   -> "ReformattedCellTaggingRules-ChatData@@Tests/AssistantMessageButtons.wlt:229,1-234,2"
 ]
 
 VerificationTest[
@@ -248,7 +248,7 @@ VerificationTest[
         "PageData"    -> KeyValuePattern @ { "PageCount" -> 2, "CurrentPage" -> 2 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReformattedCellTaggingRules-HasChatData-Pages"
+    TestID   -> "ReformattedCellTaggingRules-HasChatData-Pages@@Tests/AssistantMessageButtons.wlt:236,1-252,2"
 ]
 
 (* No flag is written when there's no chat data: *)
@@ -264,7 +264,7 @@ VerificationTest[
     ],
     <| "CellToStringData" -> "Hi there" |>,
     SameTest -> MatchQ,
-    TestID   -> "ReformattedCellTaggingRules-NoChatData"
+    TestID   -> "ReformattedCellTaggingRules-NoChatData@@Tests/AssistantMessageButtons.wlt:255,1-268,2"
 ]
 
 (* The flag gives the same answer as checking the chat data directly: *)
@@ -278,7 +278,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ReformattedCellTaggingRules-ChatDataQ"
+    TestID   -> "ReformattedCellTaggingRules-ChatDataQ@@Tests/AssistantMessageButtons.wlt:271,1-282,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -288,7 +288,7 @@ VerificationTest[
     Wolfram`Chatbook`ChatModes`UI`Private`assistantMessageButtons[ True, False ],
     _DynamicModuleBox,
     SameTest -> MatchQ,
-    TestID   -> "AssistantMessageButtons-Boxes"
+    TestID   -> "AssistantMessageButtons-Boxes@@Tests/AssistantMessageButtons.wlt:287,1-292,2"
 ]
 
 (* The boxes are cached: *)
@@ -299,7 +299,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AssistantMessageButtons-Cached"
+    TestID   -> "AssistantMessageButtons-Cached@@Tests/AssistantMessageButtons.wlt:295,1-303,2"
 ]
 
 (* The cached boxes are the same as freshly generated ones: *)
@@ -311,7 +311,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AssistantMessageButtons-CachedSameAsFresh"
+    TestID   -> "AssistantMessageButtons-CachedSameAsFresh@@Tests/AssistantMessageButtons.wlt:306,1-315,2"
 ]
 
 (* Each combination of arguments gives its own buttons: *)
@@ -345,7 +345,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "AssistantMessageButtons-Arguments"
+    TestID   -> "AssistantMessageButtons-Arguments@@Tests/AssistantMessageButtons.wlt:318,1-349,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -385,7 +385,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "AttachAssistantMessageButtons-Workspace"
+    TestID   -> "AttachAssistantMessageButtons-Workspace@@Tests/AssistantMessageButtons.wlt:356,1-389,2"
 ]
 
 (* Sidebar, chat restored from history: *)
@@ -424,7 +424,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "AttachAssistantMessageButtons-Sidebar"
+    TestID   -> "AttachAssistantMessageButtons-Sidebar@@Tests/AssistantMessageButtons.wlt:392,1-428,2"
 ]
 
 (* Regular chat notebooks don't get hover buttons: *)
@@ -437,7 +437,7 @@ VerificationTest[
     ],
     { Null, { { "ACV", _ }, { "ACV", _ }, "CurrentChatSettings" } },
     SameTest -> MatchQ,
-    TestID   -> "AttachAssistantMessageButtons-ChatNotebook"
+    TestID   -> "AttachAssistantMessageButtons-ChatNotebook@@Tests/AssistantMessageButtons.wlt:431,1-441,2"
 ]
 
 (* Nothing is attached while a chat is in progress: *)
@@ -450,7 +450,7 @@ VerificationTest[
     ],
     { Null, { } },
     SameTest -> MatchQ,
-    TestID   -> "AttachAssistantMessageButtons-ChatInProgress"
+    TestID   -> "AttachAssistantMessageButtons-ChatInProgress@@Tests/AssistantMessageButtons.wlt:444,1-454,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
