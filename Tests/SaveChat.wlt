@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/SaveChat.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/SaveChat.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -177,7 +177,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/SaveChat.wlt:24,1-181,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -195,7 +195,7 @@ VerificationTest[
     ],
     { "Untitled Chat", 1, "Untitled Chat" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DoesNotWaitForTitle"
+    TestID   -> "AutoSave-DoesNotWaitForTitle@@Tests/SaveChat.wlt:190,1-199,2"
 ]
 
 VerificationTest[
@@ -213,7 +213,7 @@ VerificationTest[
     ],
     { expectedTitleState[ "Title A", 2 ], "Title A", 1 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleCallback"
+    TestID   -> "AutoSave-TitleCallback@@Tests/SaveChat.wlt:201,1-217,2"
 ]
 
 VerificationTest[
@@ -227,7 +227,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleCallbackUpdatesHistory"
+    TestID   -> "AutoSave-TitleCallbackUpdatesHistory@@Tests/SaveChat.wlt:219,1-231,2"
 ]
 
 VerificationTest[
@@ -242,7 +242,7 @@ VerificationTest[
     ],
     { "Title A", 1, expectedTitleState[ "Title A", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CachedTitle"
+    TestID   -> "AutoSave-CachedTitle@@Tests/SaveChat.wlt:233,1-246,2"
 ]
 
 VerificationTest[
@@ -258,7 +258,7 @@ VerificationTest[
     ],
     { "Title A", 2, expectedTitleState[ "Title B", 4 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-PreviousTitleUntilReady"
+    TestID   -> "AutoSave-PreviousTitleUntilReady@@Tests/SaveChat.wlt:248,1-262,2"
 ]
 
 VerificationTest[
@@ -274,7 +274,7 @@ VerificationTest[
     ],
     { expectedTitleState[ "Title B", 4 ], 2 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-LateCallback"
+    TestID   -> "AutoSave-LateCallback@@Tests/SaveChat.wlt:264,1-278,2"
 ]
 
 VerificationTest[
@@ -291,7 +291,7 @@ VerificationTest[
     ],
     { "Untitled Chat", expectedTitleState[ "Title B", 4 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-SupersededCallback"
+    TestID   -> "AutoSave-SupersededCallback@@Tests/SaveChat.wlt:280,1-295,2"
 ]
 
 VerificationTest[
@@ -307,7 +307,7 @@ VerificationTest[
     ],
     { 1, expectedTitleState[ "Title C", 12 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackKeepsNewerMessages"
+    TestID   -> "AutoSave-CallbackKeepsNewerMessages@@Tests/SaveChat.wlt:297,1-311,2"
 ]
 
 VerificationTest[
@@ -325,7 +325,7 @@ VerificationTest[
     ],
     { "Untitled Chat", expectedTitleState[ "Immediate Title", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackDuringSave"
+    TestID   -> "AutoSave-CallbackDuringSave@@Tests/SaveChat.wlt:313,1-329,2"
 ]
 
 VerificationTest[
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     { <| _Integer -> "Title D" |>, "Untitled Chat", expectedTitleState[ "Title D", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DeferredTitles"
+    TestID   -> "AutoSave-DeferredTitles@@Tests/SaveChat.wlt:331,1-347,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -368,7 +368,7 @@ VerificationTest[
     ],
     { 2, { 0.7, 1.0 }, { False, False }, expectedTitleState[ "Title E", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetryAfterFailure"
+    TestID   -> "AutoSave-RetryAfterFailure@@Tests/SaveChat.wlt:352,1-372,2"
 ]
 
 VerificationTest[
@@ -383,7 +383,7 @@ VerificationTest[
     ],
     { 2, expectedTitleState[ "Comparing Interpolation Methods for Irregularly Scattered Measurement Data", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetryMaxLength"
+    TestID   -> "AutoSave-RetryMaxLength@@Tests/SaveChat.wlt:374,1-387,2"
 ]
 
 VerificationTest[
@@ -411,7 +411,7 @@ VerificationTest[
     ],
     { "NotThrown", 3, expectedTitleState[ "Untitled Chat", 4 ], 4 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-FailureFallback"
+    TestID   -> "AutoSave-FailureFallback@@Tests/SaveChat.wlt:389,1-415,2"
 ]
 
 VerificationTest[
@@ -443,7 +443,7 @@ VerificationTest[
     ],
     { "NotThrown", Except[ "Removed" ], 2, expectedTitleState[ "Title H", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-APIErrorResponse"
+    TestID   -> "AutoSave-APIErrorResponse@@Tests/SaveChat.wlt:417,1-447,2"
 ]
 
 VerificationTest[
@@ -457,7 +457,7 @@ VerificationTest[
     ],
     { 2, expectedTitleState[ "Title H", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-UnexpectedResponse"
+    TestID   -> "AutoSave-UnexpectedResponse@@Tests/SaveChat.wlt:449,1-461,2"
 ]
 
 VerificationTest[
@@ -479,7 +479,7 @@ VerificationTest[
     ],
     { "NotThrown", Except[ "Removed" ], 1, expectedTitleState[ "Untitled Chat", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetrySubmitFailure"
+    TestID   -> "AutoSave-RetrySubmitFailure@@Tests/SaveChat.wlt:463,1-483,2"
 ]
 
 VerificationTest[
@@ -494,7 +494,7 @@ VerificationTest[
     ],
     { "NotThrown", expectedTitleState[ "Untitled Chat", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackInternalFailure"
+    TestID   -> "AutoSave-CallbackInternalFailure@@Tests/SaveChat.wlt:485,1-498,2"
 ]
 
 VerificationTest[
@@ -507,7 +507,7 @@ VerificationTest[
     ],
     Missing[ "NotSaved" ],
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DeletedChat"
+    TestID   -> "AutoSave-DeletedChat@@Tests/SaveChat.wlt:500,1-511,2"
 ]
 
 VerificationTest[
@@ -522,7 +522,7 @@ VerificationTest[
     ],
     expectedTitleState[ "Custom Title", 2 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleChangedInMeantime"
+    TestID   -> "AutoSave-TitleChangedInMeantime@@Tests/SaveChat.wlt:513,1-526,2"
 ]
 
 VerificationTest[
@@ -539,7 +539,7 @@ VerificationTest[
     ],
     { "Custom Title", "Untitled Chat" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleChangedDuringSave"
+    TestID   -> "AutoSave-TitleChangedDuringSave@@Tests/SaveChat.wlt:528,1-543,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -555,7 +555,7 @@ VerificationTest[
     ],
     { "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
-    TestID   -> "ExplicitSave-WaitsForTitle"
+    TestID   -> "ExplicitSave-WaitsForTitle@@Tests/SaveChat.wlt:548,1-559,2"
 ]
 
 VerificationTest[
@@ -573,7 +573,7 @@ VerificationTest[
     ],
     { False, "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-NoFrontEnd"
+    TestID   -> "AutoSave-NoFrontEnd@@Tests/SaveChat.wlt:561,1-577,2"
 ]
 
 VerificationTest[
@@ -591,7 +591,7 @@ VerificationTest[
     ],
     { True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-BackgroundTitleQ"
+    TestID   -> "AutoSave-BackgroundTitleQ@@Tests/SaveChat.wlt:579,1-595,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -602,7 +602,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:600,1-606,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
