@@ -318,6 +318,8 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         selected = ConfirmMatch[ cells[[ len1 + 1 ;; len1 + len2 ]], { ___Cell }, "SelectedCells" ];
         after    = ConfirmMatch[ cells[[ len1 + len2 + 1 ;; All ]] , { ___Cell }, "AfterCells"    ];
 
+        { before, selected, after } = DeleteCases[ #, _? chatExcludedQ ] & /@ { before, selected, after };
+
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
         string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
@@ -637,11 +639,11 @@ selectContextCells0[ KeyValuePattern @ {
     "After"    -> after0_List
 } ] :=
     Module[ { before, after },
-        before = Reverse @ Take[ Reverse @ before0, UpTo[ $maxCellsBeforeSelection ] ];
-        after = Take[ after0, UpTo[ $maxCellsAfterSelection ] ];
+        before = Reverse @ Take[ Reverse @ filterChatCells @ before0, UpTo[ $maxCellsBeforeSelection ] ];
+        after = Take[ filterChatCells @ after0, UpTo[ $maxCellsAfterSelection ] ];
         Map[
             Cases[ KeyValuePattern[ "CellObject" -> cell_CellObject ] :> cell ],
-            <| "Before" -> before, "Selected" -> current, "After" -> after |>
+            <| "Before" -> before, "Selected" -> filterChatCells @ current, "After" -> after |>
         ]
     ];
 
