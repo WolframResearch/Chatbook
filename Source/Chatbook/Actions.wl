@@ -656,7 +656,9 @@ waitForLastTask // endDefinition;
 (*runNextTask*)
 runNextTask // beginDefinition;
 runNextTask[ ] := runNextTask @ $nextTaskEvaluation;
-runNextTask[ Hold[ eval_ ] ] := ($nextTaskEvaluation = None; eval);
+(* After a stop, StopChat has written the output cell, so a response that finished just before the stop isn't
+   processed further (e.g. a tool call in it isn't evaluated): *)
+runNextTask[ Hold[ eval_ ] ] := ($nextTaskEvaluation = None; If[ ! chatStopRequestedQ[ ], eval ]);
 runNextTask[ None ] := Null;
 runNextTask // endDefinition;
 
@@ -722,6 +724,12 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+(* Stop buttons call this as a preemptive evaluation, which sees the state of a chat that is still evaluating (the
+   chat's time limit in waitForLastTask also calls it from there). That chat might not have an output cell or a
+   submitted request yet, so it also needs to be told to stop (#1707, #1708): *)
+StopChat[ ] :=
+    stopEvaluatingChat[ ] /; TrueQ @ $chatState;
+
 StopChat[ ] :=
     With[ { cell = $lastCellObject },
         StopChat @ cell /; chatOutputCellQ @ cell
@@ -735,7 +743,8 @@ StopChat[ ] :=
 StopChat[ ] :=
     StopChat @ rootEvaluationCell[ ];
 
-StopChat[ cell_CellObject ] :=
+(* A chat output cell can be nested in other cells (e.g. in the sidebar), so it's stopped itself, not its parent: *)
+StopChat[ cell_CellObject ] /; ! chatOutputCellQ @ cell :=
     With[ { parent = parentCell @ cell },
         StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
     ];
@@ -745,6 +754,9 @@ StopChat[ cell0_CellObject ] := Enclose[
         finish = Function[ $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
         cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
         If[ cell === None, finish[ ] ];
+        (* The output cell of the chat that is evaluating (e.g. from the stop button in its dingbat, which only cloud
+           notebooks show) stops the chat: *)
+        If[ TrueQ @ $chatState && cell === $lastCellObject, requestChatStop[ ] ];
         settings = ConfirmMatch[ currentChatSettings @ cell, _Association|_Missing, "ChatNotebookSettings" ];
         If[ MissingQ @ settings, finish[ ] ];
         removeTask @ Lookup[ settings, "Task", None ];
@@ -766,6 +778,39 @@ StopChat[ $Failed ] :=
     ];
 
 StopChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stopEvaluatingChat*)
+stopEvaluatingChat // beginDefinition;
+
+(* The chat is only stopped once: *)
+stopEvaluatingChat[ ] :=
+    Null /; TrueQ @ $chatStopRequested;
+
+stopEvaluatingChat[ ] := (
+    requestChatStop[ ];
+    (* sendChat stops the output cell itself if the chat was stopped before the cell was in $lastCellObject: *)
+    With[ { cell = $lastCellObject }, If[ chatOutputCellQ @ cell, StopChat @ cell ] ]
+);
+
+stopEvaluatingChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*requestChatStop*)
+requestChatStop // beginDefinition;
+
+requestChatStop[ ] := (
+    (* The chat checks this while it evaluates, so that it ends without submitting its request or a tool response: *)
+    $chatStopRequested = True;
+    (* The chat's evaluation still finishes the step it's in (e.g. a tool evaluation, or the prompt generators, whose
+       waits with a time limit end early), so it can keep running for a moment after the send button reappears: *)
+    $ChatEvaluationCell = None;
+    removeTask @ $lastTask
+);
+
+requestChatStop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -792,6 +837,7 @@ cloudNextChatOutput // endDefinition;
 removeTask // beginDefinition;
 removeTask[ task_TaskObject ] := Quiet[ TaskRemove @ task, TaskRemove::timnf ];
 removeTask[ _Symbol ] := Null; (* undefined Module symbol -- task hasn't been created yet *)
+removeTask[ _Failure ] := Null; (* the request failed, so there is no task *)
 removeTask // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
