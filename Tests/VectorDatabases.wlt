@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/VectorDatabases.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/VectorDatabases.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -59,7 +59,7 @@ VerificationTest[
         "ToNumericArray"       -> _Symbol
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Functions"
+    TestID   -> "FastVectorSearch-Functions@@Tests/VectorDatabases.wlt:52,1-63,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -128,7 +128,7 @@ VerificationTest[
         "Failures" -> <| |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-MatchesVectorDatabaseSearch"
+    TestID   -> "FastVectorSearch-MatchesVectorDatabaseSearch@@Tests/VectorDatabases.wlt:68,1-132,2"
 ]
 
 VerificationTest[
@@ -204,7 +204,7 @@ VerificationTest[
         "Failures"  -> <| |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-RelatedDocumentation-Results"
+    TestID   -> "FastVectorSearch-RelatedDocumentation-Results@@Tests/VectorDatabases.wlt:134,1-208,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -268,7 +268,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-MismatchFallback"
+    TestID   -> "FastVectorSearch-MismatchFallback@@Tests/VectorDatabases.wlt:213,1-272,2"
 ]
 
 VerificationTest[
@@ -324,7 +324,7 @@ VerificationTest[
     ],
     { True, True, <| "NeuralNetRepositoryURIs" -> Failure[ "Test", _ ] |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-ErrorFallback"
+    TestID   -> "FastVectorSearch-ErrorFallback@@Tests/VectorDatabases.wlt:274,1-328,2"
 ]
 
 VerificationTest[
@@ -364,7 +364,7 @@ VerificationTest[
     ],
     { True, { "NeuralNetRepositoryURIs" }, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-FeatureDetectionFallback"
+    TestID   -> "FastVectorSearch-FeatureDetectionFallback@@Tests/VectorDatabases.wlt:330,1-368,2"
 ]
 
 VerificationTest[
@@ -419,7 +419,7 @@ VerificationTest[
     ],
     { True, True, <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Disabled"
+    TestID   -> "FastVectorSearch-Disabled@@Tests/VectorDatabases.wlt:370,1-423,2"
 ]
 
 VerificationTest[
@@ -461,7 +461,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-DisableReason"
+    TestID   -> "FastVectorSearch-DisableReason@@Tests/VectorDatabases.wlt:425,1-465,2"
 ]
 
 VerificationTest[
@@ -481,7 +481,7 @@ VerificationTest[
         Failure[ "USearchException", KeyValuePattern @ { "Value" -> "test", "Tag" -> "SemanticSearchException" } ]
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-CatchUSearch"
+    TestID   -> "FastVectorSearch-CatchUSearch@@Tests/VectorDatabases.wlt:467,1-485,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -520,7 +520,7 @@ VerificationTest[
     ],
     { True, False, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Invalidation"
+    TestID   -> "FastVectorSearch-Invalidation@@Tests/VectorDatabases.wlt:490,1-524,2"
 ]
 
 (* Handles must be released before unpacking, since memory-mapped files cannot be replaced on Windows: *)
@@ -567,9 +567,10 @@ VerificationTest[
 
         { result, DeleteDirectory[ root, DeleteContents -> True ] }
     ],
-    { { True, { __String }, <| |>, <| |>, False }, Null },
+    (* unpackVectorDatabase gives the installed directory since it swaps in a validated staging directory: *)
+    { { True, _String, <| |>, <| |>, False }, Null },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-ReleaseBeforeUnpack"
+    TestID   -> "FastVectorSearch-ReleaseBeforeUnpack@@Tests/VectorDatabases.wlt:527,1-574,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -610,7 +611,7 @@ VerificationTest[
     ],
     { _TaskObject, { <| "Test" -> <| |> |>, _TaskObject }, { <| |>, None } },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-IdleRelease"
+    TestID   -> "FastVectorSearch-IdleRelease@@Tests/VectorDatabases.wlt:579,1-615,2"
 ]
 
 VerificationTest[
@@ -670,7 +671,7 @@ VerificationTest[
     ],
     { { "NeuralNetRepositoryURIs" }, { }, { True, True }, 1, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-IdleRelease-Task"
+    TestID   -> "FastVectorSearch-IdleRelease-Task@@Tests/VectorDatabases.wlt:617,1-675,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
