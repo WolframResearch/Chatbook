@@ -3814,11 +3814,12 @@ makeReformattedCellTaggingRules[
     content_,
     KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
 ] :=
-    With[ { p = count + 1 },
+    With[ { p = count + 1, chatData = makeCompactChatData[ string, tag, settings ] },
     DeleteCases[ <|
             "CellToStringData" -> string,
             "MessageTag"       -> tag,
-            "ChatData"         -> makeCompactChatData[ string, tag, settings ],
+            "ChatData"         -> chatData,
+            "HasChatData"      -> hasChatData @ chatData,
             "PageData"         -> If[ $cloudNotebooks, Inherited, <|
                 "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
@@ -3830,16 +3831,29 @@ makeReformattedCellTaggingRules[
 ];
 
 makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] :=
-    DeleteCases[
-        <|
-            "CellToStringData" -> string,
-            "MessageTag"       -> tag,
-            "ChatData"         -> makeCompactChatData[ string, tag, settings ]
-        |>,
-        Inherited
+    With[ { chatData = makeCompactChatData[ string, tag, settings ] },
+        DeleteCases[
+            <|
+                "CellToStringData" -> string,
+                "MessageTag"       -> tag,
+                "ChatData"         -> chatData,
+                "HasChatData"      -> hasChatData @ chatData
+            |>,
+            Inherited
+        ]
     ];
 
 makeReformattedCellTaggingRules // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*hasChatData*)
+hasChatData // beginDefinition;
+(* A small flag that lets UI code check for "ChatData" without transferring it from the front end. chatDataQ trusts
+   it, so code that removes "ChatData" from a cell must also remove this flag: *)
+hasChatData[ _String ] := True;
+hasChatData[ _ ] := Inherited;
+hasChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
