@@ -180,14 +180,13 @@ VerificationTest[
 (*StopChat*)
 
 (* Runs StopChat on an output cell with the front end stubbed out, where `settings` are the output cell's chat
-   settings and the response so far is "Partial response". Returns the TaggingRules keys of the final cell that StopChat
-   writes: *)
+   settings, `pageData` is its "PageData" tagging rule, and the response so far is "Partial response". Returns the
+   TaggingRules of the final cell that StopChat writes: *)
 VerificationTest[
-    stopChatTaggingRules[ settings_ ] := Module[ { written, result },
+    stopChatTaggingRules[ settings_, pageData_: Inherited ] := Module[ { written, result },
         written = Internal`Bag[ ];
         Block[
             {
-                CurrentValue                                              = Inherited &,
                 FinishDynamic                                             = Null &,
                 Wolfram`Chatbook`$AutomaticAssistance                     = False,
                 Wolfram`Chatbook`$WorkspaceChat                           = False,
@@ -200,6 +199,16 @@ VerificationTest[
                 Wolfram`Chatbook`Common`usingFrontEnd                     = Function[ eval, eval, HoldFirst ],
                 Wolfram`Chatbook`Actions`Private`ensureChatOutputCell     = # &,
                 Wolfram`Chatbook`SendChat`Private`waitForLastChatOutput   = Null &,
+                (* StopChat sets these while it writes the final cell: *)
+                Wolfram`Chatbook`$ChatHandlerData = <| |>,
+                Wolfram`Chatbook`Common`$lastChatString,
+                Wolfram`Chatbook`SendChat`Private`$lastChatOutput,
+                Wolfram`Chatbook`SendChat`Private`$lastOpen,
+                Wolfram`Chatbook`SendChat`Private`$reformattedCell,
+                CurrentValue = Replace[
+                    { ## },
+                    { { _, { TaggingRules, "PageData" } } :> pageData, _ :> Inherited }
+                ] &,
                 Wolfram`Chatbook`Common`currentChatSettings = <|
                     settings,
                     "AutoFormat" -> False,
@@ -215,31 +224,64 @@ VerificationTest[
                 result,
                 Replace[
                     Internal`BagPart[ written, All ],
-                    HoldComplete[ _, Cell[ __, TaggingRules -> rules_, ___ ], _ ] :> Sort @ Keys @ rules,
+                    HoldComplete[ _, Cell[ __, TaggingRules -> rules_, ___ ], _ ] :> rules,
                     { 1 }
                 ]
             ]
         ]
-    ],
-    Null,
+    ];
+    (* The sorted TaggingRules keys of each final cell: *)
+    stopChatTaggingRuleKeys[ args__ ] :=
+        Replace[ stopChatTaggingRules @ args, rules: { ___Association } :> Map[ Sort @* Keys, rules ] ];
+    $stopChatData = <| "Messages" -> { <| "Role" -> "User", "Content" -> "Hello" |> } |>;
+    $stopChatPageData = <|
+        "Pages"       -> <| 1 -> BaseEncode @ BinarySerialize @ TextData @ "Previous response" |>,
+        "PageCount"   -> 1,
+        "CurrentPage" -> 1
+    |>,
+    _Association,
     SameTest -> MatchQ,
-    TestID   -> "StopChat-ChatOutputData-Definitions@@Tests/SendChat.wlt:185,1-227,2"
+    TestID   -> "StopChat-ChatOutputData-Definitions@@Tests/SendChat.wlt:185,1-245,2"
 ]
 
 VerificationTest[
-    stopChatTaggingRules @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $expectedData |>,
+    stopChatTaggingRuleKeys @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $stopChatData |>,
     { { "CellToStringData", "ChatData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:229,1-234,2"
+    TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:247,1-252,2"
+]
+
+(* The chat data ends with the response so far: *)
+VerificationTest[
+    Replace[
+        stopChatTaggingRules @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $stopChatData |>,
+        rules: { ___Association } :> Map[ BinaryDeserialize[ BaseDecode @ #[ "ChatData" ] ][ "Data", "Messages" ] &, rules ]
+    ],
+    {
+        {
+            <| "Role" -> "User"     , "Content" -> "Hello"            |>,
+            <| "Role" -> "Assistant", "Content" -> "Partial response" |>
+        }
+    },
+    SameTest -> SameQ,
+    TestID   -> "StopChat-ChatOutputData-Messages@@Tests/SendChat.wlt:255,1-268,2"
 ]
 
 (* For asynchronous requests, a chat can be stopped after a response chunk arrives but before sendChat writes "Data" to
    the output cell. The final cell is then written without "ChatData": *)
 VerificationTest[
-    stopChatTaggingRules @ Wolfram`Chatbook`Common`$defaultChatSettings,
+    stopChatTaggingRuleKeys @ Wolfram`Chatbook`Common`$defaultChatSettings,
     { { "CellToStringData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709@@Tests/SendChat.wlt:238,1-243,2"
+    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709@@Tests/SendChat.wlt:272,1-277,2"
+]
+
+(* The same goes for a regenerated chat, which still gets its new page: *)
+VerificationTest[
+    stopChatTaggingRuleKeys[ Wolfram`Chatbook`Common`$defaultChatSettings, $stopChatPageData ],
+    { { "CellToStringData", "PageData" } },
+    SameTest -> SameQ,
+    TestID   -> "StopChat-ChatOutputData-Not-Written-Paged-GH#1709@@Tests/SendChat.wlt:280,1-285,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
