@@ -1392,6 +1392,9 @@ streamableSnippetsDirectory // beginDefinition;
 
 streamableSnippetsDirectory[ ] := streamableSnippetsDirectory @ getStreamableSnippetsDir[ ];
 
+(* The chat was stopped while waiting for a download, so the directory is resolved again in the next chat: *)
+streamableSnippetsDirectory[ stopped: $$downloadStopped ] := stopped;
+
 streamableSnippetsDirectory[ skipped: $$downloadSkipped ] :=
     With[ { dir = $localStreamableSnippetsDirectory }, If[ DirectoryQ @ dir, $streamableSnippetsDir = dir, skipped ] ];
 
@@ -1551,7 +1554,7 @@ downloadAllStreamableSnippets // beginDefinition;
 downloadAllStreamableSnippets[ ] := Enclose[
     Catch @ Module[ { dir, queue, damaged, failed },
 
-        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ $localStreamableSnippetsDirectory, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ ensureDownloadDirectory @ $localStreamableSnippetsDirectory, DirectoryQ, "Directory" ];
 
         queue = Select[ $streamableSnippetTypes, ! streamableSnippetsDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
         If[ queue === { }, Throw @ ConfirmBy[ dir, streamableSnippetsDirectoryQ, "Installed" ] ];

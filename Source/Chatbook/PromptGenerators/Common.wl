@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 HoldComplete[
     `$$downloadDeclined,
     `$$downloadSkipped,
+    `$$downloadStopped,
     `$$prompt,
     `$defaultSources,
     `$downloadPromptFunction,
@@ -21,6 +22,7 @@ HoldComplete[
     `downloadedArchiveStatus,
     `downloadText,
     `downloadTextTemplate,
+    `ensureDownloadDirectory,
     `estimateDownloadTime,
     `formatByteCount,
     `getNamedSnippet,
@@ -48,15 +50,22 @@ $$prompt = $$string | { $$string... } | $$chatMessages;
 (* Returned instead of an install location (or a loaded database) when the user declined a download: *)
 $$downloadDeclined = Missing[ "DownloadDeclined", ___ ];
 
+(* Returned instead of an install location (or a loaded database) when the chat was stopped while waiting for another
+   kernel's download (see withDownloadLock). Unlike the others, this only applies to the current chat: *)
+$$downloadStopped = Missing[ "DownloadStopped", ___ ];
+
 (* Returned instead of an install location (or a loaded database) when a download is skipped, because the user declined
-   it or because it failed earlier in the session (see catchDownloadFailure): *)
-$$downloadSkipped = Missing[ "DownloadDeclined" | "DownloadFailed", ___ ];
+   it, because it failed earlier in the session (see catchDownloadFailure), or because the chat was stopped: *)
+$$downloadSkipped = Missing[ "DownloadDeclined" | "DownloadFailed" | "DownloadStopped", ___ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
 Chatbook::InvalidPrompt = "\
 Expected a string or a list of chat messages instead of `1`.";
+
+Chatbook::DownloadDirectoryFailed = "\
+Cannot download to `1` because the directory cannot be created. Check that its parent directory can be written to.";
 
 Chatbook::DownloadLockFailed = "\
 Cannot download to `1` because a lock file cannot be created there. Check that the directory can be written to.";
@@ -77,15 +86,26 @@ $fallbackDownloadRate  = 2.0*^6;
 $minDownloadRateBytes = 1*^6;
 
 (* The failures of downloads that catchDownloadFailure catches: *)
-$$downloadFailureName = "VectorDatabaseDownloadFailed" | "SnippetDownloadFailed" | "DownloadLockFailed" | "DownloadLockTimeout";
+$$downloadFailureName = Alternatives[
+    "VectorDatabaseDownloadFailed",
+    "SnippetDownloadFailed",
+    "DownloadDirectoryFailed",
+    "DownloadLockFailed",
+    "DownloadLockTimeout"
+];
 
-(* Seconds for each attempt to take a download lock, and the total time to wait for it: *)
-$downloadLockPollInterval = 10;
-$downloadLockTimeout      = 600;
+(* Seconds for each attempt to take a download lock, seconds to wait between attempts (a chat that is stopped while
+   waiting stops waiting before the next attempt), seconds between checks for a stale lock (which read the process
+   table), and the total time to wait for a lock: *)
+$downloadLockAttemptTime   = 0.2;
+$downloadLockRetryInterval = 1;
+$downloadLockPollInterval  = 10;
+$downloadLockTimeout       = 600;
 
 (* The kernel holding a download lock updates the lock file's modification date this often (in whole seconds), and
    locks that have not been updated for $staleDownloadLockAge seconds are broken (e.g. the kernel holding the lock was
-   killed on another machine, or the machine name changed): *)
+   killed on another machine, or the machine name changed). Locks of kernels that are running on this machine are never
+   broken (see staleDownloadLockQ): *)
 $downloadLockRefreshInterval = 30;
 $staleDownloadLockAge        = 180;
 
@@ -299,11 +319,16 @@ downloadedArchiveStatus // endDefinition;
 (* ::Subsection::Closed:: *)
 (*catchDownloadFailure*)
 (* Catches the failure of a download (its message has already been shown) and returns Missing[ "DownloadFailed",
-   failure ] instead, so that a chat is not aborted by it and can continue without what could not be downloaded. Any
-   other failure is passed on. *)
+   failure ] instead, so that a chat is not aborted by it and can continue without what could not be downloaded. Also
+   returns the Missing[ "DownloadStopped" ] of a chat that was stopped while waiting for a download (see
+   withDownloadLock). Any other failure is passed on. *)
 catchDownloadFailure // beginDefinition;
 catchDownloadFailure // Attributes = { HoldFirst };
-catchDownloadFailure[ eval_ ] := Catch[ eval, $catchTopTag, downloadFailureHandler ];
+
+(* The failure's message has been shown, and the chat continues, so catchHandled keeps it from silencing the messages
+   of later failures in the chat: *)
+catchDownloadFailure[ eval_ ] := catchHandled[ eval, downloadFailureHandler ];
+
 catchDownloadFailure // endDefinition;
 
 
@@ -312,10 +337,28 @@ downloadFailureHandler // beginDefinition;
 downloadFailureHandler[ failure: Failure[ tag_String, _ ], _ ] /; StringMatchQ[ tag, ___ ~~ "::" ~~ $$downloadFailureName ] :=
     Missing[ "DownloadFailed", failure ];
 
+downloadFailureHandler[ stopped: $$downloadStopped, _ ] :=
+    stopped;
+
 downloadFailureHandler[ value_, tag_ ] :=
     Throw[ Unevaluated @ value, tag ];
 
 downloadFailureHandler // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureDownloadDirectory*)
+(* Creates the directory that is downloaded to if needed. If it can't be created (e.g. its parent directory is not
+   writable), this throws a failure that catchDownloadFailure handles, like any other failed download. *)
+ensureDownloadDirectory // beginDefinition;
+
+ensureDownloadDirectory[ dir_String ] :=
+    Replace[
+        Quiet @ GeneralUtilities`EnsureDirectory @ dir,
+        Except[ _String? DirectoryQ ] :> throwFailure[ "DownloadDirectoryFailed", dir ]
+    ];
+
+ensureDownloadDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -339,8 +382,10 @@ formatDuration // endDefinition;
 (*withDownloadLock*)
 (* Like WithLock, but the lock is kept up to date while it is held, so that other kernels can break locks that are no
    longer kept up to date (e.g. because the kernel holding them was killed). Waiting for the lock is limited to
-   $downloadLockTimeout seconds. If the lock can't be taken, this throws a failure (see throwFailure). Download prompts
-   must not be shown while holding the lock, since other kernels would have to wait for them. *)
+   $downloadLockTimeout seconds. If the lock can't be taken, this throws a failure (see throwFailure). If the chat is
+   stopped while waiting, this throws Missing[ "DownloadStopped" ] instead (see catchDownloadFailure), so the chat
+   doesn't wait for the download, which is tried again in the next chat. Download prompts must not be shown while
+   holding the lock, since other kernels would have to wait for them. *)
 withDownloadLock // beginDefinition;
 withDownloadLock // Attributes = { HoldRest };
 
@@ -349,16 +394,21 @@ withDownloadLock[ lock_String, eval_ ] /; MemberQ[ $heldDownloadLocks, lock ] :=
     eval;
 
 withDownloadLock[ lock_String, eval_ ] := Catch[
-    Module[ { start, result },
-        start = AbsoluteTime[ ];
+    Module[ { start, checked, result },
+        start   = AbsoluteTime[ ];
+        checked = -Infinity;
         While[ True,
-            breakStaleDownloadLock @ lock;
-            (* Messages from WithLock itself, e.g. when the lock file can't be created or a stale lock is removed: *)
+            If[ AbsoluteTime[ ] - checked >= $downloadLockPollInterval,
+                breakStaleDownloadLock @ lock;
+                checked = AbsoluteTime[ ]
+            ];
+            (* Messages from WithLock itself, e.g. when the lock file can't be created or a stale lock is removed. Each
+               attempt is short, since WithLock keeps the kernel busy while it waits, unlike Pause: *)
             result = Quiet[
                 WithLock[
                     File @ lock,
                     Throw[ withHeldDownloadLock[ lock, eval ], $downloadLockTag ],
-                    TimeConstraint -> $downloadLockPollInterval
+                    TimeConstraint -> $downloadLockAttemptTime
                 ],
                 { CreateDirectory::privv, CreateFile::privv, WithLock::lock, WithLock::stale, WithLock::unlock }
             ];
@@ -366,11 +416,15 @@ withDownloadLock[ lock_String, eval_ ] := Catch[
                 (* WithLock fails right away if the lock file can't be created (e.g. the directory is not writable): *)
                 result =!= $TimedOut,
                     Throw[ throwFailure[ "DownloadLockFailed", DirectoryName @ lock ], $downloadLockTag ],
+                chatStopRequestedQ[ ],
+                    Throw[ throwTop @ Missing[ "DownloadStopped" ], $downloadLockTag ],
                 AbsoluteTime[ ] - start >= $downloadLockTimeout,
                     Throw[
                         throwFailure[ "DownloadLockTimeout", DirectoryName @ lock, Ceiling[ $downloadLockTimeout / 60 ] ],
                         $downloadLockTag
-                    ]
+                    ],
+                True,
+                    Pause[ $downloadLockRetryInterval ]
             ]
         ]
     ],
@@ -428,11 +482,17 @@ breakStaleDownloadLock // endDefinition;
 (*staleDownloadLockQ*)
 staleDownloadLockQ // beginDefinition;
 
-(* A lock created by a kernel on this machine that is no longer running can be broken right away. Any other lock is
-   broken once the kernel holding it stops updating it (e.g. the lock is from another machine, or the process table is
-   not available): *)
+(* A lock created by a kernel on this machine that is no longer running can be broken right away, and one that is still
+   running keeps its lock however long it takes (e.g. if it was suspended, or is busy in a long evaluation that doesn't
+   let it update the lock), since breaking it would delete the files that it is downloading or installing. Waiting for
+   it is limited (see withDownloadLock). Any other lock is broken once the kernel holding it stops updating it (e.g. the
+   lock is from another machine, or the process table is not available): *)
 staleDownloadLockQ[ lock_, KeyValuePattern @ { "MachineName" -> m_String, "ProcessID" -> pid_Integer, "CreationTime" -> t_ } ] :=
-    TrueQ[ m === $MachineName && ! processRunningQ[ pid, t ] ] || downloadLockAge @ lock > $staleDownloadLockAge;
+    Switch[ If[ m === $MachineName, lockHolderStatus[ pid, t ], "Unknown" ],
+        "Running", False,
+        "Stopped", True,
+        _        , downloadLockAge @ lock > $staleDownloadLockAge
+    ];
 
 (* Lock files left empty or unreadable by an interrupted write: *)
 staleDownloadLockQ[ lock_, Null | $Failed | _String ] :=
@@ -485,24 +545,33 @@ observedDownloadLockAge // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*processRunningQ*)
-(* Errs on the side of True if the process table is unavailable. A process that started after the lock was created
-   has only reused the PID of the kernel that created it. *)
-processRunningQ // beginDefinition;
+(*lockHolderStatus*)
+(* Whether the kernel on this machine with the given process ID that created a lock at the given time is "Running" or
+   "Stopped", or "Unknown" if that can't be told (e.g. the process table is unavailable). A process that started after
+   the lock was created has only reused the PID of the kernel that created it. This kernel's own locks are "Unknown",
+   since it only holds a lock while it keeps it up to date (see withHeldDownloadLock). *)
+lockHolderStatus // beginDefinition;
 
-processRunningQ[ pid_Integer, created_ ] :=
+lockHolderStatus[ pid_Integer, _ ] /; pid === $ProcessID :=
+    "Unknown";
+
+lockHolderStatus[ pid_Integer, created_ ] :=
     With[ { procs = Quiet @ SystemProcesses[ "PID" -> pid ] },
         Which[
-            ! ListQ @ procs, True,
-            procs === { }, False,
+            ! ListQ @ procs, "Unknown",
+            procs === { }, "Stopped",
             True,
             With[ { start = Quiet @ First[ procs ][ "StartTime" ], time = Quiet @ DateObject @ created },
-                ! TrueQ[ DateObjectQ @ start && DateObjectQ @ time && AbsoluteTime @ start > AbsoluteTime @ time + 5 ]
+                Which[
+                    ! (DateObjectQ @ start && DateObjectQ @ time), "Unknown",
+                    AbsoluteTime @ start > AbsoluteTime @ time + 5, "Stopped",
+                    True, "Running"
+                ]
             ]
         ]
     ];
 
-processRunningQ // endDefinition;
+lockHolderStatus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

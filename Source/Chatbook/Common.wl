@@ -68,6 +68,7 @@ System`HoldCompleteForm;
 `$catchTopTag;
 `beginDefinition;
 `catchAlways;
+`catchHandled;
 `catchMine;
 `catchQuiet;
 `catchTop;
@@ -656,6 +657,17 @@ catchQuiet // beginDefinition;
 catchQuiet // Attributes = { HoldFirst };
 catchQuiet[ eval_ ] := Block[ { $failed = TrueQ @ $failed }, Quiet @ catchAlways @ eval ];
 catchQuiet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*catchHandled*)
+(* Like Catch[ eval, $catchTopTag, handler ], for a handler that handles failures (e.g. by returning something else) whose
+   messages have been shown. Such a failure does not count as a failure of the enclosing catchTop, so it doesn't silence
+   the messages of later failures in that catchTop. What the handler throws again goes to the enclosing catchTop. *)
+catchHandled // beginDefinition;
+catchHandled // Attributes = { HoldFirst };
+catchHandled[ eval_, handler_ ] := Block[ { $failed = TrueQ @ $failed }, Catch[ eval, $catchTopTag, handler ] ];
+catchHandled // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

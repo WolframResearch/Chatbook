@@ -678,6 +678,9 @@ vectorDBDirectory // beginDefinition;
 
 vectorDBDirectory[ ] := vectorDBDirectory @ getVectorDBDirectory[ ];
 
+(* The chat was stopped while waiting for a download, so the directory is resolved again in the next chat: *)
+vectorDBDirectory[ stopped: $$downloadStopped ] := stopped;
+
 vectorDBDirectory[ skipped: $$downloadSkipped ] :=
     With[ { dir = $localVectorDBDirectory }, If[ DirectoryQ @ dir, $vectorDBDirectory = dir, skipped ] ];
 
@@ -1123,7 +1126,7 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 
         If[ $CloudEvaluation && ! TrueQ @ $suppressDownloadWarning, messagePrint[ "VectorDatabaseCloudDownload" ] ];
 
-        dir   = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        dir   = ConfirmBy[ ensureDownloadDirectory @ dir0, DirectoryQ, "Directory" ];
         names = ConfirmMatch[ vectorDBsToInstall[ dir, Keys @ urls0 ], { ___String }, "Names" ];
         If[ names === { }, Throw @ dir ];
 
