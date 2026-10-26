@@ -1715,10 +1715,10 @@ getStreamSnippets[ name_String, { } ] :=
 getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
     Catch @ Module[ { dir, file, keyGroups, stream, data, lookup, strings },
 
-        dir = ConfirmMatch[ $streamableSnippetsDir, $$downloadDeclined | _String, "Directory" ];
+        dir = $streamableSnippetsDir;
 
         (* Snippets that are not available because their download was declined are skipped: *)
-        If[ ! StringQ @ dir || (TrueQ @ $snippetDownloadDeclined && ! snippetsAvailableQ[ dir, name ]),
+        If[ MatchQ[ dir, $$downloadDeclined ] || (TrueQ @ $snippetDownloadDeclined && ! snippetsAvailableQ[ dir, name ]),
             Throw @ ConstantArray[ "", Length @ keys ]
         ];
 

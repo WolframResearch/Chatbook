@@ -1756,11 +1756,12 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
             indices, distances, values, data, result, snippetFunction, instructionsFunction, instructionsPosition
         },
 
-        vectorDBInfo    = ConfirmMatch[ getVectorDB @ dbName, $$downloadDeclined | _Association, "VectorDBInfo" ];
+        vectorDBInfo    = getVectorDB @ dbName;
 
         (* A database that is not available because its download was declined is skipped (and not cached): *)
         If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ declinedSearchResult @ vectorDBInfo ];
 
+        vectorDBInfo    = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDBInfo" ];
         vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         allValues       = ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ];
         embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
@@ -1945,9 +1946,9 @@ vectorDBSearch[ dbName: $$dbName, prompts: { ___String }, prop_ ] :=
 (* Full list of possible values: *)
 vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
     Catch @ Module[ { vectorDBInfo },
-        vectorDBInfo = ConfirmMatch[ getVectorDB @ dbName, $$downloadDeclined | _Association, "VectorDB" ];
+        vectorDBInfo = getVectorDB @ dbName;
         If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ { } ];
-        ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
+        ConfirmBy[ ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDB" ][ "Values" ], ListQ, "Values" ]
     ],
     throwInternalFailure
 ];
