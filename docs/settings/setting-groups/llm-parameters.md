@@ -226,7 +226,7 @@ The GPT-5 families also declare which levels they accept, through a `"ReasoningE
 `resolveReasoningEffort` (`Settings.wl`) validates the setting against that list on the way into the request, rather than during auto-resolution, because only `Automatic`-valued settings reach `resolveAutoSetting0` — a value the user set explicitly never passes through it. The rules:
 
 - A level the family accepts is used as-is, matched case-insensitively.
-- Off — `False`, `None`, `"Off"` or `"None"` — becomes the family's weakest declared level when the family has no `"None"`. It is clamped rather than dropped, because dropping the parameter would fall back to the vendor default, which for GPT-5.x is `medium`; a request to turn reasoning off must not silently become medium effort.
+- Off — `False`, `None`, `"Off"` or `"None"` — becomes the family's weakest declared level when the family has no `"None"`. It is clamped rather than dropped, because dropping the parameter would leave the effort to the provider's default, which need not be off; a request to turn reasoning off must not silently turn it on.
 - Any other recognized level is clamped to the nearest declared level, with ties resolving upward, so `"Minimal"` on a family offering `"None"` and `"Low"` becomes `"Low"` rather than turning reasoning off.
 - A spelling that is not on the `$reasoningEffortScale` (`"None"`, `"Minimal"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"`, `"Max"`) is passed through unchanged, so a typo still reaches the service and still reports an error instead of silently becoming the default.
 - A family with no `"ReasoningEfforts"` entry — every service other than the GPT-5 families — is left exactly as it was.
