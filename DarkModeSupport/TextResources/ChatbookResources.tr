@@ -9674,7 +9674,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"82648bde-034d-d845-b792-7c6abf763d3f"], Cell[BoxData[
+    ExpressionUUID->"b99636e6-69c8-994b-bf19-592fe1b2e196"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10605,7 +10605,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "a739e401-54b9-0b4f-8e86-9436c799a165"], Cell[BoxData[
+    "24fe452e-7536-2e48-93e2-7963bf8dcd29"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10656,7 +10656,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                   ImageSize->{
                     Scaled[1], 
                     UpTo[100]},
-                  ScrollPosition->{0., 0.},
                   Scrollbars->{False, Automatic}], 
                  PaneSelectorBox[{False->
                   ButtonBox[
@@ -10917,7 +10916,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "a9688995-24a9-5040-a63e-28b554188b84"]}],
+    "e5cbe56b-01ad-2042-9948-592f7952fed4"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10933,8 +10932,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"ee632ae9-ef66-f04d-86b6-\
-62bd020ed31a"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"f51ffc57-9249-1e42-a6c7-\
+01afe09cbe00"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11053,8 +11052,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"56671a20-b2a4-1e49-8323-\
-e18d2a6f0675"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"e92987d2-0d51-6b45-a3c1-\
+1d10a95eaeb4"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 

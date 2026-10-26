@@ -1253,7 +1253,8 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 		,
 		With[ { personaSettings = Lookup[ GetPersonasAssociation[ ], evaluatorName ] },
 			icon = If[ $cloudNotebooks,
-				cloudShrinkToFit[ getPersonaMenuIcon @ persona, { Automatic, 19 } ],
+				(* Cloud uses a client override for the persona icon, but keep in case the override is removed *)
+				cloudShrinkToFit[ getPersonaMenuIcon @ personaSettings, { Automatic, 19 } ],
 				Pane[ getPersonaMenuIcon @ personaSettings, ImageSize -> { Automatic, 19 }, ImageSizeAction -> "ShrinkToFit" ]
 			];
 			displayName = personaDisplayName[ evaluatorName, personaSettings ]
