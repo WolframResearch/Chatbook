@@ -1002,9 +1002,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         Grid[
             {
                 checkTemplateBoxes @ Which[
-                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "WorkspaceChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
-                    TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
                         codeBlockButtons[ lang, EvaluationCell[ ], False ]
@@ -1112,7 +1112,11 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            targetNotebookLabel @ EvaluationNotebook[ ]
+            (* In the assistant window, finding the target notebook can scan all open notebooks (the sidebar uses its
+               own notebook), so wait until the tooltip is shown. Only front end values are tracked: the lookup reads
+               Chatbook symbols that change on every catchTop call, which would otherwise rescan the notebooks while
+               the tooltip is open, e.g. twice a second while a response streams. *)
+            With[ { nbo = EvaluationNotebook[ ] }, Dynamic[ targetNotebookLabel @ nbo, TrackedSymbols :> { } ] ]
         ]
     ];
 
