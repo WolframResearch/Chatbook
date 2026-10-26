@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/PersonaDisplayName.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/PersonaDisplayName.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -29,14 +29,14 @@ VerificationTest[
     Wolfram`Chatbook`Common`personaDisplayName[ "Wolfie" ],
     RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameWolfie" ],
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-BuiltIn"
+    TestID   -> "PersonaDisplayName-BuiltIn@@Tests/PersonaDisplayName.wlt:28,1-33,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`personaDisplayName[ "NotARealPersonaName" ],
     "NotARealPersonaName",
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-Unknown-Name"
+    TestID   -> "PersonaDisplayName-Unknown-Name@@Tests/PersonaDisplayName.wlt:35,1-40,2"
 ]
 
 VerificationTest[
@@ -48,7 +48,7 @@ VerificationTest[
     },
     { "My Persona", "MyPersona", "MyPersona", "MyPersona" },
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-Data"
+    TestID   -> "PersonaDisplayName-Data@@Tests/PersonaDisplayName.wlt:42,1-52,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -60,7 +60,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`personaDisplayName[ Missing[ "NotAvailable" ] ],
     "",
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-Missing"
+    TestID   -> "PersonaDisplayName-Missing@@Tests/PersonaDisplayName.wlt:59,1-64,2"
 ]
 
 VerificationTest[
@@ -73,7 +73,7 @@ VerificationTest[
     },
     { "", "", "", "", "" },
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-Non-String"
+    TestID   -> "PersonaDisplayName-Non-String@@Tests/PersonaDisplayName.wlt:66,1-77,2"
 ]
 
 (* The persona icon tooltip as constructed by the chat input dingbat: *)
@@ -86,7 +86,7 @@ VerificationTest[
     ],
     _? (FreeQ[ _Failure ]),
     SameTest -> MatchQ,
-    TestID   -> "PersonaDisplayName-Dingbat-Tooltip"
+    TestID   -> "PersonaDisplayName-Dingbat-Tooltip@@Tests/PersonaDisplayName.wlt:80,1-90,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
