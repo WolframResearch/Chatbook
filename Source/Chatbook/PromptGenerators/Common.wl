@@ -3,6 +3,7 @@
 BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
 HoldComplete[
+    `$$downloadDeclined,
     `$$prompt,
     `$defaultSources,
     `$downloadPromptFunction,
@@ -38,6 +39,9 @@ Needs[ "Wolfram`Chatbook`Common`"  ];
 (* ::Section::Closed:: *)
 (*Argument Patterns*)
 $$prompt = $$string | { $$string... } | $$chatMessages;
+
+(* Returned instead of an install location (or a loaded database) when the user declined a download: *)
+$$downloadDeclined = Missing[ "DownloadDeclined", ___ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

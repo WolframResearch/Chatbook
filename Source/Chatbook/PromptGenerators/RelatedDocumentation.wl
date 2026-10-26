@@ -99,6 +99,8 @@ streamableSnippetArchiveInfo[ name_String, n_Integer ] :=
         { info: { _, _ } :> info[[ n ]], _ :> Missing[ "NotAvailable" ] }
     ];
 
+(* Set when the user declines a download or retry prompt. For the rest of the session, snippets that are not installed
+   (or are damaged) are skipped instead of prompting again, until InstallDocumentationResources[] is evaluated: *)
 $snippetDownloadDeclined = False;
 
 (* ::**************************************************************************************************************:: *)
@@ -1291,6 +1293,7 @@ getSnippets // endDefinition;
 (* ::Section::Closed:: *)
 (*InstallDocumentationResources*)
 InstallDocumentationResources // beginDefinition;
+(* An explicit request to install, so a download that was declined earlier in the session is offered again: *)
 InstallDocumentationResources[ ] := catchMine[ $snippetDownloadDeclined = False; installDocumentationResources[ ] ];
 InstallDocumentationResources // endExportedDefinition;
 
@@ -1301,7 +1304,9 @@ installDocumentationResources // beginDefinition;
 
 installDocumentationResources[ ] := Enclose[
     Module[ { dir },
-        dir = ConfirmBy[ getStreamableSnippetsDir[ ], streamableSnippetsDirectoryQ, "Location" ];
+        dir = getStreamableSnippetsDir[ ];
+        If[ MatchQ[ dir, $$downloadDeclined ], throwFailure[ "SnippetDownloadDeclined" ] ];
+        ConfirmBy[ dir, streamableSnippetsDirectoryQ, "Location" ];
         Success[ "DocumentationResourcesInstalled", <| "Location" -> dir |> ]
     ],
     throwInternalFailure
@@ -1325,7 +1330,7 @@ $streamableSnippetIndexCache = <| |>;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Paths*)
-$streamableSnippetsDir := getStreamableSnippetsDir[ ];
+$streamableSnippetsDir := streamableSnippetsDirectory[ ];
 
 $pacletStreamableSnippetsDirectory :=
     FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/Snippets/Streamable" };
@@ -1342,7 +1347,7 @@ $cloudStreamableSnippetsDirectory :=
 getStreamableSnippetsDir // beginDefinition;
 
 getStreamableSnippetsDir[ ] := Enclose[
-    Module[ { sources, dir },
+    Catch @ Module[ { sources, dir },
         sources = {
             $pacletStreamableSnippetsDirectory,
             If[ $CloudEvaluation, $cloudStreamableSnippetsDirectory, Nothing ],
@@ -1352,8 +1357,10 @@ getStreamableSnippetsDir[ ] := Enclose[
         dir = SelectFirst[
             sources,
             streamableSnippetsDirectoryQ,
-            ConfirmBy[ downloadStreamableSnippets[ ], streamableSnippetsDirectoryQ, "Downloaded" ]
+            ConfirmMatch[ downloadStreamableSnippets[ ], $$downloadDeclined | _? streamableSnippetsDirectoryQ, "Downloaded" ]
         ];
+
+        If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
 
         $streamableSnippetsDir = dir
     ],
@@ -1361,6 +1368,23 @@ getStreamableSnippetsDir[ ] := Enclose[
 ];
 
 getStreamableSnippetsDir // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*streamableSnippetsDirectory*)
+(* The directory that snippets are read from ($streamableSnippetsDir). After a download was declined, the snippets that
+   are installed in the local directory can still be used (getStreamSnippets skips the others), and
+   InstallDocumentationResources[] resolves the directory again: *)
+streamableSnippetsDirectory // beginDefinition;
+
+streamableSnippetsDirectory[ ] := streamableSnippetsDirectory @ getStreamableSnippetsDir[ ];
+
+streamableSnippetsDirectory[ declined: $$downloadDeclined ] :=
+    With[ { dir = $localStreamableSnippetsDirectory }, If[ DirectoryQ @ dir, $streamableSnippetsDir = dir, declined ] ];
+
+streamableSnippetsDirectory[ dir_String ] := dir;
+
+streamableSnippetsDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1446,8 +1470,9 @@ downloadStreamableSnippets // beginDefinition;
 downloadStreamableSnippets[ ] /; ! $allowSnippetDownload :=
     Throw[ Missing[ "DownloadDisabled" ], $snippetDownloadTag ];
 
+(* Downloads are not offered again after they were declined (InstallDocumentationResources[] clears the flag): *)
 downloadStreamableSnippets[ ] /; TrueQ @ $snippetDownloadDeclined :=
-    Quiet @ throwFailure[ "SnippetDownloadDeclined" ];
+    Missing[ "DownloadDeclined" ];
 
 downloadStreamableSnippets[ ] /; $allowSnippetDownload := Enclose[
     Module[ { dir, lock },
@@ -1526,10 +1551,12 @@ downloadStreamableSnippetsLocked[ dir_String ] := Enclose[
 
         damaged = Select[ queue, MemberQ[ partial, # ] || snippetsDamagedQ[ dir, # ] & ];
 
+        (* The prompt stops the current chat when it is declined (see confirmDownloadPrompt), so the declined snippets are
+           skipped instead of throwing a failure that would abort it: *)
         If[ damaged =!= { } && TrueQ @ $promptRedownload,
             If[ ! confirmRedownload[ "DownloadTypeDocumentation", damaged, Total @ Lookup[ $streamableSnippetSizes, damaged, 0 ] ],
                 $snippetDownloadDeclined = True;
-                throwFailure[ "SnippetDownloadDeclined" ]
+                Throw @ Missing[ "DownloadDeclined" ]
             ]
         ];
 
@@ -1546,7 +1573,7 @@ downloadStreamableSnippetsLocked[ dir_String ] := Enclose[
 
         Which[
             failed === { }, ConfirmBy[ dir, streamableSnippetsDirectoryQ, "Result" ],
-            TrueQ @ $snippetDownloadDeclined, throwFailure[ "SnippetDownloadDeclined" ],
+            TrueQ @ $snippetDownloadDeclined, Missing[ "DownloadDeclined" ],
             True, throwFailure[ "SnippetDownloadFailed", StringRiffle[ failed, ", " ] ]
         ]
     ],
@@ -1686,9 +1713,16 @@ getStreamSnippets[ name_String, { } ] :=
     { };
 
 getStreamSnippets[ name_String, keys: { __String } ] := Enclose[
-    Module[ { file, keyGroups, stream, data, lookup, strings },
+    Catch @ Module[ { dir, file, keyGroups, stream, data, lookup, strings },
 
-        file = ConfirmBy[ FileNameJoin @ { $streamableSnippetsDir, name, "Snippets.wxfl" }, FileExistsQ, "File" ];
+        dir = ConfirmMatch[ $streamableSnippetsDir, $$downloadDeclined | _String, "Directory" ];
+
+        (* Snippets that are not available because their download was declined are skipped: *)
+        If[ ! StringQ @ dir || (TrueQ @ $snippetDownloadDeclined && ! snippetsAvailableQ[ dir, name ]),
+            Throw @ ConstantArray[ "", Length @ keys ]
+        ];
+
+        file = ConfirmBy[ FileNameJoin @ { dir, name, "Snippets.wxfl" }, FileExistsQ, "File" ];
         keyGroups = GroupBy[ keys, StringDelete[ #1, "#" ~~ ___ ~~ EndOfString ] & ];
 
         WithCleanup[
@@ -1724,6 +1758,16 @@ getStreamSnippets0[ stream_InputStream, name_String, group_String, keys: { __Str
 ];
 
 getStreamSnippets0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetsAvailableQ*)
+snippetsAvailableQ // beginDefinition;
+
+snippetsAvailableQ[ dir_String, name_String ] :=
+    AssociationQ @ $streamableSnippetIndexCache[ name ] || streamableSnippetsDirectoryQ0 @ FileNameJoin @ { dir, name };
+
+snippetsAvailableQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

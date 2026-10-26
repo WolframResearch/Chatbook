@@ -136,6 +136,8 @@ $cacheUSearchIndexes = True;
 (* Release the memory-mapped indexes after this many seconds without a search: *)
 $usearchIndexIdleTime = 300;
 
+(* Set when the user declines a download, repair or retry prompt. For the rest of the session, databases that are not
+   installed (or are damaged) are skipped instead of prompting again, until InstallVectorDatabases[] is evaluated: *)
 $vectorDBDownloadDeclined = False;
 $staleArtifactAge         = 120;
 $downloadProgress         = <| |>;
@@ -539,6 +541,7 @@ registerVectorDatabase // endDefinition;
 (*InstallVectorDatabases*)
 InstallVectorDatabases // beginDefinition;
 
+(* An explicit request to install, so a download that was declined earlier in the session is offered again: *)
 InstallVectorDatabases[ ] :=
     catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True, $allowIndexHashing = True },
         $vectorDBDownloadDeclined = False;
@@ -554,7 +557,9 @@ installVectorDatabases // beginDefinition;
 
 installVectorDatabases[ ] := Enclose[
     Module[ { dir, snippets, snippetDir },
-        dir = ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ];
+        dir = getVectorDBDirectory[ ];
+        If[ MatchQ[ dir, $$downloadDeclined ], throwFailure[ "VectorDatabaseDownloadDeclined" ] ];
+        ConfirmBy[ dir, vectorDBDirectoryQ, "Location" ];
         snippets = ConfirmMatch[ InstallDocumentationResources[ ], _Success, "Snippets" ];
         snippetDir = ConfirmBy[ snippets[ "Location" ], DirectoryQ, "SnippetLocation" ];
         Success[ "VectorDatabasesInstalled", <| "Location" -> dir, "Snippets" -> snippetDir |> ]
@@ -567,7 +572,7 @@ installVectorDatabases // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Vector Database Utilities*)
-$vectorDBDirectory := getVectorDBDirectory[ ];
+$vectorDBDirectory := vectorDBDirectory[ ];
 
 $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ];
 
@@ -577,7 +582,7 @@ $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall
 getVectorDBDirectory // beginDefinition;
 
 getVectorDBDirectory[ ] := Enclose[
-    Module[ { sources, dir },
+    Catch @ Module[ { sources, dir },
         sources = {
             $pacletVectorDBDirectory,
             If[ $CloudEvaluation, $cloudVectorDBDirectory, Nothing ],
@@ -587,8 +592,10 @@ getVectorDBDirectory[ ] := Enclose[
         dir = SelectFirst[
             sources,
             vectorDBDirectoryQ,
-            ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
+            ConfirmMatch[ downloadVectorDatabases[ ], $$downloadDeclined | _? vectorDBDirectoryQ, "Downloaded" ]
         ];
+
+        If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
 
         If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
             (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
@@ -605,6 +612,23 @@ getVectorDBDirectory[ ] := Enclose[
 ];
 
 getVectorDBDirectory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBDirectory*)
+(* The directory that databases are loaded from for searches ($vectorDBDirectory). After a download was declined, the
+   databases that are installed in the local directory can still be used (getVectorDB skips the others), and
+   InstallVectorDatabases[] resolves the directory again: *)
+vectorDBDirectory // beginDefinition;
+
+vectorDBDirectory[ ] := vectorDBDirectory @ getVectorDBDirectory[ ];
+
+vectorDBDirectory[ declined: $$downloadDeclined ] :=
+    With[ { dir = $localVectorDBDirectory }, If[ DirectoryQ @ dir, $vectorDBDirectory = dir, declined ] ];
+
+vectorDBDirectory[ dir_String ] := dir;
+
+vectorDBDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1019,8 +1043,9 @@ downloadVectorDatabases // beginDefinition;
 downloadVectorDatabases[ ] /; ! $allowDownload :=
     Throw[ Missing[ "DownloadDisabled" ], $vdbTag ];
 
+(* Downloads are not offered again after they were declined (InstallVectorDatabases[] clears the flag): *)
 downloadVectorDatabases[ ] /; TrueQ @ $vectorDBDownloadDeclined :=
-    Quiet @ throwFailure[ "VectorDatabaseDownloadDeclined" ];
+    Missing[ "DownloadDeclined" ];
 
 downloadVectorDatabases[ ] /; $allowDownload :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
@@ -1071,18 +1096,26 @@ downloadVectorDatabasesLocked[ dir_String, urls0_Association ] := Enclose[
 
         If[ damaged =!= { } && TrueQ @ $promptRedownload,
             If[ ! confirmRedownload[ "DownloadTypeVectorDatabases", damaged, Total @ Cases[ Lookup[ $vectorDBDownloadSizes, damaged, 0 ], _Integer? Positive ] ],
-                $vectorDBDownloadDeclined = True;
-                throwFailure[ "VectorDatabaseDownloadDeclined" ]
+                Throw @ declineVectorDBDownload[ ]
             ]
         ];
 
         urls = ConfirmBy[ KeyTake[ urls0, names ], AssociationQ, "URLs" ];
-        ConfirmBy[ downloadAndUnpackVectorDatabases[ dir, urls ], DirectoryQ, "Downloaded" ]
+        ConfirmMatch[ downloadAndUnpackVectorDatabases[ dir, urls ], $$downloadDeclined | _? DirectoryQ, "Downloaded" ]
     ],
     throwInternalFailure
 ];
 
 downloadVectorDatabasesLocked // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*declineVectorDBDownload*)
+(* The prompt already stopped the current chat (see confirmDownloadPrompt), so the declined databases are skipped
+   instead of throwing a failure that would abort it: *)
+declineVectorDBDownload // beginDefinition;
+declineVectorDBDownload[ ] := ($vectorDBDownloadDeclined = True; Missing[ "DownloadDeclined" ]);
+declineVectorDBDownload // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1113,15 +1146,11 @@ downloadAndUnpackVectorDatabases[ dir_String, urls_Association ] := Enclose[
         ConfirmBy[ results, AssociationQ, "Results" ];
         failed = Keys @ Select[ results, ! StringQ @ # & ];
 
-        If[ failed =!= { },
-            If[ MemberQ[ results, Missing[ "Cancelled" ] ],
-                $vectorDBDownloadDeclined = True;
-                throwFailure[ "VectorDatabaseDownloadDeclined" ],
-                throwFailure[ "VectorDatabaseDownloadFailed", StringRiffle[ failed, ", " ] ]
-            ]
-        ];
-
-        dir
+        Which[
+            failed === { }, dir,
+            MemberQ[ results, Missing[ "Cancelled" ] ], declineVectorDBDownload[ ],
+            True, throwFailure[ "VectorDatabaseDownloadFailed", StringRiffle[ failed, ", " ] ]
+        ]
     ],
     throwInternalFailure
 ];
@@ -1477,8 +1506,10 @@ initializeVectorDatabases // endDefinition;
 initializeVectorDatabase // beginDefinition;
 
 initializeVectorDatabase[ name_String, vector_NumericArray ] := Enclose[
-    Module[ { vectorDB },
-        vectorDB = ConfirmMatch[ getVectorDB[ name ][ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
+    Catch @ Module[ { info, vectorDB },
+        info = ConfirmMatch[ getVectorDB @ name, $$downloadDeclined | _Association, "VectorDB" ];
+        If[ MatchQ[ info, $$downloadDeclined ], Throw @ info ];
+        vectorDB = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         ConfirmMatch[
             inVectorDBDirectory @ VectorDatabaseSearch[
                 vectorDB,
@@ -1507,10 +1538,14 @@ getVectorDB[ name_String ] :=
         cached[ "Data" ] /; AssociationQ @ cached && fingerprintMatchQ[ cached[ "Fingerprint" ], loadedIndexFingerprint @ name ]
     ];
 
+(* Returns Missing[ "DownloadDeclined", ... ] for a database that is skipped because its download was declined. That is
+   not cached, so the database can be used once it has been installed. *)
 getVectorDB[ name_String ] := Enclose[
-    Module[ { data },
+    Catch @ Module[ { data },
         If[ KeyExistsQ[ $loadedVectorDBs, name ], clearVectorDBCaches @ name ];
-        data = ConfirmMatch[ Association @ loadVectorDB @ name, $$loadedVectorDB, "VectorDB" ];
+        data = ConfirmMatch[ loadVectorDB @ name, $$downloadDeclined | $$loadedVectorDB, "Loaded" ];
+        If[ MatchQ[ data, $$downloadDeclined ], Throw @ data ];
+        data = ConfirmMatch[ Association @ data, $$loadedVectorDB, "VectorDB" ];
         $loadedVectorDBs[ name ] = <| "Data" -> data, "Fingerprint" -> loadedIndexFingerprint @ name |>;
         data
     ],
@@ -1538,9 +1573,10 @@ loadedIndexFingerprint // endDefinition;
 loadVectorDB // beginDefinition;
 
 loadVectorDB[ name_String ] := Enclose[
-    Module[ { loaded },
+    Catch @ Module[ { root, loaded },
         (* Resolve the directory first so that any download prompts/messages are not suppressed: *)
-        ConfirmBy[ $vectorDBDirectory, DirectoryQ, "RootDirectory" ];
+        root = ConfirmMatch[ $vectorDBDirectory, $$downloadDeclined | _? DirectoryQ, "RootDirectory" ];
+        If[ MatchQ[ root, $$downloadDeclined ], Throw @ root ];
         loaded = Quiet @ catchAlways @ loadVectorDB0 @ name;
         If[ MatchQ[ loaded, $$loadedVectorDB ], loaded, repairVectorDB @ name ]
     ],
@@ -1577,7 +1613,7 @@ loadVectorDB0 // endDefinition;
 repairVectorDB // beginDefinition;
 
 repairVectorDB[ name_String ] := Enclose[
-    Module[ { root, urls },
+    Catch @ Module[ { root, urls, dir },
 
         root = ConfirmBy[ $vectorDBDirectory, DirectoryQ, "RootDirectory" ];
         urls = $vectorDBDownloadURLs;
@@ -1587,19 +1623,24 @@ repairVectorDB[ name_String ] := Enclose[
             throwFailure[ "VectorDatabaseLoadFailed", name ]
         ];
 
+        (* This takes precedence over everything else (e.g. in initializeVectorDatabases), so no prompt is shown: *)
         If[ ! TrueQ @ $allowDownload, Throw[ Missing[ "DownloadDisabled" ], $vdbTag ] ];
-        If[ TrueQ @ $vectorDBDownloadDeclined, Quiet @ throwFailure[ "VectorDatabaseDownloadDeclined" ] ];
+
+        (* Downloads are not offered again after they were declined, so the database is skipped: *)
+        If[ TrueQ @ $vectorDBDownloadDeclined, Throw @ Missing[ "DownloadDeclined", name ] ];
 
         If[ TrueQ @ $promptRedownload && ! confirmRedownload[ "DownloadTypeVectorDatabase", { name }, $vectorDBDownloadSizes @ name ],
-            $vectorDBDownloadDeclined = True;
-            throwFailure[ "VectorDatabaseDownloadDeclined" ]
+            Throw @ declineVectorDBDownload[ ]
         ];
 
         clearVectorDBCaches @ name;
 
-        Block[ { $promptRedownload = False },
-            ConfirmBy[ downloadVectorDatabases[ root, KeyTake[ urls, { name } ] ], DirectoryQ, "Download" ]
+        dir = Block[ { $promptRedownload = False },
+            ConfirmMatch[ downloadVectorDatabases[ root, KeyTake[ urls, { name } ] ], $$downloadDeclined | _? DirectoryQ, "Download" ]
         ];
+
+        (* A retry prompt was declined: *)
+        If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
 
         Replace[
             Quiet @ catchAlways @ loadVectorDB0 @ name,
@@ -1709,13 +1750,17 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] :=
 
 (* Main definition for string prompt: *)
 vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
-    Module[
+    Catch @ Module[
         {
             vectorDBInfo, vectorDB, allValues, embeddingVector, close,
             indices, distances, values, data, result, snippetFunction, instructionsFunction, instructionsPosition
         },
 
-        vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
+        vectorDBInfo    = ConfirmMatch[ getVectorDB @ dbName, $$downloadDeclined | _Association, "VectorDBInfo" ];
+
+        (* A database that is not available because its download was declined is skipped (and not cached): *)
+        If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ declinedSearchResult @ vectorDBInfo ];
+
         vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         allValues       = ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ];
         embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
@@ -1899,8 +1944,9 @@ vectorDBSearch[ dbName: $$dbName, prompts: { ___String }, prop_ ] :=
 
 (* Full list of possible values: *)
 vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
-    Module[ { vectorDBInfo },
-        vectorDBInfo = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDB" ];
+    Catch @ Module[ { vectorDBInfo },
+        vectorDBInfo = ConfirmMatch[ getVectorDB @ dbName, $$downloadDeclined | _Association, "VectorDB" ];
+        If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ { } ];
         ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
     ],
     throwInternalFailure
@@ -1941,6 +1987,20 @@ vectorDBSearch[ All, prompt_, prop_ ] :=
 
 
 vectorDBSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*declinedSearchResult*)
+declinedSearchResult // beginDefinition;
+
+declinedSearchResult[ missing: $$downloadDeclined ] := <|
+    "EmbeddingVector" -> None,
+    "SearchData"      -> missing,
+    "Values"          -> { },
+    "Results"         -> { }
+|>;
+
+declinedSearchResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
