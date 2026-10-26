@@ -365,6 +365,8 @@ autoSelectSources[ prompt_, max_ ] /; max >= Length @ $defaultSources :=
 autoSelectSources[ prompt_, max_Integer? NonNegative ] := Enclose[
     Module[ { values },
         values = ConfirmMatch[ vectorDBSearch[ "SourceSelector", prompt, "Values" ], { ___String }, "Values" ];
+        (* The source selector gives no values if it was skipped (e.g. its download was declined): *)
+        If[ values === { }, values = Take[ $defaultSources, UpTo[ max ] ] ];
         $lastSelectedSources = ConfirmMatch[ toSource /@ Take[ values, UpTo[ max ] ], { ___String }, "Result" ]
     ],
     throwInternalFailure
