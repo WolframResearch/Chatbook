@@ -19,6 +19,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatPost;
 `$ChatPre;
 `$ChatTimingData;
+`$CloudSessionMX;
 `$ContentSuggestions;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;

@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:14.3.0
+      image: wolframresearch/wolframengine:15.0.0
       options: --user root
 
     env:
@@ -61,7 +61,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:14.3.0
+      image: wolframresearch/wolframengine:15.0.0
       options: --user root
 
     env:
@@ -91,8 +91,7 @@ jobs:
         unzip -o /tmp/ResourceSystem.zip -d Assets/Snippets/Streamable/ResourceSystem
 
     - name: Build
-      run: wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false --wolfram-version=15.0+
-      # TODO: Remove this wolfram-version override once 15.0 docker images are available
+      run: wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false
 
     - name: CreateRelease
       env:
