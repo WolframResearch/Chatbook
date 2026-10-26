@@ -54,7 +54,9 @@ the user is away or has agreed to it; otherwise stick to `eval`, `press`, `cells
 `screenshot NB --no-raise` (captures the window in place, also where it is covered, without changing focus; popup menus
 are not included). Mouse commands refuse to click where another application's window covers the point (`--force`
 overrides). While the Windows session is locked, screenshots and input fail with an explanation (`eval`, `press` and
-`screenshot --fe` still work).
+`screenshot --fe` still work). If a system dialog or a service window grabs the foreground, Windows silently discards
+synthetic input; `click`/`type`/`key` then fail naming the window in front instead of pretending it worked (see
+Troubleshooting).
 
 **Memory:** each front end (with its kernels) uses about 1 GB. Run as few as possible at once and stop them promptly;
 running a machine out of memory gets unrelated processes killed, which can take down the user's desktop session.
@@ -227,6 +229,13 @@ LLM call). Don't click the feedback Send button (it posts to Wolfram), sign-in b
   with its double quotes missing: you ran it from PowerShell; use Git Bash, `eval -` or `eval @file.wl`.
 - Windows: *"Windows is not showing this desktop"*: the session is locked (or a UAC prompt is up); ask the user to
   unlock it, or use `eval`/`press`/`screenshot --fe`.
+- Windows: *"Windows discarded the synthetic pointer input"* (or `key`/`type` reporting the focus is in some other
+  window): a more privileged window is holding the foreground, so Windows drops injected mouse and keyboard input while
+  reporting success. The error names that window. A stray key combination can cause it (e.g. a cat on the keyboard
+  tripping the Sticky Keys prompt); a service window (`GameInputSvc`) was also seen holding it. If the named window is
+  a dialog, ask the user to dismiss it (you cannot, since clicks are dropped too). Otherwise keep testing with the
+  commands that need no synthetic input - `eval`, `press` (activates a control by BoxID with no mouse), `--preemptive`
+  reads, and `screenshot NB --no-raise` - until real input at the machine clears it.
 - `snoop` fails or a notebook with a LinkSnooper evaluator never starts evaluating: Java or the kernel did not start;
   look at the end of the LinkSnooper log (`linklog --path`) and of the front end's output
   (`<temp>/ChatbookFrontEndServer-<user>/frontend-<port>.log`; on Windows, Java's own errors may not appear anywhere).

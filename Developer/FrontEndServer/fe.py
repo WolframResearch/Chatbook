@@ -2071,8 +2071,9 @@ def ensure_front_end_focus(server, d, force=False):
         for w in server.fe_windows(d)[0]:
             if focused == w["id"] or top == d.toplevel_frame(w["id"]):
                 return
-    raise CLIError("The keyboard focus is not in this front end's windows, so no keys were sent. Click into the "
-                   "target, use --notebook/--cell, or pass --force.")
+    where = f" (it is in {d.foreground_description()})" if hasattr(d, "foreground_description") else ""
+    raise CLIError(f"The keyboard focus is not in this front end's windows{where}, so no keys were sent. Click into "
+                   "the target, use --notebook/--cell, or pass --force.")
 
 
 def focus_notebook(server, d, ref):

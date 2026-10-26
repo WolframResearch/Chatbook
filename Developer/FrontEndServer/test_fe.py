@@ -178,6 +178,35 @@ def many_requests(r):
     expect(r.eval("1 + 1"), "2")
 
 
+def windows_input_block_detection():
+    """On Windows, synthetic input is silently discarded while a window of a more privileged process is in front
+    (seen with the GameInputSvc system service). fe_win32 detects that the pointer did not move and fails with an
+    explanation, instead of reporting a click that never happened. Simulated here by making SetCursorPos fail."""
+    sys.path.insert(0, HERE)
+    import fe_win32
+    d = fe_win32.Display()
+
+    # foreground_description names the foreground window's process, which the error relies on:
+    description = d.foreground_description()
+    expect(isinstance(description, str) and "pid" in description, True)
+    # This process's own integrity level is readable and is a known level:
+    expect(fe_win32._integrity_level(os.getpid()) in ("system", "high", "medium", "low", "untrusted"), True)
+
+    original = fe_win32.user32.SetCursorPos
+    try:
+        fe_win32.user32.SetCursorPos = lambda x, y: 0  # as when Windows discards the input
+        d.pointer = lambda: (-999, -999)  # the pointer never reaches the target
+        try:
+            d.move(d.left + 10, d.top + 10)
+        except fe_win32.InputBlockedError as e:
+            expect("discarded the synthetic pointer input" in str(e), True)
+            expect("press" in str(e), True)  # points at the commands that still work
+        else:
+            raise AssertionError("move did not detect the discarded input")
+    finally:
+        fe_win32.user32.SetCursorPos = original
+
+
 def unattributed_error(r):
     """An error that the server sends without a request id (here for invalid JSON) fails the request in flight at once,
     and the Server object stays usable."""
@@ -229,6 +258,8 @@ def run_tests(r, launched=False):
     r.test("wait for idle", lambda: (r.fe("eval", "--cell", "--no-wait", "Pause[2]"), r.fe("wait")))
     r.test("many requests on one connection", lambda: many_requests(r))
     r.test("errors without a request id", lambda: unattributed_error(r))
+    if sys.platform.startswith("win"):
+        r.test("Windows input-block detection", lambda: windows_input_block_detection())
 
     r.eval(TEST_NOTEBOOK)
     time.sleep(1)
