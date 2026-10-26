@@ -76,10 +76,44 @@ VerificationTest[
 ]
 
 VerificationTest[
+    Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ {
+        <| "CellObject" -> CellObject[ "first" ], "CursorPosition" -> "AboveCell" |>,
+        <| "CellObject" -> CellObject[ "second" ], "CursorPosition" -> None |>
+    },
+    <| "Before" -> { }, "Selected" -> { }, "After" -> { CellObject[ "first" ], CellObject[ "second" ] } |>,
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextCells-AboveCellIncludesFirstCell@@Tests/Context.wlt:78,1-86,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb1, nb2, settings, context1, context2 },
+        WithCleanup[
+            nb1 = NotebookPut @ Notebook @ { Cell[ "Project codename: SILVERFISH", "Text" ] };
+            nb2 = NotebookPut @ Notebook @ {
+                Cell[ "Project codename: GOLDFISH", "Text" ],
+                Cell[ "Second cell CATFISH", "Text" ]
+            };
+            settings = AbsoluteCurrentChatSettings @ nb1;
+            context1 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb1, settings ];
+            context2 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb2, settings ];
+            {
+                StringQ @ context1 && StringContainsQ[ context1, "SILVERFISH" ],
+                StringQ @ context2 && StringContainsQ[ context2, "GOLDFISH" ],
+                StringQ @ context2 && StringContainsQ[ context2, "CATFISH" ]
+            },
+            NotebookClose /@ { nb1, nb2 }
+        ]
+    ],
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-AboveFirstCell@@Tests/Context.wlt:88,1-110,2"
+]
+
+VerificationTest[
     Wolfram`Chatbook`Common`chatExcludedQ @ Cell[ "Text", "Text", TaggingRules -> "unexpected" ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:78,1-83,2"
+    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:112,1-117,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -614,7 +614,7 @@ selectContextCells[ cells: { __CellObject } ] :=
     selectContextCells @ cellInformation @ cells;
 
 selectContextCells[ { a: KeyValuePattern[ "CursorPosition" -> "AboveCell" ], after___ } ] :=
-    selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> { after } |>;
+    selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> { a, after } |>;
 
 selectContextCells[ { before___, a: KeyValuePattern[ "CursorPosition" -> "BelowCell" ], after___ } ] :=
     selectContextCells0 @ <| "Before" -> { before, a }, "Selected" -> { }, "After" -> { after } |>;
