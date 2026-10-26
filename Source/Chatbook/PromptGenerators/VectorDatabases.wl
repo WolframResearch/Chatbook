@@ -952,7 +952,7 @@ validateVectorDBFiles[ dir_String, name_String, version_String ] := Enclose[
         { length, dim } = ConfirmMatch[ info[ "Dimensions" ], { _Integer, _Integer }, "Dimensions" ];
         ConfirmAssert[ dim === $embeddingDimension, "EmbeddingDimension" ];
         values = ConfirmMatch[
-            Quiet @ catchAlways @ toVectorDatabaseValues @ Developer`ReadWXFFile @ FileNameJoin @ { dir, "Values.wxf" },
+            catchQuiet @ toVectorDatabaseValues @ Developer`ReadWXFFile @ FileNameJoin @ { dir, "Values.wxf" },
             { ___String },
             "Values"
         ];
@@ -1080,7 +1080,7 @@ downloadVectorDatabasesLocked[ dir_String, urls0_Association ] := Enclose[
         cleanupPartialDownloads @ dir;
 
         (* Try unpacking any complete zip files that might be left over from previous install attempts: *)
-        Quiet @ catchAlways @ tryUnpackingVectorDatabases @ dir;
+        catchQuiet @ tryUnpackingVectorDatabases @ dir;
 
         (* Another kernel may have finished installing while we were waiting for the lock: *)
         names = Select[ Keys @ urls0, ! vectorDBDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
@@ -1353,7 +1353,7 @@ tryUnpackingVectorDatabase // beginDefinition;
 tryUnpackingVectorDatabase[ zip_? FileExistsQ ] :=
     Quiet @ With[ { name = FileBaseName @ zip },
         If[ vectorDBNameQ @ name && validDownloadSizeQ[ FileByteCount @ zip, $vectorDBDownloadSizes @ name, None ] && validDownloadHashQ[ name, zip ],
-            With[ { res = catchAlways @ unpackVectorDatabase @ zip },
+            With[ { res = catchQuiet @ unpackVectorDatabase @ zip },
                 If[ ! DirectoryQ @ res, DeleteFile @ zip ];
                 res
             ],
@@ -1577,7 +1577,7 @@ loadVectorDB[ name_String ] := Enclose[
         (* Resolve the directory first so that any download prompts/messages are not suppressed: *)
         root = ConfirmMatch[ $vectorDBDirectory, $$downloadDeclined | _? DirectoryQ, "RootDirectory" ];
         If[ MatchQ[ root, $$downloadDeclined ], Throw @ root ];
-        loaded = Quiet @ catchAlways @ loadVectorDB0 @ name;
+        loaded = catchQuiet @ loadVectorDB0 @ name;
         If[ MatchQ[ loaded, $$loadedVectorDB ], loaded, repairVectorDB @ name ]
     ],
     throwInternalFailure
@@ -1643,7 +1643,7 @@ repairVectorDB[ name_String ] := Enclose[
         If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
 
         Replace[
-            Quiet @ catchAlways @ loadVectorDB0 @ name,
+            catchQuiet @ loadVectorDB0 @ name,
             Except[ $$loadedVectorDB ] :> throwFailure[ "VectorDatabaseLoadFailed", name ]
         ]
     ],

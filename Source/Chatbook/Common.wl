@@ -69,6 +69,7 @@ System`HoldCompleteForm;
 `beginDefinition;
 `catchAlways;
 `catchMine;
+`catchQuiet;
 `catchTop;
 `catchTopAs;
 `cloudShrinkToFit;
@@ -645,6 +646,16 @@ catchAlways // Attributes = { HoldFirst };
 catchAlways[ eval_ ] := catchAlways[ eval, Chatbook ];
 catchAlways[ eval_, sym_Symbol ] := Catch[ catchTop[ eval, sym ], $catchTopTag ];
 catchAlways // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*catchQuiet*)
+(* Like Quiet @ catchAlways @ eval, but a failure that is caught here does not count as a failure of the enclosing
+   catchTop. Otherwise, the messages of any later failures in that catchTop would be silenced too. *)
+catchQuiet // beginDefinition;
+catchQuiet // Attributes = { HoldFirst };
+catchQuiet[ eval_ ] := Block[ { $failed = TrueQ @ $failed }, Quiet @ catchAlways @ eval ];
+catchQuiet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

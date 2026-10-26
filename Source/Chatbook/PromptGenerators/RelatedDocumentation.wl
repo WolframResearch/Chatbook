@@ -1409,7 +1409,7 @@ streamableSnippetsDirectoryQ // endDefinition;
 streamableSnippetsDirectoryQ0 // beginDefinition;
 
 streamableSnippetsDirectoryQ0[ dir_? DirectoryQ ] :=
-    AssociationQ @ Quiet @ catchAlways @ getStreamableSnippetsMetadata @ File @ dir;
+    AssociationQ @ catchQuiet @ getStreamableSnippetsMetadata @ File @ dir;
 
 streamableSnippetsDirectoryQ0[ _ ] := False;
 

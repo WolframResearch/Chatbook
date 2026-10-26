@@ -139,7 +139,7 @@ stopChatOnCancel // beginDefinition;
 
 stopChatOnCancel[ ] :=
     If[ MatchQ[ $ChatEvaluationCell, _CellObject ],
-        Quiet @ catchAlways @ StopChat[ ];
+        catchQuiet @ StopChat[ ];
     ];
 
 stopChatOnCancel // endDefinition;

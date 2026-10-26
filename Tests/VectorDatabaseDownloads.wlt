@@ -599,13 +599,48 @@ VerificationTest[
     TestID   -> "Declined-InstallReturnsFailure-GH#1612@@Tests/VectorDatabaseDownloads.wlt:589,1-600,2"
 ]
 
+(* A load failure that is caught quietly does not silence the messages of later failures in the same chat: *)
+VerificationTest[
+    Module[ { other },
+        other = CreateDirectory[ ];
+        WithCleanup[
+            Block[
+                {
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory      = $root,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$localVectorDBDirectory = other,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs        = <| |>
+                },
+                (* The index is damaged, and a database that is not in the local directory can't be repaired: *)
+                truncateIndex[ ];
+                Wolfram`Chatbook`Common`catchTop @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB @ $name
+            ],
+            DeleteDirectory[ other, DeleteContents -> True ]
+        ]
+    ],
+    Failure[ "Chatbook::VectorDatabaseLoadFailed", _ ],
+    { Chatbook::VectorDatabaseLoadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "LoadVectorDB-FailureMessageNotSilenced-GH#1612@@Tests/VectorDatabaseDownloads.wlt:603,1-624,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`catchTop[
+        Wolfram`Chatbook`Common`catchQuiet @ Wolfram`Chatbook`Common`throwInternalFailure @ "quiet";
+        Wolfram`Chatbook`Common`throwFailure[ "VectorDatabaseDownloadFailed", "test" ]
+    ],
+    Failure[ "Chatbook::VectorDatabaseDownloadFailed", _ ],
+    { Chatbook::VectorDatabaseDownloadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "CatchQuiet-DoesNotSilenceLaterMessages-GH#1612@@Tests/VectorDatabaseDownloads.wlt:626,1-635,2"
+]
+
 VerificationTest[
     $prompts = { };
     Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined = False }, withPrompt[ True, download @ $name ] ];
     { Length @ $prompts, validQ[ ] },
     { 1, True },
     SameTest -> MatchQ,
-    TestID   -> "Declined-Repaired-GH#1612@@Tests/VectorDatabaseDownloads.wlt:602,1-609,2"
+    TestID   -> "Declined-Repaired-GH#1612@@Tests/VectorDatabaseDownloads.wlt:637,1-644,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -635,7 +670,7 @@ VerificationTest[
     Developer`ReadWXFFile @ FileNameJoin @ { dbDir[ ], "Manifest.wxf" },
     KeyValuePattern[ "IndexFingerprint" -> { 4401488, { __? NumberQ } } ],
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-Recorded@@Tests/VectorDatabaseDownloads.wlt:634,1-639,2"
+    TestID   -> "IndexFingerprint-Recorded@@Tests/VectorDatabaseDownloads.wlt:669,1-674,2"
 ]
 
 VerificationTest[
@@ -650,7 +685,7 @@ VerificationTest[
     ],
     { True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "SameSizeCorruption-Detected@@Tests/VectorDatabaseDownloads.wlt:641,1-654,2"
+    TestID   -> "SameSizeCorruption-Detected@@Tests/VectorDatabaseDownloads.wlt:676,1-689,2"
 ]
 
 VerificationTest[
@@ -659,7 +694,7 @@ VerificationTest[
     { Length @ $prompts, validQ[ ] },
     { 1, True },
     SameTest -> MatchQ,
-    TestID   -> "SameSizeCorruption-Repaired@@Tests/VectorDatabaseDownloads.wlt:656,1-663,2"
+    TestID   -> "SameSizeCorruption-Repaired@@Tests/VectorDatabaseDownloads.wlt:691,1-698,2"
 ]
 
 VerificationTest[
@@ -673,7 +708,7 @@ VerificationTest[
     ],
     { False, 0 },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-TouchedNotHashedByDefault@@Tests/VectorDatabaseDownloads.wlt:665,1-677,2"
+    TestID   -> "IndexFingerprint-TouchedNotHashedByDefault@@Tests/VectorDatabaseDownloads.wlt:700,1-712,2"
 ]
 
 VerificationTest[
@@ -693,7 +728,7 @@ VerificationTest[
     ],
     { True, 1, True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-TouchedButIntact@@Tests/VectorDatabaseDownloads.wlt:679,1-697,2"
+    TestID   -> "IndexFingerprint-TouchedButIntact@@Tests/VectorDatabaseDownloads.wlt:714,1-732,2"
 ]
 
 VerificationTest[
@@ -707,7 +742,7 @@ VerificationTest[
     ],
     { True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-TimeZoneChangeNotHashed@@Tests/VectorDatabaseDownloads.wlt:699,1-711,2"
+    TestID   -> "IndexFingerprint-TimeZoneChangeNotHashed@@Tests/VectorDatabaseDownloads.wlt:734,1-746,2"
 ]
 
 VerificationTest[
@@ -724,7 +759,7 @@ VerificationTest[
     },
     { True, True, True, False, False, False, False, False, True },
     SameTest -> MatchQ,
-    TestID   -> "FingerprintMatchQ@@Tests/VectorDatabaseDownloads.wlt:713,1-728,2"
+    TestID   -> "FingerprintMatchQ@@Tests/VectorDatabaseDownloads.wlt:748,1-763,2"
 ]
 
 VerificationTest[
@@ -737,7 +772,7 @@ VerificationTest[
     ],
     { True, 0, True },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-LegacyInstallSameDatesAdopted@@Tests/VectorDatabaseDownloads.wlt:730,1-741,2"
+    TestID   -> "IndexFingerprint-LegacyInstallSameDatesAdopted@@Tests/VectorDatabaseDownloads.wlt:765,1-776,2"
 ]
 
 VerificationTest[
@@ -751,7 +786,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-LegacyInstallAdopted@@Tests/VectorDatabaseDownloads.wlt:743,1-755,2"
+    TestID   -> "IndexFingerprint-LegacyInstallAdopted@@Tests/VectorDatabaseDownloads.wlt:778,1-790,2"
 ]
 
 VerificationTest[
@@ -765,7 +800,7 @@ VerificationTest[
     ],
     { False, 0, False },
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-LegacyInstallModifiedRejected@@Tests/VectorDatabaseDownloads.wlt:757,1-769,2"
+    TestID   -> "IndexFingerprint-LegacyInstallModifiedRejected@@Tests/VectorDatabaseDownloads.wlt:792,1-804,2"
 ]
 
 VerificationTest[
@@ -773,7 +808,7 @@ VerificationTest[
     validQ[ ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "IndexFingerprint-LegacyInstallModifiedRepaired@@Tests/VectorDatabaseDownloads.wlt:771,1-777,2"
+    TestID   -> "IndexFingerprint-LegacyInstallModifiedRepaired@@Tests/VectorDatabaseDownloads.wlt:806,1-812,2"
 ]
 
 VerificationTest[
@@ -794,7 +829,7 @@ VerificationTest[
     ],
     { True, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "VerifyIndexHashes-HashesOncePerSession@@Tests/VectorDatabaseDownloads.wlt:779,1-798,2"
+    TestID   -> "VerifyIndexHashes-HashesOncePerSession@@Tests/VectorDatabaseDownloads.wlt:814,1-833,2"
 ]
 
 VerificationTest[
@@ -814,14 +849,14 @@ VerificationTest[
     ],
     0,
     SameTest -> MatchQ,
-    TestID   -> "GetVectorDB-NeverHashes@@Tests/VectorDatabaseDownloads.wlt:800,1-818,2"
+    TestID   -> "GetVectorDB-NeverHashes@@Tests/VectorDatabaseDownloads.wlt:835,1-853,2"
 ]
 
 VerificationTest[
     Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowIndexHashing = True }, validQ[ ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "GetVectorDB-NeverHashes-Restore@@Tests/VectorDatabaseDownloads.wlt:820,1-825,2"
+    TestID   -> "GetVectorDB-NeverHashes-Restore@@Tests/VectorDatabaseDownloads.wlt:855,1-860,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -848,7 +883,7 @@ VerificationTest[
     ],
     { True, True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "GetVectorDB-CachedWhileUnchanged@@Tests/VectorDatabaseDownloads.wlt:830,1-852,2"
+    TestID   -> "GetVectorDB-CachedWhileUnchanged@@Tests/VectorDatabaseDownloads.wlt:865,1-887,2"
 ]
 
 VerificationTest[
@@ -870,7 +905,7 @@ VerificationTest[
     ],
     { True, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "GetVectorDB-RevalidatesAfterCorruption@@Tests/VectorDatabaseDownloads.wlt:854,1-874,2"
+    TestID   -> "GetVectorDB-RevalidatesAfterCorruption@@Tests/VectorDatabaseDownloads.wlt:889,1-909,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -896,7 +931,7 @@ VerificationTest[
     ],
     { "acquired", False },
     SameTest -> MatchQ,
-    TestID   -> "DownloadLock-BreaksStaleLock@@Tests/VectorDatabaseDownloads.wlt:879,1-900,2"
+    TestID   -> "DownloadLock-BreaksStaleLock@@Tests/VectorDatabaseDownloads.wlt:914,1-935,2"
 ]
 
 VerificationTest[
@@ -921,7 +956,7 @@ VerificationTest[
     ],
     { "waiting", True },
     SameTest -> MatchQ,
-    TestID   -> "DownloadLock-WaitsForLiveLock@@Tests/VectorDatabaseDownloads.wlt:902,1-925,2"
+    TestID   -> "DownloadLock-WaitsForLiveLock@@Tests/VectorDatabaseDownloads.wlt:937,1-960,2"
 ]
 
 VerificationTest[
@@ -933,7 +968,7 @@ VerificationTest[
     ],
     { "thrown", False },
     SameTest -> MatchQ,
-    TestID   -> "DownloadLock-ReleasedOnThrow@@Tests/VectorDatabaseDownloads.wlt:927,1-937,2"
+    TestID   -> "DownloadLock-ReleasedOnThrow@@Tests/VectorDatabaseDownloads.wlt:962,1-972,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -949,7 +984,7 @@ VerificationTest[
     ],
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "PacletVectorDBDirectoryQ-PathComponents@@Tests/VectorDatabaseDownloads.wlt:942,1-953,2"
+    TestID   -> "PacletVectorDBDirectoryQ-PathComponents@@Tests/VectorDatabaseDownloads.wlt:977,1-988,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -967,7 +1002,7 @@ VerificationTest[
     ],
     { 1, False, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "StaleTmp-PromptsCleansAndReinstalls@@Tests/VectorDatabaseDownloads.wlt:958,1-971,2"
+    TestID   -> "StaleTmp-PromptsCleansAndReinstalls@@Tests/VectorDatabaseDownloads.wlt:993,1-1006,2"
 ]
 
 VerificationTest[
@@ -979,7 +1014,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "FreshTmp-NotDeleted@@Tests/VectorDatabaseDownloads.wlt:973,1-983,2"
+    TestID   -> "FreshTmp-NotDeleted@@Tests/VectorDatabaseDownloads.wlt:1008,1-1018,2"
 ]
 
 VerificationTest[
@@ -992,7 +1027,7 @@ VerificationTest[
     ],
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "InterruptedSwap-RestoresVectorDBBackup@@Tests/VectorDatabaseDownloads.wlt:985,1-996,2"
+    TestID   -> "InterruptedSwap-RestoresVectorDBBackup@@Tests/VectorDatabaseDownloads.wlt:1020,1-1031,2"
 ]
 
 VerificationTest[
@@ -1005,7 +1040,7 @@ VerificationTest[
     ],
     { Missing[ "InvalidArchive", _ ], False, True, Null },
     SameTest -> MatchQ,
-    TestID   -> "TruncatedLeftoverZip-Rejected@@Tests/VectorDatabaseDownloads.wlt:998,1-1009,2"
+    TestID   -> "TruncatedLeftoverZip-Rejected@@Tests/VectorDatabaseDownloads.wlt:1033,1-1044,2"
 ]
 
 VerificationTest[
@@ -1017,7 +1052,7 @@ VerificationTest[
     ],
     { _String? DirectoryQ, False, True },
     SameTest -> MatchQ,
-    TestID   -> "CompleteLeftoverZip-Unpacked@@Tests/VectorDatabaseDownloads.wlt:1011,1-1021,2"
+    TestID   -> "CompleteLeftoverZip-Unpacked@@Tests/VectorDatabaseDownloads.wlt:1046,1-1056,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1038,7 +1073,7 @@ VerificationTest[
     ],
     { Failure[ "Chatbook::VectorDatabaseDownloadFailed", _ ], { }, False },
     SameTest -> MatchQ,
-    TestID   -> "FailedDownload-RetriedAndClean@@Tests/VectorDatabaseDownloads.wlt:1026,1-1042,2"
+    TestID   -> "FailedDownload-RetriedAndClean@@Tests/VectorDatabaseDownloads.wlt:1061,1-1077,2"
 ]
 
 (* A declined retry is remembered, so the next search does not start the download again: *)
@@ -1070,7 +1105,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "Declined-RetryNotStartedAgain-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1045,1-1074,2"
+    TestID   -> "Declined-RetryNotStartedAgain-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1080,1-1109,2"
 ]
 
 VerificationTest[
@@ -1083,7 +1118,7 @@ VerificationTest[
     },
     { True, False, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "ValidDownloadSizeQ@@Tests/VectorDatabaseDownloads.wlt:1076,1-1087,2"
+    TestID   -> "ValidDownloadSizeQ@@Tests/VectorDatabaseDownloads.wlt:1111,1-1122,2"
 ]
 
 VerificationTest[
@@ -1096,7 +1131,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ValidDownloadHashQ-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1089,1-1100,2"
+    TestID   -> "ValidDownloadHashQ-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1124,1-1135,2"
 ]
 
 VerificationTest[
@@ -1106,14 +1141,14 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "VectorDBIndexSize-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1102,1-1110,2"
+    TestID   -> "VectorDBIndexSize-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1137,1-1145,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`downloadURL[ <| "CDN" -> "a", "Cloud" -> "b" |>, # ] & /@ { 1, 2, 3 },
     { "a", "b", "a" },
     SameTest -> MatchQ,
-    TestID   -> "DownloadURL-Alternates@@Tests/VectorDatabaseDownloads.wlt:1112,1-1117,2"
+    TestID   -> "DownloadURL-Alternates@@Tests/VectorDatabaseDownloads.wlt:1147,1-1152,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1129,7 +1164,7 @@ VerificationTest[
     ],
     Missing[ "Cancelled" ],
     SameTest -> MatchQ,
-    TestID   -> "Snippets-CancelledQueueItemDoesNotDownload@@Tests/VectorDatabaseDownloads.wlt:1122,1-1133,2"
+    TestID   -> "Snippets-CancelledQueueItemDoesNotDownload@@Tests/VectorDatabaseDownloads.wlt:1157,1-1168,2"
 ]
 
 VerificationTest[
@@ -1138,14 +1173,14 @@ VerificationTest[
     withPrompt[ False, Quiet @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`downloadStreamableSnippets[ $snipRoot, "ResourceSystem" ] ],
     _String? DirectoryQ,
     SameTest -> MatchQ,
-    TestID   -> "Snippets-FreshInstall@@Tests/VectorDatabaseDownloads.wlt:1135,1-1142,2"
+    TestID   -> "Snippets-FreshInstall@@Tests/VectorDatabaseDownloads.wlt:1170,1-1177,2"
 ]
 
 VerificationTest[
     { $prompts, Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`streamableSnippetsDirectoryQ0[ FileNameJoin @ { $snipRoot, "ResourceSystem" } ], FileNames[ "*.staging", $snipRoot ] },
     { { }, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-FreshInstall-Valid@@Tests/VectorDatabaseDownloads.wlt:1144,1-1149,2"
+    TestID   -> "Snippets-FreshInstall-Valid@@Tests/VectorDatabaseDownloads.wlt:1179,1-1184,2"
 ]
 
 VerificationTest[
@@ -1157,7 +1192,7 @@ VerificationTest[
     ],
     { False, True },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Truncated-Detected@@Tests/VectorDatabaseDownloads.wlt:1151,1-1161,2"
+    TestID   -> "Snippets-Truncated-Detected@@Tests/VectorDatabaseDownloads.wlt:1186,1-1196,2"
 ]
 
 VerificationTest[
@@ -1188,7 +1223,7 @@ VerificationTest[
     ],
     { True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-InvalidArchiveRejected@@Tests/VectorDatabaseDownloads.wlt:1163,1-1192,2"
+    TestID   -> "Snippets-InvalidArchiveRejected@@Tests/VectorDatabaseDownloads.wlt:1198,1-1227,2"
 ]
 
 VerificationTest[
@@ -1201,7 +1236,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Snippets-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1194,1-1205,2"
+    TestID   -> "Snippets-MetadataRequired@@Tests/VectorDatabaseDownloads.wlt:1229,1-1240,2"
 ]
 
 VerificationTest[
@@ -1215,7 +1250,7 @@ VerificationTest[
     ],
     { "aborted", { } },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-AbortCleansTemporaryFile@@Tests/VectorDatabaseDownloads.wlt:1207,1-1219,2"
+    TestID   -> "Snippets-AbortCleansTemporaryFile@@Tests/VectorDatabaseDownloads.wlt:1242,1-1254,2"
 ]
 
 VerificationTest[
@@ -1228,7 +1263,7 @@ VerificationTest[
     Except[ KeyValuePattern[ "Stale" -> True ] ],
     {},
     SameTest -> MatchQ,
-    TestID   -> "Snippets-InstallClearsIndexCache@@Tests/VectorDatabaseDownloads.wlt:1221,1-1232,2"
+    TestID   -> "Snippets-InstallClearsIndexCache@@Tests/VectorDatabaseDownloads.wlt:1256,1-1267,2"
 ]
 
 VerificationTest[
@@ -1245,7 +1280,7 @@ VerificationTest[
     ],
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-InterruptedSwap-RestoresBackup@@Tests/VectorDatabaseDownloads.wlt:1234,1-1249,2"
+    TestID   -> "Snippets-InterruptedSwap-RestoresBackup@@Tests/VectorDatabaseDownloads.wlt:1269,1-1284,2"
 ]
 
 (* Evaluates eval as if the ResourceSystem snippets in $snipRoot were the only snippets, installed in the local
@@ -1300,7 +1335,7 @@ VerificationTest[
     ],
     { { { "" }, { "" }, { "" } }, 1, 1, True, $snipRoot },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Declined-LaterLookupsSkip-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1272,1-1304,2"
+    TestID   -> "Snippets-Declined-LaterLookupsSkip-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1307,1-1339,2"
 ]
 
 VerificationTest[
@@ -1310,7 +1345,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDeclined" ], { } },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Declined-DownloadNotOfferedAgain-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1306,1-1314,2"
+    TestID   -> "Snippets-Declined-DownloadNotOfferedAgain-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1341,1-1349,2"
 ]
 
 (* No prompt is shown when downloads are not allowed (e.g. in the Notebook Assistant's warm-up): *)
@@ -1334,7 +1369,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDisabled" ], { } },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Declined-AllowDownloadWins-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1317,1-1338,2"
+    TestID   -> "Snippets-Declined-AllowDownloadWins-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1352,1-1373,2"
 ]
 
 VerificationTest[
@@ -1356,7 +1391,7 @@ VerificationTest[
     ],
     { Success[ "Stub", <| |> ], False, False },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Declined-InstallClearsFlag-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1340,1-1360,2"
+    TestID   -> "Snippets-Declined-InstallClearsFlag-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1375,1-1395,2"
 ]
 
 VerificationTest[
@@ -1369,7 +1404,19 @@ VerificationTest[
     Failure[ _String? (StringEndsQ[ "SnippetDownloadDeclined" ]), _ ],
     { Wolfram`Chatbook`InstallDocumentationResources::SnippetDownloadDeclined },
     SameTest -> MatchQ,
-    TestID   -> "Snippets-Declined-InstallReturnsFailure-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1362,1-1373,2"
+    TestID   -> "Snippets-Declined-InstallReturnsFailure-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1397,1-1408,2"
+]
+
+(* Checking a damaged snippet directory does not silence the messages of later failures in the same chat: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`catchTop[
+        Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`streamableSnippetsDirectoryQ0 @ FileNameJoin @ { $snipRoot, "ResourceSystem" };
+        Wolfram`Chatbook`Common`throwFailure[ "SnippetDownloadFailed", "ResourceSystem" ]
+    ],
+    Failure[ "Chatbook::SnippetDownloadFailed", _ ],
+    { Chatbook::SnippetDownloadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "Snippets-DamagedCheckDoesNotSilenceMessages-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1411,1-1420,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1410,35 +1457,35 @@ VerificationTest[
     Length @ $textResourceFiles,
     7,
     SameTest -> MatchQ,
-    TestID   -> "TextResources-Files@@Tests/VectorDatabaseDownloads.wlt:1403,1-1414,2"
+    TestID   -> "TextResources-Files@@Tests/VectorDatabaseDownloads.wlt:1450,1-1461,2"
 ]
 
 VerificationTest[
     Union @ Flatten @ Values @ Map[ Complement[ $downloadTextKeys, Keys @ # ] &, $textResources ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-AllKeysPresent@@Tests/VectorDatabaseDownloads.wlt:1416,1-1421,2"
+    TestID   -> "TextResources-AllKeysPresent@@Tests/VectorDatabaseDownloads.wlt:1463,1-1468,2"
 ]
 
 VerificationTest[
     CountDistinct[ Lookup[ #, $downloadTextKeys ] & /@ Values @ $textResources ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "TextResources-EnglishPlaceholders@@Tests/VectorDatabaseDownloads.wlt:1423,1-1428,2"
+    TestID   -> "TextResources-EnglishPlaceholders@@Tests/VectorDatabaseDownloads.wlt:1470,1-1475,2"
 ]
 
 VerificationTest[
     CountDistinct @ Map[ Take[ Keys @ #, -Length @ $downloadTextKeys ] &, Values @ $textResources ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "TextResources-SameRelativeLocation@@Tests/VectorDatabaseDownloads.wlt:1430,1-1435,2"
+    TestID   -> "TextResources-SameRelativeLocation@@Tests/VectorDatabaseDownloads.wlt:1477,1-1482,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`PromptGenerators`Common`downloadText /@ $downloadTextKeys,
     Lookup[ readTextResources @ SelectFirst[ $textResourceFiles, StringEndsQ[ "TextResources" <> $PathnameSeparator <> "ChatbookStrings.tr" ] ], $downloadTextKeys ],
     SameTest -> MatchQ,
-    TestID   -> "TextResources-HeadlessLookup@@Tests/VectorDatabaseDownloads.wlt:1437,1-1442,2"
+    TestID   -> "TextResources-HeadlessLookup@@Tests/VectorDatabaseDownloads.wlt:1484,1-1489,2"
 ]
 
 VerificationTest[
@@ -1451,7 +1498,7 @@ VerificationTest[
     },
     { "370 MB", "2.5 GB", "an unknown size", "45 seconds", "10 minutes" },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-Formatting@@Tests/VectorDatabaseDownloads.wlt:1444,1-1455,2"
+    TestID   -> "TextResources-Formatting@@Tests/VectorDatabaseDownloads.wlt:1491,1-1502,2"
 ]
 
 (* Download text never uses a front end in a headless kernel, even for prompts (a front end launched by UsingFrontEnd
@@ -1484,7 +1531,7 @@ VerificationTest[
         0
     },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-NoFrontEnd-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1459,1-1488,2"
+    TestID   -> "TextResources-NoFrontEnd-GH#1612@@Tests/VectorDatabaseDownloads.wlt:1506,1-1535,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1494,7 +1541,7 @@ VerificationTest[
     Quiet[ DeleteDirectory[ #, DeleteContents -> True ] & /@ { $root, $snipRoot } ],
     { Null, Null },
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/VectorDatabaseDownloads.wlt:1493,1-1498,2"
+    TestID   -> "Cleanup@@Tests/VectorDatabaseDownloads.wlt:1540,1-1545,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
