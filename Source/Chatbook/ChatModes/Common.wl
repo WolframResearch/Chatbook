@@ -20,12 +20,14 @@ HoldComplete[
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,
+    `saveWorkspaceChatInput,
     `scrollInlineChat,
     `sidebarCellObject,
     `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
-    `validInputStringQ
+    `validInputStringQ,
+    `workspaceChatInput
 ];
 
 EndPackage[ ];
