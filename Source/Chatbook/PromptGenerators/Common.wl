@@ -15,6 +15,8 @@ HoldComplete[
     `confirmDownloadPrompt,
     `confirmDownloadRetry,
     `confirmRedownload,
+    `downloadText,
+    `downloadTextTemplate,
     `estimateDownloadTime,
     `formatByteCount,
     `getNamedSnippet,
@@ -57,21 +59,72 @@ $staleLockFileAge         = 60;
 $downloadPromptFunction := defaultDownloadPrompt;
 $downloadDialogWidth     = 480;
 
-$downloadPromptAllowed := TrueQ @ And[ ! TrueQ @ $CloudEvaluation, TrueQ @ $Notebooks, TrueQ @ $dialogInputAllowed ];
+(* Download prompts are only shown by a front end that can show dialogs: *)
+$downloadPromptAllowed := TrueQ @ And[
+    ! TrueQ @ $CloudEvaluation,
+    TrueQ @ $Notebooks,
+    TrueQ @ $dialogInputAllowed,
+    ! headlessFrontEndQ[ ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*headlessFrontEndQ*)
+(* True inside UsingFrontEnd in a headless kernel (e.g. in scripts or CI). $Notebooks is True there, but that front end
+   has no windows, so ChoiceDialog fails (ChoiceDialog::ninit), and it resolves text resources from the installed
+   Chatbook paclet: *)
+headlessFrontEndQ // beginDefinition;
+headlessFrontEndQ[ ] := headlessFrontEndQ[ $FrontEnd, System`UseFrontEndDump`$felink ];
+headlessFrontEndQ[ FrontEndObject[ link_LinkObject ], link_LinkObject ] := True;
+headlessFrontEndQ[ _, _ ] := False;
+headlessFrontEndQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*downloadText*)
+(* Text for download prompts and progress. A front end that can show the prompts also provides the translated text.
+   Otherwise the text comes from this paclet's own text resources, since trRaw would launch a front end in a headless
+   kernel, and that front end looks up the text in the installed Chatbook paclet: *)
+downloadText // beginDefinition;
+
+downloadText[ name_String ] /; $downloadPromptAllowed && MatchQ[ $FrontEnd, _FrontEndObject ] :=
+    Replace[ Quiet @ FrontEndResource[ "ChatbookStrings", name ], Except[ _String ] :> trPaclet @ name ];
+
+downloadText[ name_String ] :=
+    trPaclet @ name;
+
+downloadText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadTextTemplate*)
+downloadTextTemplate // beginDefinition;
+downloadTextTemplate[ name_String ] := StringTemplate @ downloadText @ name;
+downloadTextTemplate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*confirmDownloadPrompt*)
+(* The message is only evaluated if the prompt is shown. Only an explicit "Cancel" declines the download: if the prompt
+   could not be shown (e.g. ChoiceDialog returned $Failed), the download proceeds as it does without a front end. *)
 confirmDownloadPrompt // beginDefinition;
-confirmDownloadPrompt[ message_String ] /; ! $downloadPromptAllowed := True;
+confirmDownloadPrompt // Attributes = { HoldFirst };
 
-confirmDownloadPrompt[ message_String ] :=
-    With[ { confirmed = TrueQ @ $downloadPromptFunction @ message },
-        If[ ! confirmed, stopChatOnCancel[ ] ];
-        confirmed
-    ];
+confirmDownloadPrompt[ message_ ] /; ! $downloadPromptAllowed := True;
+
+confirmDownloadPrompt[ message_ ] :=
+    downloadPromptResult @ Quiet[ $downloadPromptFunction @ message, ChoiceDialog::ninit ];
 
 confirmDownloadPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadPromptResult*)
+downloadPromptResult // beginDefinition;
+downloadPromptResult[ True ] := True;
+downloadPromptResult[ False | $Canceled ] := (stopChatOnCancel[ ]; False);
+downloadPromptResult[ _ ] := True;
+downloadPromptResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -108,11 +161,11 @@ defaultDownloadPrompt // endDefinition;
 confirmRedownload // beginDefinition;
 
 (* typeKey is the text resource name describing what is being downloaded, e.g. "DownloadTypeVectorDatabases": *)
-confirmRedownload[ typeKey_String, names: { __String }, bytes_ ] := confirmDownloadPrompt @ trStringTemplate[
+confirmRedownload[ typeKey_String, names: { __String }, bytes_ ] := confirmDownloadPrompt @ downloadTextTemplate[
     "DownloadRedownloadPrompt"
 ][
     <|
-        "type"  -> trRaw @ typeKey,
+        "type"  -> downloadText @ typeKey,
         "names" -> StringRiffle[ ("\[Bullet] " <> #1 &) /@ names, "\n" ],
         "size"  -> formatByteCount @ bytes
     |>
@@ -123,12 +176,14 @@ confirmRedownload // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*confirmDownloadRetry*)
+(* The label is only evaluated if the prompt is shown: *)
 confirmDownloadRetry // beginDefinition;
+confirmDownloadRetry // Attributes = { HoldFirst };
 
-confirmDownloadRetry[ label_String, bytes_, rate_ ] :=
+confirmDownloadRetry[ label_, bytes_, rate_ ] :=
     With[ { time = estimateDownloadTime[ bytes, rate ] },
         If[ time > $longDownloadThreshold,
-            confirmDownloadPrompt @ trStringTemplate[ "DownloadRetryPrompt" ][
+            confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRetryPrompt" ][
                 <| "label" -> label, "size" -> formatByteCount @ bytes, "time" -> formatDuration @ time |>
             ],
             True
@@ -150,17 +205,17 @@ estimateDownloadTime // endDefinition;
 (* ::Subsection::Closed:: *)
 (*formatByteCount*)
 formatByteCount // beginDefinition;
-formatByteCount[ bytes_? Positive ] /; bytes >= 10^9 := trStringTemplate[ "DownloadSizeGB" ][ ToString @ Round[ bytes / 10.^9, 0.1 ] ];
-formatByteCount[ bytes_? Positive ] := trStringTemplate[ "DownloadSizeMB" ][ ToString @ Max[ 1, Round[ bytes / 10.^6 ] ] ];
-formatByteCount[ _ ] := trRaw[ "DownloadSizeUnknown" ];
+formatByteCount[ bytes_? Positive ] /; bytes >= 10^9 := downloadTextTemplate[ "DownloadSizeGB" ][ ToString @ Round[ bytes / 10.^9, 0.1 ] ];
+formatByteCount[ bytes_? Positive ] := downloadTextTemplate[ "DownloadSizeMB" ][ ToString @ Max[ 1, Round[ bytes / 10.^6 ] ] ];
+formatByteCount[ _ ] := downloadText[ "DownloadSizeUnknown" ];
 formatByteCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*formatDuration*)
 formatDuration // beginDefinition;
-formatDuration[ seconds_? NumberQ ] /; seconds >= 90 := trStringTemplate[ "DownloadDurationMinutes" ][ ToString @ Ceiling[ seconds / 60 ] ];
-formatDuration[ seconds_? NumberQ ] := trStringTemplate[ "DownloadDurationSeconds" ][ ToString @ Ceiling @ seconds ];
+formatDuration[ seconds_? NumberQ ] /; seconds >= 90 := downloadTextTemplate[ "DownloadDurationMinutes" ][ ToString @ Ceiling[ seconds / 60 ] ];
+formatDuration[ seconds_? NumberQ ] := downloadTextTemplate[ "DownloadDurationSeconds" ][ ToString @ Ceiling @ seconds ];
 formatDuration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

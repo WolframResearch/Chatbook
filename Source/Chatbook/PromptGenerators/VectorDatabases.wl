@@ -1096,7 +1096,7 @@ downloadAndUnpackVectorDatabases[ dir_String, urls_Association ] := Enclose[
         total = Total @ Cases[ Lookup[ $vectorDBDownloadSizes, names, 0 ], _Integer? Positive ];
 
         $downloadProgress = AssociationMap[ 0 &, names ];
-        $progressText = trRaw[ "ProgressTextDownloadingSearchIndices" ];
+        $progressText = downloadText[ "ProgressTextDownloadingSearchIndices" ];
 
         results = evaluateWithProgress[
             downloadVectorDatabaseFiles[ dir, urls ],
@@ -1152,14 +1152,14 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
                     Break[ ]
                 ];
                 Pause[ attempt - 1 ];
-                $progressText = trRaw[ "ProgressTextRetryingSearchIndices" ]
+                $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
             ];
 
             start = AbsoluteTime[ ];
             round = ConfirmBy[ downloadVectorDatabaseRound[ dir, KeyTake[ urls, pending ], attempt ], AssociationQ, "Round" ];
             rate  = observedDownloadRate[ Total @ Lookup[ $downloadProgress, pending, 0 ], AbsoluteTime[ ] - start ];
 
-            $progressText = trRaw[ "ProgressTextUnpackingFiles" ];
+            $progressText = downloadText[ "ProgressTextUnpackingFiles" ];
             KeyValueMap[ (results[ #1 ] = finishVectorDatabaseDownload[ dir, #1, #2 ]) &, round ];
 
             pending = Select[ pending, ! StringQ @ results[ # ] & ];

@@ -1471,7 +1471,7 @@ downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] :=
     Catch @ Module[ { retry, ver, url, tmp, start, response, newRate, size },
 
         If[ attempt > 1,
-            If[ ! confirmDownloadRetry[ trStringTemplate[ "DownloadLabelDocumentation" ][ name ], $streamableSnippetSizes @ name, rate ],
+            If[ ! confirmDownloadRetry[ downloadTextTemplate[ "DownloadLabelDocumentation" ][ name ], $streamableSnippetSizes @ name, rate ],
                 $snippetDownloadDeclined = True;
                 Throw @ Missing[ "Cancelled" ]
             ];

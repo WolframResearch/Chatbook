@@ -62,6 +62,7 @@ System`HoldCompleteForm;
 `trRaw;
 `trStringTemplate;
 `trExprTemplate;
+`trPaclet;
 
 `$catching;
 `$catchTopTag;
@@ -1431,6 +1432,16 @@ trExprTemplate[ name_? StringQ ] :=
     TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
 
 trExprTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trPaclet*)
+(* Looks up the English text for `name` in this paclet's own text resources without using a front end. trRaw launches a
+   front end in a headless kernel, which is slow, and that front end resolves text resources from the installed Chatbook
+   paclet, which might not be the one that is loaded: *)
+trPaclet // beginDefinition;
+trPaclet[ name_? StringQ ] := cloudTextResource @ name;
+trPaclet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
