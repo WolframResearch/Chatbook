@@ -296,6 +296,7 @@ formatVersion // endDefinition;
 formatIcon // beginDefinition;
 formatIcon[ _Missing ] := "";
 formatIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := formatIcon @ icon;
+formatIcon[ icon_ ] /; $cloudNotebooks := cloudShrinkToFit[ icon, { 20, 20 } ]
 formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ];
 formatIcon // endDefinition;
 
