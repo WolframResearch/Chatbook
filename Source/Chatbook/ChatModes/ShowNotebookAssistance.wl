@@ -636,7 +636,7 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
                 (* will we ever need to do this with the sidebar chat...? *)
                 If[ TrueQ @ evaluate,
                     MathLink`CallFrontEnd @ FrontEnd`TriggerControlBoxObject @
-                        MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "SidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
+                        MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { "NASidebarChatInputCellSendButton" }, FE`SearchStart -> sidebarCell, FE`SearchStop -> sidebarCell ] ]
         ]
     ],
     throwInternalFailure
@@ -670,6 +670,8 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
         movedLastChatToSourcesIndicatorQ = MatchQ[ current, _NotebookObject ] && Cells[ current ] =!= {};
 
         If[ TrueQ @ new,
+            (* keep any unsent text of the input field for the new window: *)
+            If[ MatchQ[ current, _NotebookObject ], saveWorkspaceChatInput @ current ];
             Quiet @ NotebookClose @ current;
             current = Missing[ "NotFound" ]
         ];
@@ -733,6 +735,8 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
         ];
 
         If[ TrueQ @ new,
+            (* keep any unsent text of the input field for the new window: *)
+            If[ MatchQ[ current, _NotebookObject ], saveWorkspaceChatInput @ current ];
             Quiet @ NotebookClose @ current;
             current = Missing[ "NotFound" ]
         ];
@@ -769,9 +773,16 @@ setNotebookAssistanceEvaluator // endDefinition;
 (*setWindowInputAndEvaluate*)
 setWindowInputAndEvaluate // beginDefinition;
 
-setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] := (
-    If[ validInputStringQ @ input, $WorkspaceChatInput = input ];
-    If[ TrueQ @ evaluate, ChatbookAction[ "EvaluateWorkspaceChat", nbo, Dynamic @ $WorkspaceChatInput ] ];
+(* Avoid looking up the input cell (a front end call) when there is nothing to set or evaluate: *)
+setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] :=
+    If[ validInputStringQ @ input || TrueQ @ evaluate,
+        setWindowInputAndEvaluate[ nbo, input, evaluate, workspaceChatInput @ nbo ],
+        nbo
+    ];
+
+setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_, Dynamic[ chatInput_ ] ] := (
+    If[ validInputStringQ @ input, chatInput = $WorkspaceChatInput = input ];
+    If[ TrueQ @ evaluate, ChatbookAction[ "EvaluateWorkspaceChat", nbo, Dynamic @ chatInput ] ];
     nbo
 );
 

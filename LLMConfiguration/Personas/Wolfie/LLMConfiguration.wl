@@ -9,6 +9,7 @@
 		"WolframAlpha",
 		"WebSearcher",
 		"WebFetcher",
+		"FileReader",
 		ParentList
 	}
 |>

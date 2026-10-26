@@ -7,7 +7,6 @@ Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* TODO:
-    * Save chat as a callback to GenerateChatTitleAsynchronous?
     * Save attachments separately by their hash ID (requires maintaining ref counts)
 *)
 
@@ -21,6 +20,7 @@ $defaultConversationTitle   = "Untitled Chat";
 $maxChatItems               = Infinity;
 $timestampPrefixLength      = 7; (* good for about 1000 years *)
 $$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
+$backgroundTitles           = Automatic; (* auto-saves don't wait for new titles (Automatic: see backgroundTitleQ) *)
 
 $metaKeys = { "AppName", "ConversationTitle", "ConversationUUID", "Date", "Version" };
 
@@ -48,6 +48,10 @@ $$incompatibleData = KeyValuePattern[ "Version" -> _? (GreaterThan @ $savedChatD
 $$appSpec = $$string | All | _NotebookObject;
 
 $generatedTitleCache = <| |>;
+$titleTasks          = <| |>; (* title generation tasks running in the background by message hash *)
+$titleTargets        = <| |>; (* saved chats that are waiting for a title by conversation UUID *)
+$deferredTitles      = <| |>; (* titles that were generated while an auto-save was in progress *)
+$autoSaving          = False;
 
 $appContainer = "Workspace";
 $savingNotebook = None;
@@ -223,7 +227,7 @@ restoreAttachments // beginDefinition;
 restoreAttachments[ KeyValuePattern[ "Attachments" -> attachments_Association ] ] :=
     Association @ KeyValueMap[ # -> restoreAttachments @ ## &, attachments ];
 
-restoreAttachments[ type: "Expressions"|"ToolCalls", as_Association ] := Enclose[
+restoreAttachments[ type: "Expressions"|"ToolCalls"|"Reasoning", as_Association ] := Enclose[
     ConfirmBy[ LoadAttachments[ type, as ], AssociationQ, "LoadAttachments" ],
     throwInternalFailure
 ];
@@ -367,7 +371,11 @@ saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
 
 saveChat[ messages_, settings_, autoTitle_, True ] :=
     If[ TrueQ @ autoSaveQ[ messages, settings ],
-        saveChat0[ messages, settings, autoTitle ],
+        WithCleanup[
+            Block[ { $autoSaving = True }, saveChat0[ messages, settings, autoTitle ] ],
+            (* Save any titles that were generated in the background while this chat was being saved: *)
+            If[ $deferredTitles =!= <| |>, Quiet @ catchAlways @ applyDeferredTitles[ ] ]
+        ],
         Missing[ "Skipped" ]
     ];
 
@@ -488,7 +496,7 @@ setChatDisplayTitle[ nbo_NotebookObject, _, KeyValuePattern[ "ConversationTitle"
         writeWorkspaceChatTitleDockedCell[ nbo, WindowTitle ]
     ];
 
-setChatDisplayTitle[ None, _ ] :=
+setChatDisplayTitle[ None, _, _ ] :=
     Null;
 
 setChatDisplayTitle // endDefinition;
@@ -695,7 +703,7 @@ defaultConversationTitle // beginDefinition;
 
 defaultConversationTitle[ messages_, settings_ ] :=
     If[ TrueQ @ settings[ "AutoGenerateTitle" ],
-        generateTitleCached @ messages,
+        generateTitleCached[ messages, settings ],
         $defaultConversationTitle
     ];
 
@@ -705,7 +713,14 @@ defaultConversationTitle // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*generateTitleCached*)
 generateTitleCached // beginDefinition;
-generateTitleCached[ messages_List ] := generateTitleCached0 @ Take[ messages, UpTo @ $maxTitleGenerationMessages ];
+
+(* Auto-saves don't wait for new titles to be generated: *)
+generateTitleCached[ messages_List, settings_ ] /; backgroundTitleQ @ settings :=
+    generateTitleInBackground[ Take[ messages, UpTo @ $maxTitleGenerationMessages ], settings ];
+
+generateTitleCached[ messages_List, _ ] :=
+    generateTitleCached0 @ Take[ messages, UpTo @ $maxTitleGenerationMessages ];
+
 generateTitleCached // endDefinition;
 
 
@@ -745,6 +760,301 @@ generateTitleCached0[ hash_Integer, messages_ ] := Enclose[
 ];
 
 generateTitleCached0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*backgroundTitleQ*)
+(* Only auto-saves of chats with a ConversationUUID generate titles in the background, since the UUID identifies the
+   saved chat to update later. The callback also has to be able to run after the save returns, so with the default
+   $backgroundTitles (Automatic), this requires a front end and is not done in the cloud: *)
+backgroundTitleQ // beginDefinition;
+
+backgroundTitleQ[ KeyValuePattern[ "ConversationUUID" -> _String ] ] :=
+    TrueQ @ $autoSaving && TrueQ @ Replace[ $backgroundTitles, Automatic :> $Notebooks && ! $CloudEvaluation ];
+
+backgroundTitleQ[ _ ] :=
+    False;
+
+backgroundTitleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*generateTitleInBackground*)
+(* Returns the cached title if available. Otherwise, starts generating a new title (unless a request for the same
+   messages is still running) and returns the previously saved title for this chat, which gets replaced in the saved
+   files once the new title is ready. Only the latest save of each chat gets the title (see applyBackgroundTitle). *)
+generateTitleInBackground // beginDefinition;
+
+generateTitleInBackground[ messages_List, settings_Association ] := Enclose[
+    Module[ { hash, cached, appName, uuid, title },
+
+        hash    = Hash @ messages;
+        cached  = $generatedTitleCache[ hash ];
+        appName = ConfirmBy[ getAppName @ settings, StringQ, "AppName" ];
+        uuid    = ConfirmBy[ settings[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
+        title   = If[ StringQ @ cached, cached, ConfirmBy[ savedChatTitle[ appName, uuid ], StringQ, "SavedTitle" ] ];
+
+        $titleTargets[ uuid ] = <|
+            "AppName"          -> appName,
+            "ConversationUUID" -> uuid,
+            "Hash"             -> hash,
+            "Title"            -> title,
+            "Notebook"         -> $savingNotebook,
+            "Container"        -> $appContainer
+        |>;
+
+        If[ ! StringQ @ cached && ! MatchQ[ Quiet @ $titleTasks[ hash, "Task" ][ "TaskStatus" ], "Running"|"Waiting" ],
+            submitBackgroundTitle[ hash, messages, 1, None ]
+        ];
+
+        title
+    ],
+    throwInternalFailure
+];
+
+generateTitleInBackground // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*savedChatTitle*)
+savedChatTitle // beginDefinition;
+
+savedChatTitle[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dir, metadata },
+        root     = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+        dir      = Last[ conversationFileNames[ uuid, root ], Throw @ $defaultConversationTitle ];
+        metadata = Quiet @ Developer`ReadWXFFile @ FileNameJoin @ { dir, "metadata.wxf" };
+        Replace[
+            metadata,
+            { KeyValuePattern[ "ConversationTitle" -> title_String ] :> title, _ :> $defaultConversationTitle }
+        ]
+    ],
+    throwInternalFailure
+];
+
+savedChatTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*submitBackgroundTitle*)
+submitBackgroundTitle // beginDefinition;
+
+submitBackgroundTitle[ hash_Integer, messages_List, attempt_Integer, llmKitSettings_ ] :=
+    Module[ { callback, opts, task },
+
+        callback = backgroundTitleCallback[ hash, messages, attempt ];
+        opts     = If[ attempt === 1, { }, { "MaxLength" -> 60, "Temperature" -> 1.0 } ];
+
+        task = withLLMKitSettings[
+            llmKitSettings,
+            LogChatTiming @ generateChatTitleInBackground[ messages, callback, Sequence @@ opts ]
+        ];
+
+        If[ MatchQ[ task, _TaskObject ],
+            (* A retry is submitted from the callback, which can run outside of this chat, so remember the settings: *)
+            $titleTasks[ hash ] = <|
+                "Task"           -> task,
+                "LLMKitSettings" -> withLLMKitSettings[
+                    llmKitSettings,
+                    <| "LLMKit" -> $llmKit, "LLMKitService" -> If[ TrueQ @ $llmKit, $llmKitService, None ] |>
+                ]
+            |>,
+            (* GenerateChatTitleAsynchronous only returns a failure when it's not called within catchTop. Here (in the
+               auto-save or the callback), a request that can't be submitted is thrown to that catchTop instead, which
+               fails the auto-save, or keeps the saved title if it was the retry. This handles a returned failure like
+               a failed response: *)
+            callback @ task
+        ]
+    ];
+
+submitBackgroundTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withLLMKitSettings*)
+withLLMKitSettings // beginDefinition;
+withLLMKitSettings // Attributes = { HoldRest };
+
+withLLMKitSettings[ KeyValuePattern @ { "LLMKit" -> llmKit_, "LLMKitService" -> service_ }, eval_ ] :=
+    Block[ { $llmKit = llmKit, $llmKitService = service }, eval ];
+
+withLLMKitSettings[ _, eval_ ] :=
+    eval;
+
+withLLMKitSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*backgroundTitleCallback*)
+(* The callback can run in the middle of any other evaluation (e.g. the next chat), so it needs to be isolated: *)
+backgroundTitleCallback // beginDefinition;
+
+backgroundTitleCallback[ hash_, messages_, attempt_ ] :=
+    Function[
+        Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None },
+            receiveBackgroundTitle[ hash, messages, attempt, # ]
+        ]
+    ];
+
+backgroundTitleCallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*receiveBackgroundTitle*)
+(* This follows the same steps as generateTitleCached0: *)
+receiveBackgroundTitle // beginDefinition;
+
+receiveBackgroundTitle[ hash_, _, 1, title_String ] := (
+    $lastGeneratedTitle   = title;
+    $lastRegeneratedTitle = None;
+    finishBackgroundTitle[ hash, title, True ]
+);
+
+(* retry once if first attempt failed using higher temperature and relaxed length constraint: *)
+receiveBackgroundTitle[ hash_, messages_, 1, failure_ ] := (
+    $lastGeneratedTitle   = failure;
+    $lastRegeneratedTitle = None;
+    submitBackgroundTitle[ hash, messages, 2, $titleTasks[ hash, "LLMKitSettings" ] ]
+);
+
+receiveBackgroundTitle[ hash_, _, 2, title_String ] := (
+    $lastRegeneratedTitle = title;
+    finishBackgroundTitle[ hash, title, True ]
+);
+
+(* if it's still failing, just use a default title (which is not cached) *)
+receiveBackgroundTitle[ hash_, _, 2, failure_ ] := (
+    $lastRegeneratedTitle = failure;
+    finishBackgroundTitle[ hash, $defaultConversationTitle, False ]
+);
+
+receiveBackgroundTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*finishBackgroundTitle*)
+finishBackgroundTitle // beginDefinition;
+
+finishBackgroundTitle[ hash_Integer, title_String, cache: True|False ] := (
+    KeyDropFrom[ $titleTasks, hash ];
+    If[ cache, $generatedTitleCache[ hash ] = title ];
+    (* An auto-save in progress might still write the previous title, so wait until it's done: *)
+    If[ TrueQ @ $autoSaving,
+        $deferredTitles[ hash ] = title,
+        applyBackgroundTitle[ hash, title ]
+    ]
+);
+
+finishBackgroundTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyDeferredTitles*)
+applyDeferredTitles // beginDefinition;
+
+applyDeferredTitles[ ] :=
+    With[ { deferred = $deferredTitles },
+        $deferredTitles = <| |>;
+        KeyValueMap[ applyBackgroundTitle, deferred ]
+    ];
+
+applyDeferredTitles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyBackgroundTitle*)
+applyBackgroundTitle // beginDefinition;
+
+applyBackgroundTitle[ hash_Integer, title_String ] :=
+    KeyValueMap[
+        Function[
+            KeyDropFrom[ $titleTargets, #1 ];
+            LogChatTiming @ updateSavedChatTitle[ #2, title ]
+        ],
+        Select[ $titleTargets, #[ "Hash" ] === hash & ]
+    ];
+
+applyBackgroundTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*updateSavedChatTitle*)
+(* Replaces only the title of a saved chat, since newer messages might have been saved in the meantime: *)
+updateSavedChatTitle // beginDefinition;
+
+updateSavedChatTitle[ KeyValuePattern[ "Title" -> title_String ], title_String ] :=
+    Null;
+
+updateSavedChatTitle[ target_Association, title_String ] := Enclose[
+    Catch @ Module[ { appName, uuid, saved, root, dir, metadata, data, vectors, newData },
+
+        appName = ConfirmBy[ target[ "AppName"          ], StringQ, "AppName"          ];
+        uuid    = ConfirmBy[ target[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
+        saved   = ConfirmBy[ target[ "Title"            ], StringQ, "Title"            ];
+        root    = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+
+        (* The chat might have been deleted in the meantime: *)
+        dir = Last[ conversationFileNames[ uuid, root ], Throw @ Missing[ "NotFound" ] ];
+
+        (* Leave the title alone if the chat has been saved with a different title in the meantime: *)
+        metadata = Quiet @ Developer`ReadWXFFile @ FileNameJoin @ { dir, "metadata.wxf" };
+        If[ ! MatchQ[ metadata, KeyValuePattern[ "ConversationTitle" -> saved ] ], Throw @ Missing[ "TitleChanged" ] ];
+
+        data = Quiet @ Developer`ReadWXFFile @ FileNameJoin @ { dir, "data.wxf" };
+        If[ ! MatchQ[ data, $$conversationFullData ] || data[ "ConversationTitle" ] =!= saved,
+            Throw @ Missing[ "TitleChanged" ]
+        ];
+
+        (* The first vector is the embedding of the title (see createMessageVectors): *)
+        vectors = ConfirmMatch[ Lookup[ data, "Vectors", { } ], { ___NumericArray }, "Vectors" ];
+        If[ vectors =!= { } && ! TrueQ @ $noSemanticSearch,
+            vectors = ReplacePart[
+                vectors,
+                1 -> ConfirmMatch[ toInt8Vector @ getEmbedding @ title, _NumericArray, "TitleVector" ]
+            ]
+        ];
+
+        newData = <| data, "ConversationTitle" -> title, "Vectors" -> vectors |>;
+
+        ConfirmBy[ saveChatFile[ "data", newData, dir, PerformanceGoal -> "Size" ], FileExistsQ, "SaveMessages" ];
+        ConfirmBy[ saveChatFile[ "metadata", newData, dir ], FileExistsQ, "SaveMetadata" ];
+
+        ConfirmMatch[
+            AddChatToSearchIndex @ newData,
+            _Success | Missing[ "NoSemanticSearch"|"NoVectors" ],
+            "AddToSearchIndex"
+        ];
+
+        If[ currentConversationQ[ target[ "Notebook" ], target[ "Container" ], uuid ],
+            setChatDisplayTitle[ target[ "Notebook" ], target[ "Container" ], newData ]
+        ];
+
+        updateDynamics[ "SavedChats" ];
+
+        title
+    ],
+    throwInternalFailure
+];
+
+updateSavedChatTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*currentConversationQ*)
+(* Checks if the notebook still shows the chat (e.g. it wasn't closed and "New Chat" wasn't clicked): *)
+currentConversationQ // beginDefinition;
+
+(* don't add the title cell in the sidebar during regular chat (see saveChat0) *)
+currentConversationQ[ _, _CellObject, _ ] :=
+    False;
+
+currentConversationQ[ nbo_NotebookObject, _, uuid_String ] :=
+    TrueQ @ notebookObjectQ @ nbo && CurrentChatSettings[ nbo, "ConversationUUID" ] === uuid;
+
+currentConversationQ[ _, _, _ ] :=
+    False;
+
+currentConversationQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -76,8 +76,10 @@
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
 "FormattingThinkingActive" -> "En train de r\[EAcute]fl\[EAcute]chir\[Ellipsis]",
 "FormattingThinkingComplete" -> "A r\[EAcute]fl\[EAcute]chi pendant `time` secondes",
+"FormattingThinkingCompleteSingular" -> "A r\[EAcute]fl\[EAcute]chi pendant une seconde",
 "FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
 "FormattingHide" -> "Cacher",
+"FormattingDiscardedMaterial" -> "Discarded material",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",

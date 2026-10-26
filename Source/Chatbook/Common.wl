@@ -55,6 +55,7 @@ System`HoldCompleteForm;
 `$$messageContent;
 `$$chatMessage;
 `$$chatMessages;
+`$$thinkTagAttributes;
 `wordsPattern;
 
 `tr;
@@ -139,7 +140,8 @@ $versionRequirements = <|
     "TrackScrollingWhenPlaced" -> 14.0
 |>;
 
-$mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
+(* Delayed so that loading the MX file gives False: $BuildingMX is only set while building it and isn't saved in it *)
+$mxFlag := TrueQ @ Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
 
 $resourceVersions = <|
@@ -147,10 +149,8 @@ $resourceVersions = <|
     "ClickToCopy"             -> "1.0.0",
     "GPTTokenizer"            -> "1.1.0",
     "MessageFailure"          -> "1.0.1",
-    "RelativeTimeString"      -> "1.0.0",
     "ReplaceContext"          -> "1.0.0",
     "ResourceFunctionMessage" -> "2.1.1",
-    "SecondsToQuantity"       -> "1.2.0",
     "SelectByCurrentValue"    -> "1.0.1"
 |>;
 
@@ -220,6 +220,13 @@ $$chatMessages        = { $$chatMessage... };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Reasoning*)
+
+(* Attributes in an opening think tag, e.g. the " type='summary' id='...'" in <think type='summary' id='...'>: *)
+$$thinkTagAttributes = WhitespaceCharacter ~~ Except[ ">" | "<" ]...;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Misc*)
 wordsPattern[ words_ ] := _String? (containsWordsQ @ words);
 
@@ -250,6 +257,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidOptionValue"              -> "Invalid value for `1` option: `2`.",
     "InvalidPromptGeneratorPosition"  -> "Invalid position spec for prompt generator messages: `1`.",
     "InvalidPromptGeneratorRole"      -> "Invalid role for prompt generator messages: `1`. Valid values are: \"System\", \"Assistant\", or \"User\".",
+    "InvalidRequestMethod"            -> "Invalid setting for RequestMethod: `1`; using \"ChatCompletions\" instead.",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidRootSettings"             -> "The value `1` is not valid for root chat settings.",
@@ -266,6 +274,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
+    "ResponsesAPIUnavailable"         -> "The \"Responses\" request method requires newer versions of the Wolfram/LLMFunctions and LLMConnections paclets.",
     "ServerMessageHeader"             -> "The server responded with the following message: \n\n",
     "ServerMessageTemplate"           -> "The server responded with the following message: \n\n`1`",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
@@ -618,7 +627,6 @@ catchTop[ eval_, sym_Symbol ] :=
             $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching            = True,
             $failed              = False,
-            $timeToFirstToken    = None,
             catchTop             = # &,
             catchTopAs           = (#1 &) &
         },

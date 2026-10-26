@@ -11,6 +11,7 @@ HoldComplete[
     `getNamedSnippet,
     `getSmallContextString,
     `getStreamSnippets,
+    `initializeVectorDatabases,
     `insertContextPrompt,
     `vectorDBSearch
 ];

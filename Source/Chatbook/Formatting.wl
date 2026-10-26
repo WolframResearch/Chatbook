@@ -26,7 +26,9 @@ $wlCodeString = Longest @ Alternatives[
     "WL"
 ];
 
-$resultCellCache = <| |>;
+$resultCellCache         = <| |>;
+$staticCodeBlockCache    = <| |>;
+$useStaticCodeBlockCache = False;
 
 sectionStyle[ 1 ] := "Title";
 sectionStyle[ 2 ] := "Section";
@@ -238,10 +240,16 @@ reformatTextData // endDefinition;
 reformatTextData0 // beginDefinition;
 
 reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    reformatTextDataEscaped @ StringSplit[
-        importHTMLEntities @ string,
-        $textDataFormatRulesNoMarkdownUnescape,
-        IgnoreCase -> True
+    reformatTextDataEscaped @ discardBadToolCalls @ DeleteCases[
+        Quiet[
+            StringSplit[
+                importHTMLEntities @ string,
+                $textDataFormatRulesNoMarkdownUnescape,
+                IgnoreCase -> True
+            ],
+            RegularExpression::maxrec
+        ],
+        ""
     ];
 
 reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
@@ -264,7 +272,8 @@ reformatTextData0 // endDefinition;
 
 reformatTextDataEscaped // beginDefinition;
 
-reformatTextDataEscaped[ parts_List ] := joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ parts;
+reformatTextDataEscaped[ parts_List ] :=
+    joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ splitToolCallSpacing @ parts;
 
 reformatTextDataEscaped // endDefinition;
 
@@ -282,15 +291,94 @@ reformatTextDataEscaped0[ parts_List ] := Replace[
             t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
         ],
         textBeforeCodeBlock[ s_String ] :> ReplaceAll[
-            formatTextString @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
+            reformatTextBeforeCodeBlock @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
             t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
         ],
+        toolCallSpacing[ s_String ] :> formatTextString @ s,
+        (* Text in discarded material still needs its escapes handled: *)
+        discardedMaterial[ stuff___ ] :> makeDiscardedMaterialCell0 @ reformatTextDataEscaped @ { stuff },
         other_ :> makeResultCell @ other
     },
     { 1 }
 ];
 
 reformatTextDataEscaped0 // endDefinition;
+
+reformatTextBeforeCodeBlock // beginDefinition;
+
+reformatTextBeforeCodeBlock[ string_String ] :=
+    makeResultCell /@ StringSplit[
+        string,
+        Longest @ StringExpression[
+            (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+            tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+        ] :> inlineToolCallCell @ tool
+    ];
+
+reformatTextBeforeCodeBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*splitToolCallSpacing*)
+splitToolCallSpacing // beginDefinition;
+
+(* Each part of the text between tool calls is formatted separately, which trims its whitespace. The whitespace next to
+   a tool call is split out here, so that tool calls keep the same line breaks as they do in text without escapes: *)
+splitToolCallSpacing[ { } ] := { };
+
+splitToolCallSpacing[ parts_List ] := Flatten @ MapThread[
+    splitToolCallSpacing0,
+    { parts, Prepend[ Most @ parts, None ], Append[ Rest @ parts, None ] }
+];
+
+splitToolCallSpacing // endDefinition;
+
+
+splitToolCallSpacing0 // beginDefinition;
+
+splitToolCallSpacing0[ text_String, previous_, next_ ] := splitToolCallSpacing1[
+    First @ StringCases[
+        text,
+        StringExpression[
+            StartOfString,
+            lead: WhitespaceCharacter...,
+            core: Shortest[ ___ ],
+            trail: WhitespaceCharacter...,
+            EndOfString
+        ] :> { lead, core, trail },
+        1
+    ],
+    toolCallPartQ @ previous,
+    toolCallPartQ @ next
+];
+
+splitToolCallSpacing0[ other_, _, _ ] := other;
+
+splitToolCallSpacing0 // endDefinition;
+
+
+splitToolCallSpacing1 // beginDefinition;
+
+(* Text that's only whitespace: *)
+splitToolCallSpacing1[ { ws_String, "", "" }, before_, after_ ] :=
+    If[ before || after, toolCallSpacing @ ws, ws ];
+
+splitToolCallSpacing1[ { lead_String, core_String, trail_String }, before_, after_ ] := DeleteCases[
+    {
+        If[ before, toolCallSpacing @ lead, Nothing ],
+        StringJoin[ If[ before, "", lead ], core, If[ after, "", trail ] ],
+        If[ after, toolCallSpacing @ trail, Nothing ]
+    },
+    toolCallSpacing[ "" ]
+];
+
+splitToolCallSpacing1 // endDefinition;
+
+
+toolCallPartQ // beginDefinition;
+toolCallPartQ[ _inlineToolCallCell | _discardedMaterial ] := True;
+toolCallPartQ[ _ ] := False;
+toolCallPartQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -358,26 +446,42 @@ makeResultCell // endDefinition;
 
 makeResultCell0 // beginDefinition;
 
-makeResultCell0[ thinkingOpener[ thoughts_String ] ] := (
+(* The third template box argument holds metadata that determines how the box is serialized, e.g.
+   <| "Type" -> "Literal" |> for literal <think> tags, or <| "Type" -> "Summary", "ID" -> ..., "Signature" -> ... |>
+   for reasoning summaries (see Reasoning.wl) *)
+makeResultCell0[ thinkingOpener[ thoughts_String ] ] :=
+    makeResultCell0 @ thinkingOpener[ thoughts, <| "Type" -> "Literal" |> ];
+
+makeResultCell0[ thinkingOpener[ thoughts_String, attributes_String ] ] :=
+    makeResultCell0 @ thinkingOpener[ thoughts, reasoningMetadata @ attributes ];
+
+makeResultCell0[ thinkingOpener[ thoughts_String, meta_Association ] ] := (
     If[ $thinkingStart === None, $thinkingStart = AbsoluteTime[ ] ];
     Cell[
-        BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive" }, "ThinkingOpener" ],
+        BoxData @ templateBox[
+            { formatThoughts @ thoughts, ToBoxes @ tr @ "FormattingThinkingActive", meta },
+            "ThinkingOpener"
+        ],
         "ThinkingOpener",
         Background -> None
     ]
 );
 
 makeResultCell0[ thoughtsOpener[ thoughts_String ] ] :=
-    Module[ { seconds, label },
-        If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
-        seconds = If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd, Round[ $thinkingEnd - $thinkingStart ] ];
-        label = If[ NumberQ @ seconds, trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ], tr @ "FormattingThinkingCompleteFallback" ];
+    makeResultCell0 @ thoughtsOpener[ thoughts, <| "Type" -> "Literal" |> ];
+
+makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
+    makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
+
+makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
+    Module[ { label, box },
+        label = ToBoxes @ thoughtsLabel @ meta;
+        box = If[ StringTrim @ thoughts === "",
+                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+              ];
         {
-            Cell[
-                BoxData @ templateBox[ { StringTrim @ thoughts, ToBoxes @ label }, "ThoughtsOpener" ],
-                "ThoughtsOpener",
-                Background -> None
-            ],
+            Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],
             "\n"
         }
     ];
@@ -492,6 +596,60 @@ makeResultCell0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*thoughtsLabel*)
+thoughtsLabel // beginDefinition;
+
+(* Reasoning summaries store the time spent on each reasoning item: *)
+thoughtsLabel[ KeyValuePattern @ { "Type" -> "Summary", "Duration" -> seconds_? NumberQ } ] :=
+    thoughtsLabel @ Max[ 1, Round @ seconds ];
+
+thoughtsLabel[ KeyValuePattern[ "Type" -> "Summary" ] ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+(* Literal think tags are timed from when they're first displayed: *)
+thoughtsLabel[ _Association ] := (
+    If[ $thinkingEnd === None, $thinkingEnd = AbsoluteTime[ ] ];
+    thoughtsLabel @ If[ NumberQ @ $thinkingStart && NumberQ @ $thinkingEnd,
+                        Max[ 1, Round[ $thinkingEnd - $thinkingStart ] ],
+                        None
+                    ]
+);
+
+thoughtsLabel[ 1 ] :=
+    tr[ "FormattingThinkingCompleteSingular" ];
+
+thoughtsLabel[ seconds_Integer ] :=
+    trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
+
+thoughtsLabel[ None ] :=
+    tr @ "FormattingThinkingCompleteFallback";
+
+thoughtsLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatThoughts*)
+formatThoughts // beginDefinition;
+
+formatThoughts[ thoughts_String ] :=
+    formatThoughts[ thoughts, StringTrim @ thoughts ];
+
+formatThoughts[ thoughts_, "" ] :=
+    "";
+
+formatThoughts[ thoughts_, trimmed_String ] :=
+    Block[
+        {
+            $textDataFormatRules                   = $thoughtsFormatRules,
+            $textDataFormatRulesNoMarkdownUnescape = $thoughtsFormatRulesNoMarkdownUnescape
+        },
+        TextData @ reformatTextData @ trimmed
+    ];
+
+formatThoughts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inlineSection*)
 inlineSection // beginDefinition;
 
@@ -549,18 +707,28 @@ sectionFontSize // endDefinition;
 (*makeDiscardedMaterialCell*)
 makeDiscardedMaterialCell // beginDefinition;
 
-makeDiscardedMaterialCell[ stuff___ ] := {
+makeDiscardedMaterialCell[ stuff___ ] :=
+    makeDiscardedMaterialCell0 @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ];
+
+makeDiscardedMaterialCell // endDefinition;
+
+
+makeDiscardedMaterialCell0 // beginDefinition;
+
+makeDiscardedMaterialCell0[ _List ] /; $dynamicText := {
     Cell[
-        BoxData @ templateBox[
-            {
-                ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
-                    TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
-                    "Text",
-                    Background  -> None,
-                    FontOpacity -> 0.5
-                ]
-            },
-            "DiscardedMaterialOpener"
+        BoxData @ ToBoxes @ fakeOpenerView @ tr @ "FormattingDiscardedMaterial",
+        "DiscardedMaterial",
+        Background -> None
+    ],
+    "\n"
+};
+
+makeDiscardedMaterialCell0[ textData_List ] := {
+    Cell[
+        BoxData @ ToBoxes @ openerView[
+            { tr @ "FormattingDiscardedMaterial", compressUntilViewed @ discardedMaterialColumn @ textData, "Discarded" },
+            False
         ],
         "DiscardedMaterial",
         Background -> None
@@ -568,7 +736,43 @@ makeDiscardedMaterialCell[ stuff___ ] := {
     "\n"
 };
 
-makeDiscardedMaterialCell // endDefinition;
+makeDiscardedMaterialCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*discardedMaterialColumn*)
+$$discardedToolCallCell = Cell[ _, "InlineToolCall" | "FailedToolCall", ___ ];
+
+discardedMaterialColumn // beginDefinition;
+
+discardedMaterialColumn[ textData_List ] := Column[
+    discardedMaterialRow /@ discardedMaterialGroups @ textData,
+    Spacings -> 0.5
+];
+
+discardedMaterialColumn // endDefinition;
+
+
+discardedMaterialRow // beginDefinition;
+
+discardedMaterialRow[ group_List ] := RawBoxes @ Cell[
+    TextData @ group,
+    "Text",
+    Background  -> None,
+    FontOpacity -> 0.5
+];
+
+discardedMaterialRow // endDefinition;
+
+
+discardedMaterialGroups // beginDefinition;
+
+discardedMaterialGroups[ textData_List ] := DeleteCases[
+    Split[ textData, ! MatchQ[ #2, $$discardedToolCallCell ] & ],
+    { ___String? (StringMatchQ[ WhitespaceCharacter... ]) }
+];
+
+discardedMaterialGroups // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -798,9 +1002,9 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         Grid[
             {
                 checkTemplateBoxes @ Which[
-                    TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "WorkspaceChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
-                    TrueQ @ CurrentChatSettings[ cellObj, "SidebarChat" ],
+                    TrueQ @ currentChatContainerSetting[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
                     True, (* Chatbook or inline *)
                         codeBlockButtons[ lang, EvaluationCell[ ], False ]
@@ -908,7 +1112,11 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            targetNotebookLabel @ EvaluationNotebook[ ]
+            (* In the assistant window, finding the target notebook can scan all open notebooks (the sidebar uses its
+               own notebook), so wait until the tooltip is shown. Only front end values are tracked: the lookup reads
+               Chatbook symbols that change on every catchTop call, which would otherwise rescan the notebooks while
+               the tooltip is open, e.g. twice a second while a response streams. *)
+            With[ { nbo = EvaluationNotebook[ ] }, Dynamic[ targetNotebookLabel @ nbo, TrackedSymbols :> { } ] ]
         ]
     ];
 
@@ -1517,10 +1725,37 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*$toolCallFormatRules*)
+
+(* These rules are shared by both sets of rules below, so that tool calls are recognized the same way in each: *)
+$toolCallFormatRules = {
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+    ] :> inlineToolCallCell @ tool
+    ,
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: $$simpleToolCall
+     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
+    ,
+    $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+
+(* Used when the text contains escaped markdown characters. Only the parts whose raw text has to be kept as is are split
+   out here, so that escapes are handled in the remaining text without changing code blocks or tool calls. Tool calls
+   have to be split out at this point too, since their results can contain code blocks: *)
 $textDataFormatRulesNoMarkdownUnescape = {
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
+        thoughtsOpener[ thoughts, attributes ],
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
+        thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
@@ -1537,11 +1772,17 @@ $textDataFormatRulesNoMarkdownUnescape = {
             tableCell @ code,
             codeBlockCell[ language, code ]
         ]
+    ,
+    Sequence @@ $toolCallFormatRules
 };
 
 $textDataFormatRules = {
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
+        thoughtsOpener[ thoughts, attributes ],
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
+        thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
@@ -1556,17 +1797,7 @@ $textDataFormatRules = {
             codeBlockCell[ language, code ]
         ]
     ,
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
-    ] :> inlineToolCallCell @ tool
-    ,
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: $$simpleToolCall
-     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
-    ,
-    $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    Sequence @@ $toolCallFormatRules
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
@@ -1597,6 +1828,20 @@ $textDataFormatRules = {
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$thoughtsFormatRules*)
+
+(* Markdown in the contents of think tags is formatted, but anything that looks like a tool call or another think tag is
+   left as plain text: *)
+$$thoughtsExcludedRule = HoldPattern @ RuleDelayed[
+    _,
+    _thoughtsOpener | _thinkingOpener | _inlineToolCallCell | $discardPreviousToolCall
+];
+
+$thoughtsFormatRules                   = DeleteCases[ $textDataFormatRules                  , $$thoughtsExcludedRule ];
+$thoughtsFormatRulesNoMarkdownUnescape = DeleteCases[ $textDataFormatRulesNoMarkdownUnescape, $$thoughtsExcludedRule ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1637,6 +1882,16 @@ toolCallStringFreeQ // endDefinition;
 (* Defines safe points to split content into static/dynamic parts. These patterns must be different from
    `$textDataFormatRules`, since there will be no additional formatting passes once static content is written.
    Therefore, some of the patterns that would match up to `EndOfString` must instead be explicitly terminated here.
+
+   While streaming, the split is skipped if new text can't complete a match (see `dynamicSplitSkipQ` in SendChat.wl).
+   That relies on all of the following, so it needs to be updated if any of them change:
+   - Every match ends with "```", "ENDRESULT", or ")", and no delimiter that ends a match is longer than
+     `$dynamicSplitOverlap + 1` characters.
+   - A match that ends with ")" is only possible when the content contains "![" or "ENDRESULT(".
+   - No pattern looks past the end of its match, and conditions only depend on the matched text. The exceptions are
+     the conditions of the code block and simple tool call rules, which also depend on
+     `$ChatHandlerData[ "ToolShortNames" ]`. If that changed while a response streams, a split could be delayed, which
+     only affects the streaming display.
 *)
 $dynamicSplitRules = {
     (* Code blocks *)
@@ -1659,19 +1914,21 @@ $dynamicSplitRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
+
+(* Underscores only mark emphasis at word boundaries, so names like `snake_case_name` are left as-is: *)
 $stringFormatRules = {
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
 
     "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
 
-    "___" ~~ text: Except[ "_" ].. ~~ "___" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "___" ~~ text: Except[ "_" ].. ~~ "___" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
 
     "**" ~~ text: Except[ "*" ].. ~~ "**" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
-    "__" ~~ text: Except[ "_" ].. ~~ "__" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "__" ~~ text: Except[ "_" ].. ~~ "__" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
     "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
@@ -1689,7 +1946,7 @@ $stringFormatRules = {
     "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
-    "_" ~~ text: Except[ "_" ].. ~~ "_" /; StringFreeQ[ text, "\n" ] :>
+    WordBoundary ~~ "_" ~~ text: Except[ "_" ].. ~~ "_" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
     "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :>
@@ -1740,6 +1997,8 @@ $stringFormatRules = {
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
 makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] /; $useStaticCodeBlockCache && ! TrueQ @ $dynamicText :=
+    cachedCodeBlockCell[ language, code ];
 makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ language :=
     makeInteractiveCodeCell[ "Plaintext", unescapePlainTextCodeBlock @ stripCodePadding @ code ];
 makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
@@ -1748,6 +2007,26 @@ makeCodeBlockCell // endDefinition;
 unescapePlainTextCodeBlock // beginDefinition;
 unescapePlainTextCodeBlock[ string_String ] := StringReplace[ string, "\\\\" -> "\\" ];
 unescapePlainTextCodeBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedCodeBlockCell*)
+cachedCodeBlockCell // beginDefinition;
+
+(* Code blocks are formatted when they're written as static content during streaming, and again when the final cell is
+   written. The non-dynamic formatting (which includes a front end round trip for Wolfram Language code) gives the same
+   result both times, so it's cached for the current response. The key includes the globals that formatting uses: *)
+cachedCodeBlockCell[ language_String, code_String ] :=
+    With[ { key = { language, code, $SidebarChat, $WorkspaceChat, $InlineChat, $cloudNotebooks } },
+        Lookup[
+            $staticCodeBlockCache,
+            Key @ key,
+            $staticCodeBlockCache[ key ] =
+                Block[ { $useStaticCodeBlockCache = False }, makeCodeBlockCell[ language, code ] ]
+        ]
+    ];
+
+cachedCodeBlockCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1801,7 +2080,7 @@ makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
     BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
     "InlineToolCall",
     Background   -> None,
-    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+    TaggingRules -> KeyDrop[ as, { "Icon", "CallIcon", "Result" } ]
 ];
 
 makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
@@ -1889,6 +2168,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
             "Name"        -> name,
             "DisplayName" -> getToolDisplayName @ tool,
             "Icon"        -> getToolIcon @ tool,
+            "CallIcon"    -> getToolCallIcon @ tool,
             "ToolCall"    -> StringTrim @ string,
             "Parameters"  -> params,
             "Result"      -> result
@@ -1898,7 +2178,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
 ];
 
 parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
+    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, callIcon, query, result },
 
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDRESULT"~~___~~EndOfString ];
@@ -1906,6 +2186,7 @@ parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"
         tool        = getToolByName @ name;
         displayName = getToolDisplayName[ tool, name ];
         icon        = getToolIcon @ tool;
+        callIcon    = getToolCallIcon @ tool;
         query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
         result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDRESULT" :> r ], "" ];
 
@@ -1913,6 +2194,7 @@ parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"
             "Name"        -> name,
             "DisplayName" -> displayName,
             "Icon"        -> icon,
+            "CallIcon"    -> callIcon,
             "ToolCall"    -> StringTrim @ string,
             "Parameters"  -> StringTrim @ query,
             "Result"      -> StringTrim @ result
@@ -1952,6 +2234,7 @@ parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_As
         "Name"               -> toolName @ tool,
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
+        "CallIcon"           -> getToolCallIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,
         "ToolCall"           -> StringTrim @ string,
         "Parameters"         -> parameters,
@@ -2019,20 +2302,14 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
 
 makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 
-makeToolCallBoxLabel[ as_Association, name_String ] :=
-    makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
+makeToolCallBoxLabel[ as_Association, name_String ] /; $dynamicText :=
+    fakeOpenerView @ makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, $fakeOpenerColor ] ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText :=
-    fakeOpenerView[
-        makeToolCallBoxLabel0[ as, name, icon ],
-        as[ "Result" ] =!= ""
-    ];
-
-makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
+makeToolCallBoxLabel[ as0_Association, name_String ] :=
     With[ { as = resolveToolFormatter @ as0 },
         openerView[
             {
-                makeToolCallBoxLabel0[ as, name, icon ],
+                Function[ col, makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, col ] ] ],
                 (*TODO: custom interface LLM 667 *)
                 TabView[
                     {
@@ -2042,7 +2319,8 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     2,
                     ImageSize  -> Automatic,
                     LabelStyle -> { FontSize -> 12 }
-                ]
+                ],
+                "Tool"
             },
             TrueQ @ as0[ "Open" ]
         ]
@@ -2054,22 +2332,42 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
-With[ { col = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] },
+With[ { col = $fakeOpenerColor },
     Flatten @ {
         toolCallIconPane @ icon,
         Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
-        Style[ string, FontWeight -> "DemiBold", FontColor -> col ],
-        RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "PercolateColorAnimator" ][ Small, col ]
+        Style[ string, FontWeight -> "Plain", FontColor -> col ],
+        activeToolProgressIndicator[ ]
     }
 ];
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ] ]
+    tr[ "FormattingToolUsed" ],
+    Style[ string, FontWeight -> "Plain" ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolCallIcon*)
+$fakeOpenerColor = RGBColor[ 0.53214525, 0.6238195470000001, 0.67275 ];
+
+toolCallIcon // beginDefinition;
+toolCallIcon[ KeyValuePattern[ "CallIcon" -> icon_Function ], color_ ] := icon @ color;
+toolCallIcon[ _, color_ ] := getToolCallIcon[ None ][ color ];
+toolCallIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*activeToolProgressIndicator*)
+activeToolProgressIndicator // beginDefinition;
+
+activeToolProgressIndicator[ ] :=
+    RawBoxes @ TagBox[ ToBoxes @ chatbookIcon[ "PercolateProgressAnimation", False ], "ChatbookActiveToolProgress" ];
+
+activeToolProgressIndicator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2077,31 +2375,18 @@ makeToolCallBoxLabel0 // endDefinition;
 toolCallIconPane // beginDefinition;
 
 toolCallIconPane[ icon_ ] := Pane[
-    toolCallIconPane0 @ icon,
-    BaselinePosition -> Scaled[ 0.2 ],
+    icon,
+    Alignment        -> { Left, Center },
+    BaselinePosition -> Scaled[ 0.27 ],
     ContentPadding   -> False,
-    FrameMargins     -> { { 0, 0 }, { 0, 0 } }
+    FrameMargins     -> { { 0, 0 }, { 0, 0 } },
+    ImageMargins     -> { { 0, 2}, { 2, 2 } },
+    ImageSize        -> { 20, 20 },
+    ImageSizeAction  -> "ShrinkToFit"
 ];
 
 toolCallIconPane // endDefinition;
 
-
-toolCallIconPane0 // beginDefinition;
-
-toolCallIconPane0[ $$unspecified ] :=
-    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ];
-
-toolCallIconPane0[ icon_ ] :=
-    Dynamic[
-        If[ TrueQ @ $CloudEvaluation,
-            cloudShrinkToFit[ #1, { 16, 16 } ],
-            Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
-        ] &[ icon ],
-        SingleEvaluation -> True,
-        TrackedSymbols   :> { }
-    ];
-
-toolCallIconPane0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

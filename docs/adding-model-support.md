@@ -73,6 +73,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"ToolsEnabled"` | Boolean | Whether the model supports tool/function calling |
 | `"ForceSynchronous"` | Boolean | Force non-streaming (synchronous) API calls |
 | `"Reasoning"` | `"Minimal"` / `"None"` / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
+| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); currently only honored for the `"OpenAI"` service |
 
 **Tool configuration:**
 
@@ -106,7 +107,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"TokenizerName"` | String | Which tokenizer to use for token counting (e.g., `"gpt-4o"`) |
 | `"ExcludedBasePrompts"` | List | Base prompt components to skip for this model |
 
-If a model frequently writes the wrong character in place of a Wolfram Language special character, enable `"ReplaceUnicodeCharacters"` rather than adding auto-correct rules to `$llmAutoCorrectRules` in `SendChat.wl`. Sending the ASCII long name avoids the mojibake at its source, whereas rules that repair responses after the fact have to guess at the model's intent and can rewrite valid code. See [Chat Behavior Settings](settings/setting-groups/chat-behavior.md).
+If a model frequently writes the wrong character in place of a Wolfram Language special character, enable `"ReplaceUnicodeCharacters"` rather than adding auto-correct rules to `$llmAutoCorrectRulesNoMoonshot` in `SendChat.wl`. Sending the ASCII long name avoids the mojibake at its source, whereas rules that repair responses after the fact have to guess at the model's intent and can rewrite valid code. See [Chat Behavior Settings](settings/setting-groups/chat-behavior.md).
 
 Settings whose value is `Missing["NotSupported"]` receive special treatment throughout the system. See [Unsupported Parameters (`Missing["NotSupported"]`)](#unsupported-parameters-missingnotsupported) for details.
 
@@ -386,12 +387,17 @@ resolveAutoSetting0[ as_, name_String ] :=
     ];
 ```
 
-This means `Missing["NotSupported"]` propagates through the resolved settings as-is. For example, `autoStopTokens` checks for it explicitly and preserves it rather than computing stop tokens:
+This means `Missing["NotSupported"]` propagates through the resolved settings as-is. For example, `autoStopTokens` preserves it rather than computing stop tokens, since `stopTokensSupportedQ` checks for it explicitly:
 
 ```wl
-autoStopTokens[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
-    Missing[ "NotSupported" ];
+autoStopTokens[ as_Association ] :=
+    If[ stopTokensSupportedQ @ as, chooseStopTokens @ as, Missing[ "NotSupported" ] ];
+
+stopTokensSupportedQ[ KeyValuePattern[ "StopTokens" -> Missing[ "NotSupported" ] ] ] :=
+    False;
 ```
+
+For stop tokens, the tokens that would otherwise have been used (from `chooseStopTokens`, or an explicitly given list) are then detected client-side instead (see `emulatedStopTokens` in `SendChat.wl` and `"StopTokens"` in [LLM Parameter Settings](settings/setting-groups/llm-parameters.md#client-side-emulation)).
 
 #### 2. Parameters are stripped before reaching the API
 

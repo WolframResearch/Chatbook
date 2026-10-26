@@ -443,9 +443,9 @@ addPersonaSource // endDefinition;
 (*getFullToolList*)
 getFullToolList // beginDefinition;
 
-getFullToolList[ ] := DeleteCases[
+getFullToolList[ ] := Select[
     Values @ DeleteDuplicatesBy[ "Name" ] @ Join[ $DefaultTools, $InstalledTools ],
-    _[ KeyValuePattern[ "Hidden" -> True ], ___ ]
+    #[ "Data" ][ "Hidden" ] =!= True &
 ];
 
 getFullToolList // endDefinition;
