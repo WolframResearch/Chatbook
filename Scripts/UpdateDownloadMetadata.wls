@@ -48,7 +48,9 @@ $vdbFile  = cFile @ FileNameJoin @ { $pacletDir, "Source", "Chatbook", "PromptGe
 $rdocFile = cFile @ FileNameJoin @ { $pacletDir, "Source", "Chatbook", "PromptGenerators", "RelatedDocumentation.wl" };
 $mxFile   = FileNameJoin @ { $pacletDir, "Source", "Chatbook", ToString @ $SystemWordLength <> "Bit", "Chatbook.mx" };
 
-$workDir := $workDir = cDir @ CreateDirectory @ FileNameJoin @ { $TemporaryDirectory, "ChatbookMetadata-" <> CreateUUID[ ] };
+(* Downloads are extracted in a temporary work directory, which is only created when needed (see workDirectory) and is
+   deleted when the script exits, however it exits (see Run): *)
+$workDir = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -149,17 +151,42 @@ snippetURL[ { name_String, version_String } ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Work Directory*)
+workDirectory[ ] :=
+    If[ StringQ @ $workDir,
+        $workDir,
+        $workDir = cDir @ CreateDirectory @ FileNameJoin @ { $TemporaryDirectory, "ChatbookMetadata-" <> CreateUUID[ ] }
+    ];
+
+cleanupWorkDirectory[ ] :=
+    If[ StringQ @ $workDir,
+        Quiet @ DeleteDirectory[ $workDir, DeleteContents -> True ];
+        $workDir = None
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*parseContentLength*)
+(* The value of a Content-Length header is a sequence of digits. Anything else (which is never evaluated) is invalid: *)
+parseContentLength[ value_String ] := With[ { trimmed = StringTrim @ value },
+    If[ StringMatchQ[ trimmed, DigitCharacter.. ], FromDigits @ trimmed, Missing[ "InvalidContentLength", value ] ]
+];
+
+parseContentLength[ value_ ] := Missing[ "InvalidContentLength", value ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*download*)
 download[ url_String ] := Enclose[
     Module[ { file, res, size, expected },
-        file = FileNameJoin @ { $workDir, CreateUUID[ ] <> ".zip" };
+        file = FileNameJoin @ { workDirectory[ ], CreateUUID[ ] <> ".zip" };
         logInfo[ "Downloading " <> url ];
         res = Quiet @ URLDownload[ url, file, { "File", "StatusCode", "Headers" } ];
         ConfirmAssert[ MatchQ[ res, KeyValuePattern[ "StatusCode" -> 200 ] ], "StatusCode" ];
         size = ConfirmBy[ FileByteCount @ file, Positive, "Size" ];
         expected = SelectFirst[ res[ "Headers" ], StringMatchQ[ First @ #, "content-length", IgnoreCase -> True ] &, None ];
-        If[ MatchQ[ expected, _ -> _String ],
-            ConfirmAssert[ ToExpression @ Last @ expected === size, "ContentLength" ]
+        If[ MatchQ[ expected, _ -> _ ],
+            ConfirmAssert[ parseContentLength @ Last @ expected === size, "ContentLength" ]
         ];
         <| "File" -> file, "Size" -> size, "Hash" -> ConfirmBy[ FileHash[ file, "SHA256", All, "HexString" ], StringQ, "Hash" ] |>
     ],
@@ -171,7 +198,7 @@ download[ url_String ] := Enclose[
 (*extract*)
 extract[ zip_String ] := Enclose[
     Module[ { dir },
-        dir = ConfirmBy[ CreateDirectory @ FileNameJoin @ { $workDir, CreateUUID[ ] }, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ CreateDirectory @ FileNameJoin @ { workDirectory[ ], CreateUUID[ ] }, DirectoryQ, "Directory" ];
         ConfirmMatch[ ExtractArchive[ zip, dir ], { __String }, "Extracted" ];
         dir
     ],
@@ -370,42 +397,45 @@ writeUTF8[ file_String, text_String ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Run*)
-$vdbKeys     = cicd`ScriptConfirmMatch[ vectorDBVersions[ ], { { _String, _String }.. } ];
-$snippetKeys = cicd`ScriptConfirmMatch[ snippetVersions[ ], { { _String, _String }.. } ];
+(* The work directory is deleted however this exits, including when a ScriptConfirm* check fails (they call Exit) or
+   the script is aborted: *)
+WithCleanup[
+    $vdbKeys     = cicd`ScriptConfirmMatch[ vectorDBVersions[ ], { { _String, _String }.. } ];
+    $snippetKeys = cicd`ScriptConfirmMatch[ snippetVersions[ ], { { _String, _String }.. } ];
 
-logInfo[ "Referenced vector database versions: " <> ToString[ $vdbKeys, InputForm ] ];
-logInfo[ "Referenced snippet versions: " <> ToString[ $snippetKeys, InputForm ] ];
+    logInfo[ "Referenced vector database versions: " <> ToString[ $vdbKeys, InputForm ] ];
+    logInfo[ "Referenced snippet versions: " <> ToString[ $snippetKeys, InputForm ] ];
 
-$existingVDB     = existingVectorDBMetadata[ ];
-$existingSnippet = existingSnippetMetadata[ ];
+    $existingVDB     = existingVectorDBMetadata[ ];
+    $existingSnippet = existingSnippetMetadata[ ];
 
-If[ $checkOnly,
-    $missing = Join[
-        Complement[ $vdbKeys, Keys @ Select[ $existingVDB, completeEntryQ[ #, $vdbRequired ] & ] ],
-        Complement[ $snippetKeys, Keys @ Select[ $existingSnippet, completeEntryQ[ #, $snippetRequired ] & ] ]
-    ];
-    $stale = Join[ Complement[ Keys @ $existingVDB, $vdbKeys ], Complement[ Keys @ $existingSnippet, $snippetKeys ] ];
-    If[ $missing === { } && $stale === { },
-        logInfo[ "Download metadata is up to date." ];
-        result = Success[ "UpToDate", <| |> ],
-        If[ $missing =!= { }, logError[ "Missing download metadata for: " <> ToString[ $missing, InputForm ] ] ];
-        If[ $stale   =!= { }, logWarning[ "Unreferenced download metadata for: " <> ToString[ $stale, InputForm ] ] ];
-        logError[ "Run: wolframscript -f Scripts/UpdateDownloadMetadata.wls" ];
-        Exit[ 1 ]
-    ]
-    ,
-    $vdbData     = collect[ $vdbKeys, $existingVDB, vectorDBMetadata, $vdbRequired ];
-    $snippetData = collect[ $snippetKeys, $existingSnippet, snippetMetadata, $snippetRequired ];
+    If[ $checkOnly,
+        $missing = Join[
+            Complement[ $vdbKeys, Keys @ Select[ $existingVDB, completeEntryQ[ #, $vdbRequired ] & ] ],
+            Complement[ $snippetKeys, Keys @ Select[ $existingSnippet, completeEntryQ[ #, $snippetRequired ] & ] ]
+        ];
+        $stale = Join[ Complement[ Keys @ $existingVDB, $vdbKeys ], Complement[ Keys @ $existingSnippet, $snippetKeys ] ];
+        If[ $missing === { } && $stale === { },
+            logInfo[ "Download metadata is up to date." ];
+            result = Success[ "UpToDate", <| |> ],
+            If[ $missing =!= { }, logError[ "Missing download metadata for: " <> ToString[ $missing, InputForm ] ] ];
+            If[ $stale   =!= { }, logWarning[ "Unreferenced download metadata for: " <> ToString[ $stale, InputForm ] ] ];
+            logError[ "Run: wolframscript -f Scripts/UpdateDownloadMetadata.wls" ];
+            Exit[ 1 ]
+        ]
+        ,
+        $vdbData     = collect[ $vdbKeys, $existingVDB, vectorDBMetadata, $vdbRequired ];
+        $snippetData = collect[ $snippetKeys, $existingSnippet, snippetMetadata, $snippetRequired ];
 
-    result = <|
-        "VectorDatabases" -> replaceGeneratedBlock[ $vdbFile, "VectorDatabaseDownloadMetadata", vectorDBBlock @ $vdbData ],
-        "Snippets"        -> replaceGeneratedBlock[ $rdocFile, "StreamableSnippetDownloadMetadata", snippetBlock @ $snippetData ]
-    |>;
+        result = <|
+            "VectorDatabases" -> replaceGeneratedBlock[ $vdbFile, "VectorDatabaseDownloadMetadata", vectorDBBlock @ $vdbData ],
+            "Snippets"        -> replaceGeneratedBlock[ $rdocFile, "StreamableSnippetDownloadMetadata", snippetBlock @ $snippetData ]
+        |>;
 
-    cicd`ScriptConfirmMatch[ result, KeyValuePattern @ { "VectorDatabases" -> _? BooleanQ, "Snippets" -> _? BooleanQ } ]
+        cicd`ScriptConfirmMatch[ result, KeyValuePattern @ { "VectorDatabases" -> _? BooleanQ, "Snippets" -> _? BooleanQ } ]
+    ],
+    cleanupWorkDirectory[ ]
 ];
-
-Quiet @ DeleteDirectory[ $workDir, DeleteContents -> True ];
 
 (* :!CodeAnalysis::EndBlock:: *)
 
