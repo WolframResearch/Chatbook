@@ -1476,82 +1476,18 @@ downloadStreamableSnippets[ ] /; ! $allowSnippetDownload :=
 downloadStreamableSnippets[ ] /; TrueQ @ $snippetDownloadDeclined :=
     Missing[ "DownloadDeclined" ];
 
+(* Prompts are shown before the download lock is taken, so other kernels never have to wait for a dialog. The lock is
+   taken for each download attempt instead (see downloadSnippetArchive), which checks again whether the snippets still
+   need to be installed. *)
 downloadStreamableSnippets[ ] /; $allowSnippetDownload := Enclose[
-    Module[ { dir, lock },
-        dir  = ConfirmBy[ GeneralUtilities`EnsureDirectory @ $localStreamableSnippetsDirectory, DirectoryQ, "Directory" ];
-        lock = FileNameJoin @ { dir, "download.lock" };
-        withDownloadLock[ lock, downloadStreamableSnippetsLocked @ dir ]
-    ] // LogChatTiming[ "DownloadStreamableSnippets" ],
-    throwInternalFailure
-];
+    Catch @ Module[ { dir, queue, damaged, failed },
 
-downloadStreamableSnippets[ dir_String, name_String ] /; TrueQ @ $snippetDownloadDeclined :=
-    Missing[ "Cancelled" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ $localStreamableSnippetsDirectory, DirectoryQ, "Directory" ];
 
-downloadStreamableSnippets[ dir_String, name_String ] :=
-    downloadStreamableSnippets[ dir, name, 1, None ];
-
-downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] /; attempt > $maxDownloadAttempts :=
-    Failure[ "SnippetDownloadFailed", <| "Name" -> name |> ];
-
-downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] := Enclose[
-    Catch @ Module[ { retry, ver, url, tmp, start, response, newRate, size },
-
-        If[ attempt > 1,
-            If[ ! confirmDownloadRetry[ downloadTextTemplate[ "DownloadLabelDocumentation" ][ name ], $streamableSnippetSizes @ name, rate ],
-                $snippetDownloadDeclined = True;
-                Throw @ Missing[ "Cancelled" ]
-            ];
-            Pause[ attempt - 1 ]
-        ];
-
-        tmp = FileNameJoin @ { $TemporaryDirectory, name <> "-" <> CreateUUID[ ] <> ".zip" };
-        retry = Function[
-            Quiet @ DeleteFile @ tmp;
-            Throw @ downloadStreamableSnippets[ dir, name, attempt + 1, newRate ]
-        ];
-
-        (* Ensure the temporary file is removed even if interrupted: *)
-        WithCleanup[
-            ver = ConfirmBy[ StringReplace[ $streamableSnippetVersions @ name, "." -> "-" ], StringQ, "Version" ];
-            url = ConfirmBy[ URLBuild @ { $streamableSnippetBaseURL, name, ver<>".zip" }, StringQ, "URL" ];
-
-            start    = AbsoluteTime[ ];
-            response = Quiet @ URLDownload[ url, tmp, { "File", "StatusCode" } ];
-            size     = Quiet @ FileByteCount @ tmp;
-            newRate  = If[ IntegerQ @ size && size > 0, size / Max[ AbsoluteTime[ ] - start, 0.001 ], rate ];
-
-            If[ ! MatchQ[ response, KeyValuePattern[ "StatusCode" -> 200 ] ], retry[ ] ];
-            If[ ! validSnippetArchiveQ[ name, tmp ], retry[ ] ];
-
-            Replace[ installSnippetArchive[ dir, name, tmp ], Except[ _String? DirectoryQ ] :> retry[ ] ],
-
-            Quiet @ DeleteFile @ tmp
-        ]
-    ],
-    throwInternalFailure
-];
-
-downloadStreamableSnippets // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*downloadStreamableSnippetsLocked*)
-downloadStreamableSnippetsLocked // beginDefinition;
-
-downloadStreamableSnippetsLocked[ dir_String ] := Enclose[
-    Catch @ Module[ { partial, queue, damaged, failed },
-
-        Scan[ restoreSnippetBackup[ dir, # ] &, $streamableSnippetTypes ];
-
-        partial = Select[ $streamableSnippetTypes, staleSnippetArtifacts[ dir, # ] =!= { } & ];
-        Quiet[ DeleteDirectory[ #, DeleteContents -> True ] & /@ Flatten[ staleSnippetArtifacts[ dir, # ] & /@ $streamableSnippetTypes ] ];
-
-        (* Another kernel may have finished installing while we were waiting for the lock: *)
         queue = Select[ $streamableSnippetTypes, ! streamableSnippetsDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
-        If[ queue === { }, Throw @ dir ];
+        If[ queue === { }, Throw @ ConfirmBy[ dir, streamableSnippetsDirectoryQ, "Installed" ] ];
 
-        damaged = Select[ queue, MemberQ[ partial, # ] || snippetsDamagedQ[ dir, # ] & ];
+        damaged = Select[ queue, snippetsDamagedQ[ dir, # ] & ];
 
         (* The prompt stops the current chat when it is declined (see confirmDownloadPrompt), so the declined snippets are
            skipped instead of throwing a failure that would abort it: *)
@@ -1578,25 +1514,93 @@ downloadStreamableSnippetsLocked[ dir_String ] := Enclose[
             TrueQ @ $snippetDownloadDeclined, Missing[ "DownloadDeclined" ],
             True, throwFailure[ "SnippetDownloadFailed", StringRiffle[ failed, ", " ] ]
         ]
+    ] // LogChatTiming[ "DownloadStreamableSnippets" ],
+    throwInternalFailure
+];
+
+downloadStreamableSnippets[ dir_String, name_String ] /; TrueQ @ $snippetDownloadDeclined :=
+    Missing[ "Cancelled" ];
+
+downloadStreamableSnippets[ dir_String, name_String ] :=
+    downloadStreamableSnippets[ dir, name, 1, None ];
+
+downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] /; attempt > $maxDownloadAttempts :=
+    Failure[ "SnippetDownloadFailed", <| "Name" -> name |> ];
+
+(* The retry prompt is shown before the download lock is taken again: *)
+downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] := Enclose[
+    Catch @ Module[ { result },
+
+        If[ attempt > 1,
+            If[ ! confirmDownloadRetry[ downloadTextTemplate[ "DownloadLabelDocumentation" ][ name ], $streamableSnippetSizes @ name, rate ],
+                $snippetDownloadDeclined = True;
+                Throw @ Missing[ "Cancelled" ]
+            ];
+            Pause[ attempt - 1 ]
+        ];
+
+        result = withDownloadLock[ FileNameJoin @ { dir, "download.lock" }, downloadSnippetArchive[ dir, name, rate ] ];
+
+        Replace[ result, Missing[ "Retry", newRate_ ] :> downloadStreamableSnippets[ dir, name, attempt + 1, newRate ] ]
     ],
     throwInternalFailure
 ];
 
-downloadStreamableSnippetsLocked // endDefinition;
+downloadStreamableSnippets // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*staleSnippetArtifacts*)
-staleSnippetArtifacts // beginDefinition;
+(*downloadSnippetArchive*)
+(* Evaluated while holding the download lock. Returns the installed directory, or Missing[ "Retry", rate ] if the
+   download should be tried again. *)
+downloadSnippetArchive // beginDefinition;
 
-staleSnippetArtifacts[ dir_String, name_String ] := Select[
-    FileNames[ { name <> ".staging", name <> ".old-*" }, dir ],
-    With[ { date = Quiet @ FileDate[ #, "Modification" ] },
-        ! DateObjectQ @ date || AbsoluteTime[ ] - AbsoluteTime @ date > 120
-    ] &
+downloadSnippetArchive[ dir_String, name_String, rate_ ] := Enclose[
+    Catch @ Module[ { target, retry, ver, url, tmp, start, response, newRate, size },
+
+        target = FileNameJoin @ { dir, name };
+
+        (* Leftovers of interrupted installs are no longer in use, since the lock is held: *)
+        restoreSnippetBackup[ dir, name ];
+        Quiet[ DeleteDirectory[ #, DeleteContents -> True ] & /@ snippetArtifacts[ dir, name ] ];
+
+        (* Another kernel may have installed them while we were waiting for the lock: *)
+        If[ streamableSnippetsDirectoryQ0 @ target, Throw @ target ];
+
+        tmp   = FileNameJoin @ { $TemporaryDirectory, name <> "-" <> createUUID[ ] <> ".zip" };
+        retry = Function[ Throw @ Missing[ "Retry", newRate ] ];
+
+        (* Ensure the temporary file is removed even if interrupted: *)
+        WithCleanup[
+            ver = ConfirmBy[ StringReplace[ $streamableSnippetVersions @ name, "." -> "-" ], StringQ, "Version" ];
+            url = ConfirmBy[ URLBuild @ { $streamableSnippetBaseURL, name, ver<>".zip" }, StringQ, "URL" ];
+
+            start    = AbsoluteTime[ ];
+            response = Quiet @ URLDownload[ url, tmp, { "File", "StatusCode" } ];
+            size     = Quiet @ FileByteCount @ tmp;
+            newRate  = If[ IntegerQ @ size && size > 0, size / Max[ AbsoluteTime[ ] - start, 0.001 ], rate ];
+
+            If[ ! MatchQ[ response, KeyValuePattern[ "StatusCode" -> 200 ] ], retry[ ] ];
+            If[ ! validSnippetArchiveQ[ name, tmp ], retry[ ] ];
+
+            Replace[ installSnippetArchive[ dir, name, tmp ], Except[ _String? DirectoryQ ] :> retry[ ] ],
+
+            Quiet @ DeleteFile @ tmp
+        ]
+    ],
+    throwInternalFailure
 ];
 
-staleSnippetArtifacts // endDefinition;
+downloadSnippetArchive // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetArtifacts*)
+(* Leftovers of interrupted installs (staging directories and backups of replaced installs). Only removed while holding
+   the download lock, after restoring a backup (see restoreSnippetBackup). *)
+snippetArtifacts // beginDefinition;
+snippetArtifacts[ dir_String, name_String ] := FileNames[ { name <> ".staging", name <> ".old-*" }, dir ];
+snippetArtifacts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1680,7 +1684,7 @@ installSnippetArchive0[ dir_String, name_String, zip_String, staging_String ] :=
         $streamableSnippetIndexCache = KeyDrop[ $streamableSnippetIndexCache, name ];
 
         If[ DirectoryQ @ target,
-            old = target <> ".old-" <> CreateUUID[ ];
+            old = target <> ".old-" <> createUUID[ ];
             ConfirmBy[ RenameDirectory[ target, old ], DirectoryQ, "MoveOld" ]
         ];
 

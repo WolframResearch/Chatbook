@@ -49,6 +49,13 @@ $$downloadDeclined = Missing[ "DownloadDeclined", ___ ];
 Chatbook::InvalidPrompt = "\
 Expected a string or a list of chat messages instead of `1`.";
 
+Chatbook::DownloadLockFailed = "\
+Cannot download to `1` because a lock file cannot be created there. Check that the directory can be written to.";
+
+Chatbook::DownloadLockTimeout = "\
+Timed out after waiting `2` minutes for another Wolfram Language session to finish downloading to `1`. \
+Try again later.";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Downloads*)
@@ -57,8 +64,29 @@ $promptRedownload      = True;
 $longDownloadThreshold = 30;
 $fallbackDownloadRate  = 2.0*^6;
 
+(* Seconds for each attempt to take a download lock, and the total time to wait for it: *)
 $downloadLockPollInterval = 10;
-$staleLockFileAge         = 60;
+$downloadLockTimeout      = 600;
+
+(* The kernel holding a download lock updates the lock file's modification date this often (in whole seconds), and
+   locks that have not been updated for $staleDownloadLockAge seconds are broken (e.g. the kernel holding the lock was
+   killed on another machine, or the machine name changed): *)
+$downloadLockRefreshInterval = 30;
+$staleDownloadLockAge        = 180;
+
+(* Lock files that can't be read (e.g. left empty by an interrupted write) are broken after this many seconds: *)
+$staleLockFileAge = 60;
+
+(* Lock files that were last updated longer ago than the stale age plus this margin are broken right away. The margin
+   allows for file dates that are reported with a different UTC offset, e.g. in time zones whose offset is not a whole
+   number of hours, or after a daylight saving time change: *)
+$lockFileDateMargin = 7200;
+
+(* Download locks held by this kernel: *)
+$heldDownloadLocks = { };
+
+(* The modification time of each lock file that this kernel is waiting for, and when it first saw that time: *)
+$downloadLockObservations = <| |>;
 
 $downloadPromptFunction := defaultDownloadPrompt;
 $downloadDialogWidth     = 480;
@@ -225,19 +253,76 @@ formatDuration // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*withDownloadLock*)
-(* Like WithLock, but periodically breaks the lock if the kernel that created it is no longer running: *)
+(* Like WithLock, but the lock is kept up to date while it is held, so that other kernels can break locks that are no
+   longer kept up to date (e.g. because the kernel holding them was killed). Waiting for the lock is limited to
+   $downloadLockTimeout seconds. If the lock can't be taken, this throws a failure (see throwFailure). Download prompts
+   must not be shown while holding the lock, since other kernels would have to wait for them. *)
 withDownloadLock // beginDefinition;
 withDownloadLock // Attributes = { HoldRest };
 
+(* Locks are not reentrant, so nested calls for a lock that this kernel already holds just evaluate: *)
+withDownloadLock[ lock_String, eval_ ] /; MemberQ[ $heldDownloadLocks, lock ] :=
+    eval;
+
 withDownloadLock[ lock_String, eval_ ] := Catch[
-    While[ True,
-        breakStaleDownloadLock @ lock;
-        WithLock[ File @ lock, Throw[ eval, $downloadLockTag ], TimeConstraint -> $downloadLockPollInterval ]
+    Module[ { start, result },
+        start = AbsoluteTime[ ];
+        While[ True,
+            breakStaleDownloadLock @ lock;
+            (* Messages from WithLock itself, e.g. when the lock file can't be created or a stale lock is removed: *)
+            result = Quiet[
+                WithLock[
+                    File @ lock,
+                    Throw[ withHeldDownloadLock[ lock, eval ], $downloadLockTag ],
+                    TimeConstraint -> $downloadLockPollInterval
+                ],
+                { CreateDirectory::privv, CreateFile::privv, WithLock::lock, WithLock::stale, WithLock::unlock }
+            ];
+            Which[
+                (* WithLock fails right away if the lock file can't be created (e.g. the directory is not writable): *)
+                result =!= $TimedOut,
+                    Throw[ throwFailure[ "DownloadLockFailed", DirectoryName @ lock ], $downloadLockTag ],
+                AbsoluteTime[ ] - start >= $downloadLockTimeout,
+                    Throw[
+                        throwFailure[ "DownloadLockTimeout", DirectoryName @ lock, Ceiling[ $downloadLockTimeout / 60 ] ],
+                        $downloadLockTag
+                    ]
+            ]
+        ]
     ],
     $downloadLockTag
 ];
 
 withDownloadLock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withHeldDownloadLock*)
+(* Evaluates eval while the lock file's modification date is updated in the background. Scheduled tasks also run while
+   waiting for downloads to finish, but not during a single long evaluation like ExtractArchive, which is why stale locks
+   are only broken after several missed updates. *)
+withHeldDownloadLock // beginDefinition;
+withHeldDownloadLock // Attributes = { HoldRest };
+
+withHeldDownloadLock[ lock_String, eval_ ] :=
+    Module[ { task },
+        Block[ { $heldDownloadLocks = Append[ $heldDownloadLocks, lock ] },
+            WithCleanup[
+                task = Quiet @ SessionSubmit @ ScheduledTask[ refreshDownloadLock @ lock, $downloadLockRefreshInterval ],
+                eval,
+                Quiet @ If[ MatchQ[ task, _TaskObject ], TaskRemove @ task ]
+            ]
+        ]
+    ];
+
+withHeldDownloadLock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refreshDownloadLock*)
+refreshDownloadLock // beginDefinition;
+refreshDownloadLock[ lock_String ] := Quiet @ If[ FileExistsQ @ lock, SetFileDate @ lock ];
+refreshDownloadLock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -259,18 +344,60 @@ breakStaleDownloadLock // endDefinition;
 (*staleDownloadLockQ*)
 staleDownloadLockQ // beginDefinition;
 
+(* A lock created by a kernel on this machine that is no longer running can be broken right away. Any other lock is
+   broken once the kernel holding it stops updating it (e.g. the lock is from another machine, or the process table is
+   not available): *)
 staleDownloadLockQ[ lock_, KeyValuePattern @ { "MachineName" -> m_String, "ProcessID" -> pid_Integer, "CreationTime" -> t_ } ] :=
-    m === $MachineName && ! processRunningQ[ pid, t ];
+    TrueQ[ m === $MachineName && ! processRunningQ[ pid, t ] ] || downloadLockAge @ lock > $staleDownloadLockAge;
 
 (* Lock files left empty or unreadable by an interrupted write: *)
 staleDownloadLockQ[ lock_, Null | $Failed | _String ] :=
-    With[ { date = Quiet @ FileDate[ lock, "Modification" ] },
-        DateObjectQ @ date && AbsoluteTime[ ] - AbsoluteTime @ date > $staleLockFileAge
-    ];
+    downloadLockAge @ lock > $staleLockFileAge;
 
-staleDownloadLockQ[ _, _ ] := False;
+staleDownloadLockQ[ lock_, _ ] :=
+    downloadLockAge @ lock > $staleDownloadLockAge;
 
 staleDownloadLockQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadLockAge*)
+(* Seconds for which this kernel has seen the lock file without it being updated (0 if its modification time isn't
+   known, e.g. if the lock has just been released). This doesn't compare the modification time to the current time,
+   since file dates can be reported with a different UTC offset (and the clocks of different machines can differ). *)
+downloadLockAge // beginDefinition;
+
+downloadLockAge[ lock_String ] :=
+    With[ { time = Quiet @ FileDate[ lock, "Modification" ] },
+        Which[
+            ! DateObjectQ @ time, 0,
+            UnixTime[ ] - UnixTime @ time > $staleDownloadLockAge + $lockFileDateMargin, Infinity,
+            True, observedDownloadLockAge[ lock, UnixTime @ time ]
+        ]
+    ];
+
+downloadLockAge // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*observedDownloadLockAge*)
+observedDownloadLockAge // beginDefinition;
+
+observedDownloadLockAge[ lock_String, time_Integer ] :=
+    Replace[
+        $downloadLockObservations @ lock,
+        {
+            { time, seen_ } :> AbsoluteTime[ ] - seen,
+            _ :> (
+                (* Only a few lock files are ever used, so this is reset in case paths keep changing (e.g. in tests): *)
+                If[ Length @ $downloadLockObservations > 20, $downloadLockObservations = <| |> ];
+                $downloadLockObservations[ lock ] = { time, AbsoluteTime[ ] };
+                0
+            )
+        }
+    ];
+
+observedDownloadLockAge // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -139,9 +139,15 @@ $usearchIndexIdleTime = 300;
 (* Set when the user declines a download, repair or retry prompt. For the rest of the session, databases that are not
    installed (or are damaged) are skipped instead of prompting again, until InstallVectorDatabases[] is evaluated: *)
 $vectorDBDownloadDeclined = False;
-$staleArtifactAge         = 120;
 $downloadProgress         = <| |>;
 $downloadStatus           = <| |>;
+
+(* Databases that could not be loaded even after downloading them again. They are skipped for the rest of the session,
+   until InstallVectorDatabases[] downloads them again: *)
+$vectorDBLoadFailures = { };
+
+(* Databases that are downloaded again even if their files look intact (see repairVectorDB): *)
+$forcedVectorDBDownloads = { };
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 250;
@@ -270,6 +276,13 @@ $$dbNameOrNames = $$dbName | $$dbNames;
 
 $$vectorDatabaseSource = $$vectorDatabase | _? DirectoryQ | _? FileExistsQ;
 
+(* Size and modification time (as a Unix time) of an index file: *)
+$$indexFingerprint = { _Integer, _Integer };
+
+(* Returned instead of a loaded database that is skipped, because its download was declined or because it could not be
+   loaded even after downloading it again: *)
+$$skippedVectorDB = $$downloadDeclined | Missing[ "LoadFailed", ___ ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*vectorDBNameQ*)
@@ -285,13 +298,14 @@ $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
 $loadedVectorDBs     = <| |>;
 
-(* Whether index files whose fingerprint does not match the manifest may be hashed to check if they are still intact
-   (enabled by InstallVectorDatabases; disabled otherwise, since hashing all indices can take tens of seconds): *)
-$allowIndexHashing = False;
-
 (* Set to True to verify index hashes even when the index file appears unchanged: *)
-$verifyIndexHashes         = False;
-$verifiedIndexFingerprints = <| |>;
+$verifyIndexHashes = False;
+
+(* Results of hashing index files, keyed by file and fingerprint, so that an index is hashed at most once per session
+   while it is unchanged: *)
+$verifiedIndexFingerprints   = <| |>;
+$maxVerifiedIndexFingerprints = 100;
+
 $modificationDateTolerance = 2;
 
 (* Persistent USearch index handles used by vectorDatabaseSearch: *)
@@ -541,9 +555,10 @@ registerVectorDatabase // endDefinition;
 (*InstallVectorDatabases*)
 InstallVectorDatabases // beginDefinition;
 
-(* An explicit request to install, so a download that was declined earlier in the session is offered again: *)
+(* An explicit request to install, so a download that was declined earlier in the session is offered again, and
+   databases that could not be loaded are downloaded again: *)
 InstallVectorDatabases[ ] :=
-    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True, $allowIndexHashing = True },
+    catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True },
         $vectorDBDownloadDeclined = False;
         installVectorDatabases[ ]
     ];
@@ -557,6 +572,7 @@ installVectorDatabases // beginDefinition;
 
 installVectorDatabases[ ] := Enclose[
     Module[ { dir, snippets, snippetDir },
+        reinstallFailedVectorDBs[ ];
         dir = getVectorDBDirectory[ ];
         If[ MatchQ[ dir, $$downloadDeclined ], throwFailure[ "VectorDatabaseDownloadDeclined" ] ];
         ConfirmBy[ dir, vectorDBDirectoryQ, "Location" ];
@@ -568,6 +584,34 @@ installVectorDatabases[ ] := Enclose[
 ];
 
 installVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reinstallFailedVectorDBs*)
+(* Downloads the databases that could not be loaded earlier in the session again, even if their files look intact: *)
+reinstallFailedVectorDBs // beginDefinition;
+
+reinstallFailedVectorDBs[ ] :=
+    reinstallFailedVectorDBs @ $vectorDBLoadFailures;
+
+reinstallFailedVectorDBs[ { } ] :=
+    Null;
+
+reinstallFailedVectorDBs[ names: { __String } ] := Enclose[
+    Module[ { dir },
+        dir = Block[ { $promptRedownload = False, $forcedVectorDBDownloads = names },
+            downloadVectorDatabases[ $localVectorDBDirectory, KeyTake[ $vectorDBDownloadURLs, names ] ]
+        ];
+        If[ MatchQ[ dir, $$downloadDeclined ], throwFailure[ "VectorDatabaseDownloadDeclined" ] ];
+        ConfirmBy[ dir, DirectoryQ, "Directory" ];
+        clearVectorDBCaches /@ names;
+        $vectorDBLoadFailures = Complement[ $vectorDBLoadFailures, names ];
+        dir
+    ],
+    throwInternalFailure
+];
+
+reinstallFailedVectorDBs // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -742,10 +786,14 @@ vectorDBManifestValidQ[ dir_String ] :=
         ]
     ];
 
+(* Files added by the operating system (e.g. .DS_Store) are not checked, since they can change at any time: *)
 vectorDBManifestValidQ[ dir_String, KeyValuePattern[ "Files" -> files_Association ] ] :=
     AllTrue[
         Normal @ files,
-        MatchQ[ #, _String -> _Integer ] && Quiet @ FileByteCount @ FileNameJoin @ { dir, First @ # } === Last @ # &
+        And[
+            MatchQ[ #, _String -> _Integer ],
+            ! manifestFileQ @ First @ # || Quiet @ FileByteCount @ FileNameJoin @ { dir, First @ # } === Last @ #
+        ] &
     ];
 
 vectorDBManifestValidQ[ dir_String, _ ] := False;
@@ -755,31 +803,30 @@ vectorDBManifestValidQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*vectorDBIndexIntactQ*)
-(* Detects same-size changes to the index file by comparing its size and modification date to the fingerprint recorded
-   in the manifest. Hashing large indices takes tens of seconds, so it is never done during normal use (e.g. the first
-   chat evaluation). An index that no longer matches its fingerprint is treated as damaged and offered for re-download.
-   Hashing is only done when $allowIndexHashing is True (as in InstallVectorDatabases), which allows an intact index
-   with a changed modification date to be accepted again, or when $verifyIndexHashes is True.
-   Installs from older versions have no recorded fingerprint. They are adopted unless the index was clearly modified
-   after the install was completed, in which case it is treated like a fingerprint mismatch. *)
+(* Detects same-size changes to the index file by comparing its size and modification time to the fingerprint recorded
+   in the manifest. Hashing large indices takes seconds, so it is never done while the index is unchanged (e.g. during
+   the first chat evaluation). The size of the index has already been checked, so if the fingerprint does not match, its
+   modification time changed (e.g. the index was touched, copied, or restored from a backup). It is then hashed once to
+   check whether it is still intact, and its new fingerprint is recorded if it is.
+   Installs from older versions have no fingerprint (or one that records the modification date as a date list). They are
+   adopted unless the index was modified after the install was completed, in which case it is hashed too. *)
 vectorDBIndexIntactQ // beginDefinition;
 
 vectorDBIndexIntactQ[ dir_String, name_String, version_String ] :=
-    Module[ { file, manifestFile, manifest, fingerprint, recorded, hashQ },
+    Module[ { file, manifestFile, manifest, fingerprint, recorded },
         file         = FileNameJoin @ { dir, name <> "-vectors.usearch" };
         manifestFile = FileNameJoin @ { dir, "Manifest.wxf" };
         manifest     = Replace[ If[ FileExistsQ @ manifestFile, Quiet @ Developer`ReadWXFFile @ manifestFile ], Except[ _Association ] -> <| |> ];
         fingerprint  = fileFingerprint @ file;
         recorded     = Lookup[ manifest, "IndexFingerprint" ];
-        hashQ        = TrueQ @ $allowIndexHashing;
         Which[
             TrueQ @ $verifyIndexHashes,
                 verifiedIndexHashQ[ file, fingerprint, name, version ] && recordIndexFingerprint[ dir, manifest, fingerprint ],
-            fingerprintMatchQ[ fingerprint, recorded ],
+            fingerprint === recorded,
                 True,
-            MissingQ @ recorded && ! modifiedAfterQ[ file, FileNameJoin @ { dir, "Version.wl" } ],
+            ! MatchQ[ recorded, $$indexFingerprint ] && ! modifiedAfterQ[ file, FileNameJoin @ { dir, "Version.wl" } ],
                 recordIndexFingerprint[ dir, manifest, fingerprint ],
-            hashQ && indexHashValidQ[ file, name, version ],
+            verifiedIndexHashQ[ file, fingerprint, name, version ],
                 recordIndexFingerprint[ dir, manifest, fingerprint ],
             True,
                 False
@@ -787,23 +834,6 @@ vectorDBIndexIntactQ[ dir_String, name_String, version_String ] :=
     ];
 
 vectorDBIndexIntactQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*fingerprintMatchQ*)
-(* Modification dates that differ by exactly one hour are considered equal, since file dates can be reported with a
-   different UTC offset after a daylight saving time change or a change of time zone: *)
-fingerprintMatchQ // beginDefinition;
-
-fingerprintMatchQ[ fp_, fp_ ] := True;
-
-fingerprintMatchQ[ { size_Integer, date1_List }, { size_Integer, date2_List } ] := TrueQ @ Quiet[
-    Abs[ Abs[ AbsoluteTime @ date1 - AbsoluteTime @ date2 ] - 3600 ] < 0.001
-];
-
-fingerprintMatchQ[ _, _ ] := False;
-
-fingerprintMatchQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -822,12 +852,13 @@ modifiedAfterQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*fileFingerprint*)
-(* Size and modification date (as a local date list). Compare fingerprints with fingerprintMatchQ, since the reported
-   date can shift by one hour with the UTC offset: *)
+(* Size and modification time. The modification time is recorded as a Unix time, so that it doesn't change with the time
+   zone or daylight saving time. (In time zones whose UTC offset is not a whole number of hours, FileDate reports times
+   with the offset rounded to whole hours, so after changing to or from such a time zone, the index is hashed once.) *)
 fileFingerprint // beginDefinition;
 
 fileFingerprint[ file_String ] := Quiet @ With[ { date = FileDate[ file, "Modification" ] },
-    If[ FileExistsQ @ file && DateObjectQ @ date, { FileByteCount @ file, First @ date }, None ]
+    If[ FileExistsQ @ file && DateObjectQ @ date, { FileByteCount @ file, UnixTime @ date }, None ]
 ];
 
 fileFingerprint // endDefinition;
@@ -847,14 +878,16 @@ indexHashValidQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*verifiedIndexHashQ*)
-(* Avoids hashing the same unchanged file more than once per session when $verifyIndexHashes is True: *)
+(* Avoids hashing the same unchanged file more than once per session (e.g. a damaged index that is checked again in
+   later chats): *)
 verifiedIndexHashQ // beginDefinition;
 
 verifiedIndexHashQ[ file_String, fingerprint_, name_String, version_String ] :=
     TrueQ @ Lookup[
         $verifiedIndexFingerprints,
         Key @ { file, fingerprint },
-        If[ indexHashValidQ[ file, name, version ], $verifiedIndexFingerprints[ { file, fingerprint } ] = True, False ]
+        If[ Length @ $verifiedIndexFingerprints >= $maxVerifiedIndexFingerprints, $verifiedIndexFingerprints = <| |> ];
+        $verifiedIndexFingerprints[ { file, fingerprint } ] = indexHashValidQ[ file, name, version ]
     ];
 
 verifiedIndexHashQ // endDefinition;
@@ -865,7 +898,7 @@ verifiedIndexHashQ // endDefinition;
 (* Best effort: if the manifest cannot be updated, the index will simply be verified again next time. *)
 recordIndexFingerprint // beginDefinition;
 
-recordIndexFingerprint[ dir_String, manifest_Association, fingerprint: { _Integer, _List } ] := (
+recordIndexFingerprint[ dir_String, manifest_Association, fingerprint: $$indexFingerprint ] := (
     If[ manifest[ "IndexFingerprint" ] =!= fingerprint,
         Quiet @ writeManifestFile[
             FileNameJoin @ { dir, "Manifest.wxf" },
@@ -892,11 +925,27 @@ manifestFileSizes // beginDefinition;
 manifestFileSizes[ dir_String ] := Association[
     FileNameTake[ #, -1 ] -> FileByteCount[ # ] & /@ Select[
         FileNames[ "*", dir ],
-        ! DirectoryQ[ # ] && ! MemberQ[ { "Manifest.wxf", "Version.wl" }, FileNameTake[ #, -1 ] ] && ! StringEndsQ[ #, ".tmp" ] &
+        ! DirectoryQ[ # ] && manifestFileQ @ FileNameTake[ #, -1 ] &
     ]
 ];
 
 manifestFileSizes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*manifestFileQ*)
+(* Whether a file in a vector database directory is listed in its manifest. The manifest itself, the install marker,
+   temporary files, and files added by the operating system (e.g. .DS_Store or Thumbs.db) are not: *)
+manifestFileQ // beginDefinition;
+
+manifestFileQ[ name_String ] := ! Or[
+    MemberQ[ { "Manifest.wxf", "Version.wl" }, name ],
+    StringEndsQ[ name, ".tmp" ],
+    StringStartsQ[ name, "." ],
+    MemberQ[ { "thumbs.db", "desktop.ini" }, ToLowerCase @ name ]
+];
+
+manifestFileQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -905,7 +954,7 @@ manifestFileSizes // endDefinition;
 writeManifestFile // beginDefinition;
 
 writeManifestFile[ file_String, manifest_Association ] :=
-    With[ { tmp = file <> "." <> CreateUUID[ ] <> ".tmp" },
+    With[ { tmp = file <> "." <> createUUID[ ] <> ".tmp" },
         WithCleanup[
             If[ FileExistsQ @ Developer`WriteWXFFile[ tmp, manifest ],
                 RenameFile[ tmp, file, OverwriteTarget -> True ],
@@ -920,6 +969,7 @@ writeManifestFile // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*writeVectorDBManifest*)
+(* Returns a Failure if the manifest can't be written, which fails the install (see unpackVectorDatabase0): *)
 writeVectorDBManifest // beginDefinition;
 
 writeVectorDBManifest[ dir_String, version_String ] := Enclose[
@@ -928,12 +978,12 @@ writeVectorDBManifest[ dir_String, version_String ] := Enclose[
         manifest = <|
             "Version"          -> version,
             "Files"            -> ConfirmBy[ manifestFileSizes @ dir, AssociationQ, "Files" ],
-            "IndexFingerprint" -> ConfirmMatch[ fileFingerprint @ FileNameJoin @ { dir, name <> "-vectors.usearch" }, { _Integer, _List }, "Fingerprint" ]
+            "IndexFingerprint" -> ConfirmMatch[ fileFingerprint @ FileNameJoin @ { dir, name <> "-vectors.usearch" }, $$indexFingerprint, "Fingerprint" ]
         |>;
         file = FileNameJoin @ { dir, "Manifest.wxf" };
         ConfirmBy[ writeManifestFile[ file, manifest ], FileExistsQ, "Write" ]
     ],
-    throwInternalFailure
+    Function[ failure, Failure[ "VectorDatabaseManifestFailed", <| "Directory" -> dir, "Reason" -> failure |> ] ]
 ];
 
 writeVectorDBManifest // endDefinition;
@@ -984,32 +1034,20 @@ vectorDBDamagedQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*partialVectorDBDownloads*)
+(* Leftovers of interrupted downloads and installs: partially downloaded archives, staging directories, and backups of
+   replaced installs: *)
 partialVectorDBDownloads // beginDefinition;
 
 partialVectorDBDownloads[ root_String ] :=
-    Select[ FileNames[ { "*.tmp", "*.staging", "*.old-*" }, root ], staleArtifactQ ];
-
-partialVectorDBDownloads[ root_String, name_String ] :=
-    Select[ FileNames[ { name <> ".zip*.tmp", name <> ".staging", name <> ".old-*" }, root ], staleArtifactQ ];
+    FileNames[ { "*.tmp", "*.staging", "*.old-*" }, root ];
 
 partialVectorDBDownloads // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*staleArtifactQ*)
-(* Files that are still being written (e.g. by another kernel) are not considered stale: *)
-staleArtifactQ // beginDefinition;
-
-staleArtifactQ[ file_String ] :=
-    With[ { date = Quiet @ FileDate[ file, "Modification" ] },
-        ! DateObjectQ @ date || AbsoluteTime[ ] - AbsoluteTime @ date > $staleArtifactAge
-    ];
-
-staleArtifactQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*cleanupPartialDownloads*)
+(* Only evaluated while holding the download lock, so the leftovers are not in use by another kernel. Backups are
+   restored first (see restoreVectorDBBackup). *)
 cleanupPartialDownloads // beginDefinition;
 
 cleanupPartialDownloads[ root_String ] := Quiet[
@@ -1050,15 +1088,22 @@ downloadVectorDatabases[ ] /; TrueQ @ $vectorDBDownloadDeclined :=
 downloadVectorDatabases[ ] /; $allowDownload :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
+(* Prompts are shown before the download lock is taken, so other kernels never have to wait for a dialog. The lock is
+   taken for each download attempt instead (see downloadVectorDatabaseFiles), which checks again what still needs to be
+   installed. *)
 downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
-    Module[ { dir, lock },
+    Catch @ Module[ { dir, names, urls },
 
         If[ $CloudEvaluation && ! TrueQ @ $suppressDownloadWarning, messagePrint[ "VectorDatabaseCloudDownload" ] ];
 
-        dir  = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
-        lock = FileNameJoin @ { dir, "download.lock" };
+        dir   = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        names = ConfirmMatch[ vectorDBsToInstall[ dir, Keys @ urls0 ], { ___String }, "Names" ];
+        If[ names === { }, Throw @ dir ];
 
-        withDownloadLock[ lock, downloadVectorDatabasesLocked[ dir, urls0 ] ]
+        If[ ! confirmVectorDBRepair[ dir, names ], Throw @ declineVectorDBDownload[ ] ];
+
+        urls = ConfirmBy[ KeyTake[ urls0, names ], AssociationQ, "URLs" ];
+        ConfirmMatch[ downloadAndUnpackVectorDatabases[ dir, urls ], $$downloadDeclined | _? DirectoryQ, "Downloaded" ]
     ] // LogChatTiming[ "DownloadVectorDatabases" ],
     throwInternalFailure
 ];
@@ -1067,46 +1112,33 @@ downloadVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*downloadVectorDatabasesLocked*)
-downloadVectorDatabasesLocked // beginDefinition;
+(*vectorDBsToInstall*)
+(* Databases that are not installed or are not valid, and any that should be downloaded again even if their files look
+   intact (see repairVectorDB): *)
+vectorDBsToInstall // beginDefinition;
 
-downloadVectorDatabasesLocked[ dir_String, urls0_Association ] := Enclose[
-    Catch @ Module[ { partial, names, installedQ, damaged, urls },
+vectorDBsToInstall[ dir_String, names: { ___String } ] :=
+    Select[ names, MemberQ[ $forcedVectorDBDownloads, # ] || ! vectorDBDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
 
-        Scan[ restoreVectorDBBackup[ dir, # ] &, Keys @ urls0 ];
+vectorDBsToInstall // endDefinition;
 
-        (* Names that have leftover artifacts from an interrupted download: *)
-        partial = Select[ Keys @ urls0, partialVectorDBDownloads[ dir, # ] =!= { } & ];
-        cleanupPartialDownloads @ dir;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*confirmVectorDBRepair*)
+(* Asks before downloading databases again that are installed but damaged. Databases that are not installed yet, or
+   that are installed for a different version, are downloaded without asking. *)
+confirmVectorDBRepair // beginDefinition;
 
-        (* Try unpacking any complete zip files that might be left over from previous install attempts: *)
-        catchQuiet @ tryUnpackingVectorDatabases @ dir;
+confirmVectorDBRepair[ dir_String, names: { ___String } ] :=
+    With[ { damaged = If[ TrueQ @ $promptRedownload, Select[ names, vectorDBDamagedQ[ dir, # ] & ], { } ] },
+        damaged === { } || confirmRedownload[
+            "DownloadTypeVectorDatabases",
+            damaged,
+            Total @ Cases[ Lookup[ $vectorDBDownloadSizes, damaged, 0 ], _Integer? Positive ]
+        ]
+    ];
 
-        (* Another kernel may have finished installing while we were waiting for the lock: *)
-        names = Select[ Keys @ urls0, ! vectorDBDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
-        If[ names === { }, Throw @ dir ];
-
-        (* If some databases are already installed, any that are missing entirely were likely deleted or lost: *)
-        installedQ = AnyTrue[ $vectorDBNames, vectorDBDirectoryQ0 @ FileNameJoin @ { dir, # } & ];
-
-        damaged = Select[
-            names,
-            MemberQ[ partial, # ] || vectorDBDamagedQ[ dir, # ] || (installedQ && ! FileExistsQ @ FileNameJoin @ { dir, # }) &
-        ];
-
-        If[ damaged =!= { } && TrueQ @ $promptRedownload,
-            If[ ! confirmRedownload[ "DownloadTypeVectorDatabases", damaged, Total @ Cases[ Lookup[ $vectorDBDownloadSizes, damaged, 0 ], _Integer? Positive ] ],
-                Throw @ declineVectorDBDownload[ ]
-            ]
-        ];
-
-        urls = ConfirmBy[ KeyTake[ urls0, names ], AssociationQ, "URLs" ];
-        ConfirmMatch[ downloadAndUnpackVectorDatabases[ dir, urls ], $$downloadDeclined | _? DirectoryQ, "Downloaded" ]
-    ],
-    throwInternalFailure
-];
-
-downloadVectorDatabasesLocked // endDefinition;
+confirmVectorDBRepair // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1161,12 +1193,14 @@ downloadAndUnpackVectorDatabases // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*downloadVectorDatabaseFiles*)
 (* Downloads (in parallel) and unpacks each vector database, retrying failures up to $maxDownloadAttempts times.
-   Returns an association of name -> installed directory, or a Failure/Missing for those that could not be installed. *)
+   Returns an association of name -> installed directory, or a Failure/Missing for those that could not be installed.
+   The download lock is taken for each attempt, so that it is not held while the retry prompt is shown. *)
 downloadVectorDatabaseFiles // beginDefinition;
 
 downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
-    Module[ { pending, results, attempt, start, rate, round, sizes },
+    Module[ { lock, pending, results, attempt, rate, round, sizes },
 
+        lock    = FileNameJoin @ { dir, "download.lock" };
         pending = Keys @ urls;
         results = <| |>;
         attempt = 1;
@@ -1184,13 +1218,13 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
                 $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
             ];
 
-            start = AbsoluteTime[ ];
-            round = ConfirmBy[ downloadVectorDatabaseRound[ dir, KeyTake[ urls, pending ], attempt ], AssociationQ, "Round" ];
-            rate  = observedDownloadRate[ Total @ Lookup[ $downloadProgress, pending, 0 ], AbsoluteTime[ ] - start ];
+            { round, rate } = ConfirmMatch[
+                withDownloadLock[ lock, downloadVectorDatabaseAttempt[ dir, KeyTake[ urls, pending ], attempt ] ],
+                { _Association, _ },
+                "Attempt"
+            ];
 
-            $progressText = downloadText[ "ProgressTextUnpackingFiles" ];
-            KeyValueMap[ (results[ #1 ] = finishVectorDatabaseDownload[ dir, #1, #2 ]) &, round ];
-
+            results = Join[ results, round ];
             pending = Select[ pending, ! StringQ @ results[ # ] & ];
             attempt++
         ];
@@ -1201,6 +1235,53 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
 ];
 
 downloadVectorDatabaseFiles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadVectorDatabaseAttempt*)
+(* Evaluated while holding the download lock. Returns { results, rate }, where results is an association of name ->
+   installed directory, or a Failure for those that could not be installed, and rate is the observed download rate. *)
+downloadVectorDatabaseAttempt // beginDefinition;
+
+downloadVectorDatabaseAttempt[ dir_String, urls_Association, attempt_Integer ] := Enclose[
+    Catch @ Module[ { names, installed, start, round, rate, results },
+
+        prepareVectorDBDirectory[ dir, Keys @ urls ];
+
+        (* Another kernel may have installed some of them while we were waiting for the lock: *)
+        names     = ConfirmMatch[ vectorDBsToInstall[ dir, Keys @ urls ], { ___String }, "Names" ];
+        installed = AssociationMap[ FileNameJoin @ { dir, # } &, Complement[ Keys @ urls, names ] ];
+        If[ names === { }, Throw @ { installed, None } ];
+
+        start = AbsoluteTime[ ];
+        round = ConfirmBy[ downloadVectorDatabaseRound[ dir, KeyTake[ urls, names ], attempt ], AssociationQ, "Round" ];
+        rate  = observedDownloadRate[ Total @ Lookup[ $downloadProgress, names, 0 ], AbsoluteTime[ ] - start ];
+
+        $progressText = downloadText[ "ProgressTextUnpackingFiles" ];
+        results = Association @ KeyValueMap[ #1 -> finishVectorDatabaseDownload[ dir, #1, #2 ] &, round ];
+
+        { Join[ installed, results ], rate }
+    ],
+    throwInternalFailure
+];
+
+downloadVectorDatabaseAttempt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareVectorDBDirectory*)
+(* Evaluated while holding the download lock, so any leftovers of earlier downloads are no longer in use: *)
+prepareVectorDBDirectory // beginDefinition;
+
+prepareVectorDBDirectory[ dir_String, names: { ___String } ] := (
+    (* Backups of every database are restored first, since cleaning up removes all of them: *)
+    Scan[ restoreVectorDBBackup[ dir, # ] &, Union[ names, $vectorDBNames ] ];
+    cleanupPartialDownloads @ dir;
+    (* Try unpacking any complete zip files that might be left over from previous install attempts: *)
+    catchQuiet @ tryUnpackingVectorDatabases @ dir;
+);
+
+prepareVectorDBDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1223,14 +1304,31 @@ downloadVectorDatabaseRound[ dir_String, urls_Association, attempt_Integer ] := 
             { ___TaskObject },
             "Tasks"
         ];
-        taskWait @ tasks;
-        waitForDownloadHandlers @ Keys @ urls;
+        (* Don't leave partial downloads behind if this is interrupted (e.g. the chat is stopped): *)
+        CheckAbort[
+            taskWait @ tasks;
+            waitForDownloadHandlers @ Keys @ urls,
+            deleteDownloadFiles @ Keys @ urls,
+            PropagateAborts -> True
+        ];
         AssociationMap[ Lookup[ $downloadStatus, #, <| |> ] &, Keys @ urls ]
     ],
     throwInternalFailure
 ];
 
 downloadVectorDatabaseRound // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deleteDownloadFiles*)
+(* Deletes the temporary files of the current download round (the tasks have already been removed by taskWait): *)
+deleteDownloadFiles // beginDefinition;
+
+deleteDownloadFiles[ names: { ___String } ] := Quiet[
+    DeleteFile /@ Select[ Lookup[ Lookup[ $downloadStatus, names, <| |> ], "File", None ], StringQ[ # ] && FileExistsQ[ # ] & ]
+];
+
+deleteDownloadFiles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1246,7 +1344,7 @@ downloadURL // endDefinition;
 submitVectorDatabaseDownload // beginDefinition;
 
 submitVectorDatabaseDownload[ dir_String, name_String, url_String ] :=
-    With[ { tmp = FileNameJoin @ { dir, name <> ".zip." <> CreateUUID[ ] <> ".tmp" } },
+    With[ { tmp = FileNameJoin @ { dir, name <> ".zip." <> createUUID[ ] <> ".tmp" } },
         $downloadProgress[ name ] = 0;
         $downloadStatus[ name ] = <| "File" -> tmp, "URL" -> url |>;
         URLDownloadSubmit[
@@ -1403,7 +1501,7 @@ unpackVectorDatabase0[ zip_String, staging_String ] := Enclose[
         If[ DirectoryQ @ target,
             (* Memory-mapped index files cannot be moved or replaced on Windows: *)
             releaseUSearchIndexes[ ];
-            old = target <> ".old-" <> CreateUUID[ ];
+            old = target <> ".old-" <> createUUID[ ];
             ConfirmBy[ RenameDirectory[ target, old ], DirectoryQ, "MoveOld" ]
         ];
 
@@ -1507,8 +1605,8 @@ initializeVectorDatabase // beginDefinition;
 
 initializeVectorDatabase[ name_String, vector_NumericArray ] := Enclose[
     Catch @ Module[ { info, vectorDB },
-        info = ConfirmMatch[ getVectorDB @ name, $$downloadDeclined | _Association, "VectorDB" ];
-        If[ MatchQ[ info, $$downloadDeclined ], Throw @ info ];
+        info = ConfirmMatch[ getVectorDB @ name, $$skippedVectorDB | _Association, "VectorDB" ];
+        If[ MatchQ[ info, $$skippedVectorDB ], Throw @ info ];
         vectorDB = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         ConfirmMatch[
             inVectorDBDirectory @ VectorDatabaseSearch[
@@ -1535,16 +1633,17 @@ getVectorDB // beginDefinition;
 (* Reuse the loaded database only while its index file is unchanged, since the index is read from disk during search: *)
 getVectorDB[ name_String ] :=
     With[ { cached = $loadedVectorDBs[ name ] },
-        cached[ "Data" ] /; AssociationQ @ cached && fingerprintMatchQ[ cached[ "Fingerprint" ], loadedIndexFingerprint @ name ]
+        cached[ "Data" ] /; AssociationQ @ cached && cached[ "Fingerprint" ] === loadedIndexFingerprint @ name
     ];
 
-(* Returns Missing[ "DownloadDeclined", ... ] for a database that is skipped because its download was declined. That is
-   not cached, so the database can be used once it has been installed. *)
+(* Returns a Missing (see $$skippedVectorDB) for a database that is skipped because its download was declined, or
+   because it could not be loaded even after downloading it again. That is not cached, so the database can be used once
+   it has been installed. *)
 getVectorDB[ name_String ] := Enclose[
     Catch @ Module[ { data },
         If[ KeyExistsQ[ $loadedVectorDBs, name ], clearVectorDBCaches @ name ];
-        data = ConfirmMatch[ loadVectorDB @ name, $$downloadDeclined | $$loadedVectorDB, "Loaded" ];
-        If[ MatchQ[ data, $$downloadDeclined ], Throw @ data ];
+        data = ConfirmMatch[ loadVectorDB @ name, $$skippedVectorDB | $$loadedVectorDB, "Loaded" ];
+        If[ MatchQ[ data, $$skippedVectorDB ], Throw @ data ];
         data = ConfirmMatch[ Association @ data, $$loadedVectorDB, "VectorDB" ];
         $loadedVectorDBs[ name ] = <| "Data" -> data, "Fingerprint" -> loadedIndexFingerprint @ name |>;
         data
@@ -1559,10 +1658,16 @@ $$loadedVectorDB = KeyValuePattern @ { "Values" -> { ___String }, "VectorDatabas
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*loadedIndexFingerprint*)
+(* This is checked for every search, and only needs to notice changes during the session, so it uses the modification
+   date as reported by FileDate, which is quicker than converting it to a Unix time (see fileFingerprint): *)
 loadedIndexFingerprint // beginDefinition;
 
 loadedIndexFingerprint[ name_String ] :=
-    fileFingerprint @ FileNameJoin @ { $vectorDBDirectory, name, name <> "-vectors.usearch" };
+    With[ { file = FileNameJoin @ { $vectorDBDirectory, name, name <> "-vectors.usearch" } },
+        Quiet @ With[ { date = FileDate[ file, "Modification" ] },
+            If[ FileExistsQ @ file && DateObjectQ @ date, { FileByteCount @ file, First @ date }, None ]
+        ]
+    ];
 
 loadedIndexFingerprint // endDefinition;
 
@@ -1577,6 +1682,8 @@ loadVectorDB[ name_String ] := Enclose[
         (* Resolve the directory first so that any download prompts/messages are not suppressed: *)
         root = ConfirmMatch[ $vectorDBDirectory, $$downloadDeclined | _? DirectoryQ, "RootDirectory" ];
         If[ MatchQ[ root, $$downloadDeclined ], Throw @ root ];
+        (* Not offered for download again after it could not be loaded even after downloading it again: *)
+        If[ MemberQ[ $vectorDBLoadFailures, name ], Throw @ Missing[ "LoadFailed", name ] ];
         loaded = catchQuiet @ loadVectorDB0 @ name;
         If[ MatchQ[ loaded, $$loadedVectorDB ], loaded, repairVectorDB @ name ]
     ],
@@ -1635,22 +1742,35 @@ repairVectorDB[ name_String ] := Enclose[
 
         clearVectorDBCaches @ name;
 
-        dir = Block[ { $promptRedownload = False },
+        (* Loading failed, so it is downloaded again even if its files look intact: *)
+        dir = Block[ { $promptRedownload = False, $forcedVectorDBDownloads = Union[ $forcedVectorDBDownloads, { name } ] },
             ConfirmMatch[ downloadVectorDatabases[ root, KeyTake[ urls, { name } ] ], $$downloadDeclined | _? DirectoryQ, "Download" ]
         ];
 
         (* A retry prompt was declined: *)
         If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
 
-        Replace[
-            catchQuiet @ loadVectorDB0 @ name,
-            Except[ $$loadedVectorDB ] :> throwFailure[ "VectorDatabaseLoadFailed", name ]
-        ]
+        Replace[ catchQuiet @ loadVectorDB0 @ name, Except[ $$loadedVectorDB ] :> vectorDBLoadFailed @ name ]
     ],
     throwInternalFailure
 ];
 
 repairVectorDB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBLoadFailed*)
+(* A database that could not be loaded even after downloading it again is skipped for the rest of the session, so that
+   later chats don't offer to download it again. InstallVectorDatabases[] downloads it again. *)
+vectorDBLoadFailed // beginDefinition;
+
+vectorDBLoadFailed[ name_String ] := (
+    $vectorDBLoadFailures = Union[ $vectorDBLoadFailures, { name } ];
+    messagePrint[ "VectorDatabaseLoadFailed", name ];
+    Missing[ "LoadFailed", name ]
+);
+
+vectorDBLoadFailed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1758,8 +1878,8 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 
         vectorDBInfo    = getVectorDB @ dbName;
 
-        (* A database that is not available because its download was declined is skipped (and not cached): *)
-        If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ declinedSearchResult @ vectorDBInfo ];
+        (* A database that is skipped (e.g. because its download was declined) gives no results (which are not cached): *)
+        If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ skippedSearchResult @ vectorDBInfo ];
 
         vectorDBInfo    = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDBInfo" ];
         vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
@@ -1947,7 +2067,7 @@ vectorDBSearch[ dbName: $$dbName, prompts: { ___String }, prop_ ] :=
 vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
     Catch @ Module[ { vectorDBInfo },
         vectorDBInfo = getVectorDB @ dbName;
-        If[ MatchQ[ vectorDBInfo, $$downloadDeclined ], Throw @ { } ];
+        If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ { } ];
         ConfirmBy[ ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDB" ][ "Values" ], ListQ, "Values" ]
     ],
     throwInternalFailure
@@ -1991,17 +2111,17 @@ vectorDBSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*declinedSearchResult*)
-declinedSearchResult // beginDefinition;
+(*skippedSearchResult*)
+skippedSearchResult // beginDefinition;
 
-declinedSearchResult[ missing: $$downloadDeclined ] := <|
+skippedSearchResult[ missing: $$skippedVectorDB ] := <|
     "EmbeddingVector" -> None,
     "SearchData"      -> missing,
     "Values"          -> { },
     "Results"         -> { }
 |>;
 
-declinedSearchResult // endDefinition;
+skippedSearchResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
