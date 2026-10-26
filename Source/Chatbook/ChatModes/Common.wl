@@ -16,6 +16,7 @@ HoldComplete[
     `getContextFromSelection,
     `getNotebookAssistanceInput,
     `getSelectionInfo,
+    `includedNotebookQ,
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,

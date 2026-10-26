@@ -2812,7 +2812,17 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                             ]
                         },
                         {
-                            Item[ Dynamic @ focusedNotebookDisplay[ thisNB, None ], Alignment -> Left ]
+                            (*
+                                The display reads Chatbook globals that change on every catchTop call and during chats
+                                (e.g. catchTop and $currentSettingsCache), so only track thisNB in the kernel. The front
+                                end still tracks the front end values it reads, such as Notebooks[], SelectedNotebook[],
+                                InputNotebook[] and TaggingRules (e.g. the focus menu lock), but not window titles from
+                                NotebookInformation (with any TrackedSymbols), so a renamed notebook shows its new title
+                                after the next tracked change. *)
+                            Item[
+                                Dynamic[ focusedNotebookDisplay[ thisNB, None ], TrackedSymbols :> { thisNB } ],
+                                Alignment -> Left
+                            ]
                         }
                     },
                     Alignment -> { Left, Baseline },
