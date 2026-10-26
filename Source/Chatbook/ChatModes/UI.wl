@@ -2767,9 +2767,13 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                     { {
                                         workspaceInputField[ Dynamic @ cachedChatInput ],
                                         (* no need to templatize an attached cell as it is ephemeral *)
+                                        (* use explicit keys for both buttons: the front end keeps animating the stop
+                                           button's spinner in the default pane even while it's hidden, which burns CPU
+                                           when idle. With no default pane, nothing shows for a value that matches no
+                                           key, so use =!=, which always gives True or False *)
                                         PaneSelector[
                                             {
-                                                None -> Button[
+                                                False -> Button[
                                                     blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
                                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                                     (* in case kernel was quit and the user hasn't typed something new into the search field, restore it to the cached value *)
@@ -2786,17 +2790,17 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                                     BoxID        -> "NASendChatButton",
                                                     FrameMargins -> 0,
                                                     Method       -> "Queued"
+                                                ],
+                                                True -> Button[
+                                                    blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
+                                                    Needs[ "Wolfram`Chatbook`" -> None ];
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                                    Appearance   -> "Suppressed",
+                                                    BoxID        -> "NAStopChatButton",
+                                                    FrameMargins -> 0
                                                 ]
                                             },
-                                            Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
-                                            Button[
-                                                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
-                                                Needs[ "Wolfram`Chatbook`" -> None ];
-                                                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
-                                                Appearance   -> "Suppressed",
-                                                BoxID        -> "NAStopChatButton",
-                                                FrameMargins -> 0
-                                            ],
+                                            Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell =!= None ],
                                             Alignment -> { Automatic, Baseline }
                                         ]
                                     } },
