@@ -24,6 +24,7 @@ import json
 import os
 import re
 import secrets
+import select
 import shutil
 import signal
 import socket
@@ -517,6 +518,9 @@ class Server:
     # connection used when the client hangs up (about 4 handles per connection on Windows), and the server stops
     # answering after a few hundred connections. Responses carry the request id; others (to pings) are skipped.
     def _connection(self, timeout):
+        if self._sock is not None and self._peer_closed():
+            # The kernel quit or was replaced (e.g. by `snoop`) since the last request; nothing was sent yet:
+            self.close()
         if self._sock is None:
             try:
                 self._sock = socket.create_connection((self.host, self.port), timeout=min(10.0, timeout))
@@ -524,6 +528,18 @@ class Server:
                 raise CLIError(f"Cannot connect to the front end server on port {self.port}: {e}")
             self._buffer = b""
         return self._sock
+
+    def _peer_closed(self):
+        """Whether the server has closed the idle connection. Reads what has arrived (e.g. late answers to pings)."""
+        try:
+            while select.select([self._sock], [], [], 0)[0]:
+                chunk = self._sock.recv(1 << 20)
+                if not chunk:
+                    return True
+                self._buffer += chunk
+        except OSError:
+            return True
+        return False
 
     def close(self):
         if self._sock is not None:
@@ -540,7 +556,9 @@ class Server:
             line, self._buffer = self._buffer.split(b"\n", 1)
             if line.strip():
                 response = json.loads(line.decode("utf-8"))
-                if response.get("id") == request_id:
+                # Errors the server can't attribute to a request (RequestTooLarge, InvalidJSON) have id null; only the
+                # request in flight can have caused them, because pings are always valid:
+                if response.get("id") in (request_id, None):
                     return response
         return None
 
