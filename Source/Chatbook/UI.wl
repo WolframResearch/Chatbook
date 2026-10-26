@@ -2269,6 +2269,11 @@ personaDisplayName // beginDefinition;
 personaDisplayName[ name_String ] :=
 	personaDisplayName[ name, GetCachedPersonaData @ name ];
 
+(* The "LLMEvaluator" setting is not always a persona name, e.g. it can be None or Missing[ "NotAvailable" ]
+   if the chat input dingbat updates while its cell is being removed (such as when closing the notebook): *)
+personaDisplayName[ _ ] :=
+	"";
+
 personaDisplayName[ name_String, data_Association ] :=
 	personaDisplayName[ name, data[ "DisplayName" ] ];
 
