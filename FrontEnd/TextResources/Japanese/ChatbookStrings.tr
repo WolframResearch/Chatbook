@@ -79,6 +79,7 @@
 "FormattingThinkingCompleteSingular" -> "1\:79d2\:9593\:8003\:3048\:307e\:3057\:305f",
 "FormattingThinkingCompleteFallback" -> "\:8003\:3048\:307e\:3057\:305f",
 "FormattingHide" -> "\:96a0\:3059",
+"FormattingDiscardedMaterial" -> "Discarded material",
 
 "InlineReferencesFieldHint" -> "\:30d7\:30ed\:30f3\:30d7\:30c8\:540d",
 "InlineReferencesInsertLabel" -> "\:633f\:5165\:ff1a",

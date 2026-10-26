@@ -665,6 +665,200 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*newStopTokenPositions*)
+
+(* Only stop tokens that end within the new text (the last n characters of the buffer) are found: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered = False },
+        Wolfram`Chatbook`SendChat`Private`newStopTokenPositions[ "xx\n/exec yy\n/exec", #, { "\n/exec" } ] & /@ {
+            0,
+            3,
+            7,
+            8,
+            17
+        }
+    ],
+    { { }, { { 12, 17 } }, { { 12, 17 } }, { { 12, 17 } }, { { 3, 8 }, { 12, 17 } } },
+    SameTest -> MatchQ,
+    TestID   -> "NewStopTokenPositions"
+]
+
+(* After a stop has been triggered, the entire buffer is searched: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered = True },
+        Wolfram`Chatbook`SendChat`Private`newStopTokenPositions[ "xx\n/exec yy\n/exec", 3, { "\n/exec" } ]
+    ],
+    { { 3, 8 }, { 12, 17 } },
+    SameTest -> MatchQ,
+    TestID   -> "NewStopTokenPositions-Triggered"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Comparison with the original implementation*)
+VerificationTest[
+    (* The original implementation of emulatedStopTokenTrim, which searches the entire buffer for every chunk. It keeps
+       its state in `state` instead of global symbols: *)
+    referenceStopTokenTrim // Attributes = { HoldAll };
+    referenceStopTokenTrim[ state_, container_, text_String, stop: { __String } ] :=
+        Module[ { previous, buffer, positions, start },
+            previous  = state[ "Buffer" ];
+            buffer    = state[ "Buffer" ] = previous <> text;
+            positions = Wolfram`Chatbook`SendChat`Private`dropReasoningPositions[
+                buffer,
+                StringPosition[ buffer, stop ]
+            ];
+            If[ positions === { },
+                text,
+                state[ "Triggered" ] = True;
+                start = Min @ positions[[ All, 1 ]];
+                state[ "Discarded" ] = StringDrop[ buffer, start - 1 ];
+                If[ start > StringLength @ previous,
+                    StringTake[ text, start - StringLength[ previous ] - 1 ],
+                    Wolfram`Chatbook`SendChat`Private`trimPartialStopToken[
+                        container,
+                        StringTake[ buffer, { start, StringLength @ previous } ]
+                    ];
+                    ""
+                ]
+            ]
+        ];
+
+    (* Streams chunks through emulatedStopTokenTrim and the reference implementation, appending the returned text to
+       separate containers, and gives the results for each chunk from both. If `continue` is True, chunks are still
+       processed after a stop is triggered: *)
+    compareStopTokenTrim[ chunks_List, stop_List, continue_ ] :=
+        Module[ { container, results, refState, refContainer, expected },
+            container = refContainer = <| "DynamicContent" -> "", "FullContent" -> "" |>;
+            refState  = <| "Buffer" -> "", "Triggered" -> False, "Discarded" -> None |>;
+            results   = Block[
+                {
+                    Wolfram`Chatbook`SendChat`Private`$emulatedStopBuffer        = "",
+                    Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered     = False,
+                    Wolfram`Chatbook`SendChat`Private`$lastEmulatedStopDiscarded = None
+                },
+                Function[ chunk,
+                    If[ continue || ! TrueQ @ Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered,
+                        With[
+                            {
+                                text = Wolfram`Chatbook`SendChat`Private`emulatedStopTokenTrim[ container, chunk, stop ]
+                            },
+                            container[ "DynamicContent" ] = container[ "DynamicContent" ] <> text;
+                            container[ "FullContent"    ] = container[ "FullContent"    ] <> text;
+                            {
+                                text,
+                                container,
+                                Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered,
+                                Wolfram`Chatbook`SendChat`Private`$lastEmulatedStopDiscarded
+                            }
+                        ],
+                        Nothing
+                    ]
+                ] /@ chunks
+            ];
+            expected = Function[ chunk,
+                If[ continue || ! refState[ "Triggered" ],
+                    With[ { text = referenceStopTokenTrim[ refState, refContainer, chunk, stop ] },
+                        refContainer[ "DynamicContent" ] = refContainer[ "DynamicContent" ] <> text;
+                        refContainer[ "FullContent"    ] = refContainer[ "FullContent"    ] <> text;
+                        { text, refContainer, refState[ "Triggered" ], refState[ "Discarded" ] }
+                    ],
+                    Nothing
+                ]
+            ] /@ chunks;
+            { results, expected }
+        ];
+
+    (* Splits a string into chunks of random lengths: *)
+    randomChunks[ text_String, seed_Integer, max_Integer ] := BlockRandom[
+        SeedRandom @ seed;
+        Module[ { sizes = { }, total = 0, k },
+            While[ total < StringLength @ text,
+                k = Min[ RandomInteger[ { 1, max } ], StringLength @ text - total ];
+                AppendTo[ sizes, k ];
+                total += k
+            ];
+            StringTake[ text, Transpose @ { Accumulate @ sizes - sizes + 1, Accumulate @ sizes } ]
+        ]
+    ];
+
+    (* Random text made from pieces of stop tokens, think tags, and other text, sometimes starting with reasoning: *)
+    randomStopTokenText[ seed_Integer ] := BlockRandom[
+        SeedRandom @ seed;
+        StringJoin[
+            If[ OddQ @ seed, "<think type='summary' id='abc123'>\n", "" ],
+            RandomChoice[
+                {
+                    20, 6, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+                } -> {
+                    "Some text. ", "\n", "f(x) ", "<think>", "</think>", "<thinking>", "</thinking>",
+                    "<think type='summary' id='x'>", "<think ", "<thi", "nk>", "<", ">", "</", "\n/exec", "\n/ex",
+                    "ec", "/exec", "ENDTOOLCALL", "ENDTOOL", "CALL", "/end", "[INFO]", "[IN", "FO]"
+                },
+                60
+            ]
+        ]
+    ];
+
+    $stopTokenLists = {
+        { "\n/exec" },
+        { "ENDTOOLCALL", "\n/exec" },
+        { "/end", "[INFO]" },
+        { "ENDTOOLCALL", "TOOL", "/exec", "\n/exec" }
+    };
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "EmulatedStop-ReferenceDefinitions"
+]
+
+(* Random chunkings of random text give the same results as the reference after every chunk. Some of these trigger a
+   stop and some don't: *)
+VerificationTest[
+    Module[ { cases, results },
+        cases = Flatten[
+            Table[
+                { randomChunks[ randomStopTokenText @ seed, seed, max ], stop, continue },
+                { seed, 8 },
+                { stop, $stopTokenLists },
+                { max, { 3, 10 } },
+                { continue, { False, True } }
+            ],
+            3
+        ];
+        results = compareStopTokenTrim @@@ cases;
+        {
+            Pick[ cases, UnsameQ @@@ results ],
+            Count[ results, { { ___, { _, _, True, _ } }, _ } ] > 0,
+            Count[ results, { { ___, { _, _, False, _ } }, _ } ] > 0
+        }
+    ],
+    { { }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "EmulatedStop-RandomChunks"
+]
+
+(* A long response with reasoning that mentions the stop token before the actual tool call: *)
+VerificationTest[
+    Module[ { prose, text },
+        prose = StringRiffle[ Table[ "Sentence " <> ToString @ i <> " of the answer (with details).", { i, 300 } ], " " ];
+        text  = StringJoin[
+            "<think type='summary' id='abc123'>\nI'll write the code, then\n/exec to run it.\n</think>\n",
+            prose,
+            "\n/wl\nPrime[5]\n/exec\nRESULT\n11\nENDRESULT\n\nMore text."
+        ];
+        Apply[
+            SameQ,
+            compareStopTokenTrim[ randomChunks[ text, #, 12 ], { "ENDTOOLCALL", "\n/exec" }, False ]
+        ] & /@ Range[ 3 ]
+    ],
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "EmulatedStop-LongResponse"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*applyEmulatedStopTokens*)
 
 (* Pass-through cases: emulation disabled or no extracted content strings *)
@@ -829,6 +1023,92 @@ VerificationTest[
     <| "Model" -> { "OpenAI", "o4-mini" } |>,
     SameTest -> MatchQ,
     TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:824,1-832,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*gpt-6*)
+
+(* gpt-6 models get the same settings as gpt-5.4 and later, which do not support stop tokens: *)
+VerificationTest[
+    Wolfram`Chatbook`Models`Private`chooseModelFamily /@ {
+        "gpt-6",
+        "gpt-6.0",
+        "GPT-6.0",
+        "gpt-6.1-mini",
+        "gpt-6-2026-09-01",
+        "gpt-5.6",
+        "gpt-5"
+    },
+    {
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT54Plus",
+        "GPT5"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ChooseModelFamily-GPT6"
+]
+
+VerificationTest[
+    Function[
+        name,
+        Wolfram`Chatbook`Common`autoModelSetting[ <| "Service" -> "OpenAI", "Name" -> name |>, # ] & /@ {
+            "StopTokens",
+            "Temperature",
+            "PresencePenalty"
+        }
+    ] /@ { "gpt-6", "gpt-6.0", "gpt-5.6" },
+    ConstantArray[ Missing[ "NotSupported" ], { 3, 3 } ],
+    SameTest -> MatchQ,
+    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`stopTokensSupportedQ /@ {
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6" |> |>,
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |> |>
+    },
+    { False, False },
+    SameTest -> MatchQ,
+    TestID   -> "StopTokensSupportedQ-GPT6"
+]
+
+(* No "stop" parameter is sent for gpt-6, so the stop tokens are emulated instead: *)
+VerificationTest[
+    Block[ { $AutomaticAssistance = False },
+        Function[
+            settings,
+            {
+                Wolfram`Chatbook`SendChat`Private`makeStopTokens @ settings,
+                Wolfram`Chatbook`SendChat`Private`emulatedStopTokens @ settings
+            }
+        ] @ Wolfram`Chatbook`Common`resolveAutoSettings @ <|
+            Wolfram`Chatbook`Common`$defaultChatSettings,
+            "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>
+        |>
+    ],
+    { _Missing, { "\n/exec" } },
+    SameTest -> MatchQ,
+    TestID   -> "StopTokens-GPT6-NotSent"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`Common`dropModelUnsupportedParameters[
+        Automatic,
+        <|
+            "Model"       -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>,
+            "StopTokens"  -> { "[NONE]" },
+            "Temperature" -> 0.7,
+            "MaxTokens"   -> 250
+        |>
+    ],
+    <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>, "MaxTokens" -> 250 |>,
+    SameTest -> MatchQ,
+    TestID   -> "DropModelUnsupportedParameters-GPT6"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

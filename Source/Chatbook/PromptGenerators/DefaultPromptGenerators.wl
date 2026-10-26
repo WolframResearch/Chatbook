@@ -151,7 +151,13 @@ applyPromptGenerators[ settings_, generators0_, messages: $$chatMessages ] := En
         If[ generators === { }, Throw @ { } ];
 
         data = ConfirmBy[ makePromptGeneratorData[ settings, messages ], AssociationQ, "Data" ];
-        prompts = ConfirmMatch[ applyPromptGenerator[ #, data ] & /@ generators, { $$string... }, "Prompts" ];
+
+        (* A stopped chat won't submit its request, so the generators after the one it was stopped in are skipped: *)
+        prompts = ConfirmMatch[
+            If[ chatStopRequestedQ[ ], "", applyPromptGenerator[ #, data ] ] & /@ generators,
+            { $$string... },
+            "Prompts"
+        ];
 
         DeleteCases[ prompts, "" ]
     ] // LogChatTiming[ "ApplyPromptGenerators" ],

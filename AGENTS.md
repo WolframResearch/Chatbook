@@ -35,6 +35,22 @@ If a symbol appears to be undefined when you expected otherwise, check to see if
 Names[ "*`nameOfSymbol" ]
 ```
 
+## Performance
+
+Chat responsiveness is a requirement, not an optional optimization. The most sensitive moments are opening the Notebook Assistant and the first chat input in a fresh kernel: that is when users notice delays, and when cold costs (loading resources, building caches, first front end calls) add up. The performance work in #1691–#1736 made the assistant window usable about 1 s after opening instead of 7–10 s, and the first answer token arrive about 5 s sooner; it also removed most of the per-chunk and idle overhead. Don't give these gains back.
+
+- **Only add latency when it's unavoidable.** A change that adds work before the request is sent, for every streamed chunk, after the answer, or to the first chat in a session must be necessary. Its PR must say what it costs, measured cold (first chat after a kernel start) and warm, and why the work can't be avoided, deferred or cached.
+- **Keep work off the first-chat path.** Load resources lazily, or in the assistant's warm-up (`initializeWorkspaceChat` in `ChatModes/UI.wl`, which runs after the input field is usable) instead of when the user sends. Never block the window or its input on the warm-up.
+- **Don't wait for work the answer doesn't need.** Things like chat titles run in the background, not before the first token or while the stop button is showing.
+- **Streaming handlers run for every chunk.** Keep their work proportional to the new text, not to the whole response, and avoid front end calls per chunk.
+- **UI code must stay cheap while idle and on every interaction.**
+  - Give a `Dynamic` an explicit `TrackedSymbols`. With the default, it re-runs whenever a Chatbook global it reads changes, which happens on every Chatbook call.
+  - Don't put animated content (spinners, progress indicators) in a hidden `PaneSelector` default pane; the front end keeps animating it.
+  - Keep typing, hovering and drawing free of kernel round trips, full `CurrentChatSettings` resolutions and scans of every open notebook.
+- **Bound every cache that lives for the session.**
+- **Measure before and after.** Use the `LogChatTiming` entries (`$ChatTimingData`), the `"TimeToFirstToken"` handler argument, and front end runs with the drive-frontend skill: a fresh front end per run, compared against main.
+- **Keep the tests that guard these properties.** Tests such as `NotebookAssistanceWindow.wlt`, `TimeToFirstToken.wlt`, `StreamingDisplay.wlt`, `DynamicSplit.wlt`, `WorkspaceChatInputCell.wlt`, `NotebookFocus.wlt` and `SaveChat.wlt` check them. Don't weaken or delete them to make a change pass.
+
 ## Common Commands
 
 ```shell

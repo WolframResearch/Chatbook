@@ -74,6 +74,134 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*TeX Serialization*)
+
+(* Formatted assistant math as it is stored in a chat notebook serializes back to the TeX it was created from: *)
+VerificationTest[
+    CellToString @ Cell[
+        TextData @ {
+            "The value of ",
+            Cell @ BoxData @ FormBox[
+                TemplateBox[
+                    <|
+                        "boxes"  -> FormBox[ RowBox @ { "sin", StyleBox[ "x", "TI" ] }, TraditionalForm ],
+                        "errors" -> { },
+                        "input"  -> "\\sin{x}",
+                        "state"  -> "Boxes"
+                    |>,
+                    "TeXAssistantTemplate"
+                ],
+                TraditionalForm
+            ],
+            " is shown."
+        },
+        "ChatOutput"
+    ],
+    "The value of $$\\sin{x}$$ is shown.",
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Stored-Boxes"
+]
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* Display and inline math (including math nested in other formatting) use their stored TeX, so serializing them does
+   not need to export the boxes as TeX: *)
+VerificationTest[
+    Module[ { count = 0, strings },
+        strings = Block[
+            { Wolfram`Chatbook`Serialization`Private`serializeTraditionalForm = (count++; "EXPORTED") & },
+            CellToString /@ {
+                Cell[
+                    FormatChatOutput[
+                        "Then $$\\int_0^1 x^2 \\, dx = \\frac{1}{3}$$ and \\(a+b\\) follow, with $\\sin{x}$ too."
+                    ][[ 1, 1 ]],
+                    "ChatOutput"
+                ],
+                Cell[ FormatChatOutput[ "- item with $\\alpha$ math" ][[ 1, 1 ]], "ChatOutput" ]
+            }
+        ];
+        { strings, count }
+    ],
+    {
+        {
+            "Then $$\\int_0^1 x^2 \\, dx = \\frac{1}{3}$$ and $$a+b$$ follow, with $$\\sin{x}$$ too.",
+            "* item with $$\\alpha$$ math"
+        },
+        0
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Skips-TeX-Export"
+]
+
+(* The same holds for math in tables and headings: *)
+VerificationTest[
+    Module[ { count = 0, strings },
+        strings = Block[
+            { Wolfram`Chatbook`Serialization`Private`serializeTraditionalForm = (count++; "EXPORTED") & },
+            CellToString @ Cell[ FormatChatOutput[ # ][[ 1, 1 ]], "ChatOutput" ] & /@ {
+                "| a | b |\n|---|---|\n| $z^2$ | $\\frac{1}{2}$ |",
+                "### Heading with $\\pi r^2$\n\nmore"
+            }
+        ];
+        { strings, count }
+    ],
+    {
+        {
+            _String? (StringContainsQ[ "| $$z^2$$ | $$\\frac{1}{2}$$ |" ]),
+            "### Heading with $$\\pi r^2$$\n\nmore"
+        },
+        0
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Table-And-Heading"
+]
+
+(* TeX boxes that do not have their TeX source still go through TeX export: *)
+VerificationTest[
+    Module[ { count = 0, string },
+        string = Block[
+            { Wolfram`Chatbook`Serialization`Private`serializeTraditionalForm = (count++; "EXPORTED") & },
+            CellToString @ Cell[
+                TextData @ {
+                    "Old ",
+                    Cell @ BoxData @ FormBox[
+                        TemplateBox[
+                            <| "boxes" -> FormBox[ "x", TraditionalForm ], "state" -> "Boxes" |>,
+                            "TeXAssistantTemplate"
+                        ],
+                        TraditionalForm
+                    ],
+                    " box"
+                },
+                "ChatOutput"
+            ]
+        ];
+        { string, count }
+    ],
+    { "Old EXPORTED box", 1 },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Without-Input"
+]
+
+(* The math prompt is requested every time the math is serialized, not only the first time: *)
+VerificationTest[
+    Table[
+        Block[ { Wolfram`Chatbook`Prompting`Private`$collectedPromptComponents = <| |> },
+            CellToString @ Cell[ FormatChatOutput[ "Math $y^3$ here" ][[ 1, 1 ]], "ChatOutput" ];
+            KeyExistsQ[ Wolfram`Chatbook`Prompting`Private`$collectedPromptComponents, "Math" ]
+        ],
+        2
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Serialization-Math-Prompt"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Markdown Escapes*)
 
 (* Outside of math the backslash only marks the escape, so it is dropped instead of being kept: *)
@@ -408,10 +536,59 @@ VerificationTest[
     ],
     {
         { Cell[ _, "DiscardedMaterial", ___ ], "\n", Cell[ _, "InlineToolCall", ___ ], "\nCost $5." },
-        RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ]
+        Column[ { RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ] }, ___ ]
     },
     SameTest -> MatchQ,
     TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:389,1-415,2"
+]
+
+(* Consecutive discarded tool calls are grouped into a single opener, with one row per tool call: *)
+VerificationTest[
+    With[
+        {
+            boxes = FormatChatOutput @ StringJoin[
+                "/wl\n0\n/exec\nRESULT\nOut[1]= 0\nENDRESULT(aaa111)\nBad one.\n/retry\n",
+                "/wl\n1\n/exec\nRESULT\nOut[1]= 1\nENDRESULT(bbb222)\nBad two.\n/retry\n",
+                "/wl\n2\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(ccc333)\nDone."
+            ]
+        },
+        {
+            Count[ boxes, Cell[ _, "DiscardedMaterial", ___ ], Infinity ],
+            FirstCase[
+                boxes,
+                HoldPattern @ BaseDecode[ b64_String ] :> BinaryDeserialize @ BaseDecode @ b64,
+                $Failed,
+                Infinity
+            ]
+        }
+    ],
+    {
+        1,
+        Column[
+            {
+                RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nBad one." }, ___ ],
+                RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nBad two." }, ___ ]
+            },
+            ___
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Discarded-ToolCalls-Grouped"
+]
+
+(* Tool call openers use the "ToolIconCall<name>" resource for each button state, falling back to the generic icon: *)
+VerificationTest[
+    Union @ Cases[
+        FormatChatOutput @ StringJoin[
+            "TOOLCALL: web_fetcher\n{\n\t\"url\":\"https://example.com\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(abcd1234)\n\n",
+            "TOOLCALL: made_up_tool\n{\n\t\"x\":\"1\"\n}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(efgh5678)\n\nDone."
+        ],
+        FEPrivate`FrontEndResource[ "ChatbookExpressions", name_String ][ _ ] :> name,
+        Infinity
+    ],
+    { "ToolIconCallGenericTool", "ToolIconCallWebFetcher" },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCall-Opener-Icons"
 ]
 
 (* ::**************************************************************************************************************:: *)

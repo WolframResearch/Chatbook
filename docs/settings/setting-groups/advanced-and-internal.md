@@ -31,6 +31,8 @@ Additional tokenizers are loaded on demand from `.wxf` files in the `Assets/Toke
 
 The resolved tokenizer is applied via `applyTokenizer` in `tokenCount` (`ChatMessages.wl`), which tokenizes message content and returns the token list length.
 
+Counts for text content are memoized for the session in `$tokenCountCache`, keyed by `{tokenizerName, Hash[content]}`. A count is only memoized when `"TokenizerName"` names a registered tokenizer in `$cachedTokenizers` that is the same as the tokenizer being applied, so custom tokenizer functions and image content are always counted directly. When the cache reaches `$maxTokenCountCacheSize` (5000) entries, the oldest half is discarded.
+
 ### Serialization
 
 Explicitly dropped from saved notebook settings via `toSmallSettings` (`SendChat.wl`, `KeyDrop[as, {"OpenAIKey", "Tokenizer"}]`) because tokenizer functions cannot be serialized. Serialized to a name-based reference (`<| "_Object" -> "Tokenizer", "Data" -> name |>`) in `Feedback.wl` for diagnostic reporting.
@@ -72,6 +74,8 @@ The default value `$DefaultChatHandlerFunctions` (`Settings.wl`) defines 9 event
 | `"AppendCitationsEnd"` | `Citations.wl`, after citation generation | `"CitationString"` |
 
 The `"ChatAbort"`, `"ChatPost"`, and `"ChatPre"` entries use `RuleDelayed` (`:>`) pointing to global variables `$ChatAbort`, `$ChatPost`, and `$ChatPre` (all initially `None`), allowing runtime reassignment without modifying the association.
+
+For a chat evaluated from a chat input (in a chat notebook, the sidebar, or the Notebook Assistant window), a chat that's stopped with a stop button ends like one that completed: `"ChatPost"` is called (`"ChatAbort"` is only called after an abort), with `"ChatObject" -> None` if no response text was received, for example when the chat was stopped before its request was submitted. A chat stopped before `"ChatPre"` doesn't call it, and a chat stopped after `"ChatPre"` doesn't submit its request.
 
 ### Resolution
 

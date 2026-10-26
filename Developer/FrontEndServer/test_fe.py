@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """End-to-end smoke test for the front end server and fe.py.
 
-Launches a fresh front end on a private Xvfb display, exercises the client commands against it, and stops it again.
-Needs Xvfb and a licensed Wolfram installation. Takes about a minute.
+Launches a fresh front end, exercises the client commands against it, and stops it again. Needs a licensed Wolfram
+installation, and on Linux Xvfb (the front end runs on a private display). On Windows the front end opens on the
+desktop and the test uses the real mouse and keyboard, so leave the computer alone meanwhile. Takes about two minutes.
 
-    python3 Developer/FrontEndServer/test_fe.py            # launch, test, stop
+    python3 Developer/FrontEndServer/test_fe.py            # launch, test, stop (Windows: python ...)
     python3 Developer/FrontEndServer/test_fe.py -s 2400    # test an already running server (left running)
 """
 
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -40,7 +42,7 @@ class Runner:
 
     def fe(self, *args, check=True, timeout=240, stdin=None):
         cmd = FE + (["-s", str(self.server)] if self.server else []) + list(args)
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=stdin)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=timeout, input=stdin)
         if check and proc.returncode != 0:
             raise AssertionError(f"{' '.join(args)} failed ({proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}")
         return proc.stdout.strip()
@@ -48,7 +50,7 @@ class Runner:
     def fails(self, *args):
         """Run a command that is expected to fail; return its error output."""
         cmd = FE + (["-s", str(self.server)] if self.server else []) + list(args)
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=240)
         if proc.returncode == 0:
             raise AssertionError(f"{' '.join(args)} unexpectedly succeeded: {proc.stdout.strip()}")
         return proc.stderr
@@ -84,6 +86,12 @@ def click_covered(r):
         r.fe("close", cover)
 
 
+def region_clipped(r):
+    """A region that starts left of the screen (whose origin is not 0,0 on every Windows setup) is clipped to it."""
+    left, top = json.loads(r.fe("--json", "screenshot", "--screen", "--scale", "0.25"))["origin"]
+    expect(json.loads(r.fe("--json", "screenshot", f"--region={left - 10},{top},100,100"))["width"], 90)
+
+
 def duplicate_titles(r):
     nb = r.eval('CreateDocument[{}, WindowTitle -> "FE Server Test"][[1]]', "--form", "String")
     try:
@@ -116,7 +124,79 @@ def oversized_request(r):
     return json.loads(data.decode().split("\n")[0])["errorType"]
 
 
-def run_tests(r):
+def snooping(r):
+    """`snoop` moves the server to a kernel that runs through LinkSnooper; `linklog` shows what a cell evaluation sent.
+    A Server object that was used before keeps working: it reconnects when it finds its idle connection closed."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        kernel = server.request("info")["KernelPID"]
+        r.fe("snoop")
+        expect(server.request("info")["KernelPID"] != kernel, True)
+    finally:
+        server.close()
+    info = json.loads(r.fe("--json", "info"))
+    expect(info["Evaluator"].startswith("LinkSnooperLog"), True)
+    expect(info["FrontEndPID"] not in (None, info.get("SnooperPID")), True)
+    r.fe("screenshot", "--scale", "0.25")  # finds the front end's windows by its process
+    r.fe("linklog", "--mark")
+    r.fe("eval", "--cell", "fetestSnooped = 6 * 7")
+    packets = r.fe("linklog", "--hide-server", "--limit", "0", "--width", "0")
+    expect('EnterExpressionPacket[MakeExpression[BoxData[RowBox[{"fetestSnooped"' in packets, True)
+    expect("pump[]" in packets, False)
+    # The activation record (sent to every new kernel) is redacted, so the key never shows up, even when evaluated:
+    log = r.fe("linklog", "--path").replace("\\", "/")
+    r.fe("eval", "--cell", "$ActivationKey")  # (its output is not printed)
+    expect(r.eval(f'With[{{key = $ActivationKey}}, StringQ[key] && StringLength[key] >= 6 && '
+                  f'StringContainsQ[ReadString["{log}"], key]]'), "False")
+    # All of the record's values are learned and redacted (the password has no shape it could be recognized by):
+    with open(log, encoding="utf-8", errors="replace") as f:
+        expect(re.search(r'Rule\["(ActivationKey|Password|MachineID)", \{?"(?!<redacted |")', f.read()), None)
+    expect("AlreadySnooping" in r.fails("snoop"), True)
+
+
+def many_requests(r):
+    """More requests than the server could take connections: one Server object sends them all over one connection."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        for i in range(600):
+            if i % 3 == 0:
+                server.request("ping")
+            else:
+                fe.Server.preemptive = i % 3 == 2
+                try:
+                    expect(server.evaluate(str(i))["result"], str(i))
+                finally:
+                    fe.Server.preemptive = False
+        # A queued request that waits for a busy kernel keeps pinging over the same connection:
+        expect(server.evaluate("Pause[3]; 42", timeout=30)["result"], "42")
+    finally:
+        server.close()
+    expect(r.eval("1 + 1"), "2")
+
+
+def unattributed_error(r):
+    """An error that the server sends without a request id (here for invalid JSON) fails the request in flight at once,
+    and the Server object stays usable."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        try:
+            server.request("ping", {"x": float("nan")}, timeout=30)  # json.dumps writes NaN, which is not JSON
+        except fe.ServerError as e:
+            expect(e.response.get("errorType"), "InvalidJSON")
+        else:
+            raise AssertionError("a request with invalid JSON succeeded")
+        expect(server.evaluate("1 + 1")["result"], "2")
+    finally:
+        server.close()
+
+
+def run_tests(r, launched=False):
     r.test("ping and info", lambda: json.loads(r.fe("--json", "info"))["Port"])
     r.test("evaluate", lambda: expect(r.eval("1 + 1"), "2"))
     r.test("multi-statement code", lambda: expect(r.eval("a = 2;\nb = 3;\na b"), "6"))
@@ -144,9 +224,11 @@ def run_tests(r):
     r.test("missing code file", lambda: expect("File not found" in r.fails("eval", "@/nonexistent/code.wl"), True))
     r.test("JSON errors", lambda: expect(json.loads(subprocess.run(
         FE + (["-s", str(r.server)] if r.server else []) + ["--json", "cells", "No Such Notebook"],
-        capture_output=True, text=True).stdout)["errorType"], "NotebookNotFound"))
+        capture_output=True, text=True, encoding="utf-8").stdout)["errorType"], "NotebookNotFound"))
     r.test("unknown key", lambda: expect("Unknown key name" in r.fails("key", "ctrl+NoSuchKey"), True))
     r.test("wait for idle", lambda: (r.fe("eval", "--cell", "--no-wait", "Pause[2]"), r.fe("wait")))
+    r.test("many requests on one connection", lambda: many_requests(r))
+    r.test("errors without a request id", lambda: unattributed_error(r))
 
     r.eval(TEST_NOTEBOOK)
     time.sleep(1)
@@ -172,8 +254,7 @@ def run_tests(r):
     r.test("docked cells are listed", lambda: expect(
         any(c["style"] == "DockedCell" for c in json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))), True))
     r.test("duplicate titles are ambiguous", lambda: duplicate_titles(r))
-    r.test("region clipped to the screen", lambda: expect(
-        json.loads(r.fe("--json", "screenshot", "--region", "-10,0,100,100"))["width"], 90))
+    r.test("region clipped to the screen", lambda: region_clipped(r))
     r.test("oversized request is refused", lambda: expect(oversized_request(r), "RequestTooLarge"))
     r.test("read an attached cell", lambda: r.fe(
         "read", json.loads(r.fe("--json", "cells", "FE Server Test", "--attached"))[0]["ref"]))
@@ -186,6 +267,8 @@ def run_tests(r):
         r.fe("close", "FE Server Test 2")))
     r.test("close notebook", lambda: (r.fe("close", "FE Server Test"),
                                       expect("FE Server Test" in r.fe("nbs"), False)))
+    if launched:  # last: the kernel is replaced (only possible in a front end that fe.py launched)
+        r.test("MathLink logging", lambda: snooping(r))
 
 
 def main():
@@ -195,7 +278,7 @@ def main():
 
     launched = None
     if not args.server:
-        out = subprocess.run(FE + ["--json", "launch"], capture_output=True, text=True, timeout=300)
+        out = subprocess.run(FE + ["--json", "launch"], capture_output=True, text=True, encoding="utf-8", timeout=300)
         if out.returncode != 0:
             print("launch failed:", out.stderr or out.stdout)
             return 1
@@ -203,10 +286,10 @@ def main():
         print(f"launched front end server on port {launched}")
     runner = Runner(args.server or launched)
     try:
-        run_tests(runner)
+        run_tests(runner, launched=bool(launched))
     finally:
         if launched:
-            subprocess.run(FE + ["-s", str(launched), "stop"], capture_output=True, text=True, timeout=60)
+            subprocess.run(FE + ["-s", str(launched), "stop"], capture_output=True, text=True, encoding="utf-8", timeout=60)
     print(f"\n{'FAILED: ' + ', '.join(runner.failures) if runner.failures else 'all tests passed'}")
     return 1 if runner.failures else 0
 

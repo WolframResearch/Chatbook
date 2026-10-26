@@ -2,10 +2,10 @@
 """fe.py - drive a Wolfram front end (WolframNB) from the command line.
 
 Talks to a front end server started by StartFrontEndServer[] (Developer/FrontEndServer/FrontEndServer.wl), and uses
-X11 directly (fe_x11.py) for screenshots, mouse and keyboard input.
+X11 (fe_x11.py) or, on Windows, Win32 (fe_win32.py) directly for screenshots, mouse and keyboard input.
 
 Quick start:
-    fe.py launch                        # start a fresh front end on a private Xvfb display
+    fe.py launch                        # start a fresh front end (Linux: on a private Xvfb display)
     fe.py eval '1 + 1'                  # evaluate in the front end's kernel
     fe.py eval --cell 'Plot[x, {x, 0, 1}]'   # evaluate as a real input cell (like Shift+Enter)
     fe.py nbs                           # list notebooks
@@ -19,10 +19,12 @@ Run "fe.py <command> -h" for details on each command.
 import argparse
 import contextlib
 import getpass
+import hashlib
 import json
 import os
 import re
 import secrets
+import select
 import shutil
 import signal
 import socket
@@ -36,6 +38,17 @@ sys.path.insert(0, HERE)
 
 REPO = os.path.dirname(os.path.dirname(HERE))
 PORT_RANGE = (2400, 2499)
+WINDOWS = sys.platform.startswith("win")
+SIGKILL = getattr(signal, "SIGKILL", signal.SIGTERM)  # on Windows, both terminate the process
+
+
+def screen_backend():
+    """The module that captures the screen and synthesizes input on this platform."""
+    if WINDOWS:
+        import fe_win32
+        return fe_win32
+    import fe_x11
+    return fe_x11
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -61,8 +74,13 @@ def state_dir():
     # Same directory as the server uses for its own images ($TemporaryDirectory/ChatbookFrontEndServer-$Username):
     path = os.path.join(tempfile.gettempdir(), "ChatbookFrontEndServer-" + getpass.getuser())
     os.makedirs(path, mode=0o700, exist_ok=True)
-    if hasattr(os, "getuid") and os.stat(path).st_uid != os.getuid():
-        raise CLIError(f"{path} belongs to another user; refusing to use it")
+    if hasattr(os, "getuid"):
+        status = os.stat(path)
+        if status.st_uid != os.getuid():
+            raise CLIError(f"{path} belongs to another user; refusing to use it")
+        # The server may have created it (for images) with default permissions; the logs and screenshots are private:
+        if (status.st_mode & 0o777) != 0o700:
+            os.chmod(path, 0o700)
     return path
 
 
@@ -72,25 +90,80 @@ def screenshot_dir():
     return path
 
 
+def win_kernel32():
+    import ctypes
+    from ctypes import wintypes as wt
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = wt.HANDLE
+    kernel32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
+    kernel32.GetExitCodeProcess.argtypes = [wt.HANDLE, ctypes.POINTER(wt.DWORD)]
+    kernel32.QueryFullProcessImageNameW.argtypes = [wt.HANDLE, wt.DWORD, wt.LPWSTR, ctypes.POINTER(wt.DWORD)]
+    kernel32.GetProcessTimes.argtypes = [wt.HANDLE] + [ctypes.POINTER(wt.FILETIME)] * 4
+    kernel32.CreateToolhelp32Snapshot.restype = wt.HANDLE
+    kernel32.CreateToolhelp32Snapshot.argtypes = [wt.DWORD, wt.DWORD]
+    kernel32.CloseHandle.argtypes = [wt.HANDLE]
+    kernel32.GetShortPathNameW.restype = wt.DWORD
+    kernel32.GetShortPathNameW.argtypes = [wt.LPCWSTR, wt.LPWSTR, wt.DWORD]
+    return kernel32
+
+
+@contextlib.contextmanager
+def win_process(pid):
+    """A handle to query a process on Windows (None if it does not exist or cannot be opened)."""
+    kernel32 = win_kernel32()
+    handle = kernel32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+    try:
+        yield kernel32, handle
+    finally:
+        if handle:
+            kernel32.CloseHandle(handle)
+
+
+def win_short_path(path):
+    """The 8.3 short form of an existing path on Windows (the path itself if it has none)."""
+    import ctypes
+    kernel32 = win_kernel32()
+    size = kernel32.GetShortPathNameW(path, None, 0)  # including the terminating null
+    buffer = ctypes.create_unicode_buffer(size)
+    return buffer.value if size and 0 < kernel32.GetShortPathNameW(path, buffer, size) < size else path
+
+
+def in_code_page(text):
+    """Whether text can be written in the Windows system code page (without best-fit replacements)."""
+    try:
+        text.encode("mbcs")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def command_line_path(path):
+    """A file in the state directory as the front end can pass it on the command line of a program it starts (the
+    LinkSnooper of `snoop`). On Windows, that command line goes through the system code page, so a directory whose
+    path has other characters (e.g. from the user name) is given by its 8.3 short name."""
+    if WINDOWS and not in_code_page(path):
+        directory, name = os.path.split(path)
+        path = os.path.join(win_short_path(directory), name)
+        if not in_code_page(path):
+            # (Windows gives no short name to a name that already fits 8.3 after best-fit mapping, e.g. "Łukasz".)
+            raise CLIError(f"Cannot log to {directory}: its path has characters outside the system code page that 8.3 "
+                           f"short names do not avoid. The front end passes the command line that starts LinkSnooper "
+                           f"(Java) in that code page, so Java would not find the log. Run all fe.py commands with the "
+                           f"temp directory (TMPDIR, which Git Bash sets, or else TEMP) and, if your user name has "
+                           f"such characters, LOGNAME set to plain names.")
+    return path
+
+
 def pid_alive(pid):
     if not pid:
         return False
-    if sys.platform.startswith("win"):
+    if WINDOWS:
         # os.kill(pid, 0) would terminate the process on Windows; ask the process table instead.
         import ctypes
-        kernel32 = ctypes.windll.kernel32
-        kernel32.OpenProcess.restype = ctypes.c_void_p
-        kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
-        kernel32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
-        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
-        handle = kernel32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
-        if not handle:
-            return False
-        try:
-            code = ctypes.c_ulong()
-            return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259  # STILL_ACTIVE
-        finally:
-            kernel32.CloseHandle(handle)
+        from ctypes import wintypes as wt
+        with win_process(pid) as (kernel32, handle):
+            code = wt.DWORD()
+            return bool(handle) and bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259
     try:
         os.kill(int(pid), 0)
         return True
@@ -105,17 +178,73 @@ def pid_alive(pid):
 # Executables of the processes fe.py may signal. Together with the process start time, this makes sure a PID that was
 # reused by an unrelated process is never signalled.
 PROCESS_NAMES = {
-    "kernel": {"WolframKernel", "MathKernel"},
+    "kernel": {"WolframKernel", "MathKernel", "wolfram"},
     "frontend": {"WolframNB", "Mathematica"},
+    "snooper": {"java", "javaw"},  # LinkSnooper between the front end and a kernel (see `snoop`)
     "xvfb": {"Xvfb"},
     "wm": {"xfwm4", "openbox"},
 }
 SHELLS = {"sh", "bash", "dash", "zsh"}  # the WolframNB launcher is a shell script
 
 
+def executable_name(path):
+    """The name that PROCESS_NAMES lists for an executable path (on Windows without ".exe", in lower case)."""
+    name = os.path.basename(path)
+    return os.path.splitext(name)[0].lower() if WINDOWS else name
+
+
+def win_process_info(pid):
+    """([executable path], start time as a Unix time) of a Windows process, or None."""
+    import ctypes
+    from ctypes import wintypes as wt
+    with win_process(pid) as (kernel32, handle):
+        if not handle:
+            return None
+        size = wt.DWORD(32768)
+        path = ctypes.create_unicode_buffer(size.value)
+        times = [wt.FILETIME() for _ in range(4)]
+        if (not kernel32.QueryFullProcessImageNameW(handle, 0, path, ctypes.byref(size))
+                or not kernel32.GetProcessTimes(handle, *(ctypes.byref(t) for t in times))):
+            return None
+        created = (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime  # 100 ns intervals since 1601
+        return [path.value], created / 1e7 - 11644473600
+
+
+def win_process_table():
+    """{process id: parent process id} of all Windows processes. Windows does not update the parent id when a parent
+    exits, so it can name an unrelated process that later got the same id: check identities and start times."""
+    import ctypes
+    from ctypes import wintypes as wt
+
+    class PROCESSENTRY32W(ctypes.Structure):
+        _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD), ("th32ProcessID", wt.DWORD),
+                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wt.DWORD), ("cntThreads", wt.DWORD),
+                    ("th32ParentProcessID", wt.DWORD), ("pcPriClassBase", ctypes.c_long), ("dwFlags", wt.DWORD),
+                    ("szExeFile", wt.WCHAR * 260)]
+
+    kernel32 = win_kernel32()
+    kernel32.Process32FirstW.argtypes = kernel32.Process32NextW.argtypes = [wt.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
+    snapshot = kernel32.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
+    if not snapshot or snapshot == wt.HANDLE(-1).value:
+        return {}
+    table = {}
+    try:
+        entry = PROCESSENTRY32W(dwSize=ctypes.sizeof(PROCESSENTRY32W))
+        found = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
+        while found:
+            table[entry.th32ProcessID] = entry.th32ParentProcessID
+            found = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
+    finally:
+        kernel32.CloseHandle(snapshot)
+    return table
+
+
 def process_info(pid):
-    """(argv, start time as a Unix time) of a process, or None if they cannot be determined."""
+    """(argv, start time as a Unix time) of a process, or None if they cannot be determined. On Windows, argv only
+    holds the executable's path."""
     pid = int(pid)
+    if WINDOWS:
+        return win_process_info(pid)
     try:
         with open(f"/proc/{pid}/cmdline", "rb") as f:
             argv = [a.decode("utf-8", "replace") for a in f.read().split(b"\0") if a]
@@ -126,7 +255,7 @@ def process_info(pid):
         return argv, boot + ticks / os.sysconf("SC_CLK_TCK")
     except (OSError, ValueError, IndexError, StopIteration):
         pass
-    if os.path.isdir("/proc") or sys.platform.startswith("win"):
+    if os.path.isdir("/proc"):
         return None
     try:  # no procfs (e.g. macOS)
         out = subprocess.run(["ps", "-o", "lstart=", "-o", "args=", "-p", str(pid)], capture_output=True, text=True,
@@ -145,9 +274,12 @@ def pid_is(pid, kind, started=(None, None)):
     if not info or not info[0]:
         return False
     argv, start = info
-    names = PROCESS_NAMES[kind]
-    exe = os.path.basename(argv[0])
+    names = {executable_name(n) for n in PROCESS_NAMES[kind]}
+    exe = executable_name(argv[0])
     if exe not in names and not (exe in SHELLS and len(argv) > 1 and os.path.basename(argv[1]) in names):
+        return False
+    # Any Java program could have that name; where the arguments are known (not on Windows), require LinkSnooper's:
+    if kind == "snooper" and len(argv) > 1 and not any("LinkSnooper" in a for a in argv):
         return False
     earliest, latest = started
     return (earliest is None or start >= earliest - 2) and (latest is None or start <= latest + 2)
@@ -155,15 +287,27 @@ def pid_is(pid, kind, started=(None, None)):
 
 def kill_pid(pid, kind, sig=signal.SIGTERM, started=(None, None)):
     if pid_is(pid, kind, started):
-        try:
-            os.kill(int(pid), sig)
-        except OSError:
-            pass
+        kernels = []
+        if WINDOWS and kind == "frontend":
+            # Also end the front end's kernels (including its sandbox kernel, which fe.py does not track): its child
+            # processes that are kernels and started after it (see win_process_table), and LinkSnooper processes
+            # between it and a kernel (`snoop`) with their kernels.
+            begun = (process_info(pid) or (None, None))[1]
+            table = win_process_table()
+            children = [child for child, parent in table.items() if parent == int(pid) and begun]
+            snoopers = [child for child in children if pid_is(child, "snooper", (begun, None))]
+            kernels = [child for child, parent in table.items() if (child in children or parent in snoopers)
+                       and pid_is(child, "kernel", (begun, None))] + snoopers
+        for target in [pid] + kernels:
+            try:
+                os.kill(int(target), sig)  # TerminateProcess on Windows
+            except OSError:
+                pass
 
 
 def read_json(path):
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (OSError, ValueError):
         return None
@@ -181,6 +325,7 @@ def registry_entries():
         if not isinstance(info, dict) or "Port" not in info:
             continue
         info["_file"] = os.path.join(directory, name)
+        fill_front_end_pid(info)
         launch = read_json(os.path.join(directory, f"{info['Port']}.launch.json"))
         # A launch record only belongs to this server if it was written for the same token (records can be left
         # behind, and an unrelated server may later get the same port):
@@ -192,7 +337,7 @@ def registry_entries():
 
 def server_alive(info):
     """Whether a registered server is running: its kernel process when that can be identified (strict identity checks
-    are needed before signalling anyway), otherwise (e.g. on Windows) whether it answers an authenticated ping."""
+    are needed before signalling anyway), otherwise whether it answers an authenticated ping."""
     pid = info.get("KernelPID")
     if not pid_alive(pid):
         return False
@@ -211,6 +356,46 @@ def server_alive(info):
             return json.loads(data.decode("utf-8").split("\n")[0]).get("ok") is True
     except (OSError, KeyError, ValueError):
         return False
+
+
+def fill_front_end_pid(info):
+    """The server reports its kernel's parent process as the front end's. On Windows, servers started by older versions
+    of FrontEndServer.wl report 0 instead (that is what $ParentProcessID gives there); the parent is then looked up.
+    A kernel that runs through LinkSnooper (`snoop`) is the child of a Java process, which is the front end's child."""
+    kernel, parent = info.get("KernelPID"), info.get("FrontEndPID")
+    started = server_started(info)
+    child, looked_up = kernel, False
+    if WINDOWS and not parent and pid_is(kernel, "kernel", started):
+        parent, looked_up = win_process_table().get(kernel), True
+    if parent and pid_is(parent, "snooper", started):
+        info["SnooperPID"] = child = parent
+        parent, looked_up = parent_pid(parent), True
+    if looked_up:
+        # The kernel's (and LinkSnooper's) id is not reused while it runs, but its recorded parent id may have been:
+        child_info = process_info(child)
+        if child_info and pid_is(parent, "frontend", (None, child_info[1])):
+            info["FrontEndPID"] = parent
+        elif info.get("SnooperPID"):
+            info["FrontEndPID"] = None  # not the Java process, in any case
+    return info
+
+
+def parent_pid(pid):
+    """The parent of a process, or None."""
+    if WINDOWS:
+        return win_process_table().get(int(pid))
+    try:
+        with open(f"/proc/{int(pid)}/stat") as f:
+            return int(f.read().rsplit(")", 1)[1].split()[1])  # field 4: the parent's id
+    except (OSError, ValueError, IndexError):
+        pass
+    if os.path.isdir("/proc"):
+        return None
+    try:  # no procfs (e.g. macOS)
+        out = subprocess.run(["ps", "-o", "ppid=", "-p", str(int(pid))], capture_output=True, text=True, timeout=5)
+        return int(out.stdout.strip())
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
 
 
 def server_started(info):
@@ -277,7 +462,7 @@ def select_server(spec=None, include_dead_launched=False):
 
 
 def describe_servers(entries):
-    return ", ".join(f"{e['Port']} ({e.get('Name')}, display {e.get('Display')})" for e in entries) or "none"
+    return ", ".join(f"{e['Port']} ({e.get('Name')}, display {Server(e).display})" for e in entries) or "none"
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -302,11 +487,14 @@ class Server:
         self.token = info.get("Token")
         self._id = 0
         self._scale = None
+        self._sock = None
+        self._buffer = b""
 
     @property
     def display(self):
         launch = self.info.get("_launch") or {}
-        return launch.get("display") or self.info.get("Display")
+        # On Windows, front ends run on the interactive desktop:
+        return launch.get("display") or self.info.get("Display") or ("desktop" if WINDOWS else None)
 
     def request(self, command, args=None, timeout=60):
         """Send one request and return its result.
@@ -326,6 +514,54 @@ class Server:
                 continue
             raise ServerError(response)
 
+    # All requests of a Server object share one connection: the kernel's socket library does not free everything a
+    # connection used when the client hangs up (about 4 handles per connection on Windows), and the server stops
+    # answering after a few hundred connections. Responses carry the request id; others (to pings) are skipped.
+    def _connection(self, timeout):
+        if self._sock is not None and self._peer_closed():
+            # The kernel quit or was replaced (e.g. by `snoop`) since the last request; nothing was sent yet:
+            self.close()
+        if self._sock is None:
+            try:
+                self._sock = socket.create_connection((self.host, self.port), timeout=min(10.0, timeout))
+            except OSError as e:
+                raise CLIError(f"Cannot connect to the front end server on port {self.port}: {e}")
+            self._buffer = b""
+        return self._sock
+
+    def _peer_closed(self):
+        """Whether the server has closed the idle connection. Reads what has arrived (e.g. late answers to pings)."""
+        try:
+            while select.select([self._sock], [], [], 0)[0]:
+                chunk = self._sock.recv(1 << 20)
+                if not chunk:
+                    return True
+                self._buffer += chunk
+        except OSError:
+            return True
+        return False
+
+    def close(self):
+        if self._sock is not None:
+            try:
+                self._sock.close()
+            except OSError:
+                pass
+        self._sock = None
+        self._buffer = b""
+
+    def _take_response(self, request_id):
+        """The response to `request_id` if it has arrived completely (skipping responses to pings), else None."""
+        while b"\n" in self._buffer:
+            line, self._buffer = self._buffer.split(b"\n", 1)
+            if line.strip():
+                response = json.loads(line.decode("utf-8"))
+                # Errors the server can't attribute to a request (RequestTooLarge, InvalidJSON) have id null; only the
+                # request in flight can have caused them, because pings are always valid:
+                if response.get("id") in (request_id, None):
+                    return response
+        return None
+
     def _send(self, command, args, deadline):
         self._id += 1
         timeout = max(1.0, deadline - time.time())
@@ -333,15 +569,13 @@ class Server:
                    "args": {k: v for k, v in (args or {}).items() if v is not None}, "deadline": deadline}
         if self.preemptive:
             payload["preemptive"] = True
+        sock = self._connection(timeout)
         try:
-            sock = socket.create_connection((self.host, self.port), timeout=min(10.0, timeout))
-        except OSError as e:
-            raise CLIError(f"Cannot connect to the front end server on port {self.port}: {e}")
-        data = b""
-        try:
-            sock.settimeout(timeout)
             sock.sendall((json.dumps(payload) + "\n").encode("utf-8"))
-            while not data.endswith(b"\n"):
+            while True:
+                response = self._take_response(self._id)
+                if response is not None:
+                    return response
                 # Wake up every two seconds to ping: the server only fires the front end trigger for queued requests
                 # while the kernel is idle, and it can be dropped (e.g. when evaluations are aborted); any incoming
                 # request lets the server (re-)fire it once the kernel is idle.
@@ -351,32 +585,23 @@ class Server:
                 except socket.timeout:
                     if time.time() >= deadline:
                         raise
-                    self.ping_quietly()
+                    sock.sendall((json.dumps({"id": 0, "token": self.token, "command": "ping"}) + "\n").encode())
                     continue
                 if not chunk:
-                    break
-                data += chunk
+                    self.close()
+                    raise CLIError(f"The server closed the connection without answering {command!r} "
+                                   "(did the kernel quit?)")
+                self._buffer += chunk
         except socket.timeout:
+            # The connection is not reused, so that a late answer can't be taken for the answer to another request:
+            self.close()
             raise CLIError(f"Timed out after {timeout:.0f}s waiting for {command!r}. " + self.diagnose())
         except OSError as e:
+            self.close()
             raise CLIError(f"Connection to the front end server failed during {command!r}: {e}")
-        finally:
-            sock.close()
-        if not data.strip():
-            raise CLIError(f"The server closed the connection without answering {command!r} (did the kernel quit?)")
-        try:
-            return json.loads(data.decode("utf-8").split("\n")[0])
         except ValueError as e:
+            self.close()
             raise CLIError(f"Malformed response to {command!r}: {e}")
-
-    def ping_quietly(self):
-        try:
-            with socket.create_connection((self.host, self.port), timeout=2) as sock:
-                sock.settimeout(2)
-                sock.sendall((json.dumps({"id": 0, "token": self.token, "command": "ping"}) + "\n").encode())
-                sock.recv(65536)
-        except OSError:
-            pass
 
     def diagnose(self):
         """Explain a timeout using a ping, which the server answers even while the kernel is busy."""
@@ -396,9 +621,13 @@ class Server:
             return ("The server does not answer pings either: the kernel is blocked (e.g. by a modal dialog, "
                     "or a deadlock). Take a screenshot to check for dialogs.")
         if ping.get("pumpPending") is not None or ping.get("queued"):
-            return (f"The kernel is busy with another evaluation (request queued for {ping.get('pumpPending')}s, "
-                    f"{ping.get('queued')} in queue). Wait for it to finish, raise --timeout, or use --preemptive to "
-                    "process requests during the evaluation (small risk of a front end deadlock).")
+            pending = ping.get("pumpPending")
+            return (f"The kernel is busy with another evaluation ({ping.get('queued')} request(s) queued"
+                    + (f", processing requested {pending}s ago" if pending is not None else "") + "). Wait for it to "
+                    "finish, raise --timeout, or use --preemptive to process requests during the evaluation (small "
+                    "risk of a front end deadlock). If it never finishes, check for a kernel/front end deadlock with "
+                    "`--preemptive eval 'MemberQ[Stack[], MathLink`CallFrontEndHeld]'` and abort the evaluation "
+                    "with `key alt+period` in the front end window.")
         return "The server answers pings, so the command itself is slow; raise --timeout."
 
     def evaluate(self, code, timeout=60, **kw):
@@ -406,11 +635,11 @@ class Server:
 
     # --- geometry -----------------------------------------------------------------------------------------------------
 
-    def x_display(self):
-        import fe_x11
+    def screen(self):
+        """A connection to the screen the front end runs on (an X display, or the Windows desktop)."""
         if not self.display:
             raise CLIError("The server did not report an X display (DISPLAY was unset in the front end).")
-        return fe_x11.Display(self.display)
+        return screen_backend().Display(self.display)
 
     def fe_windows(self, d):
         pid = self.info.get("FrontEndPID")
@@ -421,7 +650,8 @@ class Server:
         return own, popups
 
     def match_window(self, d, nb):
-        """Find the X window of a notebook (as returned by the server's notebook summary)."""
+        """Find the window of a notebook (as returned by the server's notebook summary). Its x, y, width and height
+        are those of the area that the notebook's WindowSize measures (on Windows, the client area)."""
         title = nb.get("title") or ""
         if nb.get("visible") is False:
             raise CLIError(f"Notebook {title!r} is hidden, so it has no window")
@@ -435,19 +665,20 @@ class Server:
             # position can differ by the window manager's frame, so it gets a generous tolerance.
             scale = self.scale(d, nbs=[nb])
             def distance(w):
+                x, y = w.get("outer") or (w["x"], w["y"])  # on Windows, where WindowMargins apply
                 return (abs(w["width"] - rect["width"] * scale) + abs(w["height"] - rect["height"] * scale),
-                        abs(w["x"] - rect["left"] * scale) + abs(w["y"] - rect["top"] * scale))
+                        abs(x - rect["left"] * scale) + abs(y - rect["top"] * scale))
             close = [w for w in (candidates or own) if distance(w)[0] <= 8 and distance(w)[1] <= 120]
             if close:
                 return min(close, key=distance)
         raise CLIError(f"Could not find the window of notebook {title!r} on display {self.display}")
 
     def scale(self, d=None, nbs=None):
-        """X pixels per front end point, measured by matching notebook windows with X windows."""
+        """Screen pixels per front end point, measured by matching notebook windows with their screen windows."""
         if self._scale:
             return self._scale
         own_display = d is None
-        d = d or self.x_display()
+        d = d or self.screen()
         try:
             if not nbs or not any(window_title(w["name"]) == (nbs[0].get("title") or "") for w in self.fe_windows(d)[0]):
                 nbs = self.request("notebooks")
@@ -464,7 +695,7 @@ class Server:
                 ratios.sort()
                 self._scale = round(ratios[len(ratios) // 2] * 48) / 48  # snap to a sane grid (e.g. 1.3333)
             else:
-                self._scale = 4 / 3
+                self._scale = d.dpi() / 72 if hasattr(d, "dpi") else 4 / 3
             return self._scale
         finally:
             if own_display:
@@ -472,7 +703,7 @@ class Server:
 
 
 def window_title(name):
-    """The notebook title in an X window name like 'Untitled-1 * (Running...) - Wolfram'."""
+    """The notebook title in a window name like 'Untitled-1 * (Running...) - Wolfram'."""
     name = re.sub(r" - Wolfram( Mathematica)?$", "", name)
     name = re.sub(r" \([^()]*\.\.\.\)$", "", name)  # " (Running...)", " (Rendering...)"
     return re.sub(r" \*$", "", name)
@@ -507,14 +738,28 @@ def default_screenshot_path(server, label):
     return os.path.join(screenshot_dir(), f"{server.port}-{stamp}-{int(time.time() * 1000) % 1000:03d}-{safe}.png")
 
 
+def native_path(path):
+    """A file argument as a path that Python understands: on Windows, MSYS/Git Bash style paths like /c/Users/... are
+    accepted too (Git Bash does not convert them when MSYS_NO_PATHCONV is set)."""
+    if WINDOWS and path:
+        match = re.match(r"^/([a-zA-Z])(/.*)?$", path)
+        if match:
+            return f"{match.group(1).upper()}:{match.group(2) or '/'}"
+    return path
+
+
 def read_code(code):
-    if code == "-":
-        return sys.stdin.read()
-    if code.startswith("@") and " " not in code and ("/" in code or code.endswith((".wl", ".m", ".wls", ".txt"))):
-        if not os.path.isfile(code[1:]):
-            raise CLIError(f"File not found: {code[1:]}")
-        with open(code[1:]) as f:
-            return f.read()
+    try:
+        if code == "-":
+            return sys.stdin.read()
+        if code.startswith("@") and " " not in code and ("/" in code or code.endswith((".wl", ".m", ".wls", ".txt"))):
+            path = native_path(code[1:])
+            if not os.path.isfile(path):
+                raise CLIError(f"File not found: {code[1:]}")
+            with open(path, encoding="utf-8-sig") as f:
+                return f.read()
+    except UnicodeDecodeError as e:
+        raise CLIError(f"The code is not UTF-8 encoded: {e}")
     return code
 
 
@@ -531,7 +776,7 @@ def cmd_servers(args):
             kill_launched(e.get("_launch"), e if e.get("_launch") else None)
             remove_registry(e["Port"])
             status = "removed"
-        rows.append({"port": e["Port"], "name": e.get("Name"), "display": e.get("Display"), "status": status,
+        rows.append({"port": e["Port"], "name": e.get("Name"), "display": Server(e).display, "status": status,
                      "launched": bool(e.get("_launch")), "kernelPID": e.get("KernelPID"),
                      "frontEndPID": e.get("FrontEndPID")})
     if args.prune:
@@ -549,8 +794,8 @@ def cmd_servers(args):
 def prune_orphans(live_ports):
     """Clean up after failed launches (launch records without a running server) and old screenshots."""
     for port, record in launch_records().items():
-        if port in live_ports or time.time() - record.get("startTime", 0) < 300:
-            continue  # running, or possibly still starting
+        if port in live_ports or time.time() - max(record.get("startTime", 0), record.get("handoff", 0)) < 300:
+            continue  # running, or possibly still starting (or moving to a new kernel: `snoop`)
         kill_launched(record)
         remove_registry(port)
         bootstrap = record.get("bootstrap")
@@ -561,15 +806,44 @@ def prune_orphans(live_ports):
         path = os.path.join(shots, name)
         if name.endswith(".png") and time.time() - os.path.getmtime(path) > 86400:
             os.remove(path)
+    # MathLink logs (`snoop`): the records of servers that are gone, and logs that have not been written to for a day
+    # (unless a running server's record names it: LinkSnooper only writes when there is traffic). On Windows, a log
+    # that LinkSnooper has open cannot be deleted. (Logs are compared by file name, since a record may give the
+    # directory by its short name: see command_line_path.)
+    directory = state_dir()
+    in_use = set()
+    for name in os.listdir(directory):
+        match = re.match(r"linksnooper-(\d+)\.json$", name)
+        if match and int(match.group(1)) in live_ports:
+            in_use.add(os.path.basename((read_json(os.path.join(directory, name)) or {}).get("log") or ""))
+        elif match:
+            remove_quietly(os.path.join(directory, name))
+    for name in os.listdir(directory):
+        path = os.path.join(directory, name)
+        if (re.match(r"linksnooper-\d+-.+\.log$", name) and name not in in_use
+                and time.time() - os.path.getmtime(path) > 86400 and remove_quietly(path)):
+            remove_quietly(path + ".cursor")
+
+
+def remove_quietly(path):
+    """Delete a file if possible; whether it is gone."""
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        return False
+    return True
 
 
 def kill_launched(launch, info=None):
     """Stop the processes of a launch record (front end, its kernel, window manager, Xvfb), checking each PID's
     identity first so that a reused PID is never signalled."""
     launch, info = launch or {}, info or {}
-    kill_pid(info.get("FrontEndPID"), "frontend", signal.SIGKILL, server_started(info))
-    kill_pid(launch.get("launcherPID"), "frontend", signal.SIGKILL, launch_started(launch))
-    kill_pid(info.get("KernelPID"), "kernel", signal.SIGKILL, server_started(info))
+    kill_pid(info.get("FrontEndPID"), "frontend", SIGKILL, server_started(info))
+    kill_pid(launch.get("launcherPID"), "frontend", SIGKILL, launch_started(launch))
+    kill_pid(info.get("KernelPID"), "kernel", SIGKILL, server_started(info))
+    kill_pid(info.get("SnooperPID"), "snooper", SIGKILL, server_started(info))
     kill_pid(launch.get("wmPID"), "wm", started=launch_started(launch))
     kill_pid(launch.get("xvfbPID"), "xvfb", started=launch_started(launch))
 
@@ -661,21 +935,59 @@ def find_front_end(explicit=None):
     if explicit:
         if not os.path.exists(explicit):
             raise CLIError(f"Front end executable not found: {explicit}")
-        return explicit
-    candidates = [os.environ.get("WOLFRAMNB"), shutil.which("WolframNB"), shutil.which("Mathematica"),
-                  "/usr/local/Wolfram/Wolfram/15.0/Executables/WolframNB"]
+        return front_end_binary(explicit)
+    candidates = [os.environ.get("WOLFRAMNB"), shutil.which("WolframNB")]
+    candidates += registered_front_ends() if WINDOWS else []  # before an older Mathematica that may be on the PATH
+    candidates += [shutil.which("Mathematica"), "/usr/local/Wolfram/Wolfram/15.0/Executables/WolframNB"]
     for c in candidates:
         if c and os.path.exists(c):
-            return c
+            return front_end_binary(c)
     raise CLIError("Cannot find the WolframNB executable; pass --front-end PATH")
+
+
+def front_end_binary(path):
+    """On Windows, WolframNB.exe (or Mathematica.exe) in the installation directory is a launcher that starts the
+    front end binary and exits at once. Start the binary directly, so that fe.py knows the front end's process."""
+    if WINDOWS:
+        binary = os.path.join(os.path.dirname(os.path.abspath(path)), "SystemFiles", "FrontEnd", "Binaries",
+                              "Windows-x86-64", os.path.basename(path))
+        if os.path.isfile(binary):
+            return binary
+    return path
+
+
+def registered_front_ends():
+    """Front end executables of the Wolfram installations registered on Windows, newest version first."""
+    import winreg
+    found = []
+    for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+        try:
+            key = winreg.OpenKey(hive, r"SOFTWARE\Wolfram Research\Installations", 0,
+                                 winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
+        except OSError:
+            continue
+        with key:
+            for i in range(winreg.QueryInfoKey(key)[0]):
+                try:
+                    with winreg.OpenKey(key, winreg.EnumKey(key, i), 0, winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as entry:
+                        path = winreg.QueryValueEx(entry, "ExecutablePath")[0]
+                        version = winreg.QueryValueEx(entry, "ProductVersion")[0]
+                except OSError:
+                    continue  # e.g. documentation or WolframScript installations
+                if executable_name(path) in ("wolframnb", "mathematica"):
+                    found.append((tuple(int(v) for v in re.findall(r"\d+", version)), path))
+    return [path for _, path in sorted(found, reverse=True)]
 
 
 def write_bootstrap(port):
     """The init file must live somewhere the front end's sandboxed helper kernel may read (the temp directory),
     otherwise that kernel reports Get::noopen in the Messages window on every launch."""
     init = os.path.join(HERE, "Init.wl").replace("\\", "/")
+    # The kernel may not read the file as UTF-8, so write other characters as \:nnnn escapes:
+    init = "".join(c if ord(c) < 128 else f"\\:{ord(c):04x}" if ord(c) < 0x10000 else f"\\|{ord(c):06x}"
+                   for c in init)
     path = os.path.join(state_dir(), f"Bootstrap-{port}.wl")
-    with open(path, "w") as f:
+    with open(path, "w", encoding="ascii") as f:
         f.write("(* Generated by fe.py launch *)\n"
                 'If[ $FrontEnd =!= Null && ! MemberQ[ $CommandLine, "-sandbox" ],\n'
                 f'    Get[ "{init}" ]\n'
@@ -684,6 +996,19 @@ def write_bootstrap(port):
 
 
 def available_memory_mb():
+    if WINDOWS:
+        import ctypes
+
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong)] + [
+                (name, ctypes.c_ulonglong) for name in ("ullTotalPhys", "ullAvailPhys", "ullTotalPageFile",
+                                                        "ullAvailPageFile", "ullTotalVirtual", "ullAvailVirtual",
+                                                        "ullAvailExtendedVirtual")]
+
+        status = MEMORYSTATUSEX(dwLength=ctypes.sizeof(MEMORYSTATUSEX))
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return status.ullAvailPhys // 1024 ** 2
+        return None
     try:
         with open("/proc/meminfo") as f:
             for line in f:
@@ -700,21 +1025,25 @@ MIN_FREE_MEMORY_MB = 2000
 
 
 def cmd_launch(args):
-    chatbook = os.path.realpath(args.chatbook) if args.chatbook else None
+    chatbook = os.path.realpath(native_path(args.chatbook)) if args.chatbook else None
     if chatbook and not os.path.isfile(os.path.join(chatbook, "PacletInfo.wl")):
         raise CLIError(f"Not a paclet directory (no PacletInfo.wl): {chatbook}")
     free = available_memory_mb()
     if free is not None and free < MIN_FREE_MEMORY_MB and not args.force:
         raise CLIError(f"Only {free} MB of memory available; a front end needs about 1 GB and starting one now could "
                        f"make the system run out of memory. Stop other front ends (`fe.py servers`) or pass --force.")
-    front_end_path = find_front_end(args.front_end)
+    front_end_path = find_front_end(native_path(args.front_end))
     token = secrets.token_hex(16)
     port = reserve_port(args.port, token)
     record = {"port": port, "token": token, "startTime": time.time()}
     xvfb = wm = front_end = None
     try:
         env = dict(os.environ)
-        if args.display in (None, "new"):
+        if WINDOWS:
+            if args.display not in (None, "current", "desktop"):
+                raise CLIError("On Windows, front ends always run on the desktop; --display is for X11")
+            display = record["display"] = "desktop"
+        elif args.display in (None, "new"):
             display, xvfb = start_xvfb(args.size)
             record["xvfbPID"] = xvfb.pid
         elif args.display == "current":
@@ -723,7 +1052,8 @@ def cmd_launch(args):
                 raise CLIError("DISPLAY is not set; pass --display :N")
         else:
             display = args.display
-        env["DISPLAY"] = record["display"] = display
+        if not WINDOWS:
+            env["DISPLAY"] = record["display"] = display
         write_launch_record(record)
 
         if args.wm and xvfb:
@@ -745,9 +1075,11 @@ def cmd_launch(args):
             env.pop("CHATBOOK_FE_SERVER_CHATBOOK", None)
 
         record["log"] = log_path = os.path.join(state_dir(), f"frontend-{port}.log")
+        # Its own session (process group on Windows), so that Ctrl-C in this terminal does not reach the front end:
+        detach = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if WINDOWS else {"start_new_session": True}
         with open(log_path, "w") as log:
             front_end = subprocess.Popen([front_end_path], env=env, stdout=log, stderr=subprocess.STDOUT,
-                                         stdin=subprocess.DEVNULL, start_new_session=True)
+                                         stdin=subprocess.DEVNULL, **detach)
         record["launcherPID"] = front_end.pid
         write_launch_record(record)
 
@@ -763,25 +1095,31 @@ def cmd_launch(args):
             time.sleep(0.5)
 
         info["_launch"] = record
-        server = Server(info)
+        server = Server(fill_front_end_pid(info))
         while not server.request("ping", timeout=30).get("ready"):
             if time.time() > deadline:
                 raise CLIError(f"Timed out waiting for the front end connection on port {port}; see {log_path}")
             time.sleep(0.5)
+        if not args.keep_welcome:
+            close_startup_windows(server, private_display=bool(xvfb))
+        if args.link_snooper:
+            server, snooping = start_snooping(server)
+            info = server.info
         if chatbook:
             # Init.wl loads it quietly; make sure tests really run against this Chatbook:
             loaded = server.request("info").get("ChatbookLocation")
-            if not isinstance(loaded, str) or os.path.realpath(loaded) != chatbook:
+            if not isinstance(loaded, str) or os.path.normcase(os.path.realpath(loaded)) != os.path.normcase(chatbook):
                 raise CLIError(f"The front end loaded Chatbook from {loaded!r} instead of {chatbook}")
-        if not args.keep_welcome:
-            close_startup_windows(server, private_display=bool(xvfb))
     except BaseException:
         # Don't leave a half-started front end (or its Xvfb) running without a way to stop it:
         if front_end and front_end.poll() is None:
-            try:
-                os.killpg(front_end.pid, signal.SIGKILL)
-            except OSError:
-                pass
+            if WINDOWS:  # the front end and the kernels it started
+                kill_pid(front_end.pid, "frontend", SIGKILL, launch_started(record))
+            else:
+                try:
+                    os.killpg(front_end.pid, signal.SIGKILL)
+                except OSError:
+                    pass
         for process in (wm, xvfb):
             if process and process.poll() is None:
                 process.terminate()
@@ -791,25 +1129,32 @@ def cmd_launch(args):
         raise
     result = {"port": port, "name": info.get("Name"), "display": display, "frontEndPID": info.get("FrontEndPID"),
               "kernelPID": info.get("KernelPID"), "log": log_path}
+    note = ""
+    if args.link_snooper:
+        result["linkSnooperLog"] = snooping["log"]
+        note = f"\nIts MathLink traffic is logged to {snooping['log']} (read it with: fe.py -s {port} linklog)"
     emit(args, result, f"Front end server {info.get('Name')} running on port {port}, display {display} "
-                       f"(front end pid {info.get('FrontEndPID')}).\nUse: fe.py -s {port} <command>")
+                       f"(front end pid {info.get('FrontEndPID')}).{note}\nUse: fe.py -s {port} <command>")
 
 
 def close_startup_windows(server, private_display):
-    """Leave a single blank notebook: close the Welcome screen (it is not a notebook, so close it through X11),
-    the "no open windows" launcher dialog, and the Messages window if it is empty."""
+    """Leave a single blank notebook: close the Welcome screen (it is not a notebook, so close it through X11 or
+    Win32), the "no open windows" launcher dialog, and the Messages window if it is empty."""
     try:
         # A regular notebook must exist first, otherwise closing the Welcome screen opens the launcher dialog:
         server.evaluate("CreateDocument[]", timeout=20)
     except (CLIError, ServerError):
         pass
     try:
-        with server.x_display() as d:
+        with server.screen() as d:
             deadline = time.time() + 8
             while time.time() < deadline:
                 welcome = [w for w in server.fe_windows(d)[0] if w["name"].startswith("Welcome to Wolfram")]
                 if welcome:
                     for w in welcome:
+                        if WINDOWS:
+                            d.close_window(w["id"])
+                            continue
                         d.activate(w["id"])
                         time.sleep(0.3)
                         # On a shared display, only send the key if it really goes to the Welcome screen:
@@ -846,6 +1191,7 @@ def cmd_stop(args):
         # Keep the launch record of a launched front end, so that it can still be stopped completely later:
         remove_registry(server.port, keep_launch=bool(launch))
         print(f"Stopped the server on port {server.port}" + (" (the front end is still running)" if launch else ""))
+        forget_snooping(server, front_end_running=True)
         return
     if server.info["_alive"]:
         try:
@@ -862,6 +1208,16 @@ def cmd_stop(args):
     if bootstrap and os.path.exists(bootstrap):
         os.remove(bootstrap)
     print(f"Stopped front end server on port {server.port}")
+    forget_snooping(server, front_end_running=False)
+
+
+def forget_snooping(server, front_end_running):
+    state = snoop_state(server)
+    if state:
+        remove_quietly(snoop_state_path(server.port))
+        print(f"Its MathLink log stays in {state['log']} (`linklog --file` reads it)" +
+              (f"; kernels of the evaluator \"{state.get('evaluator')}\" keep logging there until the front end quits"
+               if front_end_running else ""))
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -871,6 +1227,10 @@ def cmd_stop(args):
 def cmd_info(args):
     server = Server(select_server(args.server))
     result = server.request("info")
+    # The kernel's parent is not the front end when it runs through LinkSnooper (see fill_front_end_pid):
+    for key in ("FrontEndPID", "SnooperPID"):
+        if key in server.info:
+            result[key] = server.info[key]
     result["Display"] = server.display
     if server.display:
         try:
@@ -914,7 +1274,7 @@ def cmd_eval(args):
         return
     result = server.request("evaluate", {"code": code, "timeout": args.timeout, "maxCharacters": args.max,
                                          "form": args.form,
-                                         "imagePath": os.path.abspath(args.image) if args.image else None},
+                                         "imagePath": os.path.abspath(native_path(args.image)) if args.image else None},
                             timeout=args.timeout + 10)
     emit(args, result, format_eval(result))
     if result.get("timedOut"):
@@ -1033,7 +1393,7 @@ def cmd_select(args):
     nb = server.request("select", {"notebook": args.notebook})
     if server.display and not args.no_x:
         try:
-            with server.x_display() as d:
+            with server.screen() as d:
                 window = server.match_window(d, nb)
                 d.activate(window["id"])
         except Exception:
@@ -1062,6 +1422,262 @@ def cmd_reload(args):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Commands: MathLink logging (LinkSnooper)
+# ---------------------------------------------------------------------------------------------------------------------
+
+def snoop_state_path(port):
+    """The log that `snoop` set up for the server on a port (tied to that server by its token's hash)."""
+    return os.path.join(state_dir(), f"linksnooper-{port}.json")
+
+
+def token_hash(token):
+    """What the `snoop` state file keeps of the server's token (which would let anyone who reads it run code in the
+    server's kernel)."""
+    return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+
+
+def snoop_state(server):
+    state = read_json(snoop_state_path(server.port))
+    return state if isinstance(state, dict) and state.get("tokenHash") == token_hash(server.token) else None
+
+
+def start_snooping(server, links="main,pre,serv", poll_interval=1, evaluator_only=False, timeout=120):
+    """Log the MathLink traffic between the front end and a kernel with J/Link's LinkSnooper (FrontEndServer.wl,
+    command "linkSnooper"). Normally the server moves to a new kernel that runs through LinkSnooper and becomes the
+    default evaluator; with evaluator_only, there is just a new evaluator for notebooks to use.
+    Returns (server, result), where server is the one in the new kernel."""
+    launch = server.info.get("_launch")
+    if not evaluator_only and not launch:
+        raise CLIError("Only the kernel of a front end that fe.py launched can be replaced by one that runs through "
+                       "LinkSnooper (that kernel has to start the server again). Use --evaluator-only, and give the "
+                       "notebooks to watch that Evaluator.")
+    name = f"linksnooper-{server.port}-{time.strftime('%Y%m%d-%H%M%S')}.log"
+    log = command_line_path(os.path.join(state_dir(), name))
+    old_kernel = server.info.get("KernelPID")
+    if not evaluator_only:
+        # The registry file is missing while the server moves: keep `servers --prune` from taking the front end for
+        # the remains of a failed launch.
+        launch["handoff"] = time.time()
+        write_launch_record(launch)
+    result = server.request("linkSnooper", {"log": log, "links": links, "pollInterval": poll_interval,
+                                            "mode": "Evaluator" if evaluator_only else "Kernel", "timeout": timeout})
+    # Recorded right away, so that `linklog` finds the log also when something goes wrong below:
+    fd = os.open(snoop_state_path(server.port), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump({"tokenHash": token_hash(server.token), "log": log, "evaluator": result.get("evaluator"),
+                   "mode": result.get("mode"), "time": time.time()}, f)
+    if not evaluator_only:
+        # This server stops, the front end starts the new kernel, Init.wl starts the server there, and the old kernel
+        # quits. If the new kernel's server does not show up within the timeout, the old kernel starts its own again.
+        front_end_log = launch.get("log")
+        deadline = time.time() + timeout + 30
+        gone = False
+        while True:
+            entry = next((e for e in registry_entries()
+                          if e["Port"] == server.port and e.get("Token") == server.token), None)
+            if entry is None:
+                gone = True
+            elif entry.get("KernelPID") != old_kernel and entry["_alive"]:
+                break
+            elif gone and entry.get("KernelPID") == old_kernel:
+                raise CLIError(f"The kernel that runs through LinkSnooper did not start the server, so it stays in "
+                               f"the old kernel. See {log} and {front_end_log}.")
+            if time.time() > deadline:
+                raise CLIError(f"Timed out waiting for the server to start in the kernel that runs through "
+                               f"LinkSnooper. See {log} and {front_end_log}.")
+            time.sleep(0.5)
+        server = Server(entry)
+        while not server.request("ping", timeout=30).get("ready"):
+            if time.time() > deadline:
+                raise CLIError("Timed out waiting for the front end connection of the new kernel")
+            time.sleep(0.5)
+    return server, result
+
+
+def cmd_snoop(args):
+    server = Server(select_server(args.server))
+    server, result = start_snooping(server, args.links, args.poll_interval, args.evaluator_only, args.timeout)
+    evaluator, log = result.get("evaluator"), result.get("log")
+    if args.evaluator_only:
+        text = (f"Notebooks with Evaluator -> \"{evaluator}\" now get a kernel that runs through LinkSnooper, which "
+                f"logs its MathLink traffic to {log}\n"
+                f"e.g. fe.py -s {server.port} eval 'NotebookPut[Notebook[{{}}, Evaluator -> \"{evaluator}\"]]' "
+                f"(the kernel starts with the first evaluation in such a notebook)\n"
+                f"Read the log with: fe.py -s {server.port} linklog")
+    else:
+        text = (f"The front end's kernel (pid {server.info.get('KernelPID')}) now runs through LinkSnooper, which logs "
+                f"all MathLink traffic to {log}\nRead it with: fe.py -s {server.port} linklog")
+    emit(args, dict(result, kernelPID=server.info.get("KernelPID")), text)
+
+
+# Each record of a LinkSnooper log starts with a time stamp; a packet whose text contains newlines continues on the
+# following lines.
+LOG_RECORD = re.compile(rb"\[(\d\d:\d\d:\d\d\.\d{3})\] ")
+# A packet's head, which the front end sometimes sends with its context (System`EvaluatePacket[...]):
+LOG_PACKET = re.compile(r"FE (?:--->|<---) K: (?:System`)?(\w+)\[")
+# Lines that LinkSnooper(Log) writes when it starts and when the links close:
+LOG_SESSION_LINES = ("LinkSnooperLog: Java process", "LinkSnooper command-line params:", "Start Monitoring...",
+                     "MathLinkException:")
+PUMP_FUNCTION = "Wolfram`ChatbookFrontEndServer`Private`pump[]"
+
+
+def log_records(path, offset=0):
+    """[(start, end, time, text)] of the records in a LinkSnooper log from a byte offset. Only complete lines are read,
+    since LinkSnooper may be writing."""
+    with open(path, "rb") as f:
+        f.seek(offset)
+        data = f.read()
+    records, current, pos = [], None, offset
+    for line in data.split(b"\n")[:-1]:  # the last piece is an incomplete line, or empty
+        match = LOG_RECORD.match(line)
+        if match or current is None:
+            if current:
+                records.append(current)
+            current = [pos, None, match.group(1).decode() if match else "", [line[match.end():] if match else line]]
+        else:
+            current[3].append(line)
+        pos += len(line) + 1
+        current[1] = pos
+    if current:
+        records.append(current)
+    return [(start, end, stamp, b"\n".join(lines).decode("utf-8", "replace").rstrip("\r"))
+            for start, end, stamp, lines in records]
+
+
+class ServerTraffic:
+    """Recognizes the traffic of fe.py's own requests. The front end server processes them in main-link evaluations of
+    its pump button (from EvaluatePacket[... pump[] ...] to the matching ReturnPacket), which its socket handler
+    triggers through the service link (CallPacket[FrontEnd`TriggerControlBoxObject[...]] and its ReturnPacket)."""
+
+    def __init__(self, state=None):
+        state = state or {}
+        self.depth = state.get("depth", 0)          # nesting of evaluations and calls inside a pump evaluation
+        self.trigger = state.get("trigger", False)  # a trigger call on the service link awaits its reply
+
+    def state(self):
+        return {"depth": self.depth, "trigger": self.trigger}
+
+    def __call__(self, text):
+        """Whether a record (its text without the time stamp and indentation) belongs to a request of fe.py."""
+        if text.startswith(LOG_SESSION_LINES):
+            # The links closed or a new kernel started (the log is appended to): nothing is pending any more.
+            self.depth, self.trigger = 0, False
+            return False
+        if text.startswith("-Serv-"):
+            packet = text[len("-Serv-"):].lstrip()
+            head = packet_head(packet)
+            if head == "CallPacket" and "FrontEnd`TriggerControlBoxObject[" in packet[:80]:
+                self.trigger = True
+                return True
+            if self.trigger and head == "ReturnPacket" and packet.startswith("FE --->"):
+                self.trigger = False
+                return True
+            return False
+        if not text.startswith("FE "):
+            return False  # the preemptive link, or LinkSnooper's own messages
+        head, to_kernel = packet_head(text), text.startswith("FE --->")
+        if not self.depth:
+            if to_kernel and head == "EvaluatePacket" and PUMP_FUNCTION in text:
+                self.depth = 1
+                return True
+            return False
+        # Evaluations the front end asks for and calls the kernel makes nest; each ends with a ReturnPacket:
+        if head == ("EvaluatePacket" if to_kernel else "CallPacket"):
+            self.depth += 1
+        elif head == "ReturnPacket":
+            self.depth -= 1
+        return True
+
+
+def packet_head(text):
+    match = LOG_PACKET.match(text)
+    return match.group(1) if match else None
+
+
+def record_text(text):
+    """A record's text as `linklog` prints it (and as --grep sees it), without the time stamp."""
+    return re.sub(r"^(-Serv-|-Pre-)\s+", r"\1 ", text.lstrip()).replace("\r", "").replace("\n", "\\n")
+
+
+def format_record(stamp, text, width):
+    if width and len(text) > width:
+        text = f"{text[:width]}... [{len(text) - width} more characters]"
+    return f"{stamp} {text}" if stamp else text
+
+
+def cmd_linklog(args):
+    if args.file:
+        path = native_path(args.file)
+    else:
+        server = Server(select_server(args.server))
+        state = snoop_state(server)
+        if not state:
+            raise CLIError("This front end's MathLink traffic is not being logged; start with `fe.py snoop` (or "
+                           "`fe.py launch --link-snooper`), or read a log with --file")
+        path = state["log"]
+    if args.path:
+        return print(path)
+    if not os.path.exists(path):
+        raise CLIError(f"{path} does not exist (yet): LinkSnooper creates it when its kernel starts")
+
+    # Without --all/--tail, continue where the last call stopped (the cursor file also keeps the state of
+    # --hide-server's recognition of fe.py's requests at that point):
+    cursor_path = path + ".cursor"
+    use_cursor = not (args.all or args.tail)
+    cursor = (read_json(cursor_path) or {}) if use_cursor else {}
+    offset = cursor.get("offset", 0)
+    if not isinstance(offset, int) or not 0 <= offset <= os.path.getsize(path):
+        offset, cursor = 0, {}
+    records = log_records(path, offset)
+    # Packets with newlines are written in pieces, so while the log is growing its last record may be incomplete;
+    # leave that one for the next call:
+    if use_cursor and not args.mark and records and time.time() - os.path.getmtime(path) < 1:
+        records.pop()
+    server_traffic = ServerTraffic(cursor)
+    hidden = cursor.get("hidden", False)
+    grep = re.compile(args.grep) if args.grep else None
+    exclude = re.compile(args.exclude) if args.exclude else None
+    shown, end, read = [], offset, 0
+    for start, stop, stamp, raw in records:
+        if use_cursor and not args.mark and args.limit and len(shown) >= args.limit:
+            break
+        # A record without a time stamp continues one that an earlier call read in part (or precedes LinkSnooper's
+        # first line):
+        hidden = server_traffic(raw.lstrip()) if stamp else hidden
+        end, read = stop, read + 1
+        if args.mark or (args.hide_server and hidden):
+            continue
+        text = record_text(raw)
+        if (grep and not grep.search(text)) or (exclude and exclude.search(text)):
+            continue
+        shown.append({"time": stamp, "text": text, "offset": start})
+    if use_cursor:
+        try:
+            with open(cursor_path, "w") as f:
+                json.dump(dict(server_traffic.state(), offset=end, hidden=hidden), f)
+        except OSError:
+            pass
+    if args.mark:
+        return print(f"skipped {read} record(s); `linklog` continues from here")
+    matching = len(shown)
+    if args.tail:
+        shown = shown[-args.tail:]
+    elif not use_cursor and args.limit:
+        shown = shown[:args.limit]
+    if args.json:
+        return emit(args, shown)
+    for record in shown:
+        print(format_record(record["time"], record["text"], args.width))
+    unread = len(records) - read
+    if use_cursor and unread:
+        print(f"[{unread} more record(s); run linklog again to continue, or --mark to skip to the end]")
+    elif not use_cursor and not args.tail and matching > len(shown):
+        print(f"[{matching - len(shown)} more matching record(s); --limit 0 prints all]")
+    elif not shown:
+        print("(no new traffic)" if use_cursor else "(no matching traffic)")
+
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Commands: screenshots and X11
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -1071,25 +1687,25 @@ def cmd_screenshot(args):
         raise CLIError("--scale must be in (0, 1]")
     if args.fe or not server.display:
         result = server.request("rasterize", {"notebook": args.target, "cell": args.cell, "screen": args.screen or None,
-                                              "path": os.path.abspath(args.output) if args.output else None})
+                                              "path": os.path.abspath(native_path(args.output)) if args.output else None})
         # Such an image has no known screen position, so `click --image` must not use it:
         if os.path.exists(screenshot_state_path(server)):
             os.remove(screenshot_state_path(server))
         return emit(args, result, f"{result['path']} ({result['width']}x{result['height']}, front end rendered)")
 
-    with server.x_display() as d:
-        label = "screen"
+    with server.screen() as d:
+        label, shot, shown = "screen", None, None
         if args.region:
             x, y, w, h = (int(float(v)) for v in args.region.split(","))
         elif args.screen:
-            x, y, w, h = 0, 0, d.width, d.height
+            x, y, w, h = d.left, d.top, d.width, d.height
         elif args.window:
             wid = int(args.window, 0)
             geo = d.geometry(wid)
             if not geo:
                 raise CLIError(f"No such window {args.window}")
             x, y, w, h = geo[:4]
-            label = f"window-{args.window}"
+            label, shown = f"window-{args.window}", wid
         elif args.cell:
             located = server.request("locate", {"cell": args.cell})
             if located.get("coordinates") != "Document":
@@ -1102,35 +1718,43 @@ def cmd_screenshot(args):
             server.request("deselect", {"notebook": located["notebook"]})
             time.sleep(args.delay)
             x, y, w, h = bounding_pixels(rects, pad=args.pad or 8)
-            content = located.get("content") or {}
-            if content:
-                scale = server.scale(d)
-                if y < content["top"] * scale - 2 or y + h > (content["top"] + content["height"]) * scale + 2:
-                    print("note: the cell is only partly visible; the screenshot is clipped", file=sys.stderr)
+            content = content_area(server, d, located)
+            if y < content[1] - 2 or y + h > content[1] + content[3] + 2:
+                print("note: the cell is only partly visible; the screenshot is clipped", file=sys.stderr)
             label = "cell"
         else:
             nb = server.request("notebook", {"notebook": args.target or "selected"})
             if not args.no_raise:
                 server.request("select", {"notebook": nb["id"]})
             window = server.match_window(d, nb)
+            label, shown = nb.get("title") or "notebook", window["id"]
+            # The whole window, including its title bar where the window manager draws one:
+            x, y, w, h = window.get("frame") or (window["x"], window["y"], window["width"], window["height"])
             if not args.no_raise:
                 d.activate(window["id"])
                 time.sleep(args.delay)
-            x, y, w, h = window["x"], window["y"], window["width"], window["height"]
-            label = nb.get("title") or "notebook"
-        if args.pad and not args.cell:
-            x, y, w, h = x - args.pad, y - args.pad, w + 2 * args.pad, h + 2 * args.pad
-        # Clip to the screen, keeping the right and bottom edges where they are:
-        x1, y1 = min(x + w, d.width), min(y + h, d.height)
-        x, y = max(0, x), max(0, y)
-        w, h = x1 - x, y1 - y
-        if w <= 0 or h <= 0:
-            raise CLIError("The requested region is outside the screen")
-        path = args.output or default_screenshot_path(server, label)
-        shot = d.screenshot(path, x, y, w, h, scale=args.scale)
+            elif WINDOWS:
+                # Windows can capture a window's own content, also where other windows cover it:
+                if args.pad:
+                    raise CLIError("--pad does not apply to --no-raise screenshots on Windows")
+                path = native_path(args.output) or default_screenshot_path(server, label)
+                shot = d.screenshot_window(path, window["id"], scale=args.scale)
+                x, y, w, h = shot.pop("x"), shot.pop("y"), shot.pop("capturedWidth"), shot.pop("capturedHeight")
+        if shot is None:
+            if args.pad and not args.cell:
+                x, y, w, h = x - args.pad, y - args.pad, w + 2 * args.pad, h + 2 * args.pad
+            # Clip to the screen, keeping the right and bottom edges where they are:
+            x1, y1 = min(x + w, d.left + d.width), min(y + h, d.top + d.height)
+            x, y = max(d.left, x), max(d.top, y)
+            w, h = x1 - x, y1 - y
+            if w <= 0 or h <= 0:
+                raise CLIError("The requested region is outside the screen")
+            path = native_path(args.output) or default_screenshot_path(server, label)
+            shot = d.screenshot(path, x, y, w, h, scale=args.scale)
 
     downscale = shot["width"] / w  # what was actually applied
-    state = {"path": path, "x": x, "y": y, "width": w, "height": h, "scale": downscale, "time": time.time()}
+    state = {"path": path, "x": x, "y": y, "width": w, "height": h, "scale": downscale, "time": time.time(),
+             "window": shown}
     with open(screenshot_state_path(server), "w") as f:
         json.dump(state, f)
     emit(args, dict(shot, origin=[x, y], downscale=downscale),
@@ -1138,24 +1762,38 @@ def cmd_screenshot(args):
          + (f"; downscaled {downscale:.2f}x" if downscale != 1 else "") + ")")
 
 
+# On Windows, the child window that holds the boxes of each scope (the default is the notebook content):
+WINDOWS_PANES = {"Docked": "DockedCellsContent", "Sidebar": "SidebarContent"}
+
+
 def pixel_rects(server, d, located):
     """Convert the front end rectangles (points) from a `locate` result to screen pixel rectangles."""
     scale = server.scale(d)
     dx = dy = 0
-    if located.get("scope") in ("Docked", "Sidebar"):
+    scope = located.get("scope")
+    if scope in ("Docked", "Sidebar") or WINDOWS:
         try:
             nb = server.request("notebook", {"notebook": located["notebook"]})
             window = server.match_window(d, nb)
-            if located["scope"] == "Docked":
+            if scope == "Docked":
                 # Docked boxes come relative to the docked area, which starts at the top of the window's client
                 # area, below the menu bar on Linux (19 px at 96 dpi, i.e. 14.25 points):
                 dy = window["y"] + (MENU_BAR_POINTS * scale if located.get("menuBar") else 0)
-            elif located.get("content"):
+            elif scope == "Sidebar" and located.get("content"):
                 # Boxes in the sidebar are reported with x relative to the content area, which starts to the right of
                 # the sidebar; the sidebar itself starts at the window's left edge.
                 dx = window["x"] - located["content"]["left"] * scale
+            if WINDOWS:
+                # The front end reports the boxes of each pane (docked cells, sidebar, notebook content) as if the
+                # pane started at the top left corner of the window's client area:
+                name = WINDOWS_PANES.get(scope, "NotebookContent")
+                pane = d.pane(window["id"], name)
+                if not pane:
+                    raise CLIError(f"Could not find the {name} pane of notebook {nb.get('title')!r}")
+                dx, dy = dx + pane[0] - window["x"], dy + pane[1] - window["y"]
         except (CLIError, ServerError):
-            pass
+            if WINDOWS:  # the rectangles would all be off by the pane's offset
+                raise
     rects = [{"x": r["left"] * scale + dx, "y": r["top"] * scale + dy, "width": r["width"] * scale,
               "height": r["height"] * scale} for r in located.get("rects") or []]
     if located.get("coordinates") == "Document" and rects:
@@ -1167,31 +1805,46 @@ def is_whole_cell(located):
     return located.get("target") == "Cell" or located.get("match") == "Cell"
 
 
-HIGHLIGHT = (48, 140, 198)  # the front end's selection background
+HIGHLIGHT = (48, 140, 198)  # the front end's selection background on Linux (Windows uses the system's)
 MENU_BAR_POINTS = 14.25
+
+
+def content_area(server, d, located, window=None):
+    """The notebook's content area (below docked cells, excluding scroll bars) of a `locate` result, in screen pixels:
+    (left, top, width, height)."""
+    if window is None:
+        window = server.match_window(d, server.request("notebook", {"notebook": located["notebook"]}))
+    if WINDOWS:
+        # The front end reports the whole client area there; the content is a child window:
+        pane = d.pane(window["id"], "NotebookContent")
+        if pane:
+            return pane
+    scale = server.scale(d)
+    content = located.get("content") or {}
+    return (int(content.get("left", 0) * scale) or window["x"], int(content.get("top", 0) * scale) or window["y"],
+            int(content.get("width", 0) * scale) or window["width"],
+            int(content.get("height", 0) * scale) or window["height"])
 
 
 def find_selection_on_screen(server, d, located, rects):
     """Text selections in text cells are reported in document coordinates: x is right, but y depends on the scroll
     position, which the front end doesn't expose. The selection has been scrolled into view, so find its highlight
     within the notebook's content area."""
-    scale = server.scale(d)
-    content = located.get("content") or {}
     nb = server.request("select", {"notebook": located["notebook"]})
     window = server.match_window(d, nb)
     d.activate(window["id"])
     time.sleep(0.3)
-    top = int(content.get("top", 0) * scale) or window["y"]
-    height = int(content.get("height", 0) * scale) or window["height"]
+    left, top, width, height = content_area(server, d, located, window)
     if is_whole_cell(located):
         # A selected cell is reported as one rectangle between its caret positions; search the whole content width
         # and take the union of its highlighted lines.
-        left, width = int(content.get("left", 0) * scale) or window["x"], int(content.get("width", 0) * scale) or window["width"]
         rects = [{"x": left, "y": 0, "width": width, "height": rects[0]["height"], "union": True}]
+    color = d.selection_color() if hasattr(d, "selection_color") else HIGHLIGHT
+    gap = max(6, round(4.5 * server.scale(d)))  # between the lines of a selection (6 px at 96 dpi)
     # The front end may not have repainted the new selection yet: wait until two captures agree.
     previous = None
     for _ in range(6):
-        found = highlight_bands(d, rects, top, height)
+        found = highlight_bands(d, rects, top, height, color, gap)
         if found and found == previous:
             return found
         previous = found
@@ -1201,7 +1854,7 @@ def find_selection_on_screen(server, d, located, rects):
     return found
 
 
-def highlight_bands(d, rects, top, height):
+def highlight_bands(d, rects, top, height, color=HIGHLIGHT, gap=6):
     found = []
     for r in rects:
         x0, x1 = int(r["x"]) + 1, int(r["x"] + r["width"]) - 1
@@ -1212,8 +1865,8 @@ def highlight_bands(d, rects, top, height):
         for row in range(h):
             line = rgb[row * w * 3:(row + 1) * w * 3]
             hits = sum(1 for i in range(0, len(line), 3)
-                       if abs(line[i] - HIGHLIGHT[0]) < 40 and abs(line[i + 1] - HIGHLIGHT[1]) < 40
-                       and abs(line[i + 2] - HIGHLIGHT[2]) < 40)
+                       if abs(line[i] - color[0]) < 40 and abs(line[i + 1] - color[1]) < 40
+                       and abs(line[i + 2] - color[2]) < 40)
             rows.append(hits > (2 if r.get("union") else 0.25 * w))
         bands, start = [], None
         for i, hit in enumerate(rows + [False]):
@@ -1223,7 +1876,18 @@ def highlight_bands(d, rects, top, height):
                 bands.append((start, i))
                 start = None
         if bands and r.get("union"):
-            found.append({"x": r["x"], "y": top + bands[0][0], "width": r["width"], "height": bands[-1][1] - bands[0][0]})
+            # The cell's highlighted lines: the span of runs of nearly adjacent bands whose height is closest to the
+            # cell's, since other things can have the highlight color too (on Windows, controls in the system's
+            # accent color). Usually that is the span from the first band to the last.
+            runs = [list(bands[0])]
+            for b0, b1 in bands[1:]:
+                if b0 - runs[-1][1] <= gap:
+                    runs[-1][1] = b1
+                else:
+                    runs.append([b0, b1])
+            spans = [(runs[i][0], runs[j][1]) for i in range(len(runs)) for j in range(i, len(runs))]
+            b0, b1 = min(spans, key=lambda b: (abs((b[1] - b[0]) - r["height"]), b[0] - b[1]))
+            found.append({"x": r["x"], "y": top + b0, "width": r["width"], "height": b1 - b0})
         elif bands:
             b0, b1 = min(bands, key=lambda b: abs((b[1] - b[0]) - r["height"]))
             found.append({"x": r["x"], "y": top + b0, "width": r["width"], "height": b1 - b0})
@@ -1240,7 +1904,7 @@ def bounding_pixels(rects, pad=0):
 
 def cmd_windows(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
         own, popups = server.fe_windows(d)
         rows = own + [p for p in popups if p not in own]
         if args.all:
@@ -1266,6 +1930,11 @@ def resolve_point(server, d, args):
             raise CLIError("No previous screenshot; take one with `fe.py screenshot` first")
         u, v = parse_point(args.image)
         scale = state.get("scale") or 1.0
+        # On Windows, the window may be covered (`screenshot --no-raise` captures its own content). An X11 screenshot
+        # shows the screen as it is, so raising the window there would make the click land on something else:
+        if WINDOWS and state.get("window") and d.geometry(state["window"]):
+            d.activate(state["window"])
+            time.sleep(0.3)
         return state["x"] + u / scale, state["y"] + v / scale
     if getattr(args, "box", None) or getattr(args, "text", None) or getattr(args, "cell", None):
         located = server.request("locate", locate_args(args))
@@ -1316,7 +1985,7 @@ SCOPES = {"notebook": "Notebook", "docked": "Docked", "attached": "Attached", "s
 def cmd_locate(args):
     server = Server(select_server(args.server))
     located = server.request("locate", locate_args(args))
-    with server.x_display() as d:
+    with server.screen() as d:
         pixels = [{k: round(v) for k, v in r.items()} for r in pixel_rects(server, d, located)]
         located["scale"] = server.scale(d)
     located["pixels"] = pixels
@@ -1329,13 +1998,14 @@ def cmd_locate(args):
 
 def cmd_click(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
         x, y = resolve_point(server, d, args)
         if args.offset:
             dx, dy = parse_point(args.offset)
             x, y = x + dx, y + dy
-        if not (0 <= x < d.width and 0 <= y < d.height):
+        if not (d.left <= x < d.left + d.width and d.top <= y < d.top + d.height):
             raise CLIError(f"The point {round(x)},{round(y)} is outside the screen ({d.width}x{d.height})")
+        ensure_front_end_at(server, d, x, y, args.force)
         button = {"left": 1, "middle": 2, "right": 3}[args.button]
         mods = [m for m in (args.mods or "").split("+") if m]
         d.click(x, y, button=button, count=2 if args.double else 1, modifiers=mods)
@@ -1351,7 +2021,7 @@ def cmd_press(args):
 
 def cmd_move(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
         x, y = resolve_point(server, d, args)
         d.move(x, y)
     print(f"moved to {round(x)},{round(y)}")
@@ -1359,8 +2029,9 @@ def cmd_move(args):
 
 def cmd_scroll(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
         x, y = resolve_point(server, d, args) if (args.point or args.image) else d.pointer()
+        ensure_front_end_at(server, d, x, y, args.force)
         d.scroll(x, y, args.clicks, horizontal=args.horizontal)
     print(f"scrolled {args.clicks} at {round(x)},{round(y)}")
 
@@ -1369,9 +2040,23 @@ def cmd_drag(args):
     server = Server(select_server(args.server))
     x0, y0 = parse_point(args.start)
     x1, y1 = parse_point(args.end)
-    with server.x_display() as d:
+    with server.screen() as d:
+        ensure_front_end_at(server, d, x0, y0, args.force)
         d.drag(x0, y0, x1, y1)
     print(f"dragged {x0},{y0} -> {x1},{y1}")
+
+
+def ensure_front_end_at(server, d, x, y, force=False):
+    """Refuse to send mouse input to a point where another application's window is in front (where it can be found:
+    on Windows). On a shared desktop, the click would go to that application."""
+    pid = server.info.get("FrontEndPID")
+    if force or not pid or not hasattr(d, "window_at"):
+        return
+    window = d.window_at(x, y)
+    if window and d.window_pid(window) != pid:
+        name = next((w["name"] for w in d.windows() if w["id"] == window), "")
+        raise CLIError(f"The point {round(x)},{round(y)} is covered by another application's window ({name!r}), so "
+                       "no mouse input was sent. Select the notebook first, or pass --force.")
 
 
 def ensure_front_end_focus(server, d, force=False):
@@ -1408,7 +2093,7 @@ def focus_cell(server, d, cell, start=False):
 
 def cmd_focus(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
         if args.cell:
             info = focus_cell(server, d, args.cell, start=args.start)
             return print(f"cursor in cell {info['cell']} of {info['title']!r}")
@@ -1418,7 +2103,9 @@ def cmd_focus(args):
 
 def cmd_key(args):
     server = Server(select_server(args.server))
-    with server.x_display() as d:
+    with server.screen() as d:
+        for combo in args.keys:
+            d.parse_key(combo)  # fail before focusing anything
         if args.cell:
             focus_cell(server, d, args.cell)
         elif args.notebook:
@@ -1432,7 +2119,7 @@ def cmd_key(args):
 def cmd_type(args):
     server = Server(select_server(args.server))
     text = read_code(args.text)
-    with server.x_display() as d:
+    with server.screen() as d:
         if args.cell:
             focus_cell(server, d, args.cell)
         elif args.notebook:
@@ -1467,7 +2154,7 @@ def cmd_ask(args):
     before = {cell_ref(c) for c in chat_outputs(server, notebook, sidebar)}
     target = argparse.Namespace(image=None, box="AttachedChatInputField", text=None, cell=None, notebook=notebook,
                                 occurrence=None, at=None, within="sidebar" if sidebar else None)
-    with server.x_display() as d:
+    with server.screen() as d:
         # A newly opened assistant creates its input field asynchronously, and opening the sidebar moves and resizes
         # the window: wait until the field exists and its position is stable.
         deadline = time.time() + 20
@@ -1534,19 +2221,22 @@ def build_parser():
     p.add_argument("--prune", action="store_true", help="remove registry entries of dead servers")
 
     p = add("launch", cmd_launch, "start a new front end with a server")
-    p.add_argument("--display", default="new",
-                   help="'new' (default: private Xvfb display), 'current' ($DISPLAY), or an X display like :10")
-    p.add_argument("--size", default="1920x1200", help="screen size for a new Xvfb display")
+    p.add_argument("--display",
+                   help="'new' (default: private Xvfb display), 'current' ($DISPLAY), or an X display like :10 "
+                        "(on Windows, front ends always run on the desktop)")
+    p.add_argument("--size", default="1920x1200", help="screen size for a new Xvfb display (Linux)")
     p.add_argument("--port", type=int, help="server port (default: first free port in 2400-2499)")
     p.add_argument("--name", help="server name")
     p.add_argument("--chatbook", nargs="?", const=REPO, default=None,
                    help="load a development Chatbook paclet at startup (default path: this repository)")
-    p.add_argument("--wm", action="store_true", help="run a window manager (xfwm4/openbox) on the new Xvfb display")
+    p.add_argument("--wm", action="store_true", help="run a window manager (xfwm4/openbox) on the new Xvfb display (Linux)")
     p.add_argument("--wm-command", help="window manager executable to use with --wm")
     p.add_argument("--front-end", help="path to the WolframNB executable")
     p.add_argument("--keep-welcome", action="store_true", help="do not close the Welcome screen")
     p.add_argument("--timeout", type=float, default=180, help="seconds to wait for startup")
     p.add_argument("--force", action="store_true", help="launch even if little memory is available")
+    p.add_argument("--link-snooper", action="store_true",
+                   help="log all MathLink traffic between the front end and its kernel (see `snoop`, `linklog`)")
 
     p = add("stop", cmd_stop, "quit a launched front end (or stop the server in an attached one)")
     p.add_argument("--server-only", action="store_true", help="only stop the server; leave the front end running")
@@ -1596,7 +2286,7 @@ def build_parser():
 
     p = add("select", cmd_select, "bring a notebook window to the front and focus it")
     p.add_argument("notebook")
-    p.add_argument("--no-x", action="store_true", help="do not also activate the X window")
+    p.add_argument("--no-x", action="store_true", help="do not also activate the window on screen")
 
     p = add("close", cmd_close, "close a notebook without saving")
     p.add_argument("notebook")
@@ -1607,16 +2297,18 @@ def build_parser():
     p.add_argument("target", nargs="?", help="notebook reference (default: selected notebook)")
     p.add_argument("-o", "--output", help="output PNG path (default: temp dir)")
     p.add_argument("--screen", action="store_true", help="capture the whole screen")
-    p.add_argument("--window", help="capture an X window by id (see `windows`)")
+    p.add_argument("--window", help="capture a window by id (see `windows`)")
     p.add_argument("--region", help="capture x,y,w,h in screen pixels")
     p.add_argument("--cell", help="capture just this cell (by id)")
     p.add_argument("--pad", type=int, default=0, help="extra pixels around the target")
     p.add_argument("--scale", type=float, default=1.0, help="downscale factor (e.g. 0.5)")
-    p.add_argument("--no-raise", action="store_true", help="do not raise the notebook window first")
+    p.add_argument("--no-raise", action="store_true",
+                   help="for notebook screenshots: do not raise the window first (on Windows: capture the window's "
+                        "own content, also where other windows cover it, but without popup menus)")
     p.add_argument("--delay", type=float, default=0.3, help="seconds to wait after raising")
-    p.add_argument("--fe", action="store_true", help="let the front end render the image (no X11 needed)")
+    p.add_argument("--fe", action="store_true", help="let the front end render the image (no screen access needed)")
 
-    p = add("windows", cmd_windows, "list the front end's X windows (including popups)")
+    p = add("windows", cmd_windows, "list the front end's windows (including popups)")
     p.add_argument("--all", action="store_true", help="list all client windows on the display")
 
     def add_target(p, point=True):
@@ -1642,6 +2334,7 @@ def build_parser():
     p.add_argument("--double", action="store_true")
     p.add_argument("--mods", help="modifiers held during the click, e.g. ctrl+shift")
     p.add_argument("--offset", metavar="DX,DY", help="pixel offset added to the target point")
+    p.add_argument("--force", action="store_true", help="click even if another application's window covers the point")
 
     p = add("press", cmd_press, "activate a button/control by BoxID through the front end (no mouse input; works "
                                  "for hidden or off-screen controls)")
@@ -1656,12 +2349,14 @@ def build_parser():
     p.add_argument("point", nargs="?")
     p.add_argument("--image", metavar="U,V")
     p.add_argument("--window", metavar="NOTEBOOK")
-    p.add_argument("--clicks", type=int, default=3, help="positive = down, negative = up")
+    p.add_argument("--clicks", type=int, default=3, help="positive = down (right), negative = up (left)")
     p.add_argument("--horizontal", action="store_true")
+    p.add_argument("--force", action="store_true", help="scroll even if another application's window is at the point")
 
     p = add("drag", cmd_drag, "drag with the left button between two screen points")
     p.add_argument("start")
     p.add_argument("end")
+    p.add_argument("--force", action="store_true", help="drag even if another application's window is at the start")
 
     p = add("focus", cmd_focus, "focus a notebook window, or put the insertion point into a cell (for typing)")
     p.add_argument("notebook", nargs="?", default="selected")
@@ -1696,10 +2391,54 @@ def build_parser():
     p.add_argument("--timeout", type=float, default=60)
 
     add("reload", cmd_reload, "reload the server's Wolfram Language code without restarting")
+
+    p = add("snoop", cmd_snoop, "log all MathLink traffic between the front end and its kernel to a file (J/Link's "
+                                 "LinkSnooper): the kernel is replaced by one that runs through LinkSnooper, which the "
+                                 "server moves to (kernel state is lost); read the log with `linklog`")
+    p.add_argument("--evaluator-only", action="store_true",
+                   help="only add an evaluator (\"LinkSnooperLog\", or \"LinkSnooperLog 2\", ...: the output names "
+                        "it) for notebooks to use (Evaluator option); the main kernel stays as it is (this also works "
+                        "in a front end that fe.py did not launch)")
+    p.add_argument("--links", default="main,pre,serv",
+                   help="links to log: main, pre (preemptive: Dynamic updates) and/or serv (service), comma-separated "
+                        "(default: %(default)s)")
+    p.add_argument("--poll-interval", type=int, default=1,
+                   help="milliseconds LinkSnooper waits between checks of its links while there is traffic (it backs "
+                        "off to 10 when idle); larger values add latency to every front end call (default: "
+                        "%(default)s)")
+    p.add_argument("--timeout", type=float, default=120,
+                   help="seconds to wait for the server to start in the new kernel before the old kernel takes it "
+                        "back (default: %(default)s)")
+
+    p = add("linklog", cmd_linklog, "print MathLink traffic logged by `snoop`: by default the packets logged since "
+                                     "the last `linklog`, one line each")
+    p.add_argument("--mark", action="store_true", help="print nothing, just skip to the end (do this before an action "
+                                                       "to see only the traffic it causes)")
+    p.add_argument("--all", action="store_true", help="read from the start of the log, not from where the last "
+                                                      "`linklog` stopped (which stays where it is)")
+    p.add_argument("--tail", type=int, metavar="N", help="print the last N (matching) packets")
+    p.add_argument("--grep", metavar="REGEX",
+                   help="only packets whose text (as printed, without the time) matches this regular expression "
+                        "(Python syntax)")
+    p.add_argument("--exclude", metavar="REGEX", help="leave out packets whose text matches this regular expression")
+    p.add_argument("--hide-server", action="store_true",
+                   help="leave out the traffic of fe.py's queued requests (everything the server does for `eval`, "
+                        "`cells`, `locate`, `press`, ..., but not for --preemptive requests), e.g. to see what a "
+                        "click or key press caused")
+    p.add_argument("--limit", type=int, default=100, help="packets to print at most (0: no limit; default: %(default)s)")
+    p.add_argument("--width", type=int, default=300,
+                   help="characters to print per packet at most (0: no limit; default: %(default)s)")
+    p.add_argument("--file", help="read this log file (e.g. after `stop`) instead of the selected server's")
+    p.add_argument("--path", action="store_true", help="just print the log file's path (to grep or read it directly)")
     return parser
 
 
 def main(argv=None):
+    # Results can contain any character; don't fail on them where the console or pipe encoding is a legacy code page
+    # (e.g. on Windows):
+    for stream, encoding in ((sys.stdout, "utf-8"), (sys.stderr, "utf-8"), (sys.stdin, "utf-8-sig")):
+        if hasattr(stream, "reconfigure") and stream.encoding.lower().replace("-", "") != "utf8":
+            stream.reconfigure(encoding=encoding, errors="replace" if stream is not sys.stdin else "strict")
     parser = build_parser()
     args = parser.parse_args(argv)
     if not getattr(args, "func", None):
@@ -1725,9 +2464,11 @@ def main(argv=None):
         print(f"error: {e}", file=sys.stderr)
         return 1
     except Exception as e:  # noqa: BLE001
-        import fe_x11
-        if isinstance(e, fe_x11.X11Error):
-            print(f"error (X11): {e}", file=sys.stderr)
+        if isinstance(e, screen_backend().ScreenError):
+            if args.json:
+                print(json.dumps({"ok": False, "errorType": "ScreenError", "error": str(e)}, indent=1))
+                return 1
+            print(f"error ({'Windows' if WINDOWS else 'X11'}): {e}", file=sys.stderr)
             return 1
         raise
     return 0
