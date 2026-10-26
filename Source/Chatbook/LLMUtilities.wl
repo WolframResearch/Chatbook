@@ -20,6 +20,10 @@ $defaultLLMSynthesizeEvaluator :=
 
 $defaultConfigPersona = "WolframAIAssistant";
 
+(* True while submitting requests whose handlers can run in the middle of other evaluations (see
+   generateChatTitleInBackground), so that errors in handling their responses don't affect the current chat: *)
+$backgroundHandlers = False;
+
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
     "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
@@ -191,7 +195,7 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, stop, allowEmpty, handlers, keys, auth },
+    Module[ { evaluator, prompt, messages, config, chunks, stop, allowEmpty, extract, handlers, keys, auth },
 
         evaluator  = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
         prompt     = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
@@ -200,6 +204,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
         chunks     = Internal`Bag[ ];
         stop       = Select[ Flatten @ { evaluator[ "StopTokens" ] }, StringQ ];
         allowEmpty = Length @ stop > 0;
+        extract    = If[ TrueQ @ $backgroundHandlers, extractBodyChunksInBackground, extractBodyChunks ];
 
         handlers = <|
             "BodyChunkReceived" -> Function[
@@ -209,7 +214,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                 Module[ { data, strings },
                     data = Internal`BagPart[ chunks, All ];
                     $lastSynthesizeSubmitLog = data;
-                    strings = extractBodyChunks @ data;
+                    strings = extract @ data;
                     Which[
                         MatchQ[ strings, { __String } ] || (allowEmpty && strings === { }),
                             With[ { s = stopTokenTrim[ strings, stop ] }, callback[ s, #1 ] ],
@@ -477,6 +482,18 @@ extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
     ] := { };
 
 extractBodyChunks0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractBodyChunksInBackground*)
+(* The handler might have interrupted another chat, so errors (e.g. API errors) are not written to its output or thrown
+   into it and issue no messages, but are returned as failures and passed to the callback instead: *)
+extractBodyChunksInBackground // beginDefinition;
+
+extractBodyChunksInBackground[ data_ ] :=
+    Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None }, extractBodyChunks @ data ];
+
+extractBodyChunksInBackground // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
