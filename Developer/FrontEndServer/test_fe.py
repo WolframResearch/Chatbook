@@ -125,8 +125,17 @@ def oversized_request(r):
 
 
 def snooping(r):
-    """`snoop` moves the server to a kernel that runs through LinkSnooper; `linklog` shows what a cell evaluation sent."""
-    r.fe("snoop")
+    """`snoop` moves the server to a kernel that runs through LinkSnooper; `linklog` shows what a cell evaluation sent.
+    A Server object that was used before keeps working: it reconnects when it finds its idle connection closed."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        kernel = server.request("info")["KernelPID"]
+        r.fe("snoop")
+        expect(server.request("info")["KernelPID"] != kernel, True)
+    finally:
+        server.close()
     info = json.loads(r.fe("--json", "info"))
     expect(info["Evaluator"].startswith("LinkSnooperLog"), True)
     expect(info["FrontEndPID"] not in (None, info.get("SnooperPID")), True)
@@ -145,6 +154,46 @@ def snooping(r):
     with open(log, encoding="utf-8", errors="replace") as f:
         expect(re.search(r'Rule\["(ActivationKey|Password|MachineID)", \{?"(?!<redacted |")', f.read()), None)
     expect("AlreadySnooping" in r.fails("snoop"), True)
+
+
+def many_requests(r):
+    """More requests than the server could take connections: one Server object sends them all over one connection."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        for i in range(600):
+            if i % 3 == 0:
+                server.request("ping")
+            else:
+                fe.Server.preemptive = i % 3 == 2
+                try:
+                    expect(server.evaluate(str(i))["result"], str(i))
+                finally:
+                    fe.Server.preemptive = False
+        # A queued request that waits for a busy kernel keeps pinging over the same connection:
+        expect(server.evaluate("Pause[3]; 42", timeout=30)["result"], "42")
+    finally:
+        server.close()
+    expect(r.eval("1 + 1"), "2")
+
+
+def unattributed_error(r):
+    """An error that the server sends without a request id (here for invalid JSON) fails the request in flight at once,
+    and the Server object stays usable."""
+    sys.path.insert(0, HERE)
+    import fe
+    server = fe.Server(fe.select_server(str(r.server) if r.server else None))
+    try:
+        try:
+            server.request("ping", {"x": float("nan")}, timeout=30)  # json.dumps writes NaN, which is not JSON
+        except fe.ServerError as e:
+            expect(e.response.get("errorType"), "InvalidJSON")
+        else:
+            raise AssertionError("a request with invalid JSON succeeded")
+        expect(server.evaluate("1 + 1")["result"], "2")
+    finally:
+        server.close()
 
 
 def run_tests(r, launched=False):
@@ -178,6 +227,8 @@ def run_tests(r, launched=False):
         capture_output=True, text=True, encoding="utf-8").stdout)["errorType"], "NotebookNotFound"))
     r.test("unknown key", lambda: expect("Unknown key name" in r.fails("key", "ctrl+NoSuchKey"), True))
     r.test("wait for idle", lambda: (r.fe("eval", "--cell", "--no-wait", "Pause[2]"), r.fe("wait")))
+    r.test("many requests on one connection", lambda: many_requests(r))
+    r.test("errors without a request id", lambda: unattributed_error(r))
 
     r.eval(TEST_NOTEBOOK)
     time.sleep(1)
