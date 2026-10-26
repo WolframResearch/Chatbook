@@ -246,7 +246,7 @@ VerificationTest[
 
 VerificationTest[
     stopChatTaggingRuleKeys @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $stopChatData |>,
-    { { "CellToStringData", "ChatData" } },
+    { { "CellToStringData", "ChatData", "HasChatData" } },
     SameTest -> SameQ,
     TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:247,1-252,2"
 ]
@@ -268,7 +268,7 @@ VerificationTest[
 ]
 
 (* For asynchronous requests, a chat can be stopped after a response chunk arrives but before sendChat writes "Data" to
-   the output cell. The final cell is then written without "ChatData": *)
+   the output cell. The final cell is then written without "ChatData" or its "HasChatData" flag: *)
 VerificationTest[
     stopChatTaggingRuleKeys @ Wolfram`Chatbook`Common`$defaultChatSettings,
     { { "CellToStringData" } },

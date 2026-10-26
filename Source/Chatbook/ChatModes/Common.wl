@@ -16,15 +16,18 @@ HoldComplete[
     `getContextFromSelection,
     `getNotebookAssistanceInput,
     `getSelectionInfo,
+    `includedNotebookQ,
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,
+    `saveWorkspaceChatInput,
     `scrollInlineChat,
     `sidebarCellObject,
     `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
-    `validInputStringQ
+    `validInputStringQ,
+    `workspaceChatInput
 ];
 
 EndPackage[ ];
