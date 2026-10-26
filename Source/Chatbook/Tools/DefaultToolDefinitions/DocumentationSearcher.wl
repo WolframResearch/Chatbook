@@ -32,6 +32,7 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
     toolDefaultData[ "DocumentationSearcher" ],
     "ShortName"          -> "doc_search",
     "Icon"               -> $documentationSearcherIcon,
+    "CallIcon"           -> toolCallIconResource[ "DocumentationSearcher" ],
     "Description"        -> $documentationSearcherDescription,
     "Function"           -> documentationSearch,
     "FormattingFunction" -> documentationSearchFormatter,

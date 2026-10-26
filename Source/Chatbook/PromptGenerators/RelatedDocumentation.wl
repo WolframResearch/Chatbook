@@ -18,6 +18,7 @@ $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-con
 $streamableSnippetBaseURL      = "https://www.wolframcloud.com/obj/wolframai-content/StreamableSnippets";
 $documentationMarkdownBaseURL := URLBuild @ { $baseURL, $documentationSnippetVersion, "Markdown" };
 $streamableSnippetTypes        = { "Documentation", "ResourceSystem" };
+$allowSnippetDownload          = True;
 
 $rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
 
@@ -53,6 +54,13 @@ $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 25;
 
 $filteringLLMConfig = <| (* "StopTokens" -> { "CasualChat" } *) |>; (* gpt-5.4-nano does not support stop tokens *)
+
+(* Maximum number of filtering responses that are kept for reuse when identical instructions are sent again: *)
+$filterSnippetsCacheSize = 64;
+
+(* Filtering is optional, so don't let a slow or failing filter request hold up (or abort) the chat: *)
+$filterSnippetsTimeConstraint = 6;
+$filterSnippetsMaxAttempts    = 2;
 
 
 $$assistantTypeTag = "Computational"|"Knowledge"|"Data"|"CasualChat";
@@ -345,8 +353,10 @@ toSource // endDefinition;
 (*relatedDocumentationPrompt*)
 relatedDocumentationPrompt // beginDefinition;
 
-relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
-    Catch @ Module[ { results, filtered, string },
+relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter0_, filterCount_ ] := Enclose[
+    Catch @ Module[ { filter, results, filtered, string },
+
+        filter = filter0;
 
         results = ConfirmMatch[
             RelatedDocumentation[ messages, "Results", count ],
@@ -360,8 +370,19 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
 
         filtered = ConfirmMatch[
             filterSnippets[ messages, results, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
-            { ___String },
+            { ___String } | _Failure,
             "Filtered"
+        ];
+
+        (* If filtering failed (e.g. it timed out), use the top unfiltered results and the unfiltered header instead: *)
+        If[ FailureQ @ filtered,
+            filtered = ConfirmMatch[
+                Take[ filterSnippets[ messages, results, False, filterCount ], UpTo[ filterCount ] ] //
+                    LogChatTiming @ { "FilterSnippetsFallback", First @ filtered },
+                { ___String },
+                "Unfiltered"
+            ];
+            filter = False
         ];
 
         string = StringTrim @ StringRiffle[ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
@@ -557,20 +578,28 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
             "Prompt"
         ];
 
-        response = StringTrim @ ConfirmBy[
+        response = ConfirmMatch[
             LogChatTiming[
                 setServiceCaller[
-                    llmSynthesize[
+                    cachedFilterSnippetsResponse[
                         instructions,
-                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ]
+                        Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ],
+                        TimeConstraint   -> $filterSnippetsTimeConstraint,
+                        "MaxAttempts"    -> $filterSnippetsMaxAttempts,
+                        "ReturnFailures" -> True
                     ],
                     "RelatedDocumentation"
                 ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
-            StringQ,
+            _String | _Failure,
             "Response"
         ];
+
+        (* Let relatedDocumentationPrompt fall back to unfiltered results: *)
+        If[ FailureQ @ response, Throw @ response ];
+
+        response = StringTrim @ response;
 
         If[ StringContainsQ[ response, "CasualChat" ], response = "" ];
 
@@ -730,6 +759,52 @@ Here is the chat transcript:
 %%Transcript%%
 </transcript>\
 ", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedFilterSnippetsResponse*)
+(* Snippet IDs are stable within a session, so exact repeats (e.g. regenerating a response) produce identical
+   instructions, and the previous response can be reused instead of waiting for another one from the LLM: *)
+cachedFilterSnippetsResponse // beginDefinition;
+
+cachedFilterSnippetsResponse[ instructions_String, config_Association, opts: OptionsPattern[ llmSynthesize ] ] := Enclose[
+    Module[ { key, response },
+        key = ConfirmBy[ llmSynthesizeCacheKey[ instructions, config ], IntegerQ, "Key" ];
+        response = Lookup[ $filterSnippetsResponseCache, key ];
+        If[ StringQ @ response,
+            LogChatTiming[ response, "FilterSnippetsCacheHit" ],
+            response = llmSynthesize[ instructions, config, opts ];
+            If[ StringQ @ response, cacheFilterSnippetsResponse[ key, response ] ];
+            response
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* Not cacheable, so this is handled by llmSynthesize as before: *)
+cachedFilterSnippetsResponse[ instructions_, config_, opts: OptionsPattern[ llmSynthesize ] ] :=
+    llmSynthesize[ instructions, config, opts ];
+
+cachedFilterSnippetsResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cacheFilterSnippetsResponse*)
+cacheFilterSnippetsResponse // beginDefinition;
+
+cacheFilterSnippetsResponse[ key_Integer, response_String ] := (
+    If[ ! AssociationQ @ $filterSnippetsResponseCache, $filterSnippetsResponseCache = <| |> ];
+    $filterSnippetsResponseCache[ key ] = response;
+    (* Evict the oldest entries: *)
+    If[ Length @ $filterSnippetsResponseCache > $filterSnippetsCacheSize,
+        $filterSnippetsResponseCache = Take[ $filterSnippetsResponseCache, -$filterSnippetsCacheSize ]
+    ];
+    response
+);
+
+cacheFilterSnippetsResponse // endDefinition;
+
+$filterSnippetsResponseCache = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1339,7 +1414,12 @@ getStreamableSnippetsMetadata // endDefinition;
 downloadStreamableSnippets // beginDefinition;
 
 
-downloadStreamableSnippets[ ] := Enclose[
+(* Both of these need a condition, since a definition without patterns or conditions is always tried first: *)
+downloadStreamableSnippets[ ] /; ! $allowSnippetDownload :=
+    Throw[ Missing[ "DownloadDisabled" ], $snippetDownloadTag ];
+
+
+downloadStreamableSnippets[ ] /; $allowSnippetDownload := Enclose[
     Module[ { dir, queue, result },
 
         dir = $localStreamableSnippetsDirectory;
@@ -1471,6 +1551,72 @@ loadStreamIndex[ name_String ] := Enclose[
 ];
 
 loadStreamIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeStreamableSnippets*)
+initializeStreamableSnippets // beginDefinition;
+
+(* Loads the snippet indexes if the snippets are already installed. This never starts a download. *)
+initializeStreamableSnippets[ ] :=
+    Block[ { $allowSnippetDownload = False },
+        Catch[ Length /@ AssociationMap[ loadStreamIndex, $streamableSnippetTypes ], $snippetDownloadTag ]
+    ];
+
+initializeStreamableSnippets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Initialization*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*initializeRelatedDocumentation*)
+initializeRelatedDocumentation // beginDefinition;
+
+(* Loads vector databases and snippet indexes ahead of time, so the first search in a session does not have to wait
+   for them. Failures are ignored here, since the first real search handles them as usual. *)
+initializeRelatedDocumentation[ settings_ ] := <|
+    "VectorDatabases" -> LogChatTiming[
+        Quiet @ catchAlways @ initializeVectorDatabases @ initializationVectorDBNames @ settings,
+        "InitializeVectorDatabases"
+    ],
+    "SnippetIndexes" -> LogChatTiming[
+        Quiet @ catchAlways @ initializeStreamableSnippets[ ],
+        "InitializeSnippetIndexes"
+    ]
+|>;
+
+initializeRelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializationVectorDBNames*)
+initializationVectorDBNames // beginDefinition;
+
+initializationVectorDBNames[ settings_ ] := DeleteDuplicates @ Flatten @ {
+    "SourceSelector",
+    toSource /@ $defaultSources,
+    (* Only the RelatedWolframAlphaResults prompt generator needs this one: *)
+    If[ wolframAlphaResultsQ @ settings, "WolframAlphaQueries", { } ]
+};
+
+initializationVectorDBNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframAlphaResultsQ*)
+wolframAlphaResultsQ // beginDefinition;
+
+wolframAlphaResultsQ[ KeyValuePattern[ "PromptGenerators" -> generators_List ] ] := MemberQ[
+    generators,
+    "RelatedWolframAlphaResults" |
+        HoldPattern @ LLMPromptGenerator[ KeyValuePattern[ "Name" -> "RelatedWolframAlphaResults" ], ___ ]
+];
+
+wolframAlphaResultsQ[ _ ] := False;
+
+wolframAlphaResultsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

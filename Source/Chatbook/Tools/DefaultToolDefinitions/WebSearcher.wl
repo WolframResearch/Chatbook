@@ -13,6 +13,7 @@ $defaultChatTools0[ "WebSearcher" ] = <|
     toolDefaultData[ "WebSearcher" ],
     "ShortName"          -> "web_search",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
+    "CallIcon"           -> toolCallIconResource[ "WebSearcher" ],
     "Description"        -> "Search the web.",
     "Function"           -> webSearch,
     "FormattingFunction" -> toolAutoFormatter,

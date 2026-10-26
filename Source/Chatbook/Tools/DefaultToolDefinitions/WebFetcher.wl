@@ -18,6 +18,7 @@ $defaultChatTools0[ "WebFetcher" ] = <|
     toolDefaultData[ "WebFetcher" ],
     "ShortName"          -> "web_fetch",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
+    "CallIcon"           -> toolCallIconResource[ "WebFetcher" ],
     "Description"        -> "Fetch plain text or image links from a URL.",
     "Function"           -> webFetch,
     "FormattingFunction" -> toolAutoFormatter,

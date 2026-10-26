@@ -36,6 +36,7 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
     toolDefaultData[ "WolframAlpha" ],
     "ShortName"          -> "wa",
     "Icon"               -> $wolframAlphaIcon,
+    "CallIcon"           -> toolCallIconResource[ "WolframAlpha" ],
     "Description"        -> $wolframAlphaDescription,
     "DisplayName"        -> "Wolfram|Alpha",
     "Enabled"            :> ! TrueQ @ $AutomaticAssistance,

@@ -26,6 +26,7 @@ $modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "Display
 $servicesLoaded         = False;
 $useLLMServices        := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
 $serviceCache           = None;
+$buildingServiceTable   = False;
 
 $llmServicesAvailable := $llmServicesAvailable = (
     PacletInstall[ "Wolfram/LLMFunctions" ];
@@ -340,7 +341,7 @@ usableChatModelQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$availableServices*)
-$availableServices := Block[ { $availableServices = <| |> }, getAvailableServices[ ] ];
+$availableServices := Block[ { $availableServices = <| |>, $buildingServiceTable = True }, getAvailableServices[ ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -419,6 +420,53 @@ checkLiteralModelLists[ service_Association ] :=
     service;
 
 checkLiteralModelLists // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getServiceIcon*)
+getServiceIcon // beginDefinition;
+
+(* Use the full service table if it's already cached (or cheap to get), or if it's currently being built (in which case
+   $availableServices is temporarily empty): *)
+getServiceIcon[ service_String ] /; $buildingServiceTable || AssociationQ @ $serviceCache || ! $useLLMServices :=
+    $availableServices[ service, "Icon" ];
+
+(* Otherwise, avoid building the full service table (which evaluates icons for every service) just for one icon: *)
+getServiceIcon[ service_String ] := (
+    PacletInstall[ "Wolfram/LLMFunctions" ];
+    Needs[ "LLMServices`" -> None ];
+    getServiceIcon[ service, llm`LLMServiceInformation @ llm`ChatSubmit ]
+);
+
+(* Evaluate the icon for this service the same way that getAvailableServices0 does. Building the table also memoizes
+   standardized models from literal model lists (with empty icons), so in that case it's built as usual instead: *)
+getServiceIcon[ service_String, info_Association? (AllTrue[ AssociationQ ]) ] /; NoneTrue[ info, literalModelListQ ] :=
+    Module[ { services },
+        services = Replace[ info, <| |> :> $fallBackServices ];
+        If[ TrueQ @ $CloudEvaluation, services = KeyDrop[ services, "Ollama" ] ];
+        If[ KeyExistsQ[ services, service ],
+            Block[ { $availableServices = <| |>, $buildingServiceTable = True },
+                serviceIcon @ <| "Service" -> service, services[ service ] |>
+            ],
+            Missing[ "KeyAbsent", service ]
+        ]
+    ];
+
+(* Otherwise build the full service table as usual (e.g. if the service information is corrupt): *)
+getServiceIcon[ service_String, _ ] :=
+    $availableServices[ service, "Icon" ];
+
+getServiceIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*literalModelListQ*)
+(* Whether checkLiteralModelLists would standardize any models for this service: *)
+literalModelListQ // beginDefinition;
+literalModelListQ[ KeyValuePattern[ "ModelList" -> { __ } ] ] := True;
+literalModelListQ[ KeyValuePattern[ "ModelList" :> { (_String | KeyValuePattern @ { }).. } ] ] := True;
+literalModelListQ[ _Association ] := False;
+literalModelListQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

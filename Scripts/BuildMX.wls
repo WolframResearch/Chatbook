@@ -264,6 +264,9 @@ Scan[
 
 DumpSave[ $mxFile, { "Wolfram`Chatbook`" }, "SymbolAttributes" -> False ];
 
+(* Later steps in this kernel (e.g. tests run by TestPaclet.wls) should see the same $mxFlag as a loaded MX file: *)
+Wolfram`ChatbookInternal`$BuildingMX =.;
+
 PacletDirectoryUnload @ tmp;
 PacletDirectoryLoad @ $pacletDir;
 

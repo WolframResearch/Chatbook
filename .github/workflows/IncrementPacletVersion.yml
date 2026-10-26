@@ -5,8 +5,10 @@ on:
   push:
     branches: [main]
 
+# Scope the group to this workflow: workflow_run and workflow_dispatch runs use refs/heads/main as github.ref,
+# so a group of just ${{ github.ref }} would let these workflows cancel each other.
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:

@@ -3,401 +3,298 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* Created By: SaveReadableNotebook *)
-(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+(* CreatedBy='Wolfram 15.0' *)
 
-Notebook[
- {
-  Cell[StyleData[StyleDefinitions -> "Chatbook.nb"]],
-  Cell[
-   StyleData["Notebook"],
-   ClosingSaveDialog -> False,
-   Saveable -> False,
-   WindowToolbars -> { },
-   CellInsertionPointCell -> None,
-   NotebookEventActions -> {
-    ParentList,
-    {"MenuCommand", "SaveRename"} :>
-     (Needs["Wolfram`Chatbook`" -> None];
-     Symbol["Wolfram`Chatbook`SaveAsChatNotebook"][
-      EvaluationNotebook[]
-     ])
-   },
-   Selectable -> False,
-   WindowSize -> {350, Automatic},
-   WindowMargins -> {{0, Automatic}, {Automatic, 0}},
-   WindowElements -> {"VerticalScrollBar", "MagnificationPopUp"},
-   WindowFrameElements -> {"CloseBox", "ResizeArea", "ZoomBox"},
-   WindowClickSelect -> True,
-   WindowTitle ->
-    Dynamic[
-     FEPrivate`FrontEndResource[
-      "ChatbookStrings",
-      "WorkspaceWindowTitle"
-     ]
-    ],
-   DockedCells -> {
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     12655,        291]
+NotebookOptionsPosition[     10032,        261]
+NotebookOutlinePosition[     10374,        275]
+CellTagsIndexPosition[     10331,        272]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[StyleData[StyleDefinitions -> "Chatbook.nb"],ExpressionUUID->"819a9a8a-1b25-b34e-9828-f5da1dc77c9a"],
+
+Cell[StyleData["Notebook"],
+ Saveable->False,
+ WindowToolbars->{},
+ CellInsertionPointCell->None,
+ NotebookEventActions->{
+  ParentList, {"MenuCommand", "SaveRename"} :> (
+    Needs["Wolfram`Chatbook`" -> None]; 
+    Symbol["Wolfram`Chatbook`SaveAsChatNotebook"][
+      EvaluationNotebook[]])},
+ Selectable->False,
+ WindowSize->{350, Automatic},
+ WindowMargins->{{0, Automatic}, {Automatic, 0}},
+ WindowElements->{"VerticalScrollBar", "MagnificationPopUp"},
+ WindowFrameElements->{"CloseBox", "ResizeArea", "ZoomBox"},
+ WindowClickSelect->True,
+ WindowTitle->Dynamic[
+   FEPrivate`FrontEndResource["ChatbookStrings", "WorkspaceWindowTitle"]],
+ DockedCells->{
+   Cell[
+    BoxData[
+     DynamicBox[
+      ToBoxes[
+      Needs["Wolfram`Chatbook`" -> None]; 
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "MakeWorkspaceChatDockedCell"], StandardForm], Initialization :> 
+      With[{Wolfram`ChatNB`nbo = EvaluationNotebook[]}, 
+        Needs["Wolfram`Chatbook`" -> None]; 
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "AttachWorkspaceChatInput", Wolfram`ChatNB`nbo, 
+          If[Cells[Wolfram`ChatNB`nbo] =!= {}, Bottom, Top]]], 
+      TrackedSymbols :> {}]], CellFrame -> 0, CellFrameMargins -> 0, 
+    CellMargins -> {{-1, -5}, {-1, -1}}, Magnification -> Dynamic[
+      AbsoluteCurrentValue[
+       FrontEnd`EvaluationNotebook[], Magnification]]]},
+ ShowCellBracket->False,
+ TaggingRules-><|
+  "ChatNotebookSettings" -> <|
+    "SetCellDingbat" -> False, "TabbedOutput" -> False, "WorkspaceChat" -> 
+     True|>|>,
+ DefaultNewCellStyle->"AutoMoveToChatInputField",
+ Magnification->0.85,
+ Background->GrayLevel[1],
+ ClosingSaveDialog -> 
+ False,ExpressionUUID->"117dc153-5c80-8746-a6dc-a25203954fc3"],
+
+Cell[StyleData["CellExpression"],
+ Selectable->True,ExpressionUUID->"da758eb2-2f5f-7446-a81b-8a4d1fd69b07"],
+
+Cell[StyleData["WorkspaceChatStyleSheetInformation"],
+ TaggingRules-><|
+  "WorkspaceChatStyleSheetVersion" -> 
+   "2.6.0.3973832724"|>,ExpressionUUID->"c417b07e-114a-6f40-a258-\
+a51c242da253"],
+
+Cell[StyleData["AttachedCell"],
+ PrivateCellOptions->{"ContentsOpacity"->Dynamic[
+   If[
+    CurrentValue["NotebookSelected"], 1, 
+    0.5]]},ExpressionUUID->"428c8f37-e33e-3c4e-8511-cb36d238d682"],
+
+Cell[StyleData["DockedCell"],
+ PrivateCellOptions->{"ContentsOpacity"->Dynamic[
+   If[
+    CurrentValue["NotebookSelected"], 1, 
+    0.5]]},ExpressionUUID->"f2c23c0f-934f-d940-b532-d9cc9d430cba"],
+
+Cell[StyleData["WorkspaceChatToolbarButtonLabel", StyleDefinitions -> 
+ StyleData["Text"]],
+ FontSize->13,
+ FontWeight->"DemiBold",
+ FontColor->GrayLevel[
+  1],ExpressionUUID->"d49011ec-4ce5-3041-805e-99cada52802c"],
+
+Cell[StyleData["WorkspaceChatToolbarTitle", StyleDefinitions -> 
+ StyleData["WorkspaceChatToolbarButtonLabel"]],
+ FontSize->12,
+ FontColor->RGBColor[
+  0.2, 0.513725, 
+   0.67451],ExpressionUUID->"788fbb50-8b9b-c94a-ab63-6d103cdf3a79"],
+
+Cell[StyleData["ChatInput"],
+ Selectable->False,
+ CellFrame->0,
+ CellDingbat->None,
+ ShowCellBracket->False,
+ CellMargins->{{15, 15}, {5, 10}},
+ CellEventActions->None,
+ CellFrameLabels->{{None, 
     Cell[
      BoxData[
       DynamicBox[
        ToBoxes[
-        Needs["Wolfram`Chatbook`" -> None];
+       Needs["Wolfram`Chatbook`" -> None]; 
+        Symbol["Wolfram`Chatbook`ChatbookAction"]["UserMessageLabel"], 
+        StandardForm], SingleEvaluation -> True]], Background -> None, 
+     CellBaseline -> Baseline]}, {None, None}},
+ CellFrameLabelMargins->-15,
+ FrameBoxOptions->{BaselinePosition->Baseline},
+ PaneBoxOptions->{
+ BaselinePosition->
+  Baseline},ExpressionUUID->"d4d78dc4-655c-c34c-89d0-465c1e670225"],
+
+Cell[StyleData["ChatOutput"],
+ Selectable->False,
+ CellFrame->0,
+ CellDingbat->None,
+ ShowCellBracket->False,
+ CellMargins->{{10, 15}, {30, 12}},
+ Initialization:>None,
+ CellFrameLabels->{{
+    Cell[
+     BoxData[
+      DynamicBox[
+       ToBoxes[
+       Needs["Wolfram`Chatbook`" -> None]; 
+        Symbol["Wolfram`Chatbook`ChatbookAction"]["AssistantMessageLabel"], 
+        StandardForm], SingleEvaluation -> True]], Background -> None, 
+     CellBaseline -> Baseline], None}, {None, None}},
+ CellFrameLabelMargins->-5,
+ Background->None,
+ FrameBoxOptions->{BaselinePosition->Baseline},
+ PaneBoxOptions->{
+ BaselinePosition->
+  Baseline},ExpressionUUID->"fd225c44-e592-db4d-9686-6ef0e8beb1d3"],
+
+Cell[StyleData["ChatInputField"],
+ CellFrame->1,
+ CellFrameMargins->{{5, 5}, {0, 0}},
+ CellFrameColor->GrayLevel[
+  0.85],ExpressionUUID->"31bb04e2-5495-bc45-9209-501efbf6b7a5"],
+
+Cell[StyleData["AutoMoveToChatInputField"],
+ Initialization:>(NotebookDelete[
+    EvaluationCell[]]; Needs["Wolfram`Chatbook`" -> None]; 
+  Symbol["Wolfram`Chatbook`ChatbookAction"]["MoveToChatInputField", 
+    EvaluationNotebook[], True]; 
+  Null),ExpressionUUID->"d0cf9fb8-985d-5f49-8fc6-b32bca0320cb"],
+
+Cell[StyleData["CodeAssistanceWelcomeCell"],
+ CellMargins->{{10, 10}, {30, 10}},
+ TaggingRules-><|"ChatNotebookSettings" -> <|"ExcludeFromChat" -> True|>|>,
+ ShowStringCharacters->
+  False,ExpressionUUID->"7e2c77b6-a729-204c-8ef6-15870a6a4735"],
+
+Cell[StyleData["UserMessageBox"],
+ TemplateBoxOptions->{DisplayFunction->(PaneBox[
+   FrameBox[#, BaseStyle -> {"Text", Editable -> False, Selectable -> False}, 
+    Background -> RGBColor[0.929412, 0.956863, 0.988235], 
+    FrameMargins -> {{8, 15}, {8, 8}}, FrameStyle -> 
+    RGBColor[0.639216, 0.788235, 0.94902], RoundingRadius -> 8, StripOnInput -> 
+    False], Alignment -> Right, 
+   ImageSize -> {
+    Full, Automatic}]& \
+)},ExpressionUUID->"bc312048-6d82-2b46-82b6-d549f8ccb2b4"],
+
+Cell[StyleData["AssistantMessageBox"],
+ TemplateBoxOptions->{DisplayFunction->(TagBox[
+   FrameBox[#, BaseStyle -> {"Text", Editable -> False, Selectable -> False}, 
+    Background -> RGBColor[0.97647, 0.992157, 1.], FrameMargins -> 8, 
+    FrameStyle -> Directive[
+      AbsoluteThickness[2], 
+      RGBColor[0.878431, 0.937255, 0.968627]], ImageSize -> {
+      Scaled[1], Automatic}, RoundingRadius -> 8, StripOnInput -> False], 
+   EventHandlerTag[{"MouseEntered" :> If[
+       TrueQ[$CloudEvaluation], Null, 
+       With[{Wolfram`ChatNB`cell = EvaluationCell[]}, Quiet[
+          Needs["Wolfram`Chatbook`" -> None]]; 
         Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "MakeWorkspaceChatDockedCell"
-        ],
-        StandardForm
-       ],
-       Initialization :>
-        With[ { Wolfram`ChatNB`nbo = EvaluationNotebook[] },
-         Needs["Wolfram`Chatbook`" -> None];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "AttachWorkspaceChatInput",
-          Wolfram`ChatNB`nbo,
-          If[ Cells[Wolfram`ChatNB`nbo] =!= { }, Bottom, Top ]
-         ]
-        ],
-       TrackedSymbols :> { }
-      ]
-     ],
-     CellFrame -> 0,
-     CellFrameMargins -> 0,
-     CellMargins -> {{-1, -5}, {-1, -1}},
-     Magnification ->
-      Dynamic[
-       AbsoluteCurrentValue[
-        FrontEnd`EvaluationNotebook[],
-        Magnification
-       ]
-      ]
-    ]
-   },
-   ShowCellBracket -> False,
-   TaggingRules -> <|
-    "ChatNotebookSettings" -> <|
-     "SetCellDingbat" -> False,
-     "TabbedOutput" -> False,
-     "WorkspaceChat" -> True
-    |>
-   |>,
-   DefaultNewCellStyle -> "AutoMoveToChatInputField",
-   Magnification -> 0.85,
-   Background -> GrayLevel[1]
-  ],
-  Cell[StyleData["CellExpression"], Selectable -> True],
-  Cell[
-   StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.6.0.3973832724"|>
-  ],
-  Cell[
-   StyleData["AttachedCell"],
-   PrivateCellOptions -> {
-    "ContentsOpacity" ->
-     Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
-   }
-  ],
-  Cell[
-   StyleData["DockedCell"],
-   PrivateCellOptions -> {
-    "ContentsOpacity" ->
-     Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
-   }
-  ],
-  Cell[
-   StyleData[
-    "WorkspaceChatToolbarButtonLabel",
-    StyleDefinitions -> StyleData["Text"]
-   ],
-   FontSize -> 13,
-   FontWeight -> "DemiBold",
-   FontColor -> GrayLevel[1]
-  ],
-  Cell[
-   StyleData[
-    "WorkspaceChatToolbarTitle",
-    StyleDefinitions ->
-     StyleData["WorkspaceChatToolbarButtonLabel"]
-   ],
-   FontSize -> 12,
-   FontColor -> RGBColor[0.2, 0.513725, 0.67451]
-  ],
-  Cell[
-   StyleData["ChatInput"],
-   Selectable -> False,
-   CellFrame -> 0,
-   CellDingbat -> None,
-   ShowCellBracket -> False,
-   CellMargins -> {{15, 15}, {5, 10}},
-   CellEventActions -> None,
-   CellFrameLabels -> {
-    {
-     None,
-     Cell[
-      BoxData[
-       DynamicBox[
-        ToBoxes[
-         Needs["Wolfram`Chatbook`" -> None];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "UserMessageLabel"
-         ],
-         StandardForm
-        ],
-        SingleEvaluation -> True
-       ]
-      ],
-      Background -> None,
-      CellBaseline -> Baseline
-     ]
-    },
-    {None, None}
-   },
-   CellFrameLabelMargins -> -15,
-   FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
-  ],
-  Cell[
-   StyleData["ChatOutput"],
-   Selectable -> False,
-   CellFrame -> 0,
-   CellDingbat -> None,
-   ShowCellBracket -> False,
-   CellMargins -> {{10, 15}, {30, 12}},
-   Initialization :> None,
-   CellFrameLabels -> {
-    {
-     Cell[
-      BoxData[
-       DynamicBox[
-        ToBoxes[
-         Needs["Wolfram`Chatbook`" -> None];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "AssistantMessageLabel"
-         ],
-         StandardForm
-        ],
-        SingleEvaluation -> True
-       ]
-      ],
-      Background -> None,
-      CellBaseline -> Baseline
-     ],
-     None
-    },
-    {None, None}
-   },
-   CellFrameLabelMargins -> -5,
-   Background -> None,
-   FrameBoxOptions -> {BaselinePosition -> Baseline},
-   PaneBoxOptions -> {BaselinePosition -> Baseline}
-  ],
-  Cell[
-   StyleData["ChatInputField"],
-   CellFrame -> 1,
-   CellFrameMargins -> {{5, 5}, {0, 0}},
-   CellFrameColor -> GrayLevel[0.85]
-  ],
-  Cell[
-   StyleData["AutoMoveToChatInputField"],
-   Initialization :>
-    (NotebookDelete[EvaluationCell[]];
-    Needs["Wolfram`Chatbook`" -> None];
-    Symbol["Wolfram`Chatbook`ChatbookAction"][
-     "MoveToChatInputField",
-     EvaluationNotebook[],
-     True
-    ];)
-  ],
-  Cell[
-   StyleData["CodeAssistanceWelcomeCell"],
-   CellMargins -> {{10, 10}, {30, 10}},
-   TaggingRules -> <|"ChatNotebookSettings" -> <|"ExcludeFromChat" -> True|>|>,
-   ShowStringCharacters -> False
-  ],
-  Cell[
-   StyleData["UserMessageBox"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
+         "AttachAssistantMessageButtons", Wolfram`ChatNB`cell]]], Method -> 
+     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+     True}]]& )},ExpressionUUID->"550911e2-85d6-8c4b-b448-e02b9aecd6cf"],
+
+Cell[StyleData["ChatCodeBlockTemplate"],
+ TemplateBoxOptions->{DisplayFunction->(GridBox[{{
+     FrameBox[
       PaneBox[
-       FrameBox[
-        #1,
-        BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.929412, 0.956863, 0.988235],
-        FrameMargins -> {{8, 15}, {8, 8}},
-        FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
-        RoundingRadius -> 8,
-        StripOnInput -> False
-       ],
-       Alignment -> Right,
-       ImageSize -> {Full, Automatic}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["AssistantMessageBox"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      TagBox[
-       FrameBox[
-        #1,
-        BaseStyle -> {"Text", Editable -> False, Selectable -> False},
-        Background -> RGBColor[0.97647, 0.992157, 1.0],
-        FrameMargins -> 8,
-        FrameStyle ->
-         Directive[
-          AbsoluteThickness[2],
-          RGBColor[0.878431, 0.937255, 0.968627]
-         ],
-        ImageSize -> {Scaled[1], Automatic},
-        RoundingRadius -> 8,
-        StripOnInput -> False
-       ],
-       EventHandlerTag[
-        {
-         "MouseEntered" :>
-          If[ TrueQ[$CloudEvaluation],
-           Null,
-           With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-            Quiet[Needs["Wolfram`Chatbook`" -> None]];
-            Symbol["Wolfram`Chatbook`ChatbookAction"][
-             "AttachAssistantMessageButtons",
-             Wolfram`ChatNB`cell
-            ]
-           ]
-          ],
-         Method -> "Preemptive",
-         PassEventsDown -> Automatic,
-         PassEventsUp -> True
-        }
-       ]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatCodeBlockTemplate"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GridBox[
-       {
-        {
-         FrameBox[
-          PaneBox[
-           PaneBox[
-            #1,
-            ImageSize ->
-             Dynamic[
-              If[#1 > 540, #1, 540] &[
-               0.95 * AbsoluteCurrentValue[{WindowSize, 1}]
-              ]
-             ]
-           ],
-           AppearanceElements -> None,
-           ImageSize -> {Scaled[1], UpTo[400]},
-           Scrollbars -> Automatic
-          ],
-          Background -> GrayLevel[1],
-          FrameMargins -> {{10, 10}, {6, 6}},
-          FrameStyle ->
-           Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
-          ImageMargins -> {{0, 0}, {0, 8}},
-          ImageSize -> {Full, Automatic}
-         ]
-        },
-        {
-         FrameBox[
-          DynamicBox[
-           ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
-          ],
-          Background -> RGBColor[0.97647, 0.992157, 1.0],
-          FrameMargins -> {{7, 2}, {2, 2}},
-          FrameStyle ->
-           Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
-          ImageMargins -> {{0, 0}, {8, -2}},
-          ImageSize -> {Full, Automatic}
-         ]
-        }
-       },
-       DefaultBaseStyle -> "Column",
-       GridBoxAlignment -> {"Columns" -> {{Left}}},
-       GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-       GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["WelcomeToCodeAssistanceSplash"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      FrameBox[
-       PaneBox[
-        TagBox[
-         GridBox[
-          {
-           {
-            StyleBox[
-             TemplateBox[{}, "ChatIconCodeAssistant"],
-             Magnification -> 5 * Inherited,
-             StripOnInput -> False
-            ]
-           },
-           {
-            StyleBox[
-             "\"Welcome to Code Assistance Chat\"",
-             FontWeight -> Bold,
-             FontSize -> 17,
-             FontColor -> GrayLevel[0.25],
-             StripOnInput -> False
-            ]
-           },
-           {"\"Ask me anything using the input field below.\""},
-           {
-            ButtonBox[
-             "\"View Tutorial \[RightGuillemet]\"",
-             ButtonFunction :> MessageDialog["Not implemented yet."],
-             Appearance -> None,
-             BaseStyle -> {"Link"},
-             Evaluator -> Automatic,
-             Method -> "Preemptive"
-            ]
-           }
-          },
-          AutoDelete -> False,
-          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-          GridBoxSpacings -> {"Columns" -> {{1}}, "Rows" -> {0, 1.25, 1.25, 0.75}},
-          BaseStyle -> {
-           "Text",
-           FontSize -> 13,
-           FontColor -> GrayLevel[0.5],
-           LineBreakWithin -> False
-          }
-         ],
-         "Grid"
-        ],
-        Alignment -> {Center, Automatic},
-        ImageSize -> {Scaled[1], Automatic},
-        ImageSizeAction -> "ShrinkToFit"
-       ],
-       Alignment -> {Center, Automatic},
-       Background -> RGBColor[0.97647, 0.992157, 1.0],
-       FrameMargins -> {{10, 10}, {10, 10}},
-       FrameStyle -> RGBColor[0.92549, 0.941176, 0.960784],
-       ImageSize -> {Automatic, Automatic},
-       RoundingRadius -> 10,
-       StripOnInput -> False
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["PrintTemporary"],
-   Selectable -> True,
-   CellMargins -> {{30, Inherited}, {Inherited, Inherited}}
-  ]
- },
- StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+       PaneBox[#, ImageSize -> Dynamic[
+          (If[# > 540, #, 540]& )[
+          0.95 AbsoluteCurrentValue[{WindowSize, 1}]]]], AppearanceElements -> 
+       None, ImageSize -> {
+         Scaled[1], 
+         UpTo[400]}, Scrollbars -> Automatic], Background -> GrayLevel[1], 
+      FrameMargins -> {{10, 10}, {6, 6}}, FrameStyle -> Directive[
+        AbsoluteThickness[2], 
+        GrayLevel[0.89804]], ImageMargins -> {{0, 0}, {0, 8}}, 
+      ImageSize -> {Full, Automatic}]}, {
+     FrameBox[
+      DynamicBox[
+       ToBoxes[
+        Wolfram`Chatbook`Common`floatingButtonGrid[#, #2]]], Background -> 
+      RGBColor[0.97647, 0.992157, 1.], FrameMargins -> {{7, 2}, {2, 2}}, 
+      FrameStyle -> Directive[
+        AbsoluteThickness[2], 
+        GrayLevel[0.89804]], ImageMargins -> {{0, 0}, {8, -2}}, 
+      ImageSize -> {Full, Automatic}]}}, DefaultBaseStyle -> "Column", 
+   GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+   GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+   GridBoxSpacings -> {
+    "Columns" -> {{0}}, 
+     "Rows" -> {{
+      0}}}]& )},ExpressionUUID->"b9e896a9-526c-c94a-af3c-6b31530363c0"],
+
+Cell[StyleData["WelcomeToCodeAssistanceSplash"],
+ TemplateBoxOptions->{DisplayFunction->(FrameBox[
+   PaneBox[
+    TagBox[
+     GridBox[{{
+        StyleBox[
+         TemplateBox[{}, "ChatIconCodeAssistant"], Magnification -> 
+         5 Inherited, StripOnInput -> False]}, {
+        StyleBox[
+        "\"Welcome to Code Assistance Chat\"", FontWeight -> Bold, FontSize -> 
+         17, FontColor -> GrayLevel[0.25], StripOnInput -> False]}, {
+       "\"Ask me anything using the input field below.\""}, {
+        ButtonBox[
+        "\"View Tutorial \[RightGuillemet]\"", ButtonFunction :> 
+         MessageDialog["Not implemented yet."], Appearance -> None, 
+         BaseStyle -> {"Link"}, Evaluator -> Automatic, Method -> 
+         "Preemptive"]}}, AutoDelete -> False, 
+      GridBoxItemSize -> {
+       "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+      GridBoxSpacings -> {
+       "Columns" -> {{1}}, "Rows" -> {0, 1.25, 1.25, 0.75}}, 
+      BaseStyle -> {
+       "Text", FontSize -> 13, FontColor -> GrayLevel[0.5], LineBreakWithin -> 
+        False}], "Grid"], Alignment -> {Center, Automatic}, ImageSize -> {
+      Scaled[1], Automatic}, ImageSizeAction -> "ShrinkToFit"], 
+   Alignment -> {Center, Automatic}, Background -> 
+   RGBColor[0.97647, 0.992157, 1.], FrameMargins -> {{10, 10}, {10, 10}}, 
+   FrameStyle -> RGBColor[0.92549, 0.941176, 0.960784], 
+   ImageSize -> {Automatic, Automatic}, RoundingRadius -> 10, StripOnInput -> 
+   False]& )},ExpressionUUID->"d5ecdd76-83ee-5f4e-a8a6-f31fcb5bbbe8"],
+
+Cell[StyleData["PrintTemporary"],
+ Selectable->True,
+ CellMargins->{{30, Inherited}, {
+   Inherited, 
+    Inherited}},ExpressionUUID->"339dd072-d560-444a-9081-67a45e09eb28"]
+},
+FrontEndVersion->"15.0 for Microsoft Windows (64-bit) (May 19, 2026)",
+StyleDefinitions->"PrivateStylesheetFormatting.nb",
+ExpressionUUID->"ee01f931-079b-624c-a04a-fbc85dec3e3e"
 ]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[554, 20, 105, 0, 70, 50, 0, "StyleData", "StyleDefinitions", "",ExpressionUUID->"819a9a8a-1b25-b34e-9828-f5da1dc77c9a"],
+Cell[662, 22, 1782, 43, 70, 27, 0, "StyleData", "Notebook", "All",ExpressionUUID->"117dc153-5c80-8746-a6dc-a25203954fc3",
+ Magnification->0.85],
+Cell[2404, 67, 108, 1, 70, 33, 0, "StyleData", "CellExpression", "All",ExpressionUUID->"da758eb2-2f5f-7446-a81b-8a4d1fd69b07"],
+Cell[2514, 70, 196, 4, 70, 53, 0, "StyleData", "WorkspaceChatStyleSheetInformation", "All",ExpressionUUID->"c417b07e-114a-6f40-a258-a51c242da253"],
+Cell[2709, 76, 201, 4, 70, 31, 0, "StyleData", "AttachedCell", "All",ExpressionUUID->"428c8f37-e33e-3c4e-8511-cb36d238d682"],
+Cell[2909, 82, 199, 4, 70, 29, 0, "StyleData", "DockedCell", "All",ExpressionUUID->"f2c23c0f-934f-d940-b532-d9cc9d430cba"],
+Cell[3107, 88, 220, 5, 70, 92, 2, "StyleData", "WorkspaceChatToolbarButtonLabel", "All",ExpressionUUID->"d49011ec-4ce5-3041-805e-99cada52802c"],
+Cell[3325, 95, 240, 5, 70, 113, 2, "StyleData", "WorkspaceChatToolbarTitle", "All",ExpressionUUID->"788fbb50-8b9b-c94a-ab63-6d103cdf3a79"],
+Cell[3563, 102, 693, 20, 70, 28, 0, "StyleData", "ChatInput", "All",ExpressionUUID->"d4d78dc4-655c-c34c-89d0-465c1e670225"],
+Cell[4239, 124, 717, 21, 70, 29, 0, "StyleData", "ChatOutput", "All",ExpressionUUID->"fd225c44-e592-db4d-9686-6ef0e8beb1d3"],
+Cell[4938, 147, 181, 4, 70, 33, 0, "StyleData", "ChatInputField", "All",ExpressionUUID->"31bb04e2-5495-bc45-9209-501efbf6b7a5"],
+Cell[5118, 153, 309, 5, 70, 43, 0, "StyleData", "AutoMoveToChatInputField", "All",ExpressionUUID->"d0cf9fb8-985d-5f49-8fc6-b32bca0320cb"],
+Cell[5425, 160, 248, 4, 70, 44, 0, "StyleData", "CodeAssistanceWelcomeCell", "All",ExpressionUUID->"7e2c77b6-a729-204c-8ef6-15870a6a4735"],
+Cell[5672, 166, 499, 9, 70, 33, 0, "StyleData", "UserMessageBox", "All",ExpressionUUID->"bc312048-6d82-2b46-82b6-d549f8ccb2b4"],
+Cell[6165, 177, 902, 15, 70, 38, 0, "StyleData", "AssistantMessageBox", "All",ExpressionUUID->"550911e2-85d6-8c4b-b448-e02b9aecd6cf"],
+Cell[7055, 194, 1297, 28, 70, 40, 0, "StyleData", "ChatCodeBlockTemplate", "All",ExpressionUUID->"b9e896a9-526c-c94a-af3c-6b31530363c0"],
+Cell[8327, 224, 1554, 29, 70, 48, 0, "StyleData", "WelcomeToCodeAssistanceSplash", "All",ExpressionUUID->"d5ecdd76-83ee-5f4e-a8a6-f31fcb5bbbe8"],
+Cell[9855, 255, 177, 4, 70, 33, 0, "StyleData", "PrintTemporary", "All",ExpressionUUID->"339dd072-d560-444a-9081-67a45e09eb28"]
+}
+]
+*)
+
+(* End of internal cache information *)

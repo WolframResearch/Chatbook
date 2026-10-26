@@ -68,6 +68,8 @@ withChatState[ eval_ ] :=
             $absoluteCurrentSettingsCache = <| |>,
             $AutomaticAssistance          = False,
             $chatState                    = True,
+            $chatStopRequested            = False,
+            $autoAssistHandler            = False,
             $currentSettingsCache         = <| |>,
             $enableLLMServices            = Automatic,
             $WorkspaceChat                = False,
@@ -117,6 +119,18 @@ withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*chatStopRequestedQ*)
+chatStopRequestedQ // beginDefinition;
+
+(* True if StopChat was called while the chat is evaluating. $chatStopRequested is Block-scoped to the chat, but an
+   auto-assist chat's handlers run after its own evaluation has ended, possibly in the middle of another chat's
+   evaluation, so that chat's stop request doesn't apply to them: *)
+chatStopRequestedQ[ ] := TrueQ @ $chatStopRequested && ! TrueQ @ $autoAssistHandler;
+
+chatStopRequestedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*withChatStateAndFEObjects*)
 withChatStateAndFEObjects // beginDefinition;
 withChatStateAndFEObjects // Attributes = { HoldRest };
@@ -153,7 +167,8 @@ withChatEvaluationCell // Attributes = { HoldRest };
 
 withChatEvaluationCell[ cell_CellObject, eval_ ] :=
     withChatState @ WithCleanup[
-        $ChatEvaluationCell = cell
+        (* In chat notebooks, the stop button already shows while the chat is queued, so it might already be stopped: *)
+        $ChatEvaluationCell = If[ chatStopRequestedQ[ ], None, cell ]
         ,
         withEvaluationCell[
             cell,

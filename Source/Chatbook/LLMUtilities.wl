@@ -20,6 +20,10 @@ $defaultLLMSynthesizeEvaluator :=
 
 $defaultConfigPersona = "WolframAIAssistant";
 
+(* True while submitting requests whose handlers can run in the middle of other evaluations (see
+   generateChatTitleInBackground), so that errors in handling their responses don't affect the current chat: *)
+$backgroundHandlers = False;
+
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
     "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
@@ -74,14 +78,38 @@ llmChat // endDefinition;
 (*llmSynthesize*)
 llmSynthesize // beginDefinition;
 
+(* By default, llmSynthesize waits indefinitely, retries invalid responses up to three times, and writes failures to the
+   chat output. Callers can instead limit the total time spent waiting for a response (measured from when the first
+   request is submitted) and the number of attempts, and use "ReturnFailures" -> True to handle failures themselves. *)
+llmSynthesize // Options = {
+    TimeConstraint   -> Infinity,
+    "MaxAttempts"    -> 4,
+    "ReturnFailures" -> False
+};
+
 llmSynthesize[ prompt: $$llmPrompt ] :=
     llmSynthesize[ prompt, <| |> ];
 
-llmSynthesize[ prompt: $$llmPrompt, evaluator_Association ] := Enclose[
-    ConfirmMatch[
-        llmSynthesize0[ prompt, evaluator, 1 ],
-        If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ], _String, Except[ "", _String ] ],
-        "Result"
+llmSynthesize[ prompt: $$llmPrompt, evaluator_Association, opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { policy, expected },
+
+        policy = <|
+            "TimeConstraint" -> ConfirmMatch[ OptionValue[ TimeConstraint ], $$size, "TimeConstraint" ],
+            "MaxAttempts"    -> ConfirmMatch[ OptionValue[ "MaxAttempts" ], _Integer? Positive, "MaxAttempts" ],
+            "ReturnFailures" -> TrueQ @ OptionValue[ "ReturnFailures" ],
+            "Deadline"       -> None
+        |>;
+
+        expected = If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ],
+                       _String,
+                       Except[ "", _String ]
+                   ];
+
+        ConfirmMatch[
+            Catch[ llmSynthesize0[ prompt, evaluator, 1, policy ], $llmSynthesizeFailureTag ],
+            If[ policy[ "ReturnFailures" ], expected | _Failure, expected ],
+            "Result"
+        ]
     ],
     throwInternalFailure
 ];
@@ -91,19 +119,42 @@ llmSynthesize // endDefinition;
 
 llmSynthesize0 // beginDefinition;
 
-llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclose[
-    Module[ { result, callback, task },
+llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_, policy_Association ] := Enclose[
+    Module[ { result, callback, task, deadline, pause },
         result = $Failed;
         callback = Function[ result = # ];
+
+        (* A wait with a time limit ends as soon as the chat is stopped (see taskWaitYield), so don't submit a request
+           that would only be removed again (e.g. the documentation search filter, or a retry): *)
+        If[ policy[ "TimeConstraint" ] < Infinity && chatStopRequestedQ[ ],
+            llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
+        ];
+
         task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
-        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
-        taskWaitYield @ ConfirmMatch[ task, _TaskObject, "Task" ];
+        If[ FailureQ @ task, llmSynthesizeFailure[ policy, task ] ];
+
+        (* The deadline is set when the first request is submitted and applies to all attempts: *)
+        deadline = Replace[ policy[ "Deadline" ], None :> AbsoluteTime[ ] + policy[ "TimeConstraint" ] ];
+        taskWaitYield[
+            ConfirmMatch[ task, _TaskObject, "Task" ],
+            TimeConstraint -> Max[ deadline - AbsoluteTime[ ], 0 ]
+        ];
+
+        (* If the deadline passed (or the chat was stopped) before the callback was called, taskWaitYield has already
+           removed the task. Don't compare AbsoluteTime[ ] to the deadline here, since the system clock can be set back
+           while waiting: *)
+        If[ result === $Failed && deadline < Infinity,
+            llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
+        ];
 
         If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ]
             ,
-            If[ attempt > 3, throwFailureToChatOutput @ result ];
-            Pause[ Exp @ attempt / E ];
-            llmSynthesize0[ prompt, evaluator, attempt + 1 ]
+            pause = Exp @ attempt / E;
+            If[ attempt >= policy[ "MaxAttempts" ] || AbsoluteTime[ ] + pause >= deadline,
+                llmSynthesizeFailure[ policy, result ]
+            ];
+            Pause @ pause;
+            llmSynthesize0[ prompt, evaluator, attempt + 1, <| policy, "Deadline" -> deadline |> ]
             ,
             result
         ]
@@ -114,6 +165,36 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclos
 llmSynthesize0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*llmSynthesizeFailure*)
+llmSynthesizeFailure // beginDefinition;
+
+llmSynthesizeFailure[ KeyValuePattern[ "ReturnFailures" -> True ], failure_Failure ] :=
+    Throw[ failure, $llmSynthesizeFailureTag ];
+
+llmSynthesizeFailure[ _Association, failure_ ] :=
+    throwFailureToChatOutput @ failure;
+
+llmSynthesizeFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmSynthesizeCacheKey*)
+(* Identifies the request that llmSynthesize[ prompt, evaluator ] would send, so callers can reuse responses: *)
+llmSynthesizeCacheKey // beginDefinition;
+
+llmSynthesizeCacheKey[ prompt: $$llmPrompt, evaluator0_Association ] := Enclose[
+    Module[ { evaluator, auth },
+        evaluator = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
+        auth      = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+        Hash @ { prompt, evaluator, auth, If[ auth === "LLMKit", $CloudUserID, None ] }
+    ],
+    throwInternalFailure
+];
+
+llmSynthesizeCacheKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*llmSynthesizeSubmit*)
 llmSynthesizeSubmit // beginDefinition;
@@ -122,7 +203,7 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, stop, allowEmpty, handlers, keys, auth },
+    Module[ { evaluator, prompt, messages, config, chunks, stop, allowEmpty, extract, handlers, keys, auth },
 
         evaluator  = ConfirmBy[ resolveLLMConfiguration @ evaluator0, AssociationQ, "Evaluator" ];
         prompt     = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
@@ -131,6 +212,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
         chunks     = Internal`Bag[ ];
         stop       = Select[ Flatten @ { evaluator[ "StopTokens" ] }, StringQ ];
         allowEmpty = Length @ stop > 0;
+        extract    = If[ TrueQ @ $backgroundHandlers, extractBodyChunksInBackground, extractBodyChunks ];
 
         handlers = <|
             "BodyChunkReceived" -> Function[
@@ -140,7 +222,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                 Module[ { data, strings },
                     data = Internal`BagPart[ chunks, All ];
                     $lastSynthesizeSubmitLog = data;
-                    strings = extractBodyChunks @ data;
+                    strings = extract @ data;
                     Which[
                         MatchQ[ strings, { __String } ] || (allowEmpty && strings === { }),
                             With[ { s = stopTokenTrim[ strings, stop ] }, callback[ s, #1 ] ],
@@ -236,6 +318,21 @@ makeInvalidResponseFailure[ data_List ] := Failure[
 ];
 
 makeInvalidResponseFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTimedOutFailure*)
+makeTimedOutFailure // beginDefinition;
+
+makeTimedOutFailure[ timeConstraint_ ] := Failure[
+    "TimedOut",
+    <|
+        "MessageTemplate"   -> "The server did not respond within `1` seconds. Please try again later.",
+        "MessageParameters" -> { timeConstraint }
+    |>
+];
+
+makeTimedOutFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -376,6 +473,10 @@ extractBodyChunks0[ Failure[
 extractBodyChunks0[ fail_Failure? apiFailureQ ] :=
     throwFailureToChatOutput @ fail;
 
+(* Errors reported by events in a Responses API stream (e.g. "response.failed") don't include a status code: *)
+extractBodyChunks0[ fail: Failure[ "APIError", as_Association ] ] /; ! KeyExistsQ[ as, "StatusCode" ] :=
+    throwFailureToChatOutput @ fail;
+
 extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
     ! FreeQ[
         fail,
@@ -393,6 +494,18 @@ extractBodyChunks0[ failure_Failure ] :=
     Throw[ failure, $bodyChunksTag ];
 
 extractBodyChunks0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractBodyChunksInBackground*)
+(* The handler might have interrupted another chat, so errors (e.g. API errors) are not written to its output or thrown
+   into it and issue no messages, but are returned as failures and passed to the callback instead: *)
+extractBodyChunksInBackground // beginDefinition;
+
+extractBodyChunksInBackground[ data_ ] :=
+    Quiet @ catchAlways @ Block[ { $lastTask = None, $lastCellObject = None }, extractBodyChunks @ data ];
+
+extractBodyChunksInBackground // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
