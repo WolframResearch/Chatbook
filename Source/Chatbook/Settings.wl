@@ -2145,6 +2145,8 @@ cacheMergedChatSettings[ key_List, merged_ ] := (
 
 cacheMergedChatSettings // endDefinition;
 
+(* Start empty whenever this file is loaded, like the previous memo in mergeChatSettings's own definitions: *)
+Clear @ cachedMergedChatSettings;
 $mergedChatSettingsCacheSize    = 0;
 $maxMergedChatSettingsCacheSize = 500;
 
