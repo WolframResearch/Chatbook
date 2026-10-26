@@ -1191,7 +1191,7 @@ taskWaitYield // Options = { TimeConstraint -> Infinity };
 taskWaitYield[ tasks_List, opts: OptionsPattern[ ] ] :=
     WithCleanup[
         taskWaitYield[ #, opts ] & /@ tasks,
-        Scan[ If[ taskRunningQ @ #, removeTask @ # ] &, Cases[ tasks, _TaskObject ] ]
+        Scan[ If[ taskRunningQ @ #, removeTask @ # ] &, Cases[ tasks, _TaskObject, Infinity ] ]
     ];
 
 taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[

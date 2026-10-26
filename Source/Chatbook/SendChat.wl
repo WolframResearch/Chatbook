@@ -186,7 +186,6 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         ConfirmBy[ initializeProgressContainer @ container, AssociationQ, "InitializeProgress" ];
-        ClearAttributes[ container, Temporary ];
 
         $reformattedCell = None;
         cellTags = CurrentValue[ evalCell, CellTags ];
@@ -202,6 +201,10 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         throwIfChatStopped[ ];
+
+        (* The output cell will refer to the container, so it has to outlive this evaluation (unless the chat was stopped
+           before creating the cell): *)
+        ClearAttributes[ container, Temporary ];
 
         cellObj = ConfirmMatch[
             createNewChatOutput[ settings, target, cellExpr ],

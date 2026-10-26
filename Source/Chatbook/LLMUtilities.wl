@@ -119,6 +119,13 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_, policy_Ass
     Module[ { result, callback, task, deadline, pause },
         result = $Failed;
         callback = Function[ result = # ];
+
+        (* A wait with a time limit ends as soon as the chat is stopped (see taskWaitYield), so don't submit a request
+           that would only be removed again (e.g. the documentation search filter, or a retry): *)
+        If[ policy[ "TimeConstraint" ] < Infinity && chatStopRequestedQ[ ],
+            llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
+        ];
+
         task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
         If[ FailureQ @ task, llmSynthesizeFailure[ policy, task ] ];
 
@@ -129,8 +136,9 @@ llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_, policy_Ass
             TimeConstraint -> Max[ deadline - AbsoluteTime[ ], 0 ]
         ];
 
-        (* If the deadline passed before the callback was called, taskWaitYield has already removed the task.
-           Don't compare AbsoluteTime[ ] to the deadline here, since the system clock can be set back while waiting: *)
+        (* If the deadline passed (or the chat was stopped) before the callback was called, taskWaitYield has already
+           removed the task. Don't compare AbsoluteTime[ ] to the deadline here, since the system clock can be set back
+           while waiting: *)
         If[ result === $Failed && deadline < Infinity,
             llmSynthesizeFailure[ policy, makeTimedOutFailure @ policy[ "TimeConstraint" ] ]
         ];

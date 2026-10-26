@@ -744,9 +744,9 @@ StopChat[ ] :=
     StopChat @ rootEvaluationCell[ ];
 
 (* A chat output cell can be nested in other cells (e.g. in the sidebar), so it's stopped itself, not its parent: *)
-StopChat[ cell_CellObject ] :=
+StopChat[ cell_CellObject ] /; ! chatOutputCellQ @ cell :=
     With[ { parent = parentCell @ cell },
-        StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ] && ! chatOutputCellQ @ cell
+        StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
     ];
 
 StopChat[ cell0_CellObject ] := Enclose[

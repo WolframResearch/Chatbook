@@ -162,6 +162,28 @@ VerificationTest[
     TestID   -> "StopChat-Output-Cell-Button-GH#1707@@Tests/StopChat.wlt:131,1-163,2"
 ]
 
+(* The chat's time limit stops it the same way, from the chat's own evaluation: *)
+VerificationTest[
+    Module[ { task },
+        task = SessionSubmit @ ScheduledTask[ Null, { 60 } ];
+        Block[
+            {
+                Wolfram`Chatbook`$ChatEvaluationCell        = CellObject[ "TestInputCell" ],
+                Wolfram`Chatbook`Common`$chatState          = True,
+                Wolfram`Chatbook`Common`$chatStopRequested  = False,
+                Wolfram`Chatbook`Common`$lastCellObject     = None,
+                Wolfram`Chatbook`Common`$lastTask           = task,
+                Wolfram`Chatbook`Common`$nextTaskEvaluation = None
+            },
+            Wolfram`Chatbook`Common`waitForLastTask[ <| "TimeConstraint" -> 0.5 |> ];
+            { Wolfram`Chatbook`Common`$chatStopRequested, Wolfram`Chatbook`$ChatEvaluationCell, task[ "TaskStatus" ] }
+        ]
+    ],
+    { True, None, "Removed" },
+    SameTest -> SameQ,
+    TestID   -> "StopChat-Evaluating-Time-Limit@@Tests/StopChat.wlt:166,1-185,2"
+]
+
 (* A response that finished just before the stop isn't processed further, e.g. its tool call isn't evaluated: *)
 VerificationTest[
     Block[
@@ -173,7 +195,7 @@ VerificationTest[
     ] & /@ { False, True },
     { { "Evaluated", None }, { Null, None } },
     SameTest -> SameQ,
-    TestID   -> "RunNextTask-Stopped-GH#1707@@Tests/StopChat.wlt:166,1-177,2"
+    TestID   -> "RunNextTask-Stopped-GH#1707@@Tests/StopChat.wlt:188,1-199,2"
 ]
 
 (* Each chat starts without a stop request, and a stop request ends with its chat: *)
@@ -199,7 +221,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> SameQ,
-    TestID   -> "WithChatState-Stop-Request@@Tests/StopChat.wlt:180,1-203,2"
+    TestID   -> "WithChatState-Stop-Request@@Tests/StopChat.wlt:202,1-225,2"
 ]
 
 (* A chat that's evaluated inside an auto-assist chat's handler (e.g. by a tool) has its own stop request: *)
@@ -217,7 +239,7 @@ VerificationTest[
     ],
     True,
     SameTest -> SameQ,
-    TestID   -> "WithChatState-AutoAssist-Handler@@Tests/StopChat.wlt:206,1-221,2"
+    TestID   -> "WithChatState-AutoAssist-Handler@@Tests/StopChat.wlt:228,1-243,2"
 ]
 
 (* In chat notebooks, the stop button already shows while the chat is queued. If the chat is stopped before it sets
@@ -242,7 +264,7 @@ VerificationTest[
     ] & /@ { False, True },
     { CellObject[ "TestInputCell" ], None },
     SameTest -> SameQ,
-    TestID   -> "WithChatEvaluationCell-Stopped-Before@@Tests/StopChat.wlt:225,1-246,2"
+    TestID   -> "WithChatEvaluationCell-Stopped-Before@@Tests/StopChat.wlt:247,1-268,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -255,7 +277,7 @@ VerificationTest[
     stopChat[ False, CellObject[ "TestOutputCell" ] ],
     <| "StopRequested" -> False, "ChatEvaluationCell" -> None, "Stopped" -> { CellObject[ "TestOutputCell" ] } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Not-Evaluating@@Tests/StopChat.wlt:254,1-259,2"
+    TestID   -> "StopChat-Not-Evaluating@@Tests/StopChat.wlt:276,1-281,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -296,14 +318,14 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Handler-Definitions@@Tests/StopChat.wlt:268,1-300,2"
+    TestID   -> "Handler-Definitions@@Tests/StopChat.wlt:290,1-322,2"
 ]
 
 VerificationTest[
     handlerStopRequest /@ { True, False },
     { False, True },
     SameTest -> SameQ,
-    TestID   -> "AutoAssist-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:302,1-307,2"
+    TestID   -> "AutoAssist-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:324,1-329,2"
 ]
 
 (* When an emulated stop token is found in a response chunk, the "BodyChunkReceived" handler processes the response
@@ -352,14 +374,14 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-Handler-Definitions@@Tests/StopChat.wlt:312,1-356,2"
+    TestID   -> "EmulatedStop-Handler-Definitions@@Tests/StopChat.wlt:334,1-378,2"
 ]
 
 VerificationTest[
     emulatedStopHandlerStopRequest /@ { True, False },
     { { False, "Removed" }, { True, "Removed" } },
     SameTest -> SameQ,
-    TestID   -> "AutoAssist-EmulatedStop-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:358,1-363,2"
+    TestID   -> "AutoAssist-EmulatedStop-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:380,1-385,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -444,7 +466,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "SendChat-Definitions@@Tests/StopChat.wlt:372,1-448,2"
+    TestID   -> "SendChat-Definitions@@Tests/StopChat.wlt:394,1-470,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -468,7 +490,7 @@ VerificationTest[
         "LastTask" -> "TestTask"
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Not-Stopped@@Tests/StopChat.wlt:455,1-472,2"
+    TestID   -> "SendChat-Not-Stopped@@Tests/StopChat.wlt:477,1-494,2"
 ]
 
 (* Stopped before the output cell is created, so nothing is written: *)
@@ -476,7 +498,7 @@ VerificationTest[
     sendChatStoppedAt[ "Start" ],
     <| "Result" -> Null, "Events" -> { }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Before-Output-Cell-GH#1708@@Tests/StopChat.wlt:475,1-480,2"
+    TestID   -> "SendChat-Stopped-Before-Output-Cell-GH#1708@@Tests/StopChat.wlt:497,1-502,2"
 ]
 
 (* Stopped while the output cell was being created, before StopChat could find it in $lastCellObject: *)
@@ -488,7 +510,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Creating-Output-Cell-GH#1708@@Tests/StopChat.wlt:483,1-492,2"
+    TestID   -> "SendChat-Stopped-Creating-Output-Cell-GH#1708@@Tests/StopChat.wlt:505,1-514,2"
 ]
 
 (* Stopped while the messages were constructed (e.g. waiting for the documentation search). StopChat has already
@@ -497,14 +519,14 @@ VerificationTest[
     sendChatStoppedAt[ "ConstructMessages" ],
     <| "Result" -> Null, "Events" -> { "CreateOutput", "ConstructMessages" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:496,1-501,2"
+    TestID   -> "SendChat-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:518,1-523,2"
 ]
 
 VerificationTest[
     sendChatStoppedAt[ "ChatPre" ],
     <| "Result" -> Null, "Events" -> { "CreateOutput", "ConstructMessages", "ChatPre" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-ChatPre-GH#1707@@Tests/StopChat.wlt:503,1-508,2"
+    TestID   -> "SendChat-Stopped-ChatPre-GH#1707@@Tests/StopChat.wlt:525,1-530,2"
 ]
 
 (* Stopped while the request was submitted, before StopChat could find the task in $lastTask: *)
@@ -516,7 +538,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:511,1-520,2"
+    TestID   -> "SendChat-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:533,1-542,2"
 ]
 
 (* The same, but submitting the request failed. The chat ends without a task, since the failure isn't one: *)
@@ -534,7 +556,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:523,1-538,2"
+    TestID   -> "SendChat-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:545,1-560,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -621,7 +643,7 @@ VerificationTest[
         "ChatEvaluationCell" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-While-Waiting-GH#1707@@Tests/StopChat.wlt:547,1-625,2"
+    TestID   -> "SendChat-Stopped-While-Waiting-GH#1707@@Tests/StopChat.wlt:569,1-647,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -695,7 +717,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ToolEvaluation-Definitions@@Tests/StopChat.wlt:634,1-699,2"
+    TestID   -> "ToolEvaluation-Definitions@@Tests/StopChat.wlt:656,1-721,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -718,7 +740,7 @@ VerificationTest[
         "LastTask" -> "TestTask"
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Not-Stopped@@Tests/StopChat.wlt:706,1-722,2"
+    TestID   -> "ToolEvaluation-Not-Stopped@@Tests/StopChat.wlt:728,1-744,2"
 ]
 
 (* StopChat has already written the output cell, so the chat ends without evaluating the tool: *)
@@ -726,7 +748,7 @@ VerificationTest[
     toolEvaluationStoppedAt[ "ToolRequest" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Before-Tool-GH#1707@@Tests/StopChat.wlt:725,1-730,2"
+    TestID   -> "ToolEvaluation-Stopped-Before-Tool-GH#1707@@Tests/StopChat.wlt:747,1-752,2"
 ]
 
 (* ... or without sending the tool response: *)
@@ -734,14 +756,14 @@ VerificationTest[
     toolEvaluationStoppedAt[ "EvaluateTool" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest", "EvaluateTool" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Evaluating-Tool-GH#1707@@Tests/StopChat.wlt:733,1-738,2"
+    TestID   -> "ToolEvaluation-Stopped-Evaluating-Tool-GH#1707@@Tests/StopChat.wlt:755,1-760,2"
 ]
 
 VerificationTest[
     toolEvaluationStoppedAt[ "ConstructMessages" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest", "EvaluateTool", "ConstructMessages" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:740,1-745,2"
+    TestID   -> "ToolEvaluation-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:762,1-767,2"
 ]
 
 VerificationTest[
@@ -752,7 +774,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:747,1-756,2"
+    TestID   -> "ToolEvaluation-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:769,1-778,2"
 ]
 
 VerificationTest[
@@ -769,7 +791,93 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:758,1-773,2"
+    TestID   -> "ToolEvaluation-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:780,1-795,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Prompt Generators*)
+
+(* The prompt generators after the one the chat was stopped in don't run: *)
+VerificationTest[
+    Module[ { generators, ran },
+        generators = { LLMPromptGenerator[ "First" ], LLMPromptGenerator[ "Second" ] };
+        ran = { };
+        Block[
+            {
+                Wolfram`Chatbook`Common`$chatStopRequested = False,
+                Wolfram`Chatbook`PromptGenerators`DefaultPromptGenerators`Private`applyPromptGenerator = Function[
+                    AppendTo[ ran, First @ FirstPosition[ generators, #1, { 0 }, { 1 } ] ];
+                    Wolfram`Chatbook`Common`$chatStopRequested = True;
+                    "Prompt"
+                ]
+            },
+            {
+                Wolfram`Chatbook`Common`applyPromptGenerators[
+                    <| |>,
+                    generators,
+                    { <| "Role" -> "User", "Content" -> "Hello" |> }
+                ],
+                ran
+            }
+        ]
+    ],
+    { { "Prompt" }, { 1 } },
+    SameTest -> SameQ,
+    TestID   -> "ApplyPromptGenerators-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:802,1-828,2"
+]
+
+(* A request with a time limit (e.g. the documentation search filter, or its retry) isn't submitted after the chat is
+   stopped, since the wait for it would end right away. A request without a time limit is: *)
+VerificationTest[
+    Module[ { submitted },
+        submitted = 0;
+        Block[
+            {
+                Wolfram`Chatbook`Common`$chatStopRequested  = True,
+                Wolfram`Chatbook`Common`llmSynthesizeSubmit = Function[
+                    submitted++;
+                    SessionSubmit @ ScheduledTask[ #3[ "Response", <| |> ], { 0.1 } ]
+                ]
+            },
+            {
+                Wolfram`Chatbook`Common`llmSynthesize[ "Hi", <| |>, TimeConstraint -> 30, "ReturnFailures" -> True ],
+                submitted,
+                Wolfram`Chatbook`Common`llmSynthesize[ "Hi", <| |> ],
+                submitted
+            }
+        ]
+    ],
+    { Failure[ "TimedOut", _ ], 0, "Response", 1 },
+    SameTest -> MatchQ,
+    TestID   -> "LLMSynthesize-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:832,1-854,2"
+]
+
+(* Wolfram|Alpha results aren't cached if the chat was stopped, since the wait for them ended early: *)
+VerificationTest[
+    Module[ { submitted, query },
+        submitted = 0;
+        query     = "StopChat test query " <> CreateUUID[ ];
+        Block[
+            {
+                Wolfram`Chatbook`Common`$chatStopRequested = True,
+                Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`$cacheResults = True,
+                Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`submitXMLRequest = Function[
+                    Null,
+                    (submitted++; SessionSubmit @ ScheduledTask[ Null, { 60 } ]) &,
+                    HoldFirst
+                ]
+            },
+            Do[
+                Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`getWolframAlphaAPIContent0 @ { query },
+                2
+            ]
+        ];
+        submitted
+    ],
+    2,
+    SameTest -> SameQ,
+    TestID   -> "WolframAlphaResults-Stopped-Chat-Not-Cached@@Tests/StopChat.wlt:857,1-881,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -787,7 +895,7 @@ VerificationTest[
     ],
     { True, "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:780,1-791,2"
+    TestID   -> "TaskWaitYield-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:888,1-899,2"
 ]
 
 (* Callers that wait without a time limit may need the result, so their waits don't end early: *)
@@ -801,7 +909,7 @@ VerificationTest[
     ],
     { "TimedOut", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Stopped-Chat-Unlimited@@Tests/StopChat.wlt:794,1-805,2"
+    TestID   -> "TaskWaitYield-Stopped-Chat-Unlimited@@Tests/StopChat.wlt:902,1-913,2"
 ]
 
 (* A wait in an auto-assist chat's handler (e.g. the documentation search in a tool call) doesn't end early because
@@ -820,7 +928,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-AutoAssist-Handler@@Tests/StopChat.wlt:809,1-824,2"
+    TestID   -> "TaskWaitYield-AutoAssist-Handler@@Tests/StopChat.wlt:917,1-932,2"
 ]
 
 (* The task is also removed if an outer time limit interrupts the wait (it used to keep running, and its handler
@@ -838,7 +946,7 @@ VerificationTest[
     ],
     { "TimedOut", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:828,1-842,2"
+    TestID   -> "TaskWaitYield-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:936,1-950,2"
 ]
 
 (* Same for an abort: *)
@@ -855,7 +963,7 @@ VerificationTest[
     ],
     { "Aborted", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Abort-GH#1707@@Tests/StopChat.wlt:845,1-859,2"
+    TestID   -> "TaskWaitYield-Abort-GH#1707@@Tests/StopChat.wlt:953,1-967,2"
 ]
 
 (* Waiting for several tasks, an interruption also removes the tasks that weren't waited for yet: *)
@@ -872,7 +980,24 @@ VerificationTest[
     ],
     { "TimedOut", { "Removed", "Removed" } },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-List-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:862,1-876,2"
+    TestID   -> "TaskWaitYield-List-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:970,1-984,2"
+]
+
+(* The same for tasks in a nested list: *)
+VerificationTest[
+    Module[ { tasks, result },
+        tasks = Table[ SessionSubmit @ ScheduledTask[ Null, { 60 } ], 3 ];
+        result = TimeConstrained[
+            Wolfram`Chatbook`Common`taskWaitYield[ { First @ tasks, Rest @ tasks }, TimeConstraint -> 30 ];
+            "Returned",
+            1,
+            "TimedOut"
+        ];
+        { result, #[ "TaskStatus" ] & /@ tasks }
+    ],
+    { "TimedOut", { "Removed", "Removed", "Removed" } },
+    SameTest -> SameQ,
+    TestID   -> "TaskWaitYield-Nested-List-Outer-TimeConstrained@@Tests/StopChat.wlt:987,1-1001,2"
 ]
 
 (* Its own time limit still removes the task: *)
@@ -884,7 +1009,7 @@ VerificationTest[
     ],
     "Removed",
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-TimeConstraint@@Tests/StopChat.wlt:879,1-888,2"
+    TestID   -> "TaskWaitYield-TimeConstraint@@Tests/StopChat.wlt:1004,1-1013,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
