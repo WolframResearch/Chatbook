@@ -19,6 +19,7 @@ Run "fe.py <command> -h" for details on each command.
 import argparse
 import contextlib
 import getpass
+import hashlib
 import json
 import os
 import re
@@ -72,8 +73,13 @@ def state_dir():
     # Same directory as the server uses for its own images ($TemporaryDirectory/ChatbookFrontEndServer-$Username):
     path = os.path.join(tempfile.gettempdir(), "ChatbookFrontEndServer-" + getpass.getuser())
     os.makedirs(path, mode=0o700, exist_ok=True)
-    if hasattr(os, "getuid") and os.stat(path).st_uid != os.getuid():
-        raise CLIError(f"{path} belongs to another user; refusing to use it")
+    if hasattr(os, "getuid"):
+        status = os.stat(path)
+        if status.st_uid != os.getuid():
+            raise CLIError(f"{path} belongs to another user; refusing to use it")
+        # The server may have created it (for images) with default permissions; the logs and screenshots are private:
+        if (status.st_mode & 0o777) != 0o700:
+            os.chmod(path, 0o700)
     return path
 
 
@@ -95,6 +101,8 @@ def win_kernel32():
     kernel32.CreateToolhelp32Snapshot.restype = wt.HANDLE
     kernel32.CreateToolhelp32Snapshot.argtypes = [wt.DWORD, wt.DWORD]
     kernel32.CloseHandle.argtypes = [wt.HANDLE]
+    kernel32.GetShortPathNameW.restype = wt.DWORD
+    kernel32.GetShortPathNameW.argtypes = [wt.LPCWSTR, wt.LPWSTR, wt.DWORD]
     return kernel32
 
 
@@ -108,6 +116,41 @@ def win_process(pid):
     finally:
         if handle:
             kernel32.CloseHandle(handle)
+
+
+def win_short_path(path):
+    """The 8.3 short form of an existing path on Windows (the path itself if it has none)."""
+    import ctypes
+    kernel32 = win_kernel32()
+    size = kernel32.GetShortPathNameW(path, None, 0)  # including the terminating null
+    buffer = ctypes.create_unicode_buffer(size)
+    return buffer.value if size and 0 < kernel32.GetShortPathNameW(path, buffer, size) < size else path
+
+
+def in_code_page(text):
+    """Whether text can be written in the Windows system code page (without best-fit replacements)."""
+    try:
+        text.encode("mbcs")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def command_line_path(path):
+    """A file in the state directory as the front end can pass it on the command line of a program it starts (the
+    LinkSnooper of `snoop`). On Windows, that command line goes through the system code page, so a directory whose
+    path has other characters (e.g. from the user name) is given by its 8.3 short name."""
+    if WINDOWS and not in_code_page(path):
+        directory, name = os.path.split(path)
+        path = os.path.join(win_short_path(directory), name)
+        if not in_code_page(path):
+            # (Windows gives no short name to a name that already fits 8.3 after best-fit mapping, e.g. "Łukasz".)
+            raise CLIError(f"Cannot log to {directory}: its path has characters outside the system code page that 8.3 "
+                           f"short names do not avoid. The front end passes the command line that starts LinkSnooper "
+                           f"(Java) in that code page, so Java would not find the log. Run all fe.py commands with the "
+                           f"temp directory (TMPDIR, which Git Bash sets, or else TEMP) and, if your user name has "
+                           f"such characters, LOGNAME set to plain names.")
+    return path
 
 
 def pid_alive(pid):
@@ -136,6 +179,7 @@ def pid_alive(pid):
 PROCESS_NAMES = {
     "kernel": {"WolframKernel", "MathKernel", "wolfram"},
     "frontend": {"WolframNB", "Mathematica"},
+    "snooper": {"java", "javaw"},  # LinkSnooper between the front end and a kernel (see `snoop`)
     "xvfb": {"Xvfb"},
     "wm": {"xfwm4", "openbox"},
 }
@@ -233,6 +277,9 @@ def pid_is(pid, kind, started=(None, None)):
     exe = executable_name(argv[0])
     if exe not in names and not (exe in SHELLS and len(argv) > 1 and os.path.basename(argv[1]) in names):
         return False
+    # Any Java program could have that name; where the arguments are known (not on Windows), require LinkSnooper's:
+    if kind == "snooper" and len(argv) > 1 and not any("LinkSnooper" in a for a in argv):
+        return False
     earliest, latest = started
     return (earliest is None or start >= earliest - 2) and (latest is None or start <= latest + 2)
 
@@ -242,10 +289,14 @@ def kill_pid(pid, kind, sig=signal.SIGTERM, started=(None, None)):
         kernels = []
         if WINDOWS and kind == "frontend":
             # Also end the front end's kernels (including its sandbox kernel, which fe.py does not track): its child
-            # processes that are kernels and started after it (see win_process_table).
+            # processes that are kernels and started after it (see win_process_table), and LinkSnooper processes
+            # between it and a kernel (`snoop`) with their kernels.
             begun = (process_info(pid) or (None, None))[1]
-            kernels = [child for child, parent in win_process_table().items()
-                       if parent == int(pid) and begun and pid_is(child, "kernel", (begun, None))]
+            table = win_process_table()
+            children = [child for child, parent in table.items() if parent == int(pid) and begun]
+            snoopers = [child for child in children if pid_is(child, "snooper", (begun, None))]
+            kernels = [child for child, parent in table.items() if (child in children or parent in snoopers)
+                       and pid_is(child, "kernel", (begun, None))] + snoopers
         for target in [pid] + kernels:
             try:
                 os.kill(int(target), sig)  # TerminateProcess on Windows
@@ -307,15 +358,43 @@ def server_alive(info):
 
 
 def fill_front_end_pid(info):
-    """Servers started by older versions of FrontEndServer.wl on Windows report the front end's PID as 0 (that is
-    what $ParentProcessID gives there); it is the parent of the kernel."""
-    kernel = info.get("KernelPID")
-    if WINDOWS and not info.get("FrontEndPID") and pid_is(kernel, "kernel", server_started(info)):
-        parent, kernel_info = win_process_table().get(kernel), process_info(kernel)
-        # The kernel's id is not reused while it runs, but its recorded parent id may have been:
-        if kernel_info and pid_is(parent, "frontend", (None, kernel_info[1])):
+    """The server reports its kernel's parent process as the front end's. On Windows, servers started by older versions
+    of FrontEndServer.wl report 0 instead (that is what $ParentProcessID gives there); the parent is then looked up.
+    A kernel that runs through LinkSnooper (`snoop`) is the child of a Java process, which is the front end's child."""
+    kernel, parent = info.get("KernelPID"), info.get("FrontEndPID")
+    started = server_started(info)
+    child, looked_up = kernel, False
+    if WINDOWS and not parent and pid_is(kernel, "kernel", started):
+        parent, looked_up = win_process_table().get(kernel), True
+    if parent and pid_is(parent, "snooper", started):
+        info["SnooperPID"] = child = parent
+        parent, looked_up = parent_pid(parent), True
+    if looked_up:
+        # The kernel's (and LinkSnooper's) id is not reused while it runs, but its recorded parent id may have been:
+        child_info = process_info(child)
+        if child_info and pid_is(parent, "frontend", (None, child_info[1])):
             info["FrontEndPID"] = parent
+        elif info.get("SnooperPID"):
+            info["FrontEndPID"] = None  # not the Java process, in any case
     return info
+
+
+def parent_pid(pid):
+    """The parent of a process, or None."""
+    if WINDOWS:
+        return win_process_table().get(int(pid))
+    try:
+        with open(f"/proc/{int(pid)}/stat") as f:
+            return int(f.read().rsplit(")", 1)[1].split()[1])  # field 4: the parent's id
+    except (OSError, ValueError, IndexError):
+        pass
+    if os.path.isdir("/proc"):
+        return None
+    try:  # no procfs (e.g. macOS)
+        out = subprocess.run(["ps", "-o", "ppid=", "-p", str(int(pid))], capture_output=True, text=True, timeout=5)
+        return int(out.stdout.strip())
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
 
 
 def server_started(info):
@@ -675,8 +754,8 @@ def cmd_servers(args):
 def prune_orphans(live_ports):
     """Clean up after failed launches (launch records without a running server) and old screenshots."""
     for port, record in launch_records().items():
-        if port in live_ports or time.time() - record.get("startTime", 0) < 300:
-            continue  # running, or possibly still starting
+        if port in live_ports or time.time() - max(record.get("startTime", 0), record.get("handoff", 0)) < 300:
+            continue  # running, or possibly still starting (or moving to a new kernel: `snoop`)
         kill_launched(record)
         remove_registry(port)
         bootstrap = record.get("bootstrap")
@@ -687,6 +766,34 @@ def prune_orphans(live_ports):
         path = os.path.join(shots, name)
         if name.endswith(".png") and time.time() - os.path.getmtime(path) > 86400:
             os.remove(path)
+    # MathLink logs (`snoop`): the records of servers that are gone, and logs that have not been written to for a day
+    # (unless a running server's record names it: LinkSnooper only writes when there is traffic). On Windows, a log
+    # that LinkSnooper has open cannot be deleted. (Logs are compared by file name, since a record may give the
+    # directory by its short name: see command_line_path.)
+    directory = state_dir()
+    in_use = set()
+    for name in os.listdir(directory):
+        match = re.match(r"linksnooper-(\d+)\.json$", name)
+        if match and int(match.group(1)) in live_ports:
+            in_use.add(os.path.basename((read_json(os.path.join(directory, name)) or {}).get("log") or ""))
+        elif match:
+            remove_quietly(os.path.join(directory, name))
+    for name in os.listdir(directory):
+        path = os.path.join(directory, name)
+        if (re.match(r"linksnooper-\d+-.+\.log$", name) and name not in in_use
+                and time.time() - os.path.getmtime(path) > 86400 and remove_quietly(path)):
+            remove_quietly(path + ".cursor")
+
+
+def remove_quietly(path):
+    """Delete a file if possible; whether it is gone."""
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        return False
+    return True
 
 
 def kill_launched(launch, info=None):
@@ -696,6 +803,7 @@ def kill_launched(launch, info=None):
     kill_pid(info.get("FrontEndPID"), "frontend", SIGKILL, server_started(info))
     kill_pid(launch.get("launcherPID"), "frontend", SIGKILL, launch_started(launch))
     kill_pid(info.get("KernelPID"), "kernel", SIGKILL, server_started(info))
+    kill_pid(info.get("SnooperPID"), "snooper", SIGKILL, server_started(info))
     kill_pid(launch.get("wmPID"), "wm", started=launch_started(launch))
     kill_pid(launch.get("xvfbPID"), "xvfb", started=launch_started(launch))
 
@@ -952,13 +1060,16 @@ def cmd_launch(args):
             if time.time() > deadline:
                 raise CLIError(f"Timed out waiting for the front end connection on port {port}; see {log_path}")
             time.sleep(0.5)
+        if not args.keep_welcome:
+            close_startup_windows(server, private_display=bool(xvfb))
+        if args.link_snooper:
+            server, snooping = start_snooping(server)
+            info = server.info
         if chatbook:
             # Init.wl loads it quietly; make sure tests really run against this Chatbook:
             loaded = server.request("info").get("ChatbookLocation")
             if not isinstance(loaded, str) or os.path.normcase(os.path.realpath(loaded)) != os.path.normcase(chatbook):
                 raise CLIError(f"The front end loaded Chatbook from {loaded!r} instead of {chatbook}")
-        if not args.keep_welcome:
-            close_startup_windows(server, private_display=bool(xvfb))
     except BaseException:
         # Don't leave a half-started front end (or its Xvfb) running without a way to stop it:
         if front_end and front_end.poll() is None:
@@ -978,8 +1089,12 @@ def cmd_launch(args):
         raise
     result = {"port": port, "name": info.get("Name"), "display": display, "frontEndPID": info.get("FrontEndPID"),
               "kernelPID": info.get("KernelPID"), "log": log_path}
+    note = ""
+    if args.link_snooper:
+        result["linkSnooperLog"] = snooping["log"]
+        note = f"\nIts MathLink traffic is logged to {snooping['log']} (read it with: fe.py -s {port} linklog)"
     emit(args, result, f"Front end server {info.get('Name')} running on port {port}, display {display} "
-                       f"(front end pid {info.get('FrontEndPID')}).\nUse: fe.py -s {port} <command>")
+                       f"(front end pid {info.get('FrontEndPID')}).{note}\nUse: fe.py -s {port} <command>")
 
 
 def close_startup_windows(server, private_display):
@@ -1036,6 +1151,7 @@ def cmd_stop(args):
         # Keep the launch record of a launched front end, so that it can still be stopped completely later:
         remove_registry(server.port, keep_launch=bool(launch))
         print(f"Stopped the server on port {server.port}" + (" (the front end is still running)" if launch else ""))
+        forget_snooping(server, front_end_running=True)
         return
     if server.info["_alive"]:
         try:
@@ -1052,6 +1168,16 @@ def cmd_stop(args):
     if bootstrap and os.path.exists(bootstrap):
         os.remove(bootstrap)
     print(f"Stopped front end server on port {server.port}")
+    forget_snooping(server, front_end_running=False)
+
+
+def forget_snooping(server, front_end_running):
+    state = snoop_state(server)
+    if state:
+        remove_quietly(snoop_state_path(server.port))
+        print(f"Its MathLink log stays in {state['log']} (`linklog --file` reads it)" +
+              (f"; kernels of the evaluator \"{state.get('evaluator')}\" keep logging there until the front end quits"
+               if front_end_running else ""))
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1061,6 +1187,10 @@ def cmd_stop(args):
 def cmd_info(args):
     server = Server(select_server(args.server))
     result = server.request("info")
+    # The kernel's parent is not the front end when it runs through LinkSnooper (see fill_front_end_pid):
+    for key in ("FrontEndPID", "SnooperPID"):
+        if key in server.info:
+            result[key] = server.info[key]
     result["Display"] = server.display
     if server.display:
         try:
@@ -1249,6 +1379,262 @@ def cmd_reload(args):
     result = server.request("evaluate", {"code": f'PreemptProtect[Get["{path}"]]; '
                                                  'Wolfram`ChatbookFrontEndServer`FrontEndServerInformation[]["Port"]'})
     emit(args, result, f"reloaded server code (port {result.get('result')})")
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Commands: MathLink logging (LinkSnooper)
+# ---------------------------------------------------------------------------------------------------------------------
+
+def snoop_state_path(port):
+    """The log that `snoop` set up for the server on a port (tied to that server by its token's hash)."""
+    return os.path.join(state_dir(), f"linksnooper-{port}.json")
+
+
+def token_hash(token):
+    """What the `snoop` state file keeps of the server's token (which would let anyone who reads it run code in the
+    server's kernel)."""
+    return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+
+
+def snoop_state(server):
+    state = read_json(snoop_state_path(server.port))
+    return state if isinstance(state, dict) and state.get("tokenHash") == token_hash(server.token) else None
+
+
+def start_snooping(server, links="main,pre,serv", poll_interval=1, evaluator_only=False, timeout=120):
+    """Log the MathLink traffic between the front end and a kernel with J/Link's LinkSnooper (FrontEndServer.wl,
+    command "linkSnooper"). Normally the server moves to a new kernel that runs through LinkSnooper and becomes the
+    default evaluator; with evaluator_only, there is just a new evaluator for notebooks to use.
+    Returns (server, result), where server is the one in the new kernel."""
+    launch = server.info.get("_launch")
+    if not evaluator_only and not launch:
+        raise CLIError("Only the kernel of a front end that fe.py launched can be replaced by one that runs through "
+                       "LinkSnooper (that kernel has to start the server again). Use --evaluator-only, and give the "
+                       "notebooks to watch that Evaluator.")
+    name = f"linksnooper-{server.port}-{time.strftime('%Y%m%d-%H%M%S')}.log"
+    log = command_line_path(os.path.join(state_dir(), name))
+    old_kernel = server.info.get("KernelPID")
+    if not evaluator_only:
+        # The registry file is missing while the server moves: keep `servers --prune` from taking the front end for
+        # the remains of a failed launch.
+        launch["handoff"] = time.time()
+        write_launch_record(launch)
+    result = server.request("linkSnooper", {"log": log, "links": links, "pollInterval": poll_interval,
+                                            "mode": "Evaluator" if evaluator_only else "Kernel", "timeout": timeout})
+    # Recorded right away, so that `linklog` finds the log also when something goes wrong below:
+    fd = os.open(snoop_state_path(server.port), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump({"tokenHash": token_hash(server.token), "log": log, "evaluator": result.get("evaluator"),
+                   "mode": result.get("mode"), "time": time.time()}, f)
+    if not evaluator_only:
+        # This server stops, the front end starts the new kernel, Init.wl starts the server there, and the old kernel
+        # quits. If the new kernel's server does not show up within the timeout, the old kernel starts its own again.
+        front_end_log = launch.get("log")
+        deadline = time.time() + timeout + 30
+        gone = False
+        while True:
+            entry = next((e for e in registry_entries()
+                          if e["Port"] == server.port and e.get("Token") == server.token), None)
+            if entry is None:
+                gone = True
+            elif entry.get("KernelPID") != old_kernel and entry["_alive"]:
+                break
+            elif gone and entry.get("KernelPID") == old_kernel:
+                raise CLIError(f"The kernel that runs through LinkSnooper did not start the server, so it stays in "
+                               f"the old kernel. See {log} and {front_end_log}.")
+            if time.time() > deadline:
+                raise CLIError(f"Timed out waiting for the server to start in the kernel that runs through "
+                               f"LinkSnooper. See {log} and {front_end_log}.")
+            time.sleep(0.5)
+        server = Server(entry)
+        while not server.request("ping", timeout=30).get("ready"):
+            if time.time() > deadline:
+                raise CLIError("Timed out waiting for the front end connection of the new kernel")
+            time.sleep(0.5)
+    return server, result
+
+
+def cmd_snoop(args):
+    server = Server(select_server(args.server))
+    server, result = start_snooping(server, args.links, args.poll_interval, args.evaluator_only, args.timeout)
+    evaluator, log = result.get("evaluator"), result.get("log")
+    if args.evaluator_only:
+        text = (f"Notebooks with Evaluator -> \"{evaluator}\" now get a kernel that runs through LinkSnooper, which "
+                f"logs its MathLink traffic to {log}\n"
+                f"e.g. fe.py -s {server.port} eval 'NotebookPut[Notebook[{{}}, Evaluator -> \"{evaluator}\"]]' "
+                f"(the kernel starts with the first evaluation in such a notebook)\n"
+                f"Read the log with: fe.py -s {server.port} linklog")
+    else:
+        text = (f"The front end's kernel (pid {server.info.get('KernelPID')}) now runs through LinkSnooper, which logs "
+                f"all MathLink traffic to {log}\nRead it with: fe.py -s {server.port} linklog")
+    emit(args, dict(result, kernelPID=server.info.get("KernelPID")), text)
+
+
+# Each record of a LinkSnooper log starts with a time stamp; a packet whose text contains newlines continues on the
+# following lines.
+LOG_RECORD = re.compile(rb"\[(\d\d:\d\d:\d\d\.\d{3})\] ")
+# A packet's head, which the front end sometimes sends with its context (System`EvaluatePacket[...]):
+LOG_PACKET = re.compile(r"FE (?:--->|<---) K: (?:System`)?(\w+)\[")
+# Lines that LinkSnooper(Log) writes when it starts and when the links close:
+LOG_SESSION_LINES = ("LinkSnooperLog: Java process", "LinkSnooper command-line params:", "Start Monitoring...",
+                     "MathLinkException:")
+PUMP_FUNCTION = "Wolfram`ChatbookFrontEndServer`Private`pump[]"
+
+
+def log_records(path, offset=0):
+    """[(start, end, time, text)] of the records in a LinkSnooper log from a byte offset. Only complete lines are read,
+    since LinkSnooper may be writing."""
+    with open(path, "rb") as f:
+        f.seek(offset)
+        data = f.read()
+    records, current, pos = [], None, offset
+    for line in data.split(b"\n")[:-1]:  # the last piece is an incomplete line, or empty
+        match = LOG_RECORD.match(line)
+        if match or current is None:
+            if current:
+                records.append(current)
+            current = [pos, None, match.group(1).decode() if match else "", [line[match.end():] if match else line]]
+        else:
+            current[3].append(line)
+        pos += len(line) + 1
+        current[1] = pos
+    if current:
+        records.append(current)
+    return [(start, end, stamp, b"\n".join(lines).decode("utf-8", "replace").rstrip("\r"))
+            for start, end, stamp, lines in records]
+
+
+class ServerTraffic:
+    """Recognizes the traffic of fe.py's own requests. The front end server processes them in main-link evaluations of
+    its pump button (from EvaluatePacket[... pump[] ...] to the matching ReturnPacket), which its socket handler
+    triggers through the service link (CallPacket[FrontEnd`TriggerControlBoxObject[...]] and its ReturnPacket)."""
+
+    def __init__(self, state=None):
+        state = state or {}
+        self.depth = state.get("depth", 0)          # nesting of evaluations and calls inside a pump evaluation
+        self.trigger = state.get("trigger", False)  # a trigger call on the service link awaits its reply
+
+    def state(self):
+        return {"depth": self.depth, "trigger": self.trigger}
+
+    def __call__(self, text):
+        """Whether a record (its text without the time stamp and indentation) belongs to a request of fe.py."""
+        if text.startswith(LOG_SESSION_LINES):
+            # The links closed or a new kernel started (the log is appended to): nothing is pending any more.
+            self.depth, self.trigger = 0, False
+            return False
+        if text.startswith("-Serv-"):
+            packet = text[len("-Serv-"):].lstrip()
+            head = packet_head(packet)
+            if head == "CallPacket" and "FrontEnd`TriggerControlBoxObject[" in packet[:80]:
+                self.trigger = True
+                return True
+            if self.trigger and head == "ReturnPacket" and packet.startswith("FE --->"):
+                self.trigger = False
+                return True
+            return False
+        if not text.startswith("FE "):
+            return False  # the preemptive link, or LinkSnooper's own messages
+        head, to_kernel = packet_head(text), text.startswith("FE --->")
+        if not self.depth:
+            if to_kernel and head == "EvaluatePacket" and PUMP_FUNCTION in text:
+                self.depth = 1
+                return True
+            return False
+        # Evaluations the front end asks for and calls the kernel makes nest; each ends with a ReturnPacket:
+        if head == ("EvaluatePacket" if to_kernel else "CallPacket"):
+            self.depth += 1
+        elif head == "ReturnPacket":
+            self.depth -= 1
+        return True
+
+
+def packet_head(text):
+    match = LOG_PACKET.match(text)
+    return match.group(1) if match else None
+
+
+def record_text(text):
+    """A record's text as `linklog` prints it (and as --grep sees it), without the time stamp."""
+    return re.sub(r"^(-Serv-|-Pre-)\s+", r"\1 ", text.lstrip()).replace("\r", "").replace("\n", "\\n")
+
+
+def format_record(stamp, text, width):
+    if width and len(text) > width:
+        text = f"{text[:width]}... [{len(text) - width} more characters]"
+    return f"{stamp} {text}" if stamp else text
+
+
+def cmd_linklog(args):
+    if args.file:
+        path = native_path(args.file)
+    else:
+        server = Server(select_server(args.server))
+        state = snoop_state(server)
+        if not state:
+            raise CLIError("This front end's MathLink traffic is not being logged; start with `fe.py snoop` (or "
+                           "`fe.py launch --link-snooper`), or read a log with --file")
+        path = state["log"]
+    if args.path:
+        return print(path)
+    if not os.path.exists(path):
+        raise CLIError(f"{path} does not exist (yet): LinkSnooper creates it when its kernel starts")
+
+    # Without --all/--tail, continue where the last call stopped (the cursor file also keeps the state of
+    # --hide-server's recognition of fe.py's requests at that point):
+    cursor_path = path + ".cursor"
+    use_cursor = not (args.all or args.tail)
+    cursor = (read_json(cursor_path) or {}) if use_cursor else {}
+    offset = cursor.get("offset", 0)
+    if not isinstance(offset, int) or not 0 <= offset <= os.path.getsize(path):
+        offset, cursor = 0, {}
+    records = log_records(path, offset)
+    # Packets with newlines are written in pieces, so while the log is growing its last record may be incomplete;
+    # leave that one for the next call:
+    if use_cursor and not args.mark and records and time.time() - os.path.getmtime(path) < 1:
+        records.pop()
+    server_traffic = ServerTraffic(cursor)
+    hidden = cursor.get("hidden", False)
+    grep = re.compile(args.grep) if args.grep else None
+    exclude = re.compile(args.exclude) if args.exclude else None
+    shown, end, read = [], offset, 0
+    for start, stop, stamp, raw in records:
+        if use_cursor and not args.mark and args.limit and len(shown) >= args.limit:
+            break
+        # A record without a time stamp continues one that an earlier call read in part (or precedes LinkSnooper's
+        # first line):
+        hidden = server_traffic(raw.lstrip()) if stamp else hidden
+        end, read = stop, read + 1
+        if args.mark or (args.hide_server and hidden):
+            continue
+        text = record_text(raw)
+        if (grep and not grep.search(text)) or (exclude and exclude.search(text)):
+            continue
+        shown.append({"time": stamp, "text": text, "offset": start})
+    if use_cursor:
+        try:
+            with open(cursor_path, "w") as f:
+                json.dump(dict(server_traffic.state(), offset=end, hidden=hidden), f)
+        except OSError:
+            pass
+    if args.mark:
+        return print(f"skipped {read} record(s); `linklog` continues from here")
+    matching = len(shown)
+    if args.tail:
+        shown = shown[-args.tail:]
+    elif not use_cursor and args.limit:
+        shown = shown[:args.limit]
+    if args.json:
+        return emit(args, shown)
+    for record in shown:
+        print(format_record(record["time"], record["text"], args.width))
+    unread = len(records) - read
+    if use_cursor and unread:
+        print(f"[{unread} more record(s); run linklog again to continue, or --mark to skip to the end]")
+    elif not use_cursor and not args.tail and matching > len(shown):
+        print(f"[{matching - len(shown)} more matching record(s); --limit 0 prints all]")
+    elif not shown:
+        print("(no new traffic)" if use_cursor else "(no matching traffic)")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1809,6 +2195,8 @@ def build_parser():
     p.add_argument("--keep-welcome", action="store_true", help="do not close the Welcome screen")
     p.add_argument("--timeout", type=float, default=180, help="seconds to wait for startup")
     p.add_argument("--force", action="store_true", help="launch even if little memory is available")
+    p.add_argument("--link-snooper", action="store_true",
+                   help="log all MathLink traffic between the front end and its kernel (see `snoop`, `linklog`)")
 
     p = add("stop", cmd_stop, "quit a launched front end (or stop the server in an attached one)")
     p.add_argument("--server-only", action="store_true", help="only stop the server; leave the front end running")
@@ -1963,6 +2351,45 @@ def build_parser():
     p.add_argument("--timeout", type=float, default=60)
 
     add("reload", cmd_reload, "reload the server's Wolfram Language code without restarting")
+
+    p = add("snoop", cmd_snoop, "log all MathLink traffic between the front end and its kernel to a file (J/Link's "
+                                 "LinkSnooper): the kernel is replaced by one that runs through LinkSnooper, which the "
+                                 "server moves to (kernel state is lost); read the log with `linklog`")
+    p.add_argument("--evaluator-only", action="store_true",
+                   help="only add an evaluator (\"LinkSnooperLog\", or \"LinkSnooperLog 2\", ...: the output names "
+                        "it) for notebooks to use (Evaluator option); the main kernel stays as it is (this also works "
+                        "in a front end that fe.py did not launch)")
+    p.add_argument("--links", default="main,pre,serv",
+                   help="links to log: main, pre (preemptive: Dynamic updates) and/or serv (service), comma-separated "
+                        "(default: %(default)s)")
+    p.add_argument("--poll-interval", type=int, default=1,
+                   help="milliseconds LinkSnooper waits between checks of its links while there is traffic (it backs "
+                        "off to 10 when idle); larger values add latency to every front end call (default: "
+                        "%(default)s)")
+    p.add_argument("--timeout", type=float, default=120,
+                   help="seconds to wait for the server to start in the new kernel before the old kernel takes it "
+                        "back (default: %(default)s)")
+
+    p = add("linklog", cmd_linklog, "print MathLink traffic logged by `snoop`: by default the packets logged since "
+                                     "the last `linklog`, one line each")
+    p.add_argument("--mark", action="store_true", help="print nothing, just skip to the end (do this before an action "
+                                                       "to see only the traffic it causes)")
+    p.add_argument("--all", action="store_true", help="read from the start of the log, not from where the last "
+                                                      "`linklog` stopped (which stays where it is)")
+    p.add_argument("--tail", type=int, metavar="N", help="print the last N (matching) packets")
+    p.add_argument("--grep", metavar="REGEX",
+                   help="only packets whose text (as printed, without the time) matches this regular expression "
+                        "(Python syntax)")
+    p.add_argument("--exclude", metavar="REGEX", help="leave out packets whose text matches this regular expression")
+    p.add_argument("--hide-server", action="store_true",
+                   help="leave out the traffic of fe.py's queued requests (everything the server does for `eval`, "
+                        "`cells`, `locate`, `press`, ..., but not for --preemptive requests), e.g. to see what a "
+                        "click or key press caused")
+    p.add_argument("--limit", type=int, default=100, help="packets to print at most (0: no limit; default: %(default)s)")
+    p.add_argument("--width", type=int, default=300,
+                   help="characters to print per packet at most (0: no limit; default: %(default)s)")
+    p.add_argument("--file", help="read this log file (e.g. after `stop`) instead of the selected server's")
+    p.add_argument("--path", action="store_true", help="just print the log file's path (to grep or read it directly)")
     return parser
 
 

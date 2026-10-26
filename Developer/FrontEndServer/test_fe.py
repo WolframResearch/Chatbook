@@ -3,7 +3,7 @@
 
 Launches a fresh front end, exercises the client commands against it, and stops it again. Needs a licensed Wolfram
 installation, and on Linux Xvfb (the front end runs on a private display). On Windows the front end opens on the
-desktop and the test uses the real mouse and keyboard, so leave the computer alone meanwhile. Takes about a minute.
+desktop and the test uses the real mouse and keyboard, so leave the computer alone meanwhile. Takes about two minutes.
 
     python3 Developer/FrontEndServer/test_fe.py            # launch, test, stop (Windows: python ...)
     python3 Developer/FrontEndServer/test_fe.py -s 2400    # test an already running server (left running)
@@ -12,6 +12,7 @@ desktop and the test uses the real mouse and keyboard, so leave the computer alo
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -123,7 +124,30 @@ def oversized_request(r):
     return json.loads(data.decode().split("\n")[0])["errorType"]
 
 
-def run_tests(r):
+def snooping(r):
+    """`snoop` moves the server to a kernel that runs through LinkSnooper; `linklog` shows what a cell evaluation sent."""
+    r.fe("snoop")
+    info = json.loads(r.fe("--json", "info"))
+    expect(info["Evaluator"].startswith("LinkSnooperLog"), True)
+    expect(info["FrontEndPID"] not in (None, info.get("SnooperPID")), True)
+    r.fe("screenshot", "--scale", "0.25")  # finds the front end's windows by its process
+    r.fe("linklog", "--mark")
+    r.fe("eval", "--cell", "fetestSnooped = 6 * 7")
+    packets = r.fe("linklog", "--hide-server", "--limit", "0", "--width", "0")
+    expect('EnterExpressionPacket[MakeExpression[BoxData[RowBox[{"fetestSnooped"' in packets, True)
+    expect("pump[]" in packets, False)
+    # The activation record (sent to every new kernel) is redacted, so the key never shows up, even when evaluated:
+    log = r.fe("linklog", "--path").replace("\\", "/")
+    r.fe("eval", "--cell", "$ActivationKey")  # (its output is not printed)
+    expect(r.eval(f'With[{{key = $ActivationKey}}, StringQ[key] && StringLength[key] >= 6 && '
+                  f'StringContainsQ[ReadString["{log}"], key]]'), "False")
+    # All of the record's values are learned and redacted (the password has no shape it could be recognized by):
+    with open(log, encoding="utf-8", errors="replace") as f:
+        expect(re.search(r'Rule\["(ActivationKey|Password|MachineID)", \{?"(?!<redacted |")', f.read()), None)
+    expect("AlreadySnooping" in r.fails("snoop"), True)
+
+
+def run_tests(r, launched=False):
     r.test("ping and info", lambda: json.loads(r.fe("--json", "info"))["Port"])
     r.test("evaluate", lambda: expect(r.eval("1 + 1"), "2"))
     r.test("multi-statement code", lambda: expect(r.eval("a = 2;\nb = 3;\na b"), "6"))
@@ -192,6 +216,8 @@ def run_tests(r):
         r.fe("close", "FE Server Test 2")))
     r.test("close notebook", lambda: (r.fe("close", "FE Server Test"),
                                       expect("FE Server Test" in r.fe("nbs"), False)))
+    if launched:  # last: the kernel is replaced (only possible in a front end that fe.py launched)
+        r.test("MathLink logging", lambda: snooping(r))
 
 
 def main():
@@ -209,7 +235,7 @@ def main():
         print(f"launched front end server on port {launched}")
     runner = Runner(args.server or launched)
     try:
-        run_tests(runner)
+        run_tests(runner, launched=bool(launched))
     finally:
         if launched:
             subprocess.run(FE + ["-s", str(launched), "stop"], capture_output=True, text=True, encoding="utf-8", timeout=60)

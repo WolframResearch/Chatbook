@@ -4,8 +4,9 @@ description: >-
   Drive a real Wolfram front end (WolframNB) to test Chatbook's actual UI, on Linux or Windows: launch a fresh front
   end (on Linux on a private Xvfb display; optionally with the development Chatbook loaded) or attach to one that is
   already running, evaluate
-  code in its kernel, list notebooks and cells, take screenshots, and click, type, or press buttons by BoxID,
-  text, or screenshot coordinates. Use this whenever a task involves seeing or interacting with Chatbook UI -
+  code in its kernel, list notebooks and cells, take screenshots, click, type, or press buttons by BoxID,
+  text, or screenshot coordinates, and log the MathLink traffic between front end and kernel to a readable file
+  (LinkSnooper). Use this whenever a task involves seeing or interacting with Chatbook UI -
   the notebook assistant window, sidebar, chat bar, chat notebooks, output formatting, buttons and menus - for
   example "check how this renders in the front end", "reproduce this UI bug", "verify the new button works",
   "take a screenshot of the assistant window", or after changing UI code, "make sure it still works".
@@ -91,6 +92,7 @@ running, `-s` can be omitted. Other agents may be running their own servers: alw
 | Ask the assistant (window or sidebar) and print the reply | `$fe ask 'question'` / `$fe ask 'question' --sidebar NB` |
 | Menu commands | `$fe token SelectAll --notebook NB` (front end tokens; names are not validated) |
 | Messages window | `$fe messages [--clear]` |
+| Log the MathLink traffic between front end and kernel | `$fe launch --link-snooper` or `$fe snoop`, then `$fe linklog` (see §3) |
 | Hover / scroll / drag | `$fe move ...`, `$fe scroll X,Y --clicks 3`, `$fe drag X0,Y0 X1,Y1` |
 | Reload server code after editing FrontEndServer.wl | `$fe reload` |
 
@@ -174,6 +176,33 @@ checkboxes, "Copy as" menus, code block buttons) have no BoxID: locate them in a
 - Errors: `$fe messages`; service errors replace the reply with a framed `Text` cell (⚠);
   `Wolfram`Chatbook`$LastChatbookFailureText` holds the last internal failure.
 
+**MathLink traffic** (every packet the front end and the kernel exchange, logged by J/Link's LinkSnooper; e.g. to see
+which front end calls a button makes, or where an evaluation waits):
+
+```bash
+$fe launch --chatbook --link-snooper   # or `$fe snoop` in a front end fe.py launched (replaces its kernel: state is lost)
+$fe linklog --mark                     # skip what has been logged so far
+$fe click --box NANewChatButton --notebook 'Wolfram AI Assistant'   # the action
+$fe linklog --hide-server              # packets since the mark, one line each: `14:59:50.900 FE <--- K: CallPacket[...]`
+$fe linklog --all --grep 'NotebookWrite' --limit 0   # search the whole log; `linklog --path` gives the file
+```
+
+- `FE ---> K` goes to the kernel, `FE <--- K` to the front end; `-Pre-` is the preemptive link (Dynamic updates),
+  `-Serv-` the service link, the rest the main link. `linklog` continues where it stopped last time, prints at most
+  `--limit` (100) packets per call (`--all` too), and cuts each to `--width` (300) characters. `--grep` matches the
+  packet as printed, without the time.
+- `--hide-server` leaves out fe.py's queued requests, including everything `eval` code does: use it after clicks and
+  keys, not to see what an `eval` caused. Requests sent with `--preemptive` are not left out.
+- Front end calls get slower (3-6 ms each instead of 0.5 ms). The license key and password and the Wolfram Cloud token
+  are written as `<redacted ...>`, but the log still holds the user's name, email address, paths and notebook
+  contents: never paste raw logs or unchecked excerpts into issues or PRs. Don't sign in to the Wolfram Cloud while
+  logging (that password would be logged). The sandboxed "System" kernel is not logged.
+- In the user's own front end, use `$fe snoop --evaluator-only`: it adds an evaluator (use the name it prints, e.g.
+  "LinkSnooperLog") that notebooks can be given (`Evaluator -> "LinkSnooperLog"`); the user's kernel stays untouched.
+  The evaluator lasts until the front end quits: when done, quit its kernel (`$fe eval --cell 'Quit[]' --notebook NB`)
+  and give the notebooks their old Evaluator back (or close scratch notebooks unsaved).
+- `stop` keeps the log (`linklog --file PATH`). The README has the details.
+
 **Avoid side effects:** pass `"AutoSaveConversations" -> False` (otherwise chats are saved and titled with an extra
 LLM call). Don't click the feedback Send button (it posts to Wolfram), sign-in buttons, or chat bar state setters
 (`NAChatbarSetterState*`, minimize/maximize); they persist front end options. Modal dialogs (`ChoiceDialog`,
@@ -198,3 +227,7 @@ LLM call). Don't click the feedback Send button (it posts to Wolfram), sign-in b
   with its double quotes missing: you ran it from PowerShell; use Git Bash, `eval -` or `eval @file.wl`.
 - Windows: *"Windows is not showing this desktop"*: the session is locked (or a UAC prompt is up); ask the user to
   unlock it, or use `eval`/`press`/`screenshot --fe`.
+- `snoop` fails or a notebook with a LinkSnooper evaluator never starts evaluating: Java or the kernel did not start;
+  look at the end of the LinkSnooper log (`linklog --path`) and of the front end's output
+  (`<temp>/ChatbookFrontEndServer-<user>/frontend-<port>.log`; on Windows, Java's own errors may not appear anywhere).
+  That evaluator stays unusable for the session; `snoop` again adds a new one.

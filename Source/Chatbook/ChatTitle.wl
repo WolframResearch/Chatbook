@@ -113,6 +113,24 @@ GenerateChatTitleAsynchronous // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*generateChatTitleInBackground*)
+(* Like GenerateChatTitleAsynchronous, but for titles that are generated in the background (e.g. for auto-saved chats).
+   Handlers of asynchronous tasks can run in the middle of other evaluations (such as the next chat), so failures in
+   handling the response are passed to the callback instead of being thrown, no messages are issued, and the state of
+   the current chat (e.g. $lastTask and $lastCellObject) is left alone. A request that can't be submitted still throws
+   to the caller's catchTop. *)
+generateChatTitleInBackground // beginDefinition;
+
+generateChatTitleInBackground[
+    messages: $$chatMessages,
+    callback_,
+    opts: OptionsPattern[ GenerateChatTitleAsynchronous ]
+] := Block[ { $backgroundHandlers = True }, GenerateChatTitleAsynchronous[ messages, callback, opts ] ];
+
+generateChatTitleInBackground // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*generateChatTitleAsync*)
 generateChatTitleAsync // beginDefinition;
 
@@ -178,6 +196,12 @@ generateChatTitleAsync // endDefinition;
 (* ::Subsection::Closed:: *)
 (*postProcessChatTitle*)
 postProcessChatTitle // beginDefinition;
+
+postProcessChatTitle[ maxLength_ ] /; TrueQ @ $backgroundHandlers :=
+    Quiet @ catchAlways @ Block[
+        { $lastTask = None, $lastCellObject = None },
+        postProcessChatTitle[ maxLength, ## ]
+    ] &;
 
 postProcessChatTitle[ maxLength_ ] :=
     postProcessChatTitle[ maxLength, ## ] &;

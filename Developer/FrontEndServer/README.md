@@ -11,7 +11,8 @@ assistant window, sidebar, chat bar, chat notebooks) can be exercised and inspec
 | `fe_x11.py` | Linux: X11 screenshots and synthetic mouse/keyboard input via `ctypes` (libX11 + libXtst; no xdotool or ImageMagick needed) |
 | `fe_win32.py` | Windows: the same through Win32 (`user32`/`gdi32` via `ctypes`) |
 | `fe_image.py` | PNG encoding and downscaling shared by both |
-| `test_fe.py` | End-to-end smoke test: launches a front end, exercises the client, stops it (`python3 test_fe.py`, about a minute; on Windows it uses the real mouse and keyboard) |
+| `LinkSnooperLog.java` | Runs J/Link's LinkSnooper with its output in a log file, for logging the MathLink traffic between the front end and a kernel (`fe.py snoop`, see [below](#logging-mathlink-traffic)) |
+| `test_fe.py` | End-to-end smoke test: launches a front end, exercises the client, stops it (`python3 test_fe.py`, about two minutes; on Windows it uses the real mouse and keyboard) |
 
 ## Two ways to get a server
 
@@ -59,6 +60,8 @@ WolframNB
 
 `Init.wl` reads optional environment variables: `CHATBOOK_FE_SERVER_PORT`, `CHATBOOK_FE_SERVER_TOKEN`,
 `CHATBOOK_FE_SERVER_NAME`, `CHATBOOK_FE_SERVER_REGISTRY`, and `CHATBOOK_FE_SERVER_CHATBOOK` (a paclet directory to load).
+Without `CHATBOOK_FE_SERVER_PORT`, every kernel of the front end that reads the init file (e.g. one of another
+evaluator) starts a server of its own; with it, only the first one does.
 
 ## Using the client
 
@@ -80,6 +83,7 @@ $fe type 'more text' --cell CELLID            # put the cursor at the end of a c
 $fe ask 'What is 2+2?'                        # ask the assistant window through its input field, print the reply
 $fe wait                                      # wait until the kernel has finished pending evaluations
 $fe messages                                  # contents of the Messages window
+$fe snoop ; $fe linklog                       # log the MathLink traffic to the kernel, and read it
 ```
 
 Run `fe.py -h` and `fe.py <command> -h` for all options. The skill in `.claude/skills/drive-frontend/SKILL.md`
@@ -117,6 +121,102 @@ has recipes for Chatbook's UI.
 * **Screenshots** are taken from the X root window (`XGetImage`) or the Windows screen (`BitBlt`), so they show exactly
   what is on screen, including attached cells, popup menus and dialogs. `fe.py screenshot --fe` uses front end
   rendering instead (`CurrentNotebookImage`), which needs no screen access but is low resolution and cropped.
+
+## Logging MathLink traffic
+
+J/Link's LinkSnooper (`com.wolfram.jlink.util.LinkSnooper`, part of every Wolfram installation, and offered by the
+front end as the "LinkSnooper" evaluator) sits between the front end and a kernel, relays their MathLink traffic, and
+prints every packet, normally to a console window. `fe.py` runs it with its output going to a log file instead:
+
+```bash
+fe.py launch --chatbook --link-snooper   # a front end whose kernel runs through LinkSnooper
+fe.py snoop                              # or switch a front end that fe.py launched earlier (its kernel is replaced)
+fe.py linklog --mark                     # skip what has been logged so far
+fe.py click --box NANewChatButton --notebook 'Wolfram AI Assistant'   # do something
+fe.py linklog --hide-server              # the packets it caused, one line each
+```
+
+A log line is one packet: `14:57:29.795 FE ---> K: EnterExpressionPacket[...]` (front end to kernel) or
+`FE <--- K: ...` (kernel to front end); `-Serv-` marks the service link and `-Pre-` the preemptive link (Dynamic
+updates), the others are on the main link. Expressions are printed by J/Link's `Expr.toString` (`Rule[a, b]`, strings
+in quotes); LinkSnooper elides a few large packets (`FrontEnd`SetKernelSymbolContexts`, ...).
+
+`linklog` prints the packets logged since its last call (it keeps its position in `<log>.cursor`), at most `--limit`
+(100) of them, each cut to `--width` (300) characters. `--mark` skips to the end, `--all` and `--tail N` read the whole
+log (`--all` also stops at `--limit` packets; `--limit 0` prints all), `--grep`/`--exclude` filter by a regular
+expression matched against the packet as printed (without the time), and `--hide-server` leaves out the traffic of
+fe.py's queued requests: everything from the front end's evaluation of the server's pump button
+(`EvaluatePacket[... pump[] ...]`) to the matching `ReturnPacket`, which includes what code run by `eval` (or `press`,
+`token`, ...) does, and the service link calls that trigger it. Requests sent with `--preemptive` run in the server's
+socket handler, and their front end calls (`-Serv-`) are not left out. `--path` prints the log file's name, for `grep`
+or reading it directly. Logs are named `<temp>/ChatbookFrontEndServer-<user>/linksnooper-<port>-<time>.log`; `stop`
+leaves the log in place (read it with `linklog --file`), and `servers --prune` deletes logs that have not been written
+to for a day (except the current log of a running server). The file that ties a log to its server
+(`linksnooper-<port>.json`) is private and keeps only a hash of the server's token, and on Linux and macOS `fe.py` makes
+the directory private (0700). On Windows, the front end passes the command line that starts LinkSnooper through the
+system code page, so a log directory whose path has other characters (from the user name or `TEMP`) is given by its 8.3
+short name (`snoop` fails at once if it has none), and if the Chatbook checkout is in such a directory, the server runs
+a copy of `LinkSnooperLog.java` placed next to the log.
+
+How it works:
+
+* `snoop` adds an evaluator named "LinkSnooperLog" (or "LinkSnooperLog 2", ... if that name is taken) whose kernel the
+  front end starts through LinkSnooper, with `LinkSnooperLog.java` run in Java's single-file source mode by the Java
+  runtime that comes with Wolfram (`java -classpath JLink.jar LinkSnooperLog.java LOG -nowindow -timestamps
+  -pollinterval 1 -links main,pre,serv -kernelname WolframKernel`). Unlike LinkSnooper's own `-logfile` option, which
+  also prints everything to standard output (that is, into the front end's output) and truncates the file whenever
+  the kernel restarts, it appends to the log only, logs J/Link errors too, and redacts secrets (see below).
+* `EvaluatorNames` is set in `$FrontEndSession`, so nothing is saved with the preferences (setting it in `$FrontEnd`
+  would save it in `FrontEnd/init.m`). The "Local" evaluator cannot be redirected this way: the front end ignores
+  changes to its `MLOpenArguments` while it runs. Instead, `snoop` makes the new evaluator the session's default
+  evaluator, which is the evaluator of every notebook that does not set its own (including the server's pump notebook
+  and Chatbook's windows), and moves the server into its kernel: once it has answered, the server stops, the front end
+  starts the new kernel (`FrontEndToken["EvaluatorStart", name]`), whose `Init.wl` starts the server again on the same
+  port with the same token, and the old kernel quits. If the server does not come up in the new kernel within
+  `snoop --timeout` (two minutes), the old kernel takes it back and restores the default evaluator.
+  This only works in front ends that `fe.py launch` started (the new kernel must run `Init.wl`), and the old kernel's
+  state is lost.
+* `snoop --evaluator-only` just adds the evaluator, in any front end, and prints its name. Notebooks given that
+  `Evaluator` then share one more kernel (about 300 MB) that runs through LinkSnooper; the server stays where it is.
+  The evaluator lasts until the front end quits (`stop` does not remove it), and so does its kernel unless it is quit
+  (e.g. `Quit[]` in such a notebook); give the notebooks their old `Evaluator` back before they are saved.
+* A kernel that runs through LinkSnooper is the child of a Java process, which is the front end's child; `fe.py` takes
+  the Java process's parent as the front end (to find its windows, and in `stop`).
+
+Costs and caveats:
+
+* **Speed.** Every packet goes through Java and is formatted: a front end call from the kernel takes about 3-6 ms
+  instead of 0.5 ms, so UI code that makes many calls is noticeably slower. LinkSnooper sleeps between checks of its
+  links: 1 ms while there is traffic (`snoop --poll-interval`), 10 ms after a second without (at 1 ms an idle
+  LinkSnooper would use about 11% of a CPU core, at 10 ms about 1%, but each call would take about 40 ms). LinkSnooper
+  always prints all links; `snoop --links` leaves the others out of the log only after they were redacted.
+* **Size.** About 1 MB for a kernel startup and 2 MB for a notebook assistant chat. On Linux the temp directory is often
+  in memory (tmpfs).
+* **Secrets.** The log would hold everything that crosses the link in both directions, including the license
+  activation record with its activation key and password (the front end sends it to every new kernel) and the Wolfram
+  Cloud authentication token (`FrontEnd`WolframCloud`GetAuthentication[]`, e.g. for a notebook assistant chat).
+  `LinkSnooperLog.java` redacts those before writing. It learns their values as they pass: `ActivationKey`, `Password`
+  and `MachineID` from the front end's replies to the kernel (`Rule["Password", "..."]` etc., as in the activation
+  record; so such values in notebook data are redacted too), and tokens from the front end's reply to
+  the kernel's `GetAuthentication` call, from the kernel's `FrontEnd`WolframCloud`ConnectionEstablished[..., {token}]`
+  call, and from token-shaped strings (`Compress` output) in its other `FrontEnd`WolframCloud` calls. From then on it
+  writes `<redacted Password>` etc. wherever they appear (`$ActivationKey` evaluated in a cell, too); strings shaped like
+  activation keys (`1234-5678-ABCDEF`) and machine IDs (`1234-12345-12345`) are redacted even if never learned. The
+  values are never passed to it or stored, and LinkSnooper options that would get around this (`-logfile`, `-noinit`,
+  `-feside`, `-kernelside`) are refused. Not redacted: the license holder's name and organization, the machine name,
+  the Wolfram ID (email address), file paths, notebook contents, and secrets in any other form (e.g. a Wolfram ID
+  password typed into the cloud sign-in dialog, which sends it to the kernel, or `CloudConnect[id, password]`). So
+  still do not attach raw logs, or excerpts that have not been checked, to issues.
+* **Not logged:** the front end's sandboxed "System" kernel (some Chatbook controls evaluate there), kernels of other
+  evaluators, and errors before LinkSnooper has opened its log (a Java compile error, an unwritable log file). On
+  Linux those go to the front end's output (`frontend-<port>.log` in the temp directory for launched front ends); on
+  Windows, where the front end starts `javaw`, they are lost (`frontend-<port>.log` stays empty): run the evaluator's
+  command line by hand (`CurrentValue[$FrontEndSession, EvaluatorNames]`) to see them.
+* **Failed starts.** An evaluator whose kernel failed to start stays unusable for the rest of the front end session
+  (evaluations in it wait forever), so each `snoop` adds an evaluator with a new name.
+* **Windows** (tested with Windows 11 and Wolfram 15.0): the front end runs `javaw` there, and file names in the
+  evaluator's command line are written with forward slashes. The kernel that runs through LinkSnooper has a minimized
+  "Wolfram Kernel" window on the taskbar, since LinkSnooper starts it without `-noicon`.
 
 ## Windows
 

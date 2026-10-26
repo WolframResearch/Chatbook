@@ -30,8 +30,117 @@ importResourceFunction[ clickToCopy, "ClickToCopy" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*RelativeTimeString*)
-(* https://resources.wolframcloud.com/FunctionRepository/resources/RelativeTimeString *)
-importResourceFunction[ relativeTimeString, "RelativeTimeString" ];
+(* Gives the same results as https://resources.wolframcloud.com/FunctionRepository/resources/RelativeTimeString
+   (version 1.0.0) for DateObject instants, but only uses arithmetic on absolute times. The resource function uses
+   calendar functions (e.g. DayRound) that initialize CalendarData indices on first use, which takes several seconds.
+   Unlike version 1.0.0, which caches its "this morning" interval for the rest of the session, this always uses the
+   current day. *)
+
+$hour = 3600;
+$day  = 86400;
+
+(* Unit sizes as used by Quantity (a year is 365 days): *)
+$relativeTimeUnits = <|
+    "year"   -> 365 * $day,
+    "month"  -> 365 * $day / 12,
+    "day"    -> $day,
+    "hour"   -> $hour,
+    "minute" -> 60,
+    "second" -> 1
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relativeTimeString*)
+relativeTimeString // beginDefinition;
+
+relativeTimeString[ date_? DateObjectQ ] :=
+    relativeTimeString[ AbsoluteTime @ date, AbsoluteTime[ ] ];
+
+relativeTimeString[ time_? NumberQ, now_? NumberQ ] :=
+    Replace[ relativeDayString[ time, now ], None :> relativeDurationString[ time - now ] ];
+
+relativeTimeString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relativeDayString*)
+(* Names like "yesterday" or "last week", which depend on calendar days in the local time zone: *)
+relativeDayString // beginDefinition;
+
+relativeDayString[ time_, now_ ] /; ! TrueQ[ 8 * $hour <= Abs[ time - now ] <= 14 * $day ] := None;
+
+relativeDayString[ time_, now_ ] := Enclose[
+    Module[ { today, tomorrow, sunday, nextSunday },
+        today    = ConfirmBy[ AbsoluteTime @ Take[ DateList @ now, 3 ], NumberQ, "Today" ];
+        tomorrow = today + $day;
+
+        (* Absolute time zero is on a Monday, so this is the start of the most recent Sunday (today if it's Sunday): *)
+        sunday     = today - Mod[ Quotient[ today, $day ] + 1, 7 ] * $day;
+        nextSunday = If[ sunday == today, today, sunday + 7 * $day ];
+
+        Which[
+            pastIntervalQ[ time, now - 8 * $hour, today - 4 * $hour, today ], "last night",
+            pastIntervalQ[ time, now - 8 * $hour, today - $day, today ], "yesterday",
+            pastIntervalQ[ time, now - 8 * $hour, today + 4 * $hour, today + 12 * $hour ], "this morning",
+            futureIntervalQ[ time, now + 8 * $hour, tomorrow + 4 * $hour, tomorrow + 16 * $hour ], "tomorrow morning",
+            futureIntervalQ[ time, now + 12 * $hour, tomorrow, tomorrow + $day ], "tomorrow",
+            pastIntervalQ[ time, now - 4 * $day, sunday - 7 * $day, sunday ], "last week",
+            futureIntervalQ[ time, now + 4 * $day, nextSunday, nextSunday + 7 * $day ], "next week",
+            True, None
+        ]
+    ],
+    throwInternalFailure
+];
+
+relativeDayString // endDefinition;
+
+(* Whether time is in [ start, end ), where past intervals end at cutoff and future intervals start at cutoff: *)
+pastIntervalQ // beginDefinition;
+pastIntervalQ[ time_, cutoff_, start_, end_ ] := TrueQ[ start <= time < Min[ cutoff, end ] ];
+pastIntervalQ // endDefinition;
+
+futureIntervalQ // beginDefinition;
+futureIntervalQ[ time_, cutoff_, start_, end_ ] := TrueQ[ Max[ cutoff, start ] <= time < end ];
+futureIntervalQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relativeDurationString*)
+relativeDurationString // beginDefinition;
+
+relativeDurationString[ diff_ ] :=
+    relativeDurationString[ Abs @ diff, TrueQ @ Positive @ diff ];
+
+relativeDurationString[ seconds_, future_ ] :=
+    Replace[
+        SelectFirst[ Keys @ $relativeTimeUnits, seconds >= $relativeTimeUnits[ # ] & ],
+        {
+            unit_String :> durationString[ Round[ seconds / $relativeTimeUnits[ unit ] ], unit, future ],
+            (* Less than a second, which counts as a second if it rounds to 1000 milliseconds: *)
+            _ :> Which[
+                Round[ 1000 * seconds ] === 1000, durationString[ 1, "second", future ],
+                future || seconds == 0, "now",
+                True, "just now"
+            ]
+        }
+    ];
+
+relativeDurationString // endDefinition;
+
+
+durationString // beginDefinition;
+durationString[ 60, "second", future_ ] := durationString[ 1, "minute", future ];
+durationString[ 60, "minute", future_ ] := durationString[ 1, "hour"  , future ];
+durationString[ 24, "hour"  , future_ ] := durationString[ 1, "day"   , future ];
+durationString[ 7 , "day"   , future_ ] := durationString[ 1, "week"  , future ];
+durationString[ 12, "month" , future_ ] := durationString[ 1, "year"  , future ];
+durationString[ n_, unit_, True  ] := "in " <> durationString[ n, unit ];
+durationString[ n_, unit_, False ] := durationString[ n, unit ] <> " ago";
+durationString[ 1 , "hour" ] := "an hour";
+durationString[ 1 , unit_  ] := "a " <> unit;
+durationString[ n_, unit_  ] := ToString @ n <> " " <> unit <> "s";
+durationString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

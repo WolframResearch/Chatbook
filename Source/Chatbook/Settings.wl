@@ -1015,6 +1015,25 @@ resolveAutoSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*autoAssistPossibleQ*)
+(* A cheap check that only gives False if "Assistance" cannot resolve to True in `resolveAutoSettings @ settings`: *)
+autoAssistPossibleQ // beginDefinition;
+
+autoAssistPossibleQ[ settings_Association ] := Or[
+    TrueQ @ settings[ "Assistance" ],
+    (* Persona values take precedence over the given settings: *)
+    With[ { persona = getLLMEvaluator @ settings }, AssociationQ @ persona && TrueQ @ persona[ "Assistance" ] ],
+    (* An Automatic value resolves to False unless there's a model-specific default: *)
+    ! FreeQ[ $modelAutoSettings, _Association? (KeyExistsQ[ "Assistance" ]) ]
+];
+
+(* Let resolveAutoSettings handle anything else: *)
+autoAssistPossibleQ[ _ ] := True;
+
+autoAssistPossibleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inheritModelSettings*)
 inheritModelSettings // beginDefinition;
 
@@ -2216,6 +2235,36 @@ currentChatSettings1[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
 ];
 
 currentChatSettings1 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*currentChatContainerSetting*)
+(*
+    A cheaper alternative to `currentChatSettings[ cell, key ]` for settings that are only ever set on the chat
+    container, i.e. the notebook (or its stylesheet) or the notebook assistant sidebar cell, such as "WorkspaceChat"
+    and "SidebarChat". It takes a few front end calls regardless of notebook size, since it does not look for a
+    preceding chat delimiter (which needs `Cells @ nbo` and an `AbsoluteCurrentValue` over every preceding cell).
+
+    The cell is expected to be a top-level cell as given by `topParentCell`. For such cells, the result is the same as
+    `currentChatSettings[ cell, key ]` unless a chat delimiter cell sets `key` explicitly.
+*)
+currentChatContainerSetting // beginDefinition;
+
+currentChatContainerSetting[ cell_CellObject, key_String ] :=
+    currentChatContainerSetting[ cell, key, ParentCell[ cell, All ] ];
+
+(* Sidebar chat cells are nested in the sidebar cell, which acts as the notebook for chat settings: *)
+currentChatContainerSetting[ cell_CellObject, key_String, { ___CellObject, sidebar_CellObject } ] :=
+    FirstCase[
+        CurrentValue[ { cell, sidebar }, { TaggingRules, "ChatNotebookSettings", key } ],
+        Except[ Inherited ],
+        currentChatSettings1[ cell, key ]
+    ];
+
+currentChatContainerSetting[ cell_CellObject, key_String, _ ] :=
+    currentChatSettings1[ cell, key ];
+
+currentChatContainerSetting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
