@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/SessionCaches.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/SessionCaches.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -48,14 +48,14 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "MergeChatSettings-Results"
+    TestID   -> "MergeChatSettings-Results@@Tests/SessionCaches.wlt:27,1-52,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`mergeChatSettings @ { <| "Tools" -> { "A" } |>, <| "Tools" -> { ParentList, "B" } |> },
     <| "Tools" -> { "A", "B" } |>,
     SameTest -> MatchQ,
-    TestID   -> "MergeChatSettings-ParentList"
+    TestID   -> "MergeChatSettings-ParentList@@Tests/SessionCaches.wlt:54,1-59,2"
 ]
 
 VerificationTest[
@@ -87,7 +87,7 @@ VerificationTest[
     ],
     { True, True, <| "a" -> 25, "b" -> 25 |>, True, <| "a" -> 1, "b" -> 1 |> },
     SameTest -> MatchQ,
-    TestID   -> "MergeChatSettings-Bounded"
+    TestID   -> "MergeChatSettings-Bounded@@Tests/SessionCaches.wlt:61,1-91,2"
 ]
 
 VerificationTest[
@@ -108,7 +108,7 @@ VerificationTest[
     ],
     { 2, 2, Missing[ ], <| "a" -> 1, "b" -> 2 |> },
     SameTest -> MatchQ,
-    TestID   -> "MergeChatSettings-CacheEntries"
+    TestID   -> "MergeChatSettings-CacheEntries@@Tests/SessionCaches.wlt:93,1-112,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -139,7 +139,7 @@ VerificationTest[
     ],
     { Range[ 25 ], True, "Outer25", { 1 }, { "Inner" }, True },
     SameTest -> MatchQ,
-    TestID   -> "LogChatTiming-Bounded"
+    TestID   -> "LogChatTiming-Bounded@@Tests/SessionCaches.wlt:117,1-143,2"
 ]
 
 VerificationTest[
@@ -154,7 +154,7 @@ VerificationTest[
     ],
     { 20 },
     SameTest -> MatchQ,
-    TestID   -> "LogChatTiming-NestedNotTrimmed"
+    TestID   -> "LogChatTiming-NestedNotTrimmed@@Tests/SessionCaches.wlt:145,1-158,2"
 ]
 
 VerificationTest[
@@ -177,7 +177,7 @@ VerificationTest[
     ],
     { True, True, { "Inner", "Outer" }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ChatTimingData-Bounded"
+    TestID   -> "ChatTimingData-Bounded@@Tests/SessionCaches.wlt:160,1-181,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -199,7 +199,7 @@ VerificationTest[
     ],
     { True, <| "chunk" -> "chunk25", "other" -> <| "i" -> 25 |> |> },
     SameTest -> MatchQ,
-    TestID   -> "ChunkDebug-Bounded"
+    TestID   -> "ChunkDebug-Bounded@@Tests/SessionCaches.wlt:186,1-203,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -237,7 +237,7 @@ VerificationTest[
     ],
     { True, <| "Values" -> { "DocumentationURIs", 25 } |>, { "FunctionRepositoryURIs", 25 }, False },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearchCache-Bounded"
+    TestID   -> "VectorDBSearchCache-Bounded@@Tests/SessionCaches.wlt:212,1-241,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -277,7 +277,7 @@ VerificationTest[
     ],
     { True, True, 39, True, 39, True },
     SameTest -> MatchQ,
-    TestID   -> "EmbeddingCache-Bounded"
+    TestID   -> "EmbeddingCache-Bounded@@Tests/SessionCaches.wlt:246,1-281,2"
 ]
 
 VerificationTest[
@@ -303,7 +303,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "EmbeddingCache-PreemptiveTrim"
+    TestID   -> "EmbeddingCache-PreemptiveTrim@@Tests/SessionCaches.wlt:283,1-307,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
