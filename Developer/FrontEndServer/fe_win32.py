@@ -23,7 +23,8 @@ class ScreenError(Exception):
 
 
 class InputBlockedError(ScreenError):
-    """Windows discarded synthetic input (see Display._pointer_blocked)."""
+    """Windows discarded synthetic input (see Display._input_blocked)."""
+    error_type = "InputBlocked"  # its errorType in fe.py --json output, so that it can be told from other errors
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -208,26 +209,40 @@ def _check(result, what):
 # Processes
 # ---------------------------------------------------------------------------------------------------------------------
 
-def _process_name(pid):
-    """The executable name of a process (also of one that this user may not open), or None."""
+def processes():
+    """[(process id, parent process id, executable name)] of all processes, also of ones that this user may not open.
+    Empty if the snapshot fails."""
     snapshot = kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
     if not snapshot or snapshot == wt.HANDLE(-1).value:
-        return None
+        return []
+    found = []
     try:
         entry = PROCESSENTRY32W(dwSize=sizeof(PROCESSENTRY32W))
-        found = kernel32.Process32FirstW(snapshot, byref(entry))
-        while found:
-            if entry.th32ProcessID == pid:
-                return entry.szExeFile
-            found = kernel32.Process32NextW(snapshot, byref(entry))
+        more = kernel32.Process32FirstW(snapshot, byref(entry))
+        while more:
+            found.append((entry.th32ProcessID, entry.th32ParentProcessID, entry.szExeFile))
+            more = kernel32.Process32NextW(snapshot, byref(entry))
     finally:
         kernel32.CloseHandle(snapshot)
-    return None
+    return found
+
+
+def _process_name(pid):
+    """The executable name of a process (also of one that this user may not open), or None."""
+    return next((name for process, _, name in processes() if process == pid), None)
+
+
+def _integrity_name(rid):
+    """The name of an integrity level. One between the named levels is above the lower one, e.g. "medium+0x10" for
+    UIAccess programs (accessibility tools such as the Sticky Keys prompt), whose windows discard input from ordinary
+    programs too."""
+    level, name = next((level, name) for level, name in INTEGRITY_LEVELS if rid >= level)
+    return name if rid == level else f"{name}+{rid - level:#x}"
 
 
 def _integrity_level(pid):
-    """A process's integrity level: "medium" for ordinary programs, "high" for elevated ones, "system" for services.
-    None if this user may not inspect the process."""
+    """A process's integrity level: "medium" for ordinary programs, "high" for elevated ones, "system" for services
+    (see _integrity_name). None if this user may not inspect the process."""
     process = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
     if not process:
         return None
@@ -249,7 +264,7 @@ def _integrity_level(pid):
             kernel32.CloseHandle(token)
     finally:
         kernel32.CloseHandle(process)
-    return next(name for level, name in INTEGRITY_LEVELS if rid >= level)
+    return _integrity_name(rid)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -571,7 +586,9 @@ class Display:
             window = f"the window {title!r}"
         else:
             window = f"an untitled {self._text(user32.GetClassNameW, hwnd, 256)!r} window"
-        level = _integrity_level(pid) if pid else None
+        if not pid:  # e.g. the window was destroyed meanwhile
+            return f"{window} of an unknown program"
+        level = _integrity_level(pid)
         rights = f"{level} integrity" if level else "not open to this user, like system services and elevated programs"
         return f"{window} of {_process_name(pid) or 'an unknown program'} (pid {pid}, {rights})"
 
@@ -597,31 +614,44 @@ class Display:
     def move(self, x, y):
         x, y = int(round(x)), int(round(y))
         if not self._move(x, y):
-            self._pointer_blocked()
+            self._input_blocked("pointer")
 
     def _move(self, x, y):
         """Move the pointer; returns False when Windows discarded the input."""
+        start = self.pointer()
         # Absolute coordinates are normalized to 0..65535 across the virtual screen:
         nx = ((x - self.left) * 65536 + self.width // 2) // max(1, self.width)
         ny = ((y - self.top) * 65536 + self.height // 2) // max(1, self.height)
         self._send([self._mouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK, nx, ny)],
                    "pointer motion")
         # SetCursorPos corrects the rounding of the normalized coordinates (and clamps points off the screen). It
-        # fails where Windows discards the input, which SendInput doesn't report:
-        return self.pointer() == (x, y) or bool(user32.SetCursorPos(x, y))
+        # fails where Windows discards the input, which SendInput doesn't report. A pointer that was at the target
+        # already (e.g. a second click at the same point, or `scroll` without a point) shows nothing either way, so
+        # SetCursorPos has to tell then too:
+        return start != (x, y) and self.pointer() == (x, y) or bool(user32.SetCursorPos(x, y))
 
-    def _pointer_blocked(self):
+    def require_input(self, what):
+        """Fail before sending input that Windows would discard: SetCursorPos fails then, also where it leaves the
+        pointer in place. Also used by fe.py's focus check."""
+        if not user32.SetCursorPos(*self.pointer()):
+            self._input_blocked(what)
+
+    def _input_blocked(self, what):
         """Windows silently discards synthetic input while some windows of a more privileged process are in front:
         SendInput still reports success, but the pointer stays put and SetCursorPos fails. (Seen while the user was
         away: the invisible window of the GameInputSvc system service had the foreground.) Fail with an explanation
         rather than report input that never arrived."""
-        self.require_interactive("synthetic pointer input")  # a locked session gets its own explanation
-        px, py = self.pointer()
+        self.require_interactive(f"synthetic {what} input")  # a locked session gets its own explanation
+        if what == "pointer":
+            px, py = self.pointer()
+            problem = (f"Windows discarded the synthetic pointer input: the pointer stayed at {px},{py}, and "
+                       "SetCursorPos")
+        else:
+            problem = f"Windows is discarding synthetic input, so no {what} input was sent: SetCursorPos"
         raise InputBlockedError(
-            f"Windows discarded the synthetic pointer input: the pointer stayed at {px},{py}, and SetCursorPos "
-            f"failed. In front is {self.foreground_description()}. Windows drops input from this process while some "
-            "windows of a more privileged one are in front. Commands that need no input still work: eval, press, "
-            "screenshot --no-raise.")
+            f"{problem} failed. In front is {self.foreground_description()}. Windows drops input from this process "
+            "while some windows of a more privileged one are in front. Commands that need no input still work: eval, "
+            "press, screenshot --no-raise.")
 
     def button(self, button, press):
         if button in (4, 5, 6, 7):  # X11 wheel buttons
@@ -793,6 +823,7 @@ class Display:
         """Press a key combination such as 'ctrl+shift+Return', 'Escape', 'shift+Return', 'ctrl+a'."""
         mods, (vk, extended, shift) = self.parse_key(combo)
         shift = shift and "shift" not in [m.lower() for m in mods]
+        self.require_input("keyboard")  # also with `key --force`, which skips the focus check
         for _ in range(repeat):
             held = self._press_modifiers(mods)
             try:
@@ -810,6 +841,7 @@ class Display:
                 continue
             if ord(ch) < 0x20 or 0x7F <= ord(ch) < 0xA0:
                 raise ScreenError(f"Cannot type control character {ch!r}")
+        self.require_input("keyboard")  # also with `type --force`, which skips the focus check
         for ch in text:
             if ch in self._CONTROL_CHARACTERS:
                 vk, extended, _ = self.keysym(ch)

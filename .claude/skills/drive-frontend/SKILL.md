@@ -229,13 +229,13 @@ LLM call). Don't click the feedback Send button (it posts to Wolfram), sign-in b
   with its double quotes missing: you ran it from PowerShell; use Git Bash, `eval -` or `eval @file.wl`.
 - Windows: *"Windows is not showing this desktop"*: the session is locked (or a UAC prompt is up); ask the user to
   unlock it, or use `eval`/`press`/`screenshot --fe`.
-- Windows: *"Windows discarded the synthetic pointer input"* (or `key`/`type` reporting the focus is in some other
-  window): a more privileged window is holding the foreground, so Windows drops injected mouse and keyboard input while
-  reporting success. The error names that window. A stray key combination can cause it (e.g. a cat on the keyboard
-  tripping the Sticky Keys prompt); a service window (`GameInputSvc`) was also seen holding it. If the named window is
-  a dialog, ask the user to dismiss it (you cannot, since clicks are dropped too). Otherwise keep testing with the
-  commands that need no synthetic input - `eval`, `press` (activates a control by BoxID with no mouse), `--preemptive`
-  reads, and `screenshot NB --no-raise` - until real input at the machine clears it.
+- Windows: *"Windows discarded the synthetic pointer input"* or *"Windows is discarding synthetic input"* (errorType
+  `InputBlocked` with `--json`): a more privileged window is holding the foreground, so Windows drops injected mouse
+  and keyboard input while reporting success. The error names that window. A stray key combination can cause it (e.g.
+  a cat on the keyboard tripping the Sticky Keys prompt); a service window (`GameInputSvc`) was also seen holding it.
+  If the named window is a dialog, ask the user to dismiss it (you cannot, since clicks are dropped too). Otherwise
+  keep testing with the commands that need no synthetic input - `eval`, `press` (activates a control by BoxID with no
+  mouse), `--preemptive` reads, and `screenshot NB --no-raise` - until real input at the machine clears it.
 - `snoop` fails or a notebook with a LinkSnooper evaluator never starts evaluating: Java or the kernel did not start;
   look at the end of the LinkSnooper log (`linklog --path`) and of the front end's output
   (`<temp>/ChatbookFrontEndServer-<user>/frontend-<port>.log`; on Windows, Java's own errors may not appear anywhere).

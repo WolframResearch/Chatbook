@@ -10,6 +10,8 @@ desktop and the test uses the real mouse and keyboard, so leave the computer alo
 """
 
 import argparse
+import contextlib
+import io
 import json
 import os
 import re
@@ -180,29 +182,79 @@ def many_requests(r):
 
 def windows_input_block_detection():
     """On Windows, synthetic input is silently discarded while a window of a more privileged process is in front
-    (seen with the GameInputSvc system service). fe_win32 detects that the pointer did not move and fails with an
-    explanation, instead of reporting a click that never happened. Simulated here by making SetCursorPos fail."""
+    (seen with the GameInputSvc system service). fe_win32 detects it with SetCursorPos, which fails then, and fails
+    with an explanation instead of reporting a click or keys that never arrived. Simulated by making SetCursorPos
+    fail, without sending real input."""
     sys.path.insert(0, HERE)
+    import fe
     import fe_win32
     d = fe_win32.Display()
 
-    # foreground_description names the foreground window's process, which the error relies on:
-    description = d.foreground_description()
-    expect(isinstance(description, str) and "pid" in description, True)
-    # This process's own integrity level is readable and is a known level:
+    # foreground_description names the window's process, which the errors rely on. Given a known window: the actual
+    # foreground window can be none for a moment while the activation changes.
+    window = next(w for w in reversed(d.windows()) if w["pid"])
+    original_foreground = fe_win32.user32.GetForegroundWindow
+    try:
+        fe_win32.user32.GetForegroundWindow = lambda: window["id"]
+        expect(f"(pid {window['pid']}, " in d.foreground_description(), True)
+        d.window_pid = lambda hwnd: None  # as when the window was destroyed meanwhile
+        expect(d.foreground_description().endswith(" of an unknown program"), True)
+        del d.window_pid
+    finally:
+        fe_win32.user32.GetForegroundWindow = original_foreground
+    # This process's own name and integrity level are readable, and the level is a known one:
+    expect(fe_win32._process_name(os.getpid()).lower().endswith(".exe"), True)
     expect(fe_win32._integrity_level(os.getpid()) in ("system", "high", "medium", "low", "untrusted"), True)
+    # A UIAccess program (e.g. the Sticky Keys prompt) is above medium, which is why it discards our input:
+    expect([fe_win32._integrity_name(rid) for rid in (0x2000, 0x2010, 0x3000)], ["medium", "medium+0x10", "high"])
+    expect(fe.win_process_table().get(os.getpid()), os.getppid())  # shares fe_win32's process snapshot
 
+    def blocked(action, message):
+        try:
+            action()
+        except fe_win32.InputBlockedError as e:
+            expect(message in str(e), True)
+            expect("press" in str(e), True)  # points at the commands that still work
+            expect(e.error_type, "InputBlocked")  # its errorType with --json
+        else:
+            raise AssertionError(f"the discarded input was not detected ({message})")
+
+    sent = []
     original = fe_win32.user32.SetCursorPos
     try:
         fe_win32.user32.SetCursorPos = lambda x, y: 0  # as when Windows discards the input
+        d._send = lambda inputs, what: sent.append(what)  # no real input
+        target = (d.left + 10, d.top + 10)
         d.pointer = lambda: (-999, -999)  # the pointer never reaches the target
+        blocked(lambda: d.move(*target), "discarded the synthetic pointer input")
+        d.pointer = lambda: target  # already there, as for a second click at the same point
+        blocked(lambda: d.click(*target), "discarded the synthetic pointer input")
+        # Keys are refused before any are sent, also where fe.py skips the focus check (--force):
+        sent.clear()
+        blocked(lambda: d.key("Return"), "no keyboard input was sent")
+        blocked(lambda: d.type_text("x"), "no keyboard input was sent")
+        # Without --force, the focus check says why focus could not be taken, rather than only where it is:
+        d.focused_window = lambda: 0
+        blocked(lambda: fe.ensure_front_end_focus(None, d), "no keyboard input was sent")
+        expect(sent, [])
+
+        # fe.py --json reports it as errorType InputBlocked, so that it can be told from other screen errors:
+        class Server:
+            def __init__(self, port):
+                pass
+
+            @contextlib.contextmanager
+            def screen(self):
+                yield d
+
+        servers = fe.Server, fe.select_server
+        fe.Server, fe.select_server = Server, lambda server: None
         try:
-            d.move(d.left + 10, d.top + 10)
-        except fe_win32.InputBlockedError as e:
-            expect("discarded the synthetic pointer input" in str(e), True)
-            expect("press" in str(e), True)  # points at the commands that still work
-        else:
-            raise AssertionError("move did not detect the discarded input")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                expect(fe.main(["--json", "key", "--force", "Return"]), 1)
+            expect(json.loads(out.getvalue())["errorType"], "InputBlocked")
+        finally:
+            fe.Server, fe.select_server = servers
     finally:
         fe_win32.user32.SetCursorPos = original
 
@@ -259,7 +311,7 @@ def run_tests(r, launched=False):
     r.test("many requests on one connection", lambda: many_requests(r))
     r.test("errors without a request id", lambda: unattributed_error(r))
     if sys.platform.startswith("win"):
-        r.test("Windows input-block detection", lambda: windows_input_block_detection())
+        r.test("Windows input-block detection", windows_input_block_detection)
 
     r.eval(TEST_NOTEBOOK)
     time.sleep(1)
