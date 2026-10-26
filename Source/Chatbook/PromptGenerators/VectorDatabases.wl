@@ -139,8 +139,13 @@ $usearchIndexIdleTime = 300;
 (* Set when the user declines a download, repair or retry prompt. For the rest of the session, databases that are not
    installed (or are damaged) are skipped instead of prompting again, until InstallVectorDatabases[] is evaluated: *)
 $vectorDBDownloadDeclined = False;
-$downloadProgress         = <| |>;
-$downloadStatus           = <| |>;
+
+(* Set to the failure of a download that failed in a chat. For the rest of the session, later chats don't download
+   again (databases that are not installed, or are damaged, are skipped), until InstallVectorDatabases[] is evaluated: *)
+$vectorDBDownloadFailure = None;
+
+$downloadProgress = <| |>;
+$downloadStatus   = <| |>;
 
 (* Databases that could not be loaded even after downloading them again. They are skipped for the rest of the session,
    until InstallVectorDatabases[] downloads them again: *)
@@ -175,6 +180,9 @@ $maxExtraFiles     = 20;
 (*Remote Content Locations*)
 $cdnBaseVectorDatabasesURL   = "https://files.wolframcdn.com/VectorDatabases";
 $cloudBaseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
+
+(* Each database is downloaded from these in order, until one succeeds (see downloadVectorDatabaseSources): *)
+$vectorDBDownloadSources = { "CDN", "Cloud" };
 
 $vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
     <|
@@ -279,9 +287,9 @@ $$vectorDatabaseSource = $$vectorDatabase | _? DirectoryQ | _? FileExistsQ;
 (* Size and modification time (as a Unix time) of an index file: *)
 $$indexFingerprint = { _Integer, _Integer };
 
-(* Returned instead of a loaded database that is skipped, because its download was declined or because it could not be
-   loaded even after downloading it again: *)
-$$skippedVectorDB = $$downloadDeclined | Missing[ "LoadFailed", ___ ];
+(* Returned instead of a loaded database that is skipped, because its download was declined or failed, or because it
+   could not be loaded even after downloading it again: *)
+$$skippedVectorDB = $$downloadSkipped | Missing[ "LoadFailed", ___ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -555,11 +563,12 @@ registerVectorDatabase // endDefinition;
 (*InstallVectorDatabases*)
 InstallVectorDatabases // beginDefinition;
 
-(* An explicit request to install, so a download that was declined earlier in the session is offered again, and
-   databases that could not be loaded are downloaded again: *)
+(* An explicit request to install, so a download that was declined or failed earlier in the session is tried again,
+   and databases that could not be loaded are downloaded again: *)
 InstallVectorDatabases[ ] :=
     catchMine @ Block[ { $pacletVectorDBDirectory = None, $suppressDownloadWarning = True },
         $vectorDBDownloadDeclined = False;
+        $vectorDBDownloadFailure  = None;
         installVectorDatabases[ ]
     ];
 
@@ -574,6 +583,8 @@ installVectorDatabases[ ] := Enclose[
     Module[ { dir, snippets, snippetDir },
         reinstallFailedVectorDBs[ ];
         dir = getVectorDBDirectory[ ];
+        (* The download failed, and its message has been shown (see catchDownloadFailure): *)
+        If[ MatchQ[ dir, Missing[ "DownloadFailed", _Failure ] ], throwTop @ Last @ dir ];
         If[ MatchQ[ dir, $$downloadDeclined ], throwFailure[ "VectorDatabaseDownloadDeclined" ] ];
         ConfirmBy[ dir, vectorDBDirectoryQ, "Location" ];
         snippets = ConfirmMatch[ InstallDocumentationResources[ ], _Success, "Snippets" ];
@@ -636,10 +647,10 @@ getVectorDBDirectory[ ] := Enclose[
         dir = SelectFirst[
             sources,
             vectorDBDirectoryQ,
-            ConfirmMatch[ downloadVectorDatabases[ ], $$downloadDeclined | _? vectorDBDirectoryQ, "Downloaded" ]
+            ConfirmMatch[ downloadVectorDatabases[ ], $$downloadSkipped | _? vectorDBDirectoryQ, "Downloaded" ]
         ];
 
-        If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
+        If[ MatchQ[ dir, $$downloadSkipped ], Throw @ dir ];
 
         If[ $CloudEvaluation && dir === $cloudVectorDBDirectory,
             (* Automatically delete downloaded vector databases when NotebookAssistantCloudResources is available: *)
@@ -660,15 +671,15 @@ getVectorDBDirectory // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*vectorDBDirectory*)
-(* The directory that databases are loaded from for searches ($vectorDBDirectory). After a download was declined, the
-   databases that are installed in the local directory can still be used (getVectorDB skips the others), and
+(* The directory that databases are loaded from for searches ($vectorDBDirectory). After a download was declined or
+   failed, the databases that are installed in the local directory can still be used (getVectorDB skips the others), and
    InstallVectorDatabases[] resolves the directory again: *)
 vectorDBDirectory // beginDefinition;
 
 vectorDBDirectory[ ] := vectorDBDirectory @ getVectorDBDirectory[ ];
 
-vectorDBDirectory[ declined: $$downloadDeclined ] :=
-    With[ { dir = $localVectorDBDirectory }, If[ DirectoryQ @ dir, $vectorDBDirectory = dir, declined ] ];
+vectorDBDirectory[ skipped: $$downloadSkipped ] :=
+    With[ { dir = $localVectorDBDirectory }, If[ DirectoryQ @ dir, $vectorDBDirectory = dir, skipped ] ];
 
 vectorDBDirectory[ dir_String ] := dir;
 
@@ -766,9 +777,15 @@ vectorDBFilesPresentQ // endDefinition;
 (*vectorDBIndexSizeValidQ*)
 vectorDBIndexSizeValidQ // beginDefinition;
 
+(* Without metadata for the version (see downloadedArchiveStatus), the index only needs to be non-empty (once it is
+   installed, its size is also checked against the manifest): *)
 vectorDBIndexSizeValidQ[ dir_String, name_String, version_String ] :=
-    With[ { expected = Lookup[ $vectorDBIndexSizes, Key @ { name, version } ] },
-        IntegerQ @ expected && FileByteCount @ FileNameJoin @ { dir, name <> "-vectors.usearch" } === expected
+    With[
+        {
+            expected = Lookup[ $vectorDBIndexSizes, Key @ { name, version } ],
+            size     = FileByteCount @ FileNameJoin @ { dir, name <> "-vectors.usearch" }
+        },
+        If[ IntegerQ @ expected, size === expected, IntegerQ @ size && size > 0 ]
     ];
 
 vectorDBIndexSizeValidQ // endDefinition;
@@ -868,9 +885,10 @@ fileFingerprint // endDefinition;
 (*indexHashValidQ*)
 indexHashValidQ // beginDefinition;
 
+(* An index can't be verified without metadata for its version (see downloadedArchiveStatus), so it is accepted: *)
 indexHashValidQ[ file_String, name_String, version_String ] :=
     With[ { expected = Lookup[ $vectorDBIndexHashes, Key @ { name, version } ] },
-        StringQ @ expected && Quiet @ FileHash[ file, "SHA256", All, "HexString" ] === expected
+        ! StringQ @ expected || Quiet @ FileHash[ file, "SHA256", All, "HexString" ] === expected
     ];
 
 indexHashValidQ // endDefinition;
@@ -1077,7 +1095,7 @@ restoreVectorDBBackup // endDefinition;
 (*downloadVectorDatabases*)
 downloadVectorDatabases // beginDefinition;
 
-(* Both of these need a condition, since a definition without patterns or conditions is always tried first: *)
+(* All of these need a condition, since a definition without patterns or conditions is always tried first: *)
 downloadVectorDatabases[ ] /; ! $allowDownload :=
     Throw[ Missing[ "DownloadDisabled" ], $vdbTag ];
 
@@ -1085,8 +1103,17 @@ downloadVectorDatabases[ ] /; ! $allowDownload :=
 downloadVectorDatabases[ ] /; TrueQ @ $vectorDBDownloadDeclined :=
     Missing[ "DownloadDeclined" ];
 
+(* A download that failed is not tried again in later chats (InstallVectorDatabases[] clears the flag): *)
+downloadVectorDatabases[ ] /; FailureQ @ $vectorDBDownloadFailure :=
+    Missing[ "DownloadFailed", $vectorDBDownloadFailure ];
+
+(* A failed download doesn't abort the chat: its message is shown, and the databases that are not installed are
+   skipped (see $$skippedVectorDB): *)
 downloadVectorDatabases[ ] /; $allowDownload :=
-    downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
+    rememberVectorDBDownloadFailure @ catchDownloadFailure @ downloadVectorDatabases[
+        $localVectorDBDirectory,
+        $vectorDBDownloadURLs
+    ];
 
 (* Prompts are shown before the download lock is taken, so other kernels never have to wait for a dialog. The lock is
    taken for each download attempt instead (see downloadVectorDatabaseFiles), which checks again what still needs to be
@@ -1109,6 +1136,20 @@ downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
 ];
 
 downloadVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rememberVectorDBDownloadFailure*)
+rememberVectorDBDownloadFailure // beginDefinition;
+
+rememberVectorDBDownloadFailure[ failed: Missing[ "DownloadFailed", failure_ ] ] := (
+    $vectorDBDownloadFailure = failure;
+    failed
+);
+
+rememberVectorDBDownloadFailure[ result_ ] := result;
+
+rememberVectorDBDownloadFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1198,7 +1239,7 @@ downloadAndUnpackVectorDatabases // endDefinition;
 downloadVectorDatabaseFiles // beginDefinition;
 
 downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
-    Module[ { lock, pending, results, attempt, rate, round, sizes },
+    Module[ { lock, pending, results, attempt, rate, round, newRate, sizes },
 
         lock    = FileNameJoin @ { dir, "download.lock" };
         pending = Keys @ urls;
@@ -1209,7 +1250,11 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
         While[ pending =!= { } && attempt <= $maxDownloadAttempts,
 
             If[ attempt > 1,
-                sizes = Total @ Cases[ Lookup[ $vectorDBDownloadSizes, pending, 0 ], _Integer? Positive ];
+                (* Archives that were kept (see finishVectorDatabaseDownload) are not downloaded again: *)
+                sizes = Total @ Cases[
+                    Lookup[ $vectorDBDownloadSizes, Select[ pending, ! archiveKeptQ @ results[ # ] & ], 0 ],
+                    _Integer? Positive
+                ];
                 If[ ! confirmDownloadRetry[ StringRiffle[ pending, ", " ], sizes, rate ],
                     Scan[ (results[ # ] = Missing[ "Cancelled" ]) &, pending ];
                     Break[ ]
@@ -1218,11 +1263,14 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
                 $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
             ];
 
-            { round, rate } = ConfirmMatch[
-                withDownloadLock[ lock, downloadVectorDatabaseAttempt[ dir, KeyTake[ urls, pending ], attempt ] ],
+            { round, newRate } = ConfirmMatch[
+                withDownloadLock[ lock, downloadVectorDatabaseAttempt[ dir, KeyTake[ urls, pending ] ] ],
                 { _Association, _ },
                 "Attempt"
             ];
+
+            (* An attempt in which nothing was downloaded successfully doesn't tell how long downloading takes: *)
+            If[ newRate =!= None, rate = newRate ];
 
             results = Join[ results, round ];
             pending = Select[ pending, ! StringQ @ results[ # ] & ];
@@ -1240,27 +1288,32 @@ downloadVectorDatabaseFiles // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*downloadVectorDatabaseAttempt*)
 (* Evaluated while holding the download lock. Returns { results, rate }, where results is an association of name ->
-   installed directory, or a Failure for those that could not be installed, and rate is the observed download rate. *)
+   installed directory, or a Failure for those that could not be installed, and rate is the observed download rate (or
+   None, see observedDownloadRate). *)
 downloadVectorDatabaseAttempt // beginDefinition;
 
-downloadVectorDatabaseAttempt[ dir_String, urls_Association, attempt_Integer ] := Enclose[
-    Catch @ Module[ { names, installed, start, round, rate, results },
+downloadVectorDatabaseAttempt[ dir_String, urls_Association ] := Enclose[
+    Catch @ Module[ { names, installed, kept, results, rate },
 
         prepareVectorDBDirectory[ dir, Keys @ urls ];
 
         (* Another kernel may have installed some of them while we were waiting for the lock: *)
         names     = ConfirmMatch[ vectorDBsToInstall[ dir, Keys @ urls ], { ___String }, "Names" ];
         installed = AssociationMap[ FileNameJoin @ { dir, # } &, Complement[ Keys @ urls, names ] ];
-        If[ names === { }, Throw @ { installed, None } ];
 
-        start = AbsoluteTime[ ];
-        round = ConfirmBy[ downloadVectorDatabaseRound[ dir, KeyTake[ urls, names ], attempt ], AssociationQ, "Round" ];
-        rate  = observedDownloadRate[ Total @ Lookup[ $downloadProgress, names, 0 ], AbsoluteTime[ ] - start ];
+        (* Verified archives that could not be unpacked are kept, and unpacking them was just tried again (see
+           tryUnpackingVectorDatabase), so they are not downloaded again: *)
+        kept  = AssociationMap[ keptArchiveFailure[ dir, # ] &, Select[ names, FileExistsQ @ vectorDBArchiveFile[ dir, # ] & ] ];
+        names = Select[ names, ! KeyExistsQ[ kept, # ] & ];
+        If[ names === { }, Throw @ { Join[ installed, kept ], None } ];
 
-        $progressText = downloadText[ "ProgressTextUnpackingFiles" ];
-        results = Association @ KeyValueMap[ #1 -> finishVectorDatabaseDownload[ dir, #1, #2 ] &, round ];
+        { results, rate } = ConfirmMatch[
+            downloadVectorDatabaseSources[ dir, KeyTake[ urls, names ] ],
+            { _Association, _ },
+            "Download"
+        ];
 
-        { Join[ installed, results ], rate }
+        { Join[ installed, kept, results ], rate }
     ],
     throwInternalFailure
 ];
@@ -1285,22 +1338,72 @@ prepareVectorDBDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*observedDownloadRate*)
-observedDownloadRate // beginDefinition;
-observedDownloadRate[ bytes_? Positive, time_? Positive ] := bytes / time;
-observedDownloadRate[ _, _ ] := None;
-observedDownloadRate // endDefinition;
+(*downloadVectorDatabaseSources*)
+(* Downloads each database from the CDN first. Those that could not be downloaded from there are downloaded from the
+   cloud right away, without asking, so the retry prompt is only shown after both have failed. Returns { results, rate },
+   where rate is the download rate of the successful downloads (see observedDownloadRate). *)
+downloadVectorDatabaseSources // beginDefinition;
+
+downloadVectorDatabaseSources[ dir_String, urls_Association ] := Enclose[
+    Module[ { pending, results, bytes, time, sourceURLs, statuses, roundBytes, roundTime },
+
+        pending = Keys @ urls;
+        results = <| |>;
+        bytes   = 0;
+        time    = 0;
+
+        Do[
+            sourceURLs = Select[ AssociationMap[ urls[ #, source ] &, pending ], StringQ ];
+            If[ sourceURLs =!= <| |>,
+                If[ source =!= First @ $vectorDBDownloadSources,
+                    $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
+                ];
+
+                { statuses, roundBytes, roundTime } = ConfirmMatch[
+                    downloadVectorDatabaseRound[ dir, sourceURLs ],
+                    { _Association, _Integer, _? NumberQ },
+                    "Round"
+                ];
+
+                If[ roundBytes > 0, bytes += roundBytes; time += roundTime ];
+
+                $progressText = downloadText[ "ProgressTextUnpackingFiles" ];
+                results = Join[ results, Association @ KeyValueMap[ #1 -> finishVectorDatabaseDownload[ dir, #1, #2 ] &, statuses ] ];
+                pending = Select[ pending, fallbackDownloadQ @ results[ # ] & ]
+            ],
+            { source, $vectorDBDownloadSources }
+        ];
+
+        { results, observedDownloadRate[ bytes, time ] }
+    ],
+    throwInternalFailure
+];
+
+downloadVectorDatabaseSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fallbackDownloadQ*)
+(* Whether a database is downloaded from the next source: it could not be downloaded (or was not tried) from the
+   previous one. A verified archive that could not be unpacked is kept instead (see finishVectorDatabaseDownload). *)
+fallbackDownloadQ // beginDefinition;
+fallbackDownloadQ[ Failure[ "VectorDatabaseDownloadFailed", _ ] | _Missing ] := True;
+fallbackDownloadQ[ _ ] := False;
+fallbackDownloadQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*downloadVectorDatabaseRound*)
+(* Downloads from the given URLs in parallel. Returns { statuses, bytes, time }, where statuses is an association of
+   name -> download status, and bytes is the number of bytes that were downloaded successfully in the given time: *)
 downloadVectorDatabaseRound // beginDefinition;
 
-downloadVectorDatabaseRound[ dir_String, urls_Association, attempt_Integer ] := Enclose[
-    Module[ { tasks },
+downloadVectorDatabaseRound[ dir_String, urls_Association ] := Enclose[
+    Module[ { start, tasks, statuses },
+        start = AbsoluteTime[ ];
         $downloadStatus = <| |>;
         tasks = ConfirmMatch[
-            KeyValueMap[ submitVectorDatabaseDownload[ dir, #1, downloadURL[ #2, attempt ] ] &, urls ],
+            KeyValueMap[ submitVectorDatabaseDownload[ dir, #1, #2 ] &, urls ],
             { ___TaskObject },
             "Tasks"
         ];
@@ -1311,12 +1414,27 @@ downloadVectorDatabaseRound[ dir_String, urls_Association, attempt_Integer ] := 
             deleteDownloadFiles @ Keys @ urls,
             PropagateAborts -> True
         ];
-        AssociationMap[ Lookup[ $downloadStatus, #, <| |> ] &, Keys @ urls ]
+        statuses = AssociationMap[ Lookup[ $downloadStatus, #, <| |> ] &, Keys @ urls ];
+        { statuses, successfulDownloadBytes @ statuses, AbsoluteTime[ ] - start }
     ],
     throwInternalFailure
 ];
 
 downloadVectorDatabaseRound // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*successfulDownloadBytes*)
+(* Error responses (e.g. a fast 404) are not counted, since they don't tell how long a download takes: *)
+successfulDownloadBytes // beginDefinition;
+
+successfulDownloadBytes[ statuses_Association ] := Total @ Cases[
+    Values @ statuses,
+    KeyValuePattern @ { "StatusCode" -> 200, "File" -> file_String } :>
+        Replace[ Quiet @ FileByteCount @ file, Except[ _Integer ] -> 0 ]
+];
+
+successfulDownloadBytes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1332,14 +1450,6 @@ deleteDownloadFiles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*downloadURL*)
-(* Alternate between the CDN and the cloud on each attempt: *)
-downloadURL // beginDefinition;
-downloadURL[ urls_Association, attempt_Integer ] := If[ OddQ @ attempt, urls[ "CDN" ], urls[ "Cloud" ] ];
-downloadURL // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*submitVectorDatabaseDownload*)
 submitVectorDatabaseDownload // beginDefinition;
 
@@ -1351,8 +1461,8 @@ submitVectorDatabaseDownload[ dir_String, name_String, url_String ] :=
             url,
             tmp,
             HandlerFunctions -> <|
-                "TaskProgress" -> setDownloadProgress @ name,
-                "TaskFinished" -> setDownloadFinished @ name
+                "TaskProgress" -> setDownloadProgress[ name, tmp ],
+                "TaskFinished" -> setDownloadFinished[ name, tmp ]
             |>,
             HandlerFunctionsKeys -> { "ByteCountDownloaded", "ByteCountTotal", "StatusCode" }
         ]
@@ -1380,13 +1490,21 @@ waitForDownloadHandlers // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*finishVectorDatabaseDownload*)
+(* Checks a downloaded archive and installs it. Returns the installed directory, or a failure:
+    * VectorDatabaseDownloadFailed if the download is not valid. The archive is deleted, and the database is downloaded
+      again from the next source (see downloadVectorDatabaseSources).
+    * VectorDatabaseUnpackFailed if a verified archive could not be installed (e.g. there is not enough disk space). The
+      archive is kept, so that only installing it is tried again (see tryUnpackingVectorDatabase). *)
 finishVectorDatabaseDownload // beginDefinition;
 
 finishVectorDatabaseDownload[ dir_String, name_String, status_Association ] :=
-    With[ { tmp = status[ "File" ], zip = FileNameJoin @ { dir, name <> ".zip" } },
+    With[ { tmp = status[ "File" ], zip = vectorDBArchiveFile[ dir, name ] },
         Replace[
             finishVectorDatabaseDownload0[ dir, name, status, zip ],
-            failure_Failure :> (Quiet[ DeleteFile /@ Select[ { tmp, zip }, StringQ[ # ] && FileExistsQ[ # ] & ] ]; failure)
+            failure_Failure :> (
+                Quiet[ DeleteFile /@ Select[ If[ archiveKeptQ @ failure, { tmp }, { tmp, zip } ], StringQ[ # ] && FileExistsQ[ # ] & ] ];
+                failure
+            )
         ]
     ];
 
@@ -1396,42 +1514,67 @@ finishVectorDatabaseDownload // endDefinition;
 finishVectorDatabaseDownload0 // beginDefinition;
 
 finishVectorDatabaseDownload0[ dir_, name_, status_, zip_ ] := Enclose[
-    Module[ { tmp, size },
+    Module[ { tmp, size, verification, unpacked },
         tmp = ConfirmBy[ status[ "File" ], StringQ, "File" ];
         ConfirmAssert[ status[ "StatusCode" ] === 200, "StatusCode" ];
         ConfirmAssert[ FileExistsQ @ tmp, "Exists" ];
         size = FileByteCount @ tmp;
         ConfirmAssert[ validDownloadSizeQ[ size, $vectorDBDownloadSizes @ name, status[ "ByteCountTotal" ] ], "Size" ];
-        ConfirmAssert[ validDownloadHashQ[ name, tmp ], "Hash" ];
+        verification = ConfirmMatch[ vectorDBArchiveStatus[ name, tmp ], "Verified"|"Unverified", "Hash" ];
         ConfirmBy[ RenameFile[ tmp, zip, OverwriteTarget -> True ], FileExistsQ, "Rename" ];
-        ConfirmBy[ unpackVectorDatabase @ zip, DirectoryQ, "Unpack" ]
+        unpacked = unpackVectorDatabase @ zip;
+        Which[
+            DirectoryQ @ unpacked,
+                unpacked,
+            verification === "Verified",
+                Failure[ "VectorDatabaseUnpackFailed", <| "Name" -> name, "File" -> zip, "Reason" -> unpacked, "ArchiveKept" -> True |> ],
+            (* Without metadata, an archive is only valid if it can be unpacked: *)
+            True,
+                ConfirmBy[ unpacked, DirectoryQ, "Unpack" ]
+        ]
     ],
-    Function[ failure, Failure[ "VectorDatabaseDownloadFailed", <| "Name" -> name, "Reason" -> failure |> ] ]
+    Function[ failure, Failure[ "VectorDatabaseDownloadFailed", <| "Name" -> name, "URL" -> status[ "URL" ], "Reason" -> failure |> ] ]
 ];
 
 finishVectorDatabaseDownload0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*validDownloadSizeQ*)
-(* The download must match the known size and, when available, the size reported by the server: *)
-validDownloadSizeQ // beginDefinition;
-validDownloadSizeQ[ size_Integer? Positive, known_Integer? Positive, total_ ] :=
-    size === known && (! IntegerQ @ total || size === total);
-validDownloadSizeQ[ _, _, _ ] := False;
-validDownloadSizeQ // endDefinition;
+(*vectorDBArchiveFile*)
+vectorDBArchiveFile // beginDefinition;
+vectorDBArchiveFile[ dir_String, name_String ] := FileNameJoin @ { dir, name <> ".zip" };
+vectorDBArchiveFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*validDownloadHashQ*)
-validDownloadHashQ // beginDefinition;
+(*archiveKeptQ*)
+archiveKeptQ // beginDefinition;
+archiveKeptQ[ Failure[ _, KeyValuePattern[ "ArchiveKept" -> True ] ] ] := True;
+archiveKeptQ[ _ ] := False;
+archiveKeptQ // endDefinition;
 
-validDownloadHashQ[ name_String, file_String ] :=
-    With[ { expected = Lookup[ $vectorDBDownloadHashes, Key @ { name, $vectorDatabases[ name, "Version" ] } ] },
-        StringQ @ expected && Quiet @ FileHash[ file, "SHA256", All, "HexString" ] === expected
-    ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*keptArchiveFailure*)
+keptArchiveFailure // beginDefinition;
 
-validDownloadHashQ // endDefinition;
+keptArchiveFailure[ dir_String, name_String ] :=
+    Failure[ "VectorDatabaseUnpackFailed", <| "Name" -> name, "File" -> vectorDBArchiveFile[ dir, name ], "ArchiveKept" -> True |> ];
+
+keptArchiveFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBArchiveStatus*)
+(* See downloadedArchiveStatus: *)
+vectorDBArchiveStatus // beginDefinition;
+
+vectorDBArchiveStatus[ name_String, file_String ] := downloadedArchiveStatus[
+    Lookup[ $vectorDBDownloadHashes, Key @ { name, $vectorDatabases[ name, "Version" ] } ],
+    file
+];
+
+vectorDBArchiveStatus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1446,17 +1589,25 @@ tryUnpackingVectorDatabases // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*tryUnpackingVectorDatabase*)
+(* Unpacks an archive that is left over from an earlier install attempt. Archives that are not valid are deleted. A
+   verified archive is kept if it still can't be unpacked, so that it doesn't need to be downloaded again. An archive
+   that can't be verified (there is no metadata for its version) is only valid if it can be unpacked. *)
 tryUnpackingVectorDatabase // beginDefinition;
 
 tryUnpackingVectorDatabase[ zip_? FileExistsQ ] :=
     Quiet @ With[ { name = FileBaseName @ zip },
-        If[ vectorDBNameQ @ name && validDownloadSizeQ[ FileByteCount @ zip, $vectorDBDownloadSizes @ name, None ] && validDownloadHashQ[ name, zip ],
-            With[ { res = catchQuiet @ unpackVectorDatabase @ zip },
-                If[ ! DirectoryQ @ res, DeleteFile @ zip ];
-                res
+        Replace[
+            If[ vectorDBNameQ @ name && validDownloadSizeQ[ FileByteCount @ zip, $vectorDBDownloadSizes @ name, None ],
+                vectorDBArchiveStatus[ name, zip ],
+                "Invalid"
             ],
-            DeleteFile @ zip;
-            Missing[ "InvalidArchive", zip ]
+            {
+                "Invalid" :> (DeleteFile @ zip; Missing[ "InvalidArchive", zip ]),
+                verification_ :> With[ { res = catchQuiet @ unpackVectorDatabase @ zip },
+                    If[ ! DirectoryQ @ res && verification =!= "Verified", DeleteFile @ zip ];
+                    res
+                ]
+            }
         ]
     ];
 
@@ -1537,13 +1688,12 @@ taskWait // endDefinition;
 (*setDownloadProgress*)
 setDownloadProgress // beginDefinition;
 
-setDownloadProgress[ name_String ] := setDownloadProgress[ name, ## ] &;
+setDownloadProgress[ name_String, file_String ] := setDownloadProgress[ name, file, ## ] &;
 
-setDownloadProgress[ name_, as_Association ] := (
+(* Handlers of a download that was replaced (e.g. by the download from the next source) are ignored: *)
+setDownloadProgress[ name_, file_, as_Association ] /; currentDownloadQ[ name, file ] := (
     If[ TrueQ @ Positive @ as[ "ByteCountDownloaded" ], $downloadProgress[ name ] = as[ "ByteCountDownloaded" ] ];
-    If[ IntegerQ @ as[ "ByteCountTotal" ] && AssociationQ @ $downloadStatus[ name ],
-        $downloadStatus[ name, "ByteCountTotal" ] = as[ "ByteCountTotal" ]
-    ];
+    If[ IntegerQ @ as[ "ByteCountTotal" ], $downloadStatus[ name, "ByteCountTotal" ] = as[ "ByteCountTotal" ] ];
 );
 
 setDownloadProgress[ _, ___ ] := Null;
@@ -1555,14 +1705,21 @@ setDownloadProgress // endDefinition;
 (*setDownloadFinished*)
 setDownloadFinished // beginDefinition;
 
-setDownloadFinished[ name_String ] := setDownloadFinished[ name, ## ] &;
+setDownloadFinished[ name_String, file_String ] := setDownloadFinished[ name, file, ## ] &;
 
-setDownloadFinished[ name_, as_Association ] /; AssociationQ @ $downloadStatus[ name ] :=
+setDownloadFinished[ name_, file_, as_Association ] /; currentDownloadQ[ name, file ] :=
     $downloadStatus[ name, "StatusCode" ] = Lookup[ as, "StatusCode", None ];
 
 setDownloadFinished[ _, ___ ] := Null;
 
 setDownloadFinished // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*currentDownloadQ*)
+currentDownloadQ // beginDefinition;
+currentDownloadQ[ name_String, file_String ] := MatchQ[ $downloadStatus[ name ], KeyValuePattern[ "File" -> file ] ];
+currentDownloadQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1680,8 +1837,8 @@ loadVectorDB // beginDefinition;
 loadVectorDB[ name_String ] := Enclose[
     Catch @ Module[ { root, loaded },
         (* Resolve the directory first so that any download prompts/messages are not suppressed: *)
-        root = ConfirmMatch[ $vectorDBDirectory, $$downloadDeclined | _? DirectoryQ, "RootDirectory" ];
-        If[ MatchQ[ root, $$downloadDeclined ], Throw @ root ];
+        root = ConfirmMatch[ $vectorDBDirectory, $$downloadSkipped | _? DirectoryQ, "RootDirectory" ];
+        If[ MatchQ[ root, $$downloadSkipped ], Throw @ root ];
         (* Not offered for download again after it could not be loaded even after downloading it again: *)
         If[ MemberQ[ $vectorDBLoadFailures, name ], Throw @ Missing[ "LoadFailed", name ] ];
         loaded = catchQuiet @ loadVectorDB0 @ name;
@@ -1736,19 +1893,27 @@ repairVectorDB[ name_String ] := Enclose[
         (* Downloads are not offered again after they were declined, so the database is skipped: *)
         If[ TrueQ @ $vectorDBDownloadDeclined, Throw @ Missing[ "DownloadDeclined", name ] ];
 
+        (* Downloads are not tried again after one failed, so the database is skipped: *)
+        If[ FailureQ @ $vectorDBDownloadFailure, Throw @ Missing[ "DownloadFailed", $vectorDBDownloadFailure ] ];
+
         If[ TrueQ @ $promptRedownload && ! confirmRedownload[ "DownloadTypeVectorDatabase", { name }, $vectorDBDownloadSizes @ name ],
             Throw @ declineVectorDBDownload[ ]
         ];
 
         clearVectorDBCaches @ name;
 
-        (* Loading failed, so it is downloaded again even if its files look intact: *)
+        (* Loading failed, so it is downloaded again even if its files look intact. If the download fails, its message is
+           shown, and the database is skipped (see catchDownloadFailure): *)
         dir = Block[ { $promptRedownload = False, $forcedVectorDBDownloads = Union[ $forcedVectorDBDownloads, { name } ] },
-            ConfirmMatch[ downloadVectorDatabases[ root, KeyTake[ urls, { name } ] ], $$downloadDeclined | _? DirectoryQ, "Download" ]
+            ConfirmMatch[
+                rememberVectorDBDownloadFailure @ catchDownloadFailure @ downloadVectorDatabases[ root, KeyTake[ urls, { name } ] ],
+                $$downloadSkipped | _? DirectoryQ,
+                "Download"
+            ]
         ];
 
-        (* A retry prompt was declined: *)
-        If[ MatchQ[ dir, $$downloadDeclined ], Throw @ dir ];
+        (* A retry prompt was declined, or the download failed: *)
+        If[ MatchQ[ dir, $$downloadSkipped ], Throw @ dir ];
 
         Replace[ catchQuiet @ loadVectorDB0 @ name, Except[ $$loadedVectorDB ] :> vectorDBLoadFailed @ name ]
     ],

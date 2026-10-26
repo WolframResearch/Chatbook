@@ -4,6 +4,7 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
 HoldComplete[
     `$$downloadDeclined,
+    `$$downloadSkipped,
     `$$prompt,
     `$defaultSources,
     `$downloadPromptFunction,
@@ -13,9 +14,11 @@ HoldComplete[
     `$maxSelectedSources,
     `$promptRedownload,
     `$versionString,
+    `catchDownloadFailure,
     `confirmDownloadPrompt,
     `confirmDownloadRetry,
     `confirmRedownload,
+    `downloadedArchiveStatus,
     `downloadText,
     `downloadTextTemplate,
     `estimateDownloadTime,
@@ -25,6 +28,8 @@ HoldComplete[
     `getStreamSnippets,
     `initializeVectorDatabases,
     `insertContextPrompt,
+    `observedDownloadRate,
+    `validDownloadSizeQ,
     `vectorDBSearch,
     `withDownloadLock
 ];
@@ -42,6 +47,10 @@ $$prompt = $$string | { $$string... } | $$chatMessages;
 
 (* Returned instead of an install location (or a loaded database) when the user declined a download: *)
 $$downloadDeclined = Missing[ "DownloadDeclined", ___ ];
+
+(* Returned instead of an install location (or a loaded database) when a download is skipped, because the user declined
+   it or because it failed earlier in the session (see catchDownloadFailure): *)
+$$downloadSkipped = Missing[ "DownloadDeclined" | "DownloadFailed", ___ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -63,6 +72,12 @@ $maxDownloadAttempts   = 3;
 $promptRedownload      = True;
 $longDownloadThreshold = 30;
 $fallbackDownloadRate  = 2.0*^6;
+
+(* Download rates are only estimated from successful downloads of at least this many bytes (see observedDownloadRate): *)
+$minDownloadRateBytes = 1*^6;
+
+(* The failures of downloads that catchDownloadFailure catches: *)
+$$downloadFailureName = "VectorDatabaseDownloadFailed" | "SnippetDownloadFailed" | "DownloadLockFailed" | "DownloadLockTimeout";
 
 (* Seconds for each attempt to take a download lock, and the total time to wait for it: *)
 $downloadLockPollInterval = 10;
@@ -232,6 +247,75 @@ estimateDownloadTime[ bytes_? Positive, rate_? Positive ] := N[ bytes / rate ];
 estimateDownloadTime[ bytes_? Positive, _ ] := N[ bytes / $fallbackDownloadRate ];
 estimateDownloadTime[ _, _ ] := 0.0;
 estimateDownloadTime // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*observedDownloadRate*)
+(* The download rate in bytes per second, given the number of bytes of the successful (status 200) downloads and the
+   time they took. Error responses (e.g. a fast 404) and tiny bodies say nothing about how long a download would take,
+   so callers only count successful downloads, and anything less than $minDownloadRateBytes gives None, which makes
+   estimateDownloadTime use the fallback rate: *)
+observedDownloadRate // beginDefinition;
+observedDownloadRate[ bytes_Integer, seconds_? Positive ] /; bytes >= $minDownloadRateBytes := N[ bytes / seconds ];
+observedDownloadRate[ _, _ ] := None;
+observedDownloadRate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*validDownloadSizeQ*)
+(* A download must match the known size of its archive, and the size reported by the server if it was reported. If
+   there is no metadata for the archive's version, only the size reported by the server is checked (the archive must
+   then be unpacked and validated before it is installed): *)
+validDownloadSizeQ // beginDefinition;
+
+validDownloadSizeQ[ size_Integer? Positive, known_Integer? Positive, total_ ] :=
+    size === known && (! IntegerQ @ total || size === total);
+
+validDownloadSizeQ[ size_Integer? Positive, _Missing, total_ ] :=
+    ! IntegerQ @ total || size === total;
+
+validDownloadSizeQ[ _, _, _ ] := False;
+
+validDownloadSizeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*downloadedArchiveStatus*)
+(* "Verified" if a downloaded archive has the expected SHA-256 hash and "Invalid" if it doesn't. If there is no
+   metadata for the archive's version (e.g. Scripts/UpdateDownloadMetadata.wls was not run after a version change), it
+   is "Unverified", and it is only installed if it can be unpacked and its contents are valid. A verified archive is
+   kept if it can't be installed, so that only installing it needs to be tried again. *)
+downloadedArchiveStatus // beginDefinition;
+
+downloadedArchiveStatus[ expected_String, file_String ] :=
+    If[ Quiet @ FileHash[ file, "SHA256", All, "HexString" ] === expected, "Verified", "Invalid" ];
+
+downloadedArchiveStatus[ _Missing, _String ] :=
+    "Unverified";
+
+downloadedArchiveStatus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*catchDownloadFailure*)
+(* Catches the failure of a download (its message has already been shown) and returns Missing[ "DownloadFailed",
+   failure ] instead, so that a chat is not aborted by it and can continue without what could not be downloaded. Any
+   other failure is passed on. *)
+catchDownloadFailure // beginDefinition;
+catchDownloadFailure // Attributes = { HoldFirst };
+catchDownloadFailure[ eval_ ] := Catch[ eval, $catchTopTag, downloadFailureHandler ];
+catchDownloadFailure // endDefinition;
+
+
+downloadFailureHandler // beginDefinition;
+
+downloadFailureHandler[ failure: Failure[ tag_String, _ ], _ ] /; StringMatchQ[ tag, ___ ~~ "::" ~~ $$downloadFailureName ] :=
+    Missing[ "DownloadFailed", failure ];
+
+downloadFailureHandler[ value_, tag_ ] :=
+    Throw[ Unevaluated @ value, tag ];
+
+downloadFailureHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
