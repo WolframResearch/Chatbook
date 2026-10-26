@@ -3885,6 +3885,11 @@ makeCompactChatData[
         PerformanceGoal -> "Size"
     ];
 
+(* For asynchronous requests, sendChat writes "Data" to the output cell after submitting the request, so a chat that is
+   stopped in between has no data yet, and the final cell is written without it (#1709): *)
+makeCompactChatData[ message_, tag_, as_Association ] /; ! KeyExistsQ[ as, "Data" ] :=
+    Inherited;
+
 makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
