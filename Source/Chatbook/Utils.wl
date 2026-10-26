@@ -1191,7 +1191,7 @@ taskWaitYield // Options = { TimeConstraint -> Infinity };
 taskWaitYield[ tasks_List, opts: OptionsPattern[ ] ] :=
     WithCleanup[
         taskWaitYield[ #, opts ] & /@ tasks,
-        Scan[ If[ taskRunningQ @ #, Quiet @ TaskRemove @ # ] &, Cases[ tasks, _TaskObject ] ]
+        Scan[ If[ taskRunningQ @ #, removeTask @ # ] &, Cases[ tasks, _TaskObject ] ]
     ];
 
 taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[
@@ -1219,7 +1219,7 @@ taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[
                 timeConstraint
             ],
             (* Don't leave the task running if the wait ended early (time limit, stopped chat, abort, etc.): *)
-            If[ taskRunningQ @ task, Quiet @ TaskRemove @ task ]
+            If[ taskRunningQ @ task, removeTask @ task ]
         ];
 
         (* Return the task object: *)
