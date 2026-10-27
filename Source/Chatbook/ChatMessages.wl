@@ -311,7 +311,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         $lastSettings = settings;
         $lastMessages = processed;
 
-        foldContextImageMessage @ processed
+        removeAddedPromptTags @ foldContextImageMessage @ processed
     ];
 
 constructMessages // endDefinition;
@@ -386,24 +386,85 @@ addPrompts[ settings_Association, messages_List ] := Enclose[
     throwInternalFailure
 ];
 
+addPrompts[ None|"", { sysMessage_? addedPromptsMessageQ, messages___ } ] :=
+    { <| sysMessage, "Content" -> replaceAddedPrompts[ sysMessage[ "Content" ], None ] |>, messages };
+
 addPrompts[ None|"", messages_List ] :=
     messages;
 
 addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
     Module[ { systemPrompt, newPrompt, newMessage },
         systemPrompt = ConfirmBy[ Lookup[ sysMessage, "Content" ]             , StringQ     , "SystemPrompt" ];
-        newPrompt    = ConfirmBy[ StringJoin[ systemPrompt, "\n\n", prompt ]  , StringQ     , "NewPrompt"    ];
+        newPrompt    = ConfirmBy[ replaceAddedPrompts[ systemPrompt, prompt ] , StringQ     , "NewPrompt"    ];
         newMessage   = ConfirmBy[ Append[ sysMessage, "Content" -> newPrompt ], AssociationQ, "NewMessage"   ];
         { newMessage, messages }
     ]
 ];
 
 addPrompts[ prompt_String, { messages___ } ] := {
-    <| "Role" -> "System", "Content" -> prompt |>,
+    <| "Role" -> "System", "Content" -> wrapAddedPrompts @ prompt |>,
     messages
 };
 
 addPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addedPromptsMessageQ*)
+addedPromptsMessageQ // beginDefinition;
+
+addedPromptsMessageQ[ KeyValuePattern @ { "Role" -> "System", "Content" -> s_String } ] :=
+    StringContainsQ[ s, $addedPromptsOpen ];
+
+addedPromptsMessageQ[ _ ] :=
+    False;
+
+addedPromptsMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceAddedPrompts*)
+replaceAddedPrompts // beginDefinition;
+
+replaceAddedPrompts[ systemPrompt_String, prompt_ ] := StringRiffle[
+    Select[
+        { StringTrim @ removeAddedPrompts @ systemPrompt, wrapAddedPrompts @ prompt },
+        StringQ @ # && # =!= "" &
+    ],
+    "\n\n"
+];
+
+replaceAddedPrompts // endDefinition;
+
+
+wrapAddedPrompts // beginDefinition;
+wrapAddedPrompts[ None|"" ] := None;
+wrapAddedPrompts[ prompt_String ] := $addedPromptsOpen <> prompt <> $addedPromptsClose;
+wrapAddedPrompts // endDefinition;
+
+
+removeAddedPrompts // beginDefinition;
+removeAddedPrompts[ s_String ] := StringDelete[ s, $addedPromptsOpen ~~ ___ ~~ $addedPromptsClose ];
+removeAddedPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeAddedPromptTags*)
+removeAddedPromptTags // beginDefinition;
+
+removeAddedPromptTags[ data: KeyValuePattern[ "Messages" -> messages_List ] ] :=
+    <| data, "Messages" -> removeAddedPromptTags @ messages |>;
+
+removeAddedPromptTags[ { sys: KeyValuePattern @ { "Role" -> "System", "Content" -> s_String }, rest___ } ] :=
+    { <| sys, "Content" -> StringDelete[ s, { $addedPromptsOpen, $addedPromptsClose } ] |>, rest };
+
+removeAddedPromptTags[ other_ ] :=
+    other;
+
+removeAddedPromptTags // endDefinition;
+
+$addedPromptsOpen  = "<added-prompts>";
+$addedPromptsClose = "</added-prompts>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

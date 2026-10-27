@@ -278,5 +278,159 @@ VerificationTest[
     TestID   -> "FoldContextImageMessage-FoldsOnlyContextImageMessages"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Loop*)
+VerificationTest[
+    Module[ { cells, settings, marker, count, hasTags, first, data, saved, second, data2, saved2, third },
+        cells    = { Cell[ "Project codename: SILVERFISH", "Text" ], Cell[ "1 + 1", "Input" ] };
+        settings = <|
+            "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+            "Multimodal"       -> False,
+            "Prompts"          -> { "CUSTOM-PROMPT-XYZ" },
+            "UserInstructions" -> "USER-INSTRUCTIONS-XYZ"
+        |>;
+        marker = "IMPORTANT: Below is some metadata";
+        count  = Function[ messages,
+            With[ { s = messages[[ 1, "Content" ]] },
+                StringCount[ s, # ] & /@ { marker, "CUSTOM-PROMPT-XYZ", "USER-INSTRUCTIONS-XYZ", "SILVERFISH" }
+            ]
+        ];
+        { first, data } = Reap[
+            ConstructWorkspaceContextMessages[
+                cells,
+                settings,
+                { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "hi" |> }
+            ],
+            Wolfram`Chatbook`Common`$chatDataTag
+        ];
+        saved = Last @ Cases[ data, KeyValuePattern[ "Messages" -> m_ ] :> m, Infinity ];
+        { second, data2 } = Reap[
+            ConstructWorkspaceContextMessages[
+                cells,
+                settings,
+                Join[
+                    saved,
+                    {
+                        <| "Role" -> "Assistant", "Content" -> "calling tool", "ToolRequest" -> True |>,
+                        <| "Role" -> "User", "Content" -> "<tool_response>2</tool_response>", "ToolResponse" -> True |>
+                    }
+                ]
+            ],
+            Wolfram`Chatbook`Common`$chatDataTag
+        ];
+        saved2 = Last @ Cases[ data2, KeyValuePattern[ "Messages" -> m_ ] :> m, Infinity ];
+        third = ConstructWorkspaceContextMessages[
+            cells,
+            settings,
+            Join[
+                saved2,
+                {
+                    <| "Role" -> "Assistant", "Content" -> "calling tool again", "ToolRequest" -> True |>,
+                    <| "Role" -> "User", "Content" -> "<tool_response>3</tool_response>", "ToolResponse" -> True |>
+                }
+            ]
+        ];
+        hasTags = ! StringFreeQ[ #[[ 1, "Content" ]], "added-prompts" ] &;
+        {
+            count /@ { first, second, third },
+            hasTags /@ { first, second, third },
+            hasTags /@ { saved, saved2 },
+            StringStartsQ[ third[[ 1, "Content" ]], "sys" ]
+        }
+    ],
+    { ConstantArray[ { 1, 1, 1, 1 }, 3 ], { False, False, False }, { True, True }, True },
+    SameTest -> MatchQ,
+    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext"
+]
+
+VerificationTest[
+    {
+        Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys", "ctx" ],
+        Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys\n\n<added-prompts>old</added-prompts>", "new" ],
+        Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys\n\n<added-prompts>old</added-prompts>", None ],
+        Wolfram`Chatbook`Common`removeAddedPromptTags @ {
+            <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
+            <| "Role" -> "User", "Content" -> "literal <added-prompts> text" |>
+        },
+        Wolfram`Chatbook`Common`removeAddedPromptTags @ <|
+            "Messages" -> { <| "Role" -> "System", "Content" -> "<added-prompts>ctx</added-prompts>" |> }
+        |>
+    },
+    {
+        "sys\n\n<added-prompts>ctx</added-prompts>",
+        "sys\n\n<added-prompts>new</added-prompts>",
+        "sys",
+        {
+            <| "Role" -> "System", "Content" -> "sys\n\nctx" |>,
+            <| "Role" -> "User", "Content" -> "literal <added-prompts> text" |>
+        },
+        <| "Messages" -> { <| "Role" -> "System", "Content" -> "ctx" |> } |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection"
+]
+
+VerificationTest[
+    Module[ { listContent },
+        listContent = {
+            <| "Role" -> "System", "Content" -> { <| "Type" -> "Text", "Data" -> "sys" |> } |>,
+            <| "Role" -> "User", "Content" -> "hi" |>
+        };
+        {
+            Wolfram`Chatbook`ChatMessages`Private`addPrompts[ None, listContent ],
+            Wolfram`Chatbook`ChatMessages`Private`addPrompts[ "", listContent ],
+            Wolfram`Chatbook`ChatMessages`Private`addPrompts[
+                None,
+                { <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>old</added-prompts>" |> }
+            ]
+        } === { listContent, listContent, { <| "Role" -> "System", "Content" -> "sys" |> } }
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "AddPrompts-NoPromptKeepsMessages"
+]
+
+VerificationTest[
+    Module[ { result },
+        result = Wolfram`Chatbook`AugmentChatMessages[
+            { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "hi" |> },
+            <|
+                "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+                "Prompts"          -> { "CUSTOM-PROMPT-XYZ" },
+                "PromptGenerators" -> { },
+                "Tools"            -> { }
+            |>
+        ];
+        {
+            ListQ @ result,
+            FreeQ[ result, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+            ! FreeQ[ result, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
+        }
+    ],
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "AugmentChatMessages-NoAddedPromptTags"
+]
+
+VerificationTest[
+    Module[ { tagged, chat, saved },
+        tagged = {
+            <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
+            <| "Role" -> "User", "Content" -> "hi" |>,
+            <| "Role" -> "Assistant", "Content" -> "hello" |>
+        };
+        chat  = Wolfram`Chatbook`Actions`Private`constructChatObject @ tagged;
+        saved = Wolfram`Chatbook`Storage`Private`prepareMessagesForSaving[ tagged, <| "SaveSystemMessage" -> True |> ];
+        {
+            FreeQ[ Normal @ chat, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+            saved[[ 1, "Content" ]]
+        }
+    ],
+    { True, "sys\n\nctx" },
+    SameTest -> MatchQ,
+    TestID   -> "AddedPromptTags-RemovedFromChatObjectsAndSavedChats"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
 
