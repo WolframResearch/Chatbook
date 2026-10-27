@@ -99,7 +99,7 @@ VerificationTest[
     ],
     "The value of $$\\sin{x}$$ is shown.",
     SameTest -> MatchQ,
-    TestID   -> "TeX-Serialization-Stored-Boxes"
+    TestID   -> "TeX-Serialization-Stored-Boxes@@Tests/Formatting.wlt:80,1-103,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -131,7 +131,7 @@ VerificationTest[
         0
     },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Serialization-Skips-TeX-Export"
+    TestID   -> "TeX-Serialization-Skips-TeX-Export@@Tests/Formatting.wlt:110,1-135,2"
 ]
 
 (* The same holds for math in tables and headings: *)
@@ -154,7 +154,7 @@ VerificationTest[
         0
     },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Serialization-Table-And-Heading"
+    TestID   -> "TeX-Serialization-Table-And-Heading@@Tests/Formatting.wlt:138,1-158,2"
 ]
 
 (* TeX boxes that do not have their TeX source still go through TeX export: *)
@@ -181,7 +181,7 @@ VerificationTest[
     ],
     { "Old EXPORTED box", 1 },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Serialization-Without-Input"
+    TestID   -> "TeX-Serialization-Without-Input@@Tests/Formatting.wlt:161,1-185,2"
 ]
 
 (* The math prompt is requested every time the math is serialized, not only the first time: *)
@@ -195,7 +195,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Serialization-Math-Prompt"
+    TestID   -> "TeX-Serialization-Math-Prompt@@Tests/Formatting.wlt:188,1-199,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -209,7 +209,7 @@ VerificationTest[
     FormatChatOutput[ "Cost: \\$5 and \\$6" ],
     RawBoxes @ Cell @ TextData @ { "Cost: $5 and $6" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-Dollar@@Tests/Formatting.wlt:80,1-85,2"
+    TestID   -> "Markdown-Escaped-Dollar@@Tests/Formatting.wlt:208,1-213,2"
 ]
 
 (* Escapes have to be restored before inline code is formatted. Otherwise the escape sentinel is still
@@ -223,7 +223,19 @@ VerificationTest[
         " next"
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-Dollar-In-Inline-Code@@Tests/Formatting.wlt:90,1-99,2"
+    TestID   -> "Markdown-Escaped-Dollar-In-Inline-Code@@Tests/Formatting.wlt:218,1-227,2"
+]
+
+(* Text right before a code block is still formatted as markdown when the response contains an escape: *)
+VerificationTest[
+    Cases[
+        FormatChatOutput[ "## Heading\n\n- Item\n\n---\n\nCost: \\$5\n\n```wl\n1 + 1\n```" ],
+        Cell[ _, style: "InlineSection"|"InlineItem"|"MarkdownDelimiter"|"ChatCodeBlock", ___ ] :> style,
+        Infinity
+    ],
+    { "InlineSection", "InlineItem", "MarkdownDelimiter", "ChatCodeBlock" },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-Escaped-Blocks-Before-Code-Block@@Tests/Formatting.wlt:230,1-239,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -235,7 +247,7 @@ VerificationTest[
     FormatChatOutput[ "Use the wolfram_language_evaluator tool with snake__case__name or x___y___z." ],
     RawBoxes @ Cell @ TextData @ { "Use the wolfram_language_evaluator tool with snake__case__name or x___y___z." },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Intraword-Underscores@@Tests/Formatting.wlt:106,1-111,2"
+    TestID   -> "Markdown-Intraword-Underscores@@Tests/Formatting.wlt:246,1-251,2"
 ]
 
 VerificationTest[
@@ -252,7 +264,7 @@ VerificationTest[
         ")."
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Underscore-Emphasis@@Tests/Formatting.wlt:113,1-128,2"
+    TestID   -> "Markdown-Underscore-Emphasis@@Tests/Formatting.wlt:253,1-268,2"
 ]
 
 (* Underscores inside words are not escaped when serialized, since they can't mark emphasis: *)
@@ -263,7 +275,7 @@ VerificationTest[
     },
     { "Use the wolfram_language_evaluator tool.", "Rename my__var to \\_private or \\_\\_init\\_\\_" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Intraword-Underscores-Serialization@@Tests/Formatting.wlt:131,1-139,2"
+    TestID   -> "Markdown-Intraword-Underscores-Serialization@@Tests/Formatting.wlt:271,1-279,2"
 ]
 
 (* Asterisks can still mark emphasis inside words: *)
@@ -271,7 +283,7 @@ VerificationTest[
     FormatChatOutput[ "un*frigging*believable" ],
     RawBoxes @ Cell @ TextData @ { "un", StyleBox[ "frigging", FontSlant -> Italic ], "believable" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Intraword-Asterisks@@Tests/Formatting.wlt:142,1-147,2"
+    TestID   -> "Markdown-Intraword-Asterisks@@Tests/Formatting.wlt:282,1-287,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -288,7 +300,7 @@ VerificationTest[
         " for details"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Ref-Link@@Tests/Formatting.wlt:155,1-164,2"
+    TestID   -> "Inline-Code-Ref-Link@@Tests/Formatting.wlt:295,1-304,2"
 ]
 
 (* The same holds when the symbol name inside the link was escaped: *)
@@ -300,7 +312,7 @@ VerificationTest[
         " for details"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Ref-Link-Escaped-Name@@Tests/Formatting.wlt:167,1-176,2"
+    TestID   -> "Inline-Code-Ref-Link-Escaped-Name@@Tests/Formatting.wlt:307,1-316,2"
 ]
 
 (* Only a self-referential link is rewritten this way. A label that disagrees with the reference carries
@@ -319,7 +331,7 @@ VerificationTest[
         " for details"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Ref-Link-Mismatched-Name@@Tests/Formatting.wlt:180,1-195,2"
+    TestID   -> "Inline-Code-Ref-Link-Mismatched-Name@@Tests/Formatting.wlt:320,1-335,2"
 ]
 
 (* Combination of link around the function head and escaped brackets around the arguments. *)
@@ -331,7 +343,7 @@ VerificationTest[
     ],
     { "[42]." },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:198,1-207,2"
+    TestID   -> "Markdown-Escaped-Brackets-After-Link@@Tests/Formatting.wlt:338,1-347,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -345,7 +357,7 @@ VerificationTest[
     ],
     "/\\_/\\\n( o.o )\n > ^ <",
     SameTest -> MatchQ,
-    TestID   -> "Markdown-ASCII-Art-Backslashes@@Tests/Formatting.wlt:213,1-221,2"
+    TestID   -> "Markdown-ASCII-Art-Backslashes@@Tests/Formatting.wlt:353,1-361,2"
 ]
 
 VerificationTest[
@@ -359,7 +371,7 @@ VerificationTest[
     ],
     ToCharacterCode /@ { " /\\_/\\\\\n( o.o )\n > ^ <" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:223,1-235,2"
+    TestID   -> "Markdown-TextFence-Unescapes-ASCII-Art@@Tests/Formatting.wlt:363,1-375,2"
 ]
 
 VerificationTest[
@@ -373,7 +385,7 @@ VerificationTest[
     ],
     { "print('\\\\')" },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:237,1-249,2"
+    TestID   -> "Markdown-CodeFence-Preserves-Code-Backslashes@@Tests/Formatting.wlt:377,1-389,2"
 ]
 
 VerificationTest[
@@ -384,7 +396,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:251,1-260,2"
+    TestID   -> "Markdown-ASCII-Art-Not-ToolCall@@Tests/Formatting.wlt:391,1-400,2"
 ]
 
 VerificationTest[
@@ -395,7 +407,7 @@ VerificationTest[
     ],
     { _Cell },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-External-Slash-ToolCall@@Tests/Formatting.wlt:262,1-271,2"
+    TestID   -> "Markdown-External-Slash-ToolCall@@Tests/Formatting.wlt:402,1-411,2"
 ]
 
 VerificationTest[
@@ -411,7 +423,7 @@ VerificationTest[
     (* Thoughts are formatted as markdown, so escaped backslashes are displayed the same way as in chat output: *)
     ToCharacterCode @ "/\\_/\\\n( o.o )\n > ^ <",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:273,1-287,2"
+    TestID   -> "Thinking-Preserves-ASCII-Art@@Tests/Formatting.wlt:413,1-427,2"
 ]
 
 VerificationTest[
@@ -423,7 +435,7 @@ VerificationTest[
     ],
     "fish & chips /\\_/\\",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML@@Tests/Formatting.wlt:289,1-299,2"
+    TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML@@Tests/Formatting.wlt:429,1-439,2"
 ]
 
 VerificationTest[
@@ -439,7 +451,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:301,1-315,2"
+    TestID   -> "Markdown-TextFence-Block-Separators@@Tests/Formatting.wlt:441,1-455,2"
 ]
 
 VerificationTest[
@@ -450,7 +462,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-TextFence-Text-Before-Code@@Tests/Formatting.wlt:317,1-326,2"
+    TestID   -> "Markdown-TextFence-Text-Before-Code@@Tests/Formatting.wlt:457,1-466,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -476,7 +488,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Code-Block-Result@@Tests/Formatting.wlt:334,1-352,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Code-Block-Result@@Tests/Formatting.wlt:474,1-492,2"
 ]
 
 (* Escapes are only removed from the text around tool calls, not from the tool call itself: *)
@@ -491,7 +503,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Raw-Text@@Tests/Formatting.wlt:355,1-367,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Raw-Text@@Tests/Formatting.wlt:495,1-507,2"
 ]
 
 (* Tool calls keep the same line breaks around them as they do in text without escapes: *)
@@ -510,7 +522,7 @@ VerificationTest[
         { "Cost $5: \n", Cell[ _, "InlineToolCall", ___ ], "\n", Cell[ _, "InlineToolCall", ___ ], "\nDone." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Line-Breaks@@Tests/Formatting.wlt:370,1-386,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Line-Breaks@@Tests/Formatting.wlt:510,1-526,2"
 ]
 
 (* A bad tool call is discarded by /retry, and escapes are still handled in the discarded text: *)
@@ -539,7 +551,7 @@ VerificationTest[
         Column[ { RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nOops, that cost $5." }, ___ ] }, ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:389,1-415,2"
+    TestID   -> "Markdown-Escaped-ToolCall-Retry@@Tests/Formatting.wlt:529,1-555,2"
 ]
 
 (* Consecutive discarded tool calls are grouped into a single opener, with one row per tool call: *)
@@ -573,7 +585,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Discarded-ToolCalls-Grouped"
+    TestID   -> "Discarded-ToolCalls-Grouped@@Tests/Formatting.wlt:558,1-589,2"
 ]
 
 (* Tool call openers use the "ToolIconCall<name>" resource for each button state, falling back to the generic icon: *)
@@ -588,7 +600,7 @@ VerificationTest[
     ],
     { "ToolIconCallGenericTool", "ToolIconCallWebFetcher" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCall-Opener-Icons"
+    TestID   -> "ToolCall-Opener-Icons@@Tests/Formatting.wlt:592,1-604,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -606,7 +618,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:423,1-433,2"
+    TestID   -> "Placeholder-Boxes@@Tests/Formatting.wlt:612,1-622,2"
 ]
 
 (* Placeholder allows arbitrary label expressions, so these are formatted too by wrapping the already-parsed
@@ -620,7 +632,7 @@ VerificationTest[
     ],
     FrameBox @ RowBox @ { "your", " ", "data" },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:437,1-447,2"
+    TestID   -> "Placeholder-Expression-Label@@Tests/Formatting.wlt:626,1-636,2"
 ]
 
 (* String labels can contain escaped quotes: *)
@@ -636,7 +648,7 @@ VerificationTest[
     ],
     FrameBox[ "\"{{\\\"Feb 12 2026\\\", 10}, {\\\"Mar 05 2026\\\", 14}, ...}\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:450,1-463,2"
+    TestID   -> "Placeholder-Escaped-Quotes@@Tests/Formatting.wlt:639,1-652,2"
 ]
 
 (* Placeholder takes at most one argument, so empty or multiple arguments are not valid labels and are left as-is: *)
@@ -644,7 +656,7 @@ VerificationTest[
     StringToBoxes[ "f[Placeholder[a, b], Placeholder[]]", "WL" ],
     boxes_ /; FreeQ[ boxes, TagBox[ _, "Placeholder", ___ ] ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:466,1-471,2"
+    TestID   -> "Placeholder-Invalid-Arguments-Unchanged@@Tests/Formatting.wlt:655,1-660,2"
 ]
 
 (* The full formatting path renders the placeholder in finished chat output: *)
@@ -657,7 +669,7 @@ VerificationTest[
     ],
     FrameBox[ "\"your data\"" ],
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:474,1-484,2"
+    TestID   -> "Placeholder-Formatted-Output@@Tests/Formatting.wlt:663,1-673,2"
 ]
 
 (* While streaming, code is rendered from plain strings, so the placeholder appears as embedded linear syntax: *)
@@ -671,7 +683,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:487,1-498,2"
+    TestID   -> "Placeholder-Streaming@@Tests/Formatting.wlt:676,1-687,2"
 ]
 
 (* A placeholder that has not finished streaming in yet is still rendered: *)
@@ -682,7 +694,7 @@ VerificationTest[
     ],
     { __ },
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:501,1-509,2"
+    TestID   -> "Placeholder-Streaming-Partial@@Tests/Formatting.wlt:690,1-698,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code instead of losing the
@@ -694,7 +706,7 @@ VerificationTest[
     ],
     "```wl\ndata = Placeholder[\"your data\"];\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:513,1-521,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip@@Tests/Formatting.wlt:702,1-710,2"
 ]
 
 (* Expression labels round-trip through serialization as well: *)
@@ -705,7 +717,7 @@ VerificationTest[
     ],
     "```wl\nDateListPlot[Placeholder[your data]]\n```",
     SameTest -> MatchQ,
-    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:524,1-532,2"
+    TestID   -> "Placeholder-Serialization-RoundTrip-Expression-Label@@Tests/Formatting.wlt:713,1-721,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -718,7 +730,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[1, 0, 0]", "WL" ],
     TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:540,1-545,2"
+    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:729,1-734,2"
 ]
 
 (* Every supported color model is converted: *)
@@ -741,7 +753,7 @@ VerificationTest[
         { "XYZColorSwatchTemplate"      , XYZColor[ 0.5, 0.5, 0.5 ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:548,1-568,2"
+    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:737,1-757,2"
 ]
 
 (* LightDarkSwitched and ThemeColor typeset to their own template boxes rather than a "...ColorSwatchTemplate": *)
@@ -756,7 +768,7 @@ VerificationTest[
         { "LightDarkSwitched1", KeyValuePattern[ "light" -> RGBColor[ 1, 0, 0 ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:571,1-583,2"
+    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:760,1-772,2"
 ]
 
 VerificationTest[
@@ -770,7 +782,7 @@ VerificationTest[
         { "ThemeColorBlended", KeyValuePattern @ { "frac1" -> 0.3, "name1" -> "Foreground", "frac2" -> 0.7, "name2" -> "Background" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:585,1-597,2"
+    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:774,1-786,2"
 ]
 
 (* Swatches are substituted in place inside larger expressions: *)
@@ -791,7 +803,7 @@ VerificationTest[
         "]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:600,1-618,2"
+    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:789,1-807,2"
 ]
 
 (* Arguments that are not literal numbers (symbols, patterns, unevaluated expressions) do not typeset as swatches in the
@@ -800,7 +812,7 @@ VerificationTest[
     StringToBoxes[ "{RGBColor[Red, Green, Blue], Hue[N[1/3]], RGBColor[1, 0], Cases[expr, RGBColor[r_, g_, b_]]}", "WL" ],
     boxes_ /; FreeQ[ boxes, _TemplateBox ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:622,1-627,2"
+    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:811,1-816,2"
 ]
 
 (* When a color is not converted, special boxes inside its arguments are still formatted: *)
@@ -808,7 +820,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[Placeholder[\"red\"], 0, 0]", "WL" ],
     RowBox @ { "RGBColor", "[", RowBox @ { TagBox[ FrameBox[ "\"red\"" ], "Placeholder" ], ",", "0", ",", "0" }, "]" },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:630,1-635,2"
+    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:819,1-824,2"
 ]
 
 (* The full formatting path renders swatches in finished chat output, both in code and in sandbox output rows: *)
@@ -823,7 +835,7 @@ VerificationTest[
         { "Output"  , TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:638,1-650,2"
+    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:827,1-839,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code: *)
@@ -834,7 +846,7 @@ VerificationTest[
     ],
     "```wl\n{RGBColor[1, 0, 0], Hue[0.3], GrayLevel[0.5]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:653,1-661,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:842,1-850,2"
 ]
 
 (* LightDarkSwitched and ThemeColor, including their one-argument and blended variants, round-trip as well: *)
@@ -848,7 +860,7 @@ VerificationTest[
     ],
     "```wl\n{LightDarkSwitched[RGBColor[1, 0, 0], RGBColor[0, 1, 0]], LightDarkSwitched[RGBColor[1, 0, 0]], ThemeColor[\"Background\"], ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:664,1-675,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:853,1-864,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -870,7 +882,7 @@ VerificationTest[
         "ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:682,1-697,2"
+    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:871,1-886,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -890,7 +902,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:707,1-717,2"
+    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:896,1-906,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -903,7 +915,7 @@ VerificationTest[
     Wolfram`Chatbook`Formatting`Private`activeToolProgressIndicator[ ],
     RawBoxes @ TagBox[ _, "ChatbookActiveToolProgress" ],
     SameTest -> MatchQ,
-    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:725,1-730,2"
+    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:914,1-919,2"
 ]
 
 VerificationTest[
@@ -916,7 +928,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:732,1-743,2"
+    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:921,1-932,2"
 ]
 
 VerificationTest[
@@ -932,7 +944,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:745,1-759,2"
+    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:934,1-948,2"
 ]
 
 VerificationTest[
@@ -945,7 +957,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:761,1-772,2"
+    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:950,1-961,2"
 ]
 
 VerificationTest[
@@ -970,7 +982,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:774,1-797,2"
+    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:963,1-986,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -985,5 +997,5 @@ VerificationTest[
     ],
     { _Cell },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock@@Tests/Formatting.wlt:801,1-812,2"
+    TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock@@Tests/Formatting.wlt:990,1-1001,2"
 ]
