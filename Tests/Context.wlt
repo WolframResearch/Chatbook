@@ -116,4 +116,167 @@ VerificationTest[
     TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:112,1-117,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Selected Graphics*)
+VerificationTest[
+    $plotCells = {
+        Cell[ "Some text", "Text" ],
+        Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 2 Pi } ], "Output" ]
+    };
+    $plotQuestion = <| "Role" -> "User", "Content" -> "Describe the selected plot in one short sentence." |>;
+    $plotInput    = { <| "Role" -> "System", "Content" -> "You are a helpful assistant." |>, $plotQuestion };
+    $plotSettings = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>, "Multimodal" -> True |>;
+    { $plotMessages, $plotData } = Reap[
+        ConstructWorkspaceContextMessages[ $plotCells, $plotSettings, $plotInput ],
+        Wolfram`Chatbook`Common`$chatDataTag
+    ];
+    $plotSaved = Last @ Cases[ $plotData, KeyValuePattern[ "Messages" -> m_ ] :> m, Infinity ];
+    { Length @ $plotMessages, Length @ $plotSaved },
+    { 2, 3 },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup"
+]
+
+VerificationTest[
+    {
+        Lookup[ $plotMessages, "Role" ],
+        StringQ @ $plotMessages[[ 1, "Content" ]],
+        Count[ $plotMessages[[ 1 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+        Count[ $plotMessages[[ 2 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+        Last @ $plotMessages[[ 2, "Content" ]]
+    },
+    {
+        { "System", "User" },
+        True,
+        0,
+        1,
+        <| "Type" -> "Text", "Data" -> "Describe the selected plot in one short sentence." |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage"
+]
+
+VerificationTest[
+    {
+        DeleteCases[ $plotSaved, _? Wolfram`Chatbook`Common`temporaryMessageQ ][[ 2 ]],
+        Wolfram`Chatbook`Common`$lastMessages[[ 3 ]]
+    },
+    { $plotQuestion, $plotQuestion },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages"
+]
+
+VerificationTest[
+    Module[ { toolLoop },
+        toolLoop = ConstructWorkspaceContextMessages[
+            $plotCells,
+            $plotSettings,
+            Join[
+                $plotSaved,
+                {
+                    <| "Role" -> "Assistant", "Content" -> "calling tool", "ToolRequest" -> True |>,
+                    <| "Role" -> "User", "Content" -> "<tool_response>2</tool_response>", "ToolResponse" -> True |>
+                }
+            ]
+        ];
+        {
+            Lookup[ toolLoop, "Role" ],
+            Count[ toolLoop, KeyValuePattern[ "Type" -> "Image" ], Infinity ]
+        }
+    ],
+    { { "System", "User", "Assistant", "User" }, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce"
+]
+
+VerificationTest[
+    Module[ { messages },
+        messages = ConstructWorkspaceContextMessages[ $plotCells, <| $plotSettings, "Multimodal" -> False |>, $plotInput ];
+        {
+            Lookup[ messages, "Role" ],
+            StringFreeQ[ messages[[ 1, "Content" ]], "MarkdownImageBox" ],
+            FreeQ[ messages, KeyValuePattern[ "Type" -> "Image" ] ]
+        }
+    ],
+    { { "System", "User" }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback"
+]
+
+VerificationTest[
+    Module[ { img1, img2 },
+        img1 = <| "Type" -> "Image", "Data" -> "img1" |>;
+        img2 = <| "Type" -> "Image", "Data" -> "img2" |>;
+        Wolfram`Chatbook`ChatModes`Context`Private`contextImageParts @ {
+            <| "Role" -> "User", "Content" -> { "a ![Image](attachment://content-1)", img1 } |>,
+            <| "Role" -> "User", "Content" -> { "b ![Image](attachment://content-1)", img1 } |>,
+            <| "Role" -> "User", "Content" -> {
+                <| "Type" -> "Text", "Data" -> "c ![Image](attachment://content-2)" |>,
+                img2
+            } |>
+        }
+    ],
+    {
+        { "![Image](attachment://content-1)", <| "Type" -> "Image", "Data" -> "img1" |> },
+        { "![Image](attachment://content-2)", <| "Type" -> "Image", "Data" -> "img2" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`ChatMessages`Private`mergeMessageData @ {
+        <| "Role" -> "System", "Content" -> "sys" |>,
+        <| "Role" -> "User", "Content" -> "temp", "Temporary" -> True |>,
+        <| "Role" -> "User", "Content" -> "input" |>
+    },
+    {
+        <| "Role" -> "System", "Content" -> "sys" |>,
+        <| "Role" -> "User", "Content" -> "temp", "Temporary" -> True |>,
+        <| "Role" -> "User", "Content" -> "input" |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate"
+]
+
+VerificationTest[
+    Module[ { images, generated },
+        images = Wolfram`Chatbook`ChatMessages`Private`makeContextImageMessage @ {
+            { "![Image](attachment://content-1)", <| "Type" -> "Image", "Data" -> "img" |> }
+        };
+        generated = <|
+            "Role"      -> "User",
+            "Content"   -> { "result", <| "Type" -> "Image", "Data" -> "other" |> },
+            "Temporary" -> True
+        |>;
+        Wolfram`Chatbook`ChatMessages`Private`foldContextImageMessage @ {
+            <| "Role" -> "System", "Content" -> "sys" |>,
+            images,
+            <| "Role" -> "User", "Content" -> "input" |>,
+            <| "Role" -> "Assistant", "Content" -> "out" |>,
+            generated,
+            <| "Role" -> "User", "Content" -> "next" |>
+        }
+    ],
+    {
+        <| "Role" -> "System", "Content" -> "sys" |>,
+        <|
+            "Role"    -> "User",
+            "Content" -> {
+                KeyValuePattern[ "Type" -> "Text" ],
+                <| "Type" -> "Text", "Data" -> "\n![Image](attachment://content-1)" |>,
+                <| "Type" -> "Image", "Data" -> "img" |>,
+                <| "Type" -> "Text", "Data" -> "input" |>
+            }
+        |>,
+        <| "Role" -> "Assistant", "Content" -> "out" |>,
+        KeyValuePattern @ { "Content" -> { "result", _ }, "Temporary" -> True },
+        <| "Role" -> "User", "Content" -> "next" |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "FoldContextImageMessage-FoldsOnlyContextImageMessages"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
+

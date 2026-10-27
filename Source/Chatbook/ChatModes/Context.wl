@@ -18,6 +18,7 @@ $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
 $contextPrompt              = None;
 $selectionPrompt            = None;
+$contextImages              = { };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \
@@ -274,8 +275,7 @@ getContextFromSelection[ chatNB_, nbo_NotebookObject, settings0_Association, opt
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
-            $notebookMetadataString     = getNotebookMetadataString @ nbo,
-            $countImageTokens           = countImageTokensQ @ settings0
+            $notebookMetadataString     = getNotebookMetadataString @ nbo
         },
         Module[ { settings, selectionData, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
@@ -307,9 +307,15 @@ getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_C
             getContextFromSelection0[ selectionData, settings ] /; MatchQ[ $selectionInfo, None|_Association ]
         ];
 
-getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
+getContextFromSelection0[ selectionData_Association, settings0_ ] := Enclose[
     Catch @ Module[
-        { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string, nbCtx },
+        {
+            images, settings, cellObjects, cells, len1, len2, before, selected, after, marked, messages, string,
+            nbCtx
+        },
+
+        images   = contextImagesAllowedQ @ settings0;
+        settings = <| settings0, "Multimodal" -> images |>;
 
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
         cells = ConfirmMatch[ LogChatTiming @ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
@@ -324,7 +330,20 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         { before, selected, after } = DeleteCases[ #, _? chatExcludedQ ] & /@ { before, selected, after };
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
-        messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
+        messages = ConfirmMatch[
+            Block[ { $multimodalMessages = images, $countImageTokens = images },
+                LogChatTiming @ makeChatMessages[ settings, marked, False ]
+            ],
+            { ___Association },
+            "Messages"
+        ];
+
+        $contextImages = ConfirmMatch[
+            If[ images, contextImageParts @ messages, { } ],
+            { ___List },
+            "ContextImages"
+        ];
+
         string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
 
         $contextPrompt   = processContextPromptString @ string;
@@ -345,14 +364,54 @@ getContextFromSelection0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*countImageTokensQ*)
-countImageTokensQ // beginDefinition;
-countImageTokensQ[ settings_ ] := countImageTokensQ[ settings, allowedMultimodalRoles @ settings ];
-countImageTokensQ[ settings_, All ] := True;
-countImageTokensQ[ settings_, "System" ] := True;
-countImageTokensQ[ settings_, { ___, "System", ___ } ] := True;
-countImageTokensQ[ settings_, roles_ ] := False;
-countImageTokensQ // endDefinition;
+(*contextImagesAllowedQ*)
+contextImagesAllowedQ // beginDefinition;
+
+contextImagesAllowedQ[ settings_Association ] :=
+    TrueQ @ settings[ "Multimodal" ] && contextImagesAllowedQ @ allowedMultimodalRoles @ settings;
+
+contextImagesAllowedQ[ All ] := True;
+contextImagesAllowedQ[ roles_List ] := MemberQ[ roles, "User" ];
+contextImagesAllowedQ[ _ ] := False;
+
+contextImagesAllowedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contextImageParts*)
+contextImageParts // beginDefinition;
+
+contextImageParts[ messages_List ] := DeleteDuplicatesBy[
+    Flatten[ contextImageParts /@ messages, 1 ],
+    Replace[ #, { { link_String, _ } :> link, { None, img_ } :> img } ] &
+];
+
+contextImageParts[ KeyValuePattern[ "Content" -> content_List ] ] := SequenceCases[
+    content,
+    { text: Repeated[ $$contextTextPart, { 0, 1 } ], img: KeyValuePattern[ "Type" -> "Image" ] } :>
+        { imageLink @ text, img }
+];
+
+contextImageParts[ _ ] :=
+    { };
+
+contextImageParts // endDefinition;
+
+$$contextTextPart = _String | KeyValuePattern @ { "Type" -> "Text", "Data" -> _String };
+
+
+imageLink // beginDefinition;
+
+imageLink[ ] := None;
+
+imageLink[ KeyValuePattern[ "Data" -> text_String ] ] := imageLink @ text;
+
+imageLink[ text_String ] := Last[
+    StringCases[ text, Shortest[ "![" ~~ Except[ "\n" ]... ~~ "](" ~~ Except[ ")" | "\n" ].. ~~ ")" ] ],
+    None
+];
+
+imageLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

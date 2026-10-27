@@ -311,7 +311,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         $lastSettings = settings;
         $lastMessages = processed;
 
-        processed
+        foldContextImageMessage @ processed
     ];
 
 constructMessages // endDefinition;
@@ -372,13 +372,16 @@ constructInlineMessages // endDefinition;
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, inline, sidebar, prompt },
-        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
-        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
-        sidebar   = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
-        prompt    = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
-        addPrompts[ prompt, messages ]
+    Block[ { $contextImages = { } },
+        Module[ { custom, workspace, inline, sidebar, prompt, withImages },
+            custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
+            workspace  = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+            inline     = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
+            sidebar    = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
+            prompt     = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
+            withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
+            addPrompts[ prompt, withImages ]
+        ]
     ],
     throwInternalFailure
 ];
@@ -401,6 +404,90 @@ addPrompts[ prompt_String, { messages___ } ] := {
 };
 
 addPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addContextImages*)
+addContextImages // beginDefinition;
+
+addContextImages[ messages_List, { } ] :=
+    messages;
+
+addContextImages[ messages_List, images: { __List } ] := Enclose[
+    Module[ { positions },
+        positions = Position[
+            messages,
+            KeyValuePattern[ "Role" -> "User" ]? (! toolMessageQ @ # &),
+            { 1 },
+            Heads -> False
+        ];
+        If[ positions === { },
+            messages,
+            ConfirmMatch[ Insert[ messages, makeContextImageMessage @ images, Last @ positions ], _List, "Inserted" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+addContextImages // endDefinition;
+
+
+makeContextImageMessage // beginDefinition;
+
+makeContextImageMessage[ images_List ] := <|
+    "Role"      -> "User",
+    "Content"   -> Flatten @ {
+        <| "Type" -> "Text", "Data" -> $contextImagesLabel |>,
+        Replace[
+            images,
+            {
+                { link_String, img_ } :> { <| "Type" -> "Text", "Data" -> "\n" <> link |>, img },
+                { _, img_ } :> img
+            },
+            { 1 }
+        ]
+    },
+    "Temporary" -> True
+|>;
+
+makeContextImageMessage // endDefinition;
+
+$contextImagesLabel = "\
+[Original images for the MarkdownImageBoxes in the notebook context. Each image follows its markdown link. \
+The user's message follows the images.]";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*foldContextImageMessage*)
+foldContextImageMessage // beginDefinition;
+
+foldContextImageMessage[ messages_List ] := SequenceReplace[
+    messages,
+    { images_? contextImageMessageQ, input: KeyValuePattern[ "Role" -> "User" ] } :>
+        <| input, "Content" -> Join[ images[ "Content" ], toContentPartList @ input[ "Content" ] ] |>
+];
+
+foldContextImageMessage // endDefinition;
+
+
+contextImageMessageQ // beginDefinition;
+
+contextImageMessageQ[ KeyValuePattern @ {
+    "Role"      -> "User",
+    "Content"   -> { KeyValuePattern[ "Data" -> $contextImagesLabel ], ___ },
+    "Temporary" -> True
+} ] := True;
+
+contextImageMessageQ[ _ ] := False;
+
+contextImageMessageQ // endDefinition;
+
+
+toContentPartList // beginDefinition;
+toContentPartList[ content_String ] := { <| "Type" -> "Text", "Data" -> content |> };
+toContentPartList[ content_Association ] := { content };
+toContentPartList[ content_List ] := Replace[ content, s_String :> <| "Type" -> "Text", "Data" -> s |>, { 1 } ];
+toContentPartList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1305,7 +1392,9 @@ mergeMessageData[ messages_List ] :=
 mergeMessageData // endDefinition;
 
 mergeMessageData0 // beginDefinition;
-mergeMessageData0[ messages_List ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+mergeMessageData0[ messages_List ] := Flatten[
+    mergeMessages /@ SplitBy[ messages, { Lookup[ #, "Role" ], temporaryMessageQ @ # } & ]
+];
 mergeMessageData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
