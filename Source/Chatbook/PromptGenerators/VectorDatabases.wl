@@ -1175,11 +1175,7 @@ confirmVectorDBRepair // beginDefinition;
 
 confirmVectorDBRepair[ dir_String, names: { ___String } ] :=
     With[ { damaged = If[ TrueQ @ $promptRedownload, Select[ names, vectorDBDamagedQ[ dir, # ] & ], { } ] },
-        damaged === { } || confirmRedownload[
-            "DownloadTypeVectorDatabases",
-            damaged,
-            Total @ Cases[ Lookup[ $vectorDBDownloadSizes, damaged, 0 ], _Integer? Positive ]
-        ]
+        damaged === { } || confirmRedownload @ damaged
     ];
 
 confirmVectorDBRepair // endDefinition;
@@ -1263,7 +1259,7 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
                     Break[ ]
                 ];
                 Pause[ attempt - 1 ];
-                $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
+                $progressText = downloadText[ "ProgressTextDownloadingSearchIndices" ]
             ];
 
             { round, newRate } = ConfirmMatch[
@@ -1359,7 +1355,7 @@ downloadVectorDatabaseSources[ dir_String, urls_Association ] := Enclose[
             sourceURLs = Select[ AssociationMap[ urls[ #, source ] &, pending ], StringQ ];
             If[ sourceURLs =!= <| |>,
                 If[ source =!= First @ $vectorDBDownloadSources,
-                    $progressText = downloadText[ "ProgressTextRetryingSearchIndices" ]
+                    $progressText = downloadText[ "ProgressTextDownloadingSearchIndices" ]
                 ];
 
                 { statuses, roundBytes, roundTime } = ConfirmMatch[
@@ -1899,7 +1895,7 @@ repairVectorDB[ name_String ] := Enclose[
         (* Downloads are not tried again after one failed, so the database is skipped: *)
         If[ FailureQ @ $vectorDBDownloadFailure, Throw @ Missing[ "DownloadFailed", $vectorDBDownloadFailure ] ];
 
-        If[ TrueQ @ $promptRedownload && ! confirmRedownload[ "DownloadTypeVectorDatabase", { name }, $vectorDBDownloadSizes @ name ],
+        If[ TrueQ @ $promptRedownload && ! confirmRedownload @ { name },
             Throw @ declineVectorDBDownload[ ]
         ];
 

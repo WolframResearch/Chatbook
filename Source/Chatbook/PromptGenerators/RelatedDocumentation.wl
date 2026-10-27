@@ -1513,7 +1513,7 @@ downloadStreamableSnippets[ dir_String, name_String, attempt_Integer, rate_ ] :=
     Catch @ Module[ { result },
 
         If[ attempt > 1,
-            If[ ! confirmDownloadRetry[ downloadTextTemplate[ "DownloadLabelDocumentation" ][ name ], snippetDownloadSize[ dir, name ], rate ],
+            If[ ! confirmDownloadRetry[ name, snippetDownloadSize[ dir, name ], rate ],
                 $snippetDownloadDeclined = True;
                 Throw @ Missing[ "Cancelled" ]
             ];
@@ -1564,7 +1564,7 @@ downloadAllStreamableSnippets[ ] := Enclose[
         (* The prompt stops the current chat when it is declined (see confirmDownloadPrompt), so the declined snippets are
            skipped instead of throwing a failure that would abort it: *)
         If[ damaged =!= { } && TrueQ @ $promptRedownload,
-            If[ ! confirmRedownload[ "DownloadTypeDocumentation", damaged, Total @ Cases[ Lookup[ $streamableSnippetSizes, damaged, 0 ], _Integer? Positive ] ],
+            If[ ! confirmRedownload @ damaged,
                 $snippetDownloadDeclined = True;
                 Throw @ Missing[ "DownloadDeclined" ]
             ]

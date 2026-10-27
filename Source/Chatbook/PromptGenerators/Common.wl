@@ -24,7 +24,6 @@ HoldComplete[
     `downloadTextTemplate,
     `ensureDownloadDirectory,
     `estimateDownloadTime,
-    `formatByteCount,
     `getNamedSnippet,
     `getSmallContextString,
     `getStreamSnippets,
@@ -215,9 +214,8 @@ defaultDownloadPrompt // beginDefinition;
 (* The text wraps to the window width, so it must not be wrapped in a fixed-width Pane that is wider than the window: *)
 defaultDownloadPrompt[ message_String ] := ChoiceDialog[
     Style[ message, "DialogTextCommon", FontSize -> 14 ],
-    { tr[ "DownloadButton" ] -> True, tr[ "CancelButton" ] -> False },
-    WindowSize  -> { $downloadDialogWidth, FitAll },
-    WindowTitle -> tr[ "DownloadDialogTitle" ]
+    { tr[ "OKButton" ] -> True, tr[ "CancelButton" ] -> False },
+    WindowSize -> { $downloadDialogWidth, FitAll }
 ];
 
 defaultDownloadPrompt // endDefinition;
@@ -227,15 +225,8 @@ defaultDownloadPrompt // endDefinition;
 (*confirmRedownload*)
 confirmRedownload // beginDefinition;
 
-(* typeKey is the text resource name describing what is being downloaded, e.g. "DownloadTypeVectorDatabases": *)
-confirmRedownload[ typeKey_String, names: { __String }, bytes_ ] := confirmDownloadPrompt @ downloadTextTemplate[
-    "DownloadRedownloadPrompt"
-][
-    <|
-        "type"  -> downloadText @ typeKey,
-        "names" -> StringRiffle[ ("\[Bullet] " <> #1 &) /@ names, "\n" ],
-        "size"  -> formatByteCount @ bytes
-    |>
+confirmRedownload[ names: { __String } ] := confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRedownloadPrompt" ][
+    StringRiffle[ ("\[Bullet] " <> #1 &) /@ names, "\n" ]
 ];
 
 confirmRedownload // endDefinition;
@@ -243,18 +234,15 @@ confirmRedownload // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*confirmDownloadRetry*)
-(* The label is only evaluated if the prompt is shown: *)
+(* Only asks if trying again would take long (estimated from the size and download rate). The label is only evaluated
+   if the prompt is shown: *)
 confirmDownloadRetry // beginDefinition;
 confirmDownloadRetry // Attributes = { HoldFirst };
 
 confirmDownloadRetry[ label_, bytes_, rate_ ] :=
-    With[ { time = estimateDownloadTime[ bytes, rate ] },
-        If[ time > $longDownloadThreshold,
-            confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRetryPrompt" ][
-                <| "label" -> label, "size" -> formatByteCount @ bytes, "time" -> formatDuration @ time |>
-            ],
-            True
-        ]
+    If[ estimateDownloadTime[ bytes, rate ] > $longDownloadThreshold,
+        confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRetryPrompt" ][ label ],
+        True
     ];
 
 confirmDownloadRetry // endDefinition;
@@ -359,23 +347,6 @@ ensureDownloadDirectory[ dir_String ] :=
     ];
 
 ensureDownloadDirectory // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*formatByteCount*)
-formatByteCount // beginDefinition;
-formatByteCount[ bytes_? Positive ] /; bytes >= 10^9 := downloadTextTemplate[ "DownloadSizeGB" ][ ToString @ Round[ bytes / 10.^9, 0.1 ] ];
-formatByteCount[ bytes_? Positive ] := downloadTextTemplate[ "DownloadSizeMB" ][ ToString @ Max[ 1, Round[ bytes / 10.^6 ] ] ];
-formatByteCount[ _ ] := downloadText[ "DownloadSizeUnknown" ];
-formatByteCount // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*formatDuration*)
-formatDuration // beginDefinition;
-formatDuration[ seconds_? NumberQ ] /; seconds >= 90 := downloadTextTemplate[ "DownloadDurationMinutes" ][ ToString @ Ceiling[ seconds / 60 ] ];
-formatDuration[ seconds_? NumberQ ] := downloadTextTemplate[ "DownloadDurationSeconds" ][ ToString @ Ceiling @ seconds ];
-formatDuration // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
