@@ -255,7 +255,10 @@ getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: Opti
     Module[ { focused, userNotebook },
         If[ TrueQ @ $WorkspaceChat,
             focused = settings[ "FocusedNotebook" ];
-            userNotebook = If[ notebookObjectQ @ focused, focused, getUserNotebook[ ] ];
+            userNotebook = If[ notebookObjectQ @ focused && TrueQ @ includedNotebookQ @ focused,
+                                focused,
+                                getUserNotebook[ ]
+                            ];
             ,
             userNotebook = $evaluationNotebook;
         ];

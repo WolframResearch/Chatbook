@@ -293,6 +293,87 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Locked Notebook Not Included*)
+
+(* A lock on an excluded or hidden notebook is treated as no lock: *)
+VerificationTest[
+    Table[
+        withFocusStubs[
+            Module[ { display },
+                display = Wolfram`Chatbook`ChatModes`Common`focusedNotebookDisplay[ $chatNB, None ];
+                {
+                    $writes[[ All, 3 ]],
+                    Cases[ display, Style[ "\[Checkmark] ", ShowContents -> True ], Infinity ],
+                    Cases[
+                        display,
+                        Verbatim[ RuleDelayed ][ Row @ { Style[ "\[Checkmark] ", ShowContents -> True ], rest___ }, _ ] :>
+                            Length @ { rest },
+                        Infinity
+                    ]
+                }
+            ],
+            $defaultNotebooks,
+            locked
+        ],
+        { locked, { $excludedNB, $hiddenNB } }
+    ],
+    ConstantArray[
+        {
+            { "Notebook A.nb" },
+            { Style[ "\[Checkmark] ", ShowContents -> True ] },
+            { 4 }
+        },
+        2
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebookNotIncluded"
+]
+
+VerificationTest[
+    Table[
+        withFocusStubs[
+            Block[
+                {
+                    CurrentChatSettings = Function[
+                        Switch[ #2, "WorkspaceChat", True, "FocusedNotebook", locked, _, Inherited ]
+                    ]
+                },
+                GetFocusedNotebook @ $chatNB
+            ]
+        ],
+        { locked, { $excludedNB, $hiddenNB, $paletteNB, $userNB2, Inherited } }
+    ],
+    { $userNB1, $userNB1, $userNB1, $userNB2, $userNB1 },
+    SameTest -> MatchQ,
+    TestID   -> "GetFocusedNotebook-LockedNotebookNotIncluded"
+]
+
+(* The context sent to the model never comes from an excluded or hidden locked notebook: *)
+VerificationTest[
+    Table[
+        withFocusStubs @ Catch[
+            Block[
+                {
+                    Wolfram`Chatbook`$WorkspaceChat = True,
+                    Wolfram`Chatbook`ChatModes`Context`Private`getNotebookMetadataString =
+                        Throw[ #, $contextSourceTag ] &
+                },
+                Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[
+                    $chatNB,
+                    <| "FocusedNotebook" -> locked |>
+                ]
+            ],
+            $contextSourceTag
+        ],
+        { locked, { $excludedNB, $hiddenNB, $paletteNB, $userNB2, Inherited } }
+    ],
+    { $userNB1, $userNB1, $userNB1, $userNB2, $userNB1 },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-LockedNotebookNotIncluded"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Sidebar*)
 
 (* The sidebar does not scan all notebooks when its own notebook is included: *)
