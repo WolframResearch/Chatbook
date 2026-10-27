@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`ChatbookTests`" ];
 HoldComplete[
     `$TestDefinitionsLoaded,
     `$TestNotebook;
+    `ConstructWorkspaceContextMessages;
     `CreateChatCell;
     `CreateChatCells;
     `CreateTestChatNotebook;
@@ -220,6 +221,38 @@ MarkdownRoundTrip[ md_String ] := MarkdownRoundTrip[ md, "Finished" ];
 MarkdownRoundTrip[ md_String, status_String ] :=
     Wolfram`Chatbook`CellToString @ Cell[ TextData @ FormatMarkdown[ md, status ], "ChatOutput" ];
 MarkdownRoundTrip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ConstructWorkspaceContextMessages*)
+ConstructWorkspaceContextMessages // ClearAll;
+
+ConstructWorkspaceContextMessages[ cells: { __Cell }, settings0_Association, messages: { __Association } ] :=
+    UsingFrontEnd @ Module[ { nb, settings },
+        WithCleanup[
+            nb = NotebookPut @ Notebook @ cells;
+            SelectionMove[ Last @ Cells @ nb, All, Cell ];
+            settings = <|
+                AbsoluteCurrentChatSettings @ nb,
+                "AllowSelectionContext" -> True,
+                "FocusedNotebook"       -> nb,
+                "PromptGenerators"      -> { },
+                "Tools"                 -> { },
+                settings0
+            |>;
+            Block[
+                {
+                    Wolfram`Chatbook`$WorkspaceChat             = True,
+                    Wolfram`Chatbook`Common`$evaluationNotebook = nb,
+                    Wolfram`Chatbook`Common`$multimodalMessages = TrueQ @ settings[ "Multimodal" ]
+                },
+                Wolfram`Chatbook`Common`constructMessages[ settings, messages ]
+            ],
+            NotebookClose @ nb
+        ]
+    ];
+
+ConstructWorkspaceContextMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
