@@ -1175,7 +1175,7 @@ confirmVectorDBRepair // beginDefinition;
 
 confirmVectorDBRepair[ dir_String, names: { ___String } ] :=
     With[ { damaged = If[ TrueQ @ $promptRedownload, Select[ names, vectorDBDamagedQ[ dir, # ] & ], { } ] },
-        damaged === { } || confirmRedownload @ damaged
+        damaged === { } || confirmRedownload[ FileNameJoin @ { dir, # } & /@ damaged ]
     ];
 
 confirmVectorDBRepair // endDefinition;
@@ -1254,7 +1254,7 @@ downloadVectorDatabaseFiles[ dir_String, urls_Association ] := Enclose[
                     Lookup[ $vectorDBDownloadSizes, Select[ pending, ! archiveKeptQ @ results[ # ] & ], 0 ],
                     _Integer? Positive
                 ];
-                If[ ! confirmDownloadRetry[ StringRiffle[ pending, ", " ], sizes, rate ],
+                If[ ! confirmDownloadRetry[ sizes, rate ],
                     Scan[ (results[ # ] = Missing[ "Cancelled" ]) &, pending ];
                     Break[ ]
                 ];
@@ -1895,7 +1895,7 @@ repairVectorDB[ name_String ] := Enclose[
         (* Downloads are not tried again after one failed, so the database is skipped: *)
         If[ FailureQ @ $vectorDBDownloadFailure, Throw @ Missing[ "DownloadFailed", $vectorDBDownloadFailure ] ];
 
-        If[ TrueQ @ $promptRedownload && ! confirmRedownload @ { name },
+        If[ TrueQ @ $promptRedownload && ! confirmRedownload @ { FileNameJoin @ { root, name } },
             Throw @ declineVectorDBDownload[ ]
         ];
 

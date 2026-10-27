@@ -311,7 +311,7 @@
 "ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
 "ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
 "DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of `1` did not complete. Would you like to try again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
 "ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
 "ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }

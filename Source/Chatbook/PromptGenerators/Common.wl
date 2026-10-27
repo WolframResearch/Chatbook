@@ -213,20 +213,53 @@ defaultDownloadPrompt // beginDefinition;
 
 (* The text wraps to the window width, so it must not be wrapped in a fixed-width Pane that is wider than the window: *)
 defaultDownloadPrompt[ message_String ] := ChoiceDialog[
-    Style[ message, "DialogTextCommon", FontSize -> 14 ],
+    Style[ downloadPromptContent @ message, "DialogTextCommon", FontSize -> 14 ],
     { tr[ "OKButton" ] -> True, tr[ "CancelButton" ] -> False },
-    WindowSize -> { $downloadDialogWidth, FitAll }
+    WindowSize  -> { $downloadDialogWidth, FitAll },
+    WindowTitle -> tr[ "WorkspaceWindowTitle" ]
 ];
 
 defaultDownloadPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadPromptContent*)
+(* Bulleted lines (e.g. the file paths from confirmRedownload) get a hanging indent, so that long paths that wrap stay
+   readable: *)
+downloadPromptContent // beginDefinition;
+
+downloadPromptContent[ message_String ] /; StringContainsQ[ message, "\[Bullet] " ] :=
+    Column[ downloadPromptLine /@ StringSplit[ message, "\n", All ], Spacings -> 0.4 ];
+
+downloadPromptContent[ message_String ] :=
+    message;
+
+downloadPromptContent // endDefinition;
+
+
+downloadPromptLine // beginDefinition;
+
+downloadPromptLine[ line_String ] /; StringStartsQ[ line, "\[Bullet] " ] := Grid[
+    { { "\[Bullet]", StringDrop[ line, 2 ] } },
+    Alignment -> { Left, Baseline },
+    Spacings  -> { 0.4, 0 },
+    ItemSize  -> { { Automatic, Fit } }
+];
+
+downloadPromptLine[ line_String ] :=
+    line;
+
+downloadPromptLine // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*confirmRedownload*)
+(* Lists the install locations (rather than the internal names) of what is damaged, so that users can check them, e.g.
+   for disk space or permissions: *)
 confirmRedownload // beginDefinition;
 
-confirmRedownload[ names: { __String } ] := confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRedownloadPrompt" ][
-    StringRiffle[ ("\[Bullet] " <> #1 &) /@ names, "\n" ]
+confirmRedownload[ paths: { __String } ] := confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRedownloadPrompt" ][
+    StringRiffle[ ("\[Bullet] " <> #1 &) /@ paths, "\n" ]
 ];
 
 confirmRedownload // endDefinition;
@@ -234,14 +267,12 @@ confirmRedownload // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*confirmDownloadRetry*)
-(* Only asks if trying again would take long (estimated from the size and download rate). The label is only evaluated
-   if the prompt is shown: *)
+(* Only asks if trying again would take long (estimated from the size and download rate): *)
 confirmDownloadRetry // beginDefinition;
-confirmDownloadRetry // Attributes = { HoldFirst };
 
-confirmDownloadRetry[ label_, bytes_, rate_ ] :=
+confirmDownloadRetry[ bytes_, rate_ ] :=
     If[ estimateDownloadTime[ bytes, rate ] > $longDownloadThreshold,
-        confirmDownloadPrompt @ downloadTextTemplate[ "DownloadRetryPrompt" ][ label ],
+        confirmDownloadPrompt @ downloadText[ "DownloadRetryPrompt" ],
         True
     ];
 
