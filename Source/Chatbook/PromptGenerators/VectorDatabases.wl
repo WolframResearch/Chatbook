@@ -2236,7 +2236,8 @@ vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
     Catch @ Module[ { vectorDBInfo },
         vectorDBInfo = getVectorDB @ dbName;
         If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ { } ];
-        ConfirmBy[ ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDB" ][ "Values" ], ListQ, "Values" ]
+        vectorDBInfo = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDB" ];
+        ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
     ],
     throwInternalFailure
 ];

@@ -674,4 +674,26 @@ VerificationTest[
     TestID   -> "FastVectorSearch-IdleRelease-Task@@Tests/VectorDatabases.wlt:617,1-675,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*All Values*)
+(* The full list of values of a database (e.g. for RelatedWolframAlphaQueries[ All ]): *)
+VerificationTest[
+    Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "NeuralNetRepositoryURIs", All, "Values" ],
+    { __String },
+    SameTest -> MatchQ,
+    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:681,1-686,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[
+        { "NeuralNetRepositoryURIs", "PacletRepositoryURIs" },
+        All,
+        "Values"
+    ],
+    { __String },
+    SameTest -> MatchQ,
+    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:688,1-697,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

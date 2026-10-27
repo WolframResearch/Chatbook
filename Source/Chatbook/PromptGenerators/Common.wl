@@ -410,7 +410,14 @@ withDownloadLock[ lock_String, eval_ ] := Catch[
                     Throw[ withHeldDownloadLock[ lock, eval ], $downloadLockTag ],
                     TimeConstraint -> $downloadLockAttemptTime
                 ],
-                { CreateDirectory::privv, CreateFile::privv, WithLock::lock, WithLock::stale, WithLock::unlock }
+                {
+                    CreateDirectory::dirf,
+                    CreateDirectory::privv,
+                    CreateFile::privv,
+                    WithLock::lock,
+                    WithLock::stale,
+                    WithLock::unlock
+                }
             ];
             Which[
                 (* WithLock fails right away if the lock file can't be created (e.g. the directory is not writable): *)
