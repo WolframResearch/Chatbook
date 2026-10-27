@@ -32,7 +32,7 @@ getFocusedNotebook[ obj: $$feObj ] /; ! TrueQ @ CurrentChatSettings[ obj, "Works
 getFocusedNotebook[ obj: $$feObj ] := Enclose[
     Module[ { locked },
         locked = ConfirmMatch[ getLockedNotebook @ obj, _NotebookObject | None, "Locked" ];
-        If[ notebookObjectQ @ locked, locked, getUserNotebook[ ] ]
+        If[ notebookObjectQ @ locked && TrueQ @ includedNotebookQ @ locked, locked, getUserNotebook[ ] ]
     ],
     throwInternalFailure
 ];
@@ -66,6 +66,8 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         ];
 
         If[ notebooks === { }, Throw @ Spacer[ 0 ] ];
+
+        If[ ! MemberQ[ notebooks, KeyValuePattern[ "NotebookObject" -> locked ] ], locked = None ];
 
         info = ConfirmMatch[ addFocusInfo[ locked, notebooks ], { __Association }, "Info" ];
         current = ConfirmBy[ First @ info, AssociationQ, "Current" ];
