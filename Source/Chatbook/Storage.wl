@@ -630,7 +630,7 @@ getAttachmentsForSaving // endDefinition;
 prepareMessagesForSaving // beginDefinition;
 
 prepareMessagesForSaving[ messages_, settings_ ] :=
-    revertMultimodalContent @
+    revertMultimodalContent @ removeAddedPromptTags @
         If[ TrueQ @ settings[ "SaveSystemMessage" ],
             messages,
             dropSystemMessage @ dropTemporaryMessages @ messages

@@ -345,6 +345,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `redDialogButtonLabel;
 `reformatTextData;
 `relativeTimeString;
+`removeAddedPromptTags;
 `removeBasePrompt;
 `removeCellAccents;
 `removeChatMenus;
