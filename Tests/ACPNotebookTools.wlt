@@ -345,7 +345,7 @@ VerificationTest[
     {
         StringContainsQ[ $nbtTools[ "OpenNotebook" ][ "Description" ], $acpNotebookWorkflow ],
         StringContainsQ[ $nbtTools[ "ReadCells" ][ "Description" ], $acpNotebookNotation ],
-        StringContainsQ[ $acpNotebookWorkflow, "OpenNotebook" ~~ __ ~~ "SaveNotebook" ~~ __ ~~ "ShowChanges" ],
+        StringContainsQ[ $acpNotebookWorkflow, "OpenNotebook" ~~ __ ~~ "ReadCells" ~~ __ ~~ "ShowChanges" ],
         StringContainsQ[ $acpNotebookNotation, "(* ::Style:: #id *)" ] && StringContainsQ[ $acpNotebookNotation, "\\[Name]" ],
         AllTrue[ $nbtTools, StringFreeQ[ #[ "Description" ], RegularExpression[ "[\\x{E000}-\\x{F8FF}]" ] ] & ]
     },

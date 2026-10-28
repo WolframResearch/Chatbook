@@ -148,10 +148,13 @@ $acpNotebookWorkflow = "\
 These tools edit Wolfram notebooks through the user's Wolfram front end (desktop app); nothing is evaluated. Use them \
 instead of editing .nb files. Your edits never change the user's notebook directly: OpenNotebook makes a hidden \
 snapshot of a notebook (unsaved changes included) and gives its handle (s1, s2, ...), which the other tools take. \
-Workflow: ListNotebooks (its first notebook is the one the user is working in) -> OpenNotebook -> GetOutline, \
-SearchNotebook, ReadCells -> EditInCell (preferred), SetCell, InsertCells, DeleteCells -> SaveNotebook -> ShowChanges, \
-which shows the user their notebook as a diff against the snapshot, to accept or reject change by change. \
-CloseNotebook discards a snapshot instead.";
+Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first) -> ReadCells (the whole \
+notebook, in one call) -> EditInCell, SetCell, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
+shows the user their notebook as a diff against it, to accept or reject change by change. CloseNotebook discards a \
+snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
+independent cells in one turn, as parallel calls. For a cell that changes only in part, use EditInCell with short \
+oldText and newText instead of rewriting the cell with SetCell. A notebook edit needs no todo list. If you have \
+WolframLanguageEvaluator, check code with it directly; WolframLanguageContext is not needed for notebook edits.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -193,8 +196,8 @@ content.";
 
 $setCellDescription = "\
 Replaces the whole content of one cell of a snapshot, and optionally its style. text is the new content in the cell \
-text notation, without the marker line (text cells are wrapped in (* *)). Prefer EditInCell for changes within a \
-cell. Gives the cell's new content.";
+text notation, without the marker line (text cells are wrapped in (* *)). Rewriting a whole cell is slow: for a \
+cell that changes only in part, EditInCell is much faster. Gives the cell's new content.";
 
 $insertCellsDescription = "\
 Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
@@ -204,8 +207,8 @@ marker line (text cells wrapped in (* *)). Gives the new cells with their ids.";
 $deleteCellsDescription = "Deletes cells from a snapshot.";
 
 $saveNotebookDescription = "\
-Saves the edits of a snapshot (to the snapshot, never to the user's notebook). Call it when the edits are done, then \
-ShowChanges.";
+Saves the edits of a snapshot (to the snapshot, never to the user's notebook). ShowChanges saves first, so this is \
+only needed to keep a snapshot's edits without showing them.";
 
 $showChangesDescription = "\
 Shows the user their notebook as a diff against the snapshot (unsaved edits are saved first), where they accept or \
