@@ -163,6 +163,24 @@ includedNotebookQ[ nbo_NotebookObject ] :=
 includedNotebookQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveFocusedNotebook*)
+resolveFocusedNotebook // beginDefinition;
+
+resolveFocusedNotebook[ focused_ ] :=
+    Module[ { info },
+        If[ notebookObjectQ @ focused,
+            info = notebookInformation @ focused;
+            If[ MatchQ[ info, _Association ] && exclusionReason @ info === None,
+                Return @ { focused, info }
+            ]
+        ];
+        getUserNotebookInformation[ ]
+    ];
+
+resolveFocusedNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Context from other notebooks*)
 
@@ -253,29 +271,38 @@ getContextFromSelection // Options = {
 };
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    Module[ { focused, userNotebook },
+    Module[ { userNotebook, info },
         If[ TrueQ @ $WorkspaceChat,
-            focused = settings[ "FocusedNotebook" ];
-            userNotebook = If[ notebookObjectQ @ focused && TrueQ @ includedNotebookQ @ focused,
-                                focused,
-                                getUserNotebook[ ]
-                            ];
+            { userNotebook, info } = resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
             ,
             userNotebook = $evaluationNotebook;
+            info = Automatic;
         ];
-        getContextFromSelection[ chatNB, userNotebook, settings, opts ]
+        getContextFromSelection[ chatNB, userNotebook, info, settings, opts ]
     ];
 
-getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
+getContextFromSelection[ _NotebookObject, None, _Association, OptionsPattern[ ] ] :=
     None;
 
-getContextFromSelection[ chatNB_, nbo_NotebookObject, settings0_Association, opts: OptionsPattern[ ] ] := Enclose[
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    getContextFromSelection[ chatNB, nbo, Automatic, settings, opts ];
+
+getContextFromSelection[ _, None, _, _Association, OptionsPattern[ ] ] :=
+    None;
+
+getContextFromSelection[
+    _,
+    nbo_NotebookObject,
+    info: (Automatic | _Association),
+    settings0_Association,
+    OptionsPattern[ ]
+] := Enclose[
     Catch @ Block[
         {
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
-            $notebookMetadataString     = getNotebookMetadataString @ nbo
+            $notebookMetadataString     = getNotebookMetadataString[ nbo, info ]
         },
         Module[ { settings, selectionData, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
@@ -418,8 +445,14 @@ imageLink // endDefinition;
 (*getNotebookMetadataString*)
 getNotebookMetadataString // beginDefinition;
 
-getNotebookMetadataString[ nbo_NotebookObject ] := Enclose[
-    ConfirmBy[ getNotebookMetadataString0 @ notebookInformation @ nbo, StringQ, "Metadata" ],
+getNotebookMetadataString[ nbo_NotebookObject ] :=
+    getNotebookMetadataString[ nbo, Automatic ];
+
+getNotebookMetadataString[ nbo_NotebookObject, Automatic ] :=
+    getNotebookMetadataString[ nbo, notebookInformation @ nbo ];
+
+getNotebookMetadataString[ _NotebookObject, info_Association ] := Enclose[
+    ConfirmBy[ getNotebookMetadataString0 @ info, StringQ, "Metadata" ],
     throwInternalFailure
 ];
 
@@ -724,6 +757,22 @@ selectContextCells0 // endDefinition;
 getUserNotebook // beginDefinition;
 getUserNotebook[ ] := FirstCase[ getUserNotebooks[ ], _NotebookObject, None ];
 getUserNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getUserNotebookInformation*)
+getUserNotebookInformation // beginDefinition;
+
+getUserNotebookInformation[ ] := Enclose[
+    FirstCase[
+        ConfirmMatch[ SourceNotebookObjectInformation[ ], { ___Association }, "NotebookInformation" ],
+        info: KeyValuePattern @ { "Included" -> True, "NotebookObject" -> nbo_NotebookObject } :> { nbo, info },
+        { None, None }
+    ],
+    throwInternalFailure
+];
+
+getUserNotebookInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

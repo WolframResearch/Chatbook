@@ -20,6 +20,7 @@ HoldComplete[
     `moveChatInputToBottom,
     `moveChatInputToTop,
     `moveToInlineChatInputField,
+    `resolveFocusedNotebook,
     `saveWorkspaceChatInput,
     `scrollInlineChat,
     `sidebarCellObject,
