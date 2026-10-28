@@ -136,7 +136,12 @@ any other 2D box is written as its FullForm in \:2e22 \:2e23, e.g. \:2e22SqrtBox
 wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:2e22\"*)\"\:2e23, and styled text is \
 \:2e22StyleBox[...]\:2e23. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]): always \
 write them that way, never as raw characters. Other Unicode characters (Greek letters, \:2192) are written as they \
-are. Content that would run code when shown (dynamic boxes, button functions) is refused.";
+are. Content that would run code when shown (dynamic boxes, button functions) is refused. Math is typeset: in a text \
+cell a formula is an inline \:2e22Cell[BoxData[FormBox[..., TraditionalForm]], \"InlineFormula\"]\:2e23, e.g. \
+\:2e22Cell[BoxData[FormBox[FractionBox[RowBox[{\"\[PartialD]\", \"L\"}], RowBox[{\"\[PartialD]\", \
+OverscriptBox[\"q\", \".\"]}]], TraditionalForm]], \"InlineFormula\"]\:2e23, and a DisplayFormula cell holds \
+\:2e22FormBox[..., TraditionalForm]\:2e23. Keep a notebook's typesetting when you rewrite it: write new math as such \
+boxes, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells.";
 (* :!CodeAnalysis::EndBlock:: *)
 
 $acpNotebookWorkflow = "\
