@@ -22,30 +22,37 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Excluded Cells*)
 VerificationTest[
-    UsingFrontEnd @ Module[ { nb, cells, settings, selectedContext, unselectedContext },
-        WithCleanup[
-            nb = CreateDocument @ {
-                Cell[ "QA1", "Title" ],
-                Cell[ "1 + 1", "Input" ],
-                Cell[ "PUBLIC-111 visible text", "Text" ],
-                Cell[ "SECRET-222 excluded text", { "Text", "ChatExcluded" } ]
-            };
-            cells = Cells @ nb;
-            settings = AbsoluteCurrentChatSettings @ nb;
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, cells, settings, selectedContext, unselectedContext },
+            WithCleanup[
+                nb = CreateDocument @ {
+                    Cell[ "QA1", "Title" ],
+                    Cell[ "1 + 1", "Input" ],
+                    Cell[ "PUBLIC-111 visible text", "Text" ],
+                    Cell[ "SECRET-222 excluded text", { "Text", "ChatExcluded" } ]
+                };
+                cells = Cells @ nb;
+                settings = AbsoluteCurrentChatSettings @ nb;
 
-            SelectionMove[ cells[[ 4 ]], All, Cell ];
-            selectedContext = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
+                SelectionMove[ cells[[ 4 ]], All, Cell ];
+                selectedContext = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
 
-            SelectionMove[ cells[[ 2 ]], After, Cell ];
-            unselectedContext = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
+                SelectionMove[ cells[[ 2 ]], After, Cell ];
+                unselectedContext = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
 
-            {
-                StringContainsQ[ selectedContext, "PUBLIC-111" ],
-                StringFreeQ[ selectedContext, "SECRET-222" ],
-                StringContainsQ[ unselectedContext, "PUBLIC-111" ],
-                StringFreeQ[ unselectedContext, "SECRET-222" ]
-            },
-            NotebookClose @ nb
+                {
+                    StringContainsQ[ selectedContext, "PUBLIC-111" ],
+                    StringFreeQ[ selectedContext, "SECRET-222" ],
+                    StringContainsQ[ unselectedContext, "PUBLIC-111" ],
+                    StringFreeQ[ unselectedContext, "SECRET-222" ]
+                },
+                NotebookClose @ nb
+            ]
         ]
     ],
     { True, True, True, True },
@@ -86,22 +93,29 @@ VerificationTest[
 ]
 
 VerificationTest[
-    UsingFrontEnd @ Module[ { nb1, nb2, settings, context1, context2 },
-        WithCleanup[
-            nb1 = NotebookPut @ Notebook @ { Cell[ "Project codename: SILVERFISH", "Text" ] };
-            nb2 = NotebookPut @ Notebook @ {
-                Cell[ "Project codename: GOLDFISH", "Text" ],
-                Cell[ "Second cell CATFISH", "Text" ]
-            };
-            settings = AbsoluteCurrentChatSettings @ nb1;
-            context1 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb1, settings ];
-            context2 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb2, settings ];
-            {
-                StringQ @ context1 && StringContainsQ[ context1, "SILVERFISH" ],
-                StringQ @ context2 && StringContainsQ[ context2, "GOLDFISH" ],
-                StringQ @ context2 && StringContainsQ[ context2, "CATFISH" ]
-            },
-            NotebookClose /@ { nb1, nb2 }
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb1, nb2, settings, context1, context2 },
+            WithCleanup[
+                nb1 = NotebookPut @ Notebook @ { Cell[ "Project codename: SILVERFISH", "Text" ] };
+                nb2 = NotebookPut @ Notebook @ {
+                    Cell[ "Project codename: GOLDFISH", "Text" ],
+                    Cell[ "Second cell CATFISH", "Text" ]
+                };
+                settings = AbsoluteCurrentChatSettings @ nb1;
+                context1 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb1, settings ];
+                context2 = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb2, settings ];
+                {
+                    StringQ @ context1 && StringContainsQ[ context1, "SILVERFISH" ],
+                    StringQ @ context2 && StringContainsQ[ context2, "GOLDFISH" ],
+                    StringQ @ context2 && StringContainsQ[ context2, "CATFISH" ]
+                },
+                NotebookClose /@ { nb1, nb2 }
+            ]
         ]
     ],
     { True, True, True },
@@ -392,21 +406,23 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Module[ { result },
-        result = Wolfram`Chatbook`AugmentChatMessages[
-            { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "hi" |> },
-            <|
-                "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
-                "Prompts"          -> { "CUSTOM-PROMPT-XYZ" },
-                "PromptGenerators" -> { },
-                "Tools"            -> { }
-            |>
-        ];
-        {
-            ListQ @ result,
-            FreeQ[ result, s_String /; StringContainsQ[ s, "added-prompts" ] ],
-            ! FreeQ[ result, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
-        }
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+        Module[ { result },
+            result = Wolfram`Chatbook`AugmentChatMessages[
+                { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "hi" |> },
+                <|
+                    "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+                    "Prompts"          -> { "CUSTOM-PROMPT-XYZ" },
+                    "PromptGenerators" -> { },
+                    "Tools"            -> { }
+                |>
+            ];
+            {
+                ListQ @ result,
+                FreeQ[ result, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+                ! FreeQ[ result, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
+            }
+        ]
     ],
     { True, True, True },
     SameTest -> MatchQ,

@@ -169,27 +169,34 @@ CreateChatCell // endDefinition;
 ConstructWorkspaceContextMessages // ClearAll;
 
 ConstructWorkspaceContextMessages[ cells: { __Cell }, settings0_Association, messages: { __Association } ] :=
-    UsingFrontEnd @ Module[ { nb, settings },
-        WithCleanup[
-            nb = NotebookPut @ Notebook @ cells;
-            SelectionMove[ Last @ Cells @ nb, All, Cell ];
-            settings = <|
-                AbsoluteCurrentChatSettings @ nb,
-                "AllowSelectionContext" -> True,
-                "FocusedNotebook"       -> nb,
-                "PromptGenerators"      -> { },
-                "Tools"                 -> { },
-                settings0
-            |>;
-            Block[
-                {
-                    Wolfram`Chatbook`$WorkspaceChat             = True,
-                    Wolfram`Chatbook`Common`$evaluationNotebook = nb,
-                    Wolfram`Chatbook`Common`$multimodalMessages = TrueQ @ settings[ "Multimodal" ]
-                },
-                Wolfram`Chatbook`Common`constructMessages[ settings, messages ]
-            ],
-            NotebookClose @ nb
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, settings },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ cells;
+                SelectionMove[ Last @ Cells @ nb, All, Cell ];
+                settings = <|
+                    AbsoluteCurrentChatSettings @ nb,
+                    "AllowSelectionContext" -> True,
+                    "FocusedNotebook"       -> nb,
+                    "PromptGenerators"      -> { },
+                    "Tools"                 -> { },
+                    settings0
+                |>;
+                Block[
+                    {
+                        Wolfram`Chatbook`$WorkspaceChat             = True,
+                        Wolfram`Chatbook`Common`$evaluationNotebook = nb,
+                        Wolfram`Chatbook`Common`$multimodalMessages = TrueQ @ settings[ "Multimodal" ]
+                    },
+                    Wolfram`Chatbook`Common`constructMessages[ settings, messages ]
+                ],
+                NotebookClose @ nb
+            ]
         ]
     ];
 
