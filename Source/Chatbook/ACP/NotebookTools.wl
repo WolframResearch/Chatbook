@@ -883,7 +883,7 @@ withoutStrings // endDefinition;
      notebookFrontEnd[ "FileName", nb ]                          the snapshot's file, or $Failed
      notebookFrontEnd[ "Save", nb ]                              Null, or $Failed
      notebookFrontEnd[ "Close", nb ]                             closes the snapshot; the front end deletes its file
-     notebookFrontEnd[ "ShowDiff", source, snapshot ]            CellDiff's ShowNotebookDiff[ source, snapshot ]
+     notebookFrontEnd[ "ShowDiff", source, snapshot, edited ]    CellDiff's ShowNotebookDiff[ source, snapshot, "Lines", edited ]
    The packets are the front end's (FrontEnd docs/NotebookMCP/Plan.md, "FE packets"). *)
 notebookFrontEnd // beginDefinition;
 
@@ -909,7 +909,7 @@ frontEndOperation[ "Edit", nb_NotebookObject, ops_List ] :=
 frontEndOperation[ "FileName", nb_NotebookObject ] := Quiet @ NotebookFileName @ nb;
 frontEndOperation[ "Save", nb_NotebookObject ] := Quiet @ NotebookSave @ nb;
 frontEndOperation[ "Close", nb_NotebookObject ] := Quiet @ NotebookClose @ nb;
-frontEndOperation[ "ShowDiff", source_, snapshot_NotebookObject ] := showNotebookDiff[ source, snapshot ];
+frontEndOperation[ "ShowDiff", source_, snapshot_NotebookObject, edited_ ] := showNotebookDiff[ source, snapshot, edited ];
 
 frontEndOperation // endDefinition;
 
@@ -922,7 +922,9 @@ frontEndOperation // endDefinition;
    $ContextPath *)
 showNotebookDiff // beginDefinition;
 
-showNotebookDiff[ source_, snapshot_NotebookObject ] := Module[ { diffFile, result },
+(* With the uuids of the edited cells (None if they are not known), which a CellDiff without that form leaves
+   unevaluated *)
+showNotebookDiff[ source_, snapshot_NotebookObject, edited: _List | None ] := Module[ { diffFile, result },
     diffFile = notebookDiffFile[ ];
     If[ ! FileExistsQ @ diffFile,
         toolError[ "ShowChanges is not available: the notebook comparison `1` was not found.", diffFile ]
@@ -931,7 +933,10 @@ showNotebookDiff[ source_, snapshot_NotebookObject ] := Module[ { diffFile, resu
     If[ Names @ $notebookDiffFunction === { },
         toolError[ "ShowChanges is not available: `1` does not define ShowNotebookDiff.", diffFile ]
     ];
-    result = Symbol[ $notebookDiffFunction ][ source, snapshot ];
+    result = If[ ListQ @ edited, Symbol[ $notebookDiffFunction ][ source, snapshot, "Lines", edited ], $Failed ];
+    If[ ! ListQ @ edited || MatchQ[ result, _Symbol[ _, _, "Lines", _List ] ] && SymbolName @ Head @ result === "ShowNotebookDiff",
+        result = Symbol[ $notebookDiffFunction ][ source, snapshot ]
+    ];
     If[ MatchQ[ result, _Symbol[ ___ ] ] && SymbolName @ Head @ result === "ShowNotebookDiff",
         toolError[ "ShowChanges is not available: `1` does not define ShowNotebookDiff.", diffFile ]
     ];
@@ -1317,10 +1322,28 @@ changedCells[ handle_String, cells: { __CellObject }, result_Association ] := Mo
         KeyDrop[ $snapshots[ handle, "IDs" ], Keys @ pairs ],
         AssociationThread[ Values @ pairs, Lookup[ $snapshots[ handle, "IDs" ], Keys @ pairs ] ]
     ];
-    Replace[ cells, Normal @ pairs, { 1 } ]
+    editedCells[ handle, Replace[ cells, Normal @ pairs, { 1 } ] ]
 ];
 
 changedCells // endDefinition;
+
+
+(* Records the ExpressionUUIDs of edited cells, which ShowChanges gives CellDiff so that it reads only the cells that
+   changed (inserted and deleted cells it finds by their uuids alone); None once a cell has no uuid (the legacy object
+   format), since CellDiff must then compare every cell. Gives the cells. *)
+editedCells // beginDefinition;
+
+editedCells[ handle_String, cells_List ] := (
+    $snapshots[[ handle, "EditedCells" ]] = With[ { ids = Cases[ cells, CellObject[ id_String, ___ ] :> id ] },
+        Replace[ Lookup[ $snapshots[ handle ], "EditedCells", { } ], {
+            known_List /; Length @ ids === Length @ cells :> Union[ known, ids ],
+            _ -> None
+        } ]
+    ];
+    cells
+);
+
+editedCells // endDefinition;
 
 
 (* Whether two CellObjects name the same cell: the same uuid, another instance *)
@@ -1991,7 +2014,7 @@ showChanges[ args_Association ] := Module[ { handle, record, result },
         Return[ "There are no changes to show: " <> handle <> " was not edited. Close it with CloseNotebook.", Module ]
     ];
     If[ TrueQ @ record[ "Unsaved" ], saveSnapshot @ handle ];
-    result = notebookFrontEnd[ "ShowDiff", record[ "Source" ], record[ "Notebook" ] ];
+    result = notebookFrontEnd[ "ShowDiff", record[ "Source" ], record[ "Notebook" ], Lookup[ record, "EditedCells", { } ] ];
     If[ FailureQ @ result,
         toolError[ "The changes of `1` could not be shown: `2`", snapshotLabel @ handle, diffFailureText @ result ]
     ];

@@ -226,7 +226,7 @@ VerificationTest[
 
     fakeFE0[ "Save", _ ] := If[ TrueQ @ $fakeSaveFails, $Failed, Null ];
     fakeFE0[ "Close", nbo_ ] := (KeyDropFrom[ $fakeNotebooks, nbo ]; Null);
-    fakeFE0[ "ShowDiff", _, _ ] := $fakeDiffResult;
+    fakeFE0[ "ShowDiff", __ ] := $fakeDiffResult;
 
     fakePosition[ cells_List, cell_, i_Integer ] := Replace[
         FirstPosition[ Lookup[ cells, "Cell" ], cell, None, { 1 } ],
@@ -1086,6 +1086,20 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-SetCells"
 ]
 
+(* The cells that SetCells and EditInCell change are recorded by their uuids, for ShowChanges *)
+VerificationTest[
+    withFakeFE @ (
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |> } |> ];
+        nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c3", "edits" -> { <| "oldText" -> "Hamiltonian", "newText" -> "Lagrangian" |> } |> ];
+        nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*x*)" |> } |> ];
+        Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[ "s1", "EditedCells" ]
+    ),
+    { "fake-1-3", "fake-1-4" },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-EditedCells"
+]
+
 (* InsertCells after or before a cell, or at the end; the new cells get the next ids and are shown *)
 VerificationTest[
     withFakeFE @ (
@@ -1190,11 +1204,11 @@ VerificationTest[
         "The user now sees \"Untitled\" as a diff against your edits, and accepts or rejects each change there. s2 is closed.",
         {
             { "Save", NotebookObject[ "fake-snapshot-1" ] },
-            { "ShowDiff", NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ] },
-            { "ShowDiff", NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ] },
+            { "ShowDiff", NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ], { } },
+            { "ShowDiff", NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ], { } },
             { "Close", NotebookObject[ "fake-snapshot-1" ] },
             { "Save", NotebookObject[ "fake-snapshot-2" ] },
-            { "ShowDiff", None, NotebookObject[ "fake-snapshot-2" ] },
+            { "ShowDiff", None, NotebookObject[ "fake-snapshot-2" ], { } },
             { "Close", NotebookObject[ "fake-snapshot-2" ] }
         },
         <| |>,
@@ -1267,18 +1281,21 @@ VerificationTest[
 (*ShowNotebookDiff*)
 
 (* CellDiff's ShowNotebookDiff is loaded from CELLDIFF_NOTEBOOKDIFF_FILE (every time), off $ContextPath, and called with
-   the source and the snapshot's NotebookObject; a missing file gives an error *)
+   the source, the snapshot's NotebookObject and the uuids of the edited cells, or without them by a CellDiff that has
+   no such form; a missing file gives an error *)
 VerificationTest[
-    Module[ { dir, good, saved, results },
+    Module[ { dir, good, edited, saved, results },
         dir   = CreateDirectory[ ];
         good  = FileNameJoin @ { dir, "Good.wl" };
         Export[ good, "BeginPackage[\"CellDiffNotebookDiff`\"];\nShowNotebookDiff::usage = \"test\";\nBegin[\"`Private`\"];\nShowNotebookDiff[source_, snapshot_NotebookObject] := {\"Shown\", source, snapshot};\nEnd[];\nEndPackage[];\n", "Text" ];
+        edited = FileNameJoin @ { dir, "Edited.wl" };
+        Export[ edited, "BeginPackage[\"CellDiffNotebookDiff`\"];\nShowNotebookDiff::usage = \"test\";\nBegin[\"`Private`\"];\nShowNotebookDiff[source_, snapshot_NotebookObject, mode_String, ids_List] := {\"Edited\", source, snapshot, mode, ids};\nEnd[];\nEndPackage[];\n", "Text" ];
         saved = Environment[ "CELLDIFF_NOTEBOOKDIFF_FILE" ];
         results = Internal`InheritedBlock[ { $ContextPath },
             Table[
                 SetEnvironment[ "CELLDIFF_NOTEBOOKDIFF_FILE" -> file ];
-                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`showNotebookDiff[ NotebookObject[ "src" ], NotebookObject[ "snap" ] ],
-                { file, { good, FileNameJoin @ { dir, "Missing.wl" } } }
+                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`showNotebookDiff[ NotebookObject[ "src" ], NotebookObject[ "snap" ], { "u1" } ],
+                { file, { good, edited, FileNameJoin @ { dir, "Missing.wl" } } }
             ]
         ];
         SetEnvironment[ "CELLDIFF_NOTEBOOKDIFF_FILE" -> Replace[ saved, Except[ _String ] -> None ] ];
@@ -1292,6 +1309,7 @@ VerificationTest[
     {
         {
             { "Shown", NotebookObject[ "src" ], NotebookObject[ "snap" ] },
+            { "Edited", NotebookObject[ "src" ], NotebookObject[ "snap" ], "Lines", { "u1" } },
             _String? (StringMatchQ[ "ShowChanges is not available: the notebook comparison " ~~ __ ~~ "Missing.wl was not found." ])
         },
         False,
