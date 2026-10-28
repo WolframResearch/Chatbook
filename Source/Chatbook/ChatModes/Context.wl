@@ -658,7 +658,11 @@ insertSelectionIndicator // endDefinition;
 selectContextCells // beginDefinition;
 
 selectContextCells[ nbo_NotebookObject ] /; TrueQ @ $SidebarChat :=
-Module[ { sidebarCell, savedContext, selectionAtTimeOfInputConfirmation, allCells, firstBeforeCell, selectedCells, firstAfterCell, currentSelections, context },
+Module[
+    {
+        sidebarCell, savedContext, selectionAtTimeOfInputConfirmation, allCells, firstBeforeCell, selectedCells,
+        firstAfterCell, currentSelections, context
+    },
     (* The TaggingRules of the sidebar cell contains the selection objects at the time the sidebar input field content was confirmed *)
     sidebarCell = sidebarCellObject @ nbo;
     savedContext = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" } ];
@@ -670,7 +674,10 @@ Module[ { sidebarCell, savedContext, selectionAtTimeOfInputConfirmation, allCell
 
     allCells = Cells @ nbo;
     If[ Not @ AssociationQ @ selectionAtTimeOfInputConfirmation,
-        context = <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>;
+        context = selectContextCells0 @ Map[
+            cellInformation,
+            <| "Before" -> allCells, "Selected" -> { }, "After" -> { } |>
+        ];
         setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" }, context ];
         Return @ context
     ];
@@ -693,15 +700,16 @@ Module[ { sidebarCell, savedContext, selectionAtTimeOfInputConfirmation, allCell
 
     (* It is possible that there is no main notebook selection: default to all cells as "Before" *)
     context = If[ firstBeforeCell === None && firstAfterCell === None && selectedCells === { },
-        <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>,
+        <| "Before" -> allCells, "Selected" -> { }, "After" -> { } |>,
         <|
             "Before" -> With[ { p = FirstPosition[ allCells, firstBeforeCell, None ] },
-                If[ p =!= None, Reverse @ Take[ Reverse @ Extract[ allCells, { ;; p[[1]] } ], UpTo[ $maxCellsBeforeSelection ] ], { } ] ],
+                If[ p =!= None, Extract[ allCells, { ;; p[[1]] } ], { } ] ],
             "Selected" -> selectedCells,
             "After" -> With[ { p = FirstPosition[ allCells, firstAfterCell, None ] },
-                If[ p =!= None, Take[ Extract[ allCells, { p[[1]] ;; } ], UpTo[ $maxCellsAfterSelection ] ], { } ] ]
+                If[ p =!= None, Extract[ allCells, { p[[1]] ;; } ], { } ] ]
         |>
     ];
+    context = selectContextCells0 @ Map[ cellInformation, context ];
     setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" }, context ];
     context
 ]
