@@ -1181,7 +1181,8 @@ MouseAppearance[
             clickableOpenerRow0[ label, direction, colors[ "Hover"   ], colors[ "Hover"    ] ],
             clickableOpenerRow0[ label, direction, colors[ "Pressed" ], colors[ "Pressed"  ] ]
         ],
-        FEPrivate`Set[ var, Not[ var ] ],
+        (* Null result: the front end reports non-Null results as an "unknown packet" when Evaluator -> None *)
+        FEPrivate`Set[ var, Not[ var ] ]; Null,
         Alignment        -> Left,
         Appearance       -> "Suppressed",
         BaselinePosition -> Baseline,
