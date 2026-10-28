@@ -113,9 +113,18 @@ If[ ! IntegerQ @ $snapshotCount, $snapshotCount = 0 ];
 (* ::Subsection::Closed:: *)
 (*acpNotebookTools*)
 
-(* The notebook tools as LLMTools, in the order of $toolSpecs *)
+(* The notebook tools as LLMTools, in the order of $toolSpecs. LLMTool interprets the lists of objects (SetCells'
+   cells, EditInCell's edits, InsertCells' newCells) with Interpreter, whose first CompoundElement in a front end's
+   kernel takes about 0.5 s: one is interpreted here, when the server starts, instead of in the agent's first edit. *)
 acpNotebookTools // beginDefinition;
-acpNotebookTools[ ] := KeyValueMap[ LLMTool @ <| "Name" -> #1, #2, "Options" -> { } |> &, $toolSpecs ];
+
+acpNotebookTools[ ] := (
+    Interpreter[ RepeatingElement @ CompoundElement @ <| "cell" -> "String", "text" -> "String" |> ][
+        { <| "cell" -> "c1", "text" -> "" |> }
+    ];
+    KeyValueMap[ LLMTool @ <| "Name" -> #1, #2, "Options" -> { } |> &, $toolSpecs ]
+);
+
 acpNotebookTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
