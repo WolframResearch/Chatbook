@@ -309,8 +309,8 @@ VerificationTest[
         ];
         {
             Lookup[ merged, "Role" ],
-            StringCount[ merged[[ 2, "Content" ]], "FIRST", Infinity ],
-            StringCount[ merged[[ 2, "Content" ]], "SECOND", Infinity ],
+            Count[ merged[[ 2, "Content" ]], s_String /; StringContainsQ[ s, "FIRST" ], Infinity ],
+            Count[ merged[[ 2, "Content" ]], s_String /; StringContainsQ[ s, "SECOND" ], Infinity ],
             Count[ merged[[ 2 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
             Lookup[ unmerged, "Role" ]
         }
@@ -339,6 +339,67 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ContextImageParts-PairsLinksAndDeduplicates"
+]
+
+VerificationTest[
+    Module[ { links, content, context, selected },
+        links = "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 7 ];
+        content = Flatten @ MapIndexed[
+            { #1, <| "Type" -> "Image", "Data" -> "img" <> ToString @ First @ #2 |> } &,
+            links
+        ];
+        context = StringRiffle[
+            ReplacePart[
+                links,
+                4 -> Wolfram`Chatbook`Common`$leftSelectionIndicator <>
+                     links[[ 4 ]] <>
+                     Wolfram`Chatbook`Common`$rightSelectionIndicator
+            ],
+            "\n"
+        ];
+        selected = Wolfram`Chatbook`ChatModes`Context`Private`selectContextImages[
+            { <| "Role" -> "User", "Content" -> content |> },
+            context
+        ];
+        {
+            Length @ selected,
+            First @ selected,
+            Cases[ selected, { link_String, _ } :> link ]
+        }
+    ],
+    {
+        5,
+        { "![Image](attachment://content-4)", <| "Type" -> "Image", "Data" -> "img4" |> },
+        {
+            "![Image](attachment://content-4)",
+            "![Image](attachment://content-3)",
+            "![Image](attachment://content-5)",
+            "![Image](attachment://content-2)",
+            "![Image](attachment://content-6)"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages"
+]
+
+VerificationTest[
+    Module[ { links, content },
+        links = "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 7 ];
+        content = Flatten @ MapIndexed[
+            { #1, <| "Type" -> "Image", "Data" -> "img" <> ToString @ First @ #2 |> } &,
+            links
+        ];
+        Cases[
+            Wolfram`Chatbook`ChatModes`Context`Private`selectContextImages[
+                { <| "Role" -> "User", "Content" -> content |> },
+                StringRiffle[ links, "\n" ]
+            ],
+            { link_String, _ } :> link
+        ]
+    ],
+    "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 5 ],
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder"
 ]
 
 VerificationTest[

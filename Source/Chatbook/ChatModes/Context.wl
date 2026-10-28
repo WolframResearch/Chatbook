@@ -16,6 +16,7 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
+$maxContextImages           = 5;
 $contextPrompt              = None;
 $selectionPrompt            = None;
 $contextImages              = { };
@@ -365,13 +366,13 @@ getContextFromSelection0[ selectionData_Association, settings0_ ] := Enclose[
             "Messages"
         ];
 
+        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
+
         $contextImages = ConfirmMatch[
-            If[ images, contextImageParts @ messages, { } ],
+            If[ images, selectContextImages[ messages, string ], { } ],
             { ___List },
             "ContextImages"
         ];
-
-        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
 
         $contextPrompt   = processContextPromptString @ string;
         $selectionPrompt = extractSelectionPrompt @ string;
@@ -425,6 +426,59 @@ contextImageParts[ _ ] :=
 contextImageParts // endDefinition;
 
 $$contextTextPart = _String | KeyValuePattern @ { "Type" -> "Text", "Data" -> _String };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectContextImages*)
+selectContextImages // beginDefinition;
+
+selectContextImages[ messages_List, context_String ] :=
+    Module[ { parts, selection, links, positions, indexed },
+        parts = contextImageParts @ messages;
+        If[ Length @ parts <= $maxContextImages, Return @ parts ];
+
+        selection = First[
+            StringPosition[
+                context,
+                Shortest[ $leftSelectionIndicator ~~ ___ ~~ $rightSelectionIndicator ],
+                1
+            ],
+            Missing[ "NotFound" ]
+        ];
+        If[ MissingQ @ selection, Return @ Take[ parts, $maxContextImages ] ];
+
+        links = DeleteDuplicates @ Cases[ parts, { link_String, _ } :> link ];
+        positions = If[ links === { },
+            <| |>,
+            GroupBy[ StringPosition[ context, Alternatives @@ links ], StringTake[ context, # ] & ]
+        ];
+        indexed = MapIndexed[
+            { #1, First @ #2, contextImageDistance[ #1, selection, positions ] } &,
+            parts
+        ];
+        First /@ Take[ SortBy[ indexed, { Last, #[[ 2 ]] & } ], $maxContextImages ]
+    ];
+
+selectContextImages // endDefinition;
+
+
+contextImageDistance // beginDefinition;
+
+contextImageDistance[ { link_String, _ }, selection_, positions_Association ] :=
+    With[ { found = Lookup[ positions, link, { } ] },
+        If[ found === { }, Infinity, Min[ intervalDistance[ #, selection ] & /@ found ] ]
+    ];
+
+contextImageDistance[ _, _, _Association ] :=
+    Infinity;
+
+contextImageDistance // endDefinition;
+
+
+intervalDistance // beginDefinition;
+intervalDistance[ { a1_Integer, a2_Integer }, { b1_Integer, b2_Integer } ] :=
+    Max[ 0, Max[ a1, b1 ] - Min[ a2, b2 ] - 1 ];
+intervalDistance // endDefinition;
 
 
 imageLink // beginDefinition;
