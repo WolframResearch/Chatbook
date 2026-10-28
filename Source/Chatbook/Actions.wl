@@ -876,7 +876,7 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    constructChatObject0 @ removeAddedPromptTags @ messages;
+    constructChatObject0 @ messages;
 
 constructChatObject // endDefinition;
 

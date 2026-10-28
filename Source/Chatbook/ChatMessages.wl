@@ -311,7 +311,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         $lastSettings = settings;
         $lastMessages = processed;
 
-        removeAddedPromptTags @ foldContextImageMessage @ processed
+        foldContextImageMessage @ processed
     ];
 
 constructMessages // endDefinition;
@@ -452,16 +452,32 @@ removeAddedPrompts // endDefinition;
 (*removeAddedPromptTags*)
 removeAddedPromptTags // beginDefinition;
 
-removeAddedPromptTags[ data: KeyValuePattern[ "Messages" -> messages_List ] ] :=
-    <| data, "Messages" -> removeAddedPromptTags @ messages |>;
-
-removeAddedPromptTags[ { sys: KeyValuePattern @ { "Role" -> "System", "Content" -> s_String }, rest___ } ] :=
-    { <| sys, "Content" -> StringDelete[ s, { $addedPromptsOpen, $addedPromptsClose } ] |>, rest };
-
-removeAddedPromptTags[ other_ ] :=
-    other;
+removeAddedPromptTags[ messages_List ] := Replace[
+    messages,
+    {
+        message: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } :> <|
+            message,
+            "Content" -> removeAddedPromptTags0 @ content
+        |>,
+        message: KeyValuePattern @ { "role" -> "system", "content" -> content_ } :> <|
+            message,
+            "content" -> removeAddedPromptTags0 @ content
+        |>
+    },
+    { 1 }
+];
 
 removeAddedPromptTags // endDefinition;
+
+
+removeAddedPromptTags0 // beginDefinition;
+
+removeAddedPromptTags0[ content_ ] := ReplaceAll[
+    content,
+    s_String :> RuleCondition @ StringDelete[ s, { $addedPromptsOpen, $addedPromptsClose } ]
+];
+
+removeAddedPromptTags0 // endDefinition;
 
 $addedPromptsOpen  = "<added-prompts>";
 $addedPromptsClose = "</added-prompts>";
@@ -522,11 +538,37 @@ The user's message follows the images.]";
 (*foldContextImageMessage*)
 foldContextImageMessage // beginDefinition;
 
-foldContextImageMessage[ messages_List ] := SequenceReplace[
-    messages,
-    { images_? contextImageMessageQ, input: KeyValuePattern[ "Role" -> "User" ] } :>
-        <| input, "Content" -> Join[ images[ "Content" ], toContentPartList @ input[ "Content" ] ] |>
+foldContextImageMessage[ messages_List ] := Module[ { imagePosition, relativeInputPosition, imageIndex, inputIndex },
+    imagePosition = FirstPosition[ messages, _? contextImageMessageQ, Missing[ "NotFound" ], { 1 } ];
+    If[ MissingQ @ imagePosition, Return @ messages ];
+
+    imageIndex = First @ imagePosition;
+    relativeInputPosition = FirstPosition[
+        Drop[ messages, imageIndex ],
+        message: KeyValuePattern[ "Role" -> "User" ] /; ! temporaryMessageQ @ message,
+        Missing[ "NotFound" ],
+        { 1 }
+    ];
+    If[ MissingQ @ relativeInputPosition, Return @ messages ];
+
+    inputIndex = imageIndex + First @ relativeInputPosition;
+    Delete[
+        ReplacePart[
+            messages,
+            inputIndex -> <|
+                messages[[ inputIndex ]],
+                "Content" -> Join[
+                    messages[[ imageIndex, "Content" ]],
+                    toContentPartList @ messages[[ inputIndex, "Content" ]]
+                ]
+            |>
+        ],
+        imageIndex
+    ]
 ];
+
+foldContextImageMessage[ other_ ] :=
+    other;
 
 foldContextImageMessage // endDefinition;
 
