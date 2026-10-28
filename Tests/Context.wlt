@@ -83,6 +83,38 @@ VerificationTest[
 ]
 
 VerificationTest[
+    UsingFrontEnd @ Module[ { nb, cells, sidebarCell, workspace, sidebar },
+        WithCleanup[
+            nb = CreateDocument @ Join[
+                Table[ Cell[ "included", "Text" ], 50 ],
+                Flatten @ Table[
+                    { Cell[ "included", "Text" ], Cell[ "excluded", { "Text", "ChatExcluded" } ] },
+                    50
+                ]
+            ];
+            cells = Cells @ nb;
+            sidebarCell = First @ cells;
+            SelectionMove[ nb, After, Notebook ];
+            Block[ { Wolfram`Chatbook`ChatModes`Context`Private`$maxCellsBeforeSelection = 100 },
+                workspace = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb;
+                Internal`InheritedBlock[
+                    { Wolfram`Chatbook`ChatModes`Common`sidebarCellObject },
+                    Wolfram`Chatbook`ChatModes`Common`sidebarCellObject[ _NotebookObject ] := sidebarCell;
+                    Block[ { Wolfram`Chatbook`$SidebarChat = True },
+                        sidebar = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb
+                    ]
+                ]
+            ];
+            { sidebar === workspace, Length @ sidebar[ "Before" ] },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, 100 },
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextCells-SidebarFiltersBeforeApplyingLimits"
+]
+
+VerificationTest[
     Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ {
         <| "CellObject" -> CellObject[ "first" ], "CursorPosition" -> "AboveCell" |>,
         <| "CellObject" -> CellObject[ "second" ], "CursorPosition" -> None |>
