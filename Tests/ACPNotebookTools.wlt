@@ -595,7 +595,8 @@ VerificationTest[
 ]
 
 (* Agent text that would run code when it is shown is refused: linear syntax (its characters, their escapes, \! and \*
-   that are not themselves escaped) anywhere, dynamic boxes and code options inside a box wrapper. Code typed in a code
+   that are not themselves escaped) anywhere, dynamic boxes and code options inside a box wrapper, an inline formula's
+   \:2e22$boxes\:2e23 included. Code typed in a code
    cell, names in strings, placeholders and escaped backslashes are fine. *)
 VerificationTest[
     {
@@ -605,7 +606,8 @@ VerificationTest[
             "\:2e22StyleBox[\"Dynamic[x] and Initialization :> f\", FontSlant -> \"Italic\"]\:2e23",
             "StringReplace[s, \"\\\\!\" -> \"\"]",
             "x\:02c42 + \:2e22SqrtBox[\"a\"]\:2e23 \\[Rule] b",
-            "(*see \\\\! here*)"
+            "(*see \\\\! here*)",
+            "(*the momentum \:2e22$\"p\"\:2e23 and \:2e22$SuperscriptBox[\"q\", \"2\"]\:2e23*)"
         },
         nbtResult[ Wolfram`Chatbook`ACP`NotebookTools`Private`requireInertText[ #, "The text" ]; "OK" ] & /@ {
             "a" <> FromCharacterCode[ 63425 ] <> "b",
@@ -614,11 +616,12 @@ VerificationTest[
             "\:2e22DynamicModuleBox[{}, \"x\"]\:2e23",
             "\:2e22ButtonBox[\"x\", ButtonFunction :> CreateFile[\"x\"]]\:2e23",
             "\:2e22Cell[\"x\", \"Text\", CellDynamicExpression \\[RuleDelayed] f]\:2e23",
-            "\:2e22TemplateBox[{\"x\"}, \"T\", InterpretationFunction -> (f &)]\:2e23"
+            "\:2e22TemplateBox[{\"x\"}, \"T\", InterpretationFunction -> (f &)]\:2e23",
+            "(*an inline formula \:2e22$DynamicBox[CreateFile[\"x\"]]\:2e23*)"
         }
     },
     {
-        { "OK", "OK", "OK", "OK", "OK", "OK" },
+        { "OK", "OK", "OK", "OK", "OK", "OK", "OK" },
         {
             "The text has linear syntax (\"\\:f7c1\"), which would run code when it is shown; the notebook tools never write it.",
             "The text has linear syntax (\"\\!\"), which would run code when it is shown; the notebook tools never write it.",
@@ -626,7 +629,8 @@ VerificationTest[
             "The text has content that would run code when it is shown (DynamicModuleBox), which the notebook tools never write.",
             "The text has content that would run code when it is shown (ButtonFunction), which the notebook tools never write.",
             "The text has content that would run code when it is shown (CellDynamicExpression), which the notebook tools never write.",
-            "The text has content that would run code when it is shown (InterpretationFunction), which the notebook tools never write."
+            "The text has content that would run code when it is shown (InterpretationFunction), which the notebook tools never write.",
+            "The text has content that would run code when it is shown (DynamicBox), which the notebook tools never write."
         }
     },
     SameTest -> MatchQ,

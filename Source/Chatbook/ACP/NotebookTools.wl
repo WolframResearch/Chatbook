@@ -146,9 +146,9 @@ wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:2e22\"*)\"\:
 \:2e22StyleBox[...]\:2e23. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]): always \
 write them that way, never as raw characters. Other Unicode characters (Greek letters, \:2192) are written as they \
 are. Content that would run code when shown (dynamic boxes, button functions) is refused. Math is typeset: in a text \
-cell a formula is an inline \:2e22Cell[BoxData[FormBox[..., TraditionalForm]], \"InlineFormula\"]\:2e23, e.g. \
-\:2e22Cell[BoxData[FormBox[FractionBox[RowBox[{\"\[PartialD]\", \"L\"}], RowBox[{\"\[PartialD]\", \
-OverscriptBox[\"q\", \".\"]}]], TraditionalForm]], \"InlineFormula\"]\:2e23, and a DisplayFormula cell holds \
+cell a formula is an inline formula cell, written \:2e22$boxes\:2e23, which is short for \:2e22Cell[BoxData[FormBox[\
+boxes, TraditionalForm]], \"InlineFormula\"]\:2e23 (boxes in FullForm), e.g. \:2e22$FractionBox[RowBox[{\
+\"\[PartialD]\", \"L\"}], RowBox[{\"\[PartialD]\", OverscriptBox[\"q\", \".\"]}]]\:2e23, and a DisplayFormula cell holds \
 \:2e22FormBox[..., TraditionalForm]\:2e23. Keep a notebook's typesetting when you rewrite it: write new math as such \
 boxes, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells.";
 (* :!CodeAnalysis::EndBlock:: *)
@@ -831,7 +831,12 @@ requireInertText[ text_String, what_String ] := Module[ { found },
         ]
     ];
     found = First[
-        Flatten @ StringCases[ withoutStrings /@ StringCases[ text, $$wrapper ], $$codeInWrapper, 1 ],
+        (* an inline formula's wrapper, \:2e22$boxes\:2e23, holds its boxes after the $ *)
+        Flatten @ StringCases[
+            withoutStrings @ StringReplace[ #, StartOfString ~~ "\:2e22$" -> "\:2e22" ] & /@ StringCases[ text, $$wrapper ],
+            $$codeInWrapper,
+            1
+        ],
         None
     ];
     If[ StringQ @ found,
