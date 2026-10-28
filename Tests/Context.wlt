@@ -292,11 +292,16 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Module[ { images, generated },
+    Module[ { images, generatedSystem, generatedUser },
         images = Wolfram`Chatbook`ChatMessages`Private`makeContextImageMessage @ {
             { "![Image](attachment://content-1)", <| "Type" -> "Image", "Data" -> "img" |> }
         };
-        generated = <|
+        generatedSystem = <|
+            "Role"      -> "System",
+            "Content"   -> "generated system",
+            "Temporary" -> True
+        |>;
+        generatedUser = <|
             "Role"      -> "User",
             "Content"   -> { "result", <| "Type" -> "Image", "Data" -> "other" |> },
             "Temporary" -> True
@@ -304,14 +309,16 @@ VerificationTest[
         Wolfram`Chatbook`ChatMessages`Private`foldContextImageMessage @ {
             <| "Role" -> "System", "Content" -> "sys" |>,
             images,
+            generatedSystem,
+            generatedUser,
             <| "Role" -> "User", "Content" -> "input" |>,
-            <| "Role" -> "Assistant", "Content" -> "out" |>,
-            generated,
-            <| "Role" -> "User", "Content" -> "next" |>
+            <| "Role" -> "Assistant", "Content" -> "out" |>
         }
     ],
     {
         <| "Role" -> "System", "Content" -> "sys" |>,
+        KeyValuePattern @ { "Role" -> "System", "Content" -> "generated system", "Temporary" -> True },
+        KeyValuePattern @ { "Content" -> { "result", _ }, "Temporary" -> True },
         <|
             "Role"    -> "User",
             "Content" -> {
@@ -321,12 +328,10 @@ VerificationTest[
                 <| "Type" -> "Text", "Data" -> "input" |>
             }
         |>,
-        <| "Role" -> "Assistant", "Content" -> "out" |>,
-        KeyValuePattern @ { "Content" -> { "result", _ }, "Temporary" -> True },
-        <| "Role" -> "User", "Content" -> "next" |>
+        <| "Role" -> "Assistant", "Content" -> "out" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FoldContextImageMessage-FoldsOnlyContextImageMessages"
+    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -385,7 +390,13 @@ VerificationTest[
         hasTags = ! StringFreeQ[ #[[ 1, "Content" ]], "added-prompts" ] &;
         {
             count /@ { first, second, third },
-            hasTags /@ { first, second, third },
+            Function[
+                chatMessages,
+                hasTags @ Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+                    <| "ToolMethod" -> "Local" |>,
+                    chatMessages
+                ]
+            ] /@ { first, second, third },
             hasTags /@ { saved, saved2 },
             StringStartsQ[ third[[ 1, "Content" ]], "sys" ]
         }
@@ -401,22 +412,20 @@ VerificationTest[
         Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys\n\n<added-prompts>old</added-prompts>", "new" ],
         Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys\n\n<added-prompts>old</added-prompts>", None ],
         Wolfram`Chatbook`Common`removeAddedPromptTags @ {
-            <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
+            <| "Role" -> "System", "Content" -> { <| "Type" -> "Text", "Data" -> "sys" |> } |>,
+            <| "Role" -> "System", "Content" -> "<added-prompts>ctx</added-prompts>" |>,
             <| "Role" -> "User", "Content" -> "literal <added-prompts> text" |>
-        },
-        Wolfram`Chatbook`Common`removeAddedPromptTags @ <|
-            "Messages" -> { <| "Role" -> "System", "Content" -> "<added-prompts>ctx</added-prompts>" |> }
-        |>
+        }
     },
     {
         "sys\n\n<added-prompts>ctx</added-prompts>",
         "sys\n\n<added-prompts>new</added-prompts>",
         "sys",
         {
-            <| "Role" -> "System", "Content" -> "sys\n\nctx" |>,
+            <| "Role" -> "System", "Content" -> { <| "Type" -> "Text", "Data" -> "sys" |> } |>,
+            <| "Role" -> "System", "Content" -> "ctx" |>,
             <| "Role" -> "User", "Content" -> "literal <added-prompts> text" |>
-        },
-        <| "Messages" -> { <| "Role" -> "System", "Content" -> "ctx" |> } |>
+        }
     },
     SameTest -> MatchQ,
     TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection"
@@ -444,7 +453,7 @@ VerificationTest[
 
 VerificationTest[
     Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
-        Module[ { result },
+        Module[ { result, submitted },
             result = Wolfram`Chatbook`AugmentChatMessages[
                 { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "hi" |> },
                 <|
@@ -454,35 +463,81 @@ VerificationTest[
                     "Tools"            -> { }
                 |>
             ];
+            submitted = Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+                <| "ToolMethod" -> "Local" |>,
+                result
+            ];
             {
                 ListQ @ result,
-                FreeQ[ result, s_String /; StringContainsQ[ s, "added-prompts" ] ],
-                ! FreeQ[ result, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
+                ! FreeQ[ result, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+                FreeQ[ submitted, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+                ! FreeQ[ submitted, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
             }
         ]
     ],
-    { True, True, True },
+    { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "AugmentChatMessages-NoAddedPromptTags"
+    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags"
 ]
 
 VerificationTest[
-    Module[ { tagged, chat, saved },
-        tagged = {
-            <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
-            <| "Role" -> "User", "Content" -> "hi" |>,
-            <| "Role" -> "Assistant", "Content" -> "hello" |>
-        };
-        chat  = Wolfram`Chatbook`Actions`Private`constructChatObject @ tagged;
-        saved = Wolfram`Chatbook`Storage`Private`prepareMessagesForSaving[ tagged, <| "SaveSystemMessage" -> True |> ];
-        {
-            FreeQ[ Normal @ chat, s_String /; StringContainsQ[ s, "added-prompts" ] ],
-            saved[[ 1, "Content" ]]
-        }
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+        Module[ { result, submitted },
+            result = {
+                <| "Role" -> "System", "Content" -> "GENERATED-DOCS-XYZ", "Temporary" -> True |>,
+                <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>CUSTOM-PROMPT-XYZ</added-prompts>" |>,
+                <| "Role" -> "User", "Content" -> "hi" |>
+            };
+            submitted = Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+                <| "ToolMethod" -> "Local" |>,
+                result
+            ];
+            {
+                result[[ 1, "Content" ]],
+                FreeQ[ submitted, s_String /; StringContainsQ[ s, "added-prompts" ] ],
+                ! FreeQ[ submitted, s_String /; StringContainsQ[ s, "CUSTOM-PROMPT-XYZ" ] ]
+            }
+        ]
     ],
-    { True, "sys\n\nctx" },
+    { "GENERATED-DOCS-XYZ", True, True },
     SameTest -> MatchQ,
-    TestID   -> "AddedPromptTags-RemovedFromChatObjectsAndSavedChats"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+        Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+            <| "ToolMethod" -> "Local", "ConvertSystemRoleToUser" -> True |>,
+            {
+                <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
+                <| "Role" -> "User", "Content" -> "hi" |>
+            }
+        ]
+    ],
+    {
+        KeyValuePattern @ { "Role" -> "User", "Content" -> "sys\n\nctx" },
+        KeyValuePattern @ { "Role" -> "User", "Content" -> "hi" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+        Wolfram`Chatbook`SendChat`Private`prepareMessagesForHTTPRequest[
+            <| "ToolMethod" -> "Local" |>,
+            {
+                <| "Role" -> "System", "Content" -> "sys\n\n<added-prompts>ctx</added-prompts>" |>,
+                <| "Role" -> "User", "Content" -> "hi" |>
+            }
+        ]
+    ],
+    {
+        KeyValuePattern @ { "role" -> "system", "content" -> "sys\n\nctx" },
+        KeyValuePattern @ { "role" -> "user", "content" -> "hi" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
