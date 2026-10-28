@@ -96,24 +96,31 @@ appendCellToSidebarChat // endDefinition;
 evaluateSidebarChat // beginDefinition;
 
 evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
-    Module[ { text, uuid, cell },
+    WithCleanup[
+        Module[ { text, uuid, cell },
 
-        text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
+            text = makeBoxesInputMoreTextLike @ input;
+            uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
-        cell = Cell[
-            BoxData @ TemplateBox[
-                { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
-                "NotebookAssistant`Sidebar`UserMessageBox"
-            ],
-            "NotebookAssistant`Sidebar`ChatInput",
-            (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
-                However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
-            CellTags -> uuid
-        ];
+            cell = Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
+                    "NotebookAssistant`Sidebar`UserMessageBox"
+                ],
+                "NotebookAssistant`Sidebar`ChatInput",
+                (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
+                    However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
+                CellTags -> uuid
+            ];
 
-        cellObject = appendCellToSidebarChat[ nbo, sidebarCell, cell, uuid ];
-        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+            cellObject = appendCellToSidebarChat[ nbo, sidebarCell, cell, uuid ];
+            ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+        ],
+        With[ { selections = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] },
+            If[ AssociationQ @ selections, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ selections ];
+            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ];
+            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" }, Inherited ]
+        ]
     ],
     throwInternalFailure
 ];

@@ -170,7 +170,8 @@ chatExcludedQ // beginDefinition;
 chatExcludedQ[ cell_CellObject ] := chatExcludedQ @ cellInformation @ cell;
 
 chatExcludedQ[ Cell[ __, $$chatIgnoredStyle, ___ ] ] := True;
-chatExcludedQ[ Cell[ __, TaggingRules -> tags_, ___ ] ] := chatExcludedQ @ tags;
+chatExcludedQ[ Cell[ __, TaggingRules -> tags: KeyValuePattern[ { } ], ___ ] ] := chatExcludedQ @ tags;
+chatExcludedQ[ Cell[ __, TaggingRules -> _, ___ ] ] := False;
 chatExcludedQ[ Cell[ ___ ] ] := False;
 
 chatExcludedQ[ KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ] := True;

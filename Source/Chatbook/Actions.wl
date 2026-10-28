@@ -876,14 +876,22 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
+    constructChatObject0 @ messages;
+
+constructChatObject // endDefinition;
+
+
+constructChatObject0 // beginDefinition;
+
+constructChatObject0[ messages_List ] :=
     With[ { chat = Quiet[ chatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
-constructChatObject[ messages_List ] :=
+constructChatObject0[ messages_List ] :=
     Dataset[ KeyMap[ Capitalize ] /@ messages ];
 
-constructChatObject // endDefinition;
+constructChatObject0 // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
