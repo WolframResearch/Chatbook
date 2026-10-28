@@ -52,6 +52,10 @@ VerificationTest[
     };
 
     notebookInformationStub[ All ] := ($scanCount++; $notebooks);
+    notebookInformationStub[ nbo_NotebookObject ] := (
+        $notebookInfoCount++;
+        SelectFirst[ $notebooks, #[ "NotebookObject" ] === nbo &, Missing[ "NotebookClosed", nbo ] ]
+    );
     notebookInformationStub[ { nbo_NotebookObject } ] := {
         SelectFirst[ $notebooks, #[ "NotebookObject" ] === nbo &, Missing[ "NotebookClosed", nbo ] ]
     };
@@ -66,6 +70,7 @@ VerificationTest[
             $notebooks          = notebooks,
             $focusWindowTitles  = titles,
             $scanCount          = 0,
+            $notebookInfoCount  = 0,
             $writes             = { },
             CurrentValue        = currentValueStub,
             CurrentChatSettings = Function[
@@ -348,6 +353,23 @@ VerificationTest[
     TestID   -> "GetFocusedNotebook-LockedNotebookNotIncluded"
 ]
 
+VerificationTest[
+    Table[
+        withFocusStubs @ Block[
+            {
+                CurrentChatSettings = Function[
+                    Switch[ #2, "WorkspaceChat", True, "FocusedNotebook", locked, _, Inherited ]
+                ]
+            },
+            { GetFocusedNotebook @ $chatNB, $notebookInfoCount, $scanCount }
+        ],
+        { locked, { $excludedNB, $userNB2, Inherited } }
+    ],
+    { { $userNB1, 1, 1 }, { $userNB2, 1, 0 }, { $userNB1, 0, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "GetFocusedNotebook-ResolvesNotebookInformationOnce"
+]
+
 (* The context sent to the model never comes from an excluded or hidden locked notebook: *)
 VerificationTest[
     Table[
@@ -356,7 +378,7 @@ VerificationTest[
                 {
                     Wolfram`Chatbook`$WorkspaceChat = True,
                     Wolfram`Chatbook`ChatModes`Context`Private`getNotebookMetadataString =
-                        Throw[ #, $contextSourceTag ] &
+                        Throw[ { #1, #2, $notebookInfoCount, $scanCount }, $contextSourceTag ] &
                 },
                 Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[
                     $chatNB,
@@ -367,7 +389,13 @@ VerificationTest[
         ],
         { locked, { $excludedNB, $hiddenNB, $paletteNB, $userNB2, Inherited } }
     ],
-    { $userNB1, $userNB1, $userNB1, $userNB2, $userNB1 },
+    {
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB2, KeyValuePattern[ "NotebookObject" -> $userNB2 ], 1, 0 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 0, 1 }
+    },
     SameTest -> MatchQ,
     TestID   -> "GetContextFromSelection-LockedNotebookNotIncluded"
 ]
