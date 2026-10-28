@@ -93,6 +93,43 @@ VerificationTest[
 ]
 
 VerificationTest[
+    UsingFrontEnd @ Module[ { nb, sidebarCell, cells, saved, first, second },
+        WithCleanup[
+            nb = CreateDocument @ {
+                Cell[ "before", "Text" ],
+                Cell[ "PartitionsP[417]", "Input" ],
+                Cell[ "sidebar", "Text" ]
+            };
+            cells = Cells @ nb;
+            sidebarCell = Last @ cells;
+            saved = <| "Before" -> { First @ cells }, "Selected" -> { cells[[ 2 ]] }, "After" -> { } |>;
+            Wolfram`Chatbook`Common`setCurrentValue[
+                sidebarCell,
+                { TaggingRules, "CurrentSelectionContext" },
+                saved
+            ];
+            Internal`InheritedBlock[
+                { Wolfram`Chatbook`ChatModes`Common`sidebarCellObject },
+                Wolfram`Chatbook`ChatModes`Common`sidebarCellObject[ _NotebookObject ] := sidebarCell;
+                Block[ { Wolfram`Chatbook`$SidebarChat = True },
+                    first  = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb;
+                    second = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb
+                ]
+            ];
+            {
+                first === saved,
+                second === saved,
+                CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" } ] === saved
+            },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextCells-SidebarSelectionSurvivesToolLoop"
+]
+
+VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`$contextPrompt   = None,
