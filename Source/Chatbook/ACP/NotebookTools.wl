@@ -11,9 +11,9 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
    the MCP server (MCP.wl). The agent never edits the user's notebooks: OpenNotebook has the front end make a hidden
    snapshot of a notebook (or of a .nb file, or a new empty one), the reads and edits go to the snapshot, and ShowChanges
    shows the user their notebook as a CellDiff comparison against the edited snapshot, where they accept or reject the
-   changes. A tool's function takes the arguments as an Association and gives a String (JSON for ListNotebooks and
-   OpenNotebook, text otherwise), or a Failure whose "String" is an error text for the agent (AgentTools turns it into a
-   tool result with isError).
+   changes. A tool's function takes the arguments as an Association and gives a String (JSON for ListNotebooks, JSON
+   and then the cells for OpenNotebook, text otherwise), or a Failure whose "String" is an error text for the agent
+   (AgentTools turns it into a tool result with isError).
 
    Rules:
    * The front end does the work: every front end operation goes through notebookFrontEnd (the snapshot, cell text and
@@ -148,12 +148,13 @@ $acpNotebookWorkflow = "\
 These tools edit Wolfram notebooks through the user's Wolfram front end (desktop app); nothing is evaluated. Use them \
 instead of editing .nb files. Your edits never change the user's notebook directly: OpenNotebook makes a hidden \
 snapshot of a notebook (unsaved changes included) and gives its handle (s1, s2, ...), which the other tools take. \
-Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first) -> ReadCells (the whole \
-notebook, in one call) -> EditInCell, SetCell, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
+Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first), which gives the \
+notebook's cells too -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
 shows the user their notebook as a diff against it, to accept or reject change by change. CloseNotebook discards a \
 snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
-independent cells in one turn, as parallel calls. For a cell that changes only in part, use EditInCell with short \
-oldText and newText instead of rewriting the cell with SetCell. A notebook edit needs no todo list. If you have \
+independent cells in one turn: one SetCells call for all the cells you rewrite, parallel calls for the rest. For a \
+cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
+notebook edit needs no todo list. If you have \
 WolframLanguageEvaluator, check code with it directly; WolframLanguageContext is not needed for notebook edits.";
 
 (* ::**************************************************************************************************************:: *)
@@ -168,8 +169,9 @@ windows and notebooks the user excluded from AI are not listed.";
 $openNotebookDescription = "\
 Opens a hidden snapshot of a notebook to edit: a notebook open in the front end (its id from ListNotebooks, its exact \
 window title, or its file; unsaved changes included) or a .nb file that is not open. Without notebook, it starts a \
-new, empty notebook. Returns JSON {notebook, title, source, cells}: notebook is the snapshot's handle for the other \
-tools. A notebook with an open snapshot gives that snapshot again. " <> $acpNotebookWorkflow;
+new, empty notebook. Returns JSON {notebook, title, source, cells}, where notebook is the snapshot's handle for the \
+other tools, and then the cells as ReadCells shows them, so that no ReadCells call is needed (unless a note says cells \
+were not shown). A notebook with an open snapshot gives that snapshot again. " <> $acpNotebookWorkflow;
 
 $getOutlineDescription = "\
 Gives a map of a snapshot: for each cell, its marker line (* ::Style:: #id *) and the start of its content (preview \
@@ -194,10 +196,11 @@ empty newText; to insert, put the text next to the insertion point in oldText an
 newText. Copy oldText exactly from ReadCells or SearchNotebook; it never includes a marker line. Gives the cell's new \
 content.";
 
-$setCellDescription = "\
-Replaces the whole content of one cell of a snapshot, and optionally its style. text is the new content in the cell \
-text notation, without the marker line (text cells are wrapped in (* *)). Rewriting a whole cell is slow: for a \
-cell that changes only in part, EditInCell is much faster. Gives the cell's new content.";
+$setCellsDescription = "\
+Replaces the whole content of cells of a snapshot, and optionally their styles, in one call: each item is {cell, \
+text, style}, text in the cell text notation without the marker line (text cells wrapped in (* *)). The items are \
+applied in order, all or none. Use one SetCells call for all the cells you rewrite. Rewriting a whole cell is slow: \
+for a cell that changes only in part, EditInCell is much faster. Gives the ids of the cells it set.";
 
 $insertCellsDescription = "\
 Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
@@ -312,15 +315,19 @@ The edits, applied in order: {oldText, newText, count}; oldText must occur exact
             ]
         }
     |>,
-    "SetCell" -> <|
-        "DisplayName" -> "Set Cell",
-        "Description" -> $setCellDescription,
-        "Function"    -> setCellTool,
+    "SetCells" -> <|
+        "DisplayName" -> "Set Cells",
+        "Description" -> $setCellsDescription,
+        "Function"    -> setCellsTool,
         "Parameters"  -> {
             $snapshotParameter,
-            $cellParameter,
-            parameter[ "text", "String", "The cell's new content, without its marker line", True ],
-            parameter[ "style", "String", "The cell's new style; omit it to keep the style", False ]
+            parameter[
+                "cells",
+                RepeatingElement @ CompoundElement @ <| "cell" -> "String", "text" -> "String", "style" -> "String" |>,
+                "\
+The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New words*)\"}; omit style to keep the style",
+                True
+            ]
         }
     |>,
     "InsertCells" -> <|
@@ -396,9 +403,9 @@ editInCellTool     // beginDefinition;
 editInCellTool[ args_ ] := toolResult[ "EditInCell", editInCell @ toolArguments @ args ];
 editInCellTool     // endDefinition;
 
-setCellTool        // beginDefinition;
-setCellTool[ args_ ] := toolResult[ "SetCell", setCell @ toolArguments @ args ];
-setCellTool        // endDefinition;
+setCellsTool       // beginDefinition;
+setCellsTool[ args_ ] := toolResult[ "SetCells", setCells @ toolArguments @ args ];
+setCellsTool       // endDefinition;
 
 insertCellsTool    // beginDefinition;
 insertCellsTool[ args_ ] := toolResult[ "InsertCells", insertCells @ toolArguments @ args ];
@@ -654,7 +661,7 @@ stylesArgument[ spec_ ] := Replace[ listArgument[ spec, "," | ";" ], { } -> None
 stylesArgument // endDefinition;
 
 
-(* A cell style (SetCell's style, a new cell's style), or Automatic if it is not given *)
+(* A cell style (a set cell's style, a new cell's style), or Automatic if it is not given *)
 styleArgument // beginDefinition;
 styleArgument[ Missing[ ___ ] | Null, _String ] := Automatic;
 styleArgument[ s_String, _String ] := If[ StringTrim @ s === "", Automatic, StringTrim @ s ];
@@ -733,6 +740,34 @@ newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
 ];
 
 newCellArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setCellsArgument*)
+
+(* SetCells' cells as "Set" operations of the edit packet: { { "Set", cell, style, text }, ... } *)
+setCellsArgument // beginDefinition;
+
+setCellsArgument[ handle_String, cells: { __Association } ] := MapIndexed[ setCellArgument[ handle, #1, First @ #2 ] &, cells ];
+setCellsArgument[ _String, { } | Missing[ ___ ] | Null ] := missingArgument[ "cells" ];
+
+setCellsArgument[ _String, _ ] :=
+    toolError[ "The parameter cells must be a list of cells {cell, text, style}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}]." ];
+
+setCellsArgument // endDefinition;
+
+
+setCellArgument // beginDefinition;
+
+setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell, text },
+    cell = cellArgument[ handle, Lookup[ item, "cell", Missing[ "NoInput" ] ] ];
+    text = Lookup[ item, "text", Missing[ "NoInput" ] ];
+    If[ ! StringQ @ text, toolError[ "Item `1` of cells has no text.", i ] ];
+    requireCellText[ text, "The text of item " <> ToString @ i ];
+    { "Set", cell, styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ], text }
+];
+
+setCellArgument // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1168,7 +1203,7 @@ resolveCell[ handle_String, spec_String ] := Module[ { id, cell },
     If[ MatchQ[ cell, _CellObject ],
         cell,
         toolError[
-            "`1` has no cell `2`. Cell ids come from GetOutline, ReadCells and SearchNotebook.",
+            "`1` has no cell `2`. Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
             handle,
             quoted @ spec
         ]
@@ -1190,7 +1225,7 @@ cellID[ spec_String ] := With[ { id = ToLowerCase @ StringTrim[ spec, (Whitespac
 cellID // endDefinition;
 
 
-(* The cell argument of EditInCell and SetCell, InsertCells' anchor *)
+(* The cell argument of EditInCell and SetCells, InsertCells' anchor *)
 cellArgument // beginDefinition;
 cellArgument[ handle_String, spec_ ] := resolveCell[ handle, stringArgument[ spec, "cell" ] ];
 cellArgument // endDefinition;
@@ -1209,22 +1244,33 @@ forgetCells[ handle_String, cells_List ] := ($snapshots[[ handle, "IDs" ]] = Key
 forgetCells // endDefinition;
 
 
-(* The cell that an "Edit" or "Set" operation changed: the front end keeps the cell, but if it gives another CellObject
-   for it, that one takes over the id *)
-changedCell // beginDefinition;
+(* The cells that "Edit" or "Set" operations changed: the front end replaces each such cell by a new one, which keeps
+   the cell's ExpressionUUID (CellObject[uuid, instance]) but not its CellObject, so the new CellObject takes over the
+   id. The packet gives the changed cells in document order: a replacement is matched to its cell by the uuid, or, if
+   CellObjects have no uuid (the legacy object format), when there is only one. *)
+changedCells // beginDefinition;
 
-changedCell[ handle_String, cell_CellObject, result_Association ] := With[
-    { new = First[ Cases[ Lookup[ result, "Changed", { } ], _CellObject ], cell ] },
-    If[ new =!= cell && ! KeyExistsQ[ $snapshots[ handle, "IDs" ], new ],
-        $snapshots[[ handle, "IDs" ]] = Append[
-            KeyDrop[ $snapshots[ handle, "IDs" ], cell ],
-            new -> $snapshots[ handle, "IDs", cell ]
-        ]
+changedCells[ handle_String, cells: { __CellObject }, result_Association ] := Module[ { changed, new, lost, pairs },
+    changed = Cases[ Lookup[ result, "Changed", { } ], _CellObject ];
+    new     = Select[ changed, ! KeyExistsQ[ $snapshots[ handle, "IDs" ], # ] & ];
+    lost    = Select[ cells, ! MemberQ[ changed, # ] & ];
+    pairs   = DeleteMissing @ AssociationMap[ Function[ old, SelectFirst[ new, sameCellQ[ old, # ] &, Missing[ ] ] ], lost ];
+    If[ pairs === <| |> && Length @ new === 1 && Length @ lost === 1, pairs = <| First @ lost -> First @ new |> ];
+    $snapshots[[ handle, "IDs" ]] = Join[
+        KeyDrop[ $snapshots[ handle, "IDs" ], Keys @ pairs ],
+        AssociationThread[ Values @ pairs, Lookup[ $snapshots[ handle, "IDs" ], Keys @ pairs ] ]
     ];
-    new
+    Replace[ cells, Normal @ pairs, { 1 } ]
 ];
 
-changedCell // endDefinition;
+changedCells // endDefinition;
+
+
+(* Whether two CellObjects name the same cell: the same uuid, another instance *)
+sameCellQ // beginDefinition;
+sameCellQ[ CellObject[ uuid_String, ___ ], CellObject[ uuid_String, ___ ] ] := True;
+sameCellQ[ _CellObject, _CellObject ] := False;
+sameCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1290,12 +1336,12 @@ cellBlocks // endDefinition;
 (* ::Subsection::Closed:: *)
 (*applyEdit*)
 
-(* Applies one operation of the edit packet to a snapshot and gives the packet's result. A Failure of the packet (the
+(* Applies operations of the edit packet to a snapshot and gives the packet's result. A Failure of the packet (the
    batch is atomic: nothing changed) ends the tool with its tag and message, and a hint for the agent. *)
 applyEdit // beginDefinition;
 
-applyEdit[ handle_String, op_List ] := Module[ { result },
-    result = notebookFrontEnd[ "Edit", $snapshots[ handle, "Notebook" ], { op } ];
+applyEdit[ handle_String, ops: { __List } ] := Module[ { result },
+    result = notebookFrontEnd[ "Edit", $snapshots[ handle, "Notebook" ], ops ];
     Which[
         FailureQ @ result && result =!= $Failed,
             toolError @ editFailureText[ handle, result ],
@@ -1425,19 +1471,23 @@ sourceReference // endDefinition;
 (*OpenNotebook*)
 openNotebook // beginDefinition;
 
-openNotebook[ args_Association ] := Module[ { source, handle, reopened, cells },
+(* The snapshot as JSON, then its cells as ReadCells shows them, so that the agent needs no ReadCells call *)
+openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries },
     source   = openSource @ args[ "notebook" ];
     handle   = sourceSnapshot @ source[ "Source" ];
     reopened = StringQ @ handle;
     If[ ! reopened, handle = newSnapshot @ source ];
-    cells = cellTexts[ handle, All, 1, True ];
-    toJSON @ <|
-        "notebook" -> handle,
-        "title"    -> $snapshots[ handle, "Title" ],
-        "source"   -> sourceReference @ $snapshots @ handle,
-        "cells"    -> Length @ cells,
-        If[ reopened, "note" -> "This notebook already had an open snapshot; its edits so far are kept.", Nothing ]
-    |>
+    entries = cellTexts[ handle, All, All, True ];
+    StringJoin[
+        toJSON @ <|
+            "notebook" -> handle,
+            "title"    -> $snapshots[ handle, "Title" ],
+            "source"   -> sourceReference @ $snapshots @ handle,
+            "cells"    -> Length @ entries,
+            If[ reopened, "note" -> "This notebook already had an open snapshot; its edits so far are kept.", Nothing ]
+        |>,
+        If[ entries === { }, "", "\n\nIts cells, as ReadCells shows them:\n" <> budgetedBlocks @ entries ]
+    ]
 ];
 
 openNotebook // endDefinition;
@@ -1567,12 +1617,21 @@ outlineBlock // endDefinition;
 (*ReadCells*)
 readCells // beginDefinition;
 
-readCells[ args_Association ] := Module[ { handle, ids, full, entries, blocks, shown },
+readCells[ args_Association ] := Module[ { handle, ids, full, entries },
     handle  = resolveSnapshot @ args[ "notebook" ];
     ids     = cellIDsArgument[ args[ "cells" ], "cells" ];
     full    = booleanArgument[ args[ "full" ], "full", False ];
     entries = cellTexts[ handle, If[ ids === None, All, resolveCells[ handle, ids ] ], All, ! full ];
-    If[ entries === { }, Return[ snapshotLabel @ handle <> " has no cells.", Module ] ];
+    If[ entries === { }, snapshotLabel @ handle <> " has no cells.", budgetedBlocks @ entries ]
+];
+
+readCells // endDefinition;
+
+
+(* Cells as marker lines and content, as many as fit into $readBudget, with a note on the ones that do not *)
+budgetedBlocks // beginDefinition;
+
+budgetedBlocks[ entries: { __Association } ] := Module[ { blocks, shown },
     blocks = cellBlock /@ entries;
     shown  = budgetCount[ StringLength /@ blocks, $readBudget ];
     StringJoin[
@@ -1580,14 +1639,15 @@ readCells[ args_Association ] := Module[ { handle, ids, full, entries, blocks, s
         If[ shown < Length @ blocks,
             StringJoin[
                 "\n[Not shown: #", entries[[ shown + 1, "ID" ]], " and the ", ToString[ Length @ blocks - shown - 1 ],
-                " cells after it (a result has at most ", ToString @ $readBudget, " characters). Read them with cells.]"
+                " cells after it (a result has at most ", ToString @ $readBudget, " characters). Read them with ReadCells \
+and cells.]"
             ],
             ""
         ]
     ]
 ];
 
-readCells // endDefinition;
+budgetedBlocks // endDefinition;
 
 
 (* How many of the lengths fit into the budget (at least one) *)
@@ -1707,8 +1767,8 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
     handle = resolveSnapshot @ args[ "notebook" ];
     cell   = cellArgument[ handle, args[ "cell" ] ];
     edits  = editsArgument @ args[ "edits" ];
-    result = applyEdit[ handle, { "Edit", cell, edits } ];
-    cell   = changedCell[ handle, cell, result ];
+    result = applyEdit[ handle, { { "Edit", cell, edits } } ];
+    cell   = First @ changedCells[ handle, { cell }, result ];
     StringJoin[
         "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
         " (", ToString @ Length @ edits, If[ Length @ edits === 1, " edit", " edits" ], "). It now reads:\n",
@@ -1721,21 +1781,22 @@ editInCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*SetCell*)
-setCell // beginDefinition;
+(*SetCells*)
 
-setCell[ args_Association ] := Module[ { handle, cell, text, style, result },
+(* All the cells in one edit packet; the result names them only (their content is what the agent just wrote) *)
+setCells // beginDefinition;
+
+setCells[ args_Association ] := Module[ { handle, ops, cells },
     handle = resolveSnapshot @ args[ "notebook" ];
-    cell   = cellArgument[ handle, args[ "cell" ] ];
-    text   = textArgument[ args[ "text" ], "text" ];
-    requireCellText[ text, "The text" ];
-    style = styleArgument[ args[ "style" ], "style" ];
-    result = applyEdit[ handle, { "Set", cell, style, text } ];
-    cell   = changedCell[ handle, cell, result ];
-    "Set #" <> $snapshots[ handle, "IDs", cell ] <> " of " <> handle <> ". It now reads:\n" <> cellBlocks[ handle, { cell } ]
+    ops    = setCellsArgument[ handle, args[ "cells" ] ];
+    cells  = changedCells[ handle, DeleteDuplicates @ ops[[ All, 2 ]], applyEdit[ handle, ops ] ];
+    StringJoin[
+        "Set ", ToString @ Length @ cells, If[ Length @ cells === 1, " cell", " cells" ], " of ", handle, ": ",
+        StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ], ". ReadCells shows their new content."
+    ]
 ];
 
-setCell // endDefinition;
+setCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1747,7 +1808,7 @@ insertCells[ args_Association ] := Module[ { handle, cells, anchor, position, re
     cells    = newCellsArgument @ args[ "newCells" ];
     anchor   = anchorArgument[ handle, args[ "cell" ] ];
     position = positionArgument @ args[ "position" ];
-    result   = applyEdit[ handle, { "Insert", anchor, position, cells } ];
+    result   = applyEdit[ handle, { { "Insert", anchor, position, cells } } ];
     inserted = Cases[ Lookup[ result, "Inserted", { } ], _CellObject ];
     numberCells[ handle, inserted ];
     where = Which[
@@ -1773,7 +1834,7 @@ deleteCells[ args_Association ] := Module[ { handle, cells, ids, result },
     handle = resolveSnapshot @ args[ "notebook" ];
     cells  = resolveCells[ handle, Replace[ cellIDsArgument[ args[ "cells" ], "cells" ], None :> missingArgument[ "cells" ] ] ];
     ids    = Lookup[ $snapshots[ handle, "IDs" ], cells ];
-    result = applyEdit[ handle, { "Delete", cells } ];
+    result = applyEdit[ handle, { { "Delete", cells } } ];
     forgetCells[ handle, cells ];
     StringJoin[
         "Deleted ", ToString @ Replace[ Lookup[ result, "Deleted", Length @ cells ], Except[ _Integer ] -> Length @ cells ],

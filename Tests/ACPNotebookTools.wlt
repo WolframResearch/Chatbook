@@ -63,7 +63,7 @@ VerificationTest[
     nbtText[ failure_Failure ] := failure[ "String" ];
     nbtText[ other_ ] := other;
 
-    nbtJSON[ json_String ] := Developer`ReadRawJSONString @ json;
+    nbtJSON[ json_String ] := Developer`ReadRawJSONString @ First @ StringSplit[ json, "\n\nIts cells", 2 ];
     nbtJSON[ other_ ] := other;
 
     (* The value of a pure part, or the text of the tool error it ends with *)
@@ -282,7 +282,7 @@ VerificationTest[
     { Keys @ $nbtTools, AllTrue[ $nbtTools, MatchQ[ _LLMTool ] ] },
     {
         {
-            "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCell",
+            "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCells",
             "InsertCells", "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
         },
         True
@@ -294,7 +294,7 @@ VerificationTest[
 VerificationTest[
     Map[ #[ "Data" ][ "DisplayName" ] &, Values @ $nbtTools ],
     {
-        "List Notebooks", "Open Notebook", "Get Outline", "Read Cells", "Search Notebook", "Edit In Cell", "Set Cell",
+        "List Notebooks", "Open Notebook", "Get Outline", "Read Cells", "Search Notebook", "Edit In Cell", "Set Cells",
         "Insert Cells", "Delete Cells", "Save Notebook", "Show Changes", "Close Notebook"
     },
     SameTest -> MatchQ,
@@ -317,7 +317,7 @@ VerificationTest[
             "ReadCells"      -> { "object", { "notebook", "cells", "full" }, { "notebook" } },
             "SearchNotebook" -> { "object", { "notebook", "query", "regex", "cells", "styles", "limit" }, { "notebook", "query" } },
             "EditInCell"     -> { "object", { "notebook", "cell", "edits" }, { "notebook", "cell", "edits" } },
-            "SetCell"        -> { "object", { "notebook", "cell", "text", "style" }, { "notebook", "cell", "text" } },
+            "SetCells"       -> { "object", { "notebook", "cells" }, { "notebook", "cells" } },
             "InsertCells"    -> { "object", { "notebook", "newCells", "cell", "position" }, { "notebook", "newCells" } },
             "DeleteCells"    -> { "object", { "notebook", "cells" }, { "notebook", "cells" } },
             "SaveNotebook"   -> { "object", { "notebook" }, { "notebook" } },
@@ -345,7 +345,7 @@ VerificationTest[
     {
         StringContainsQ[ $nbtTools[ "OpenNotebook" ][ "Description" ], $acpNotebookWorkflow ],
         StringContainsQ[ $nbtTools[ "ReadCells" ][ "Description" ], $acpNotebookNotation ],
-        StringContainsQ[ $acpNotebookWorkflow, "OpenNotebook" ~~ __ ~~ "ReadCells" ~~ __ ~~ "ShowChanges" ],
+        StringContainsQ[ $acpNotebookWorkflow, "OpenNotebook" ~~ __ ~~ "SetCells" ~~ __ ~~ "ShowChanges" ],
         StringContainsQ[ $acpNotebookNotation, "(* ::Style:: #id *)" ] && StringContainsQ[ $acpNotebookNotation, "\\[Name]" ],
         AllTrue[ $nbtTools, StringFreeQ[ #[ "Description" ], RegularExpression[ "[\\x{E000}-\\x{F8FF}]" ] ] & ]
     },
@@ -637,15 +637,16 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Snapshots*)
 
-(* OpenNotebook snapshots a listed notebook (by id, title or file), numbers its cells (a cheap read) and records it;
-   a notebook that has an open snapshot gives that one again *)
+(* OpenNotebook snapshots a listed notebook (by id, title or file), records it, and gives its cells as ReadCells shows
+   them, from the read that numbers them; a notebook that has an open snapshot gives that one again *)
 VerificationTest[
     withFakeFE @ Module[ { first, again, record },
-        first  = nbtJSON @ nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        first  = nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         again  = nbtJSON @ nbtCall[ "OpenNotebook", <| "notebook" -> "Hamiltonian Mechanics" |> ];
         record = Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[ "s1" ];
         {
-            first,
+            nbtJSON @ first,
+            StringDrop[ first, StringLength @ First @ StringSplit[ first, "\n\nIts cells", 2 ] ] === "\n\nIts cells, as ReadCells shows them:\n" <> nbtCall[ "ReadCells", <| "notebook" -> "s1" |> ],
             again,
             Keys @ Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots,
             KeyDrop[ record, "IDs" ],
@@ -655,6 +656,7 @@ VerificationTest[
     ],
     {
         <| "notebook" -> "s1", "title" -> "Hamiltonian Mechanics", "source" -> "abcdef11", "cells" -> 7 |>,
+        True,
         <|
             "notebook" -> "s1", "title" -> "Hamiltonian Mechanics", "source" -> "abcdef11", "cells" -> 7,
             "note" -> "This notebook already had an open snapshot; its edits so far are kept."
@@ -675,7 +677,7 @@ VerificationTest[
         {
             { "Snapshot", NotebookObject[ "fake-source-1" ] },
             { "FileName", NotebookObject[ "fake-snapshot-1" ] },
-            { "CellText", NotebookObject[ "fake-snapshot-1" ], All, 1, True }
+            { "CellText", NotebookObject[ "fake-snapshot-1" ], All, All, True }
         }
     },
     SameTest -> MatchQ,
@@ -795,7 +797,7 @@ VerificationTest[
             "\n"
         ],
         "The offset 9 is past the last cell: s1 has 7 cells.",
-        { { 1, True }, { 24, True }, { 80, True }, { 80, True } }
+        { { All, True }, { 24, True }, { 80, True }, { 80, True } }
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-GetOutline"
@@ -821,9 +823,9 @@ VerificationTest[
         "(* ::Input:: #c4 *)\nH = p\:02c42/(2 m l\:02c42) - m g l Cos[\[Theta]]\n(* ::Text:: #c3 *)\n(*The Hamiltonian of a pendulum of length l and mass m:*)",
         7,
         "(* ::Input:: #c7 *)\neqs = {q'[t] == D[H, p], p'[t] == -D[H, q]};\nsol = NDSolve[eqs, {q, p}, {t, 0, 10}]",
-        "(* ::Title:: #c1 *)\n(*Hamiltonian Mechanics*)\n(* ::Section:: #c2 *)\n(*The simple pendulum*)\n[Not shown: #c3 and the 4 cells after it (a result has at most 100 characters). Read them with cells.]",
-        "s1 has no cell \"c99\". Cell ids come from GetOutline, ReadCells and SearchNotebook.",
-        { { 2, True }, { 0, True }, { 1, False }, { 0, True } }
+        "(* ::Title:: #c1 *)\n(*Hamiltonian Mechanics*)\n(* ::Section:: #c2 *)\n(*The simple pendulum*)\n[Not shown: #c3 and the 4 cells after it (a result has at most 100 characters). Read them with ReadCells and cells.]",
+        "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
+        { { 0, True }, { 2, True }, { 0, True }, { 1, False }, { 0, True } }
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-ReadCells"
@@ -962,7 +964,7 @@ VerificationTest[
             "AmbiguousMatch: \"l\" occurs 2 times in the cell. Nothing was changed. Make oldText longer, so that it occurs as often as count says, or give count.",
             "ParseError: The new content of the cell does not parse. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:2e22 \:2e23 wrappers.",
             "Edit 1 has no newText (use \"\" to delete oldText).",
-            "s1 has no cell \"c99\". Cell ids come from GetOutline, ReadCells and SearchNotebook.",
+            "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
             "CellNotFound: The cell does not exist. Nothing was changed. Call GetOutline for the current cell ids."
         },
         4,
@@ -973,45 +975,63 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-EditInCell-Failures"
 ]
 
-(* A changed cell that the front end gives as another CellObject keeps its id *)
+(* A changed cell that the front end gives as another CellObject keeps its id: matched by its uuid (the packet gives
+   the changed cells in document order, not in the order of the operations), or as the only one *)
 VerificationTest[
     withFakeFE @ (
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         {
-            Wolfram`Chatbook`ACP`NotebookTools`Private`changedCell[ "s1", CellObject[ "fake-1-4" ], <| "Changed" -> { CellObject[ "fake-1-4" ] } |> ],
-            Wolfram`Chatbook`ACP`NotebookTools`Private`changedCell[ "s1", CellObject[ "fake-1-4" ], <| "Changed" -> { CellObject[ "other" ] } |> ],
-            Lookup[ Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[ "s1", "IDs" ], { CellObject[ "other" ], CellObject[ "fake-1-4" ] } ]
+            Wolfram`Chatbook`ACP`NotebookTools`Private`changedCells[ "s1", { CellObject[ "fake-1-4" ] }, <| "Changed" -> { CellObject[ "fake-1-4" ] } |> ],
+            Wolfram`Chatbook`ACP`NotebookTools`Private`changedCells[ "s1", { CellObject[ "fake-1-5" ], CellObject[ "fake-1-3" ] }, <| "Changed" -> { CellObject[ "fake-1-3", 2 ], CellObject[ "fake-1-5", 2 ] } |> ],
+            Wolfram`Chatbook`ACP`NotebookTools`Private`changedCells[ "s1", { CellObject[ "fake-1-4" ] }, <| "Changed" -> { CellObject[ "other" ] } |> ],
+            Lookup[
+                Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[ "s1", "IDs" ],
+                { CellObject[ "fake-1-5", 2 ], CellObject[ "fake-1-3", 2 ], CellObject[ "other" ], CellObject[ "fake-1-4" ] }
+            ]
         }
     ),
-    { CellObject[ "fake-1-4" ], CellObject[ "other" ], { "c4", Missing[ "KeyAbsent", CellObject[ "fake-1-4" ] ] } },
+    {
+        { CellObject[ "fake-1-4" ] },
+        { CellObject[ "fake-1-5", 2 ], CellObject[ "fake-1-3", 2 ] },
+        { CellObject[ "other" ] },
+        { "c5", "c3", "c4", Missing[ "KeyAbsent", CellObject[ "fake-1-4" ] ] }
+    },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-ChangedCell"
 ]
 
-(* SetCell replaces a cell's content, and its style if one is given *)
+(* SetCells replaces the content of cells, and their styles where given, in one edit packet; a bad item changes nothing *)
 VerificationTest[
     withFakeFE @ (
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         {
-            nbtCall[ "SetCell", <| "notebook" -> "s1", "cell" -> "c3", "text" -> "(*The Lagrangian:*)" |> ],
-            nbtCall[ "SetCell", <| "notebook" -> "s1", "cell" -> "c3", "text" -> "(*Lagrangian*)", "style" -> "Subsection" |> ],
-            nbtText @ nbtCall[ "SetCell", <| "notebook" -> "s1", "cell" -> "c3", "text" -> "(* ::Text:: #c3 *)\n(*x*)" |> ],
-            nbtCall[ "SetCell", <| "notebook" -> "s1", "cell" -> "c3" |> ],
-            Cases[ $fakeCalls, { "Edit", _, { op_ } } :> op ]
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |>, <| "cell" -> "c3", "text" -> "(*The Lagrangian:*)" |> } |> ],
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*Lagrangian*)", "style" -> "Subsection" |> } |> ],
+            nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c3, c4" |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*x*)" |>, <| "cell" -> "c4", "text" -> "(* ::Text:: #c4 *)\n(*x*)" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c99", "text" -> "(*x*)" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> "x" |> ],
+            nbtCall[ "SetCells", <| "notebook" -> "s1" |> ],
+            Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ]
         }
     ),
     {
-        "Set #c3 of s1. It now reads:\n(* ::Text:: #c3 *)\n(*The Lagrangian:*)",
-        "Set #c3 of s1. It now reads:\n(* ::Subsection:: #c3 *)\n(*Lagrangian*)",
-        "The text includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
+        "Set 2 cells of s1: #c4, #c3. ReadCells shows their new content.",
+        "Set 1 cell of s1: #c3. ReadCells shows their new content.",
+        "(* ::Subsection:: #c3 *)\n(*Lagrangian*)\n(* ::Input:: #c4 *)\nL = T - V",
+        "The text of item 2 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
+        "Item 1 of cells has no text.",
+        "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
+        "The parameter cells must be a list of cells {cell, text, style}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}].",
         _Failure, (* LLMTool refuses a call without a required parameter *)
         {
-            { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" },
-            { "Set", CellObject[ "fake-1-3" ], "Subsection", "(*Lagrangian*)" }
+            { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" } },
+            { { "Set", CellObject[ "fake-1-3" ], "Subsection", "(*Lagrangian*)" } }
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ACPNotebookTools-SetCell"
+    TestID   -> "ACPNotebookTools-SetCells"
 ]
 
 (* InsertCells after or before a cell, or at the end; the new cells get the next ids and are shown *)
@@ -1055,7 +1075,7 @@ VerificationTest[
     ),
     {
         "Deleted 2 cells (#c5, #c4) from s1.",
-        "s1 has no cell \"c4\". Cell ids come from GetOutline, ReadCells and SearchNotebook.",
+        "s1 has no cell \"c4\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
         _Failure, (* LLMTool refuses a call without a required parameter *)
         { "c1", "c2", "c3", "c6", "c7" },
         5

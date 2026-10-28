@@ -258,7 +258,7 @@ VerificationTest[
     $mcpTestThrow = "acp-mcp-test-throw";
 
     $mcpToolNames = {
-        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCell", "InsertCells",
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCells", "InsertCells",
         "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
     };
 
@@ -1382,9 +1382,10 @@ VerificationTest[
     TestID   -> "ACPMCP-NotebookMCPServer"
 ]
 
-(* The notebook tools over the wire, on a made-up front end: EditInCell's edits arrive as a list of {oldText, newText,
-   count} in one "Edit" operation (count 1 if not given), the agent text form's characters pass unchanged both ways,
-   and an edit without newText is an error result *)
+(* The notebook tools over the wire, on a made-up front end: OpenNotebook gives the cells after its JSON; EditInCell's
+   edits arrive as a list of {oldText, newText, count} in one "Edit" operation (count 1 if not given), the agent text
+   form's characters pass unchanged both ways, and an edit without newText is an error result; SetCells' cells arrive
+   as "Set" operations (style Automatic if not given) *)
 VerificationTest[
     ifMCP @ Module[ { token, call, cells, edits = { }, fake, results },
         token = StringDelete[ NotebookMCPServer[ ][ "headers", "Authorization" ], StartOfString ~~ "Bearer " ];
@@ -1399,7 +1400,10 @@ VerificationTest[
         fake[ "CellText", _, _, _, _ ] := cells;
         fake[ "Edit", _, ops_ ] := (
             AppendTo[ edits, ops ];
-            cells[[ 1, "Text" ]] = Fold[ StringReplace[ #1, #2[[ 1 ]] -> #2[[ 2 ]] ] &, cells[[ 1, "Text" ]], ops[[ 1, 3 ]] ];
+            cells[[ 1, "Text" ]] = Switch[ ops[[ 1, 1 ]],
+                "Edit", Fold[ StringReplace[ #1, #2[[ 1 ]] -> #2[[ 2 ]] ] &, cells[[ 1, "Text" ]], ops[[ 1, 3 ]] ],
+                "Set" , ops[[ 1, 4 ]]
+            ];
             <| "Changed" -> { CellObject[ "w1" ] }, "Inserted" -> { }, "Deleted" -> 0 |>
         );
         results = Block[
@@ -1421,7 +1425,8 @@ VerificationTest[
                         }
                     |>
                 ],
-                call[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c1", "edits" -> { <| "oldText" -> "x" |> } |> ]
+                call[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c1", "edits" -> { <| "oldText" -> "x" |> } |> ],
+                call[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c1", "text" -> "x = \:2e22SqrtBox[\"2\"]\:2e23" |> } |> ]
             }
         ];
         acpMCPStopServer[ ];
@@ -1429,7 +1434,15 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | {
         {
-            <| "content" -> { <| "type" -> "text", "text" -> "{\"notebook\":\"s1\",\"title\":\"Untitled\",\"source\":null,\"cells\":1}" |> }, "isError" -> False |>,
+            <|
+                "content" -> {
+                    <|
+                        "type" -> "text",
+                        "text" -> "{\"notebook\":\"s1\",\"title\":\"Untitled\",\"source\":null,\"cells\":1}\n\nIts cells, as ReadCells shows them:\n(* ::Input:: #c1 *)\nH = p\:02c42/(2 m) + V[q]"
+                    |>
+                },
+                "isError" -> False
+            |>,
             <|
                 "content" -> {
                     <|
@@ -1439,7 +1452,8 @@ VerificationTest[
                 },
                 "isError" -> False
             |>,
-            <| "content" -> { <| "type" -> "text", "text" -> "Edit 1 has no newText (use \"\" to delete oldText)." |> }, "isError" -> True |>
+            <| "content" -> { <| "type" -> "text", "text" -> "Edit 1 has no newText (use \"\" to delete oldText)." |> }, "isError" -> True |>,
+            <| "content" -> { <| "type" -> "text", "text" -> "Set 1 cell of s1: #c1. ReadCells shows their new content." |> }, "isError" -> False |>
         },
         {
             {
@@ -1451,7 +1465,8 @@ VerificationTest[
                         { "+ V[q]", "- V[q]", 1 }
                     }
                 }
-            }
+            },
+            { { "Set", CellObject[ "w1" ], Automatic, "x = \:2e22SqrtBox[\"2\"]\:2e23" } }
         }
     },
     SameTest -> MatchQ,
