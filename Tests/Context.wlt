@@ -256,6 +256,39 @@ VerificationTest[
 ]
 
 VerificationTest[
+    Module[ { merged, unmerged },
+        merged = ConstructWorkspaceContextMessages[
+            $plotCells,
+            $plotSettings,
+            {
+                <| "Role" -> "System", "Content" -> "sys" |>,
+                <| "Role" -> "User", "Content" -> "FIRST" |>,
+                <| "Role" -> "User", "Content" -> "SECOND" |>
+            }
+        ];
+        unmerged = ConstructWorkspaceContextMessages[
+            $plotCells,
+            <| $plotSettings, "MergeMessages" -> False |>,
+            {
+                <| "Role" -> "System", "Content" -> "sys" |>,
+                <| "Role" -> "User", "Content" -> "FIRST" |>,
+                <| "Role" -> "User", "Content" -> "SECOND" |>
+            }
+        ];
+        {
+            Lookup[ merged, "Role" ],
+            StringCount[ merged[[ 2, "Content" ]], "FIRST", Infinity ],
+            StringCount[ merged[[ 2, "Content" ]], "SECOND", Infinity ],
+            Count[ merged[[ 2 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+            Lookup[ unmerged, "Role" ]
+        }
+    ],
+    { { "System", "User" }, 1, 1, 1, { "System", "User", "User" } },
+    SameTest -> MatchQ,
+    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage"
+]
+
+VerificationTest[
     Module[ { img1, img2 },
         img1 = <| "Type" -> "Image", "Data" -> "img1" |>;
         img2 = <| "Type" -> "Image", "Data" -> "img2" |>;
@@ -289,6 +322,32 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate"
+]
+
+VerificationTest[
+    Module[ { result, saved },
+        saved = Wolfram`Chatbook`ChatMessages`Private`mergeMessageData @ {
+            <| "Role" -> "System", "Content" -> "sys" |>,
+            <| "Role" -> "Assistant", "Content" -> "tool call" |>,
+            <| "Role" -> "System", "Content" -> "tool response" |>,
+            <| "Role" -> "System", "Content" -> "retry", "Temporary" -> True |>
+        };
+        result = Wolfram`Chatbook`ChatMessages`Private`mergeOutgoingMessageData @ saved;
+        {
+            Lookup[ result, "Role" ],
+            Last @ result,
+            Lookup[ saved, "Role" ],
+            Last @ saved
+        }
+    ],
+    {
+        { "System", "Assistant", "System" },
+        KeyValuePattern[ "Content" -> { "tool response\n\nretry" } ],
+        { "System", "Assistant", "System", "System" },
+        KeyValuePattern @ { "Content" -> "retry", "Temporary" -> True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving"
 ]
 
 VerificationTest[

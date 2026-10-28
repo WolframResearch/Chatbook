@@ -230,7 +230,8 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
+        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed,
+          outgoing },
 
         If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
@@ -311,7 +312,8 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         $lastSettings = settings;
         $lastMessages = processed;
 
-        foldContextImageMessage @ processed
+        outgoing = foldContextImageMessage @ processed;
+        If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeOutgoingMessageData @ outgoing, outgoing ]
     ];
 
 constructMessages // endDefinition;
@@ -1499,6 +1501,23 @@ mergeMessageData0[ messages_List ] := Flatten[
     mergeMessages /@ SplitBy[ messages, { Lookup[ #, "Role" ], temporaryMessageQ @ # } & ]
 ];
 mergeMessageData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mergeOutgoingMessageData*)
+mergeOutgoingMessageData // beginDefinition;
+
+mergeOutgoingMessageData[ { sys: KeyValuePattern[ "Role" -> "System" ], rest___ } ] :=
+    Flatten @ { sys, mergeOutgoingMessageData0 @ { rest } };
+
+mergeOutgoingMessageData[ messages_List ] :=
+    mergeOutgoingMessageData0 @ messages;
+
+mergeOutgoingMessageData // endDefinition;
+
+mergeOutgoingMessageData0 // beginDefinition;
+mergeOutgoingMessageData0[ messages_List ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+mergeOutgoingMessageData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
