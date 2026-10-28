@@ -48,7 +48,9 @@ $previewLength     = 80;    (* characters of each cell in GetOutline by default 
 $maxPreviewLength  = 2000;  (* at most *)
 $outlineLimit      = 300;   (* cells in one GetOutline result by default *)
 $maxOutlineLimit   = 2000;  (* at most *)
-$readBudget        = 60000; (* characters in one ReadCells result (at least one cell is shown) *)
+$outlineHeadings   = "Title" | "Subtitle" | "Chapter" | "Section" | "Subsection" | "Subsubsection";
+$readBudget        = 40000; (* characters in one result that shows cells (at least one is shown); opencode cuts a tool
+                               result at about 50 KB and tells the model to use sub-agents on the rest *)
 $searchLimit       = 50;    (* matches that SearchNotebook shows by default *)
 $maxSearchLimit    = 500;   (* at most *)
 $searchTimeLimit   = 10;    (* seconds that one search may take *)
@@ -158,7 +160,8 @@ These tools edit Wolfram notebooks through the user's Wolfram front end (desktop
 instead of editing .nb files. Your edits never change the user's notebook directly: OpenNotebook makes a hidden \
 snapshot of a notebook (unsaved changes included) and gives its handle (s1, s2, ...), which the other tools take. \
 Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first), which gives the \
-notebook's cells too -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
+notebook's cells too (for a long notebook, an outline of its headings: then read the sections you change with \
+ReadCells, as ranges of cells) -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
 shows the user their notebook as a diff against it, to accept or reject change by change. CloseNotebook discards a \
 snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
 independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
@@ -180,8 +183,9 @@ $openNotebookDescription = "\
 Opens a hidden snapshot of a notebook to edit: a notebook open in the front end (its id from ListNotebooks, its exact \
 window title, or its file; unsaved changes included) or a .nb file that is not open. Without notebook, it starts a \
 new, empty notebook. Returns JSON {notebook, title, source, cells}, where notebook is the snapshot's handle for the \
-other tools, and then the cells as ReadCells shows them, so that no ReadCells call is needed (unless a note says cells \
-were not shown). A notebook with an open snapshot gives that snapshot again. " <> $acpNotebookWorkflow;
+other tools, and then the cells as ReadCells shows them, so that no ReadCells call is needed, or, for a notebook too \
+long to show whole, an outline of its headings with the range of cells under each. A notebook with an open snapshot \
+gives that snapshot again. " <> $acpNotebookWorkflow;
 
 $getOutlineDescription = "\
 Gives a map of a snapshot: for each cell, its marker line (* ::Style:: #id *) and the start of its content (preview \
@@ -190,8 +194,8 @@ notebooks come in parts (offset, limit).";
 
 $readCellsDescription = "\
 Reads cells of a snapshot: each cell as its marker line and its content, exactly as EditInCell matches it. Without \
-cells, it reads the whole notebook (up to 60000 characters). Graphics and large boxes are placeholders unless full is \
-true. " <> $acpNotebookNotation;
+cells, it reads the whole notebook (up to 40000 characters); cells also takes ranges such as c10-c20. Graphics and \
+large boxes are placeholders unless full is true. " <> $acpNotebookNotation;
 
 $searchNotebookDescription = "\
 Finds text in the cells of a snapshot: a literal string, or with regex true a regular expression (PCRE), in each \
@@ -247,7 +251,7 @@ $cellParameter     = parameter[ "cell", "String", "The id of the cell, e.g. c3",
 cellsParameter // beginDefinition;
 
 cellsParameter[ required_, help_String ] :=
-    parameter[ "cells", "String", "The ids of the cells, separated by commas, e.g. \"c3, c4\"" <> help, required ];
+    parameter[ "cells", "String", "The ids of the cells, separated by commas, and ranges of ids, e.g. \"c3, c4, c10-c20\"" <> help, required ];
 
 cellsParameter // endDefinition;
 
@@ -663,8 +667,14 @@ listArgument // endDefinition;
 cellIDsArgument // beginDefinition;
 cellIDsArgument[ Missing[ ___ ] | Null, _String ] := None;
 
-cellIDsArgument[ spec: _String | { ___String }, name_String ] :=
-    Replace[ listArgument[ spec, WhitespaceCharacter | "," | ";" ], { } :> missingArgument @ name ];
+(* "c10 - c20" is one range, "c10-c20" *)
+cellIDsArgument[ spec: _String | { ___String }, name_String ] := Replace[
+    listArgument[
+        StringReplace[ spec, RegularExpression[ "(\\d)\\s*[-\\x{2013}]\\s*(?=#?[cC]?\\d)" ] -> "$1-" ],
+        WhitespaceCharacter | "," | ";"
+    ],
+    { } :> missingArgument @ name
+];
 
 cellIDsArgument[ _, name_String ] :=
     toolError[ "The parameter `1` must be a string of cell ids separated by commas, e.g. \"c3, c4\".", name ];
@@ -1213,8 +1223,33 @@ numberCells // endDefinition;
 
 (* The cells that the agent's ids name, in the given order *)
 resolveCells // beginDefinition;
-resolveCells[ handle_String, ids: { __String } ] := DeleteDuplicates[ resolveCell[ handle, # ] & /@ ids ];
+resolveCells[ handle_String, ids: { __String } ] := DeleteDuplicates @ Flatten[ resolveCellOrRange[ handle, # ] & /@ ids ];
 resolveCells // endDefinition;
+
+
+(* An id, or a range of ids such as "c10-c20": the snapshot's cells numbered 10 to 20, in the order of their numbers *)
+resolveCellOrRange // beginDefinition;
+
+resolveCellOrRange[ handle_String, spec_String ] := Replace[
+    StringCases[ spec, RegularExpression[ "^#?[cC]?(\\d+)-#?[cC]?(\\d+)$" ] :> FromDigits /@ { "$1", "$2" } ],
+    {
+        { { from_, to_ } } :> Replace[
+            SortBy[
+                Select[ Normal @ $snapshots[ handle, "IDs" ], Between[ cellNumber @ Last[ # ], { from, to } ] & ],
+                cellNumber @* Last
+            ][[ All, 1 ]],
+            { } :> toolError[ "`1` has no cells numbered `2` to `3`.", handle, from, to ]
+        ],
+        _ :> resolveCell[ handle, spec ]
+    }
+];
+
+resolveCellOrRange // endDefinition;
+
+
+cellNumber // beginDefinition;
+cellNumber[ id_String ] := Replace[ StringDrop[ id, 1 ], { n_ /; StringMatchQ[ n, DigitCharacter.. ] :> FromDigits @ n, _ -> 0 } ];
+cellNumber // endDefinition;
 
 
 resolveCell // beginDefinition;
@@ -1493,13 +1528,16 @@ sourceReference // endDefinition;
 (*OpenNotebook*)
 openNotebook // beginDefinition;
 
-(* The snapshot as JSON, then its cells as ReadCells shows them, so that the agent needs no ReadCells call *)
-openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries },
+(* The snapshot as JSON, then its cells as ReadCells shows them, so that the agent needs no ReadCells call, or, if
+   they do not all fit into $readBudget, an outline of its headings with the range of cells under each, from which the
+   agent reads the sections it changes *)
+openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries, blocks },
     source   = openSource @ args[ "notebook" ];
     handle   = sourceSnapshot @ source[ "Source" ];
     reopened = StringQ @ handle;
     If[ ! reopened, handle = newSnapshot @ source ];
     entries = cellTexts[ handle, All, All, True ];
+    blocks  = cellBlock /@ entries;
     StringJoin[
         toJSON @ <|
             "notebook" -> handle,
@@ -1508,11 +1546,46 @@ openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries 
             "cells"    -> Length @ entries,
             If[ reopened, "note" -> "This notebook already had an open snapshot; its edits so far are kept.", Nothing ]
         |>,
-        If[ entries === { }, "", "\n\nIts cells, as ReadCells shows them:\n" <> budgetedBlocks @ entries ]
+        Which[
+            blocks === { }, "",
+            budgetCount[ StringLength /@ blocks, $readBudget ] === Length @ blocks,
+                "\n\nIts cells, as ReadCells shows them:\n" <> StringRiffle[ blocks, "\n" ],
+            True,
+                "\n\n" <> notebookOutline @ entries
+        ]
     ]
 ];
 
 openNotebook // endDefinition;
+
+
+(* The headings of a notebook too long to show whole, each with the range of cells up to the next heading *)
+notebookOutline // beginDefinition;
+
+notebookOutline[ entries_List ] := Module[ { positions, ends },
+    positions = Flatten @ Position[ Lookup[ entries, "Style", "" ], $outlineHeadings, { 1 } ];
+    ends      = Append[ Rest @ positions - 1, Length @ entries ];
+    StringJoin[
+        "It is too long to show whole (", ToString @ Length @ entries, " cells). Its headings, each with the range of ",
+        "cells under it:\n",
+        StringRiffle[ MapThread[ outlineHeading, { entries[[ positions ]], entries[[ ends, "ID" ]] } ], "\n" ],
+        "\nRead the sections you change with ReadCells, giving their ranges (e.g. cells \"c12-c40, c90-c120\"), or find ",
+        "cells with SearchNotebook."
+    ]
+];
+
+notebookOutline // endDefinition;
+
+
+outlineHeading // beginDefinition;
+
+outlineHeading[ entry_Association, last_String ] := StringJoin[
+    StringRepeat[ "  ", Max[ 0, Replace[ Lookup[ entry, "GroupDepth", 0 ], Except[ _Integer ] -> 0 ] - 1 ] ],
+    "#", entry[ "ID" ], If[ last =!= entry[ "ID" ], "-#" <> last, "" ], " (", styleName @ entry[ "Style" ], ") ",
+    StringTrim @ StringReplace[ cellContent @ entry, { "(*" -> "", "*)" -> "", ("\r\n" | "\n" | "\r") -> " " } ]
+];
+
+outlineHeading // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

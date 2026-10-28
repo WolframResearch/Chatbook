@@ -835,6 +835,48 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-ReadCells"
 ]
 
+(* A notebook too long to show whole: OpenNotebook gives an outline of its headings with the range of cells under each,
+   from the same read *)
+VerificationTest[
+    withFakeFE @ Block[ { Wolfram`Chatbook`ACP`NotebookTools`Private`$readBudget = 60 },
+        {
+            nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ],
+            Cases[ $fakeCalls, { "CellText", __ } ]
+        }
+    ],
+    {
+        "{\"notebook\":\"s1\",\"title\":\"Hamiltonian Mechanics\",\"source\":\"abcdef11\",\"cells\":7}\n\nIt is too long to show \
+whole (7 cells). Its headings, each with the range of cells under it:\n#c1 (Title) Hamiltonian Mechanics\n#c2-#c5 (Section) \
+The simple pendulum\n#c6-#c7 (Section) Equations of motion\nRead the sections you change with ReadCells, giving their \
+ranges (e.g. cells \"c12-c40, c90-c120\"), or find cells with SearchNotebook.",
+        { { "CellText", NotebookObject[ "fake-snapshot-1" ], All, All, True } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-OpenNotebook-Outline"
+]
+
+(* Ranges of cell ids, as the outline gives them: the cells numbered so, in the order of their numbers; spaces around
+   the dash are fine *)
+VerificationTest[
+    withFakeFE @ (
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        {
+            StringCases[ nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c5 - c7, 2" |> ], "#c" ~~ DigitCharacter.. ],
+            StringCases[ nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "#c3-#c4" |> ], "#c" ~~ DigitCharacter.. ],
+            nbtText @ nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c20-c30" |> ],
+            nbtCall[ "DeleteCells", <| "notebook" -> "s1", "cells" -> "c6-c7" |> ]
+        }
+    ),
+    {
+        { "#c5", "#c6", "#c7", "#c2" },
+        { "#c3", "#c4" },
+        "s1 has no cells numbered 20 to 30.",
+        "Deleted 2 cells (#c6, #c7) from s1."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-CellRanges"
+]
+
 (* A literal or a regular expression in the cells' content (as ReadCells shows it), with line:column and the line;
    cells and styles narrow the search; a limit; no matches; a bad regular expression or no query *)
 VerificationTest[
