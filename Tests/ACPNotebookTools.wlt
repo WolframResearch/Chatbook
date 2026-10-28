@@ -317,7 +317,7 @@ VerificationTest[
             "ReadCells"      -> { "object", { "notebook", "cells", "full" }, { "notebook" } },
             "SearchNotebook" -> { "object", { "notebook", "query", "regex", "cells", "styles", "limit" }, { "notebook", "query" } },
             "EditInCell"     -> { "object", { "notebook", "cell", "edits" }, { "notebook", "cell", "edits" } },
-            "SetCells"       -> { "object", { "notebook", "cells" }, { "notebook", "cells" } },
+            "SetCells"       -> { "object", { "notebook", "cells", "delete" }, { "notebook", "cells" } },
             "InsertCells"    -> { "object", { "notebook", "newCells", "cell", "position" }, { "notebook", "newCells" } },
             "DeleteCells"    -> { "object", { "notebook", "cells" }, { "notebook", "cells" } },
             "SaveNotebook"   -> { "object", { "notebook" }, { "notebook" } },
@@ -1000,14 +1000,17 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-ChangedCell"
 ]
 
-(* SetCells replaces the content of cells, and their styles where given, in one edit packet; a bad item changes nothing *)
+(* SetCells replaces the content of cells, and their styles where given, and deletes the cells of delete, in one edit
+   packet; a bad item changes nothing *)
 VerificationTest[
     withFakeFE @ (
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         {
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |>, <| "cell" -> "c3", "text" -> "(*The Lagrangian:*)" |> } |> ],
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*Lagrangian*)", "style" -> "Subsection" |> } |> ],
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |> }, "delete" -> "c5, c7" |> ],
             nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c3, c4" |> ],
+            nbtText @ nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c5" |> ],
             nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*x*)" |>, <| "cell" -> "c4", "text" -> "(* ::Text:: #c4 *)\n(*x*)" |> } |> ],
             nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3" |> } |> ],
             nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c99", "text" -> "(*x*)" |> } |> ],
@@ -1019,7 +1022,9 @@ VerificationTest[
     {
         "Set 2 cells of s1: #c4, #c3. ReadCells shows their new content.",
         "Set 1 cell of s1: #c3. ReadCells shows their new content.",
+        "Set 1 cell of s1: #c4; deleted #c5, #c7. ReadCells shows their new content.",
         "(* ::Subsection:: #c3 *)\n(*Lagrangian*)\n(* ::Input:: #c4 *)\nL = T - V",
+        "s1 has no cell \"c5\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
         "The text of item 2 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
         "Item 1 of cells has no text.",
         "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
@@ -1027,7 +1032,8 @@ VerificationTest[
         _Failure, (* LLMTool refuses a call without a required parameter *)
         {
             { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" } },
-            { { "Set", CellObject[ "fake-1-3" ], "Subsection", "(*Lagrangian*)" } }
+            { { "Set", CellObject[ "fake-1-3" ], "Subsection", "(*Lagrangian*)" } },
+            { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Delete", { CellObject[ "fake-1-5" ], CellObject[ "fake-1-7" ] } } }
         }
     },
     SameTest -> MatchQ,

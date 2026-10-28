@@ -152,7 +152,8 @@ Workflow: OpenNotebook (by its file when the user names one; otherwise ListNoteb
 notebook's cells too -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
 shows the user their notebook as a diff against it, to accept or reject change by change. CloseNotebook discards a \
 snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
-independent cells in one turn: one SetCells call for all the cells you rewrite, parallel calls for the rest. For a \
+independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
+make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
 notebook edit needs no todo list. If you have \
 WolframLanguageEvaluator, check code with it directly; WolframLanguageContext is not needed for notebook edits.";
@@ -199,8 +200,9 @@ content.";
 $setCellsDescription = "\
 Replaces the whole content of cells of a snapshot, and optionally their styles, in one call: each item is {cell, \
 text, style}, text in the cell text notation without the marker line (text cells wrapped in (* *)). The items are \
-applied in order, all or none. Use one SetCells call for all the cells you rewrite. Rewriting a whole cell is slow: \
-for a cell that changes only in part, EditInCell is much faster. Gives the ids of the cells it set.";
+applied in order, all or none. Use one SetCells call for all the cells you rewrite, with delete for the cells to \
+delete with them (such as outputs that the new cells make stale). Rewriting a whole cell is slow: for a cell that \
+changes only in part, EditInCell is much faster. Gives the ids of the cells it set and deleted.";
 
 $insertCellsDescription = "\
 Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
@@ -327,6 +329,12 @@ The edits, applied in order: {oldText, newText, count}; oldText must occur exact
                 "\
 The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New words*)\"}; omit style to keep the style",
                 True
+            ],
+            parameter[
+                "delete",
+                "String",
+                "The ids of cells to delete in the same edit, separated by commas, such as outputs that the new cells make stale",
+                False
             ]
         }
     |>,
@@ -1783,16 +1791,26 @@ editInCell // endDefinition;
 (* ::Section::Closed:: *)
 (*SetCells*)
 
-(* All the cells in one edit packet; the result names them only (their content is what the agent just wrote) *)
+(* All the cells, and the cells to delete with them, in one edit packet; the result names them only (their content is
+   what the agent just wrote) *)
 setCells // beginDefinition;
 
-setCells[ args_Association ] := Module[ { handle, ops, cells },
-    handle = resolveSnapshot @ args[ "notebook" ];
-    ops    = setCellsArgument[ handle, args[ "cells" ] ];
-    cells  = changedCells[ handle, DeleteDuplicates @ ops[[ All, 2 ]], applyEdit[ handle, ops ] ];
+setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cells },
+    handle     = resolveSnapshot @ args[ "notebook" ];
+    ops        = setCellsArgument[ handle, args[ "cells" ] ];
+    deleted    = Replace[ cellIDsArgument[ args[ "delete" ], "delete" ], { None -> { }, ids_ :> resolveCells[ handle, ids ] } ];
+    deletedIDs = Lookup[ $snapshots[ handle, "IDs" ], deleted ];
+    cells      = changedCells[
+        handle,
+        Select[ DeleteDuplicates @ ops[[ All, 2 ]], ! MemberQ[ deleted, # ] & ],
+        applyEdit[ handle, If[ deleted === { }, ops, Append[ ops, { "Delete", deleted } ] ] ]
+    ];
+    forgetCells[ handle, deleted ];
     StringJoin[
         "Set ", ToString @ Length @ cells, If[ Length @ cells === 1, " cell", " cells" ], " of ", handle, ": ",
-        StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ], ". ReadCells shows their new content."
+        StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ],
+        If[ deleted === { }, "", "; deleted " <> StringRiffle[ "#" <> # & /@ deletedIDs, ", " ] ],
+        ". ReadCells shows their new content."
     ]
 ];
 
