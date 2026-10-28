@@ -253,6 +253,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
     "InvalidWriteMethod"              -> "Invalid setting for NotebookWriteMethod: `1`; using default instead.",
     "ModelToolSupport"                -> "The model `1` does not support tools.",
+    "NotebookMCPServerUnavailable"    -> "The MCP server of the notebook tools could not be started. `1`",
     "NoAPIKey"                        -> "No API key defined.",
     "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
     "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",

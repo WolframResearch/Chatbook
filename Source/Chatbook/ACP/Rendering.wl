@@ -49,7 +49,10 @@ $permissionCommandLength = 4000; (* characters of those lines (which are not cut
 $permissionScopePatterns = 8;    (* patterns of a shell command named in the "Always allow" text *)
 
 (* The parameters of the notebook tools (NotebookTools.wl), in the order they are shown *)
-$notebookToolParameters = { "notebook", "cell", "position", "cells", "offset", "limit", "markdown" };
+$notebookToolParameters = {
+    "notebook", "cell", "cells", "position", "style", "text", "edits", "newCells", "query", "regex", "styles", "preview",
+    "offset", "limit", "full"
+};
 $clockTicks          = 5;    (* the Working header's elapsed time is refreshed every 5 publisher ticks (1 s) *)
 $workOpenDefault     = False; (* the live "Working" opener starts closed: its header's label says what is happening *)
 $cacheSweepTicks     = 50;
@@ -2004,12 +2007,13 @@ toolIconName[ tool_Association ] := Module[ { name, kind, names },
             "WolframLanguageEvaluator",
         StringQ @ name && StringContainsQ[ name, "WolframAlpha", IgnoreCase -> True ],
             "WolframAlpha",
-        (* the notebook tools of the window's MCP server (NotebookTools.wl, e.g. "wolframnotebooks_createnotebook") *)
-        StringQ @ name && StringEndsQ[ name, "_createnotebook" ],
-            "CreateNotebook",
-        StringQ @ name && StringEndsQ[ name, "_listnotebooks" | "_readnotebook" ],
+        (* the notebook tools of the window's MCP server (NotebookTools.wl, e.g. "wolframnotebooks_editincell") *)
+        StringQ @ name && StringEndsQ[
+            name,
+            "_listnotebooks" | "_opennotebook" | "_getoutline" | "_readcells" | "_searchnotebook"
+        ],
             "FileReader",
-        StringQ @ name && StringEndsQ[ name, "_insertcells" | "_replacecells" | "_deletecells" ],
+        StringQ @ name && StringEndsQ[ name, "_editincell" | "_setcell" | "_insertcells" | "_deletecells" ],
             "Edit",
         True,
             "GenericTool"
@@ -2381,7 +2385,7 @@ argumentValueView // beginDefinition;
 
 argumentValueView[ _, _Missing, _ ] := computedView[ ];
 argumentValueView[ "notebook", spec_String, titles_Association ] := notebookArgumentView[ spec, Lookup[ titles, spec, None ] ];
-argumentValueView[ "markdown", text_String, _ ] := codeView[ text, "text", argumentLimits[ ] ];
+argumentValueView[ "text", text_String, _ ] := codeView[ text, "text", argumentLimits[ ] ];
 argumentValueView[ _, list: { (_String | _Integer | True | False | Null)... }, _ ] := codeText @ StringRiffle[ jsonText /@ list, ", " ];
 argumentValueView[ _, value: (_Integer | True | False | Null), _ ] := codeText @ jsonText @ value;
 argumentValueView[ _, value_, _ ] := inputValueView @ value;

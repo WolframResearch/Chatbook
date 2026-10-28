@@ -257,6 +257,11 @@ VerificationTest[
     (* A thrown value that the queue tests use on purpose (its "Uncaught" entry is expected, see ACPMCP-DebugLog) *)
     $mcpTestThrow = "acp-mcp-test-throw";
 
+    $mcpToolNames = {
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCell", "InsertCells",
+        "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
+    };
+
     $mcpEntryPattern = KeyValuePattern @ {
         "type"    -> "http",
         "name"    -> "WolframNotebooks",
@@ -317,8 +322,8 @@ VerificationTest[
     TestID   -> "ACPMCP-EnabledQ@@Tests/ACPMCP.wlt:279,1-318,2"
 ]
 
-(* OpenCode asks before the tools that change open notebooks: its permission names are <server>_<tool>, with characters
-   outside [a-zA-Z0-9_-] replaced by "_" *)
+(* OpenCode asks before the tools that change open notebooks (ShowChanges; the edit tools only change snapshots): its
+   permission names are <server>_<tool>, with characters outside [a-zA-Z0-9_-] replaced by "_" *)
 VerificationTest[
     {
         $acpMCPServerName,
@@ -328,15 +333,9 @@ VerificationTest[
     },
     {
         "WolframNotebooks",
-        <| "WolframNotebooks_InsertCells" -> "ask", "WolframNotebooks_ReplaceCells" -> "ask", "WolframNotebooks_DeleteCells" -> "ask" |>,
+        <| "WolframNotebooks_ShowChanges" -> "ask" |>,
         "My_server_v2_a_b_tool",
-        <|
-            "edit"                          -> "ask",
-            "bash"                          -> "ask",
-            "WolframNotebooks_InsertCells"  -> "ask",
-            "WolframNotebooks_ReplaceCells" -> "ask",
-            "WolframNotebooks_DeleteCells"  -> "ask"
-        |>
+        <| "edit" -> "ask", "bash" -> "ask", "WolframNotebooks_ShowChanges" -> "ask" |>
     },
     SameTest -> MatchQ,
     TestID   -> "ACPMCP-ToolPermissions@@Tests/ACPMCP.wlt:322,1-343,2"
@@ -569,6 +568,58 @@ VerificationTest[
     { True, True, True },
     SameTest -> MatchQ,
     TestID   -> "ACPMCP-Token-NotInRecord@@Tests/ACPMCP.wlt:558,1-572,2"
+]
+
+(* A token of an external client (NotebookMCPServer, for ACPLink scripts) belongs to no window: it is valid until the
+   server stops, keeps the server from its idle stop, and its calls run. They are drained in the pump, also in a
+   notebook front end's kernel, whose pump fires the button for a window's calls (the script's SendACPPrompt waits on
+   the main link, where the button's evaluation would wait behind it). Stopping the server revokes it. *)
+VerificationTest[
+    withMCPState @ Module[ { token, w, wToken, triggered = 0, idle, first, second, t0 = AbsoluteTime[ ] },
+        $mcpRuns = { }; $mcpRejects = { };
+        token = Wolfram`Chatbook`ACP`MCP`Private`issueExternalToken[ ];
+        Wolfram`Chatbook`ACP`MCP`Private`mcpHousekeeping[ ];
+        idle   = { Keys @ Wolfram`Chatbook`ACP`MCP`Private`$mcpTokens === { token }, Wolfram`Chatbook`ACP`MCP`Private`$mcpIdleSince };
+        w      = mcpWindow[ <| |>, "Connection" -> "conn-x" ];
+        wToken = Wolfram`Chatbook`ACP`MCP`Private`issueToken[ w, "conn-x" ];
+        Block[
+            {
+                Wolfram`Chatbook`ACP`MCP`Private`notebookFrontEndQ = True &,
+                Wolfram`Chatbook`ACP`MCP`Private`triggerDrain      = (triggered++; Null) &
+            },
+            PreemptProtect[
+                AppendTo[ Wolfram`Chatbook`ACP`MCP`Private`$mcpQueue, mcpJob[ fakeRun[ "Window" ], fakeInfo[ "Window", wToken ] ] ];
+                acpMCPKick[ ];
+                first = { triggered, $mcpRuns };
+                AppendTo[ Wolfram`Chatbook`ACP`MCP`Private`$mcpQueue, mcpJob[ fakeRun[ "External" ], fakeInfo[ "External", token ] ] ];
+                acpMCPKick[ ];
+                second = { triggered, $mcpRuns, Wolfram`Chatbook`ACP`MCP`Private`$mcpQueue }
+            ]
+        ];
+        {
+            acpMCPAuthorizedQ @ token,
+            KeyDrop[ Wolfram`Chatbook`ACP`MCP`Private`$mcpTokens @ token, "IssuedAt" ],
+            idle,
+            first,
+            second,
+            $mcpRejects,
+            Lookup[ mcpLogSince[ t0, "MCPToolCall" ], { "Tool", "Mode" } ],
+            acpMCPStopServer[ ];
+            { acpMCPAuthorizedQ /@ { token, wToken }, Keys @ Wolfram`Chatbook`ACP`MCP`Private`$mcpTokens === { wToken } }
+        }
+    ],
+    {
+        True,
+        <| "Window" -> None, "Connection" -> None, "External" -> True |>,
+        { True, None },
+        { 1, { } },
+        { 1, { "Window", "External" }, { } },
+        { },
+        { { "Window", "Pump" }, { "External", "Pump" } },
+        { { False, True }, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPMCP-Token-External"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1205,8 +1256,8 @@ VerificationTest[
     TestID   -> "ACPMCP-Server-Restart@@Tests/ACPMCP.wlt:1197,1-1206,2"
 ]
 
-(* Over HTTP: initialize (instructions, Chatbook's version), the six tools, a tool call through the queue, and 401s for
-   a missing or an unknown token, the token of a window whose setting was turned off, and a revoked one *)
+(* Over HTTP: initialize (instructions, Chatbook's version), the tools, a tool call through the queue, and 401s for a
+   missing or an unknown token, the token of a window whose setting was turned off, and a revoked one *)
 VerificationTest[
     ifMCP @ Module[ { w, token, init, list, call, noAuth, wrong, off, revoked, t0 = AbsoluteTime[ ] },
         w     = mcpWindow[ <| |>, "Status" -> "Ready", "Connection" -> "conn-http" ];
@@ -1244,12 +1295,12 @@ VerificationTest[
         200,
         <|
             "serverInfo"   -> <| "name" -> "WolframNotebooks", "version" -> Wolfram`Chatbook`Common`$thisPaclet[ "Version" ] |>,
-            "instructions" -> _String? (StringContainsQ[ #, "ListNotebooks" ] && StringContainsQ[ #, "approval" ] &)
+            "instructions" -> _String? (StringContainsQ[ #, "OpenNotebook" ] && StringContainsQ[ #, "ShowChanges" ] && StringContainsQ[ #, "(* ::Style:: #id *)" ] &)
         |>,
         200,
-        { "ListNotebooks", "ReadNotebook", "CreateNotebook", "InsertCells", "ReplaceCells", "DeleteCells" },
+        $mcpToolNames,
         200,
-        <| "content" -> { <| "type" -> "text", "text" -> "[]" |> }, "isError" -> False |>,
+        <| "content" -> { <| "type" -> "text", "text" -> "{\"notebooks\":[],\"snapshots\":[]}" |> }, "isError" -> False |>,
         { { "ListNotebooks", "Pump", "OK" } },
         { 401, 401, 401, 401 }
     },
@@ -1269,6 +1320,142 @@ VerificationTest[
     Missing[ "TestSkipped" ] | { False, None, True, True },
     SameTest -> MatchQ,
     TestID   -> "ACPMCP-Server-IdleStopRestart@@Tests/ACPMCP.wlt:1261,1-1272,2"
+]
+
+(* NotebookMCPServer (for ACPLink scripts): an http entry for the "mcpServers" of a session, with a new external token
+   each time, which the server accepts (its calls are drained in the pump) and which is in no debug log entry; ACPLink
+   takes the entry as it is. Stopping the server revokes the tokens. *)
+VerificationTest[
+    ifMCP @ Module[ { e1, e2, token, list, call, acp, t0 = AbsoluteTime[ ] },
+        e1    = NotebookMCPServer[ ];
+        e2    = NotebookMCPServer[ ];
+        token = StringDelete[ e1[ "headers", "Authorization" ], StartOfString ~~ "Bearer " ];
+        list  = mcpHTTP[ <| "jsonrpc" -> "2.0", "id" -> 1, "method" -> "tools/list" |>, token ];
+        call  = mcpHTTP[ <| "jsonrpc" -> "2.0", "id" -> 2, "method" -> "tools/call", "params" -> <| "name" -> "ListNotebooks", "arguments" -> <| |> |> |>, token ];
+        acp   = If[ TrueQ[ acpLinkAvailableQ[ ] && acpLoadACPLink[ ] === True ],
+            Symbol[ "ACPLink`ACP`InternalSymbols`mcpServerOptionToACP" ][
+                e1,
+                e1,
+                <| "AgentCapabilities" -> <| "Session" -> <| "MCP" -> <| "HTTP" -> True |> |> |> |>,
+                NotebookMCPServer
+            ],
+            Missing[ "NoACPLink" ]
+        ];
+        {
+            e1,
+            e1[ "url" ] === e2[ "url" ] === acpMCPServer[ ][ "URL" ],
+            e1[ "headers" ] =!= e2[ "headers" ],
+            acpMCPAuthorizedQ @ token,
+            Wolfram`Chatbook`ACP`MCP`Private`$mcpTokens[ token, "Window" ],
+            list[ "StatusCode" ],
+            Lookup[ Developer`ReadRawJSONString[ list[ "Body" ] ][ "result", "tools" ], "name" ] === $mcpToolNames,
+            mcpBodyResult @ call[ "Body" ],
+            Lookup[ mcpLogSince[ t0, "MCPToolCall" ], { "Tool", "Mode", "Status" } ],
+            acp,
+            StringFreeQ[ ToString[ mcpDebugLog[ ], InputForm ], token ],
+            acpMCPStopServer[ ];
+            acpMCPAuthorizedQ @ token
+        }
+    ],
+    Missing[ "TestSkipped" ] | {
+        <|
+            "name"    -> "WolframNotebooks",
+            "type"    -> "http",
+            "url"     -> _String? (StringMatchQ[ "http://127.0.0.1:" ~~ DigitCharacter.. ~~ "/mcp" ]),
+            "headers" -> <| "Authorization" -> _String? (StringMatchQ[ RegularExpression[ "Bearer [0-9a-f]{64}" ] ]) |>
+        |>,
+        True,
+        True,
+        True,
+        None,
+        200,
+        True,
+        <| "content" -> { <| "type" -> "text", "text" -> "{\"notebooks\":[],\"snapshots\":[]}" |> }, "isError" -> False |>,
+        { { "ListNotebooks", "Pump", "OK" } },
+        Missing[ "NoACPLink" ] | {
+            <| "name" -> "WolframNotebooks", "type" -> "http", "url" -> _String, "headers" -> { <| "name" -> "Authorization", "value" -> _String |> } |>
+        },
+        True,
+        False
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPMCP-NotebookMCPServer"
+]
+
+(* The notebook tools over the wire, on a made-up front end: EditInCell's edits arrive as a list of {oldText, newText,
+   count} in one "Edit" operation (count 1 if not given), the agent text form's characters pass unchanged both ways,
+   and an edit without newText is an error result *)
+VerificationTest[
+    ifMCP @ Module[ { token, call, cells, edits = { }, fake, results },
+        token = StringDelete[ NotebookMCPServer[ ][ "headers", "Authorization" ], StartOfString ~~ "Bearer " ];
+        (* the body as UTF-8 (URLRead's "Body" takes an event stream without a charset for Latin-1) *)
+        call[ name_, args_ ] := mcpBodyResult @ ByteArrayToString[
+            mcpHTTP[ <| "jsonrpc" -> "2.0", "id" -> 1, "method" -> "tools/call", "params" -> <| "name" -> name, "arguments" -> args |> |>, token ][ "BodyByteArray" ],
+            "UTF-8"
+        ];
+        cells = { <| "Cell" -> CellObject[ "w1" ], "Style" -> "Input", "Text" -> "H = p\:02c42/(2 m) + V[q]", "GroupDepth" -> 0, "Open" -> True |> };
+        fake[ "Snapshot", _ ] := NotebookObject[ "wire-snapshot" ];
+        fake[ "FileName", _ ] := "/tmp/wire-snapshot.nb";
+        fake[ "CellText", _, _, _, _ ] := cells;
+        fake[ "Edit", _, ops_ ] := (
+            AppendTo[ edits, ops ];
+            cells[[ 1, "Text" ]] = Fold[ StringReplace[ #1, #2[[ 1 ]] -> #2[[ 2 ]] ] &, cells[[ 1, "Text" ]], ops[[ 1, 3 ]] ];
+            <| "Changed" -> { CellObject[ "w1" ] }, "Inserted" -> { }, "Deleted" -> 0 |>
+        );
+        results = Block[
+            {
+                Wolfram`Chatbook`ACP`NotebookTools`Private`notebookFrontEnd = fake,
+                Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots       = <| |>,
+                Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshotCount   = 0
+            },
+            {
+                call[ "OpenNotebook", <| |> ],
+                call[
+                    "EditInCell",
+                    <|
+                        "notebook" -> "s1",
+                        "cell"     -> "c1",
+                        "edits"    -> {
+                            <| "oldText" -> "H = p\:02c42/(2 m)", "newText" -> "L = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2" |>,
+                            <| "oldText" -> "+ V[q]", "newText" -> "- V[q]", "count" -> 1 |>
+                        }
+                    |>
+                ],
+                call[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c1", "edits" -> { <| "oldText" -> "x" |> } |> ]
+            }
+        ];
+        acpMCPStopServer[ ];
+        { results, edits }
+    ],
+    Missing[ "TestSkipped" ] | {
+        {
+            <| "content" -> { <| "type" -> "text", "text" -> "{\"notebook\":\"s1\",\"title\":\"Untitled\",\"source\":null,\"cells\":1}" |> }, "isError" -> False |>,
+            <|
+                "content" -> {
+                    <|
+                        "type" -> "text",
+                        "text" -> "Edited #c1 of s1 (2 edits). It now reads:\n(* ::Input:: #c1 *)\nL = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2 - V[q]"
+                    |>
+                },
+                "isError" -> False
+            |>,
+            <| "content" -> { <| "type" -> "text", "text" -> "Edit 1 has no newText (use \"\" to delete oldText)." |> }, "isError" -> True |>
+        },
+        {
+            {
+                {
+                    "Edit",
+                    CellObject[ "w1" ],
+                    {
+                        { "H = p\:02c42/(2 m)", "L = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2", 1 },
+                        { "+ V[q]", "- V[q]", 1 }
+                    }
+                }
+            }
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPMCP-NotebookMCPServer-EditInCell"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1316,7 +1503,7 @@ VerificationTest[
 ]
 
 (* The agent calls the server like OpenCode: initialize (then notifications/initialized), tools/list, a tool call
-   (headless: ListNotebooks lists nothing), and requests with a wrong or no bearer token get 401 *)
+   (headless: ListNotebooks lists no notebooks), and requests with a wrong or no bearer token get 401 *)
 VerificationTest[
     ifMCPAgent @ Module[ { log = mcpLastLog[ ], t0 = AbsoluteTime[ ], responses, initialized },
         mcpWriteScenario[ "cb-mcp-tools", <|
@@ -1349,8 +1536,8 @@ VerificationTest[
         { 200, 200, 200, 401, 401 },
         "WolframNotebooks",
         202,
-        { "ListNotebooks", "ReadNotebook", "CreateNotebook", "InsertCells", "ReplaceCells", "DeleteCells" },
-        <| "content" -> { <| "type" -> "text", "text" -> "[]" |> }, "isError" -> False |>,
+        $mcpToolNames,
+        <| "content" -> { <| "type" -> "text", "text" -> "{\"notebooks\":[],\"snapshots\":[]}" |> }, "isError" -> False |>,
         { { "ListNotebooks", "OK" } },
         { }
     },

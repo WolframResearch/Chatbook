@@ -1979,11 +1979,11 @@ VerificationTest[
     Module[ { read },
         read[ code_ ] := acpExecuteScript[ code ][[ { "Tools", "Complete" } ]];
         {
-            read[ "// tools.WolframNotebooks.ListNotebooks({});\nconst n = 'DeleteCells';\nawait tools.WolframNotebooks[n]({notebook: 'a'})" ],
-            read[ "const t = tools;\nawait t.WolframNotebooks.DeleteCells({})" ],
+            read[ "// tools.WolframNotebooks.ListNotebooks({});\nconst n = 'ShowChanges';\nawait tools.WolframNotebooks[n]({notebook: 'a'})" ],
+            read[ "const t = tools;\nawait t.WolframNotebooks.ShowChanges({})" ],
             read[ "const nb = tools.WolframNotebooks;\nawait nb[name]({})" ],
-            read[ "const { DeleteCells } = tools.WolframNotebooks;\nawait DeleteCells({})" ],
-            read[ "/* tools.WolframNotebooks.ListNotebooks() */ await \\u0074ools.WolframNotebooks.DeleteCells({notebook: \"x\"})" ],
+            read[ "const { ShowChanges } = tools.WolframNotebooks;\nawait ShowChanges({})" ],
+            read[ "/* tools.WolframNotebooks.ListNotebooks() */ await \\u0074ools.WolframNotebooks.ShowChanges({notebook: \"x\"})" ],
             read[ "const x = compute();\nreturn x;" ],
             (* the word in text is no use of the tools, and neither is the server's name in text *)
             read[ "await tools.WolframNotebooks.InsertCells({notebook: \"a\", markdown: \"Use these tools. Then the tools [1] work.\"})" ],
@@ -1995,11 +1995,11 @@ VerificationTest[
         }
     ],
     {
-        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
-        <| "Tools" -> { "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.ShowChanges" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.ShowChanges" }, "Complete" -> False |>,
         <| "Tools" -> { }, "Complete" -> False |>,
-        <| "Tools" -> { "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
-        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.ShowChanges" }, "Complete" -> False |>,
+        <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.ShowChanges" }, "Complete" -> False |>,
         <| "Tools" -> { }, "Complete" -> True |>,
         <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>,
         <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>,
@@ -2018,7 +2018,7 @@ VerificationTest[
 VerificationTest[
     Module[ { decoy, call, read },
         decoy = "/* tools.WolframNotebooks.ListNotebooks({}) */\n";
-        call  = ".WolframNotebooks.DeleteCells({notebook:\"ab12cd34\", cells:\"c1,c2\"})";
+        call  = ".WolframNotebooks.ShowChanges({notebook:\"ab12cd34\", cells:\"c1,c2\"})";
         read[ code_ ] := acpExecuteScript[ decoy <> code ][[ { "Tools", "Complete" } ]];
         {
             read /@ {
@@ -2027,10 +2027,10 @@ VerificationTest[
                 "await (0, tools)" <> call,
                 "const t = 0 || tools;\nawait t" <> call,
                 "const t = true ? tools : 0;\nawait t" <> call,
-                "const f = async (a, t) => t.WolframNotebooks.DeleteCells(a);\nawait f({notebook:\"ab12cd34\"}, tools)",
+                "const f = async (a, t) => t.WolframNotebooks.ShowChanges(a);\nawait f({notebook:\"ab12cd34\"}, tools)",
                 "const g = () => { return tools };\nawait g()" <> call,
-                "const nb = tools.WolframNotebooks;\nconst m = nb;\nawait m.DeleteCells({})",
-                "await globalThis[\"tools\"][\"WolframNotebooks\"][\"DeleteCells\"]({})"
+                "const nb = tools.WolframNotebooks;\nconst m = nb;\nawait m.ShowChanges({})",
+                "await globalThis[\"tools\"][\"WolframNotebooks\"][\"ShowChanges\"]({})"
             },
             read /@ {
                 "await tools" <> FromCharacterCode[ 16^^FEFF ] <> call,
@@ -2039,8 +2039,8 @@ VerificationTest[
         }
     ],
     {
-        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> False |>, 9 ],
-        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.DeleteCells" }, "Complete" -> True |>, 2 ]
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.ShowChanges" }, "Complete" -> False |>, 9 ],
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ListNotebooks", "WolframNotebooks.ShowChanges" }, "Complete" -> True |>, 2 ]
     },
     SameTest -> MatchQ,
     TestID   -> "ACPTranscript-ExecuteScript-HiddenUses@@Tests/ACPTranscript.wlt:2018,1-2047,2"
@@ -2085,24 +2085,24 @@ VerificationTest[
         read[ code_ ] := acpExecuteScript[ code ][[ { "Tools", "Complete" } ]];
         {
             read /@ {
-                "const nb = tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});",
-                "let nb = tools[\"WolframNotebooks\"]\nawait nb.InsertCells({notebook: \"a\"})",
-                "{ var nb = tools.WolframNotebooks }\nawait nb.InsertCells({notebook: \"a\"});"
+                "const nb = tools.WolframNotebooks;\nawait nb.ShowChanges({notebook: \"a\"});",
+                "let nb = tools[\"WolframNotebooks\"]\nawait nb.ShowChanges({notebook: \"a\"})",
+                "{ var nb = tools.WolframNotebooks }\nawait nb.ShowChanges({notebook: \"a\"});"
             },
             read[ "await f();\nconst nb = tools.WolframNotebooks" ],
             read /@ {
-                "nb = tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});",
-                "const nb = tools.WolframNotebooks // the notebook tools\nawait nb.InsertCells({notebook: \"a\"});",
-                "const nb = tools.WolframNotebooks, x = 1;\nawait nb.InsertCells({notebook: \"a\"});",
-                "const nb = tools.WolframNotebooks\n(nb.InsertCells)({notebook: \"a\"});",
-                "const nb =\n  tools.WolframNotebooks;\nawait nb.InsertCells({notebook: \"a\"});"
+                "nb = tools.WolframNotebooks;\nawait nb.ShowChanges({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks // the notebook tools\nawait nb.ShowChanges({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks, x = 1;\nawait nb.ShowChanges({notebook: \"a\"});",
+                "const nb = tools.WolframNotebooks\n(nb.ShowChanges)({notebook: \"a\"});",
+                "const nb =\n  tools.WolframNotebooks;\nawait nb.ShowChanges({notebook: \"a\"});"
             }
         }
     ],
     {
-        ConstantArray[ <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> True |>, 3 ],
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ShowChanges" }, "Complete" -> True |>, 3 ],
         <| "Tools" -> { }, "Complete" -> True |>,
-        ConstantArray[ <| "Tools" -> { "WolframNotebooks.InsertCells" }, "Complete" -> False |>, 5 ]
+        ConstantArray[ <| "Tools" -> { "WolframNotebooks.ShowChanges" }, "Complete" -> False |>, 5 ]
     },
     SameTest -> MatchQ,
     TestID   -> "ACPTranscript-ExecuteScript-AliasDeclarations@@Tests/ACPTranscript.wlt:2083,1-2109,2"

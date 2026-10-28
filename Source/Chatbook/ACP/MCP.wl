@@ -27,9 +27,13 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      acpDisconnect, acpForgetWindow), and turning the setting off, revokes it, and housekeeping forgets revoked ones.
      Tokens are secrets: they are kept in $mcpTokens and in the parameters of the session requests only, never in the
      window record, the TaggingRules, the queue, the debug log, a Failure or a message.
+   * Clients that are not ACP windows (an ACPLink script's session, NBMCP-02) get an "External" token from the public
+     NotebookMCPServer[], valid until the server stops; while one exists the server is not stopped for being idle.
    * The server's handler runs inside SocketListen, a preemptive evaluation (R2): the authentication function
      (acpMCPAuthorizedQ) is a lookup, and the evaluation function (acpMCPEnqueue) only queues the call and schedules
      acpMCPKick. Neither makes front end calls or waits.
+   * Calls of an external client are drained in the pump: such a client is typically a script whose SendACPPrompt waits
+     on the main link, where the button's queued evaluation would wait behind it until the prompt timed out.
    * In a notebook front end's kernel, tool calls run on the kernel's main link: acpMCPKick (in the pump) fires the
      Method -> "Queued" button of a hidden notebook (the technique of Developer/FrontEndServer), whose ButtonFunction,
      acpMCPDrain, runs the queued calls one after the other as a main link evaluation. Meanwhile the front end's Dynamics
@@ -68,14 +72,13 @@ $mcpServerFunction    = "Wolfram`AgentTools`StartMCPSocketServer";
 $mcpEndedText  = "The ACP connection that made this call has ended.";
 $mcpFailedText = "The tool call failed because of an internal error in Chatbook.";
 
-(* The server's initialize "instructions": OpenCode gives them to the model with the server's tools *)
-$mcpInstructions = "\
-These tools work on the notebooks that are open in the user's Wolfram desktop app (the front end), unsaved changes \
-included; they are not files. Start with ListNotebooks: the first notebook it lists is the one the user is working in \
-(\"this notebook\"). Notebooks and cells are named by the short ids that ListNotebooks and ReadNotebook give. New \
-content is always markdown (```wl code blocks become Input cells, which are not evaluated); no tool evaluates code. \
-InsertCells, ReplaceCells and DeleteCells change notebooks the user has open, so they need the user's approval. A call \
-waits while the user's own evaluation runs in the front end.";
+(* The server's initialize "instructions": OpenCode gives them to the model with the server's tools. The workflow and
+   the cell text notation (NotebookTools.wl) are also in the descriptions of OpenNotebook and ReadCells. *)
+$mcpInstructions := StringJoin[
+    $acpNotebookWorkflow,
+    " A call waits while the user's own evaluation runs in the front end.\n\n",
+    $acpNotebookNotation
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -84,9 +87,12 @@ waits while the user's own evaluation runs in the front end.";
 (* Not reset if this file is reloaded during development, so that a running server, its tokens and the queued calls are
    kept. In the MX build they start out empty.
      $mcpServer          None, or <| "Object" -> the MCPSocketServerObject, "URL", "Port", "StartedAt" |>
-     $mcpTokens          token -> <| "Window" -> nbo, "Connection" -> conn, "IssuedAt" -> time |>
+     $mcpTokens          token -> <| "Window" -> nbo, "Connection" -> conn, "IssuedAt" -> time |>, or for an external
+                         client (NotebookMCPServer) <| "Window" -> None, "Connection" -> None, "External" -> True,
+                         "IssuedAt" -> time |>
      $mcpQueue           the queued calls, oldest first: <| "ID", "Run" -> run, "Info" -> info without its "Token",
-                         "Caller" -> <| "Window", "Connection" |> of the token (or None), "QueuedAt" -> time |>
+                         "Caller" -> <| "Window", "Connection" (, "External") |> of the token (or None),
+                         "QueuedAt" -> time |>
      $mcpJobs            the other main link jobs (acpMainLinkRun), oldest first: <| "ID", "Eval" -> HoldComplete[ eval ],
                          "Label", "QueuedAt" -> time |>
      $mcpEvaluator       None, or the Evaluator of the ACP windows (this kernel), read when a token is issued in a
@@ -325,7 +331,10 @@ ensureServer // endDefinition;
 
 (* An in-memory MCPServerObject with the notebook tools (the LLMTools themselves) and the instructions, on 127.0.0.1 and
    a free port. The handler authenticates with acpMCPAuthorizedQ and queues tool calls with acpMCPEnqueue. Messages are
-   quieted and throws caught: a failure is logged ("MCPServerFailed") and the window connects without MCP servers. *)
+   quieted and throws caught: a failure is logged ("MCPServerFailed") and the window connects without MCP servers.
+   "Prompts" comes first in the "LLMEvaluator": AgentTools (f7de2ea) looks it up with
+   KeyValuePattern["LLMEvaluator" -> KeyValuePattern[prop_ -> value_]], which only finds the first key, so after "Tools"
+   the server would send no instructions. *)
 startServer // beginDefinition;
 
 startServer[ ] := Quiet @ acpCatchAll @ agentTools[ "StartMCPSocketServer" ][
@@ -333,7 +342,7 @@ startServer[ ] := Quiet @ acpCatchAll @ agentTools[ "StartMCPSocketServer" ][
         "Name"          -> $acpMCPServerName,
         "Location"      -> None,
         "ServerVersion" -> chatbookVersion[ ],
-        "LLMEvaluator"  -> <| "Tools" -> acpNotebookTools[ ], "Prompts" -> $mcpInstructions |>
+        "LLMEvaluator"  -> <| "Prompts" -> $mcpInstructions, "Tools" -> acpNotebookTools[ ] |>
     |> ],
     "Authentication"     -> acpMCPAuthorizedQ,
     "EvaluationFunction" -> acpMCPEnqueue,
@@ -393,7 +402,8 @@ acpMCPStopServer[ ] := Module[ { server },
     server = PreemptProtect @ With[ { s = $mcpServer }, $mcpServer = None; $mcpIdleSince = None; s ];
     If[ AssociationQ @ server,
         Quiet @ DeleteObject @ server[ "Object" ];
-        PreemptProtect[ $mcpQueue = { } ]
+        (* external tokens name this server's URL, which no longer answers *)
+        PreemptProtect[ $mcpQueue = { }; $mcpTokens = Select[ $mcpTokens, ! externalTokenQ @ # & ] ]
     ];
     Null
 ];
@@ -527,6 +537,8 @@ acpMCPAuthorizedQ // endDefinition;
    revokes it at once, although the window only reconnects after a running turn *)
 tokenValidQ // beginDefinition;
 
+tokenValidQ[ entry_ ] /; externalTokenQ @ entry := True;
+
 tokenValidQ[ KeyValuePattern @ { "Window" -> nbo_NotebookObject, "Connection" -> conn_ } ] :=
     conn =!= None && With[ { window = acpWindowGet @ nbo },
         AssociationQ @ window && Lookup[ window, "Connection", None ] === conn && mcpWindowQ @ window
@@ -535,6 +547,13 @@ tokenValidQ[ KeyValuePattern @ { "Window" -> nbo_NotebookObject, "Connection" ->
 tokenValidQ[ _ ] := False;
 
 tokenValidQ // endDefinition;
+
+
+(* A token (or a queued call's "Caller") of an external client (NotebookMCPServer) *)
+externalTokenQ // beginDefinition;
+externalTokenQ[ entry_Association ] := TrueQ @ Lookup[ entry, "External", False ];
+externalTokenQ[ _ ] := False;
+externalTokenQ // endDefinition;
 
 
 (* The token of the window's connection, or None *)
@@ -641,7 +660,7 @@ tokenCaller // beginDefinition;
 
 tokenCaller[ token_String ] := Replace[
     Lookup[ $mcpTokens, token, None ],
-    entry_Association :> KeyTake[ entry, { "Window", "Connection" } ]
+    entry_Association :> KeyTake[ entry, { "Window", "Connection", "External" } ]
 ];
 
 tokenCaller[ _ ] := None;
@@ -703,7 +722,7 @@ acpMCPKick // beginDefinition;
 acpMCPKick[ ] := Which[
     ! waitingQ[ ] || TrueQ @ $mcpDraining,
         Null,
-    notebookFrontEndQ[ ],
+    notebookFrontEndQ[ ] && ! externalCallsQ[ ],
         $mcpLastKick = AbsoluteTime[ ];
         triggerDrain[ ],
     True,
@@ -712,6 +731,13 @@ acpMCPKick[ ] := Which[
 ];
 
 acpMCPKick // endDefinition;
+
+
+(* Whether calls of an external client wait: they are drained in the pump (an external client typically waits on the
+   main link, in SendACPPrompt, where the button's evaluation would wait behind it) *)
+externalCallsQ // beginDefinition;
+externalCallsQ[ ] := AnyTrue[ $mcpQueue, externalTokenQ @ Lookup[ #, "Caller", None ] & ];
+externalCallsQ // endDefinition;
 
 
 (* The kernel of a notebook front end. Under UsingFrontEnd (tests, CI) the main evaluation has $Notebooks and a
@@ -971,6 +997,50 @@ responseStatus[ _Association ] := "OK";
 responseStatus[ _Failure ] := "Error"; (* an internal error in AgentTools: the call was answered with an error *)
 responseStatus[ _ ] := "NotRun"; (* run[] does nothing for a call that was answered or cancelled meanwhile *)
 responseStatus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*External Clients*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*NotebookMCPServer*)
+
+(* NotebookMCPServer[] starts the kernel's server unless it runs and gives an entry for the "mcpServers" of an ACP
+   session, with a new token of an external client: for ACPLink scripts, which have no ACP window (NBMCP-02), e.g.
+   CreateACPSession[conn, MCPServers -> {NotebookMCPServer[]}]. The entry holds the token, a secret: it is the caller's
+   to keep out of outputs and files. The token is valid until the server stops (acpMCPStopServer, or the file descriptor
+   guard); while it exists, the server is not stopped for being idle. Calls of external clients are drained in the pump
+   (see acpMCPKick), so that a script's SendACPPrompt can wait on the main link meanwhile. *)
+NotebookMCPServer // beginDefinition;
+
+NotebookMCPServer[ ] := catchMine @ Module[ { server },
+    server = acpMCPEnsureServer[ ];
+    If[ ! AssociationQ @ server,
+        throwFailure[ "NotebookMCPServerUnavailable", Replace[ Quiet @ server[ "Message" ], Except[ _String ] -> "" ] ]
+    ];
+    <|
+        "name"    -> $acpMCPServerName,
+        "type"    -> "http",
+        "url"     -> server[ "URL" ],
+        "headers" -> <| "Authorization" -> "Bearer " <> issueExternalToken[ ] |>
+    |>
+];
+
+NotebookMCPServer // endExportedDefinition;
+
+
+issueExternalToken // beginDefinition;
+
+issueExternalToken[ ] := With[ { token = newToken[ ] },
+    PreemptProtect[
+        $mcpTokens[ token ] = <| "Window" -> None, "Connection" -> None, "External" -> True, "IssuedAt" -> AbsoluteTime[ ] |>;
+        $mcpIdleSince = None
+    ];
+    token
+];
+
+issueExternalToken // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

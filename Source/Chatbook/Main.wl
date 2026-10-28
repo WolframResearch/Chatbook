@@ -87,6 +87,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `LogChatTiming;
 `MakeExpressionURI;
 `NotebookAssistanceSidebarSettings;
+`NotebookMCPServer;
 `ProcessNotebookForRAG;
 `RebuildChatSearchIndex;
 `RegisterVectorDatabase;
@@ -137,6 +138,11 @@ CreateChatNotebook[] creates an empty chat notebook and opens it in the front en
 
 GeneralUtilities`SetUsage[ Chatbook, "\
 Chatbook is a symbol for miscellaneous chat notebook messages.\
+" ];
+
+GeneralUtilities`SetUsage[ NotebookMCPServer, "\
+NotebookMCPServer[] starts the MCP server of the notebook tools in this kernel if it is not running, and gives an ACP \
+MCP server entry for it with a new bearer token, for CreateACPSession[conn$, MCPServers -> {NotebookMCPServer[]}].\
 " ];
 
 (* ::**************************************************************************************************************:: *)
@@ -281,6 +287,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "LoadChat",
     "LogChatTiming",
     "MakeExpressionURI",
+    "NotebookMCPServer",
     "ProcessNotebookForRAG",
     "RebuildChatSearchIndex",
     "RegisterVectorDatabase",

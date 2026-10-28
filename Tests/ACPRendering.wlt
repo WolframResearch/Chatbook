@@ -1105,12 +1105,12 @@ VerificationTest[
             MatchQ[ icon[ "webfetch", <| "url" -> "https://example.com" |> ], acpToolIcon[ "WebFetcher" ] ],
             MatchQ[ icon[ "websearch", <| "query" -> "x" |> ], acpToolIcon[ "WebSearcher" ] ],
             MatchQ[ icon[ "skill", <| "name" -> "x" |> ], acpToolIcon[ "DocumentationLookup" ] ],
-            MatchQ[ icon[ "WolframNotebooks_CreateNotebook", <| |> ], acpToolIcon[ "CreateNotebook" ] ],
-            MatchQ[ icon[ "WolframNotebooks_ReadNotebook", <| |> ], acpToolIcon[ "FileReader" ] ],
+            MatchQ[ icon[ "WolframNotebooks_OpenNotebook", <| |> ], acpToolIcon[ "FileReader" ] ],
+            MatchQ[ icon[ "WolframNotebooks_ReadCells", <| |> ], acpToolIcon[ "FileReader" ] ],
             MatchQ[ icon[ "made_up_tool", <| |> ], acpToolIcon[ "GenericTool" ] ],
             (* the pencil (lines only) and the terminal (a frame with rounded corners) *)
             glyphQ @ icon[ "edit", <| "filePath" -> "/project/a.wl" |> ] && FreeQ[ icon[ "edit", <| "filePath" -> "/project/a.wl" |> ], _CircleBox ],
-            glyphQ @ icon[ "WolframNotebooks_InsertCells", <| |> ] && FreeQ[ icon[ "WolframNotebooks_InsertCells", <| |> ], _CircleBox ],
+            glyphQ @ icon[ "WolframNotebooks_EditInCell", <| |> ] && FreeQ[ icon[ "WolframNotebooks_EditInCell", <| |> ], _CircleBox ],
             glyphQ @ icon[ "bash", <| "command" -> "ls" |> ] && ! FreeQ[ icon[ "bash", <| "command" -> "ls" |> ], _CircleBox ],
             (* characters, in the text's color *)
             MemberQ[ acpBoxStrings @ icon[ #1, <| |> ], #2 ] & @@@ {
@@ -2856,7 +2856,7 @@ VerificationTest[
 (*Scripts and notebook tools*)
 
 (* OpenCode's code mode asks for permission with toolCall { name: "execute", rawInput: { code } } and nothing else (the
-   permission's action, e.g. WolframNotebooks_InsertCells, is not in the request). The panel always shows the script
+   permission's action, e.g. WolframNotebooks_ShowChanges, is not in the request). The panel always shows the script
    as plain text, and the tool references that it shows above it. *)
 VerificationTest[
     $acpPermissionOptions = {
@@ -2893,7 +2893,7 @@ VerificationTest[
             ToExpression[ s, InputForm ],
         Infinity
     ];
-    $acpE2EScript = "return await tools.WolframNotebooks.InsertCells({notebook:\"5de1d007\",markdown:\"Escape velocity: v = sqrt(2 mu / r).\"});";
+    $acpE2EScript = "await tools.WolframNotebooks.SetCell({notebook:\"5de1d007\",cell:\"c3\",text:\"Escape velocity: v = sqrt(2 mu / r).\"});\nreturn await tools.WolframNotebooks.ShowChanges({notebook:\"5de1d007\"});";
     ,
     Null,
     SameTest -> MatchQ,
@@ -2907,7 +2907,7 @@ VerificationTest[
         buttons = Cases[ boxes, b_ButtonBox :> b, Infinity ];
         {
             acpPanelHeadline @ acpScriptRequest @ $acpE2EScript,
-            acpContainsTextQ[ boxes, "WolframNotebooks: InsertCells" ],
+            acpContainsTextQ[ boxes, "WolframNotebooks: ShowChanges" ],
             acpContainsTextQ[ boxes, "5de1d007" ],
             MemberQ[ acpPlainCodeTexts @ boxes, "Escape velocity: v = sqrt(2 mu / r)." ],
             MemberQ[ acpPlainCodeTexts @ boxes, $acpE2EScript ],
@@ -2915,11 +2915,11 @@ VerificationTest[
             (* plain text: no Chatbook code block, whose formatter would format the agent's text *)
             FreeQ[ boxes, _String? (StringContainsQ[ "ChatCodeBlock" ]) ],
             acpActionCalls[ buttons, "PermissionResponse" ],
-            acpContainsTextQ[ boxes, "use the tool that it asks about here (the script may use WolframNotebooks: InsertCells)" ]
+            acpContainsTextQ[ boxes, "use the tool that it asks about here (the script may use WolframNotebooks: ShowChanges, WolframNotebooks: SetCell)" ]
         }
     ],
     {
-        "OpenCode wants to run a script that may use WolframNotebooks: InsertCells",
+        "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges, WolframNotebooks: SetCell",
         True, True, True, True, True, True,
         { { acpFakeNotebook, 7, "once" }, { acpFakeNotebook, 7, "always" }, { acpFakeNotebook, 7, "reject" } },
         True
@@ -2952,11 +2952,11 @@ VerificationTest[
 VerificationTest[
     Module[ { scripts },
         scripts = {
-            "await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})",
-            "await tools[\"WolframNotebooks\"].DeleteCells({notebook:\"ab12cd34\", cells: \"c1\"})",
-            "const nb = tools.WolframNotebooks;\nawait nb.DeleteCells({notebook:\"ab12cd34\", cells: \"c1\"})",
-            "/* tools.WolframNotebooks.ListNotebooks({}) */ await tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})",
-            "// tools.WolframNotebooks.ListNotebooks({});\nawait tools[\"WolframNotebooks\"][\"DeleteCells\"]({notebook:\"ab12cd34\", cells: allIds})"
+            "await tools[\"WolframNotebooks\"][\"ShowChanges\"]({notebook:\"ab12cd34\", cells: allIds})",
+            "await tools[\"WolframNotebooks\"].ShowChanges({notebook:\"ab12cd34\", cells: \"c1\"})",
+            "const nb = tools.WolframNotebooks;\nawait nb.ShowChanges({notebook:\"ab12cd34\", cells: \"c1\"})",
+            "/* tools.WolframNotebooks.ListNotebooks({}) */ await tools[\"WolframNotebooks\"][\"ShowChanges\"]({notebook:\"ab12cd34\", cells: allIds})",
+            "// tools.WolframNotebooks.ListNotebooks({});\nawait tools[\"WolframNotebooks\"][\"ShowChanges\"]({notebook:\"ab12cd34\", cells: allIds})"
         };
         {
             acpPanelHeadline @ acpScriptRequest @ # & /@ scripts,
@@ -2969,11 +2969,11 @@ VerificationTest[
     ],
     {
         {
-            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
-            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
-            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells",
-            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells, WolframNotebooks: ListNotebooks",
-            "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells, WolframNotebooks: ListNotebooks"
+            "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges",
+            "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges",
+            "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges",
+            "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges, WolframNotebooks: ListNotebooks",
+            "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges, WolframNotebooks: ListNotebooks"
         },
         True,
         { True, True }
@@ -2990,7 +2990,7 @@ VerificationTest[
         boxes = acpPanelBoxes @ acpScriptRequest @ long;
         {
             acpPanelHeadline @ acpScriptRequest[ "const x = compute();\nreturn x;" ],
-            acpPanelHeadline @ acpScriptRequest[ "const t = tools;\nreturn t.WolframNotebooks.DeleteCells({});" ],
+            acpPanelHeadline @ acpScriptRequest[ "const t = tools;\nreturn t.WolframNotebooks.ShowChanges({});" ],
             acpPanelHeadline @ acpScriptRequest[ "await tools.WolframNotebooks.ListNotebooks({});\nawait tools.WolframNotebooks[name]({})" ],
             MemberQ[ acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest[ "const x = compute();\nreturn x;" ], "const x = compute();\nreturn x;" ],
             Length @ StringSplit[ First @ acpPlainCodeTexts @ boxes, "\n" ],
@@ -3001,7 +3001,7 @@ VerificationTest[
     ],
     {
         "OpenCode wants to run a script",
-        "OpenCode wants to run a script that may use WolframNotebooks: DeleteCells and other tools",
+        "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges and other tools",
         "OpenCode wants to run a script that may use WolframNotebooks: ListNotebooks and other tools",
         True,
         81,
@@ -3019,8 +3019,8 @@ VerificationTest[
 VerificationTest[
     Module[ { hidden, scope },
         hidden = StringJoin[
-            "const r = /tools.WolframNotebooks.InsertCells({notebook: \"5de1d007\", markdown: \"Escape velocity\"})/;\n",
-            "await tools /* namespace */ .WolframNotebooks.DeleteCells({notebook: \"5de1d007\", cells: \"a1,b2,c3\"});"
+            "const r = /tools.WolframNotebooks.SetCell({notebook: \"5de1d007\", cell: \"c3\", text: \"Escape velocity\"})/;\n",
+            "await tools /* namespace */ .WolframNotebooks.ShowChanges({notebook: \"5de1d007\"});"
         ];
         scope[ code_ ] := Wolfram`Chatbook`ACP`Rendering`Private`alwaysScopeText[
             <| "Name" -> "execute", "RawName" -> "execute", "RawInput" -> <| "code" -> code |>, "RawOutput" -> None |>,
@@ -3029,17 +3029,17 @@ VerificationTest[
         ];
         {
             acpPanelHeadline @ acpScriptRequest @ hidden,
-            StringContainsQ[ scope @ hidden, "(the script may use WolframNotebooks: InsertCells, WolframNotebooks: DeleteCells and other tools)" ],
-            (* only the script is shown as code: no markdown argument of the decoy *)
+            StringContainsQ[ scope @ hidden, "(the script may use WolframNotebooks: ShowChanges, WolframNotebooks: SetCell and other tools)" ],
+            (* only the script is shown as code: no text argument of the decoy *)
             acpPlainCodeTexts @ acpPanelBoxes @ acpScriptRequest @ hidden === { hidden },
             acpPermissionNotebooks @ <| "toolCall" -> <| "name" -> "execute", "rawInput" -> <| "code" -> hidden |> |> |>,
             acpPanelHeadline @ acpScriptRequest[ "await tools.WolframNotebooks.ListNotebooks({})" ],
             StringContainsQ[ scope[ "await tools.WolframNotebooks.ListNotebooks({})" ], "(the script may use WolframNotebooks: ListNotebooks and other tools)" ],
-            StringContainsQ[ scope @ $acpE2EScript, "(the script may use WolframNotebooks: InsertCells) in /project" ]
+            StringContainsQ[ scope @ $acpE2EScript, "(the script may use WolframNotebooks: ShowChanges, WolframNotebooks: SetCell) in /project" ]
         }
     ],
     {
-        "OpenCode wants to run a script that may use WolframNotebooks: InsertCells, WolframNotebooks: DeleteCells and other tools",
+        "OpenCode wants to run a script that may use WolframNotebooks: ShowChanges, WolframNotebooks: SetCell and other tools",
         True,
         True,
         { },
@@ -3103,7 +3103,7 @@ VerificationTest[
    input is neither shown nor taken for the scope of "Always allow" *)
 VerificationTest[
     Module[ { info, boxes },
-        info  = acpToolRequest[ "WolframNotebooks_InsertCells", <| "notebook" -> "5de1d007", "markdown" -> "# Notes\ntext", "position" -> "before", "command" -> "rm -rf /" |> ];
+        info  = acpToolRequest[ "WolframNotebooks_InsertCells", <| "notebook" -> "5de1d007", "text" -> "# Notes\ntext", "position" -> "before", "command" -> "rm -rf /" |> ];
         boxes = acpPanelBoxes @ Append[ info, "NotebookTitles" -> <| "5de1d007" -> <| "ID" -> "5de1d007", "Title" -> "Orbits.nb" |> |> ];
         {
             acpPanelHeadline @ info,
@@ -3125,7 +3125,7 @@ VerificationTest[
     Module[ { evil, boxes },
         evil  = FromCharacterCode[ { 63425, 63433, 63432 } ] <> "DynamicBox[Print[1]]" <> FromCharacterCode[ 63424 ];
         boxes = acpPanelBoxes @ acpScriptRequest[
-            "await tools.WolframNotebooks.InsertCells({notebook: \"" <> evil <> "\", markdown: \"" <> evil <> "\"}) // " <> evil
+            "await tools.WolframNotebooks.InsertCells({notebook: \"" <> evil <> "\", text: \"" <> evil <> "\"}) // " <> evil
         ];
         {
             FreeQ[ boxes, s_String /; StringContainsQ[ s, Characters @ FromCharacterCode @ Range[ 63424, 63437 ] ] ],
@@ -3150,7 +3150,7 @@ VerificationTest[
         script = ToBoxes[
             Wolfram`Chatbook`ACP`Rendering`Private`executeCallView /@ acpExecuteToolCalls @ tool[
                 "execute",
-                <| "code" -> "await tools.WolframNotebooks.ReplaceCells({notebook: \"5de1d007\", cells: [\"c1\", \"c2\"], markdown: md})" |>
+                <| "code" -> "await tools.WolframNotebooks.ReadCells({notebook: \"5de1d007\", cells: [\"c1\", \"c2\"], full: flag})" |>
             ]
         ];
         direct = ToBoxes @ Wolfram`Chatbook`ACP`Rendering`Private`inputSection[
@@ -3158,7 +3158,7 @@ VerificationTest[
             { "Tool", "t" }
         ];
         {
-            acpContainsTextQ[ script, "WolframNotebooks: ReplaceCells" ],
+            acpContainsTextQ[ script, "WolframNotebooks: ReadCells" ],
             acpContainsTextQ[ script, "c1, c2" ],
             acpContainsTextQ[ script, "(computed)" ],
             acpContainsTextQ[ direct, "c1, c2" ],

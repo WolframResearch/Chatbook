@@ -79,6 +79,27 @@ These can be revisited:
 * **A session restored from the same folder gives the pending messages back**, as one of another folder, New and a
   folder change do (`acpReturnPendingMessages`), rather than disabling Restore while a message is being prepared.
 
+### Snapshot tools (branch `feature/notebook-mcp`, October 2026)
+
+The tools follow FrontEnd `docs/NotebookMCP/Plan.md` (NBMCP-40, -50, -02); docs/acp-window.md, "Notebook tools", has
+the details. Decisions and facts that the code does not show:
+
+* The front end packets (`NotebookSnapshot`, `NotebookCellText`, `NotebookCellTextEdit`) were not built yet when the
+  tools were written: every front end operation goes through `notebookFrontEnd`, and the tests use a made-up front end
+  that implements the packets' contract as the plan gives it. Check the real packets against it (result shapes, the
+  `Failure` tags, `"Preview" -> 1` for numbering, what `"Open"` means) before relying on the tests.
+* Only ShowChanges asks in the ACP window (`$acpNotebookEditTools`): edits change only snapshots (NBMCP-41 is still
+  open). The permission panel's tests now use ShowChanges as the tool that asks.
+* Cell ids are counters per snapshot (`c1`, ...), not UUID prefixes: shorter for the model, and stable while the
+  snapshot is open. Listed notebooks keep their UUID-prefix ids.
+* Calls of external clients (`NotebookMCPServer[]`) are drained in the pump: a script's `SendACPPrompt` holds the main
+  link, so the pump button would deadlock until the prompt's time limit.
+* AgentTools f7de2ea finds only the first key of the `"LLMEvaluator"`, so `"Prompts"` must come before `"Tools"`, or
+  no instructions are sent (the old `ACPMCP-Server-HTTP` failure). Worth fixing in AgentTools.
+* The agent's text is checked for content that runs code when shown (`requireInertText`), since ShowChanges shows it in
+  the user's notebook; the front end's reader should refuse the same. CellDiff's comparison reads the snapshot with
+  `Get` (`notebookExpression`), which evaluates what the file holds: a review point for NBMCP-50.
+
 ## Measured behaviour (Wolfram 15.0 front end, 15.0.1 kernel)
 
 Measured with experiments; the design depends on them.

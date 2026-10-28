@@ -318,13 +318,7 @@ VerificationTest[
     Developer`ReadRawJSONString @ acpOpenCodeConfigJSON[ ],
     <|
         "$schema"    -> "https://opencode.ai/config.json",
-        "permission" -> <|
-            "edit"                          -> "ask",
-            "bash"                          -> "ask",
-            "WolframNotebooks_InsertCells"  -> "ask",
-            "WolframNotebooks_ReplaceCells" -> "ask",
-            "WolframNotebooks_DeleteCells"  -> "ask"
-        |>
+        "permission" -> <| "edit" -> "ask", "bash" -> "ask", "WolframNotebooks_ShowChanges" -> "ask" |>
     |>,
     SameTest -> MatchQ,
     TestID   -> "OpenCodeConfigJSON-NoLLMKit@@Tests/ACPConnection.wlt:317,1-331,2"
@@ -345,13 +339,7 @@ VerificationTest[
         }
     ],
     {
-        <|
-            "edit"                          -> "ask",
-            "bash"                          -> "ask",
-            "WolframNotebooks_InsertCells"  -> "ask",
-            "WolframNotebooks_ReplaceCells" -> "ask",
-            "WolframNotebooks_DeleteCells"  -> "ask"
-        |>,
+        <| "edit" -> "ask", "bash" -> "ask", "WolframNotebooks_ShowChanges" -> "ask" |>,
         "@ai-sdk/openai-compatible",
         "https://services.wolfram.com/api/llmkit/v1",
         "Bearer {env:LLMKIT_API_KEY}",

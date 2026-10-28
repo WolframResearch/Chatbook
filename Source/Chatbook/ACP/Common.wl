@@ -428,6 +428,8 @@ HoldComplete[
     (* ::**************************************************************************************************************:: *)
     (* NotebookTools.wl *)
     `$acpNotebookEditTools,
+    `$acpNotebookNotation, (* used by MCP.wl (the server's instructions) *)
+    `$acpNotebookWorkflow, (* used by MCP.wl (the server's instructions) *)
     `acpAttachableNotebooks, (* used by Attachments.wl (the attach menu) *)
     `acpDefusedCells,        (* used by Attachments.wl (defusing cells before CellToString) *)
     `acpNotebookMarkdown,    (* used by Attachments.wl (the markdown of an attached notebook) *)

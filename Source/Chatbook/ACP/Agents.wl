@@ -572,8 +572,8 @@ acpOpenCodeConfigJSON[ llmKit_ ] := Developer`WriteRawJSONString[ openCodeConfig
 acpOpenCodeConfigJSON // endDefinition;
 
 
-(* Edits, shell commands and the notebook tools that change open notebooks (MCP.wl's acpMCPToolPermissions, e.g.
-   "WolframNotebooks_InsertCells") ask for permission. These rules only reach an agent that gets the environment: see
+(* Edits, shell commands and the notebook tools that change open notebooks (MCP.wl's acpMCPToolPermissions:
+   "WolframNotebooks_ShowChanges") ask for permission. These rules only reach an agent that gets the environment: see
    acpOwnAgentCommandQ. *)
 openCodeConfig // beginDefinition;
 
