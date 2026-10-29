@@ -1095,6 +1095,56 @@ readReturnPacket // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*sandboxTeXBoxes*)
+
+(* The LaTeX formulas of the ACP notebook tools (ACP/NotebookTools.wl): reads each string as LaTeX math with the
+   kernel's TeX import in the sandbox kernel, since the import evaluates parts of what it reads (\mathrm{...} content as
+   a string literal). Gives for each its boxes in TraditionalForm as InputForm text (letters without their italic style,
+   \[LongEqual] as =, the import's combining diaeresis of \ddot as the front end's "..", and a space after a function
+   name such as cos, which the import runs into its argument), or None for a string that is not math it can read; or a
+   Failure ("NoSandboxKernel", "TimedOut",
+   "KernelQuit"). Nothing that the kernel gives back is evaluated here but that list of strings. *)
+sandboxTeXBoxes // beginDefinition;
+
+sandboxTeXBoxes[ texs: { __String }, seconds_? Positive ] := Catch @ Module[ { kernel, packet },
+    kernel = Quiet @ getSandboxKernel[ ];
+    If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
+    With[ { formulas = texs, names = $texFunctionNames },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Block[ { $Messages = { } },
+            Replace[
+                Cases[ Quiet @ ImportString[ "$" <> StringTrim @ # <> "$", "TeX" ], _FormBox, Infinity, 1 ],
+                {
+                    { FormBox[ box_, TraditionalForm ] } :> ToString[
+                        box //. {
+                            StyleBox[ s_String, "TI" ] :> s,
+                            "\[LongEqual]" -> "=",
+                            "\:0308" -> "..",
+                            RowBox[ { a___, f: names, b: Except[ " " | "(" ], c___ } ] :> RowBox @ { a, f, " ", b, c }
+                        },
+                        InputForm,
+                        CharacterEncoding -> "PrintableASCII"
+                    ],
+                    _ -> None
+                }
+            ] & /@ formulas
+        ] ]
+    ];
+    packet = TimeConstrained[ readReturnPacket @ kernel, seconds, $TimedOut ];
+    Replace[ packet, {
+        $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
+        HoldComplete[ ReturnPacket[ list: { (_String | None) .. } ] ] /; Length @ list === Length @ texs :> list,
+        HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
+        _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
+    } ]
+];
+
+sandboxTeXBoxes // endDefinition;
+
+$texFunctionNames = Alternatives[ "sin", "cos", "tan", "cot", "sec", "csc", "sinh", "cosh", "tanh", "arcsin", "arccos",
+    "arctan", "exp", "log", "ln", "det" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
 

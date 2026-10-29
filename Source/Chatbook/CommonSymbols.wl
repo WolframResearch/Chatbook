@@ -400,6 +400,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `sandboxCheckCells;
 `sandboxEvaluate;
 `sandboxFormatter;
+`sandboxTeXBoxes;
 `savedChatQ;
 `scrollOutputQ;
 `selectByCurrentValue;

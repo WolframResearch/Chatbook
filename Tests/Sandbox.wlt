@@ -361,4 +361,33 @@ If[ $localEvaluatorAvailable,
     ]
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TeX Boxes*)
+
+(* The ACP notebook tools' LaTeX formulas are read in the sandbox kernel: the TeX import evaluates \mathrm{...} content
+   as a string literal, so code smuggled into one runs there, never in this kernel *)
+VerificationTest[
+    Block[ { Wolfram`ChatbookTests`$texInjected = False },
+        {
+            Wolfram`Chatbook`Common`sandboxTeXBoxes[
+                { "\\omega=\\sqrt{k/m}", "\\frac{1}{2", "\\mathrm{a\"<>ToString[Wolfram`ChatbookTests`$texInjected = True]<>\"b}", "\\ddot r=-g\\cos\\theta" },
+                60
+            ],
+            Wolfram`ChatbookTests`$texInjected
+        }
+    ],
+    {
+        {
+            "RowBox[{\"\\[Omega]\", \"=\", SqrtBox[RowBox[{\"k\", \"/\", \"m\"}]]}]",
+            None,
+            _String,
+            "RowBox[{OverscriptBox[\"r\", \"..\"], \"=\", \"-\", \"g\", \"cos\", \" \", \"\\[Theta]\"}]"
+        },
+        False
+    },
+    SameTest -> MatchQ,
+    TestID   -> "TeXBoxes"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

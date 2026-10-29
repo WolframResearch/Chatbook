@@ -1091,6 +1091,91 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-SetCells"
 ]
 
+(* LaTeX formulas in what the agent writes become the boxes that the front end reads: \:2e22$boxes\:2e23 inline,
+   \:2e22FormBox[...]\:2e23 for a DisplayFormula cell. The sandbox kernel reads them (made up here), each formula once
+   per text, and only for texts that have formulas; the boxes are checked like the rest of the text. *)
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $texRead  = { },
+            $texBoxes = <|
+                "\\omega"     -> "\"\\[Omega]\"",
+                "L=T-V"       -> "RowBox[{\"L\", \"=\", \"T\", \"-\", \"V\"}]",
+                "\\frac{1}{2" -> None,
+                "\\dot x"     -> "DynamicBox[x]"
+            |>,
+            Wolfram`Chatbook`Common`sandboxTeXBoxes = Function[ { texs, seconds },
+                AppendTo[ $texRead, texs ];
+                If[ texs === { "\\fail" }, Failure[ "TimedOut", <| |> ], Lookup[ $texBoxes, texs ] ]
+            ]
+        },
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        {
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> {
+                <| "cell" -> "c3", "text" -> "(*the frequency \:2e22tex:\\omega\:2e23, again \:2e22tex:\\omega\:2e23*)" |>,
+                <| "cell" -> "c4", "text" -> "\:2e22display-tex:L=T-V\:2e23", "style" -> "DisplayFormula" |>
+            } |> ],
+            nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*no formulas*)" |> } |> ],
+            nbtText @ nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c3", "edits" -> {
+                <| "oldText" -> "again", "newText" -> "\:2e22tex:\\frac{1}{2\:2e23" |>
+            } |> ],
+            nbtText @ nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*\:2e22tex:\\dot x\:2e23*)" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:2e22tex:\\fail\:2e23*)" |> } |> ],
+            Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ],
+            $texRead
+        }
+    ],
+    {
+        "Set 2 cells of s1: #c3, #c4. ReadCells shows their new content.",
+        _String,
+        "The newText of edit 1 has a formula that is not LaTeX math the tools can read: \"\\frac{1}{2\".",
+        "The text of new cell 1 has content that would run code when it is shown (DynamicBox), which the notebook tools never write.",
+        "The text of item 1 has LaTeX formulas that could not be read now (TimedOut). Write them as boxes instead.",
+        {
+            {
+                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*the frequency \:2e22$\"\\[Omega]\"\:2e23, again \:2e22$\"\\[Omega]\"\:2e23*)" },
+                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:2e22FormBox[RowBox[{\"L\", \"=\", \"T\", \"-\", \"V\"}], TraditionalForm]\:2e23" }
+            },
+            { { "Insert", ___, { { "Text", "(*no formulas*)" } } } }
+        },
+        { { "\\omega" }, { "L=T-V" }, { "\\frac{1}{2" }, { "\\dot x" }, { "\\fail" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-TeXFormulas"
+]
+
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $texRead = { },
+            Wolfram`Chatbook`Common`sandboxTeXBoxes = Function[ { texs, seconds }, AppendTo[ $texRead, texs ]; ConstantArray[ "\"x\"", Length @ texs ] ]
+        },
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        {
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> {
+                <| "cell" -> "c3", "text" -> "(*\:2e22tex:L=\\tfrac12 m v^2-\\dfrac{1}{2}\:2e23 and \:2e22tex:\[Theta]\[PartialD]x\:2e23*)" |>,
+                <| "cell" -> "c4", "text" -> "display-tex:L=T-V", "style" -> "DisplayFormula" |>
+            } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:2e22tex:90\[Degree]\:2e23*)" |> } |> ],
+            Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ],
+            $texRead
+        }
+    ],
+    {
+        "Set 2 cells of s1: #c3, #c4. ReadCells shows their new content.",
+        "The text of item 1 has a LaTeX formula with characters to write as LaTeX commands instead: \[Degree].",
+        {
+            {
+                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*\:2e22$\"x\"\:2e23 and \:2e22$\"x\"\:2e23*)" },
+                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:2e22FormBox[\"x\", TraditionalForm]\:2e23" }
+            }
+        },
+        { { "L=\\frac12 m v^2-\\frac{1}{2}", "\\theta \\partial x" }, { "L=T-V" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-TeXSource"
+]
+
 (* The cells that SetCells and EditInCell change are recorded by their uuids, for ShowChanges *)
 VerificationTest[
     withFakeFE @ (

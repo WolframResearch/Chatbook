@@ -20,7 +20,8 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      cell text edit packets, NotebookFileName, NotebookSave, NotebookClose, and CellDiff's ShowNotebookDiff), so that
      tests can replace it with a made-up front end. The front end reads and writes cells in the agent text form
      (FrontEnd docs/NotebookMCP/AgentTextForm.md); the tools add the marker line (* ::Style:: #id *) in front of each
-     cell's content and never parse or convert content themselves.
+     cell's content and never parse or convert content themselves, but for LaTeX formulas (texFormulas: the front end
+     reads no LaTeX).
    * Front end calls must not run in a SocketListen or reader handler (R2): the tools run in MCP.wl's drain (the main
      link, or the pump for clients that are not ACP windows). Without a front end ($FrontEnd === Null), ListNotebooks
      lists no notebooks and the other tools give an error.
@@ -41,7 +42,8 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      ShowChanges (OpenNotebook's result says so). Each saves the agent a model call.
    * Code check: SetCells, EditInCell and InsertCells end their result with a check of the snapshot's code when they
      changed an Input or Code cell: its Input and Code cells, evaluated in order in a fresh context of Chatbook's sandbox
-     kernel (Sandbox.wl's sandboxCheckCells), never in this kernel, with what each gives and its messages.
+     kernel (Sandbox.wl's sandboxCheckCells), never in this kernel, with what each gives and its messages. LaTeX
+     formulas are read there too (sandboxTeXBoxes): the kernel's TeX import evaluates parts of what it reads.
    * Errors are texts for the agent; internal failures are logged as "NotebookToolFailed" (acpLog) and the agent only
      learns that the tool failed. A Failure of the front end's edit packet is shown with its tag and message.
    * The markdown of attached notebooks (acpNotebookMarkdown, acpDefusedCells, for Attachments.wl) is also defined
@@ -66,6 +68,7 @@ $snippetLength     = 160;   (* characters of the line of a match that SearchNote
 $maxQuotedLength   = 80;    (* characters of an argument that an error message repeats *)
 $codeCheckSeconds  = 30;    (* seconds that the code check of an edit may take; later cells are not checked *)
 $cellCheckSeconds  = 10;    (* seconds that one cell may take in the code check *)
+$texSeconds        = 10;    (* seconds that reading the LaTeX formulas of one text may take *)
 
 (* The tools that change notebooks the user has open: ShowChanges shows the diff in the user's notebook (or opens the
    source file visibly). The edit tools only change snapshots. OpenCode asks before these (MCP.wl's
@@ -101,6 +104,10 @@ $$codeInWrapper = RegularExpression[ StringJoin[
 ] ];
 
 $$wrapper = "\:2e22" ~~ Except[ "\:2e23" ]... ~~ "\:2e23";
+
+(* A LaTeX formula the agent writes: \:2e22tex:...\:2e23 an inline formula cell, \:2e22display-tex:...\:2e23 the content
+   of a DisplayFormula cell *)
+$$texFormula = "\:2e22" ~~ kind: ("tex" | "display-tex") ~~ ":" ~~ tex: Except[ "\:2e22" | "\:2e23" ]... ~~ "\:2e23";
 
 $toolErrorTag = "Wolfram`Chatbook`ACP`NotebookTools`ToolError";
 
@@ -164,8 +171,12 @@ are. Content that would run code when shown (dynamic boxes, button functions) is
 cell a formula is an inline formula cell, written \:2e22$boxes\:2e23, which is short for \:2e22Cell[BoxData[FormBox[\
 boxes, TraditionalForm]], \"InlineFormula\"]\:2e23 (boxes in FullForm), e.g. \:2e22$FractionBox[RowBox[{\
 \"\[PartialD]\", \"L\"}], RowBox[{\"\[PartialD]\", OverscriptBox[\"q\", \".\"]}]]\:2e23, and a DisplayFormula cell holds \
-\:2e22FormBox[..., TraditionalForm]\:2e23. Keep a notebook's typesetting when you rewrite it: write new math as such \
-boxes, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells.";
+\:2e22FormBox[..., TraditionalForm]\:2e23. You may write a formula as LaTeX math instead, which is shorter: \
+\:2e22tex:\\frac{\\partial L}{\\partial \\dot{q}}\:2e23 is an inline formula cell, and \:2e22display-tex:...\:2e23 the \
+whole content of a DisplayFormula cell; write the LaTeX as it is, with single backslashes, and fractions as \
+\\frac{...}{...} rather than with a slash. Formulas are read back as boxes. Keep a notebook's typesetting when you \
+rewrite it: write new math as formulas, never as plain text such as dq/dt, and keep displayed equations in \
+DisplayFormula cells.";
 (* :!CodeAnalysis::EndBlock:: *)
 
 $acpNotebookWorkflow = "\
@@ -748,6 +759,7 @@ the addition in newText.", i ]
     If[ markerQ @ old || markerQ @ new,
         toolError[ "Edit `1` includes a marker line (* ::Style:: #id *): an edit works on the content of one cell.", i ]
     ];
+    new = texFormulas[ new, "The newText of edit " <> ToString @ i ];
     requireInertText[ new, "The newText of edit " <> ToString @ i ];
     { old, new, count }
 ];
@@ -777,6 +789,7 @@ newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
     text  = Lookup[ cell, "text", Missing[ "NoInput" ] ];
     If[ ! StringQ @ style || StringTrim @ style === "", toolError[ "New cell `1` has no style.", i ] ];
     If[ ! StringQ @ text, toolError[ "New cell `1` has no text.", i ] ];
+    text = texFormulas[ text, "The text of new cell " <> ToString @ i ];
     requireCellText[ text, "The text of new cell " <> ToString @ i ];
     { StringTrim @ style, text }
 ];
@@ -805,11 +818,80 @@ setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell,
     cell = cellArgument[ handle, Lookup[ item, "cell", Missing[ "NoInput" ] ] ];
     text = Lookup[ item, "text", Missing[ "NoInput" ] ];
     If[ ! StringQ @ text, toolError[ "Item `1` of cells has no text.", i ] ];
+    text = texFormulas[ text, "The text of item " <> ToString @ i ];
     requireCellText[ text, "The text of item " <> ToString @ i ];
     { "Set", cell, styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ], text }
 ];
 
 setCellArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*texFormulas*)
+
+(* Agent text with its LaTeX formulas ($$texFormula) turned into the boxes that the front end reads: \:2e22$boxes\:2e23
+   for an inline formula cell, \:2e22FormBox[boxes, TraditionalForm]\:2e23 for a DisplayFormula cell's content. They are
+   about half as long as their boxes, which saves the agent time. The sandbox kernel reads them (sandboxTeXBoxes), and
+   the result is checked like the rest of the text. A DisplayFormula's content written as display-tex:... without its
+   brackets is read as such. *)
+texFormulas // beginDefinition;
+
+texFormulas[ text_String, what_String ] /; StringStartsQ[ text, "display-tex:" ] && StringFreeQ[ text, "\:2e22" | "\:2e23" ] :=
+    texFormulas[ "\:2e22" <> text <> "\:2e23", what ];
+
+texFormulas[ text_String, _String ] /; StringFreeQ[ text, $$texFormula ] := text;
+
+texFormulas[ text_String, what_String ] := Module[ { texs, boxes },
+    texs  = DeleteDuplicates @ StringCases[ text, $$texFormula :> tex ];
+    boxes = sandboxTeXBoxes[ texImportSource[ #, what ] & /@ texs, $texSeconds ];
+    If[ FailureQ @ boxes,
+        toolError[ "`1` has LaTeX formulas that could not be read now (`2`). Write them as boxes instead.", what, boxes[ "Tag" ] ]
+    ];
+    boxes = AssociationThread[ texs, boxes ];
+    KeyValueMap[
+        If[ #2 === None, toolError[ "`1` has a formula that is not LaTeX math the tools can read: `2`.", what, quoted @ #1 ] ] &,
+        boxes
+    ];
+    StringReplace[ text, $$texFormula :> If[ kind === "tex",
+        "\:2e22$" <> boxes @ tex <> "\:2e23",
+        "\:2e22FormBox[" <> boxes @ tex <> ", TraditionalForm]\:2e23"
+    ] ]
+];
+
+texFormulas // endDefinition;
+
+
+(* A formula as the kernel's TeX import reads it right: it misreads \tfrac and \dfrac (what comes before one ends up in
+   its numerator), so they become \frac, and it misreads characters that are not ASCII (as Latin-1 bytes of UTF-8), so
+   Greek letters and common symbols become their LaTeX commands; any other such character is refused *)
+texImportSource // beginDefinition;
+
+texImportSource[ tex_String, what_String ] := Module[ { source, other },
+    source = StringReplace[ tex, Join[ { "\\tfrac" -> "\\frac", "\\dfrac" -> "\\frac" }, $texCharacters ] ];
+    other  = Union @ StringCases[ source, RegularExpression[ "[^\\x00-\\x7F]" ] ];
+    If[ other =!= { },
+        toolError[ "`1` has a LaTeX formula with characters to write as LaTeX commands instead: `2`.", what, StringJoin @ other ]
+    ];
+    source
+];
+
+texImportSource // endDefinition;
+
+
+$texCharacters = KeyValueMap[ #1 -> "\\" <> #2 <> " " &, <|
+    "\[Alpha]" -> "alpha", "\[Beta]" -> "beta", "\[Gamma]" -> "gamma", "\[Delta]" -> "delta", "\[Epsilon]" -> "epsilon",
+    "\[CurlyEpsilon]" -> "varepsilon", "\[Zeta]" -> "zeta", "\[Eta]" -> "eta", "\[Theta]" -> "theta",
+    "\[CurlyTheta]" -> "vartheta", "\[Iota]" -> "iota", "\[Kappa]" -> "kappa", "\[Lambda]" -> "lambda", "\[Mu]" -> "mu",
+    "\[Nu]" -> "nu", "\[Xi]" -> "xi", "\[Pi]" -> "pi", "\[Rho]" -> "rho", "\[Sigma]" -> "sigma", "\[Tau]" -> "tau",
+    "\[Upsilon]" -> "upsilon", "\[Phi]" -> "phi", "\[CurlyPhi]" -> "varphi", "\[Chi]" -> "chi", "\[Psi]" -> "psi",
+    "\[Omega]" -> "omega", "\[CapitalGamma]" -> "Gamma", "\[CapitalDelta]" -> "Delta", "\[CapitalTheta]" -> "Theta",
+    "\[CapitalLambda]" -> "Lambda", "\[CapitalXi]" -> "Xi", "\[CapitalPi]" -> "Pi", "\[CapitalSigma]" -> "Sigma",
+    "\[CapitalPhi]" -> "Phi", "\[CapitalPsi]" -> "Psi", "\[CapitalOmega]" -> "Omega", "\[PartialD]" -> "partial",
+    "\[Infinity]" -> "infty", "\[LessEqual]" -> "le", "\[GreaterEqual]" -> "ge", "\[NotEqual]" -> "ne",
+    "\[RightArrow]" -> "to", "\[PlusMinus]" -> "pm", "\[Times]" -> "times", "\[CenterDot]" -> "cdot", "\[Del]" -> "nabla",
+    "\[ScriptL]" -> "ell", "\[HBar]" -> "hbar", "\[TildeTilde]" -> "approx", "\[Element]" -> "in", "\[Sum]" -> "sum",
+    "\[Integral]" -> "int"
+|> ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
