@@ -164,6 +164,7 @@ $acpUIStrings = <|
     "NoticeNotConnected"             -> "the agent is not connected.",
     "NoticePreparing"                -> "The attachments of the last message are still being prepared.",
     "NoticeAttachmentClosed"         -> "The notebook `name` is no longer open: remove it from the attachments or open it again.",
+    "NoticeChangesNotShown"          -> "The changes to `names` could not be shown: `reason`",
     "NoticeAttachmentMissing"        -> "The file `name` can't be read.",
     "NoticeAttachmentUnreadable"     -> "The notebook file `name` can't be read.",
     "NoticeAttachmentNotebookUnreadable" -> "The notebook `name` can't be read.",
@@ -4017,7 +4018,13 @@ acpFinishTurnState[ turnID_String, nbo_NotebookObject ] := Module[ { pending, wi
         (* The turn may have changed files: check the project's uncommitted changes (Git.wl) *)
         acpGitMarkStale @ nbo;
         (* The session moved to the top of the agent's list and may have a (new) title (Sessions.wl) *)
-        acpSessionsNoteTurnEnd @ nbo
+        acpSessionsNoteTurnEnd @ nbo;
+        (* A turn that ended normally: the window shows the notebooks its agent edited. Only now, once the final cell is
+           written: the show's front end calls run on the main link, and a front end call of the pump (finalization)
+           while the front end writes a large reply to the main link deadlocks both. *)
+        If[ acpTurnGet[ turnID, "StopReason", None ] === "end_turn",
+            acpMainLinkRun[ nbo, showWindowSnapshots @ nbo, "ShowChanges" ]
+        ]
     ];
     acpTurnDrop @ turnID;
     acpPublish[ ];
@@ -4027,6 +4034,26 @@ acpFinishTurnState[ turnID_String, nbo_NotebookObject ] := Module[ { pending, wi
 acpFinishTurnState[ turnID_String, _ ] := (acpTurnDrop @ turnID; Null);
 
 acpFinishTurnState // endDefinition;
+
+(* The window shows the notebooks that its agent edited, as ShowChanges does (NotebookTools.wl's acpShowWindowSnapshots),
+   when a turn ended normally (acpFinishTurnState): its agent ends its turn instead of calling ShowChanges. A main link
+   job (front end calls); a notebook whose changes could not be shown is named in a notice. *)
+showWindowSnapshots // beginDefinition;
+
+showWindowSnapshots[ nbo_NotebookObject ] := Replace[ acpShowWindowSnapshots @ nbo, {
+    { } -> Null,
+    failed_List :> With[
+        {
+            notice = acpLabel[ "NoticeChangesNotShown", <|
+                "names"  -> StringRiffle[ acpRemoteDisplayName /@ Lookup[ failed, "Title" ], ", " ],
+                "reason" -> First[ failed ][ "Text" ]
+            |> ]
+        },
+        acpSchedule @ acpSetNotice[ nbo, notice ]
+    ]
+} ];
+
+showWindowSnapshots // endDefinition;
 
 
 (* The front end occasionally misses the reset of the busy flag at the end of a turn and keeps showing the Stop button,

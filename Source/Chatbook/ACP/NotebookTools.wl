@@ -34,6 +34,11 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      ToExpression'd.
    * Nothing the agent writes may run code when it is shown (ShowChanges shows it in the user's notebook):
      requireInertText refuses linear syntax escapes and, inside box wrappers, dynamic boxes and options that hold code.
+   * Chat windows: a snapshot remembers the ACP window whose agent opened it ($acpToolWindow, which MCP.wl's drain sets
+     for the calls of a window's agent; None for other clients). That window is the agent's host: it opens the notebooks
+     attached to a message as snapshots (acpOpenNotebookFor, for Attachments.wl), and it shows its agent's edited
+     snapshots when a turn ends (acpShowWindowSnapshots, for Connection.wl), so its agent ends its turn instead of calling
+     ShowChanges (OpenNotebook's result says so). Each saves the agent a model call.
    * Code check: SetCells, EditInCell and InsertCells end their result with a check of the snapshot's code when they
      changed an Input or Code cell: its Input and Code cells, evaluated in order in a fresh context of Chatbook's sandbox
      kernel (Sandbox.wl's sandboxCheckCells), never in this kernel, with what each gives and its messages.
@@ -107,10 +112,13 @@ $toolErrorTag = "Wolfram`Chatbook`ACP`NotebookTools`ToolError";
      $snapshots      handle -> <| "Handle", "Notebook" -> the snapshot's NotebookObject, "File" -> its file (or None),
                      "Source" -> NotebookObject | file | None, "SourceID" -> the source's notebook id (or None),
                      "Title", "IDs" -> <| CellObject -> "c1", ... |>, "NextID", "Edited" (edited since it was opened),
-                     "Unsaved" (edited since it was last saved) |>
-     $snapshotCount  the number of the last handle *)
+                     "Unsaved" (edited since it was last saved), "Window" -> the ACP window whose agent opened it, or
+                     None |>
+     $snapshotCount  the number of the last handle
+   $acpToolWindow is the ACP window whose agent made the running call (MCP.wl's drain blocks it), None otherwise. *)
 If[ ! AssociationQ @ $snapshots, $snapshots = <| |> ];
 If[ ! IntegerQ @ $snapshotCount, $snapshotCount = 0 ];
+$acpToolWindow = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -167,8 +175,8 @@ snapshot of a notebook (unsaved changes included) and gives its handle (s1, s2, 
 Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first), which gives the \
 notebook's cells too (for a long notebook, an outline of its headings: then read the sections you change with \
 ReadCells, as ranges of cells) -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
-shows the user their notebook as a diff against it, to accept or reject change by change. CloseNotebook discards a \
-snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
+shows the user their notebook as a diff against it, to accept or reject change by change (when OpenNotebook says that \
+the chat window shows the changes, end your turn instead). CloseNotebook discards a snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
 independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
 make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
@@ -1587,6 +1595,7 @@ openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries,
             "cells"    -> Length @ entries,
             If[ reopened, "note" -> "This notebook already had an open snapshot; its edits so far are kept.", Nothing ]
         |>,
+        If[ hostShowsQ @ handle, "\n\n" <> $hostShowsNote, "" ],
         Which[
             blocks === { }, "",
             budgetCount[ StringLength /@ blocks, $readBudget ] === Length @ blocks,
@@ -1697,7 +1706,8 @@ newSnapshot[ source_Association ] := Module[ { nbo, file, handle },
         "IDs"      -> <| |>,
         "NextID"   -> 1,
         "Edited"   -> False,
-        "Unsaved"  -> False
+        "Unsaved"  -> False,
+        "Window"   -> $acpToolWindow
     |>;
     handle
 ];
@@ -2063,7 +2073,10 @@ saveNotebook // beginDefinition;
 saveNotebook[ args_Association ] := Module[ { handle },
     handle = resolveSnapshot @ args[ "notebook" ];
     saveSnapshot @ handle;
-    "Saved " <> handle <> ". When the work on it is done, call ShowChanges to show the user the changes."
+    "Saved " <> handle <> If[ hostShowsQ @ handle,
+        ". When the work on it is done, end your turn: the chat window then shows the user the changes.",
+        ". When the work on it is done, call ShowChanges to show the user the changes."
+    ]
 ];
 
 saveNotebook // endDefinition;
@@ -2115,6 +2128,63 @@ diffFailureText // beginDefinition;
 diffFailureText[ failure: Failure[ _, _Association ] ] := failureMessage @ failure;
 diffFailureText[ _ ] := "the comparison failed.";
 diffFailureText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Windows*)
+
+(* What an ACP window does as its agent's host (see the rules): its snapshots show the changes when the turn ends *)
+hostShowsQ // beginDefinition;
+hostShowsQ[ handle_String ] := MatchQ[ $snapshots[ handle, "Window" ], _NotebookObject ];
+hostShowsQ // endDefinition;
+
+$hostShowsNote = "\
+This chat window shows the user your edited snapshots as diffs when your turn ends: end your turn as soon as the edits \
+are done, with one short sentence, instead of calling ShowChanges.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpOpenNotebookFor*)
+
+(* OpenNotebook's result for a notebook attached to a message of the window nbo (an open notebook or a .nb file), as if
+   the window's agent had called it: the snapshot is the window's. A Failure if it can't be opened (e.g. a notebook the
+   tools don't list). Makes front end calls: called in a main link job (Attachments.wl). *)
+acpOpenNotebookFor // beginDefinition;
+
+acpOpenNotebookFor[ nbo_NotebookObject, source: _NotebookObject | _String ] := Block[ { $acpToolWindow = nbo },
+    toolResult[ "OpenNotebook", openNotebook @ <| "notebook" -> notebookSpec @ source |> ]
+];
+
+acpOpenNotebookFor // endDefinition;
+
+
+(* What OpenNotebook takes for an open notebook: its id *)
+notebookSpec // beginDefinition;
+notebookSpec[ nbo_NotebookObject ] := Replace[ SelectFirst[ listedNotebooks[ ], #[ "NotebookObject" ] === nbo & ], {
+    entry_Association :> entry[ "ID" ],
+    _ :> toolError[ "This notebook is not one that the notebook tools can open." ]
+} ];
+notebookSpec[ file_String ] := file;
+notebookSpec // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpShowWindowSnapshots*)
+
+(* Shows the edited snapshots of the window nbo as ShowChanges does, when its agent's turn ended. Gives the failures:
+   { <| "Title", "Text" |>, ... } for the snapshots whose changes could not be shown (they stay open). Snapshots that
+   were not edited stay open for the next turn. Makes front end calls: called in a main link job (Connection.wl). *)
+acpShowWindowSnapshots // beginDefinition;
+
+acpShowWindowSnapshots[ nbo_NotebookObject ] := Module[ { handles },
+    handles = Keys @ Select[ $snapshots, #[ "Window" ] === nbo && TrueQ @ #[ "Edited" ] & ];
+    Cases[
+        { $snapshots[ #, "Title" ], toolResult[ "ShowChanges", showChanges @ <| "notebook" -> # |> ] } & /@ handles,
+        { title_, failure_Failure } :> <| "Title" -> title, "Text" -> failure[ "String" ] |>
+    ]
+];
+
+acpShowWindowSnapshots // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -430,11 +430,14 @@ HoldComplete[
     `$acpNotebookEditTools,
     `$acpNotebookNotation, (* used by MCP.wl (the server's instructions) *)
     `$acpNotebookWorkflow, (* used by MCP.wl (the server's instructions) *)
+    `$acpToolWindow,         (* set by MCP.wl's drain (the window whose agent made the call) *)
     `acpAttachableNotebooks, (* used by Attachments.wl (the attach menu) *)
     `acpDefusedCells,        (* used by Attachments.wl (defusing cells before CellToString) *)
     `acpNotebookMarkdown,    (* used by Attachments.wl (the markdown of an attached notebook) *)
     `acpNotebookTitles, (* used by Connection.wl (the notebooks of a permission request, for the permission panel) *)
     `acpNotebookTools,
+    `acpOpenNotebookFor,     (* used by Attachments.wl (an attached notebook as a snapshot) *)
+    `acpShowWindowSnapshots, (* used by UI.wl (the end of a turn) *)
 
     (* ::**************************************************************************************************************:: *)
     (* MCP.wl *)
@@ -453,6 +456,7 @@ HoldComplete[
     `acpMCPServersParam,      (* used by Connection.wl (session/new, session/load, session/resume) *)
     `acpMCPStopServer,
     `acpMCPToolPermissions,   (* used by Agents.wl (OpenCode's permission rules) *)
+    `acpMCPWindowQ,           (* used by Attachments.wl (whether the window's agent has the notebook tools) *)
 
     (* ::**************************************************************************************************************:: *)
     (* Attachments.wl *)

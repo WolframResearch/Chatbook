@@ -75,6 +75,7 @@ $imagesNotSentNote = "[The [image n] placeholders stand for images that were not
 $moreGraphicsNote  = "[More graphics of this notebook are shown as [graphics]: at most `1` images are sent with a message.]";
 $noRoomNote        = "[More graphics of this notebook are shown as [graphics]: the message has no room for more images.]";
 $fileCutNote       = "[The rest of this file is left out: it is too large to attach whole.]";
+$snapshotNote      = "[This notebook is open for you as a snapshot: this is what OpenNotebook gives for it, so do not call OpenNotebook for it.]\n\n";
 
 $$attachmentTag = ("/"|"") ~~ "attachment";
 
@@ -1065,6 +1066,9 @@ acpPrepareAttachments[ nbo_NotebookObject, activeQ_, prep_Association ] := Catch
             "ImagesQ"    -> ! caps[ "Known" ] || caps[ "Image" ],
             "Agent"      -> Replace[ Lookup[ window, "Agent", "OpenCode" ], Except[ _String ] -> "OpenCode" ],
             "ActiveQ"    -> activeQ,
+            "Window"     -> nbo,
+            (* an attached notebook is opened as a snapshot for an agent that has the notebook tools *)
+            "SnapshotsQ" -> ! acpRemoteQ @ window && acpMCPWindowQ @ nbo,
             "ImageCount" -> 0,
             "Characters" -> 0,
             "Bytes"      -> utf8Length @ text
@@ -1182,6 +1186,7 @@ imageBytes // endDefinition;
 prepareAttachment // beginDefinition;
 
 prepareAttachment[ ref: KeyValuePattern[ "Kind" -> "Notebook" ], ctx_Association ] := Module[ { name, cells },
+    Replace[ snapshotAttachment[ ref, ref[ "Notebook" ], None, ctx ], prepared_List :> Return[ prepared, Module ] ];
     name  = acpRemoteDisplayName @ ref[ "Name" ];
     cells = notebookCells @ ref[ "Notebook" ];
     Replace[ cells, {
@@ -1207,6 +1212,7 @@ prepareAttachment[ ref: KeyValuePattern[ "Kind" -> "File" ], ctx_Association ] :
     If[ size > max,
         throwAttachment[ "NoticeAttachmentTooLarge", <| "name" -> name, "size" -> acpByteSizeLabel @ size, "max" -> acpByteSizeLabel @ max |> ]
     ];
+    If[ nb, Replace[ snapshotAttachment[ <| ref, "Size" -> size |>, path, path, ctx ], prepared_List :> Return[ prepared, Module ] ] ];
     bytes = readFileBytes[ path, size ];
     If[ ! ByteArrayQ @ bytes, throwAttachment[ "NoticeAttachmentMissing", <| "name" -> name |> ] ];
     Which[
@@ -1234,6 +1240,47 @@ readFileBytes[ path_String, n_Integer ] := Module[ { stream },
 ];
 
 readFileBytes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snapshotAttachment*)
+
+(* An attached notebook (an open one, or a .nb file) as a snapshot that the window's agent edits: OpenNotebook's result
+   for it (NotebookTools.wl's acpOpenNotebookFor), so that the agent needs no OpenNotebook call, and the window shows its
+   changes when the turn ends. Only for an agent that has the notebook tools ("SnapshotsQ"), never for a prompt
+   notebook's message, and only if the result fits into the message; None otherwise, and the markdown is sent. *)
+snapshotAttachment // beginDefinition;
+
+snapshotAttachment[ ref_Association, source_, path_, ctx_Association ] := Module[ { result, text },
+    If[ ! TrueQ @ ctx[ "SnapshotsQ" ] || TrueQ @ Lookup[ ref, "Prompt", False ], Return[ None, Module ] ];
+    result = acpOpenNotebookFor[ ctx[ "Window" ], source ];
+    If[ ! StringQ @ result,
+        acpLog[ "AttachmentSnapshotFailed", <| "Value" -> result |> ];
+        Return[ None, Module ]
+    ];
+    text = $snapshotNote <> result;
+    If[ StringLength @ text > charactersLeft @ ctx, Return[ None, Module ] ];
+    {
+        <|
+            "Kind"      -> ref[ "Kind" ],
+            "Name"      -> ref[ "Name" ],
+            "Path"      -> path,
+            "Ref"       -> ref,
+            "Text"      -> text,
+            "Images"    -> { },
+            "Cells"     -> Replace[ Quiet @ Developer`ReadRawJSONString @ First @ StringSplit[ result, "\n", 2 ], { KeyValuePattern[ "cells" -> n_Integer ] :> n, _ -> None } ],
+            "Size"      -> Lookup[ ref, "Size", None ],
+            "Truncated" -> False
+        |>,
+        <|
+            ctx,
+            "Characters" -> ctx[ "Characters" ] + StringLength @ text,
+            "Bytes"      -> ctx[ "Bytes" ] + utf8Length @ text
+        |>
+    }
+];
+
+snapshotAttachment // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

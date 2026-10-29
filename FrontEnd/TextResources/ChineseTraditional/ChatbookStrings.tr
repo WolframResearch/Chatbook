@@ -654,6 +654,7 @@
 "ACPNoticeNotConnected" -> "the agent is not connected.",
 "ACPNoticePreparing" -> "The attachments of the last message are still being prepared.",
 "ACPNoticeAttachmentClosed" -> "The notebook `name` is no longer open: remove it from the attachments or open it again.",
+"ACPNoticeChangesNotShown" -> "The changes to `names` could not be shown: `reason`",
 "ACPNoticeAttachmentMissing" -> "The file `name` can't be read.",
 "ACPNoticeAttachmentUnreadable" -> "The notebook file `name` can't be read.",
 "ACPNoticeAttachmentNotebookUnreadable" -> "The notebook `name` can't be read.",

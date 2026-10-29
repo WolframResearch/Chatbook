@@ -556,6 +556,20 @@ externalTokenQ[ _ ] := False;
 externalTokenQ // endDefinition;
 
 
+(* The ACP window of a queued call's "Caller", or None (an external client); NotebookTools.wl records it on the snapshots
+   that the call opens *)
+callerWindow // beginDefinition;
+callerWindow[ KeyValuePattern[ "Window" -> nbo_NotebookObject ] ] := nbo;
+callerWindow[ _ ] := None;
+callerWindow // endDefinition;
+
+
+(* Whether the agent of the window nbo has the notebook tools: its connection has a valid token *)
+acpMCPWindowQ // beginDefinition;
+acpMCPWindowQ[ nbo_NotebookObject ] := With[ { window = acpWindowGet @ nbo }, AssociationQ @ window && StringQ @ windowToken @ window ];
+acpMCPWindowQ // endDefinition;
+
+
 (* The token of the window's connection, or None *)
 windowToken // beginDefinition;
 
@@ -974,7 +988,7 @@ runJob[ job_Association, mode_String ] := Module[ { info, name, start, response 
             acpLog[ "MCPToolRejected", <| "Tool" -> name |> ],
         True,
             start    = AbsoluteTime[ ];
-            response = job[ "Run" ][ ];
+            response = Block[ { $acpToolWindow = callerWindow @ job[ "Caller" ] }, job[ "Run" ][ ] ];
             If[ FailureQ @ response && TrueQ @ Quiet @ info[ "ActiveQ" ][ ], info[ "Reject" ][ $mcpFailedText ] ];
             acpLog[ "MCPToolCall", <|
                 "Tool"    -> name,

@@ -679,7 +679,8 @@ VerificationTest[
             "Title"    -> "Hamiltonian Mechanics",
             "NextID"   -> 8,
             "Edited"   -> False,
-            "Unsaved"  -> False
+            "Unsaved"  -> False,
+            "Window"   -> None
         |>,
         { "c1", "c2", "c3", "c4", "c5", "c6", "c7" },
         {
@@ -1368,6 +1369,87 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-CodeCheck"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Windows*)
+
+(* A snapshot that a window's agent opens is the window's: OpenNotebook and SaveNotebook tell the agent to end its turn,
+   and acpShowWindowSnapshots shows the window's edited snapshots (others, and unedited ones, stay open) *)
+VerificationTest[
+    withFakeFE @ Module[ { window, opened, other, saved, failed, shown },
+        window = NotebookObject[ "fake-window" ];
+        opened = Block[ { $acpToolWindow = window }, nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ] ];
+        other  = nbtCall[ "OpenNotebook", <| |> ];
+        Block[ { $acpToolWindow = window }, nbtCall[ "OpenNotebook", <| "notebook" -> "12345678" |> ] ];
+        nbtCall[ "DeleteCells", <| "notebook" -> "s1", "cells" -> "c7" |> ];
+        nbtCall[ "InsertCells", <| "notebook" -> "s2", "newCells" -> { <| "style" -> "Title", "text" -> "(*New*)" |> } |> ];
+        saved  = nbtCall[ "SaveNotebook", <| "notebook" -> "s1" |> ];
+        failed = Block[ { $fakeDiffResult = Failure[ "Test", <| "MessageTemplate" -> "The comparison could not be made." |> ] },
+            acpShowWindowSnapshots @ window
+        ];
+        shown = acpShowWindowSnapshots @ window;
+        {
+            StringContainsQ[ #, "This chat window shows the user your edited snapshots" ] & /@ { opened, other },
+            saved,
+            failed,
+            shown,
+            Cases[ $fakeCalls, { "ShowDiff", source_, snapshot_, _ } :> { source, snapshot } ],
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[[ All, "Window" ]]
+        }
+    ],
+    {
+        { True, False },
+        "Saved s1. When the work on it is done, end your turn: the chat window then shows the user the changes.",
+        { <| "Title" -> "Hamiltonian Mechanics", "Text" -> "The changes of s1 (\"Hamiltonian Mechanics\") could not be shown: The comparison could not be made." |> },
+        { },
+        {
+            { NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ] },
+            { NotebookObject[ "fake-source-1" ], NotebookObject[ "fake-snapshot-1" ] }
+        },
+        <| "s2" -> None, "s3" -> NotebookObject[ "fake-window" ] |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-WindowSnapshots"
+]
+
+(* An attached notebook is opened as the window's snapshot (OpenNotebook's result in the attachment's text) when the
+   window's agent has the notebook tools, not for a prompt notebook, and not for a notebook the tools can't open *)
+VerificationTest[
+    withFakeFE @ Module[ { window, ref, ctx, attach, prepared },
+        window = NotebookObject[ "fake-window" ];
+        ref    = <| "Kind" -> "Notebook", "Key" -> "k1", "Notebook" -> NotebookObject[ "fake-source-1" ], "Name" -> "HamiltonianMechanics.nb" |>;
+        ctx    = <| "SnapshotsQ" -> True, "Window" -> window, "Limits" -> <| "Characters" -> 600000 |>, "Characters" -> 0, "Bytes" -> 10 |>;
+        attach = Wolfram`Chatbook`ACP`Attachments`Private`snapshotAttachment;
+        prepared = attach[ ref, ref[ "Notebook" ], None, ctx ];
+        {
+            KeyTake[ First @ prepared, { "Kind", "Name", "Path", "Images", "Cells", "Truncated" } ],
+            StringStartsQ[ First[ prepared ][ "Text" ], "[This notebook is open for you as a snapshot" ],
+            StringContainsQ[ First[ prepared ][ "Text" ], "\"notebook\":\"s1\"" ~~ __ ~~ "This chat window shows the user" ],
+            Last[ prepared ][ "Characters" ] === StringLength @ First[ prepared ][ "Text" ],
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots[ "s1", "Window" ],
+            attach[ ref, ref[ "Notebook" ], None, <| ctx, "SnapshotsQ" -> False |> ],
+            attach[ <| ref, "Prompt" -> True |>, ref[ "Notebook" ], None, ctx ],
+            attach[ ref, NotebookObject[ "not-listed" ], None, ctx ],
+            nbtText @ acpOpenNotebookFor[ window, NotebookObject[ "not-listed" ] ],
+            Keys @ Wolfram`Chatbook`ACP`NotebookTools`Private`$snapshots
+        }
+    ],
+    {
+        <| "Kind" -> "Notebook", "Name" -> "HamiltonianMechanics.nb", "Path" -> None, "Images" -> { }, "Cells" -> 7, "Truncated" -> False |>,
+        True,
+        True,
+        True,
+        NotebookObject[ "fake-window" ],
+        None,
+        None,
+        None,
+        "This notebook is not one that the notebook tools can open.",
+        { "s1" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-AttachedSnapshot"
 ]
 
 (* ::**************************************************************************************************************:: *)
