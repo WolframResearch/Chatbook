@@ -598,13 +598,68 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Pop Out From History*)
+VerificationTest[
+    withMockTitles @ UsingFrontEnd @ Module[ { windowUUID, poppedUUID, windowSettings, nbo },
+        windowUUID = CreateUUID[ ];
+        poppedUUID = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ windowUUID, "AutoSaveOnly" -> True ];
+        SaveChat[ titleTestMessages[ 2 ], titleTestSettings @ poppedUUID, "AutoSaveOnly" -> True ];
+        (* The settings of the assistant window, which has a different chat loaded: *)
+        windowSettings = <|
+            titleTestSettings @ windowUUID,
+            "Tools"          -> { "NotebookEditor" },
+            "SetCellDingbat" -> False,
+            "Model"          -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
+        |>;
+        nbo = Wolfram`Chatbook`ChatModes`UI`Private`popOutChatNB0[
+            <| "AppName" -> $titleTestApp, "ConversationUUID" -> poppedUUID |>,
+            windowSettings
+        ];
+        WithCleanup[
+            {
+                CurrentChatSettings[ nbo, "ConversationUUID" ] =!= windowUUID,
+                CurrentChatSettings[ nbo, "AppName" ] =!= $titleTestApp,
+                Wolfram`Chatbook`Common`resolveAutoSettings[
+                    Wolfram`Chatbook`Common`currentChatSettings @ nbo
+                ][ "AutoSaveConversations" ],
+                Lookup[
+                    Replace[
+                        CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ],
+                        Except[ _Association ] -> <| |>
+                    ],
+                    { "ConversationUUID", "AppName", "AutoSaveConversations", "Tools", "SetCellDingbat" },
+                    None
+                ],
+                CurrentChatSettings[ nbo, "Model" ],
+                Count[ NotebookGet[ nbo ][[ 1 ]], Cell[ __, "ChatInput", ___ ], Infinity ],
+                LoadChat[ $titleTestApp, windowUUID ][ "Messages" ] === titleTestMessages[ 1 ]
+            },
+            NotebookClose @ nbo
+        ]
+    ],
+    {
+        True,
+        True,
+        False,
+        { None, None, None, None, None },
+        KeyValuePattern @ { "Service" -> "OpenAI", "Name" -> "gpt-4o" },
+        2,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "PopOutFromHistory-DropsWindowSettings@@Tests/SaveChat.wlt:602,1-652,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cleanup*)
 VerificationTest[
     titleTestCleanup[ ];
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:602,1-608,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:657,1-663,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -77,6 +77,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$notebookAssistanceExtraInstructions;
 `$notebookEditorEnabled;
 `$openToolCallBoxes;
+`$popOutSettings;
 `$preferencesScope;
 `$progressContainer;
 `$progressText;

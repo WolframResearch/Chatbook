@@ -4055,7 +4055,7 @@ popOutChatNB0[ id_, settings_Association ] := Enclose[
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
         dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
         cells = ConfirmMatch[ updateCellDingbats[ ChatMessageToCell @ messages, dingbat ], { __Cell }, "Cells" ];
-        options = Sequence @@ Normal[ settings, Association ];
+        options = Sequence @@ Normal[ KeyTake[ settings, $popOutSettings ], Association ];
         ConfirmMatch[ CreateChatNotebook[ cells, options ], _NotebookObject, "Notebook" ]
     ],
     throwInternalFailure
