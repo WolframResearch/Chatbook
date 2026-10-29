@@ -28,6 +28,9 @@ $historyNotice               = None; (* shown above the History overlay, e.g. af
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
 
+(* the docked cells below the window's top stripe (see writeWorkspaceChatSubDockedCell): *)
+$$workspaceChatSubDockedCellTag = "WorkspaceChatTitleDockedCell" | "WorkspaceChatMovedToHistoryDockedCell";
+
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
     Appearance -> "Frameless",
@@ -2504,59 +2507,78 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*writeWorkspaceChatSourcesDockedCell*)
-writeWorkspaceChatSourcesDockedCell // beginDefinition;
+(*writeWorkspaceChatSubDockedCell*)
+(* The window has a single docked cell below the top stripe, which shows either the chat's title or the notice that the
+   previous chat was moved to History, so writing one replaces the other: *)
+writeWorkspaceChatSubDockedCell // beginDefinition;
 
-writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSourcesDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                content,
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatSourcesDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_, tag_String ] :=
+    setCurrentValue[ nbo, DockedCells,
+        Replace[
+            DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> $$workspaceChatSubDockedCellTag, ___ ] ],
+            { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
+                a,
+                makeWorkspaceChatSubDockedCellExpression[ content, color @ "NA_ToolbarTitleBackground", tag ],
+                b
+            }
+        ]
+    ];
 
-writeWorkspaceChatSourcesDockedCell // endDefinition;
+writeWorkspaceChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*writeWorkspaceChatTitleDockedCell*)
 writeWorkspaceChatTitleDockedCell // beginDefinition;
 
-writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatTitleDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                Style[
-                    FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                        "WorkspaceChatToolbarTitle",
-                        #,
-                        Right
-                    ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
-                    "WorkspaceChatToolbarTitle"
-                ],
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatTitleDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Style[
+            FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                "WorkspaceChatToolbarTitle",
+                #,
+                Right
+            ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
+            "WorkspaceChatToolbarTitle"
+        ],
+        "WorkspaceChatTitleDockedCell"
+    ];
 
 writeWorkspaceChatTitleDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatMovedToHistoryDockedCell*)
+(* Shown in a new window when it replaces one whose chat was saved, until the new chat gets a title: *)
+writeWorkspaceChatMovedToHistoryDockedCell // beginDefinition;
+
+writeWorkspaceChatMovedToHistoryDockedCell[ nbo_NotebookObject ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Button[
+            MouseAppearance[
+                Style[
+                    Row @ {
+                        trExprTemplate[ "WorkspaceToolbarSourcesSubTitleMoved" ][
+                            <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |>
+                        ]
+                    },
+                    "WorkspaceChatToolbarTitle",
+                    FontSlant  -> Italic,
+                    FontWeight -> Plain
+                ],
+                "LinkHand" (* indicates that the docked cell is clickable *)
+            ],
+            toggleOverlayMenu[ nbo, None, "History" ],
+            Appearance -> "Suppressed",
+            BoxID      -> "NAMovedLastChatToHistory"
+        ],
+        "WorkspaceChatMovedToHistoryDockedCell"
+    ];
+
+writeWorkspaceChatMovedToHistoryDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

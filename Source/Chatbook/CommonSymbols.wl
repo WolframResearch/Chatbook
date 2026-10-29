@@ -365,6 +365,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `rootEvaluationCell;
 `sandboxEvaluate;
 `sandboxFormatter;
+`savedChatQ;
 `scrollOutputQ;
 `selectByCurrentValue;
 `selectionEvaluateCreateCell;
@@ -433,6 +434,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `writeInlineChatOutputCell;
 `writeReformattedCell;
 `writeSidebarChatTitleCell;
+`writeWorkspaceChatMovedToHistoryDockedCell;
 `writeWorkspaceChatTitleDockedCell;
 
 EndPackage[ ];

@@ -223,6 +223,31 @@ getChatConversationData0[ missing_Missing ] :=
 getChatConversationData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*savedChatQ*)
+(* Checks whether a chat has been saved, without reading its data: *)
+savedChatQ // beginDefinition;
+
+savedChatQ[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dir },
+        root = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+        dir = First[ conversationFileNames[ uuid, root ], Throw @ False ];
+        FileExistsQ @ FileNameJoin @ { dir, "data.wxf" }
+    ],
+    throwInternalFailure
+];
+
+(* the AppName setting can be Automatic or Inherited, which saves to the default app (see getAppName): *)
+savedChatQ[ appName: Except[ _String ], uuid_String ] :=
+    savedChatQ[ getAppName @ appName, uuid ];
+
+(* a chat without a ConversationUUID has never been saved (see ensureConversationUUID): *)
+savedChatQ[ _, Except[ _String ] ] :=
+    False;
+
+savedChatQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*restoreAttachments*)
 restoreAttachments // beginDefinition;
