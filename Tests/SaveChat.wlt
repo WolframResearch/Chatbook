@@ -655,17 +655,41 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Open Sidebar As Assistant Window*)
 VerificationTest[
-    UsingFrontEnd @ Module[ { oldUUID, nbo, sidebarCell, button, before, window },
-        oldUUID = CreateUUID[ ];
-        nbo = CreateDocument[ { Cell[ "", "Text" ] }, Visible -> False ];
-        (* A headless front end has no sidebar, so an ordinary cell stands in for the sidebar cell: *)
-        sidebarCell = First @ Cells @ nbo;
-        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = oldUUID;
-        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+    (* A headless front end has no sidebar, so an ordinary cell holding a scrolling content cell stands in for it: *)
+    sidebarStandIn[ text_String ] := Cell[
+        BoxData @ RowBox @ {
+            Cell[
+                BoxData @ RowBox @ {
+                    Cell[ text, "NotebookAssistant`Sidebar`ChatInput", CellTags -> "SidebarTopCell" ],
+                    Cell[ text <> " reply", "NotebookAssistant`Sidebar`ChatOutput", CellTags -> "SidebarTopCell" ]
+                },
+                "Text",
+                CellTags -> "SidebarScrollingContentCell"
+            ]
+        },
+        "Text"
+    ];
+
+    (* Presses the button and returns the notebook it opened: *)
+    pressOpenSidebarAsWindow[ nbo_, sidebarCell_ ] := Module[ { button, before },
         button = Wolfram`Chatbook`ChatModes`UI`Private`sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ];
         before = Notebooks[ ];
         ReleaseHold @ Extract[ button, 2, Hold ];
-        window = First[ Complement[ Notebooks[ ], before ], $Failed ];
+        First[ Complement[ Notebooks[ ], before ], $Failed ]
+    ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-Definitions@@Tests/SaveChat.wlt:657,1-683,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { oldUUID, nbo, sidebarCell, window },
+        oldUUID = CreateUUID[ ];
+        nbo = CreateDocument[ { sidebarStandIn[ "SIDEBAR-FIRST" ] }, Visible -> False ];
+        sidebarCell = First @ Cells @ nbo;
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = oldUUID;
+        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+        window = pressOpenSidebarAsWindow[ nbo, sidebarCell ];
         WithCleanup[
             {
                 CurrentChatSettings[ window, "ConversationUUID" ] === oldUUID,
@@ -678,7 +702,40 @@ VerificationTest[
     ],
     { True, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID@@Tests/SaveChat.wlt:657,1-682,2"
+    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID@@Tests/SaveChat.wlt:685,1-706,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { existingUUID, sidebarUUID, existing, nbo, sidebarCell, window },
+        existingUUID = CreateUUID[ ];
+        sidebarUUID  = CreateUUID[ ];
+        (* An assistant window that already has an unrelated conversation: *)
+        existing = ShowNotebookAssistance[
+            None,
+            "Window",
+            "NewChat"              -> True,
+            "ChatNotebookSettings" -> <| "ConversationUUID" -> existingUUID, "AutoSaveConversations" -> False |>
+        ];
+        SelectionMove[ existing, After, Notebook ];
+        NotebookWrite[ existing, { Cell[ "MANGO-3", "ChatInput" ], Cell[ "MANGO-3 reply", "ChatOutput" ] } ];
+        nbo = CreateDocument[ { sidebarStandIn[ "SIDEBAR-FIRST" ] }, Visible -> False ];
+        sidebarCell = First @ Cells @ nbo;
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = sidebarUUID;
+        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+        window = pressOpenSidebarAsWindow[ nbo, sidebarCell ];
+        WithCleanup[
+            {
+                MatchQ[ window, _NotebookObject ],
+                MemberQ[ Notebooks[ ], existing ],
+                CurrentChatSettings[ window, "ConversationUUID" ] === sidebarUUID,
+                Cases[ NotebookRead @ Cells @ window, Cell[ s_String, ___ ] :> s ]
+            },
+            Quiet[ NotebookClose /@ { window, nbo, existing } ]
+        ]
+    ],
+    { True, False, True, { "SIDEBAR-FIRST", "SIDEBAR-FIRST reply" } },
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-ReplacesExistingWindow@@Tests/SaveChat.wlt:708,1-739,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -689,7 +746,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:687,1-693,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:744,1-750,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

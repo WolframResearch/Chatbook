@@ -459,16 +459,21 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
         
-        (* open a new workspace window *)
-        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> settings ];
-
-        If[ chatTitle =!= "",
-            setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
-            writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
-        ];
-        SelectionMove[ newNB, Before, Notebook ];
-        NotebookWrite[ newNB, cells ];
-        attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
+        If[ MatchQ[ cells, { __Cell } ],
+            (* always open a new workspace window, so the conversation isn't merged into one that's already open: *)
+            newNB = ShowNotebookAssistance[ nbo, "Window", "NewChat" -> True, "ChatNotebookSettings" -> settings ];
+            If[ chatTitle =!= "",
+                setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
+                writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
+            ];
+            SelectionMove[ newNB, After, Notebook ];
+            NotebookWrite[ newNB, cells ];
+            (* reveal the written cells by moving the chat input field to the bottom of the window: *)
+            attachWorkspaceChatInput @ newNB
+            ,
+            (* there is nothing to move, so just show the assistant window: *)
+            ShowNotebookAssistance[ nbo, "Window" ]
+        ]
     ],
     Appearance -> "Suppressed",
     BoxID      -> "NASidebarOpenAsAssistantWindowButton",
