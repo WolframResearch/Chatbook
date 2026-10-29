@@ -4812,7 +4812,10 @@ makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dy
                                             System`ItemMargins -> 10
                                         ] } }
                                     ,
-                                    If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
+                                    (* stay on the last page if deleting chats removed the current one *)
+                                    If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ],
+                                        page = If[ IntegerQ @ page && page > totalPages, totalPages, 1 ]
+                                    ];
                                     makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
                                 ]
                             ],
