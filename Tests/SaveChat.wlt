@@ -740,13 +740,145 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Load From History*)
+VerificationTest[
+    savedChatDirectory[ uuid_String ] := Last[
+        FileNames[ "*_" <> uuid, ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ] ],
+        Missing[ "NotSaved" ]
+    ];
+
+    (* An invisible stand-in for the assistant window, with the scrollbar hidden like attachOverlayMenu does: *)
+    withHistoryTestWindow[ test_ ] := UsingFrontEnd @ Module[ { nbo = CreateDocument[ { }, Visible -> False ] },
+        CurrentChatSettings[ nbo, "AppName" ] = $titleTestApp;
+        WithCleanup[ test @ nbo, NotebookClose @ nbo ]
+    ];
+
+    scrollbarQ[ nbo_ ] := MemberQ[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+    overlayTags[ nbo_ ] := CurrentValue[ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu" ], CellTags ];
+
+    (* Like a second click on the History button; the reopened History hides the scrollbar until it is closed: *)
+    closeHistory[ nbo_ ] := (
+        Wolfram`Chatbook`ChatModes`Common`toggleOverlayMenu[ nbo, None, "History" ];
+        scrollbarQ @ nbo && overlayTags @ nbo === { }
+    );
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-Definitions@@Tests/SaveChat.wlt:744,1-768,2"
+]
+
+(* An unreadable data.wxf (corrupt, or locked by another process) does not delete the chat: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        WriteString[ FileNameJoin @ { dir, "data.wxf" }, "not a wxf file" ];
+        Close @ FileNameJoin @ { dir, "data.wxf" };
+        {
+            LoadChat[ $titleTestApp, uuid ],
+            DirectoryQ @ dir,
+            FileExistsQ @ FileNameJoin @ { dir, "metadata.wxf" }
+        }
+    ],
+    { Missing[ "Corrupt" ], True, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadChat-CorruptDataKeepsChat@@Tests/SaveChat.wlt:771,1-787,2"
+]
+
+(* A chat folder without data.wxf can't be recovered, so it is removed: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        DeleteFile @ FileNameJoin @ { dir, "data.wxf" };
+        { LoadChat[ $titleTestApp, uuid ], DirectoryQ @ dir }
+    ],
+    { Missing[ "NotFound" ], False },
+    SameTest -> MatchQ,
+    TestID   -> "LoadChat-MissingDataRemovesChat@@Tests/SaveChat.wlt:790,1-801,2"
+]
+
+(* Loading a History row whose chat is gone restores the scrollbar, shows History again and writes no error cell: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+        {
+            Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                nbo,
+                None,
+                <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+            ],
+            overlayTags @ nbo,
+            Cells @ nbo,
+            closeHistory @ nbo
+        }
+    ],
+    { Null, { "History" }, { }, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-StaleRow@@Tests/SaveChat.wlt:804,1-821,2"
+]
+
+(* Same for a chat whose data can't be read, which is kept: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        WriteString[ FileNameJoin @ { dir, "data.wxf" }, "not a wxf file" ];
+        Close @ FileNameJoin @ { dir, "data.wxf" };
+        withHistoryTestWindow @ Function[ nbo,
+            Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+            {
+                Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> uuid |>
+                ],
+                overlayTags @ nbo,
+                Cells @ nbo,
+                closeHistory @ nbo,
+                DirectoryQ @ dir
+            }
+        ]
+    ],
+    { Null, { "History" }, { }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-CorruptChat@@Tests/SaveChat.wlt:824,1-849,2"
+]
+
+(* The scrollbar is also restored when loading fails unexpectedly: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+        {
+            Block[ { LoadChat = <| "ConversationUUID" -> 1 |> & },
+                Head @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+                ]
+            ],
+            scrollbarQ @ nbo,
+            overlayTags @ nbo
+        }
+    ],
+    { Failure, True, { } },
+    { General::ChatbookInternal },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-InternalFailure@@Tests/SaveChat.wlt:852,1-871,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cleanup*)
 VerificationTest[
     titleTestCleanup[ ];
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:744,1-750,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:876,1-882,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

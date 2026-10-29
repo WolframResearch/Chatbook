@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/NotebookAssistanceWindow.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/NotebookAssistanceWindow.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -86,7 +86,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/NotebookAssistanceWindow.wlt:25,1-90,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -101,7 +101,7 @@ VerificationTest[
     },
     { 1, { False } },
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-AsynchronousInitialization"
+    TestID   -> "DockedCell-AsynchronousInitialization@@Tests/NotebookAssistanceWindow.wlt:97,1-105,2"
 ]
 
 (* First window open in a kernel session: the cursor is placed in the chat input field and the loading overlay is
@@ -114,8 +114,8 @@ VerificationTest[
             "AttachOverlay",
             { "AttachWorkspaceChatInput", $testNotebook, Top },
             { "MoveCursorToInputField", CellObject[ "input" ] },
-            "RestoreScrollbar",
             { "NotebookDelete", CellObject[ "overlay" ] },
+            "RestoreScrollbar",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, True },
             "InitializeWorkspaceChat",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, False }
@@ -123,7 +123,7 @@ VerificationTest[
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-ColdOpen"
+    TestID   -> "DockedCell-ColdOpen@@Tests/NotebookAssistanceWindow.wlt:109,1-127,2"
 ]
 
 (* Chat is already initialized in this kernel session, so only the chat input field is attached: *)
@@ -135,13 +135,13 @@ VerificationTest[
             "AttachOverlay",
             { "AttachWorkspaceChatInput", $testNotebook, Top },
             { "MoveCursorToInputField", CellObject[ "input" ] },
-            "RestoreScrollbar",
-            { "NotebookDelete", CellObject[ "overlay" ] }
+            { "NotebookDelete", CellObject[ "overlay" ] },
+            "RestoreScrollbar"
         },
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmOpen"
+    TestID   -> "DockedCell-WarmOpen@@Tests/NotebookAssistanceWindow.wlt:130,1-145,2"
 ]
 
 (* Nothing to do if the chat input field exists and chat is already initialized: *)
@@ -149,7 +149,7 @@ VerificationTest[
     runDockedCellInitialization[ { True, True, True } ],
     <| "Result" -> "Done", "Log" -> { }, "Initialized" -> True |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-AlreadyInitialized"
+    TestID   -> "DockedCell-AlreadyInitialized@@Tests/NotebookAssistanceWindow.wlt:148,1-153,2"
 ]
 
 (* After the kernel was quit, the existing window initializes chat again: *)
@@ -161,8 +161,8 @@ VerificationTest[
             "AttachOverlay",
             { "AttachWorkspaceChatInput", $testNotebook, Bottom },
             { "MoveCursorToInputField", CellObject[ "input" ] },
-            "RestoreScrollbar",
             { "NotebookDelete", CellObject[ "overlay" ] },
+            "RestoreScrollbar",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, True },
             "InitializeWorkspaceChat",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, False }
@@ -170,7 +170,7 @@ VerificationTest[
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-KernelRestart"
+    TestID   -> "DockedCell-KernelRestart@@Tests/NotebookAssistanceWindow.wlt:156,1-174,2"
 ]
 
 (* The top stripe progress indicator is reset if chat initialization is aborted: *)
@@ -182,8 +182,8 @@ VerificationTest[
             "AttachOverlay",
             { "AttachWorkspaceChatInput", $testNotebook, Top },
             { "MoveCursorToInputField", CellObject[ "input" ] },
-            "RestoreScrollbar",
             { "NotebookDelete", CellObject[ "overlay" ] },
+            "RestoreScrollbar",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, True },
             "InitializeWorkspaceChat",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, False }
@@ -191,7 +191,7 @@ VerificationTest[
         "Initialized" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmUpAborted"
+    TestID   -> "DockedCell-WarmUpAborted@@Tests/NotebookAssistanceWindow.wlt:177,1-195,2"
 ]
 
 (* The top stripe progress indicator is reset if chat initialization fails: *)
@@ -203,8 +203,8 @@ VerificationTest[
             "AttachOverlay",
             { "AttachWorkspaceChatInput", $testNotebook, Top },
             { "MoveCursorToInputField", CellObject[ "input" ] },
-            "RestoreScrollbar",
             { "NotebookDelete", CellObject[ "overlay" ] },
+            "RestoreScrollbar",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, True },
             "InitializeWorkspaceChat",
             { "setCurrentValue", CellObject[ "stripe" ], { TaggingRules, "ProgressIndicator" }, False }
@@ -212,7 +212,7 @@ VerificationTest[
         "Initialized" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmUpFailed"
+    TestID   -> "DockedCell-WarmUpFailed@@Tests/NotebookAssistanceWindow.wlt:198,1-216,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -237,7 +237,7 @@ VerificationTest[
     ],
     { { { "Queued" } }, { { "Queued" } } },
     SameTest -> MatchQ,
-    TestID   -> "ChatInput-QueuedSubmit"
+    TestID   -> "ChatInput-QueuedSubmit@@Tests/NotebookAssistanceWindow.wlt:223,1-241,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

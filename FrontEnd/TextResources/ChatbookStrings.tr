@@ -275,6 +275,7 @@
 "WorkspaceHistoryLastPage" -> "Last page",
 "WorkspaceHistoryTitle" -> "History",
 "WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",

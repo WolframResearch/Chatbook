@@ -24,6 +24,7 @@ $inputFieldBox               = None;
 $inlineChatScrollPosition    = 0.0;
 $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
+$historyNotice               = None; (* shown above the History overlay, e.g. after a chat failed to load *)
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
 
@@ -2462,8 +2463,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                             ]
                         },
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
-                    ];
-                    restoreVerticalScrollbar @ nbo
+                    ]
                 );
                 (* then initialize chat (most costly step) without the loading overlay, showing progress in the top stripe *)
                 If[ Not @ TrueQ @ $workspaceChatInitialized, withWorkspaceGlobalProgress[ nbo, initializeWorkspaceChat[ ] ] ]
@@ -4293,7 +4293,9 @@ withLoadingOverlay[ { nbo_NotebookObject, appContainer_ }, eval_ ] :=
         WithCleanup[
             attached = attachOverlayMenu[ nbo, appContainer, "Loading" ],
             eval,
-            NotebookDelete @ attached
+            NotebookDelete @ attached;
+            (* the window overlay hides the vertical scrollbar, so it's restored even if eval fails or is aborted *)
+            If[ appContainer === None, restoreVerticalScrollbar @ nbo ]
         ]
     ];
 
@@ -4465,14 +4467,20 @@ inclusionCheckbox // endDefinition;
 historyOverlay // beginDefinition;
 
 historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
+    historyOverlay[ nbo, appContainer, $historyNotice ];
+
+historyOverlay[ nbo_NotebookObject, appContainer_, notice_ ] :=
     DynamicModule[ { searching = False, query = "", overlayCell },
-        PaneSelector[
-            {
-                True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
-                False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
-            },
-            Dynamic @ searching,
-            ImageSize -> Automatic
+        withHistoryNotice[
+            PaneSelector[
+                {
+                    True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
+                    False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
+                },
+                Dynamic @ searching,
+                ImageSize -> Automatic
+            ],
+            notice
         ],
 
         Initialization   :> (overlayCell = EvaluationCell[ ]),
@@ -4485,6 +4493,26 @@ historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
     ];
 
 historyOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withHistoryNotice*)
+withHistoryNotice // beginDefinition;
+
+withHistoryNotice[ view_, None ] := view;
+
+withHistoryNotice[ view_, notice_ ] := Column[
+    {
+        Pane[
+            Style[ notice, "Text", FontSize -> 13, FontColor -> color @ "NA_OverlayMenuFontSubtle", FontSlant -> Italic ],
+            FrameMargins -> { { 5, 5 }, { 0, 3 } }
+        ],
+        view
+    },
+    Spacings -> 0.5
+];
+
+withHistoryNotice // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4915,10 +4943,23 @@ removeChatFromRows // endDefinition;
 (*loadConversation*)
 loadConversation // beginDefinition;
 
-loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) throws its Missing to $loadFailedTag
+   from inside withLoadingOverlay, so History is only reopened after the loading overlay is gone *)
+loadConversation[ nbo_NotebookObject, appContainer_, id_ ] := Catch[
+    loadConversation0[ nbo, appContainer, id ],
+    $loadFailedTag,
+    historyLoadFailed[ nbo, appContainer, #1 ] &
+];
+
+loadConversation // endDefinition;
+
+
+loadConversation0 // beginDefinition;
+
+loadConversation0[ nbo_NotebookObject, None, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, cellObjects },
 
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4947,10 +4988,10 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
 ];
 
 (* if we need to distinguish this further then condition on TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] *)
-loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
+loadConversation0[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, lastDockedCell, scrollablePaneCell },
         (* load new cells *)
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4973,7 +5014,27 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     throwInternalFailure
 ];
 
-loadConversation // endDefinition;
+loadConversation0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadSavedChat*)
+loadSavedChat // beginDefinition;
+loadSavedChat[ id_ ] := Replace[ LoadChat @ id, missing_Missing :> Throw[ missing, $loadFailedTag ] ];
+loadSavedChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyLoadFailed*)
+historyLoadFailed // beginDefinition;
+
+(* History is reopened from storage, so a chat that no longer exists isn't listed anymore *)
+historyLoadFailed[ nbo_NotebookObject, appContainer_, _Missing ] := (
+    Block[ { $historyNotice = tr[ "WorkspaceHistoryLoadFailed" ] }, attachOverlayMenu[ nbo, appContainer, "History" ] ];
+    Null
+);
+
+historyLoadFailed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
