@@ -431,7 +431,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
     ],
-    Module[ { newNB, cells, chatTitle },
+    Module[ { newNB, cells, chatTitle, settings },
         cells = ReplaceRepeated[
             NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
             (* so far there's only one TemplateBox that needs to be unconverted *)
@@ -447,6 +447,8 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
             }
         ];
         chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ];
+        (* read before the sidebar gets a new UUID, so the window keeps the conversation's UUID *)
+        settings = KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ];
 
         FrontEndTokenExecute[ nbo, "HideSidebar" ]; (* not displaying the sidebar should reduce dynamics *)
 
@@ -458,7 +460,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
         
         (* open a new workspace window *)
-        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ];
+        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> settings ];
 
         If[ chatTitle =!= "",
             setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];

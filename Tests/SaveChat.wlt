@@ -653,13 +653,43 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Open Sidebar As Assistant Window*)
+VerificationTest[
+    UsingFrontEnd @ Module[ { oldUUID, nbo, sidebarCell, button, before, window },
+        oldUUID = CreateUUID[ ];
+        nbo = CreateDocument[ { Cell[ "", "Text" ] }, Visible -> False ];
+        (* A headless front end has no sidebar, so an ordinary cell stands in for the sidebar cell: *)
+        sidebarCell = First @ Cells @ nbo;
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = oldUUID;
+        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+        button = Wolfram`Chatbook`ChatModes`UI`Private`sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ];
+        before = Notebooks[ ];
+        ReleaseHold @ Extract[ button, 2, Hold ];
+        window = First[ Complement[ Notebooks[ ], before ], $Failed ];
+        WithCleanup[
+            {
+                CurrentChatSettings[ window, "ConversationUUID" ] === oldUUID,
+                TrueQ @ CurrentChatSettings[ window, "SidebarChat" ],
+                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] =!= oldUUID,
+                StringQ @ CurrentChatSettings[ sidebarCell, "ConversationUUID" ]
+            },
+            Quiet[ NotebookClose /@ { window, nbo } ]
+        ]
+    ],
+    { True, False, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID@@Tests/SaveChat.wlt:657,1-682,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cleanup*)
 VerificationTest[
     titleTestCleanup[ ];
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:657,1-663,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:687,1-693,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
