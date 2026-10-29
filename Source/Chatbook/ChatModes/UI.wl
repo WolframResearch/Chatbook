@@ -4054,9 +4054,17 @@ popOutChatNB // endDefinition;
 
 popOutChatNB0 // beginDefinition;
 
-popOutChatNB0[ id_, settings_Association ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) returns its Missing *)
+popOutChatNB0[ id_, settings_Association ] := Catch[ popOutChatNB1[ id, settings ], $loadFailedTag ];
+
+popOutChatNB0 // endDefinition;
+
+
+popOutChatNB1 // beginDefinition;
+
+popOutChatNB1[ id_, settings_Association ] := Enclose[
     Module[ { loaded, uuid, title, messages, dingbat, cells, options },
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4068,7 +4076,7 @@ popOutChatNB0[ id_, settings_Association ] := Enclose[
     throwInternalFailure
 ];
 
-popOutChatNB0 // endDefinition;
+popOutChatNB1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -4554,8 +4562,10 @@ historySearchView // endDefinition;
 (*makeHistorySearchResults*)
 makeHistorySearchResults // beginDefinition;
 
-makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := Dynamic[
+(* the results are searched again when saved chats change, e.g. after a chat was deleted or saved elsewhere *)
+makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := trackedDynamic[
     showSearchResults[ nbo, appContainer, appName, query ],
+    "SavedChats",
     SynchronousUpdating -> False, (* searching should not block typing in the search field *)
     TrackedSymbols      :> { query }
 ];
@@ -4780,40 +4790,61 @@ makeDefaultHistoryView // endDefinition;
 makeDefaultHistoryView0 // beginDefinition;
 
 makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Enclose[
-    DynamicModule[ { appName, chats, display },
+    DynamicModule[ { appName, chats = None, display },
         display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
         appName = ConfirmBy[ CurrentChatSettings[ If[ appContainer === None, nbo, appContainer ], "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
 
-        DynamicWrapper[
-            Dynamic @ display,
-            display =
-                Grid[
-                    With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
-                        totalPages = Length @ pages;
-                        If[ totalPages == 0,
-                            { {
-                                Item[
-                                    Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
-                                    Alignment          -> { Center, Center },
-                                    System`ItemMargins -> 10
-                                ] } }
-                            ,
-                            If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
-                            makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+        (* chats are read from storage when shown and again whenever saved chats change, e.g. after a chat was deleted
+           in the search view or in another History overlay, or a new chat was saved *)
+        trackedDynamicWrapper[
+            DynamicWrapper[
+                Dynamic @ display,
+                If[ ListQ @ chats,
+                    display =
+                        Grid[
+                            With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
+                                totalPages = Length @ pages;
+                                If[ totalPages == 0,
+                                    { {
+                                        Item[
+                                            Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
+                                            Alignment          -> { Center, Center },
+                                            System`ItemMargins -> 10
+                                        ] } }
+                                    ,
+                                    If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
+                                    makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+                                ]
+                            ],
+                            Alignment -> { Left, Center },
+                            Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                            Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                         ]
-                    ],
-                    Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                 ],
-            TrackedSymbols :> { page, chats }
+                TrackedSymbols :> { page, chats }
+            ],
+            chats = readHistoryChats[ appName, chats ],
+            "SavedChats",
+            SynchronousUpdating -> False
         ]
     ],
     throwInternalFailure
 ];
 
 makeDefaultHistoryView0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readHistoryChats*)
+readHistoryChats // beginDefinition;
+
+(* if storage can't be read, the rows that are already shown are kept *)
+readHistoryChats[ appName_String, current_ ] := Replace[
+    catchAlways @ ListSavedChats @ appName,
+    Except[ { ___Association } ] :> If[ ListQ @ current, current, { } ]
+];
+
+readHistoryChats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4892,7 +4923,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                     { {
                         Button[
                             chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ],
-                            popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+                            popOutFromHistory[ nbo, appContainer, chat ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
                             BoxID            -> "NAHistoryPopOutConversation" <> title,
@@ -4937,6 +4968,18 @@ removeChatFromRows[ Dynamic[ chats_ ], KeyValuePattern[ "ConversationUUID" -> uu
     chats = DeleteCases[ chats, KeyValuePattern[ "ConversationUUID" -> uuid ] ];
 
 removeChatFromRows // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*popOutFromHistory*)
+popOutFromHistory // beginDefinition;
+
+popOutFromHistory[ nbo_NotebookObject, appContainer_, chat_Association ] := Replace[
+    popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+    missing_Missing :> historyLoadFailed[ nbo, appContainer, missing ]
+];
+
+popOutFromHistory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

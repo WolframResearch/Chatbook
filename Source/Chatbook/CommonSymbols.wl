@@ -410,6 +410,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `topParentCell;
 `toSmallSettings;
 `trackedDynamic;
+`trackedDynamicWrapper;
 `truncateString;
 `unsetCV;
 `updateCellDingbats;

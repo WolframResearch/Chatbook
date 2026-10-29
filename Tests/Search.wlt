@@ -307,7 +307,8 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*History Search Results*)
 
-(* The results update asynchronously, so that searching does not block typing in the search field: *)
+(* The results update asynchronously, so that searching does not block typing in the search field,
+   and are searched again when saved chats change, e.g. after a chat was deleted in another History view: *)
 VerificationTest[
     Wolfram`Chatbook`ChatModes`UI`Private`makeHistorySearchResults[
         NotebookObject[ "search-test" ],
@@ -316,11 +317,17 @@ VerificationTest[
         Dynamic @ $historySearchTestQuery
     ],
     Dynamic[
-        _Wolfram`Chatbook`ChatModes`UI`Private`showSearchResults,
-        OrderlessPatternSequence[ SynchronousUpdating -> False, TrackedSymbols :> { $historySearchTestQuery } ]
+        Catch[ HoldPattern @ CompoundExpression[ __, _Wolfram`Chatbook`ChatModes`UI`Private`showSearchResults ], _ ],
+        OrderlessPatternSequence[
+            SynchronousUpdating -> False,
+            TrackedSymbols :> { OrderlessPatternSequence[
+                $historySearchTestQuery,
+                Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger
+            ] }
+        ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "HistorySearch-AsynchronousResults@@Tests/Search.wlt:311,1-324,2"
+    TestID   -> "HistorySearch-AsynchronousResults@@Tests/Search.wlt:312,1-331,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -331,7 +338,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "Search", # }, "EnsureDirectory" -> False ] & /@ $testApps,
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-Cleanup@@Tests/Search.wlt:329,1-335,2"
+    TestID   -> "SearchCache-Cleanup@@Tests/Search.wlt:336,1-342,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

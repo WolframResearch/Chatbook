@@ -870,6 +870,111 @@ VerificationTest[
     TestID   -> "LoadFromHistory-InternalFailure@@Tests/SaveChat.wlt:852,1-871,2"
 ]
 
+(* Popping out a History row whose chat is gone opens no notebook, shows History again and writes no error cell: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Module[ { before, result },
+            before = Notebooks[ ];
+            result = Wolfram`Chatbook`ChatModes`UI`Private`popOutChatNB0[
+                <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>,
+                <| |>
+            ];
+            {
+                result,
+                Wolfram`Chatbook`ChatModes`UI`Private`popOutFromHistory[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+                ],
+                Complement[ Notebooks[ ], before ],
+                overlayTags @ nbo,
+                Cells @ nbo,
+                closeHistory @ nbo
+            }
+        ]
+    ],
+    { Missing[ "NotFound" ], Null, { }, { "History" }, { }, True },
+    SameTest -> MatchQ,
+    TestID   -> "PopOutFromHistory-StaleRow@@Tests/SaveChat.wlt:874,1-899,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*History Refresh*)
+
+(* The default History view re-reads its chats when saved chats change (deleted or saved elsewhere): *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        FirstCase[
+            Wolfram`Chatbook`ChatModes`UI`Private`makeDefaultHistoryView0[
+                nbo,
+                None,
+                Dynamic @ $historyTestPage,
+                Dynamic @ $historyTestTotalPages
+            ],
+            DynamicWrapper[ _DynamicWrapper, update_, opts___ ] :> {
+                ! FreeQ[ Unevaluated @ update, _Wolfram`Chatbook`ChatModes`UI`Private`readHistoryChats ],
+                { opts }
+            },
+            Missing[ ],
+            Infinity
+        ]
+    ],
+    {
+        True,
+        {
+            OrderlessPatternSequence[
+                TrackedSymbols :> { Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger },
+                SynchronousUpdating -> False
+            ]
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "HistoryRefresh-DefaultViewTracksSavedChats@@Tests/SaveChat.wlt:906,1-934,2"
+]
+
+(* Deleting and saving chats update the trigger, and re-reading lists the current chats: *)
+VerificationTest[
+    withMockTitles @ Module[ { first, second, third, read, trigger, refreshTitles, shown, afterDelete, afterSave },
+        first   = CreateUUID[ ];
+        second  = CreateUUID[ ];
+        third   = CreateUUID[ ];
+        read    = Wolfram`Chatbook`ChatModes`UI`Private`readHistoryChats;
+        trigger = Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger &;
+        (* The app also has chats saved by earlier tests: *)
+        refreshTitles = Sort @ Select[ Lookup[ #, "ConversationTitle" ], StringStartsQ[ "Refresh " ] ] &;
+        SaveChat[ titleTestMessages[ 1 ], <| titleTestSettings @ first , "ConversationTitle" -> "Refresh One" |> ];
+        SaveChat[ titleTestMessages[ 2 ], <| titleTestSettings @ second, "ConversationTitle" -> "Refresh Two" |> ];
+        shown = read[ $titleTestApp, None ];
+        afterDelete = { trigger[ ], DeleteChat[ $titleTestApp, first ]; trigger[ ], read[ $titleTestApp, shown ] };
+        afterSave = {
+            trigger[ ],
+            SaveChat[ titleTestMessages[ 3 ], <| titleTestSettings @ third, "ConversationTitle" -> "Refresh Three" |> ];
+            trigger[ ],
+            read[ $titleTestApp, shown ]
+        };
+        {
+            refreshTitles @ shown,
+            Less @@ Most @ afterDelete,
+            refreshTitles @ Last @ afterDelete,
+            Less @@ Most @ afterSave,
+            refreshTitles @ Last @ afterSave,
+            (* If storage can't be read, the rows that are shown are kept: *)
+            Block[ { ListSavedChats = $Failed & }, read[ $titleTestApp, shown ] === shown ]
+        }
+    ],
+    {
+        { "Refresh One", "Refresh Two" },
+        True,
+        { "Refresh Two" },
+        True,
+        { "Refresh Three", "Refresh Two" },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "HistoryRefresh-ReadsCurrentChats@@Tests/SaveChat.wlt:937,1-976,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cleanup*)
@@ -878,7 +983,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:876,1-882,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:981,1-987,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
