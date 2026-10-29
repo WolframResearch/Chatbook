@@ -33,6 +33,11 @@ $llmKitRequestTimeout = 5; (* seconds; the lookup runs (once per session) in the
 (* Model preference after the agent's own default (which may be deprecated, e.g. opencode/exo-free): *)
 $fallbackModels = { "llmkit/gpt-5.4", "openai/gpt-6.1-sol" };
 
+(* Effort for a model when the user has not chosen one; opencode itself starts at the model's lowest. Sol at medium
+   effort wrote the best notebook rewrites in blind grading, for a few seconds more than low (FrontEnd
+   docs/NotebookMCP/Speed/overnight/ledger.md, "Evening ... editing front end"). *)
+$defaultEfforts = <| "openai/gpt-6.1-sol" -> "medium" |>;
+
 (* LLMKit chat models for the injected OpenCode provider. Embedding and image models and gpt-5.2-codex (which fails on
    /chat/completions) are deliberately excluded; "limit" is required by OpenCode for some of them (the gpt-4o models). *)
 $llmKitModels = <|
@@ -880,6 +885,26 @@ acpPreferredModel[ configOptions_List, prefs_Association ] := Module[ { option, 
 acpPreferredModel[ _, _ ] := Missing[ "NotAvailable" ];
 
 acpPreferredModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpPreferredEffort*)
+
+(* acpPreferredEffort[configOptions, prefs] gives the effort to select after a session was created: prefs["LastEffort"]
+   (the persisted last choice for the agent), else the default of the session's current model ($defaultEfforts), else
+   None (the agent's own). *)
+acpPreferredEffort // beginDefinition;
+
+acpPreferredEffort[ configOptions_, prefs_Association ] := Replace[
+    Lookup[ prefs, "LastEffort", None ],
+    Except[ _String ] :> Lookup[
+        $defaultEfforts,
+        Replace[ acpFindConfigOption[ configOptions, "model" ], { option_Association :> Lookup[ option, "currentValue", None ], _ -> None } ],
+        None
+    ]
+];
+
+acpPreferredEffort // endDefinition;
 
 
 (* acpFindConfigOption[configOptions, category] gives the raw ACP configOption with that category ("model" | "mode" |

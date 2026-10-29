@@ -143,6 +143,7 @@ HoldComplete[
     `acpPathDirectories,
     `acpPersistedRemoteHome,
     `acpPersistedSetting,
+    `acpPreferredEffort,
     `acpPreferredModel,
     `acpProgramEnvironment,
     `acpSetPersistedSetting,

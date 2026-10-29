@@ -1135,9 +1135,10 @@ continueConfiguration[ nbo_NotebookObject, conn_ ] := Module[ { window, step, se
 continueConfiguration // endDefinition;
 
 
-(* { configId, value, origin } or None. A new session gets the preferred model and effort; a loaded (restored) or resumed
-   session keeps its own (set_config_option would also move it to the top of the agent's session list): only choices
-   the user made while it was being set up are applied. *)
+(* { configId, value, origin } or None. A new session gets the preferred model and effort (acpPreferredEffort: the last
+   choice, else the default of the model, which is set first); a loaded (restored) or resumed session keeps its own
+   (set_config_option would also move it to the top of the agent's session list): only choices the user made while it
+   was being set up are applied. *)
 nextConfigStep // beginDefinition;
 
 nextConfigStep[ window_Association ] := Module[ { options, pending, attempts, prefs, settings, requested, own, steps },
@@ -1164,7 +1165,7 @@ nextConfigStep[ window_Association ] := Module[ { options, pending, attempts, pr
                 ]
             ]
         ],
-        configTarget[ acpFindConfigOption[ options, "thought_level" ], pending, If[ own, None, Lookup[ prefs, "LastEffort", None ] ] ],
+        configTarget[ acpFindConfigOption[ options, "thought_level" ], pending, If[ own, None, acpPreferredEffort[ options, prefs ] ] ],
         configTarget[ acpFindConfigOption[ options, "mode" ], pending, None ]
     };
     FirstCase[ steps, step: { id_String, value_, _ } /; Lookup[ attempts, id, Missing[ ] ] =!= value :> step, None ]

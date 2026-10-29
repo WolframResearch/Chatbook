@@ -619,6 +619,17 @@ VerificationTest[
 ]
 
 VerificationTest[
+    {
+        acpPreferredEffort[ modelOptions[ $openCodeModels, "openai/gpt-6.1-sol" ], <| |> ],
+        acpPreferredEffort[ modelOptions[ $openCodeModels, "openai/gpt-6.1-sol" ], <| "LastEffort" -> "high" |> ],
+        acpPreferredEffort[ modelOptions[ $openCodeModels, "openai/gpt-6-luna" ], <| |> ],
+        acpPreferredEffort[ { }, <| "LastEffort" -> None |> ]
+    },
+    { "medium", "high", None, None },
+    TestID -> "PreferredEffort@@Tests/ACPConnection.wlt:609,1-618,2"
+]
+
+VerificationTest[
     acpBillingLabel /@ {
         "llmkit/gpt-5.4",
         "openai/gpt-6.1-sol",
