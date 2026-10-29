@@ -34,6 +34,9 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      ToExpression'd.
    * Nothing the agent writes may run code when it is shown (ShowChanges shows it in the user's notebook):
      requireInertText refuses linear syntax escapes and, inside box wrappers, dynamic boxes and options that hold code.
+   * Code check: SetCells, EditInCell and InsertCells end their result with a check of the snapshot's code when they
+     changed an Input or Code cell: its Input and Code cells, evaluated in order in a fresh context of Chatbook's sandbox
+     kernel (Sandbox.wl's sandboxCheckCells), never in this kernel, with what each gives and its messages.
    * Errors are texts for the agent; internal failures are logged as "NotebookToolFailed" (acpLog) and the agent only
      learns that the tool failed. A Failure of the front end's edit packet is shown with its tag and message.
    * The markdown of attached notebooks (acpNotebookMarkdown, acpDefusedCells, for Attachments.wl) is also defined
@@ -56,6 +59,8 @@ $maxSearchLimit    = 500;   (* at most *)
 $searchTimeLimit   = 10;    (* seconds that one search may take *)
 $snippetLength     = 160;   (* characters of the line of a match that SearchNotebook shows *)
 $maxQuotedLength   = 80;    (* characters of an argument that an error message repeats *)
+$codeCheckSeconds  = 30;    (* seconds that the code check of an edit may take; later cells are not checked *)
+$cellCheckSeconds  = 10;    (* seconds that one cell may take in the code check *)
 
 (* The tools that change notebooks the user has open: ShowChanges shows the diff in the user's notebook (or opens the
    source file visibly). The edit tools only change snapshots. OpenCode asks before these (MCP.wl's
@@ -167,8 +172,9 @@ snapshot instead. Work quickly: each of your turns takes seconds, and an edit's 
 independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
 make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
-notebook edit needs no todo list. If you have \
-WolframLanguageEvaluator, check code with it directly; WolframLanguageContext is not needed for notebook edits.";
+notebook edit needs no todo list. SetCells, EditInCell and InsertCells check the notebook's code themselves: after an \
+edit of code, their result ends with a code check of every Input cell, evaluated in order in a fresh context (results \
+and messages), so the code needs no other check. WolframLanguageContext is not needed for notebook edits.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -215,7 +221,8 @@ Replaces the whole content of cells of a snapshot, and optionally their styles, 
 text, style}, text in the cell text notation without the marker line (text cells wrapped in (* *)). The items are \
 applied in order, all or none. Use one SetCells call for all the cells you rewrite, with delete for the cells to \
 delete with them (such as outputs that the new cells make stale). Rewriting a whole cell is slow: for a cell that \
-changes only in part, EditInCell is much faster. Gives the ids of the cells it set and deleted.";
+changes only in part, EditInCell is much faster. Gives the ids of the cells it set and deleted, and after an edit of \
+code a code check of the notebook's Input cells.";
 
 $insertCellsDescription = "\
 Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
@@ -880,6 +887,8 @@ withoutStrings // endDefinition;
                                                                  ... } or $Failed; cells: All or { CellObject, ... },
                                                                  preview: n or All, elide: True or False
      notebookFrontEnd[ "Edit", nb, ops ]                         <| "Changed", "Inserted", "Deleted" |> or a Failure
+     notebookFrontEnd[ "CodeCells", nb ]                         { <| "Cell", "Boxes" |>, ... }: its Input and Code
+                                                                 cells, in order, or $Failed
      notebookFrontEnd[ "FileName", nb ]                          the snapshot's file, or $Failed
      notebookFrontEnd[ "Save", nb ]                              Null, or $Failed
      notebookFrontEnd[ "Close", nb ]                             closes the snapshot; the front end deletes its file
@@ -905,6 +914,15 @@ frontEndOperation[ "CellText", nb_NotebookObject, cells_, preview_, elide_ ] :=
 
 frontEndOperation[ "Edit", nb_NotebookObject, ops_List ] :=
     Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookCellTextEdit[ nb, ops ];
+
+frontEndOperation[ "CodeCells", nb_NotebookObject ] := Quiet @ Module[ { cells, read },
+    cells = Cells[ nb, CellStyle -> { "Input", "Code" } ];
+    read  = If[ cells === { }, { }, NotebookRead @ cells ];
+    If[ MatchQ[ cells, { ___CellObject } ] && Length @ read === Length @ cells,
+        MapThread[ <| "Cell" -> #1, "Boxes" -> Replace[ #2, { Cell[ BoxData[ b_ ], ___ ] :> b, Cell[ t_String, ___ ] :> t, _ -> "" } ] |> &, { cells, read } ],
+        $Failed
+    ]
+];
 
 frontEndOperation[ "FileName", nb_NotebookObject ] := Quiet @ NotebookFileName @ nb;
 frontEndOperation[ "Save", nb_NotebookObject ] := Quiet @ NotebookSave @ nb;
@@ -1890,7 +1908,8 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
     StringJoin[
         "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
         " (", ToString @ Length @ edits, If[ Length @ edits === 1, " edit", " edits" ], "). It now reads:\n",
-        cellBlocks[ handle, { cell } ]
+        cellBlocks[ handle, { cell } ],
+        codeCheck[ handle, { cell } ]
     ]
 ];
 
@@ -1920,7 +1939,8 @@ setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cell
         "Set ", ToString @ Length @ cells, If[ Length @ cells === 1, " cell", " cells" ], " of ", handle, ": ",
         StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ],
         If[ deleted === { }, "", "; deleted " <> StringRiffle[ "#" <> # & /@ deletedIDs, ", " ] ],
-        ". ReadCells shows their new content."
+        ". ReadCells shows their new content.",
+        codeCheck[ handle, cells ]
     ]
 ];
 
@@ -1947,7 +1967,8 @@ insertCells[ args_Association ] := Module[ { handle, cells, anchor, position, re
     StringJoin[
         "Inserted ", ToString @ Length @ inserted, If[ Length @ inserted === 1, " cell ", " cells " ], where, " of ", handle,
         ":\n",
-        cellBlocks[ handle, inserted ]
+        cellBlocks[ handle, inserted ],
+        codeCheck[ handle, inserted ]
     ]
 ];
 
@@ -1971,6 +1992,68 @@ deleteCells[ args_Association ] := Module[ { handle, cells, ids, result },
 ];
 
 deleteCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Code check*)
+
+(* The end of an edit's result when the edit changed or inserted one of the snapshot's Input or Code cells: those
+   cells, evaluated in order in a fresh context of the sandbox kernel, with what each gives that is worth showing and
+   its messages, so that the agent needs no evaluator to check its code. "" otherwise. *)
+codeCheck // beginDefinition;
+
+codeCheck[ handle_String, changed_List ] := Module[ { code, results },
+    code = notebookFrontEnd[ "CodeCells", $snapshots[ handle, "Notebook" ] ];
+    If[ ! MatchQ[ code, { __Association } ] || ! IntersectingQ[ Lookup[ code, "Cell" ], changed ], Return[ "", Module ] ];
+    results = sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ];
+    If[ ! ListQ @ results,
+        Return[ "\n\nCode check: the code could not be checked (" <> codeCheckFailureText @ results <> ").", Module ]
+    ];
+    codeCheckText[ Lookup[ $snapshots[ handle, "IDs" ], Lookup[ code, "Cell" ], "?" ], results ]
+];
+
+codeCheck // endDefinition;
+
+
+(* results: one <| "Result" -> what the cell gave as InputForm ("" for nothing worth showing), "Messages", "Aborted" |>
+   for each cell in order, fewer if the check ran out of time *)
+codeCheckText // beginDefinition;
+
+codeCheckText[ ids_List, results_List ] := Module[ { lines, failed },
+    lines  = DeleteCases[ MapThread[ codeCheckLine, { Take[ ids, Length @ results ], results } ], "" ];
+    failed = Count[ results, KeyValuePattern[ "Messages" -> { __ } ] ];
+    StringJoin[
+        "\n\nCode check: the snapshot's ", ToString @ Length @ ids, " Input cells, evaluated in order in a fresh context ",
+        "of a separate kernel, ",
+        If[ failed === 0, "give no messages", "give messages in " <> ToString @ failed <> If[ failed === 1, " cell", " cells" ] ],
+        If[ lines === { }, ".", ":\n" <> StringRiffle[ lines, "\n" ] ],
+        If[ Length @ results < Length @ ids,
+            "\nThe check stopped after " <> ToString @ $codeCheckSeconds <> " s: #" <> ids[[ Length @ results + 1 ]] <>
+                " and later cells were not checked.",
+            ""
+        ]
+    ]
+];
+
+codeCheckText // endDefinition;
+
+
+codeCheckLine // beginDefinition;
+
+codeCheckLine[ id_String, result_Association ] := Module[ { shown, messages },
+    shown    = If[ TrueQ @ result[ "Aborted" ], "aborted after " <> ToString @ $cellCheckSeconds <> " s", result[ "Result" ] ];
+    messages = Replace[ result[ "Messages" ], { { } -> "", m_List :> "messages " <> StringRiffle[ m, ", " ] } ];
+    If[ shown === "" && messages === "", "", "#" <> id <> ": " <> StringRiffle[ DeleteCases[ { shown, messages }, "" ], "; " ] ]
+];
+
+codeCheckLine // endDefinition;
+
+
+codeCheckFailureText // beginDefinition;
+codeCheckFailureText[ Failure[ "TimedOut", _ ] ] := "the separate kernel did not answer in time";
+codeCheckFailureText[ Failure[ "KernelQuit", _ ] ] := "the code quit the separate kernel";
+codeCheckFailureText[ _ ] := "the separate kernel is not available";
+codeCheckFailureText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

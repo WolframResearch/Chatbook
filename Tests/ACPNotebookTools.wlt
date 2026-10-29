@@ -224,6 +224,10 @@ VerificationTest[
         $fakeTag
     ];
 
+    (* the code cells only for the tests of the code check, so that the other edits are not checked *)
+    fakeFE0[ "CodeCells", nbo_ ] /; TrueQ @ $fakeCodeCells :=
+        <| "Cell" -> #[ "Cell" ], "Boxes" -> #[ "Text" ] |> & /@ Select[ $fakeNotebooks[ nbo, "Cells" ], MemberQ[ { "Input", "Code" }, #[ "Style" ] ] & ];
+
     fakeFE0[ "Save", _ ] := If[ TrueQ @ $fakeSaveFails, $Failed, Null ];
     fakeFE0[ "Close", nbo_ ] := (KeyDropFrom[ $fakeNotebooks, nbo ]; Null);
     fakeFE0[ "ShowDiff", __ ] := $fakeDiffResult;
@@ -1317,6 +1321,53 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-ShowNotebookDiff"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Code Check*)
+
+(* An edit that changes or inserts an Input cell ends with the code check of the snapshot's Input cells (evaluated by
+   the sandbox kernel, made up here); an edit of other cells has none *)
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $fakeCodeCells = True,
+            $checked       = { },
+            $checkResults  = { },
+            Wolfram`Chatbook`Common`sandboxCheckCells = Function[ { boxes, cellSeconds, seconds }, AppendTo[ $checked, boxes ]; $checkResults ]
+        },
+        Module[ { check, text, edited, stopped, failed, inserted },
+            check[ r_String ] := Replace[ StringPosition[ r, "\n\nCode check:" ], { { { start_, _ }, ___ } :> StringDrop[ r, start + 1 ], _ -> None } ];
+            nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+            text = nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*New words*)" |> } |> ];
+            $checkResults = {
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>,
+                <| "Result" -> "{q -> InterpolatingFunction[...]}", "Messages" -> { "NDSolve::ndsz" }, "Aborted" -> False |>
+            };
+            edited = nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c4", "edits" -> { <| "oldText" -> "Cos", "newText" -> "Sin" |> } |> ];
+            $checkResults = { <| "Result" -> "", "Messages" -> { }, "Aborted" -> True |> };
+            stopped = nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 1" |> } |> ];
+            $checkResults = Failure[ "TimedOut", <| |> ];
+            failed = nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c4", "edits" -> { <| "oldText" -> "Sin", "newText" -> "Cos" |> } |> ];
+            $checkResults = ConstantArray[ <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>, 3 ];
+            inserted = nbtCall[ "InsertCells", <| "notebook" -> "s1", "cell" -> "c7", "newCells" -> { <| "style" -> "Input", "text" -> "x = 1" |> } |> ];
+            { check /@ { text, edited, stopped, failed, inserted }, Length /@ $checked, StringContainsQ[ $checked[[ 1, 1 ]], "Sin" ] }
+        ]
+    ],
+    {
+        {
+            None,
+            "Code check: the snapshot's 2 Input cells, evaluated in order in a fresh context of a separate kernel, give messages in 1 cell:\n#c7: {q -> InterpolatingFunction[...]}; messages NDSolve::ndsz",
+            "Code check: the snapshot's 2 Input cells, evaluated in order in a fresh context of a separate kernel, give no messages:\n#c4: aborted after 10 s\nThe check stopped after 30 s: #c7 and later cells were not checked.",
+            "Code check: the code could not be checked (the separate kernel did not answer in time).",
+            "Code check: the snapshot's 3 Input cells, evaluated in order in a fresh context of a separate kernel, give no messages."
+        },
+        { 2, 2, 2, 3 },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-CodeCheck"
 ]
 
 (* ::**************************************************************************************************************:: *)

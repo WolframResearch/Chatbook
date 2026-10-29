@@ -397,6 +397,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `restoreReasoningData;
 `revertMultimodalContent;
 `rootEvaluationCell;
+`sandboxCheckCells;
 `sandboxEvaluate;
 `sandboxFormatter;
 `savedChatQ;

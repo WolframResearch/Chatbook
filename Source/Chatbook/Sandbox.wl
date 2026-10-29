@@ -1026,6 +1026,75 @@ $$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitio
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*sandboxCheckCells*)
+
+(* The code check of the ACP notebook tools (ACP/NotebookTools.wl): evaluates the boxes of a notebook's code cells in
+   order in the sandbox kernel, in a context of their own with only System` on $ContextPath (removed afterwards), each
+   for at most cellSeconds, and stops starting cells after seconds. Gives for each cell that ran <| "Result" -> what it
+   gave as InputForm (at most 100 characters; "" for Null, graphics and the like), "Messages" -> their names,
+   "Aborted" |>, or a Failure ("NoSandboxKernel", "TimedOut": the kernel is closed and the next use starts another one,
+   "KernelQuit"). Nothing that the kernel gives back is evaluated here but that list of strings. *)
+sandboxCheckCells // beginDefinition;
+
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] := Catch @ Module[ { kernel, context, packet },
+    kernel = Quiet @ getSandboxKernel[ ];
+    If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
+    context = "CodeCheck" <> StringDelete[ createUUID[ ], "-" ] <> "`";
+    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Module[ { end, results, result, shown },
+            end = AbsoluteTime[ ] + s;
+            results = Block[ { $Context = ctx, $ContextPath = { "System`" }, $Messages = { } },
+                Table[
+                    If[ AbsoluteTime[ ] > end,
+                        Nothing,
+                        Block[ { $MessageList = { } },
+                            result = CheckAbort[ Catch @ TimeConstrained[ ToExpression[ cell, StandardForm ], cs, $Aborted ], $Aborted ];
+                            shown  = Replace[
+                                result /. g: (_Graphics | _Graphics3D | _Image | _Legended | _DynamicModule | _Manipulate) :> Skeleton @ Head @ g,
+                                list_List :> DeleteCases[ list, Null ]
+                            ];
+                            <|
+                                "Result"   -> If[ MatchQ[ shown, Null | $Aborted | { } | Skeleton[ _ ] | { Skeleton[ _ ] } ],
+                                    "",
+                                    StringReplace[ StringTake[ ToString[ shown, InputForm ], UpTo[ 100 ] ], "\n" -> " " ]
+                                ],
+                                "Messages" -> DeleteDuplicates[ ToString /@ $MessageList ],
+                                "Aborted"  -> result === $Aborted
+                            |>
+                        ]
+                    ],
+                    { cell, cells }
+                ]
+            ];
+            Quiet @ Remove[ ctx <> "*" ];
+            results
+        ] ]
+    ];
+    packet = TimeConstrained[ readReturnPacket @ kernel, seconds + cellSeconds + 5, $TimedOut ];
+    Replace[ packet, {
+        $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
+        (* held, the associations are Association[...] expressions: only this form is evaluated *)
+        HoldComplete[ ReturnPacket[ list: { Association[ "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False ] ... } ] ] :> list,
+        HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
+        _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
+    } ]
+];
+
+sandboxCheckCells // endDefinition;
+
+
+(* The next ReturnPacket of the kernel, held, or $Failed once the link is gone (the code quit the kernel) *)
+readReturnPacket // beginDefinition;
+
+readReturnPacket[ kernel_LinkObject ] := Module[ { packet },
+    While[ MatchQ[ packet = Quiet @ LinkRead[ kernel, HoldComplete ], HoldComplete[ Except[ _ReturnPacket ] ] ] ];
+    packet
+];
+
+readReturnPacket // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
 
