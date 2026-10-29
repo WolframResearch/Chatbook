@@ -598,13 +598,392 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Pop Out From History*)
+VerificationTest[
+    withMockTitles @ UsingFrontEnd @ Module[ { windowUUID, poppedUUID, windowSettings, nbo },
+        windowUUID = CreateUUID[ ];
+        poppedUUID = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ windowUUID, "AutoSaveOnly" -> True ];
+        SaveChat[ titleTestMessages[ 2 ], titleTestSettings @ poppedUUID, "AutoSaveOnly" -> True ];
+        (* The settings of the assistant window, which has a different chat loaded: *)
+        windowSettings = <|
+            titleTestSettings @ windowUUID,
+            "Tools"          -> { "NotebookEditor" },
+            "SetCellDingbat" -> False,
+            "Model"          -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
+        |>;
+        nbo = Wolfram`Chatbook`ChatModes`UI`Private`popOutChatNB0[
+            <| "AppName" -> $titleTestApp, "ConversationUUID" -> poppedUUID |>,
+            windowSettings
+        ];
+        WithCleanup[
+            {
+                CurrentChatSettings[ nbo, "ConversationUUID" ] =!= windowUUID,
+                CurrentChatSettings[ nbo, "AppName" ] =!= $titleTestApp,
+                Wolfram`Chatbook`Common`resolveAutoSettings[
+                    Wolfram`Chatbook`Common`currentChatSettings @ nbo
+                ][ "AutoSaveConversations" ],
+                Lookup[
+                    Replace[
+                        CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ],
+                        Except[ _Association ] -> <| |>
+                    ],
+                    { "ConversationUUID", "AppName", "AutoSaveConversations", "Tools", "SetCellDingbat" },
+                    None
+                ],
+                CurrentChatSettings[ nbo, "Model" ],
+                Count[ NotebookGet[ nbo ][[ 1 ]], Cell[ __, "ChatInput", ___ ], Infinity ],
+                LoadChat[ $titleTestApp, windowUUID ][ "Messages" ] === titleTestMessages[ 1 ]
+            },
+            NotebookClose @ nbo
+        ]
+    ],
+    {
+        True,
+        True,
+        False,
+        { None, None, None, None, None },
+        KeyValuePattern @ { "Service" -> "OpenAI", "Name" -> "gpt-4o" },
+        2,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "PopOutFromHistory-DropsWindowSettings@@Tests/SaveChat.wlt:602,1-652,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Open Sidebar As Assistant Window*)
+VerificationTest[
+    (* A headless front end has no sidebar, so an ordinary cell holding a scrolling content cell stands in for it: *)
+    sidebarStandIn[ text_String ] := Cell[
+        BoxData @ RowBox @ {
+            Cell[
+                BoxData @ RowBox @ {
+                    Cell[ text, "NotebookAssistant`Sidebar`ChatInput", CellTags -> "SidebarTopCell" ],
+                    Cell[ text <> " reply", "NotebookAssistant`Sidebar`ChatOutput", CellTags -> "SidebarTopCell" ]
+                },
+                "Text",
+                CellTags -> "SidebarScrollingContentCell"
+            ]
+        },
+        "Text"
+    ];
+
+    (* Presses the button and returns the notebook it opened: *)
+    pressOpenSidebarAsWindow[ nbo_, sidebarCell_ ] := Module[ { button, before },
+        button = Wolfram`Chatbook`ChatModes`UI`Private`sidebarOpenAsAssistantWindowButton[ nbo, sidebarCell ];
+        before = Notebooks[ ];
+        ReleaseHold @ Extract[ button, 2, Hold ];
+        First[ Complement[ Notebooks[ ], before ], $Failed ]
+    ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-Definitions@@Tests/SaveChat.wlt:657,1-683,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { oldUUID, nbo, sidebarCell, window },
+        oldUUID = CreateUUID[ ];
+        nbo = CreateDocument[ { sidebarStandIn[ "SIDEBAR-FIRST" ] }, Visible -> False ];
+        sidebarCell = First @ Cells @ nbo;
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = oldUUID;
+        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+        window = pressOpenSidebarAsWindow[ nbo, sidebarCell ];
+        WithCleanup[
+            {
+                CurrentChatSettings[ window, "ConversationUUID" ] === oldUUID,
+                TrueQ @ CurrentChatSettings[ window, "SidebarChat" ],
+                CurrentChatSettings[ sidebarCell, "ConversationUUID" ] =!= oldUUID,
+                StringQ @ CurrentChatSettings[ sidebarCell, "ConversationUUID" ]
+            },
+            Quiet[ NotebookClose /@ { window, nbo } ]
+        ]
+    ],
+    { True, False, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID@@Tests/SaveChat.wlt:685,1-706,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { existingUUID, sidebarUUID, existing, nbo, sidebarCell, window },
+        existingUUID = CreateUUID[ ];
+        sidebarUUID  = CreateUUID[ ];
+        (* An assistant window that already has an unrelated conversation: *)
+        existing = ShowNotebookAssistance[
+            None,
+            "Window",
+            "NewChat"              -> True,
+            "ChatNotebookSettings" -> <| "ConversationUUID" -> existingUUID, "AutoSaveConversations" -> False |>
+        ];
+        SelectionMove[ existing, After, Notebook ];
+        NotebookWrite[ existing, { Cell[ "MANGO-3", "ChatInput" ], Cell[ "MANGO-3 reply", "ChatOutput" ] } ];
+        nbo = CreateDocument[ { sidebarStandIn[ "SIDEBAR-FIRST" ] }, Visible -> False ];
+        sidebarCell = First @ Cells @ nbo;
+        CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = sidebarUUID;
+        CurrentChatSettings[ sidebarCell, "SidebarChat" ] = True;
+        window = pressOpenSidebarAsWindow[ nbo, sidebarCell ];
+        WithCleanup[
+            {
+                MatchQ[ window, _NotebookObject ],
+                MemberQ[ Notebooks[ ], existing ],
+                CurrentChatSettings[ window, "ConversationUUID" ] === sidebarUUID,
+                Cases[ NotebookRead @ Cells @ window, Cell[ s_String, ___ ] :> s ]
+            },
+            Quiet[ NotebookClose /@ { window, nbo, existing } ]
+        ]
+    ],
+    { True, False, True, { "SIDEBAR-FIRST", "SIDEBAR-FIRST reply" } },
+    SameTest -> MatchQ,
+    TestID   -> "OpenSidebarAsWindow-ReplacesExistingWindow@@Tests/SaveChat.wlt:708,1-739,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Load From History*)
+VerificationTest[
+    savedChatDirectory[ uuid_String ] := Last[
+        FileNames[ "*_" <> uuid, ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ] ],
+        Missing[ "NotSaved" ]
+    ];
+
+    (* An invisible stand-in for the assistant window, with the scrollbar hidden like attachOverlayMenu does: *)
+    withHistoryTestWindow[ test_ ] := UsingFrontEnd @ Module[ { nbo = CreateDocument[ { }, Visible -> False ] },
+        CurrentChatSettings[ nbo, "AppName" ] = $titleTestApp;
+        WithCleanup[ test @ nbo, NotebookClose @ nbo ]
+    ];
+
+    scrollbarQ[ nbo_ ] := MemberQ[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+    overlayTags[ nbo_ ] := CurrentValue[ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu" ], CellTags ];
+
+    (* Like a second click on the History button; the reopened History hides the scrollbar until it is closed: *)
+    closeHistory[ nbo_ ] := (
+        Wolfram`Chatbook`ChatModes`Common`toggleOverlayMenu[ nbo, None, "History" ];
+        scrollbarQ @ nbo && overlayTags @ nbo === { }
+    );
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-Definitions@@Tests/SaveChat.wlt:744,1-768,2"
+]
+
+(* An unreadable data.wxf (corrupt, or locked by another process) does not delete the chat: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        WriteString[ FileNameJoin @ { dir, "data.wxf" }, "not a wxf file" ];
+        Close @ FileNameJoin @ { dir, "data.wxf" };
+        {
+            LoadChat[ $titleTestApp, uuid ],
+            DirectoryQ @ dir,
+            FileExistsQ @ FileNameJoin @ { dir, "metadata.wxf" }
+        }
+    ],
+    { Missing[ "Corrupt" ], True, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadChat-CorruptDataKeepsChat@@Tests/SaveChat.wlt:771,1-787,2"
+]
+
+(* A chat folder without data.wxf can't be recovered, so it is removed: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        DeleteFile @ FileNameJoin @ { dir, "data.wxf" };
+        { LoadChat[ $titleTestApp, uuid ], DirectoryQ @ dir }
+    ],
+    { Missing[ "NotFound" ], False },
+    SameTest -> MatchQ,
+    TestID   -> "LoadChat-MissingDataRemovesChat@@Tests/SaveChat.wlt:790,1-801,2"
+]
+
+(* Loading a History row whose chat is gone restores the scrollbar, shows History again and writes no error cell: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+        {
+            Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                nbo,
+                None,
+                <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+            ],
+            overlayTags @ nbo,
+            Cells @ nbo,
+            closeHistory @ nbo
+        }
+    ],
+    { Null, { "History" }, { }, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-StaleRow@@Tests/SaveChat.wlt:804,1-821,2"
+]
+
+(* Same for a chat whose data can't be read, which is kept: *)
+VerificationTest[
+    withMockTitles @ Module[ { uuid, dir },
+        uuid = CreateUUID[ ];
+        SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
+        dir = savedChatDirectory @ uuid;
+        WriteString[ FileNameJoin @ { dir, "data.wxf" }, "not a wxf file" ];
+        Close @ FileNameJoin @ { dir, "data.wxf" };
+        withHistoryTestWindow @ Function[ nbo,
+            Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+            {
+                Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> uuid |>
+                ],
+                overlayTags @ nbo,
+                Cells @ nbo,
+                closeHistory @ nbo,
+                DirectoryQ @ dir
+            }
+        ]
+    ],
+    { Null, { "History" }, { }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-CorruptChat@@Tests/SaveChat.wlt:824,1-849,2"
+]
+
+(* The scrollbar is also restored when loading fails unexpectedly: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Wolfram`Chatbook`ChatModes`UI`Private`hideVerticalScrollbar @ nbo;
+        {
+            Block[ { LoadChat = <| "ConversationUUID" -> 1 |> & },
+                Head @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`ChatModes`UI`Private`loadConversation[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+                ]
+            ],
+            scrollbarQ @ nbo,
+            overlayTags @ nbo
+        }
+    ],
+    { Failure, True, { } },
+    { General::ChatbookInternal },
+    SameTest -> MatchQ,
+    TestID   -> "LoadFromHistory-InternalFailure@@Tests/SaveChat.wlt:852,1-871,2"
+]
+
+(* Popping out a History row whose chat is gone opens no notebook, shows History again and writes no error cell: *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        Module[ { before, result },
+            before = Notebooks[ ];
+            result = Wolfram`Chatbook`ChatModes`UI`Private`popOutChatNB0[
+                <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>,
+                <| |>
+            ];
+            {
+                result,
+                Wolfram`Chatbook`ChatModes`UI`Private`popOutFromHistory[
+                    nbo,
+                    None,
+                    <| "AppName" -> $titleTestApp, "ConversationUUID" -> CreateUUID[ ] |>
+                ],
+                Complement[ Notebooks[ ], before ],
+                overlayTags @ nbo,
+                Cells @ nbo,
+                closeHistory @ nbo
+            }
+        ]
+    ],
+    { Missing[ "NotFound" ], Null, { }, { "History" }, { }, True },
+    SameTest -> MatchQ,
+    TestID   -> "PopOutFromHistory-StaleRow@@Tests/SaveChat.wlt:874,1-899,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*History Refresh*)
+
+(* The default History view re-reads its chats when saved chats change (deleted or saved elsewhere): *)
+VerificationTest[
+    withHistoryTestWindow @ Function[ nbo,
+        FirstCase[
+            Wolfram`Chatbook`ChatModes`UI`Private`makeDefaultHistoryView0[
+                nbo,
+                None,
+                Dynamic @ $historyTestPage,
+                Dynamic @ $historyTestTotalPages
+            ],
+            DynamicWrapper[ _DynamicWrapper, update_, opts___ ] :> {
+                ! FreeQ[ Unevaluated @ update, _Wolfram`Chatbook`ChatModes`UI`Private`readHistoryChats ],
+                { opts }
+            },
+            Missing[ ],
+            Infinity
+        ]
+    ],
+    {
+        True,
+        {
+            OrderlessPatternSequence[
+                TrackedSymbols :> { Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger },
+                SynchronousUpdating -> False
+            ]
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "HistoryRefresh-DefaultViewTracksSavedChats@@Tests/SaveChat.wlt:906,1-934,2"
+]
+
+(* Deleting and saving chats update the trigger, and re-reading lists the current chats: *)
+VerificationTest[
+    withMockTitles @ Module[ { first, second, third, read, trigger, refreshTitles, shown, afterDelete, afterSave },
+        first   = CreateUUID[ ];
+        second  = CreateUUID[ ];
+        third   = CreateUUID[ ];
+        read    = Wolfram`Chatbook`ChatModes`UI`Private`readHistoryChats;
+        trigger = Wolfram`Chatbook`Dynamics`Private`$savedChatsTrigger &;
+        (* The app also has chats saved by earlier tests: *)
+        refreshTitles = Sort @ Select[ Lookup[ #, "ConversationTitle" ], StringStartsQ[ "Refresh " ] ] &;
+        SaveChat[ titleTestMessages[ 1 ], <| titleTestSettings @ first , "ConversationTitle" -> "Refresh One" |> ];
+        SaveChat[ titleTestMessages[ 2 ], <| titleTestSettings @ second, "ConversationTitle" -> "Refresh Two" |> ];
+        shown = read[ $titleTestApp, None ];
+        afterDelete = { trigger[ ], DeleteChat[ $titleTestApp, first ]; trigger[ ], read[ $titleTestApp, shown ] };
+        afterSave = {
+            trigger[ ],
+            SaveChat[ titleTestMessages[ 3 ], <| titleTestSettings @ third, "ConversationTitle" -> "Refresh Three" |> ];
+            trigger[ ],
+            read[ $titleTestApp, shown ]
+        };
+        {
+            refreshTitles @ shown,
+            Less @@ Most @ afterDelete,
+            refreshTitles @ Last @ afterDelete,
+            Less @@ Most @ afterSave,
+            refreshTitles @ Last @ afterSave,
+            (* If storage can't be read, the rows that are shown are kept: *)
+            Block[ { ListSavedChats = $Failed & }, read[ $titleTestApp, shown ] === shown ]
+        }
+    ],
+    {
+        { "Refresh One", "Refresh Two" },
+        True,
+        { "Refresh Two" },
+        True,
+        { "Refresh Three", "Refresh Two" },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "HistoryRefresh-ReadsCurrentChats@@Tests/SaveChat.wlt:937,1-976,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cleanup*)
 VerificationTest[
     titleTestCleanup[ ];
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:602,1-608,2"
+    TestID   -> "Cleanup@@Tests/SaveChat.wlt:981,1-987,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

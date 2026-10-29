@@ -152,8 +152,8 @@ loadChat // beginDefinition;
 loadChat[ as_Association ] := Enclose[
     Catch @ Module[ { data },
         data = ConfirmMatch[ getChatConversationData @ as, $$conversationFullData|_Missing, "Data" ];
-        If[ data === Missing[ "IncompatibleData" ], Throw @ data ];
-        If[ MissingQ @ data, RemoveChatFromSearchIndex @ as; Throw @ data ];
+        If[ data === Missing[ "NotFound" ], RemoveChatFromSearchIndex @ as ];
+        If[ MissingQ @ data, Throw @ data ];
         ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
         data
     ],
@@ -200,14 +200,17 @@ getChatConversationData // endDefinition;
 getChatConversationData0 // beginDefinition;
 
 getChatConversationData0[ dir_String ] := Enclose[
-    Catch @ Module[ { fail, file, data },
-        fail = Function[ Quiet @ DeleteDirectory[ dir, DeleteContents -> True ]; Throw @ Missing[ "NotFound" ] ];
-
+    Catch @ Module[ { file, data },
         file = FileNameJoin @ { dir, "data.wxf" };
-        If[ ! FileExistsQ @ file, fail[ ] ];
 
+        If[ ! FileExistsQ @ file,
+            Quiet @ DeleteDirectory[ dir, DeleteContents -> True ];
+            Throw @ Missing[ "NotFound" ]
+        ];
+
+        (* An unreadable file might be locked or only temporarily unavailable, so the chat is kept: *)
         data = Quiet @ Developer`ReadWXFFile @ file;
-        If[ ! AssociationQ @ data, fail[ ] ];
+        If[ ! AssociationQ @ data, Throw @ Missing[ "Corrupt" ] ];
 
         checkChatDataVersion @ data
     ],
@@ -218,6 +221,31 @@ getChatConversationData0[ missing_Missing ] :=
     missing;
 
 getChatConversationData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*savedChatQ*)
+(* Checks whether a chat has been saved, without reading its data: *)
+savedChatQ // beginDefinition;
+
+savedChatQ[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dir },
+        root = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+        dir = First[ conversationFileNames[ uuid, root ], Throw @ False ];
+        FileExistsQ @ FileNameJoin @ { dir, "data.wxf" }
+    ],
+    throwInternalFailure
+];
+
+(* the AppName setting can be Automatic or Inherited, which saves to the default app (see getAppName): *)
+savedChatQ[ appName: Except[ _String ], uuid_String ] :=
+    savedChatQ[ getAppName @ appName, uuid ];
+
+(* a chat without a ConversationUUID has never been saved (see ensureConversationUUID): *)
+savedChatQ[ _, Except[ _String ] ] :=
+    False;
+
+savedChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
