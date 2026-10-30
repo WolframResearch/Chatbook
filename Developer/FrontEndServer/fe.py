@@ -213,30 +213,8 @@ def win_process_info(pid):
 def win_process_table():
     """{process id: parent process id} of all Windows processes. Windows does not update the parent id when a parent
     exits, so it can name an unrelated process that later got the same id: check identities and start times."""
-    import ctypes
-    from ctypes import wintypes as wt
-
-    class PROCESSENTRY32W(ctypes.Structure):
-        _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD), ("th32ProcessID", wt.DWORD),
-                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wt.DWORD), ("cntThreads", wt.DWORD),
-                    ("th32ParentProcessID", wt.DWORD), ("pcPriClassBase", ctypes.c_long), ("dwFlags", wt.DWORD),
-                    ("szExeFile", wt.WCHAR * 260)]
-
-    kernel32 = win_kernel32()
-    kernel32.Process32FirstW.argtypes = kernel32.Process32NextW.argtypes = [wt.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
-    snapshot = kernel32.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
-    if not snapshot or snapshot == wt.HANDLE(-1).value:
-        return {}
-    table = {}
-    try:
-        entry = PROCESSENTRY32W(dwSize=ctypes.sizeof(PROCESSENTRY32W))
-        found = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
-        while found:
-            table[entry.th32ProcessID] = entry.th32ParentProcessID
-            found = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
-    finally:
-        kernel32.CloseHandle(snapshot)
-    return table
+    import fe_win32
+    return {pid: parent for pid, parent, _ in fe_win32.processes()}
 
 
 def process_info(pid):
@@ -2071,8 +2049,11 @@ def ensure_front_end_focus(server, d, force=False):
         for w in server.fe_windows(d)[0]:
             if focused == w["id"] or top == d.toplevel_frame(w["id"]):
                 return
-    raise CLIError("The keyboard focus is not in this front end's windows, so no keys were sent. Click into the "
-                   "target, use --notebook/--cell, or pass --force.")
+    if hasattr(d, "require_input"):
+        d.require_input("keyboard")  # when Windows discards input (so focus could not be taken), say that instead
+    where = f" (it is in {d.foreground_description()})" if hasattr(d, "foreground_description") else ""
+    raise CLIError(f"The keyboard focus is not in this front end's windows{where}, so no keys were sent. Click into "
+                   "the target, use --notebook/--cell, or pass --force.")
 
 
 def focus_notebook(server, d, ref):
@@ -2466,7 +2447,8 @@ def main(argv=None):
     except Exception as e:  # noqa: BLE001
         if isinstance(e, screen_backend().ScreenError):
             if args.json:
-                print(json.dumps({"ok": False, "errorType": "ScreenError", "error": str(e)}, indent=1))
+                error_type = getattr(e, "error_type", "ScreenError")  # InputBlocked: Windows is discarding input
+                print(json.dumps({"ok": False, "errorType": error_type, "error": str(e)}, indent=1))
                 return 1
             print(f"error ({'Windows' if WINDOWS else 'X11'}): {e}", file=sys.stderr)
             return 1

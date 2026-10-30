@@ -249,6 +249,17 @@ differences:
 * **Input.** Text is typed as Unicode characters (independent of the keyboard layout); key names are the common X11
   ones (`Return`, `BackSpace`, `Prior`, `F5`, `KP_Enter`, `comma`, `ctrl+a`, ...). `meta` and `alt` are Alt;
   `super`/`win` is the Windows key. Input to windows of elevated (administrator) processes is blocked by Windows.
+* **Discarded input.** Windows silently drops synthetic input from this process while a window of a *more privileged*
+  process is in front, even an invisible one: `SendInput` still reports success, but nothing happens. This can be
+  triggered by accident: a system dialog (a Sticky Keys / Ease of Access prompt from a stray key combination) or a
+  service window (`GameInputSvc` was seen holding the foreground) grabbing the foreground is enough. (A UAC prompt
+  usually shows on a secure desktop instead, which fails as a locked session does.) `SetCursorPos` fails too while
+  input is discarded, which is how fe.py detects it: `move` (and so `click`, `drag` and `scroll`), `key` and `type`
+  check it, also where the pointer already is at the target and with `--force`, and fail naming the window in front
+  and its process instead of reporting input that never landed (with `--json`, as errorType `InputBlocked`, so that
+  it can be told from other screen errors). When the window named is a dialog, dismissing it clears the condition;
+  otherwise it takes real input at the machine. Meanwhile `eval`, `press` and `screenshot` (`--no-raise`, to avoid a
+  raise that also needs the foreground) keep working.
 * **Multiple monitors.** Coordinates span the virtual screen, which can start at negative coordinates; write those as
   `click -- -100,200` or `--region=-100,0,400,300`. Monitors with different scaling are untested: keep the front end's
   windows on one monitor.

@@ -306,13 +306,11 @@ reformatTextDataEscaped0 // endDefinition;
 
 reformatTextBeforeCodeBlock // beginDefinition;
 
+(* Same as the text formatting in reformatTextData0, but without trimming the line break before the code block: *)
 reformatTextBeforeCodeBlock[ string_String ] :=
-    makeResultCell /@ StringSplit[
-        string,
-        Longest @ StringExpression[
-            (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-            tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
-        ] :> inlineToolCallCell @ tool
+    makeResultCell /@ DeleteCases[
+        Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
+        ""
     ];
 
 reformatTextBeforeCodeBlock // endDefinition;

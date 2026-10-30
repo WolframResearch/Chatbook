@@ -308,6 +308,13 @@ VerificationTest[
     TestID   -> "DocumentationLookup-Markdown-Multiple@@Tests/RelatedDocumentation.wlt:301,1-309,2"
 ]
 
+VerificationTest[
+    $DefaultTools[ "DocumentationLookup" ][ <| "ids" -> "Pi" |> ],
+    _String? (StringContainsQ[ "Pi is \[Pi], with numerical value \[TildeEqual]3.14159" ]),
+    SameTest -> MatchQ,
+    TestID   -> "DocumentationLookup-Markdown-UTF8-GH#1744@@Tests/RelatedDocumentation.wlt:311,1-316,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*FilterSnippets Response Cache*)
@@ -366,7 +373,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-1", 1 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Repeat"
+    TestID   -> "FilterSnippetsCache-Repeat@@Tests/RelatedDocumentation.wlt:368,1-377,2"
 ]
 
 VerificationTest[
@@ -377,7 +384,7 @@ VerificationTest[
     ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Repeat-Timing"
+    TestID   -> "FilterSnippetsCache-Repeat-Timing@@Tests/RelatedDocumentation.wlt:379,1-388,2"
 ]
 
 VerificationTest[
@@ -389,7 +396,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-DifferentInstructions"
+    TestID   -> "FilterSnippetsCache-DifferentInstructions@@Tests/RelatedDocumentation.wlt:390,1-400,2"
 ]
 
 VerificationTest[
@@ -401,7 +408,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-DifferentModel"
+    TestID   -> "FilterSnippetsCache-DifferentModel@@Tests/RelatedDocumentation.wlt:402,1-412,2"
 ]
 
 VerificationTest[
@@ -418,7 +425,7 @@ VerificationTest[
     ],
     { "Failed", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-FailureNotCached"
+    TestID   -> "FilterSnippetsCache-FailureNotCached@@Tests/RelatedDocumentation.wlt:414,1-429,2"
 ]
 
 VerificationTest[
@@ -435,7 +442,7 @@ VerificationTest[
     ],
     { $Failed, "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-NonStringNotCached"
+    TestID   -> "FilterSnippetsCache-NonStringNotCached@@Tests/RelatedDocumentation.wlt:431,1-446,2"
 ]
 
 VerificationTest[
@@ -447,7 +454,7 @@ VerificationTest[
     ],
     { 64, "Computational\n5 Mock-70", "Computational\n5 Mock-71", 71 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Bounded"
+    TestID   -> "FilterSnippetsCache-Bounded@@Tests/RelatedDocumentation.wlt:448,1-458,2"
 ]
 
 VerificationTest[
@@ -459,7 +466,7 @@ VerificationTest[
     ],
     2,
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Disabled"
+    TestID   -> "FilterSnippetsCache-Disabled@@Tests/RelatedDocumentation.wlt:460,1-470,2"
 ]
 
 (* Hits still resolve the filtering configuration, so a non-LLMKit authentication still turns off LLMKit for the chat: *)
@@ -479,7 +486,7 @@ VerificationTest[
     ],
     { { "Computational\n5 Mock-1", False, 1 }, { "Computational\n5 Mock-1", False, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-AuthenticationSideEffect"
+    TestID   -> "FilterSnippetsCache-AuthenticationSideEffect@@Tests/RelatedDocumentation.wlt:473,1-490,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -494,7 +501,7 @@ VerificationTest[
     ],
     { key_Integer, key_Integer },
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Stable"
+    TestID   -> "LLMSynthesizeCacheKey-Stable@@Tests/RelatedDocumentation.wlt:495,1-505,2"
 ]
 
 (* The same model through a different authentication path is a different request: *)
@@ -509,7 +516,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Authentication"
+    TestID   -> "LLMSynthesizeCacheKey-Authentication@@Tests/RelatedDocumentation.wlt:508,1-520,2"
 ]
 
 VerificationTest[
@@ -523,7 +530,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Service"
+    TestID   -> "LLMSynthesizeCacheKey-Service@@Tests/RelatedDocumentation.wlt:522,1-534,2"
 ]
 
 (* LLMKit requests are made for the signed-in user, so responses are not reused across cloud accounts: *)
@@ -540,7 +547,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-CloudUser"
+    TestID   -> "LLMSynthesizeCacheKey-CloudUser@@Tests/RelatedDocumentation.wlt:537,1-551,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -564,7 +571,7 @@ VerificationTest[
     ],
     { 1, 1, 1, True, True, _String? (StringStartsQ[ "IMPORTANT: " ]), { __String } },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat@@Tests/RelatedDocumentation.wlt:556,1-575,2"
 ]
 
 (* Sources used for citations are still added when the response comes from the cache: *)
@@ -583,7 +590,7 @@ VerificationTest[
     ],
     { 1, True, _Association? (Length @ # > 0 &) },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Sources"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Sources@@Tests/RelatedDocumentation.wlt:578,1-594,2"
 ]
 
 VerificationTest[
@@ -611,7 +618,7 @@ VerificationTest[
     ],
     { 2, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-DifferentTranscript"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-DifferentTranscript@@Tests/RelatedDocumentation.wlt:596,1-622,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
