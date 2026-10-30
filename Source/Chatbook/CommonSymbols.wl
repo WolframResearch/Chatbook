@@ -163,6 +163,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chooseDefaultModelName;
 `chooseStopTokens;
 `clearMinimizedChats;
+`clearNoModelListCache;
 `clickToCopy;
 `color;
 `compressUntilViewed;

@@ -617,22 +617,55 @@ makeServiceSelector // beginDefinition;
 
 Attributes[ makeServiceSelector ] = { HoldRest };
 
+(* The PopupMenu setter is a synchronous preemptive evaluation that blocks the front end, so it only makes cheap
+   assignments. The model list download and settings writes happen in the asynchronous DynamicWrapper instead. *)
 makeServiceSelector[ services_, dmPrefCache_, service_, model_, modelNameSelector_, state_ ] :=
-    PopupMenu[
-        Dynamic[
-            extractServiceName @ Lookup[ dmPrefCache, "Model" ],
-            Function[ serviceSelectCallback[ #, dmPrefCache, service, model, modelNameSelector, state ] ]
-        ],
-        (* ensure LLMKit is first in the popup followed by a delimiter *)
-        Replace[
-            KeyValueMap[
-                popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
-                DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+    DynamicModule[ { pending = None },
+        DynamicWrapper[
+            PopupMenu[
+                Dynamic[
+                    Replace[ pending, Except[ _String ] :> extractServiceName @ Lookup[ dmPrefCache, "Model" ] ],
+                    Function[ serviceSelectSetter[ #, service, state, pending ] ],
+                    TrackedSymbols :> { pending, dmPrefCache }
+                ],
+                (* ensure LLMKit is first in the popup followed by a delimiter *)
+                Replace[
+                    KeyValueMap[
+                        popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
+                        DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+                    ],
+                    { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
             ],
-            { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
+            (* Each evaluation handles at most one selection. Only the setter sets pending to a string, so a new pass
+               needs a new user selection. If the user picks a different service while this one is loading, pending
+               is left as is: the change to the tracked symbol makes the front end evaluate this again for it. *)
+            If[ StringQ @ pending,
+                With[ { selected = pending },
+                    serviceSelectCallback[ selected, dmPrefCache, service, model, modelNameSelector, state ];
+                    If[ pending === selected, pending = None ]
+                ]
+            ],
+            SynchronousUpdating -> False,
+            TrackedSymbols      :> { pending }
+        ]
     ];
 
 makeServiceSelector // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serviceSelectSetter*)
+serviceSelectSetter // beginDefinition;
+
+Attributes[ serviceSelectSetter ] = { HoldRest };
+
+serviceSelectSetter[ selected_String, service_, state_, pending_ ] := catchAlways[
+    service = selected;
+    If[ ! modelListCachedQ @ selected, state = "Loading" ];
+    pending = selected;
+];
+
+serviceSelectSetter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -775,10 +808,13 @@ serviceConnectButton[
             Quiet[
                 Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service
             ],
-            _ServiceObject :>
+            _ServiceObject :> (
+                (* The service was just connected, so a recently cached failure no longer applies: *)
+                clearNoModelListCache @ service;
                 If[ ListQ @ getServiceModelList @ service,
                     serviceSelectCallback[ service, dmPrefCache, service, model, modelNameSelector, state ]
                 ]
+            )
         ],
         Method -> "Queued"
     ];
@@ -2040,8 +2076,9 @@ getServiceDefaultModel[ Dynamic[ dmPrefCache_ ], service_String ] := Enclose[
         If[ ! StringQ @ name,
             name = ConfirmMatch[ chooseDefaultModelName @ service, _String|Automatic, "DefaultName" ];
             If[ name === Automatic,
+                (* Never prompt for an API key here; makeModelNameSelector shows a connect button instead: *)
                 Replace[
-                    getServiceModelList @ service,
+                    Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ],
                     { KeyValuePattern[ "Name" -> s_String ], ___ } :> (name = s)
                 ]
             ];

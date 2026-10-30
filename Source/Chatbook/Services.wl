@@ -22,6 +22,8 @@ $llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", ""
 $allowConnectionDialog  = True;
 $enableLLMServices      = Automatic;
 $modelListCache         = <| |>;
+$noModelListCache       = <| |>;
+$noModelListCacheTime   = 60;
 $modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
 $servicesLoaded         = False;
 $useLLMServices        := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
@@ -47,7 +49,11 @@ $invalidModelNameParts = <|
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
 InvalidateServiceCache // beginDefinition;
-InvalidateServiceCache[ ] := catchAlways[ $serviceCache = None; updateDynamics[ { "Models", "Services" } ]; ];
+InvalidateServiceCache[ ] := catchAlways[
+    $serviceCache = None;
+    $noModelListCache = <| |>;
+    updateDynamics[ { "Models", "Services" } ];
+];
 InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -213,7 +219,10 @@ getServiceModelList[ service_String ] :=
             {
                 {  } | None :> Missing[ "NoModelList" ],
                 list_List :> list,
-                _ :> getServiceModelList[ service, $availableServices[ service ] ]
+                _ :> If[ noModelListCachedQ @ service,
+                         Missing[ "NoModelList" ],
+                         getServiceModelList[ service, $availableServices[ service ] ]
+                     ]
             }
         ]
     ];
@@ -241,10 +250,38 @@ getServiceModelList[ service_String, info_, models0_List ] := Enclose[
     throwInternalFailure
 ];
 
-getServiceModelList[ service_String, info_, Missing[ "NoModelList" ] ] :=
-    Missing[ "NoModelList" ];
+getServiceModelList[ service_String, info_, Missing[ "NoModelList" ] ] := (
+    (* Remember the failure briefly, so that retrying an unreachable service (e.g. a local Ollama server that isn't
+       running) does not repeat the connection timeout: *)
+    $noModelListCache[ service ] = AbsoluteTime[ ];
+    Missing[ "NoModelList" ]
+);
 
 getServiceModelList // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*noModelListCachedQ*)
+noModelListCachedQ // beginDefinition;
+
+noModelListCachedQ[ service_String ] :=
+    With[ { time = Lookup[ $noModelListCache, service ] },
+        If[ NumberQ @ time && AbsoluteTime[ ] - time < $noModelListCacheTime,
+            True,
+            KeyDropFrom[ $noModelListCache, service ];
+            False
+        ]
+    ];
+
+noModelListCachedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clearNoModelListCache*)
+(* Used before a retry the user asked for (e.g. after connecting a service), which should always fetch again: *)
+clearNoModelListCache // beginDefinition;
+clearNoModelListCache[ service_String ] := (KeyDropFrom[ $noModelListCache, service ]; Null);
+clearNoModelListCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
