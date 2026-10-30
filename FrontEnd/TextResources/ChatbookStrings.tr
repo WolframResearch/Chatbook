@@ -310,7 +310,11 @@
 "ProgressTextWaitingForResponse" -> "Waiting||Receiving||Listening||Holding||Processing||Checking",
 "ProgressTextGeneratingSuggestions" -> "Generating suggestions",
 "ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
-"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets",
+"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|

@@ -311,7 +311,11 @@
 "ProgressTextWaitingForResponse" -> "Waiting||Receiving||Listening||Holding||Processing||Checking",
 "ProgressTextGeneratingSuggestions" -> "\:30b5\:30b8\:30a7\:30b9\:30c1\:30e7\:30f3\:3092\:751f\:6210\:3057\:3066\:3044\:307e\:3059",
 "ProgressTextDownloadingSnippet" -> "`1`\:306e\:30c9\:30ad\:30e5\:30e1\:30f3\:30c8\:306e\:629c\:7c8b\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059",
-"ProgressTextDownloadingSnippets" -> "`1`\:306e\:30c9\:30ad\:30e5\:30e1\:30f3\:30c8\:306e\:629c\:7c8b\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059"
+"ProgressTextDownloadingSnippets" -> "`1`\:306e\:30c9\:30ad\:30e5\:30e1\:30f3\:30c8\:306e\:629c\:7c8b\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059",
+"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|

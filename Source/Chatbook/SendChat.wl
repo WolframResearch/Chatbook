@@ -163,7 +163,7 @@ sendChatHeadless // endDefinition;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { settings, cells0, cells, target, messages, data, deferData, persona, cellTags, cellExpr, cellObj, container, task },
+    catchChatStopped @ Module[ { settings, cells0, cells, target, messages, data, deferData, persona, cellTags, cellExpr, cellObj, container, task },
 
         resolveInlineReferences @ evalCell;
 
@@ -186,7 +186,6 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         ConfirmBy[ initializeProgressContainer @ container, AssociationQ, "InitializeProgress" ];
-        ClearAttributes[ container, Temporary ];
 
         $reformattedCell = None;
         cellTags = CurrentValue[ evalCell, CellTags ];
@@ -201,11 +200,25 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             NotebookDelete @ $lastCellObject;
         ];
 
-        cellObj = $lastCellObject = ConfirmMatch[
+        throwIfChatStopped[ ];
+
+        (* The output cell will refer to the container, so it has to outlive this evaluation (unless the chat was stopped
+           before creating the cell): *)
+        ClearAttributes[ container, Temporary ];
+
+        cellObj = ConfirmMatch[
             createNewChatOutput[ settings, target, cellExpr ],
             _CellObject,
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
+
+        (* StopChat stops the output cell (removing it or restoring its previous page) once it's in $lastCellObject, so
+           it only needs to be stopped here if the chat was stopped before that. PreemptProtect keeps StopChat from
+           running between the assignment and the check: *)
+        If[ PreemptProtect[ $lastCellObject = cellObj; chatStopRequestedQ[ ] ],
+            StopChat @ cellObj;
+            throwIfChatStopped[ ]
+        ];
 
         If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
             SelectionMove[ cellObj, After, Cell ] (* mimic the selection behavior of standard cell evaluations *)
@@ -221,6 +234,9 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             ],
             $chatDataTag
         ] // withApproximateProgress[ "CreatingMessages", 0.3 ];
+
+        (* For example, stopped while waiting for the documentation search. StopChat has stopped the output cell: *)
+        throwIfChatStopped[ ];
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
@@ -265,12 +281,16 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             |>
         ];
 
+        throwIfChatStopped[ ];
+
         task = $lastTask = chatSubmit[
             container,
             prepareMessagesForLLM[ settings, messages ],
             cellObj,
             settings
         ] // withApproximateProgress[ "SendingChat", 0.4 ];
+
+        throwIfChatStopped @ task;
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -429,6 +449,27 @@ asyncChatSubmitQ[ settings_Association ] := And[
 ];
 
 asyncChatSubmitQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*catchChatStopped*)
+(* If the chat is stopped while it's evaluating (see chatStopRequestedQ), sendChat and toolEvaluation end without
+   submitting another request, the same way as a chat that's stopped before its response starts: *)
+catchChatStopped // beginDefinition;
+catchChatStopped // Attributes = { HoldFirst };
+catchChatStopped[ eval_ ] := Catch[ eval, $chatStoppedTag ];
+catchChatStopped // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*throwIfChatStopped*)
+throwIfChatStopped // beginDefinition;
+throwIfChatStopped[ ] := If[ chatStopRequestedQ[ ], Throw[ Null, $chatStoppedTag ] ];
+
+(* StopChat can't remove the task if it runs before the task is in $lastTask. The task can also be a failure, which
+   waitForLastTask doesn't handle, so the chat ends with no task: *)
+throwIfChatStopped[ task_ ] := If[ chatStopRequestedQ[ ], removeTask @ task; $lastTask = None; throwIfChatStopped[ ] ];
+throwIfChatStopped // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1273,6 +1314,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     {
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
+                        $autoAssistHandler   = autoAssist,
                         $autoOpen            = autoOpen,
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
@@ -1297,7 +1339,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                             If[ stopEmulation && $emulatedStopTriggered,
                                 (* An emulated stop token was just detected, so end the streaming task now and
                                    process the response the same way the "TaskFinished" handler would have: *)
-                                Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ];
+                                removeTask @ $lastTask;
                                 taskFinishedHandler @ <|
                                     as,
                                     "TaskStatus"            -> "Finished",
@@ -1316,6 +1358,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     {
                         $alwaysOpen          = alwaysOpen,
                         $AutomaticAssistance = autoAssist,
+                        $autoAssistHandler   = autoAssist,
                         $autoOpen            = autoOpen,
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
@@ -1722,12 +1765,18 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     updateDynamicDisplay @ container
 );
 
-writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
-     Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ];
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := (
+    (* Only keep the most recent unexpected chunks: *)
+    If[ Internal`BagLength @ $chunkDebug >= $maxChunkDebugSize,
+        $chunkDebug = Internal`Bag @ Internal`BagPart[ $chunkDebug, -Floor[ $maxChunkDebugSize / 2 ] ;; ]
+    ];
+    Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ]
+);
 
 writeChunk0 // endDefinition;
 
-$chunkDebug = Internal`Bag[ ];
+$chunkDebug        = Internal`Bag[ ];
+$maxChunkDebugSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1980,7 +2029,7 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
         boxObject = If[ FailureQ @ NotebookRead @ dynamicBox, Missing[ "BoxRemoved", dynamicBox ], dynamicBox ];
 
         If[ MatchQ[ boxObject, Missing[ "BoxRemoved", ___ ] ],
-            throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
+            throwTop[ removeTask @ $lastTask; Null ]
         ];
 
         settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
@@ -2258,7 +2307,7 @@ simpleToolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[
+    catchChatStopped @ Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
             messages, roles, response, newMessages, req, toolID, task
@@ -2282,6 +2331,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         applyHandlerFunction[ settings, "ToolRequestReceived", <| "ToolRequest" -> toolCall |> ];
 
+        (* Stopped before the tool is evaluated: *)
+        throwIfChatStopped[ ];
+
         toolResponse = ConfirmMatch[
             If[ FailureQ @ toolCall,
                 toolCall,
@@ -2290,6 +2342,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
+
+        (* Stopped while the tool was evaluating. StopChat has already written the output cell: *)
+        throwIfChatStopped[ ];
 
         toolID = tinyHash[ toolResponse, 9 ];
         toolCall = insertToolID[ toolCall, toolID ];
@@ -2345,9 +2400,14 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         appendToolResult[ container, settings, output, toolID ];
 
+        (* Stopped while the messages were constructed: *)
+        throwIfChatStopped[ ];
+
         If[ ! sendToolResponseQ[ settings, toolResponse ], throwTop @ StopChat @ cell ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
+
+        throwIfChatStopped @ task;
 
         addHandlerArguments[ "Task" -> task ];
 

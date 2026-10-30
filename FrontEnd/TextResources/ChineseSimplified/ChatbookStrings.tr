@@ -310,7 +310,11 @@
 "ProgressTextWaitingForResponse" -> "\:6B63\:5728\:7B49\:5F85||\:6B63\:5728\:63A5\:6536||\:6B63\:5728\:542C\:53D6||\:6301\:7EED\:6301\:6709||\:6B63\:5728\:5904\:7406||\:6B63\:5728\:68C0\:67E5",
 "ProgressTextGeneratingSuggestions" -> "\:6B63\:5728\:751F\:6210\:5EFA\:8BAE",
 "ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
-"ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5"
+"ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
+"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|

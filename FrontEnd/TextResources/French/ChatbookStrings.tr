@@ -310,7 +310,11 @@
 "ProgressTextWaitingForResponse" -> "Attente||R\[EAcute]ception||\[CapitalEAcute]coute||Maintien||Traitement||V\[EAcute]rification",
 "ProgressTextGeneratingSuggestions" -> "G\[EAcute]n\[EAcute]ration de suggestions",
 "ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
-"ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`"
+"ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`",
+"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|

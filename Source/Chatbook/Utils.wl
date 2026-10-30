@@ -1219,28 +1219,41 @@ evaluateWithDialogProgress // endDefinition;
 (*taskWaitYield*)
 (* Effectively equivalent to TaskWait, but allows other asynchronous tasks to run while waiting. *)
 taskWaitYield // beginDefinition;
-taskWaitYield // Attributes = { Listable };
 taskWaitYield // Options = { TimeConstraint -> Infinity };
 
+(* Waits for each task in turn, so if the wait is interrupted, the tasks after the current one also need removing: *)
+taskWaitYield[ tasks_List, opts: OptionsPattern[ ] ] :=
+    WithCleanup[
+        taskWaitYield[ #, opts ] & /@ tasks,
+        Scan[ If[ taskRunningQ @ #, removeTask @ # ] &, Cases[ tasks, _TaskObject, Infinity ] ]
+    ];
+
 taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[
-    Module[ { waitTime, timeConstraint },
+    Module[ { waitTime, timeConstraint, stoppable },
 
         waitTime = ConfirmMatch[ $taskWaitInterval, $$size, "WaitTime" ];
         timeConstraint = ConfirmMatch[ OptionValue[ TimeConstraint ], $$size, "TimeConstraint" ];
 
-        TimeConstrained[
-            While[
-                (* Check if the task hasn't finished yet: *)
-                Quiet @ MatchQ[ task[ "TaskStatus" ], "Running"|"Waiting" ],
+        (* Callers that limit the wait already handle a task that didn't finish, so these waits can also end early if
+           the chat is stopped, e.g. waiting for the documentation search before the chat's request is submitted: *)
+        stoppable = timeConstraint < Infinity;
 
-                (* Yield to other asynchronous tasks to prevent blocking: *)
-                Internal`YieldAsynchronousTask[ ];
+        WithCleanup[
+            TimeConstrained[
+                While[
+                    (* Check if the task hasn't finished yet: *)
+                    taskRunningQ @ task && ! (stoppable && chatStopRequestedQ[ ]),
 
-                (* Wait before checking again: *)
-                Pause[ waitTime ];
+                    (* Yield to other asynchronous tasks to prevent blocking: *)
+                    Internal`YieldAsynchronousTask[ ];
+
+                    (* Wait before checking again: *)
+                    Pause[ waitTime ];
+                ],
+                timeConstraint
             ],
-            timeConstraint,
-            Quiet @ TaskRemove @ task
+            (* Don't leave the task running if the wait ended early (time limit, stopped chat, abort, etc.): *)
+            If[ taskRunningQ @ task, removeTask @ task ]
         ];
 
         (* Return the task object: *)
@@ -1250,6 +1263,13 @@ taskWaitYield[ task_TaskObject, opts: OptionsPattern[ ] ] := Enclose[
 ];
 
 taskWaitYield // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*taskRunningQ*)
+taskRunningQ // beginDefinition;
+taskRunningQ[ task_TaskObject ] := Quiet @ MatchQ[ task[ "TaskStatus" ], "Running"|"Waiting" ];
+taskRunningQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1390,7 +1410,11 @@ LogChatTiming[ eval_, tag_String ] := (
 
 LogChatTiming // endExportedDefinition;
 
-$timingLog = Internal`Bag[ ];
+$timingLog        = Internal`Bag[ ];
+$nestedChatTiming = False;
+
+(* Top-level entries kept in $timingLog (the oldest half is dropped when this is exceeded): *)
+$maxTimingLogSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1413,7 +1437,7 @@ logChatTiming[ eval_, tag_String ] :=
         now    = chatTime[ ];
         absNow = AbsoluteTime[ ];
 
-        Block[ { $timingLog = Internal`Bag[ ] },
+        Block[ { $timingLog = Internal`Bag[ ], $nestedChatTiming = True },
             fullTime = First @ AbsoluteTiming[ result = eval ];
             innerTimings = Internal`BagPart[ $timingLog, All ];
         ];
@@ -1431,10 +1455,20 @@ logChatTiming[ eval_, tag_String ] :=
                 "ChildTimings"       -> innerTimings
             |> ];
 
+        (* Only top-level entries are trimmed, since nested ones are needed for the parent's "UsedTiming": *)
+        If[ ! $nestedChatTiming && Internal`BagLength @ $timingLog > $maxTimingLogSize, trimTimingLog[ ] ];
+
         result
     ];
 
 logChatTiming // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trimTimingLog*)
+trimTimingLog // beginDefinition;
+trimTimingLog[ ] := $timingLog = Internal`Bag @ Internal`BagPart[ $timingLog, -Floor[ $maxTimingLogSize / 2 ] ;; ];
+trimTimingLog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

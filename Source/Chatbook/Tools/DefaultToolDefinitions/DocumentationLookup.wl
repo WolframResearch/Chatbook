@@ -53,7 +53,8 @@ documentationLookup0[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] && StringF
     Module[ { url, response, body },
         url = URLBuild @ { $documentationMarkdownBaseURL, StringDelete[ uri, "paclet:" ] <> ".md" };
         response = URLRead @ url;
-        body = If[ response[ "StatusCode" ] === 200, response[ "Body" ] ];
+        (* The pages are UTF-8, but are served without a charset, so "Body" would decode them as ISO-8859-1: *)
+        body = If[ response[ "StatusCode" ] === 200, ByteArrayToString @ response[ "BodyByteArray" ] ];
         documentationLookup0[ uri ] =
             If[ StringQ @ body,
                 body,

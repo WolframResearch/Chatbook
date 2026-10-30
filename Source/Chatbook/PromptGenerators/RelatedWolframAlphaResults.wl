@@ -899,7 +899,8 @@ getWolframAlphaAPIContent0[ queries: { ___String } ] := Enclose[
             waResultID
         ];
 
-        If[ TrueQ @ $cacheResults,
+        (* If the chat was stopped, the wait ended early, so the results might be incomplete: *)
+        If[ TrueQ @ $cacheResults && ! chatStopRequestedQ[ ],
             getWolframAlphaAPIContent0[ queries ] = cleaned,
             cleaned
         ]

@@ -310,7 +310,11 @@
 "ProgressTextWaitingForResponse" -> "Esperando||Recibiendo||Escuchando||En espera||Procesando||Verificando",
 "ProgressTextGeneratingSuggestions" -> "Generando sugerencias",
 "ProgressTextDownloadingSnippet" -> "Descargando `1` fragmento de documentaci\[OAcute]n",
-"ProgressTextDownloadingSnippets" -> "Descargando `1` fragmentos de documentaci\[OAcute]n"
+"ProgressTextDownloadingSnippets" -> "Descargando `1` fragmentos de documentaci\[OAcute]n",
+"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
+"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
+"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
 }
 @|
 @|

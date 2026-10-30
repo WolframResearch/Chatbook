@@ -24,6 +24,7 @@ import json
 import os
 import re
 import secrets
+import select
 import shutil
 import signal
 import socket
@@ -212,30 +213,8 @@ def win_process_info(pid):
 def win_process_table():
     """{process id: parent process id} of all Windows processes. Windows does not update the parent id when a parent
     exits, so it can name an unrelated process that later got the same id: check identities and start times."""
-    import ctypes
-    from ctypes import wintypes as wt
-
-    class PROCESSENTRY32W(ctypes.Structure):
-        _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD), ("th32ProcessID", wt.DWORD),
-                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wt.DWORD), ("cntThreads", wt.DWORD),
-                    ("th32ParentProcessID", wt.DWORD), ("pcPriClassBase", ctypes.c_long), ("dwFlags", wt.DWORD),
-                    ("szExeFile", wt.WCHAR * 260)]
-
-    kernel32 = win_kernel32()
-    kernel32.Process32FirstW.argtypes = kernel32.Process32NextW.argtypes = [wt.HANDLE, ctypes.POINTER(PROCESSENTRY32W)]
-    snapshot = kernel32.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
-    if not snapshot or snapshot == wt.HANDLE(-1).value:
-        return {}
-    table = {}
-    try:
-        entry = PROCESSENTRY32W(dwSize=ctypes.sizeof(PROCESSENTRY32W))
-        found = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
-        while found:
-            table[entry.th32ProcessID] = entry.th32ParentProcessID
-            found = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
-    finally:
-        kernel32.CloseHandle(snapshot)
-    return table
+    import fe_win32
+    return {pid: parent for pid, parent, _ in fe_win32.processes()}
 
 
 def process_info(pid):
@@ -486,6 +465,8 @@ class Server:
         self.token = info.get("Token")
         self._id = 0
         self._scale = None
+        self._sock = None
+        self._buffer = b""
 
     @property
     def display(self):
@@ -511,6 +492,54 @@ class Server:
                 continue
             raise ServerError(response)
 
+    # All requests of a Server object share one connection: the kernel's socket library does not free everything a
+    # connection used when the client hangs up (about 4 handles per connection on Windows), and the server stops
+    # answering after a few hundred connections. Responses carry the request id; others (to pings) are skipped.
+    def _connection(self, timeout):
+        if self._sock is not None and self._peer_closed():
+            # The kernel quit or was replaced (e.g. by `snoop`) since the last request; nothing was sent yet:
+            self.close()
+        if self._sock is None:
+            try:
+                self._sock = socket.create_connection((self.host, self.port), timeout=min(10.0, timeout))
+            except OSError as e:
+                raise CLIError(f"Cannot connect to the front end server on port {self.port}: {e}")
+            self._buffer = b""
+        return self._sock
+
+    def _peer_closed(self):
+        """Whether the server has closed the idle connection. Reads what has arrived (e.g. late answers to pings)."""
+        try:
+            while select.select([self._sock], [], [], 0)[0]:
+                chunk = self._sock.recv(1 << 20)
+                if not chunk:
+                    return True
+                self._buffer += chunk
+        except OSError:
+            return True
+        return False
+
+    def close(self):
+        if self._sock is not None:
+            try:
+                self._sock.close()
+            except OSError:
+                pass
+        self._sock = None
+        self._buffer = b""
+
+    def _take_response(self, request_id):
+        """The response to `request_id` if it has arrived completely (skipping responses to pings), else None."""
+        while b"\n" in self._buffer:
+            line, self._buffer = self._buffer.split(b"\n", 1)
+            if line.strip():
+                response = json.loads(line.decode("utf-8"))
+                # Errors the server can't attribute to a request (RequestTooLarge, InvalidJSON) have id null; only the
+                # request in flight can have caused them, because pings are always valid:
+                if response.get("id") in (request_id, None):
+                    return response
+        return None
+
     def _send(self, command, args, deadline):
         self._id += 1
         timeout = max(1.0, deadline - time.time())
@@ -518,15 +547,13 @@ class Server:
                    "args": {k: v for k, v in (args or {}).items() if v is not None}, "deadline": deadline}
         if self.preemptive:
             payload["preemptive"] = True
+        sock = self._connection(timeout)
         try:
-            sock = socket.create_connection((self.host, self.port), timeout=min(10.0, timeout))
-        except OSError as e:
-            raise CLIError(f"Cannot connect to the front end server on port {self.port}: {e}")
-        data = b""
-        try:
-            sock.settimeout(timeout)
             sock.sendall((json.dumps(payload) + "\n").encode("utf-8"))
-            while not data.endswith(b"\n"):
+            while True:
+                response = self._take_response(self._id)
+                if response is not None:
+                    return response
                 # Wake up every two seconds to ping: the server only fires the front end trigger for queued requests
                 # while the kernel is idle, and it can be dropped (e.g. when evaluations are aborted); any incoming
                 # request lets the server (re-)fire it once the kernel is idle.
@@ -536,32 +563,23 @@ class Server:
                 except socket.timeout:
                     if time.time() >= deadline:
                         raise
-                    self.ping_quietly()
+                    sock.sendall((json.dumps({"id": 0, "token": self.token, "command": "ping"}) + "\n").encode())
                     continue
                 if not chunk:
-                    break
-                data += chunk
+                    self.close()
+                    raise CLIError(f"The server closed the connection without answering {command!r} "
+                                   "(did the kernel quit?)")
+                self._buffer += chunk
         except socket.timeout:
+            # The connection is not reused, so that a late answer can't be taken for the answer to another request:
+            self.close()
             raise CLIError(f"Timed out after {timeout:.0f}s waiting for {command!r}. " + self.diagnose())
         except OSError as e:
+            self.close()
             raise CLIError(f"Connection to the front end server failed during {command!r}: {e}")
-        finally:
-            sock.close()
-        if not data.strip():
-            raise CLIError(f"The server closed the connection without answering {command!r} (did the kernel quit?)")
-        try:
-            return json.loads(data.decode("utf-8").split("\n")[0])
         except ValueError as e:
+            self.close()
             raise CLIError(f"Malformed response to {command!r}: {e}")
-
-    def ping_quietly(self):
-        try:
-            with socket.create_connection((self.host, self.port), timeout=2) as sock:
-                sock.settimeout(2)
-                sock.sendall((json.dumps({"id": 0, "token": self.token, "command": "ping"}) + "\n").encode())
-                sock.recv(65536)
-        except OSError:
-            pass
 
     def diagnose(self):
         """Explain a timeout using a ping, which the server answers even while the kernel is busy."""
@@ -2031,8 +2049,11 @@ def ensure_front_end_focus(server, d, force=False):
         for w in server.fe_windows(d)[0]:
             if focused == w["id"] or top == d.toplevel_frame(w["id"]):
                 return
-    raise CLIError("The keyboard focus is not in this front end's windows, so no keys were sent. Click into the "
-                   "target, use --notebook/--cell, or pass --force.")
+    if hasattr(d, "require_input"):
+        d.require_input("keyboard")  # when Windows discards input (so focus could not be taken), say that instead
+    where = f" (it is in {d.foreground_description()})" if hasattr(d, "foreground_description") else ""
+    raise CLIError(f"The keyboard focus is not in this front end's windows{where}, so no keys were sent. Click into "
+                   "the target, use --notebook/--cell, or pass --force.")
 
 
 def focus_notebook(server, d, ref):
@@ -2426,7 +2447,8 @@ def main(argv=None):
     except Exception as e:  # noqa: BLE001
         if isinstance(e, screen_backend().ScreenError):
             if args.json:
-                print(json.dumps({"ok": False, "errorType": "ScreenError", "error": str(e)}, indent=1))
+                error_type = getattr(e, "error_type", "ScreenError")  # InputBlocked: Windows is discarding input
+                print(json.dumps({"ok": False, "errorType": error_type, "error": str(e)}, indent=1))
                 return 1
             print(f"error ({'Windows' if WINDOWS else 'X11'}): {e}", file=sys.stderr)
             return 1
