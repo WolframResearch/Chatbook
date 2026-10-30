@@ -511,7 +511,12 @@ createMessageVectors[ metadata_, messages: $$chatMessages, settings_ ] := Enclos
         If[ $noSemanticSearch, Throw @ { } ];
         ConfirmAssert[ Length @ messages >= 2, "LengthCheck" ];
         partitioned = ConfirmBy[ Partition[ messages, UpTo[ 2 ] ], ListQ, "Pairs" ];
-        strings = ConfirmMatch[ messagesToString /@ partitioned, { __String }, "Strings" ];
+        (* Search matches what was visible in the chat, so reasoning summaries are left out of the embeddings: *)
+        strings = ConfirmMatch[
+            messagesToString[ #, "ReasoningContent" -> "Drop" ] & /@ partitioned,
+            { __String },
+            "Strings"
+        ];
         rVectors = ConfirmMatch[ getEmbeddings @ strings, { __NumericArray }, "Embeddings" ];
         iVectors = ConfirmMatch[ toInt8Vector /@ rVectors, { __NumericArray }, "Int8Vectors" ];
         title = metadata[ "ConversationTitle" ];

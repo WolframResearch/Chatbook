@@ -125,11 +125,30 @@ $absoluteCurrentSettingsCache = None;
 
 $experimentalFeatures = { };
 
+(* UI that is not released yet is shown only when this is True, and then highlighted (see devModeMenuItems in UI.wl): *)
+$devModeUI = False;
+
 
 $modelInheritedLists = {
     "BasePrompt",
     "ExcludedBasePrompts"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesServiceQ*)
+responsesServiceQ // beginDefinition;
+
+(* Whether the installed LLMFunctions can serve the Responses endpoint for the given service: *)
+responsesServiceQ[ service_String ] := And[
+    TrueQ @ $responsesAPIAvailable,
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
+];
+
+responsesServiceQ[ service_ ] := False;
+
+responsesServiceQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -374,6 +393,8 @@ $modelAutoSettings[ Automatic ] = <| |>;
 $modelAutoSettings[ Automatic, "GPT4Omni" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 128000,
+    (* Rejects an image in a system message ("Image URLs are only allowed for messages with role 'user'"): *)
+    "MultimodalRoles"            -> { "User" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
 |>;
@@ -402,6 +423,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "Minimal", "Low", "Medium", "High" }, (* No "None" *)
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -412,13 +434,15 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning"        :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High" } (* "None" replaces "Minimal" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
     "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
+    "ReasoningEfforts"         -> { "None", "Low", "Medium", "High", "XHigh" }, (* "XHigh" is new in GPT-5.2 *)
     "ReplaceUnicodeCharacters" -> True
 |>;
 
@@ -427,8 +451,9 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
-    "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "MaxContextTokens"  -> 128000,
+    "Reasoning"         :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"  -> { "Low", "Medium", "High" } (* No "None" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
@@ -437,6 +462,8 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
     "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
+    "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
+    "ResponsesReasoning"         -> "Medium",
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
     (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. However, there are still
@@ -449,6 +476,26 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
+
+$modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
+|>;
+
+$modelAutoSettings[ Automatic, "GPT56Cyber" ] = <|
+    "MaxContextTokens" -> 400000
+|>;
+
+(* Pro models reject some of their families' default effort levels (e.g. gpt-5-pro only accepts "high"), so they
+   request summaries without an effort, and OpenAI applies the model's own default: *)
+$modelAutoSettings[ Automatic, "GPT5Pro" ] = <|
+    "Reasoning"          -> <| "summary" -> "auto" |>,
+    "ResponsesReasoning" -> <| "summary" -> "auto" |>
+|>;
+
+$modelAutoSettings[ Automatic, "GPT52Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
+$modelAutoSettings[ Automatic, "GPT54Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
+$modelAutoSettings[ Automatic, "GPT55Pro" ] = $modelAutoSettings[ Automatic, "GPT5Pro" ];
 
 $gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
 
@@ -471,6 +518,8 @@ $modelAutoSettings[ Automatic, "O1" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
 |>;
@@ -489,6 +538,8 @@ $modelAutoSettings[ Automatic, "O3" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "ToolCallExamplePromptStyle" -> "Basic",
     "ToolMethod"                 -> "Service"
@@ -500,6 +551,8 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
     "MaxContextTokens"           -> 100000,
     "MaxToolResponses"           -> 3,
     "Multimodal"                 -> True,
+    (* LLMConnections sends system messages to o-series models as developer messages, which cannot carry images: *)
+    "MultimodalRoles"            -> { "User" },
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
@@ -664,6 +717,97 @@ modelUnsupportedParameters[ as_, config_Association ] :=
     modelUnsupportedParameters[ as, Keys @ config ];
 
 modelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveReasoningEffort*)
+
+(* Ordered weakest-to-strongest; a family's "ReasoningEfforts" is a subset of this: *)
+$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "Max" };
+
+resolveReasoningEffort // beginDefinition;
+
+(* Without a model there are no declared levels to clamp to: *)
+resolveReasoningEffort[ settings_Association ] /; ! KeyExistsQ[ settings, "Model" ] :=
+    settings[ "Reasoning" ];
+
+resolveReasoningEffort[ settings_Association ] :=
+    resolveReasoningEffort[
+        settings[ "Reasoning" ],
+        requestMethodReasoningEfforts[ settings, autoModelSetting[ settings, "ReasoningEfforts" ] ]
+    ];
+
+(* Families that declare no effort levels are left exactly as they were: *)
+resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
+
+(* Off, however the family spells it: *)
+resolveReasoningEffort[ False | None, levels: { __String } ] := clampReasoningEffort[ "None", levels ];
+
+resolveReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ If[ StringMatchQ[ effort, "Off", IgnoreCase -> True ], "None", effort ], levels ];
+
+(* Automatic, Inherited, Missing[ ... ], an explicit association, Quantity[ n, "Tokens" ]: *)
+resolveReasoningEffort[ value_, levels_ ] := value;
+
+resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestMethodReasoningEfforts*)
+requestMethodReasoningEfforts // beginDefinition;
+
+(* "Max" is only accepted on the Responses endpoint (gpt-5.6 offers it there, but stops at "XHigh" on chat
+   completions), so on chat completions it clamps to the next level down: *)
+requestMethodReasoningEfforts[ KeyValuePattern[ "RequestMethod" -> "ChatCompletions" ], levels: { __String } ] :=
+    DeleteCases[ levels, level_ /; StringMatchQ[ level, "Max", IgnoreCase -> True ] ];
+
+requestMethodReasoningEfforts[ settings_, levels_ ] := levels;
+
+requestMethodReasoningEfforts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clampReasoningEffort*)
+clampReasoningEffort // beginDefinition;
+
+(* The family accepts the level as spelled, so use the family's own spelling: *)
+clampReasoningEffort[ effort_String, levels: { __String } ] /;
+    AnyTrue[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ] :=
+    SelectFirst[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ];
+
+(* Dropping the parameter would fall back to the vendor default, so clamp instead of dropping: *)
+clampReasoningEffort[ "None", levels: { __String } ] := First @ SortBy[ levels, reasoningEffortIndex ];
+
+clampReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ reasoningEffortIndex @ effort, effort, levels ];
+
+(* Not a level this scale knows about, so leave it alone: *)
+clampReasoningEffort[ _Missing, effort_String, levels_ ] := effort;
+
+(* The nearest supported level, ties resolving upward: *)
+clampReasoningEffort[ want_Integer, effort_String, levels: { __String } ] :=
+    With[ { known = Select[ levels, IntegerQ @ reasoningEffortIndex @ # & ] },
+        If[ known === { },
+            effort,
+            First @ MinimalBy[ known, { Abs[ reasoningEffortIndex @ # - want ], -reasoningEffortIndex @ # } & ]
+        ]
+    ];
+
+clampReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningEffortIndex*)
+reasoningEffortIndex // beginDefinition;
+
+reasoningEffortIndex[ effort_String ] :=
+    SelectFirst[
+        Range @ Length @ $reasoningEffortScale,
+        StringMatchQ[ effort, $reasoningEffortScale[[ # ]], IgnoreCase -> True ] &,
+        Missing[ ]
+    ];
+
+reasoningEffortIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -981,6 +1125,13 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 
+(* Some models only accept reasoning together with tools on the Responses endpoint, so they declare a separate default
+   for it (e.g. GPT-5.4+, whose "Reasoning" default is "None" elsewhere): *)
+resolveAutoSetting0[ as: KeyValuePattern[ "RequestMethod" -> "Responses" ], "Reasoning" ] :=
+    With[ { s = autoModelSetting[ as, "ResponsesReasoning" ] },
+        s /; MatchQ[ s, Missing[ "NotSupported" ] | Except[ $$unspecified ] ]
+    ];
+
 (* See if model-specific default is defined: *)
 resolveAutoSetting0[ as_, name_String ] :=
     With[ { s = autoModelSetting[ as, name ] },
@@ -1044,6 +1195,7 @@ $autoSettingKeyDependencies = <|
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
     "OpenToolCallBoxes"          -> "SendToolResponse",
+    "Reasoning"                  -> "RequestMethod",
     "RequestMethod"              -> { "Authentication", "Model" },
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",

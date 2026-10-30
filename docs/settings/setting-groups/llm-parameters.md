@@ -191,13 +191,47 @@ Controls the reasoning/thinking effort level for models that support extended th
 
 ### Resolution
 
-When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAutoSetting0` handler exists). No global auto default exists in `$modelAutoSettings[Automatic, Automatic]`, so for most models `Automatic` is left as-is and stripped by `DeleteMissing` in `makeLLMConfiguration`.
+When `Automatic`, resolved via `$modelAutoSettings` lookup. With `"RequestMethod" -> "Responses"`, a `resolveAutoSetting0` rule (`Settings.wl`) uses the family's `"ResponsesReasoning"` model setting when it declares one; otherwise the family's `"Reasoning"` model setting applies. No global auto default exists in `$modelAutoSettings[Automatic, Automatic]`, so for most models `Automatic` is left as-is and stripped by `DeleteMissing` in `makeLLMConfiguration`.
 
 ### Model-Specific Overrides
 
-- **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
-- **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
-- No other model families define a `"Reasoning"` override.
+Several families override this setting, and they do not all spell "off" the same way.
+
+| Family | Resolved value |
+| ------ | -------------- |
+| GPT-5 | `"Minimal"` if `$gpt5Reasoning`, otherwise `Missing["NotSupported"]` |
+| GPT-5.1 (inherited by GPT-5.2 and GPT-5.3) | `"None"` under the same condition |
+| GPT-5.3 Chat | `"Medium"` under the same condition |
+| GPT-5.4+ (inherited by GPT-5.6+) | `"None"` on chat completions; `"Medium"` on the Responses endpoint, through `"ResponsesReasoning"` |
+| xAI Grok-3 | `False` |
+| xAI Grok-4 (inherited by Grok-4.2) | `Missing["NotSupported"]` |
+| OpenRouter DeepSeek Flash | `<\| "effort" -> "none" \|>` |
+| OpenRouter Kimi K2.5 | `<\| "effort" -> "none" \|>` |
+
+Two different paclet version floors are in play, and they are not interchangeable. `$gpt5Reasoning` requires `Wolfram/LLMFunctions` newer than `2.2.4`. The GPT-5.4+ families instead depend on the request method: their reasoning default applies only on the Responses endpoint, which the compatibility gate `$responsesAPIAvailable` opens with `Wolfram/LLMFunctions` `2.4.0` and `LLMConnections` `1.1.0` or newer, because those models request reasoning together with tools and that combination is only accepted on the Responses endpoint — see [`"RequestMethod"`](model-and-service.md#requestmethod).
+
+### Supported Effort Levels
+
+The GPT-5 families also declare which levels they accept, through a `"ReasoningEfforts"` entry in `$modelAutoSettings`. This is a model auto setting only; it is deliberately not a chat setting, so it is not settable through `CurrentChatSettings`.
+
+| Family | Declared levels |
+| ------ | --------------- |
+| GPT-5 | `"Minimal"`, `"Low"`, `"Medium"`, `"High"` |
+| GPT-5.1 | `"None"`, `"Low"`, `"Medium"`, `"High"` |
+| GPT-5.2 (inherited by GPT-5.3) | `"None"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"` |
+| GPT-5.4 and GPT-5.5 | `"None"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"` |
+| GPT-5.6 and later | `"None"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"`, `"Max"` |
+| GPT-5.3 Chat | `"Low"`, `"Medium"`, `"High"` |
+
+`resolveReasoningEffort` (`Settings.wl`) validates the setting against that list on the way into the request, rather than during auto-resolution, because only `Automatic`-valued settings reach `resolveAutoSetting0` — a value the user set explicitly never passes through it. The rules:
+
+- A level the family accepts is used as-is, matched case-insensitively.
+- Off — `False`, `None`, `"Off"` or `"None"` — becomes the family's weakest declared level when the family has no `"None"`. It is clamped rather than dropped, because dropping the parameter would leave the effort to the provider's default, which need not be off; a request to turn reasoning off must not silently turn it on.
+- Any other recognized level is clamped to the nearest declared level, with ties resolving upward, so `"Minimal"` on a family offering `"None"` and `"Low"` becomes `"Low"` rather than turning reasoning off.
+- A spelling that is not on the `$reasoningEffortScale` (`"None"`, `"Minimal"`, `"Low"`, `"Medium"`, `"High"`, `"XHigh"`, `"Max"`) is passed through unchanged, so a typo still reaches the service and still reports an error instead of silently becoming the default.
+- A family with no `"ReasoningEfforts"` entry — every service other than the GPT-5 families — is left exactly as it was.
+
+The list is only ever read to validate a value, never to supply one, so it cannot switch reasoning on for a family whose resolved value is off.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
 
@@ -205,9 +239,16 @@ When the `"Responses"` request method is used, plain effort levels are expanded 
 
 Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLMConfiguration` to the LLM service. `Missing` values are stripped by `DeleteMissing` in `makeLLMConfiguration`, and unsupported parameters are dropped by `dropModelUnsupportedParameters`. Not used in the legacy HTTP request path.
 
+The value that goes on the wire depends on the resolved endpoint, because `makeLLMConfiguration` builds this key through `requestReasoningSummaries` (`SendChat.wl`):
+
+- On the **Responses** endpoint the effort level is sent as an association that also requests a summary, for example `<| "effort" -> "medium", "summary" -> "auto" |>`. The summary has to be asked for explicitly: without it the endpoint returns an encrypted reasoning blob and no readable text, and nothing is displayed. A summary is still not guaranteed even when requested — a turn that emits a tool call, or one where the model did little thinking, commonly returns none.
+- On the **chat completions** endpoint the plain effort string is sent unchanged. That path does not accept the association form.
+- An association the user supplied is passed through exactly as they wrote it, on either endpoint. A plain effort of `"None"` is sent as it is, never given a summary request.
+
+
 ### Integration Points
 
-- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Dependencies**: `"RequestMethod"` in `$autoSettingKeyDependencies`, so the request method is resolved first.
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
 - **Notebook conversion**: Not listed in `$popOutSettings`.
 

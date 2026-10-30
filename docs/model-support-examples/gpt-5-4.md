@@ -99,9 +99,17 @@ $modelAutoSettings[ Automatic, "GPT54" ] = <|
 | `"EndToken"` | `None` | GPT 5.4 doesn't need an end-of-turn token and sometimes emits it incorrectly. See [Issue 2](#issue-2-disabling-the-end-token). |
 | `"HybridToolMethod"` | `True` | Avoids JSON syntax errors in long tool arguments. See [Issue 1](#issue-1-switching-to-hybrid-tool-calling). |
 | `"MaxContextTokens"` | `1050000` | GPT 5.4 has a 1M+ token context window. |
-| `"Reasoning"` | `Missing["NotSupported"]` | Reasoning mode does not work with tools in the completions endpoint. |
+| `"Reasoning"` | `Missing["NotSupported"]` | Reasoning mode does not work with tools in the completions endpoint. **No longer current** — see the note below. |
 | `"ToolCallExamplePromptStyle"` | `Automatic` | Use the default example prompt style. |
 | `"ToolMethod"` | `Verbatim @ Automatic` | Required for hybrid tool calling; `Verbatim` prevents `Automatic` from resolving further down the hierarchy. |
+
+> **Since this case study was written**, GPT-5 models opt in to OpenAI's Responses endpoint
+> (`"EnableResponses"` on the `GPT5` family, which every later family inherits), where reasoning and
+> tool calling do coexist. `GPT54Plus` now declares `"Reasoning" -> "None"` for chat completions and
+> `"ResponsesReasoning" -> "Medium"` for the Responses endpoint, instead of `Missing["NotSupported"]`.
+> The reasoning here explains why the value was originally disabled; it is no longer the shipped
+> configuration. See [`"Reasoning"`](../settings/setting-groups/llm-parameters.md#reasoning) and
+> [`"RequestMethod"`](../settings/setting-groups/model-and-service.md#requestmethod).
 
 ---
 
