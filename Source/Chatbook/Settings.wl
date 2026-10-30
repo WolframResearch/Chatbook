@@ -58,6 +58,8 @@ $defaultChatSettings = <|
     "MinimumResponsesToSave"         -> 1,
     "Model"                          :> $DefaultModel,
     "Multimodal"                     -> Automatic,
+    "NotebookEditing"                -> False,
+    "NotebookReEvaluate"             -> True,
     "NotebookWriteMethod"            -> Automatic,
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
     "OpenAIKey"                      -> Automatic,
@@ -892,7 +894,8 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         result = ConfirmBy[ resolveTools @ result, AssociationQ, "ResolveTools" ];
         result = ConfirmBy[ resolvePromptGenerators @ result, AssociationQ, "ResolvePromptGenerators" ];
         If[ result[ "ToolMethod" ] === Automatic,
-            result[ "ToolMethod" ] = chooseToolMethod @ result
+            (* the notebook tools take lists of objects: the model calls them as the service's own tools *)
+            result[ "ToolMethod" ] = If[ TrueQ @ result[ "NotebookEditing" ], "Service", chooseToolMethod @ result ]
         ];
         (* Stop tokens depend on the tool method, so they are resolved last unless they were given explicitly: *)
         If[ MatchQ[ settings[ "StopTokens" ], $$unspecified ],

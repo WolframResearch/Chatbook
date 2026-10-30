@@ -435,7 +435,6 @@ HoldComplete[
     `acpDefusedCells,        (* used by Attachments.wl (defusing cells before CellToString) *)
     `acpNotebookMarkdown,    (* used by Attachments.wl (the markdown of an attached notebook) *)
     `acpNotebookTitles, (* used by Connection.wl (the notebooks of a permission request, for the permission panel) *)
-    `acpNotebookTools,
     `acpOpenNotebookFor,     (* used by Attachments.wl (an attached notebook as a snapshot) *)
     `acpShowWindowSnapshots, (* used by UI.wl (the end of a turn) *)
 

@@ -149,6 +149,10 @@ If[ ! AssociationQ @ $texReads, $texReads = <| |> ];
 If[ ! AssociationQ @ $texOriginals, $texOriginals = <| |> ];
 $acpToolWindow = None;
 
+(* Who decides whether edits evaluate their Input cells: None the agent (evaluate: true), True always, False never, in
+   which case the agent writes new Output cells itself, grayed (the sidebar chat's Re-evaluate switch) *)
+If[ ! MemberQ[ { None, True, False }, $acpNotebookReEvaluate ], $acpNotebookReEvaluate = None ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tools*)
@@ -226,6 +230,34 @@ and messages), so the code needs no other check. Output cells hold real results 
 evaluate: true, SetCells, EditInCell and InsertCells evaluate the Input cells they write and every Input cell after \
 them, and replace their outputs with the results: code that needs no change is not rewritten to update its outputs. \
 WolframLanguageContext is not needed for notebook edits.";
+
+(* The notebook tools' part of a chat's system prompt when a chat edits notebooks (the sidebar chat's Notebook editing
+   switch): the workflow, with outputs as $acpNotebookReEvaluate decides, and the notation *)
+acpNotebookEditingPrompt // beginDefinition;
+
+acpNotebookEditingPrompt[ ] := StringJoin[
+    If[ $acpNotebookReEvaluate === None,
+        $acpNotebookWorkflow,
+        StringReplace[ $acpNotebookWorkflow, $$outputSentence -> $editingOutputSentences @ $acpNotebookReEvaluate ]
+    ],
+    " The user's notebook is the one this chat is about: ListNotebooks lists it first.\n\n",
+    $acpNotebookNotation
+];
+
+acpNotebookEditingPrompt // endDefinition;
+
+$$outputSentence = "Output cells hold real results and are never written by hand:" ~~ Shortest[ ___ ] ~~ "to update its outputs.";
+
+$editingOutputSentences = <|
+    True  -> "\
+Output cells hold real results and are never written by hand: SetCells, EditInCell and InsertCells evaluate the Input \
+cells they write and every Input cell after them, and replace their outputs with the results, which the user sees \
+grayed until they evaluate them; code that needs no change is not rewritten to update its outputs.",
+    False -> "\
+Nothing is evaluated: write the outputs your edits change yourself, exactly as the code would give them (the code \
+check shows each cell's result), with InsertCells (style Output) after their Input cell, and delete the old ones; the \
+user sees them grayed until they evaluate them."
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -839,10 +871,10 @@ newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
     text  = Lookup[ cell, "text", Missing[ "NoInput" ] ];
     If[ ! StringQ @ style || StringTrim @ style === "", toolError[ "New cell `1` has no style.", i ] ];
     If[ ! StringQ @ text, toolError[ "New cell `1` has no text.", i ] ];
-    If[ outputStyleQ @ StringTrim @ style, toolError @ $outputCellText ];
+    If[ outputStyleQ @ StringTrim @ style && ! handWrittenOutputQ @ StringTrim @ style, toolError @ $outputCellText ];
     text = texFormulas[ text, "The text of new cell " <> ToString @ i ];
     requireCellText[ text, "The text of new cell " <> ToString @ i ];
-    { StringTrim @ style, text }
+    { If[ handWrittenOutputQ @ StringTrim @ style, $evaluatedOutputStyles, StringTrim @ style ], text }
 ];
 
 newCellArgument // endDefinition;
@@ -2393,7 +2425,7 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
         "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
         " (", ToString @ Length @ edits, If[ Length @ edits === 1, " edit", " edits" ], "). It now reads:\n",
         cellBlocks[ handle, { cell } ],
-        codeCheck[ handle, { cell }, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
+        codeCheck[ handle, { cell }, evaluateArgument @ args ]
     ]
 ];
 
@@ -2470,7 +2502,7 @@ setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cell
         StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ],
         If[ deleted === { }, "", "; deleted " <> StringRiffle[ "#" <> # & /@ deletedIDs, ", " ] ],
         ". ReadCells shows their new content.",
-        codeCheck[ handle, cells, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
+        codeCheck[ handle, cells, evaluateArgument @ args ]
     ]
 ];
 
@@ -2498,7 +2530,7 @@ insertCells[ args_Association ] := Module[ { handle, cells, anchor, position, re
         "Inserted ", ToString @ Length @ inserted, If[ Length @ inserted === 1, " cell ", " cells " ], where, " of ", handle,
         ":\n",
         cellBlocks[ handle, inserted ],
-        codeCheck[ handle, inserted, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
+        codeCheck[ handle, inserted, evaluateArgument @ args ]
     ]
 ];
 
@@ -2649,6 +2681,18 @@ outputPlan // endDefinition;
 $evaluatedOutputStyles = { "Output", "EvaluationUnmatched" };
 
 
+(* Whether this call's edits evaluate their Input cells: the agent's evaluate, unless $acpNotebookReEvaluate decides *)
+evaluateArgument // beginDefinition;
+evaluateArgument[ args_Association ] := Replace[ $acpNotebookReEvaluate, None :> booleanArgument[ args[ "evaluate" ], "evaluate", False ] ];
+evaluateArgument // endDefinition;
+
+
+(* A new Output cell that the agent may write itself: when edits never evaluate; it is grayed like evaluated outputs *)
+handWrittenOutputQ // beginDefinition;
+handWrittenOutputQ[ style_ ] := $acpNotebookReEvaluate === False && style === "Output";
+handWrittenOutputQ // endDefinition;
+
+
 outputStyleQ // beginDefinition;
 outputStyleQ[ style_ ] := MemberQ[ { "Output", "Print", "Message", "Echo" }, style ];
 outputStyleQ // endDefinition;
@@ -2666,10 +2710,15 @@ requireNoOutputCells[ handle_String, cells_List ] := With[
 
 requireNoOutputCells // endDefinition;
 
-$outputCellText = "\
+$outputCellText := If[ $acpNotebookReEvaluate === False,
+    "\
+An Output cell is not edited: delete it and insert its new content with InsertCells (style Output) after its Input \
+cell.",
+    "\
 Output cells are never written by hand: they hold the real results. Give evaluate: true with the edit of the Input \
 cell, which replaces its outputs and those of the Input cells after it with their results, or delete outputs that \
-become stale.";
+become stale."
+];
 
 
 (* results: one <| "Result" -> what the cell gave as InputForm ("" for nothing worth showing), "Messages", "Aborted" |>

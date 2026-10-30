@@ -130,6 +130,9 @@ makeSidebarChatDockedCell[ ] :=
             Framed[
                 Grid[
                     { {
+                        Item[ sidebarEditingSwitches @ Dynamic @ Typeset`sidebarCell, Alignment -> Left ],
+                        SpanFromLeft, SpanFromLeft, SpanFromLeft, SpanFromLeft, SpanFromLeft
+                    }, {
                         sidebarNewChatButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
                         sidebarSourcesButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
@@ -172,6 +175,89 @@ makeSidebarChatDockedCell[ ] :=
     ];
 
 makeSidebarChatDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sidebarEditingSwitches*)
+
+(* The sidebar chat's Notebook editing switch, and below it, while editing is on, its Re-evaluate switch: chat settings
+   of the sidebar cell (Tools/Common.wl's selectNotebookEditingTools reads them) *)
+sidebarEditingSwitches // beginDefinition;
+
+sidebarEditingSwitches[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, _CellObject ],
+    With[
+        {
+            editing    = TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
+            reEvaluate = CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookReEvaluate" } ] =!= False
+        },
+        Column[
+            {
+                sidebarSwitch[
+                    editing,
+                    "Notebook editing",
+                    "The assistant can change the notebook's cells. You review its changes before they're kept.",
+                    0,
+                    CurrentChatSettings[ cell, "NotebookEditing" ] = ! editing
+                ],
+                If[ editing,
+                    sidebarSwitch[
+                        reEvaluate,
+                        "Re-evaluate",
+                        If[ reEvaluate,
+                            "Runs the notebook from the top for real outputs. They're grayed until you evaluate them yourself.",
+                            "The assistant writes outputs itself, without evaluating. They're grayed until you evaluate them yourself."
+                        ],
+                        14,
+                        CurrentChatSettings[ cell, "NotebookReEvaluate" ] = ! reEvaluate
+                    ],
+                    Nothing
+                ]
+            },
+            Spacings -> 0.4
+        ]
+    ],
+    ""
+];
+
+sidebarEditingSwitches // endDefinition;
+
+
+sidebarSwitch // beginDefinition;
+
+sidebarSwitch[ on_, label_, tooltip_, indent_, action_ ] := Tooltip[
+    Button[
+        Row[ { Spacer[ indent ], switchGraphic @ on, Spacer[ 5 ], label }, BaselinePosition -> Baseline ],
+        action,
+        Appearance       -> "Suppressed",
+        BaseStyle        -> { "Text", FontSize -> 12.35, FontColor -> color @ "NA_ChatInputFieldFocusFont" },
+        BaselinePosition -> Baseline,
+        ImageMargins     -> { { 4, 0 }, { 2, 4 } },
+        Method           -> "Queued"
+    ],
+    tooltip,
+    TooltipDelay -> 0.3
+];
+
+sidebarSwitch // Attributes = { HoldRest };
+
+sidebarSwitch // endDefinition;
+
+
+switchGraphic // beginDefinition;
+
+switchGraphic[ on_ ] := Graphics[
+    {
+        If[ TrueQ @ on, color @ "NA_ChatInputFieldFocusFont", LightDarkSwitched @ GrayLevel[ 0.72 ] ],
+        Rectangle[ { 0, 0 }, { 2, 1 }, RoundingRadius -> 0.5 ],
+        White,
+        Disk[ { If[ TrueQ @ on, 1.5, 0.5 ], 0.5 }, 0.36 ]
+    },
+    BaselinePosition -> Scaled[ 0.1 ],
+    ImageSize        -> { 22, 11 },
+    PlotRangePadding -> None
+];
+
+switchGraphic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -622,7 +708,15 @@ makeSidebarChatInputCell[ ] := Cell[
                             ]
                         },
                         {
-                            Item[ Dynamic @ Typeset`focusArea, Alignment -> Left ],
+                            (* nothing to ignore while the assistant edits the notebook *)
+                            Item[
+                                Dynamic @ If[
+                                    TrueQ @ CurrentValue[ Typeset`sidebarCell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
+                                    Spacer[ 0 ],
+                                    Typeset`focusArea
+                                ],
+                                Alignment -> Left
+                            ],
                             SpanFromLeft
                         }
                     },

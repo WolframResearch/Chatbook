@@ -43,7 +43,7 @@ $$inlineModifierCell = Alternatives[
 $$promptArgumentToken = Alternatives[ ">", "^", "^^" ];
 
 $promptTemplate = StringTemplate[
-    "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%\n\n%%Skills%%\n\n%%Post%%",
+    "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%\n\n%%Editing%%\n\n%%Skills%%\n\n%%Post%%",
     Delimiters -> "%%"
 ];
 
@@ -1354,6 +1354,7 @@ buildSystemPrompt[ as_Association ] := StringReplace[
                 "Pre"    -> getPrePrompt @ as,
                 "Post"   -> getPostPrompt @ as,
                 "Tools"  -> getToolPrompt @ as,
+                "Editing" -> If[ TrueQ @ as[ "NotebookEditing" ] && TrueQ @ as[ "ToolsEnabled" ], acpNotebookEditingPrompt[ ], "" ],
                 "Skills" -> getSkillsPrompt @ as,
                 "Group"  -> getGroupPrompt @ as,
                 "Base"   -> "<base-prompt></base-prompt>"

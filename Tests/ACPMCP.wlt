@@ -947,7 +947,7 @@ VerificationTest[
             box1  = Wolfram`Chatbook`ACP`MCP`Private`createPump[ "ACPMCPTestKernel" ];
             nb1   = Wolfram`Chatbook`ACP`MCP`Private`$mcpPumpNotebook;
             visible = { CurrentValue[ nb1, Visible ], MemberQ[ Notebooks[ ], nb1 ] };
-            listed = Developer`ReadRawJSONString[ SelectFirst[ acpNotebookTools[ ], #[ "Name" ] === "ListNotebooks" & ][ <| |> ] ];
+            listed = Developer`ReadRawJSONString[ SelectFirst[ Wolfram`Chatbook`Common`acpNotebookTools[ ], #[ "Name" ] === "ListNotebooks" & ][ <| |> ] ];
             box2  = Wolfram`Chatbook`ACP`MCP`Private`createPump[ "ACPMCPTestKernel" ];
             nb2   = Wolfram`Chatbook`ACP`MCP`Private`$mcpPumpNotebook;
             NotebookWrite[ NotebookLocationSpecifier[ First @ Cells @ nb2, "After" ], Cell[ "printed", "Print" ], None ];

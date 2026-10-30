@@ -663,16 +663,41 @@ resolveTools // beginDefinition;
 resolveTools[ settings: KeyValuePattern[ "ToolsEnabled" -> True ] ] := (
     initTools[ ];
     selectTools @ settings;
+    selectNotebookEditingTools @ settings;
     $toolOptions = Lookup[ settings, "ToolOptions", $DefaultToolOptions ];
     $lastSelectedTools = $selectedTools;
     $lastToolOptions = $toolOptions;
     If[ KeyExistsQ[ $selectedTools, "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
-    Append[ settings, "Tools" -> Values @ $selectedTools ]
+    <|
+        settings,
+        "Tools" -> Values @ $selectedTools,
+        (* an edit takes several calls: open, read, edit (and fix), show the changes *)
+        If[ TrueQ @ settings[ "NotebookEditing" ], "MaxToolResponses" -> Max[ Replace[ settings[ "MaxToolResponses" ], Except[ _Integer ] -> 0 ], $notebookEditingToolResponses ], Nothing ]
+    |>
 );
 
 resolveTools[ settings_Association ] := settings;
 
 resolveTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectNotebookEditingTools*)
+
+(* A chat that edits notebooks (the sidebar chat's Notebook editing switch) has the ACP notebook tools, and their
+   outputs follow its Re-evaluate switch; any other chat leaves the choice to the tools' agent *)
+selectNotebookEditingTools // beginDefinition;
+
+selectNotebookEditingTools[ settings_Association ] :=
+    If[ TrueQ @ settings[ "NotebookEditing" ],
+        $acpNotebookReEvaluate = settings[ "NotebookReEvaluate" ] =!= False;
+        Scan[ ($selectedTools[ toolName @ # ] = #) &, acpNotebookTools[ ] ],
+        $acpNotebookReEvaluate = None
+    ];
+
+selectNotebookEditingTools // endDefinition;
+
+$notebookEditingToolResponses = 20;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

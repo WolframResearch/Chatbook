@@ -53,7 +53,7 @@ VerificationTest[
     $nbtTag       = IntegerString[ RandomInteger[ { 10^5, 10^6 - 1 } ] ];
     $nbtNotebooks = { };
     $nbtFiles     = { };
-    $nbtTools     = Association[ #[ "Name" ] -> # & /@ acpNotebookTools[ ] ];
+    $nbtTools     = Association[ #[ "Name" ] -> # & /@ Wolfram`Chatbook`Common`acpNotebookTools[ ] ];
     $nbtFrontEndQ = TrueQ @ Quiet @ MatchQ[ UsingFrontEnd @ $FrontEnd, _FrontEndObject ];
 
     (* A tool called like AgentTools' tools/call does: the LLMTool applied to the arguments *)
@@ -1666,6 +1666,62 @@ VerificationTest[
     } /. $outputText -> "Output cells are never written by hand: they hold the real results. Give evaluate: true with the edit of the Input cell, which replaces its outputs and those of the Input cells after it with their results, or delete outputs that become stale.",
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-EvaluateOutputs"
+]
+
+(* The sidebar chat's Re-evaluate switch ($acpNotebookReEvaluate): on, every edit evaluates, whatever the agent's
+   evaluate says; off, nothing is evaluated, the agent inserts Output cells itself, which are grayed, and an Output cell
+   is still not edited by hand. The editing prompt says which. *)
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $fakeCodeCells = True,
+            $checkArgs     = { },
+            $checkResults  = { <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>, <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |> },
+            Wolfram`Chatbook`Common`sandboxCheckCells = (AppendTo[ $checkArgs, { ## } ]; $checkResults) &
+        },
+        Module[ { evaluated, notEvaluated, written, refused, prompts },
+            nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+            evaluated = Block[ { Wolfram`Chatbook`Common`$acpNotebookReEvaluate = True },
+                nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "y = 2" |> } |> ];
+                Length @ $checkArgs[[ -1 ]]
+            ];
+            Block[ { Wolfram`Chatbook`Common`$acpNotebookReEvaluate = False },
+                notEvaluated = (
+                    nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "y = 3" |> }, "evaluate" -> True |> ];
+                    Length @ $checkArgs[[ -1 ]]
+                );
+                written = nbtCall[ "InsertCells", <| "notebook" -> "s1", "cell" -> "c4", "position" -> "After", "newCells" -> { <| "style" -> "Output", "text" -> "3" |> } |> ];
+                refused = nbtText @ nbtCall[ "EditInCell", <|
+                    "notebook" -> "s1",
+                    "cell"     -> First @ StringCases[ written, "::Output:: #" ~~ id: WordCharacter.. :> id ],
+                    "edits"    -> { <| "oldText" -> "3", "newText" -> "4" |> }
+                |> ]
+            ];
+            prompts = Block[ { Wolfram`Chatbook`Common`$acpNotebookReEvaluate = # }, Wolfram`Chatbook`Common`acpNotebookEditingPrompt[ ] ] & /@ { True, False, None };
+            {
+                evaluated,
+                notEvaluated,
+                Last @ Cases[ $fakeCalls, { "Edit", _, { { "Insert", _, "After", cells_ } } } :> cells ],
+                refused,
+                StringContainsQ[ prompts[[ 1 ]], "evaluate the Input cells they write" ],
+                StringContainsQ[ prompts[[ 2 ]], "Nothing is evaluated: write the outputs" ],
+                StringContainsQ[ prompts[[ 3 ]], "with evaluate: true" ],
+                StringContainsQ[ #, "Cell text notation" ] & /@ prompts
+            }
+        ]
+    ],
+    {
+        4,
+        3,
+        { { { "Output", "EvaluationUnmatched" }, "3" } },
+        "An Output cell is not edited: delete it and insert its new content with InsertCells (style Output) after its Input cell.",
+        True,
+        True,
+        True,
+        { True, True, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-ReEvaluateModes"
 ]
 
 (* ::**************************************************************************************************************:: *)
