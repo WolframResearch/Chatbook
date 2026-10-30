@@ -62,12 +62,15 @@ System`HoldCompleteForm;
 `trRaw;
 `trStringTemplate;
 `trExprTemplate;
+`trPaclet;
 
 `$catching;
 `$catchTopTag;
 `beginDefinition;
 `catchAlways;
+`catchHandled;
 `catchMine;
+`catchQuiet;
 `catchTop;
 `catchTopAs;
 `cloudShrinkToFit;
@@ -644,6 +647,27 @@ catchAlways // Attributes = { HoldFirst };
 catchAlways[ eval_ ] := catchAlways[ eval, Chatbook ];
 catchAlways[ eval_, sym_Symbol ] := Catch[ catchTop[ eval, sym ], $catchTopTag ];
 catchAlways // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*catchQuiet*)
+(* Like Quiet @ catchAlways @ eval, but a failure that is caught here does not count as a failure of the enclosing
+   catchTop. Otherwise, the messages of any later failures in that catchTop would be silenced too. *)
+catchQuiet // beginDefinition;
+catchQuiet // Attributes = { HoldFirst };
+catchQuiet[ eval_ ] := Block[ { $failed = TrueQ @ $failed }, Quiet @ catchAlways @ eval ];
+catchQuiet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*catchHandled*)
+(* Like Catch[ eval, $catchTopTag, handler ], for a handler that handles failures (e.g. by returning something else) whose
+   messages have been shown. Such a failure does not count as a failure of the enclosing catchTop, so it doesn't silence
+   the messages of later failures in that catchTop. What the handler throws again goes to the enclosing catchTop. *)
+catchHandled // beginDefinition;
+catchHandled // Attributes = { HoldFirst };
+catchHandled[ eval_, handler_ ] := Block[ { $failed = TrueQ @ $failed }, Catch[ eval, $catchTopTag, handler ] ];
+catchHandled // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1431,6 +1455,16 @@ trExprTemplate[ name_? StringQ ] :=
     TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
 
 trExprTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trPaclet*)
+(* Looks up the English text for `name` in this paclet's own text resources without using a front end. trRaw launches a
+   front end in a headless kernel, which is slow, and that front end resolves text resources from the installed Chatbook
+   paclet, which might not be the one that is loaded: *)
+trPaclet // beginDefinition;
+trPaclet[ name_? StringQ ] := cloudTextResource @ name;
+trPaclet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

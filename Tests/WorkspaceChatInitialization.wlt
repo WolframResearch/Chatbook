@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/WorkspaceChatInitialization.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/WorkspaceChatInitialization.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -23,7 +23,7 @@ VerificationTest[
     InstallVectorDatabases[ ],
     _Success,
     SameTest -> MatchQ,
-    TestID   -> "InstallVectorDatabases"
+    TestID   -> "InstallVectorDatabases@@Tests/WorkspaceChatInitialization.wlt:22,1-27,2"
 ]
 
 $expectedVectorDBNames = {
@@ -46,38 +46,39 @@ VerificationTest[
     Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChat[ ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat"
+    TestID   -> "InitializeWorkspaceChat@@Tests/WorkspaceChatInitialization.wlt:45,1-50,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized,
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-Initialized"
+    TestID   -> "InitializeWorkspaceChat-Initialized@@Tests/WorkspaceChatInitialization.wlt:52,1-57,2"
 ]
 
 VerificationTest[
     NumericArrayQ @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache[ "Hello" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-Embeddings"
+    TestID   -> "InitializeWorkspaceChat-Embeddings@@Tests/WorkspaceChatInitialization.wlt:59,1-64,2"
 ]
 
 VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`Common`$cachedTokenizers, "gpt-4o-text" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-Tokenizer"
+    TestID   -> "InitializeWorkspaceChat-Tokenizer@@Tests/WorkspaceChatInitialization.wlt:66,1-71,2"
 ]
 
+(* getVectorDB keeps the loaded databases in $loadedVectorDBs (together with the index fingerprint that it checks): *)
 VerificationTest[
     AllTrue[
         $expectedVectorDBNames,
-        memoizedQ[ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB, # ] &
+        KeyExistsQ[ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs, # ] &
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-VectorDatabases"
+    TestID   -> "InitializeWorkspaceChat-VectorDatabases@@Tests/WorkspaceChatInitialization.wlt:74,1-82,2"
 ]
 
 VerificationTest[
@@ -87,7 +88,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-VectorDatabaseValues"
+    TestID   -> "InitializeWorkspaceChat-VectorDatabaseValues@@Tests/WorkspaceChatInitialization.wlt:84,1-92,2"
 ]
 
 VerificationTest[
@@ -100,7 +101,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-SnippetIndexes"
+    TestID   -> "InitializeWorkspaceChat-SnippetIndexes@@Tests/WorkspaceChatInitialization.wlt:94,1-105,2"
 ]
 
 (* A failure in one step should not stop the others or produce messages: *)
@@ -112,7 +113,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-FailureIsolation"
+    TestID   -> "InitializeWorkspaceChat-FailureIsolation@@Tests/WorkspaceChatInitialization.wlt:108,1-117,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -125,7 +126,7 @@ VerificationTest[
     ],
     _Failure,
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-Failure"
+    TestID   -> "InitializationStep-Failure@@Tests/WorkspaceChatInitialization.wlt:122,1-130,2"
 ]
 
 (* Steps do not change the chat state, since asynchronous handlers of a chat that is streaming at the same time run
@@ -148,7 +149,7 @@ VerificationTest[
     ],
     { { "Cell", <| "Key" -> "Value" |> }, "NewTask" },
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-ChatState"
+    TestID   -> "InitializationStep-ChatState@@Tests/WorkspaceChatInitialization.wlt:134,1-153,2"
 ]
 
 VerificationTest[
@@ -164,7 +165,7 @@ VerificationTest[
     ],
     "Task",
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-AsynchronousChatState"
+    TestID   -> "InitializationStep-AsynchronousChatState@@Tests/WorkspaceChatInitialization.wlt:155,1-169,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -189,7 +190,7 @@ VerificationTest[
     ],
     { { None, None }, "Task", "Cell", <| "Key" -> "Value" |> },
     SameTest -> MatchQ,
-    TestID   -> "WithIsolatedChatState-RestoresChatState"
+    TestID   -> "WithIsolatedChatState-RestoresChatState@@Tests/WorkspaceChatInitialization.wlt:174,1-194,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -206,7 +207,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChatSettings"
+    TestID   -> "InitializeWorkspaceChatSettings@@Tests/WorkspaceChatInitialization.wlt:199,1-211,2"
 ]
 
 VerificationTest[
@@ -215,7 +216,7 @@ VerificationTest[
     ],
     Missing[ "NotAuthenticated" ],
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChatSettings-NotAuthenticated"
+    TestID   -> "InitializeWorkspaceChatSettings-NotAuthenticated@@Tests/WorkspaceChatInitialization.wlt:213,1-220,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -228,14 +229,14 @@ VerificationTest[
         "SnippetIndexes"  -> <| "Documentation" -> _Integer? Positive, "ResourceSystem" -> _Integer? Positive |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "InitializeRelatedDocumentation"
+    TestID   -> "InitializeRelatedDocumentation@@Tests/WorkspaceChatInitialization.wlt:225,1-233,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`initializationVectorDBNames[ None ],
     $expectedVectorDBNames,
     SameTest -> MatchQ,
-    TestID   -> "InitializationVectorDBNames"
+    TestID   -> "InitializationVectorDBNames@@Tests/WorkspaceChatInitialization.wlt:235,1-240,2"
 ]
 
 VerificationTest[
@@ -246,7 +247,7 @@ VerificationTest[
         |>,
     Append[ $expectedVectorDBNames, "WolframAlphaQueries" ],
     SameTest -> MatchQ,
-    TestID   -> "InitializationVectorDBNames-WolframAlpha"
+    TestID   -> "InitializationVectorDBNames-WolframAlpha@@Tests/WorkspaceChatInitialization.wlt:242,1-251,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -287,6 +288,7 @@ VerificationTest[
             ];
             Block[
                 {
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$loadedVectorDBs = <| |>,
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory :=
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDBDirectory[ ],
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$pacletVectorDBDirectory = dir,
@@ -299,7 +301,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDisabled" ], { }, Null },
     SameTest -> MatchQ,
-    TestID   -> "InitializeVectorDatabases-NoDownload"
+    TestID   -> "InitializeVectorDatabases-NoDownload@@Tests/WorkspaceChatInitialization.wlt:270,1-305,2"
 ]
 
 VerificationTest[
@@ -319,7 +321,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDisabled" ], { }, Null },
     SameTest -> MatchQ,
-    TestID   -> "InitializeStreamableSnippets-NoDownload"
+    TestID   -> "InitializeStreamableSnippets-NoDownload@@Tests/WorkspaceChatInitialization.wlt:307,1-325,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

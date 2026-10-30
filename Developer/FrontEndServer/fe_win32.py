@@ -6,7 +6,7 @@ through ctypes. The process is made per-monitor DPI aware, so all coordinates ar
 
 import ctypes
 import time
-from ctypes import POINTER, Structure, Union, byref, c_int, c_long, c_uint, c_void_p, sizeof
+from ctypes import POINTER, Structure, Union, byref, c_int, c_long, c_ubyte, c_uint, c_void_p, sizeof
 from ctypes import wintypes as wt
 
 from fe_image import encode_png, scale_rgb
@@ -14,11 +14,17 @@ from fe_image import encode_png, scale_rgb
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
 dwmapi = ctypes.WinDLL("dwmapi")
 
 
 class ScreenError(Exception):
     pass
+
+
+class InputBlockedError(ScreenError):
+    """Windows discarded synthetic input (see Display._input_blocked)."""
+    error_type = "InputBlocked"  # its errorType in fe.py --json output, so that it can be told from other errors
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -62,6 +68,13 @@ class BITMAPINFO(Structure):
     _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", wt.DWORD * 3)]
 
 
+class PROCESSENTRY32W(Structure):
+    _fields_ = [("dwSize", wt.DWORD), ("cntUsage", wt.DWORD), ("th32ProcessID", wt.DWORD),
+                ("th32DefaultHeapID", ULONG_PTR), ("th32ModuleID", wt.DWORD), ("cntThreads", wt.DWORD),
+                ("th32ParentProcessID", wt.DWORD), ("pcPriClassBase", c_long), ("dwFlags", wt.DWORD),
+                ("szExeFile", wt.WCHAR * 260)]
+
+
 INPUT_MOUSE, INPUT_KEYBOARD = 0, 1
 MOUSEEVENTF_MOVE, MOUSEEVENTF_ABSOLUTE, MOUSEEVENTF_VIRTUALDESK = 0x0001, 0x8000, 0x4000
 MOUSEEVENTF_WHEEL, MOUSEEVENTF_HWHEEL = 0x0800, 0x1000
@@ -84,6 +97,9 @@ VK_MENU = 0x12
 ES_DISPLAY_REQUIRED = 0x00000002
 UOI_NAME = 2
 DESKTOP_READOBJECTS = 0x0001
+TH32CS_SNAPPROCESS = 0x00000002
+PROCESS_QUERY_LIMITED_INFORMATION, TOKEN_QUERY, TOKEN_INTEGRITY_LEVEL = 0x1000, 0x0008, 25
+INTEGRITY_LEVELS = [(0x4000, "system"), (0x3000, "high"), (0x2000, "medium"), (0x1000, "low"), (0, "untrusted")]
 
 
 def _signatures():
@@ -142,9 +158,25 @@ def _signatures():
     # GetWindowLongPtrW is an alias of GetWindowLongW in 32-bit Windows:
     _get_window_long = getattr(user32, "GetWindowLongPtrW", None) or user32.GetWindowLongW
     _get_window_long.argtypes, _get_window_long.restype = [wt.HWND, c_int], ctypes.c_ssize_t
-    kernel32.GetCurrentThreadId.restype = wt.DWORD
-    kernel32.SetThreadExecutionState.argtypes = [wt.DWORD]
-    kernel32.SetThreadExecutionState.restype = wt.DWORD
+    for name, args, res in [
+        ("GetCurrentThreadId", [], wt.DWORD),
+        ("SetThreadExecutionState", [wt.DWORD], wt.DWORD),
+        ("CloseHandle", [H], wt.BOOL),
+        ("OpenProcess", [wt.DWORD, wt.BOOL, wt.DWORD], H),
+        ("CreateToolhelp32Snapshot", [wt.DWORD, wt.DWORD], H),
+        ("Process32FirstW", [H, POINTER(PROCESSENTRY32W)], wt.BOOL),
+        ("Process32NextW", [H, POINTER(PROCESSENTRY32W)], wt.BOOL),
+    ]:
+        f = getattr(kernel32, name)
+        f.argtypes, f.restype = args, res
+    for name, args, res in [
+        ("OpenProcessToken", [H, wt.DWORD, POINTER(H)], wt.BOOL),
+        ("GetTokenInformation", [H, c_int, c_void_p, wt.DWORD, POINTER(wt.DWORD)], wt.BOOL),
+        ("GetSidSubAuthorityCount", [c_void_p], POINTER(c_ubyte)),
+        ("GetSidSubAuthority", [c_void_p, wt.DWORD], POINTER(wt.DWORD)),
+    ]:
+        f = getattr(advapi32, name)
+        f.argtypes, f.restype = args, res
     dwmapi.DwmGetWindowAttribute.argtypes = [wt.HWND, wt.DWORD, c_void_p, wt.DWORD]
     dwmapi.DwmGetWindowAttribute.restype = c_long
 
@@ -171,6 +203,68 @@ def _check(result, what):
     if not result:
         raise ScreenError(f"{what} failed (Windows error {ctypes.get_last_error()})")
     return result
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Processes
+# ---------------------------------------------------------------------------------------------------------------------
+
+def processes():
+    """[(process id, parent process id, executable name)] of all processes, also of ones that this user may not open.
+    Empty if the snapshot fails."""
+    snapshot = kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+    if not snapshot or snapshot == wt.HANDLE(-1).value:
+        return []
+    found = []
+    try:
+        entry = PROCESSENTRY32W(dwSize=sizeof(PROCESSENTRY32W))
+        more = kernel32.Process32FirstW(snapshot, byref(entry))
+        while more:
+            found.append((entry.th32ProcessID, entry.th32ParentProcessID, entry.szExeFile))
+            more = kernel32.Process32NextW(snapshot, byref(entry))
+    finally:
+        kernel32.CloseHandle(snapshot)
+    return found
+
+
+def _process_name(pid):
+    """The executable name of a process (also of one that this user may not open), or None."""
+    return next((name for process, _, name in processes() if process == pid), None)
+
+
+def _integrity_name(rid):
+    """The name of an integrity level. One between the named levels is above the lower one, e.g. "medium+0x10" for
+    UIAccess programs (accessibility tools such as the Sticky Keys prompt), whose windows discard input from ordinary
+    programs too."""
+    level, name = next((level, name) for level, name in INTEGRITY_LEVELS if rid >= level)
+    return name if rid == level else f"{name}+{rid - level:#x}"
+
+
+def _integrity_level(pid):
+    """A process's integrity level: "medium" for ordinary programs, "high" for elevated ones, "system" for services
+    (see _integrity_name). None if this user may not inspect the process."""
+    process = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not process:
+        return None
+    token = wt.HANDLE()
+    try:
+        if not advapi32.OpenProcessToken(process, TOKEN_QUERY, byref(token)):
+            return None
+        try:
+            size = wt.DWORD()
+            advapi32.GetTokenInformation(token, TOKEN_INTEGRITY_LEVEL, None, 0, byref(size))
+            if not size.value:
+                return None
+            label = ctypes.create_string_buffer(size.value)
+            if not advapi32.GetTokenInformation(token, TOKEN_INTEGRITY_LEVEL, label, size, byref(size)):
+                return None
+            sid = ctypes.cast(label, POINTER(c_void_p))[0]  # TOKEN_MANDATORY_LABEL.Label.Sid
+            rid = advapi32.GetSidSubAuthority(sid, advapi32.GetSidSubAuthorityCount(sid)[0] - 1)[0]
+        finally:
+            kernel32.CloseHandle(token)
+    finally:
+        kernel32.CloseHandle(process)
+    return _integrity_name(rid)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -480,6 +574,24 @@ class Display:
     def focused_window(self):
         return user32.GetForegroundWindow() or 0
 
+    def foreground_description(self):
+        """Describe the foreground window and its process, for errors about input that went elsewhere or was
+        discarded."""
+        hwnd = user32.GetForegroundWindow()
+        if not hwnd:
+            return "no window"
+        pid = self.window_pid(hwnd)
+        title = self._text(user32.GetWindowTextW, hwnd)
+        if title:
+            window = f"the window {title!r}"
+        else:
+            window = f"an untitled {self._text(user32.GetClassNameW, hwnd, 256)!r} window"
+        if not pid:  # e.g. the window was destroyed meanwhile
+            return f"{window} of an unknown program"
+        level = _integrity_level(pid)
+        rights = f"{level} integrity" if level else "not open to this user, like system services and elevated programs"
+        return f"{window} of {_process_name(pid) or 'an unknown program'} (pid {pid}, {rights})"
+
     # --- pointer -----------------------------------------------------------------------------------------------------
 
     def pointer(self):
@@ -501,13 +613,45 @@ class Display:
 
     def move(self, x, y):
         x, y = int(round(x)), int(round(y))
+        if not self._move(x, y):
+            self._input_blocked("pointer")
+
+    def _move(self, x, y):
+        """Move the pointer; returns False when Windows discarded the input."""
+        start = self.pointer()
         # Absolute coordinates are normalized to 0..65535 across the virtual screen:
         nx = ((x - self.left) * 65536 + self.width // 2) // max(1, self.width)
         ny = ((y - self.top) * 65536 + self.height // 2) // max(1, self.height)
         self._send([self._mouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK, nx, ny)],
                    "pointer motion")
-        if self.pointer() != (x, y):  # rounding of the normalized coordinates
-            user32.SetCursorPos(x, y)
+        # SetCursorPos corrects the rounding of the normalized coordinates (and clamps points off the screen). It
+        # fails where Windows discards the input, which SendInput doesn't report. A pointer that was at the target
+        # already (e.g. a second click at the same point, or `scroll` without a point) shows nothing either way, so
+        # SetCursorPos has to tell then too:
+        return start != (x, y) and self.pointer() == (x, y) or bool(user32.SetCursorPos(x, y))
+
+    def require_input(self, what):
+        """Fail before sending input that Windows would discard: SetCursorPos fails then, also where it leaves the
+        pointer in place. Also used by fe.py's focus check."""
+        if not user32.SetCursorPos(*self.pointer()):
+            self._input_blocked(what)
+
+    def _input_blocked(self, what):
+        """Windows silently discards synthetic input while some windows of a more privileged process are in front:
+        SendInput still reports success, but the pointer stays put and SetCursorPos fails. (Seen while the user was
+        away: the invisible window of the GameInputSvc system service had the foreground.) Fail with an explanation
+        rather than report input that never arrived."""
+        self.require_interactive(f"synthetic {what} input")  # a locked session gets its own explanation
+        if what == "pointer":
+            px, py = self.pointer()
+            problem = (f"Windows discarded the synthetic pointer input: the pointer stayed at {px},{py}, and "
+                       "SetCursorPos")
+        else:
+            problem = f"Windows is discarding synthetic input, so no {what} input was sent: SetCursorPos"
+        raise InputBlockedError(
+            f"{problem} failed. In front is {self.foreground_description()}. Windows drops input from this process "
+            "while some windows of a more privileged one are in front. Commands that need no input still work: eval, "
+            "press, screenshot --no-raise.")
 
     def button(self, button, press):
         if button in (4, 5, 6, 7):  # X11 wheel buttons
@@ -679,6 +823,7 @@ class Display:
         """Press a key combination such as 'ctrl+shift+Return', 'Escape', 'shift+Return', 'ctrl+a'."""
         mods, (vk, extended, shift) = self.parse_key(combo)
         shift = shift and "shift" not in [m.lower() for m in mods]
+        self.require_input("keyboard")  # also with `key --force`, which skips the focus check
         for _ in range(repeat):
             held = self._press_modifiers(mods)
             try:
@@ -696,6 +841,7 @@ class Display:
                 continue
             if ord(ch) < 0x20 or 0x7F <= ord(ch) < 0xA0:
                 raise ScreenError(f"Cannot type control character {ch!r}")
+        self.require_input("keyboard")  # also with `type --force`, which skips the focus check
         for ch in text:
             if ch in self._CONTROL_CHARACTERS:
                 vk, extended, _ = self.keysym(ch)
