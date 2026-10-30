@@ -342,4 +342,33 @@ VerificationTest[
     TestID   -> "FocusedNotebookDisplay-Sidebar-NoIncludedNotebooks@@Tests/NotebookFocus.wlt:335,1-343,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Sources Overlay*)
+
+(* The notebook list and its checkboxes read Chatbook symbols that change on every catchTop call, so they must only
+   track front end values. Otherwise they re-trigger each other continuously while the overlay is open: *)
+VerificationTest[
+    Cases[
+        ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`notebookSources[ $chatNB, # ],
+        DynamicBox[ content_, opts___ ] /; ! FreeQ[ HoldComplete @ content, SourceNotebookObjectInformation ] :>
+            HoldForm @ { opts },
+        Infinity
+    ] & /@ { None, $sidebarCell },
+    { { HoldForm @ { TrackedSymbols :> { } } }, { HoldForm @ { TrackedSymbols :> { } } } },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookSources-TrackedSymbols@@Tests/NotebookFocus.wlt:351,1-361,2"
+]
+
+VerificationTest[
+    Cases[
+        ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`inclusionCheckbox @ $userNB1,
+        CheckboxBox[ Dynamic[ _, _, opts___ ], ___ ] :> HoldForm @ { opts },
+        { 0, Infinity }
+    ],
+    { HoldForm @ { TrackedSymbols :> { } } },
+    SameTest -> MatchQ,
+    TestID   -> "InclusionCheckbox-TrackedSymbols@@Tests/NotebookFocus.wlt:363,1-372,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

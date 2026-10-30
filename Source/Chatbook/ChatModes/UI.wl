@@ -4353,65 +4353,75 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
                 FrameMargins -> { { 5, 5 }, { 3, 3 } }
             ],
             Pane[
-                Dynamic @ Grid[
-                    Function[ results,
-                        If[ results === { },
-                            { {
-                                Pane[
-                                    Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontFamily -> "Source Sans Pro", FontSlant -> "Italic" ],
-                                    Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
-                            results ]
-                    ] @
-                    Cases[
-                        SortBy[
-                            If[ appContainer === None,
-                                SourceNotebookObjectInformation[ ]
-                                , (* ELSE the app is a sub-part of its notebook e.g. the side bar, so exclude its notebook *)
-                                Select[ SourceNotebookObjectInformation[ ], #[ "NotebookObject" ] =!= appNotebook& ]
-                            ],
-                            #[ "WindowTitle" ] & ],
-                        KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
-                            Spacer[ 3 ],
-                            inclusionCheckbox @ nbo,
-                            Item[
+                (*
+                    The list reads Chatbook globals that change on every catchTop call (e.g. catchTop and
+                    $chatEvaluationID), and the inclusion checkboxes it creates set them again, so tracking them would
+                    re-run the list continuously while the overlay is open. The front end still tracks the front end
+                    values it reads, such as Notebooks[], SelectedNotebook[], InputNotebook[] and TaggingRules, but
+                    not window titles from NotebookInformation, so a renamed notebook shows its new title after the
+                    next tracked change. *)
+                Dynamic[
+                    Grid[
+                        Function[ results,
+                            If[ results === { },
+                                { {
+                                    Pane[
+                                        Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontFamily -> "Source Sans Pro", FontSlant -> "Italic" ],
+                                        Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
+                                results ]
+                        ] @
+                        Cases[
+                            SortBy[
+                                If[ appContainer === None,
+                                    SourceNotebookObjectInformation[ ]
+                                    , (* ELSE the app is a sub-part of its notebook e.g. the side bar, so exclude its notebook *)
+                                    Select[ SourceNotebookObjectInformation[ ], #[ "NotebookObject" ] =!= appNotebook& ]
+                                ],
+                                #[ "WindowTitle" ] & ],
+                            KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
+                                Spacer[ 3 ],
+                                inclusionCheckbox @ nbo,
+                                Item[
+                                    Button[
+                                        MouseAppearance[
+                                            Grid[
+                                                { {
+                                                    $notebookIcon,
+                                                    If[ MatchQ[ title, None|"" ], formatNotebookTitle @ title, Style[ title, color @ "NA_OverlayMenuFont" ] ]
+                                                } },
+                                                Alignment -> { Left, Baseline }
+                                            ],
+                                            "LinkHand"
+                                        ],
+                                        ToggleChatInclusion @ nbo,
+                                        Alignment  -> Left,
+                                        Appearance -> "Suppressed",
+                                        BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                                        BoxID      -> "NASourcesToggleChatInclusions"
+                                    ],
+                                    ItemSize -> Fit
+                                ],
                                 Button[
                                     MouseAppearance[
-                                        Grid[
-                                            { {
-                                                $notebookIcon,
-                                                If[ MatchQ[ title, None|"" ], formatNotebookTitle @ title, Style[ title, color @ "NA_OverlayMenuFont" ] ]
-                                            } },
-                                            Alignment -> { Left, Baseline }
+                                        Mouseover[
+                                            Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont_2" ],
+                                            Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont" ]
                                         ],
                                         "LinkHand"
                                     ],
-                                    ToggleChatInclusion @ nbo,
-                                    Alignment  -> Left,
+                                    SetSelectedNotebook @ nbo,
+                                    Alignment  -> Right,
                                     Appearance -> "Suppressed",
-                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
-                                    BoxID      -> "NASourcesToggleChatInclusions"
-                                ],
-                                ItemSize -> Fit
-                            ],
-                            Button[
-                                MouseAppearance[
-                                    Mouseover[
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont_2" ],
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont" ]
-                                    ],
-                                    "LinkHand"
-                                ],
-                                SetSelectedNotebook @ nbo,
-                                Alignment  -> Right,
-                                Appearance -> "Suppressed",
-                                BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" },
-                                BoxID      -> "NASourcesGoToNotebook"
-                            ]
-                        }
+                                    BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" },
+                                    BoxID      -> "NASourcesGoToNotebook"
+                                ]
+                            }
+                        ],
+                        Alignment -> { Left, Center },
+                        Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                        Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                     ],
-                    Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+                    TrackedSymbols :> { }
                 ],
                 FrameMargins -> { { 0, 0 }, { 5, 5 } }
             ]
@@ -4440,10 +4450,13 @@ formatNotebookTitle // endDefinition;
 (*inclusionCheckbox*)
 inclusionCheckbox // beginDefinition;
 
+(* CurrentChatSettings sets Chatbook globals via catchMine, so only the front end's TaggingRules tracking should update
+   this (ToggleChatInclusion writes TaggingRules). *)
 inclusionCheckbox[ nbo_NotebookObject ] :=
     Checkbox @ Dynamic[
         ! TrueQ @ CurrentChatSettings[ nbo, "ExcludeFromChat" ],
-        ToggleChatInclusion[ nbo, #1 ] &
+        ToggleChatInclusion[ nbo, #1 ] &,
+        TrackedSymbols :> { }
     ];
 
 inclusionCheckbox // endDefinition;
