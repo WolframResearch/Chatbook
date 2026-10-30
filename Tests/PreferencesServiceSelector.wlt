@@ -276,6 +276,68 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*getModelListQuietly*)
+
+(* Failing third-party model list code doesn't reach the Messages window: *)
+VerificationTest[
+    Wolfram`Chatbook`Services`Private`getModelListQuietly @ <|
+        "Service"   -> "QuietTestService",
+        "ModelList" :> Join[ { }[[ 1 ]], StringReplace[ 1, "a" -> "b" ] ]
+    |>,
+    Missing[ "NoModelList" ],
+    SameTest -> MatchQ,
+    TestID   -> "GetModelListQuietly-NoMessages@@Tests/PreferencesServiceSelector.wlt:282,1-290,2"
+]
+
+(* A suppressed connection dialog is still detected while messages are quieted: *)
+VerificationTest[
+    Wolfram`Chatbook`Services`Private`getModelListQuietly @ <|
+        "Service"   -> "QuietTestService",
+        "ModelList" :> (Message[ Part::partw, 1, { } ]; Message[ DialogInput::nprmtv ]; { })
+    |>,
+    Missing[ "NotConnected" ],
+    SameTest -> MatchQ,
+    TestID   -> "GetModelListQuietly-NotConnected@@Tests/PreferencesServiceSelector.wlt:293,1-301,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*getServiceDefaultModel*)
+
+(* A remembered Automatic doesn't stick: the next selection looks for a model again and uses the first one: *)
+VerificationTest[
+    Module[ { cache = <| |>, lists, results },
+        lists = { Missing[ "NoModelList" ], { <| "Name" -> "m1" |>, <| "Name" -> "m2" |> } };
+        Block[
+            {
+                Wolfram`Chatbook`Common`chooseDefaultModelName = Automatic &,
+                Wolfram`Chatbook`Common`getServiceModelList = (First @ lists) &,
+                CurrentChatSettings
+            },
+            CurrentChatSettings /: Set[ CurrentChatSettings[ ___ ], v_ ] := v;
+            results = Table[
+                With[
+                    {
+                        name = Wolfram`Chatbook`PreferencesContent`Private`getServiceDefaultModel[
+                            Dynamic @ cache,
+                            "QuietTestService"
+                        ]
+                    },
+                    lists = Rest @ lists;
+                    name
+                ],
+                2
+            ]
+        ];
+        { results, cache }
+    ],
+    { { Automatic, "m1" }, <| "ServiceDefaultModel" -> <| "QuietTestService" -> "m1" |> |> },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceDefaultModel-RetriesAutomatic@@Tests/PreferencesServiceSelector.wlt:308,1-337,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*serviceConnectButton*)
 
 (* After connecting, the Connect button always fetches again, even if a failure was cached just before: *)
@@ -303,7 +365,7 @@ VerificationTest[
     ],
     { "Connect", { "Fetch", False }, { "Callback", "UnreachableTestService" } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:282,1-307,2"
+    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:344,1-369,2"
 ]
 
 (* A cancelled connection doesn't fetch or change anything: *)
@@ -328,7 +390,7 @@ VerificationTest[
     ],
     { { "Connect" }, <| "UnreachableTestService" -> 0 |> },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:310,1-332,2"
+    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:372,1-394,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

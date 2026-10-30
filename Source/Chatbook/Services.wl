@@ -310,12 +310,12 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
         getModelListQuietly @ info
     ];
 
-getModelListQuietly[ info_Association ] := Quiet[
-    checkModelList[
-        info,
-        Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
-    ],
-    { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink, ServiceConnect::authfail }
+(* The "ModelList" code belongs to the service provider and can emit arbitrary messages when it fails (e.g. the Ollama
+   model list when the local server isn't running), so all of them are quieted. Check still sees quieted messages, and
+   checkModelList turns any result that isn't a list into a Missing. *)
+getModelListQuietly[ info_Association ] := checkModelList[
+    info,
+    Quiet @ Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
 ];
 
 getModelListQuietly // endDefinition;
