@@ -2104,7 +2104,10 @@ writeResult[ settings_, container_, cell_CellObject, as_Association ] := Enclose
         If[ settings[ "BypassResponseChecking" ], Throw @ writeReformattedCell[ settings, container, cell ] ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
-        processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ];
+        processed = Replace[
+            ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ],
+            strings: { ___String } :> StringJoin @ strings
+        ];
         If[ FailureQ @ processed, throwTop @ writeErrorCell[ cell, processed ] ];
 
         (* The body data is only needed to detect errors, and none of the error checks below can match a response that
