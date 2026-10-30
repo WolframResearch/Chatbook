@@ -611,20 +611,37 @@ selectContextCells[ { } ] :=
 selectContextCells[ cells: { __CellObject } ] :=
     selectContextCells @ cellInformation @ cells;
 
-selectContextCells[ { a: KeyValuePattern[ "CursorPosition" -> "AboveCell" ], after___ } ] :=
-    selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> { after } |>;
+selectContextCells[ info: { __Association } ] := Module[ { cursor, i, n },
+    cursor = Lookup[ info, "CursorPosition", None ];
+    Which[
+        First @ cursor === "AboveCell",
+            selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> Rest @ info |>,
 
-selectContextCells[ { before___, a: KeyValuePattern[ "CursorPosition" -> "BelowCell" ], after___ } ] :=
-    selectContextCells0 @ <| "Before" -> { before, a }, "Selected" -> { }, "After" -> { after } |>;
+        IntegerQ[ i = firstCursorIndex[ cursor, "BelowCell" ] ],
+            selectContextCells0 @ <| "Before" -> Take[ info, i ], "Selected" -> { }, "After" -> Drop[ info, i ] |>,
 
-selectContextCells[ { before___, a: KeyValuePattern[ "CursorPosition" -> _List ], after___ } ] :=
-    selectContextCells0 @ <| "Before" -> { before }, "Selected" -> { a }, "After" -> { after } |>;
+        IntegerQ[ i = firstCursorIndex[ cursor, _List ] ],
+            selectContextCells0 @ <|
+                "Before"   -> Take[ info, i - 1 ],
+                "Selected" -> { info[[ i ]] },
+                "After"    -> Drop[ info, i ]
+            |>,
 
-selectContextCells[ { before___, a: Longest[ KeyValuePattern[ "CursorPosition" -> "CellBracket" ].. ], after___ } ] :=
-    selectContextCells0 @ <| "Before" -> { before }, "Selected" -> { a }, "After" -> { after } |>;
+        IntegerQ[ i = firstCursorIndex[ cursor, "CellBracket" ] ],
+            n = LengthWhile[ Drop[ cursor, i - 1 ], # === "CellBracket" & ];
+            selectContextCells0 @ <|
+                "Before"   -> Take[ info, i - 1 ],
+                "Selected" -> Take[ info, { i, i + n - 1 } ],
+                "After"    -> Drop[ info, i + n - 1 ]
+            |>,
 
-selectContextCells[ { all: KeyValuePattern[ "CursorPosition" -> None ]... } ] :=
-    selectContextCells0 @ <| "Before" -> { all }, "Selected" -> { }, "After" -> { } |>;
+        MatchQ[ cursor, { None... } ],
+            selectContextCells0 @ <| "Before" -> info, "Selected" -> { }, "After" -> { } |>,
+
+        True,
+            throwInternalFailure @ selectContextCells @ info
+    ]
+];
 
 selectContextCells // endDefinition;
 
@@ -646,6 +663,13 @@ selectContextCells0[ KeyValuePattern @ {
     ];
 
 selectContextCells0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*firstCursorIndex*)
+firstCursorIndex // beginDefinition;
+firstCursorIndex[ cursor_List, patt_ ] := First @ FirstPosition[ cursor, patt, { None }, { 1 }, Heads -> False ];
+firstCursorIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
