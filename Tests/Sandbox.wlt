@@ -379,10 +379,10 @@ VerificationTest[
     ],
     {
         {
-            "RowBox[{\"\\[Omega]\", \"=\", SqrtBox[RowBox[{\"k\", \"/\", \"m\"}]]}]",
+            "RowBox[{\"\\[Omega]\", \"\\[LongEqual]\", SqrtBox[RowBox[{\"k\", \"/\", \"m\"}]]}]",
             None,
             _String,
-            "RowBox[{OverscriptBox[\"r\", \"..\"], \"=\", \"-\", \"g\", \"cos\", \" \", \"\\[Theta]\"}]"
+            "RowBox[{OverscriptBox[\"r\", \"..\"], \"\\[LongEqual]\", \"-\", \"g\", \"cos\", \" \", \"\\[Theta]\"}]"
         },
         False
     },

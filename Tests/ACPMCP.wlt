@@ -1420,13 +1420,13 @@ VerificationTest[
                         "notebook" -> "s1",
                         "cell"     -> "c1",
                         "edits"    -> {
-                            <| "oldText" -> "H = p\:02c42/(2 m)", "newText" -> "L = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2" |>,
+                            <| "oldText" -> "H = p\:02c42/(2 m)", "newText" -> "L = m \:3014SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:3015/2" |>,
                             <| "oldText" -> "+ V[q]", "newText" -> "- V[q]", "count" -> 1 |>
                         }
                     |>
                 ],
                 call[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c1", "edits" -> { <| "oldText" -> "x" |> } |> ],
-                call[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c1", "text" -> "x = \:2e22SqrtBox[\"2\"]\:2e23" |> } |> ]
+                call[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c1", "text" -> "x = \:3014SqrtBox[\"2\"]\:3015" |> } |> ]
             }
         ];
         acpMCPStopServer[ ];
@@ -1447,7 +1447,7 @@ VerificationTest[
                 "content" -> {
                     <|
                         "type" -> "text",
-                        "text" -> "Edited #c1 of s1 (2 edits). It now reads:\n(* ::Input:: #c1 *)\nL = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2 - V[q]"
+                        "text" -> "Edited #c1 of s1 (2 edits). It now reads:\n(* ::Input:: #c1 *)\nL = m \:3014SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:3015/2 - V[q]"
                     |>
                 },
                 "isError" -> False
@@ -1461,12 +1461,12 @@ VerificationTest[
                     "Edit",
                     CellObject[ "w1" ],
                     {
-                        { "H = p\:02c42/(2 m)", "L = m \:2e22SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:2e23/2", 1 },
+                        { "H = p\:02c42/(2 m)", "L = m \:3014SuperscriptBox[OverscriptBox[\"q\", \".\"], \"2\"]\:3015/2", 1 },
                         { "+ V[q]", "- V[q]", 1 }
                     }
                 }
             },
-            { { "Set", CellObject[ "w1" ], Automatic, "x = \:2e22SqrtBox[\"2\"]\:2e23" } }
+            { { "Set", CellObject[ "w1" ], Automatic, "x = \:3014SqrtBox[\"2\"]\:3015" } }
         }
     },
     SameTest -> MatchQ,

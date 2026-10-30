@@ -113,7 +113,7 @@ VerificationTest[
         fakeCell[ "src-2", "Section", "(*The simple pendulum*)", 1 ],
         fakeCell[ "src-3", "Text", "(*The Hamiltonian of a pendulum of length l and mass m:*)", 2 ],
         fakeCell[ "src-4", "Input", "H = p\:02c42/(2 m l\:02c42) - m g l Cos[\[Theta]]", 2 ],
-        fakeCell[ "src-5", "Output", "\:2e22FE`ElidedBox[1, \"GraphicsBox\", 48213]\:2e23", 2 ],
+        fakeCell[ "src-5", "Output", "\:3014FE`ElidedBox[1, \"GraphicsBox\", 48213]\:3015", 2 ],
         fakeCell[ "src-6", "Section", "(*Equations of motion*)", 1, False ],
         fakeCell[ "src-7", "Input", "eqs = {q'[t] == D[H, p], p'[t] == -D[H, q]};\nsol = NDSolve[eqs, {q, p}, {t, 0, 10}]", 2 ]
     };
@@ -558,7 +558,7 @@ VerificationTest[
         { <| "oldText" -> "", "newText" -> "b" |> },
         { <| "oldText" -> "a", "newText" -> "b", "count" -> 0 |> },
         { <| "oldText" -> "x\n(* ::Input:: #c4 *)\ny", "newText" -> "z" |> },
-        { <| "oldText" -> "a", "newText" -> "\:2e22DynamicBox[ToBoxes[CreateFile[\"x\"]]]\:2e23" |> },
+        { <| "oldText" -> "a", "newText" -> "\:3014DynamicBox[ToBoxes[CreateFile[\"x\"]]]\:3015" |> },
         { },
         Missing[ "NoInput" ],
         Failure[ "InterpretationFailure", <| |> ]
@@ -600,28 +600,28 @@ VerificationTest[
 
 (* Agent text that would run code when it is shown is refused: linear syntax (its characters, their escapes, \! and \*
    that are not themselves escaped) anywhere, dynamic boxes and code options inside a box wrapper, an inline formula's
-   \:2e22$boxes\:2e23 included. Code typed in a code
+   \:3014$boxes\:3015 included. Code typed in a code
    cell, names in strings, placeholders and escaped backslashes are fine. *)
 VerificationTest[
     {
         nbtResult[ Wolfram`Chatbook`ACP`NotebookTools`Private`requireInertText[ #, "The text" ]; "OK" ] & /@ {
             "Dynamic[x] + DynamicModule[{a}, a]",
-            "\:2e22FE`ElidedBox[1, \"DynamicBox\", 120]\:2e23",
-            "\:2e22StyleBox[\"Dynamic[x] and Initialization :> f\", FontSlant -> \"Italic\"]\:2e23",
+            "\:3014FE`ElidedBox[1, \"DynamicBox\", 120]\:3015",
+            "\:3014StyleBox[\"Dynamic[x] and Initialization :> f\", FontSlant -> \"Italic\"]\:3015",
             "StringReplace[s, \"\\\\!\" -> \"\"]",
-            "x\:02c42 + \:2e22SqrtBox[\"a\"]\:2e23 \\[Rule] b",
+            "x\:02c42 + \:3014SqrtBox[\"a\"]\:3015 \\[Rule] b",
             "(*see \\\\! here*)",
-            "(*the momentum \:2e22$\"p\"\:2e23 and \:2e22$SuperscriptBox[\"q\", \"2\"]\:2e23*)"
+            "(*the momentum \:3014$\"p\"\:3015 and \:3014$SuperscriptBox[\"q\", \"2\"]\:3015*)"
         },
         nbtResult[ Wolfram`Chatbook`ACP`NotebookTools`Private`requireInertText[ #, "The text" ]; "OK" ] & /@ {
             "a" <> FromCharacterCode[ 63425 ] <> "b",
             "\"\\!\\(\\*RowBox[{CreateFile[\\\"x\\\"]}]\\)\"",
             "a \\:f7c1 b",
-            "\:2e22DynamicModuleBox[{}, \"x\"]\:2e23",
-            "\:2e22ButtonBox[\"x\", ButtonFunction :> CreateFile[\"x\"]]\:2e23",
-            "\:2e22Cell[\"x\", \"Text\", CellDynamicExpression \\[RuleDelayed] f]\:2e23",
-            "\:2e22TemplateBox[{\"x\"}, \"T\", InterpretationFunction -> (f &)]\:2e23",
-            "(*an inline formula \:2e22$DynamicBox[CreateFile[\"x\"]]\:2e23*)"
+            "\:3014DynamicModuleBox[{}, \"x\"]\:3015",
+            "\:3014ButtonBox[\"x\", ButtonFunction :> CreateFile[\"x\"]]\:3015",
+            "\:3014Cell[\"x\", \"Text\", CellDynamicExpression \\[RuleDelayed] f]\:3015",
+            "\:3014TemplateBox[{\"x\"}, \"T\", InterpretationFunction -> (f &)]\:3015",
+            "(*an inline formula \:3014$DynamicBox[CreateFile[\"x\"]]\:3015*)"
         }
     },
     {
@@ -788,7 +788,7 @@ VerificationTest[
                 "    (* ::Input:: #c4 *)",
                 "    H = p\:02c42/(2 m l\:02c42) - m g \[Ellipsis]",
                 "    (* ::Output:: #c5 *)",
-                "    \:2e22FE`ElidedBox[1, \"Graphi\[Ellipsis]",
+                "    \:3014FE`ElidedBox[1, \"Graphi\[Ellipsis]",
                 "  (* ::Section::Closed:: #c6 *)",
                 "  (*Equations of motion*)",
                 "    (* ::Input:: #c7 *)",
@@ -954,7 +954,7 @@ VerificationTest[
                 "notebook" -> "s1",
                 "cell"     -> "#c4",
                 "edits"    -> {
-                    <| "oldText" -> "H = p\:02c42/(2 m l\:02c42)", "newText" -> "L = m l\:02c42 \:2e22SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:2e23/2" |>,
+                    <| "oldText" -> "H = p\:02c42/(2 m l\:02c42)", "newText" -> "L = m l\:02c42 \:3014SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:3015/2" |>,
                     <| "oldText" -> "- m g l Cos", "newText" -> "+ m g l Cos" |>
                 }
             |>
@@ -966,7 +966,7 @@ VerificationTest[
         }
     ],
     {
-        "Edited #c4 of s1 (2 edits). It now reads:\n(* ::Input:: #c4 *)\nL = m l\:02c42 \:2e22SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:2e23/2 + m g l Cos[\[Theta]]",
+        "Edited #c4 of s1 (2 edits). It now reads:\n(* ::Input:: #c4 *)\nL = m l\:02c42 \:3014SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:3015/2 + m g l Cos[\[Theta]]",
         {
             "Edit",
             NotebookObject[ "fake-snapshot-1" ],
@@ -975,7 +975,7 @@ VerificationTest[
                     "Edit",
                     CellObject[ "fake-1-4" ],
                     {
-                        { "H = p\:02c42/(2 m l\:02c42)", "L = m l\:02c42 \:2e22SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:2e23/2", 1 },
+                        { "H = p\:02c42/(2 m l\:02c42)", "L = m l\:02c42 \:3014SuperscriptBox[OverscriptBox[\"\[Theta]\", \".\"], \"2\"]\:3015/2", 1 },
                         { "- m g l Cos", "+ m g l Cos", 1 }
                     }
                 }
@@ -1011,9 +1011,9 @@ VerificationTest[
     ],
     {
         {
-            "NoMatch: \"+ V[q]\" does not occur in the cell. Nothing was changed. Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:2e22 \:2e23 wrappers and \\[Name] characters.",
+            "NoMatch: \"+ V[q]\" does not occur in the cell. Nothing was changed. Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
             "AmbiguousMatch: \"l\" occurs 2 times in the cell. Nothing was changed. Make oldText longer, so that it occurs as often as count says, or give count.",
-            "ParseError: The new content of the cell does not parse. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:2e22 \:2e23 wrappers.",
+            "ParseError: The new content of the cell does not parse. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
             "Edit 1 has no newText (use \"\" to delete oldText).",
             "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
             "CellNotFound: The cell does not exist. Nothing was changed. Call GetOutline for the current cell ids."
@@ -1091,8 +1091,8 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-SetCells"
 ]
 
-(* LaTeX formulas in what the agent writes become the boxes that the front end reads: \:2e22$boxes\:2e23 inline,
-   \:2e22FormBox[...]\:2e23 for a DisplayFormula cell. The sandbox kernel reads them (made up here), each formula once
+(* LaTeX formulas in what the agent writes become the boxes that the front end reads: \:3014$boxes\:3015 inline,
+   \:3014FormBox[...]\:3015 for a DisplayFormula cell. The sandbox kernel reads them (made up here), each formula once
    per text, and only for texts that have formulas; the boxes are checked like the rest of the text. *)
 VerificationTest[
     withFakeFE @ Block[
@@ -1112,15 +1112,15 @@ VerificationTest[
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         {
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> {
-                <| "cell" -> "c3", "text" -> "(*the frequency \:2e22tex:\\omega\:2e23, again \:2e22tex:\\omega\:2e23*)" |>,
-                <| "cell" -> "c4", "text" -> "\:2e22display-tex:L=T-V\:2e23", "style" -> "DisplayFormula" |>
+                <| "cell" -> "c3", "text" -> "(*the frequency \:3014tex:\\omega\:3015, again \:3014tex:\\omega\:3015*)" |>,
+                <| "cell" -> "c4", "text" -> "\:3014display-tex:L=T-V\:3015", "style" -> "DisplayFormula" |>
             } |> ],
             nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*no formulas*)" |> } |> ],
             nbtText @ nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c3", "edits" -> {
-                <| "oldText" -> "again", "newText" -> "\:2e22tex:\\frac{1}{2\:2e23" |>
+                <| "oldText" -> "again", "newText" -> "\:3014tex:\\frac{1}{2\:3015" |>
             } |> ],
-            nbtText @ nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*\:2e22tex:\\dot x\:2e23*)" |> } |> ],
-            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:2e22tex:\\fail\:2e23*)" |> } |> ],
+            nbtText @ nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Text", "text" -> "(*\:3014tex:\\dot x\:3015*)" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:3014tex:\\fail\:3015*)" |> } |> ],
             Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ],
             $texRead
         }
@@ -1133,8 +1133,8 @@ VerificationTest[
         "The text of item 1 has LaTeX formulas that could not be read now (TimedOut). Write them as boxes instead.",
         {
             {
-                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*the frequency \:2e22$\"\\[Omega]\"\:2e23, again \:2e22$\"\\[Omega]\"\:2e23*)" },
-                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:2e22FormBox[RowBox[{\"L\", \"=\", \"T\", \"-\", \"V\"}], TraditionalForm]\:2e23" }
+                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*the frequency \:3014$\"\\[Omega]\"\:3015, again \:3014$\"\\[Omega]\"\:3015*)" },
+                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:3014FormBox[RowBox[{\"L\", \"=\", \"T\", \"-\", \"V\"}], TraditionalForm]\:3015" }
             },
             { { "Insert", ___, { { "Text", "(*no formulas*)" } } } }
         },
@@ -1153,10 +1153,10 @@ VerificationTest[
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
         {
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> {
-                <| "cell" -> "c3", "text" -> "(*\:2e22tex:L=\\tfrac12 m v^2-\\dfrac{1}{2}\:2e23 and \:2e22tex:\[Theta]\[PartialD]x\:2e23*)" |>,
+                <| "cell" -> "c3", "text" -> "(*\:3014tex:L=\\tfrac12 m v^2-\\dfrac{1}{2}\:3015 and \:3014tex:\[Theta]\[PartialD]x\:3015*)" |>,
                 <| "cell" -> "c4", "text" -> "display-tex:L=T-V", "style" -> "DisplayFormula" |>
             } |> ],
-            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:2e22tex:90\[Degree]\:2e23*)" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*\:3014tex:90\[Degree]\:3015*)" |> } |> ],
             Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ],
             $texRead
         }
@@ -1166,14 +1166,162 @@ VerificationTest[
         "The text of item 1 has a LaTeX formula with characters to write as LaTeX commands instead: \[Degree].",
         {
             {
-                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*\:2e22$\"x\"\:2e23 and \:2e22$\"x\"\:2e23*)" },
-                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:2e22FormBox[\"x\", TraditionalForm]\:2e23" }
+                { "Set", CellObject[ "fake-1-3" ], Automatic, "(*\:3014$\"x\"\:3015 and \:3014$\"x\"\:3015*)" },
+                { "Set", CellObject[ "fake-1-4" ], "DisplayFormula", "\:3014FormBox[\"x\", TraditionalForm]\:3015" }
             }
         },
         { { "L=\\frac12 m v^2-\\frac{1}{2}", "\\theta \\partial x" }, { "L=T-V" } }
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-TeXSource"
+]
+
+(* A structure LaTeX has no form for is an island of boxes \:3014Head[...]\:3015 in the LaTeX, whose box arguments are
+   LaTeX in their own \:3014 \:3015. The sandbox kernel reads all of a text's LaTeX in one call, an island as
+   \text{ZqnqZ}, whose string in the boxes the island's text replaces. An unreadable argument is named, and so are an
+   island that is not boxes and LaTeX in an island's quoted string. *)
+VerificationTest[
+    Block[
+        {
+            $texRead = { },
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$texOriginals = <| |>,
+            Wolfram`Chatbook`Common`sandboxTeXBoxes = Function[ { texs, seconds },
+                AppendTo[ $texRead, texs ];
+                Lookup[
+                    <|
+                        "\\int x\\, \\text{Zq1qZ} \\,dx" -> "RowBox[{\"\\[Integral]\", \"x\", \" \", \"Zq1qZ\", \"\\[DifferentialD]\", \"x\"}]",
+                        "\\alpha x" -> "RowBox[{\"\\[Alpha]\", \"x\"}]",
+                        "y"         -> "\"y\""
+                    |>,
+                    texs,
+                    None
+                ]
+            ]
+        },
+        {
+            {
+                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`texFormulas[
+                    "(*\:3014tex:\\int x\\,\:3014TemplateBox[{\"n\",\:3014\\alpha x\:3015},\"BesselJ\"]\:3015\\,dx\:3015 and \:3014tex:y\:3015*)",
+                    "T"
+                ],
+                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`texFormulas[
+                    "display-tex:\\int x\\,\:3014TemplateBox[{\"n\",\:3014\\frac{1}{2\:3015},\"BesselJ\"]\:3015\\,dx",
+                    "T"
+                ],
+                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`texFormulas[ "(*\:3014tex:x\:3014y\:3015\:3015*)", "T" ],
+                nbtResult @ Wolfram`Chatbook`ACP`NotebookTools`Private`texFormulas[
+                    "(*\:3014tex:\:3014TemplateBox[{\"\\nu\",\"x\"},\"BesselJ\"]\:3015\:3015*)",
+                    "T"
+                ]
+            },
+            $texRead
+        }
+    ],
+    {
+        {
+            "(*\:3014$RowBox[{\"\\[Integral]\", \"x\", \" \", TemplateBox[{\"n\",RowBox[{\"\\[Alpha]\", \"x\"}]},\"BesselJ\"], \"\\[DifferentialD]\", \"x\"}]\:3015 and \:3014$\"y\"\:3015*)",
+            "T has a formula that is not LaTeX math the tools can read: \"\\frac{1}{2\".",
+            "T has \:3014y\:3015 inside a LaTeX formula, where \:3014 \:3015 holds an island of boxes such as \:3014TemplateBox[...]\:3015.",
+            "T has LaTeX in a quoted string of an island, \"\\nu\": a quoted string is plain text, and a box argument in LaTeX goes in its own \:3014 \:3015, e.g. \:3014\\nu\:3015."
+        },
+        { { "\\int x\\, \\text{Zq1qZ} \\,dx", "\\alpha x", "y" }, { "\\int x\\, \\text{Zq1qZ} \\,dx", "\\frac{1}{2" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-TeXIslands"
+]
+
+(* The agent reads a formula as LaTeX with islands when that LaTeX reads back to the same boxes, else as boxes (and
+   always as boxes when parsing it could evaluate something). A formula written back unchanged gets the front end's
+   text back exactly. EditInCell applies edits to the text the agent reads when a formula of the cell reads as LaTeX,
+   with the front end's failures, and sets the cell; other cells get the front end's own edit. *)
+VerificationTest[
+    Block[
+        {
+            $fakeSources = <| NotebookObject[ "fake-source-1" ] -> {
+                fakeCell[ "src-1", "Text", "(*the energy \:3014$SuperscriptBox[\"q\", \"2\"]\:3015 of \:3014$TemplateBox[{\"n\", \"x\"}, \"BesselJ\"]\:3015*)", 0 ],
+                fakeCell[ "src-2", "Input", "f[q_] := q\:02c42", 0 ],
+                fakeCell[ "src-3", "Text", "(*unsafe \:3014$RowBox[{\"a\", Print[1]}]\:3015*)", 0 ]
+            } |>,
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$texReads     = <| |>,
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$texOriginals = <| |>,
+            Wolfram`Chatbook`Common`sandboxTeXBoxes = Function[ { texs, seconds },
+                Lookup[
+                    <|
+                        "q^{2}"           -> "SuperscriptBox[\"q\", \"2\"]",
+                        "r^{2}"           -> "SuperscriptBox[\"r\", \"2\"]",
+                        " \\text{Zq1qZ} " -> "\"Zq1qZ\""
+                    |>,
+                    texs,
+                    None
+                ]
+            ]
+        },
+        withFakeFE @ Module[ { open, read, edit },
+            open = nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+            read = "(*the energy \:3014tex:q^{2}\:3015 of \:3014tex:\:3014TemplateBox[{\"n\",\"x\"},\"BesselJ\"]\:3015\:3015*)";
+            edit[ cell_, old_, new_ ] := nbtText @ nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> cell,
+                "edits" -> { <| "oldText" -> old, "newText" -> new |> } |> ];
+            {
+                StringContainsQ[ open, read ],
+                StringContainsQ[ open, "(*unsafe \:3014$RowBox[{\"a\", Print[1]}]\:3015*)" ],
+                nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c1", "text" -> read |> } |> ],
+                StringContainsQ[ edit[ "c1", "q^{2}", "r^{2}" ], "\:3014tex:r^{2}\:3015" ],
+                edit[ "c1", "zzz", "y" ],
+                edit[ "c2", "q\:02c42", "q\:02c43" ],
+                Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ]
+            }
+        ]
+    ],
+    {
+        True,
+        True,
+        "Set 1 cell of s1: #c1. ReadCells shows their new content.",
+        True,
+        "NoMatch: The text \"zzz\" does not occur in the cell. Nothing was changed. Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
+        _String,
+        {
+            { { "Set", CellObject[ "fake-1-1" ], Automatic, "(*the energy \:3014$SuperscriptBox[\"q\", \"2\"]\:3015 of \:3014$TemplateBox[{\"n\", \"x\"}, \"BesselJ\"]\:3015*)" } },
+            { { "Set", CellObject[ "fake-1-1" ], Automatic, "(*the energy \:3014$SuperscriptBox[\"r\", \"2\"]\:3015 of \:3014$TemplateBox[{\"n\", \"x\"}, \"BesselJ\"]\:3015*)" } },
+            { { "Edit", CellObject[ "fake-1-2" ], { { "q\:02c42", "q\:02c43", 1 } } } }
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-TeXReads"
+]
+
+(* A = and a \[LongEqual] read as the same LaTeX: written back, that LaTeX restores neither formula but is converted,
+   and LaTeX = becomes the import's \[LongEqual] (an equation in TraditionalForm) *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$texReads     = <| |>,
+            Wolfram`Chatbook`ACP`NotebookTools`Private`$texOriginals = <| |>,
+            Wolfram`Chatbook`Common`sandboxTeXBoxes = Function[ { texs, seconds },
+                ConstantArray[ "RowBox[{\"L\", \"\\[LongEqual]\", \"T\"}]", Length @ texs ]
+            ]
+        },
+        Module[ { read },
+            read = Wolfram`Chatbook`ACP`NotebookTools`Private`texReadTexts @ {
+                "\:3014$RowBox[{\"L\", \"\\[LongEqual]\", \"T\"}]\:3015",
+                "\:3014$RowBox[{\"L\", \"=\", \"T\"}]\:3015",
+                "\:3014$RowBox[{\"V\", \"=\", \"T\"}]\:3015"
+            };
+            {
+                read,
+                Wolfram`Chatbook`ACP`NotebookTools`Private`texFormulas[ #, "T" ] & /@ read
+            }
+        ]
+    ],
+    {
+        { "\:3014tex:L = T\:3015", "\:3014tex:L = T\:3015", "\:3014$RowBox[{\"V\", \"=\", \"T\"}]\:3015" },
+        {
+            "\:3014$RowBox[{\"L\", \"\\[LongEqual]\", \"T\"}]\:3015",
+            "\:3014$RowBox[{\"L\", \"\\[LongEqual]\", \"T\"}]\:3015",
+            "\:3014$RowBox[{\"V\", \"=\", \"T\"}]\:3015"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-TeXReadsAmbiguous"
 ]
 
 (* The cells that SetCells and EditInCell change are recorded by their uuids, for ShowChanges *)

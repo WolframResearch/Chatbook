@@ -20,8 +20,8 @@ Needs[ "Wolfram`Chatbook`ACP`Common`" ];
      cell text edit packets, NotebookFileName, NotebookSave, NotebookClose, and CellDiff's ShowNotebookDiff), so that
      tests can replace it with a made-up front end. The front end reads and writes cells in the agent text form
      (FrontEnd docs/NotebookMCP/AgentTextForm.md); the tools add the marker line (* ::Style:: #id *) in front of each
-     cell's content and never parse or convert content themselves, but for LaTeX formulas (texFormulas: the front end
-     reads no LaTeX).
+     cell's content and never parse or convert content themselves, but for LaTeX formulas (texFormulas, texReadTexts:
+     the front end reads and writes no LaTeX).
    * Front end calls must not run in a SocketListen or reader handler (R2): the tools run in MCP.wl's drain (the main
      link, or the pump for clients that are not ACP windows). Without a front end ($FrontEnd === Null), ListNotebooks
      lists no notebooks and the other tools give an error.
@@ -103,11 +103,18 @@ $$codeInWrapper = RegularExpression[ StringJoin[
     ")"
 ] ];
 
-$$wrapper = "\:2e22" ~~ Except[ "\:2e23" ]... ~~ "\:2e23";
+$$wrapper = "\:3014" ~~ Except[ "\:3015" ]... ~~ "\:3015";
 
-(* A LaTeX formula the agent writes: \:2e22tex:...\:2e23 an inline formula cell, \:2e22display-tex:...\:2e23 the content
-   of a DisplayFormula cell *)
-$$texFormula = "\:2e22" ~~ kind: ("tex" | "display-tex") ~~ ":" ~~ tex: Except[ "\:2e22" | "\:2e23" ]... ~~ "\:2e23";
+(* An outermost wrapper, whose content may hold wrappers: its content is "$1" *)
+$$nestedWrapper = RegularExpression[ "\\x{3014}((?:[^\\x{3014}\\x{3015}]++|(?0))*+)\\x{3015}" ];
+
+(* The content of a LaTeX formula's wrapper: tex:... an inline formula cell, display-tex:... the content of a
+   DisplayFormula cell *)
+$$texFormula = ("tex:" | "display-tex:") ~~ ___;
+
+(* The content of a formula's wrapper in the front end's text: $boxes an inline formula cell, a FormBox the content of a
+   DisplayFormula cell *)
+$$frontEndFormula = ("$" ~~ ___) | ("FormBox[" ~~ ___ ~~ ", TraditionalForm]");
 
 $toolErrorTag = "Wolfram`Chatbook`ACP`NotebookTools`ToolError";
 
@@ -122,9 +129,16 @@ $toolErrorTag = "Wolfram`Chatbook`ACP`NotebookTools`ToolError";
                      "Unsaved" (edited since it was last saved), "Window" -> the ACP window whose agent opened it, or
                      None |>
      $snapshotCount  the number of the last handle
+     $texReads       the content of a formula's wrapper in the front end's text -> its content as the agent reads it
+                     (as LaTeX, or the same), for each formula read (texReadTexts)
+     $texOriginals   the content of a formula's wrapper as LaTeX the agent read -> the front end's, so that a formula
+                     the agent leaves unchanged is written back exactly (texFormulas); None for LaTeX that different
+                     formulas read as (a = and a \[LongEqual] both read as =), which is converted instead
    $acpToolWindow is the ACP window whose agent made the running call (MCP.wl's drain blocks it), None otherwise. *)
 If[ ! AssociationQ @ $snapshots, $snapshots = <| |> ];
 If[ ! IntegerQ @ $snapshotCount, $snapshotCount = 0 ];
+If[ ! AssociationQ @ $texReads, $texReads = <| |> ];
+If[ ! AssociationQ @ $texOriginals, $texOriginals = <| |> ];
 $acpToolWindow = None;
 
 (* ::**************************************************************************************************************:: *)
@@ -159,24 +173,29 @@ acpNotebookTools // endDefinition;
 (* :!CodeAnalysis::Disable::UnrecognizedLongName:: *)
 $acpNotebookNotation = "\
 Cell text notation: a cell is a marker line (* ::Style:: #id *) followed by its content. #id (e.g. #c3) names the \
-cell in the other tools; marker lines are not content, and no edit includes one. Code cells hold Wolfram Language \
-input as typed. x\:02c42 is a superscript, a\:02c51 a subscript and 1\:20442 a fraction (only between single tokens); \
-any other 2D box is written as its FullForm in \:2e22 \:2e23, e.g. \:2e22SqrtBox[\"x\"]\:2e23 or \
-\:2e22SubscriptBox[\"a\", RowBox[{\"i\", \"+\", \"1\"}]]\:2e23, with no short forms or other \:2e22 \:2e23 inside. \
-\:2e22FE`ElidedBox[n, \"Head\", size]\:2e23 stands for graphics or a large box: keep it unchanged. Text cells are \
-wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:2e22\"*)\"\:2e23, and styled text is \
-\:2e22StyleBox[...]\:2e23. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]): always \
-write them that way, never as raw characters. Other Unicode characters (Greek letters, \:2192) are written as they \
-are. Content that would run code when shown (dynamic boxes, button functions) is refused. Math is typeset: in a text \
-cell a formula is an inline formula cell, written \:2e22$boxes\:2e23, which is short for \:2e22Cell[BoxData[FormBox[\
-boxes, TraditionalForm]], \"InlineFormula\"]\:2e23 (boxes in FullForm), e.g. \:2e22$FractionBox[RowBox[{\
-\"\[PartialD]\", \"L\"}], RowBox[{\"\[PartialD]\", OverscriptBox[\"q\", \".\"]}]]\:2e23, and a DisplayFormula cell holds \
-\:2e22FormBox[..., TraditionalForm]\:2e23. You may write a formula as LaTeX math instead, which is shorter: \
-\:2e22tex:\\frac{\\partial L}{\\partial \\dot{q}}\:2e23 is an inline formula cell, and \:2e22display-tex:...\:2e23 the \
-whole content of a DisplayFormula cell; write the LaTeX as it is, with single backslashes, and fractions as \
-\\frac{...}{...} rather than with a slash. Formulas are read back as boxes. Keep a notebook's typesetting when you \
-rewrite it: write new math as formulas, never as plain text such as dq/dt, and keep displayed equations in \
-DisplayFormula cells.";
+cell in the other tools; marker lines are not content, and no edit includes one.
+
+Math is typeset and written as LaTeX. In a text cell \:3014tex:...\:3015 is an inline formula, e.g. \
+\:3014tex:\\frac{\\partial L}{\\partial \\dot{q}}\:3015, and \:3014display-tex:...\:3015 is the whole content of a \
+DisplayFormula cell. Write the LaTeX as it is, with single backslashes, and fractions as \\frac{...}{...}. LaTeX \
+writes only how math looks, so a structure with a meaning beyond its look (any TemplateBox, such as a named function, \
+a color swatch or a quantity; a TagBox) is an island of boxes \:3014Head[...]\:3015 inside the LaTeX, whose box \
+arguments are LaTeX in their own \:3014 \:3015 (strings in quotes are plain text, not LaTeX), e.g. \
+\:3014display-tex:\\int_0^1 x\\,\:3014TemplateBox[{\"n\",\:3014\\alpha x\:3015},\"BesselJ\"]\:3015\\,dx=0\:3015. \
+Keep such structures, and use them in new math too, never a look-alike such as J_n(x). Formulas are read in this \
+form. One that LaTeX cannot write exactly is read as boxes in FullForm: \:3014$boxes\:3015 for an inline formula, \
+\:3014FormBox[boxes, TraditionalForm]\:3015 for a DisplayFormula cell; edit it as boxes or rewrite it as LaTeX.
+
+Code cells hold Wolfram Language input as typed. Where code has 2D boxes, x\:02c42 is a superscript, a\:02c51 a \
+subscript and 1\:20442 a fraction (only between single tokens), and any other box is its FullForm in \:3014 \:3015, \
+e.g. \:3014SqrtBox[\"x\"]\:3015, with no short forms or other \:3014 \:3015 inside. \:3014FE`ElidedBox[n, \"Head\", \
+size]\:3015 stands for graphics or a large box: keep it unchanged.
+
+Text cells are wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:3014\"*)\"\:3015, and styled text \
+is \:3014StyleBox[...]\:3015. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]), \
+never as raw characters; other Unicode characters (Greek letters, \:2192) as they are. Content that would run code \
+when shown (dynamic boxes, button functions) is refused. Keep a notebook's typesetting when you rewrite it: write new \
+math as formulas, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells.";
 (* :!CodeAnalysis::EndBlock:: *)
 
 $acpNotebookWorkflow = "\
@@ -829,36 +848,157 @@ setCellArgument // endDefinition;
 (* ::Subsection::Closed:: *)
 (*texFormulas*)
 
-(* Agent text with its LaTeX formulas ($$texFormula) turned into the boxes that the front end reads: \:2e22$boxes\:2e23
-   for an inline formula cell, \:2e22FormBox[boxes, TraditionalForm]\:2e23 for a DisplayFormula cell's content. They are
-   about half as long as their boxes, which saves the agent time. The sandbox kernel reads them (sandboxTeXBoxes), and
-   the result is checked like the rest of the text. A DisplayFormula's content written as display-tex:... without its
-   brackets is read as such. *)
+(* Agent text with its LaTeX formulas turned into the boxes that the front end reads: \:3014tex:...\:3015 becomes an
+   inline formula cell \:3014$boxes\:3015, \:3014display-tex:...\:3015 a DisplayFormula cell's content
+   \:3014FormBox[boxes, TraditionalForm]\:3015. They are about half as long as their boxes, which saves the agent time.
+   LaTeX writes only how math looks, so a structure with a meaning beyond it (a TemplateBox, a TagBox) is an island of
+   boxes \:3014Head[...]\:3015 in the LaTeX, whose box arguments are LaTeX in their own \:3014 \:3015: islands nest. A
+   formula the agent read as LaTeX and left as it was gets the front end's text back ($texOriginals), so that it stays
+   exactly as it was. The result is checked like the rest of the text. A DisplayFormula's content written as
+   display-tex:... without its brackets is read as such. *)
 texFormulas // beginDefinition;
 
-texFormulas[ text_String, what_String ] /; StringStartsQ[ text, "display-tex:" ] && StringFreeQ[ text, "\:2e22" | "\:2e23" ] :=
-    texFormulas[ "\:2e22" <> text <> "\:2e23", what ];
+texFormulas[ text_String, what_String ] /; StringStartsQ[ text, "display-tex:" ] :=
+    texFormulas[ "\:3014" <> text <> "\:3015", what ];
 
-texFormulas[ text_String, _String ] /; StringFreeQ[ text, $$texFormula ] := text;
+texFormulas[ text_String, _String ] /; StringFreeQ[ text, "\:3014tex:" | "\:3014display-tex:" ] := text;
 
-texFormulas[ text_String, what_String ] := Module[ { texs, boxes },
-    texs  = DeleteDuplicates @ StringCases[ text, $$texFormula :> tex ];
-    boxes = sandboxTeXBoxes[ texImportSource[ #, what ] & /@ texs, $texSeconds ];
-    If[ FailureQ @ boxes,
-        toolError[ "`1` has LaTeX formulas that could not be read now (`2`). Write them as boxes instead.", what, boxes[ "Tag" ] ]
+texFormulas[ text_String, what_String ] := Module[ { pieces, formulas, boxes },
+    pieces   = Replace[ wrapperPieces @ text, texWrapper[ c_ ] :> texWrapper @ Replace[ Lookup[ $texOriginals, c, None ], None -> c ], { 1 } ];
+    formulas = DeleteDuplicates @ Cases[ pieces, texWrapper[ c_String /; StringMatchQ[ c, $$texFormula ] ] :> c ];
+    boxes    = AssociationThread[
+        formulas,
+        texBoxesTexts[ StringDelete[ formulas, StartOfString ~~ ("tex:" | "display-tex:") ], what ]
     ];
-    boxes = AssociationThread[ texs, boxes ];
     KeyValueMap[
-        If[ #2 === None, toolError[ "`1` has a formula that is not LaTeX math the tools can read: `2`.", what, quoted @ #1 ] ] &,
+        If[ MatchQ[ #2, unreadTeX[ _ ] ],
+            toolError[ "`1` has a formula that is not LaTeX math the tools can read: `2`.", what, quoted @ First @ #2 ]
+        ] &,
         boxes
     ];
-    StringReplace[ text, $$texFormula :> If[ kind === "tex",
-        "\:2e22$" <> boxes @ tex <> "\:2e23",
-        "\:2e22FormBox[" <> boxes @ tex <> ", TraditionalForm]\:2e23"
-    ] ]
+    StringJoin @ Replace[ pieces, {
+        texWrapper[ c_ ] /; KeyExistsQ[ boxes, c ] :> If[ StringStartsQ[ c, "tex:" ],
+            "\:3014$" <> boxes @ c <> "\:3015",
+            "\:3014FormBox[" <> boxes @ c <> ", TraditionalForm]\:3015"
+        ],
+        texWrapper[ c_ ] :> "\:3014" <> c <> "\:3015"
+    }, { 1 } ]
 ];
 
 texFormulas // endDefinition;
+
+
+(* Text as its strings and its outermost wrappers, texWrapper[ content ] *)
+wrapperPieces // beginDefinition;
+wrapperPieces[ text_String ] := StringSplit[ text, $$nestedWrapper :> texWrapper[ "$1" ] ];
+wrapperPieces // endDefinition;
+
+
+(* The boxes, as InputForm text, of LaTeX formulas that may hold islands; or unreadTeX[ tex ] for one with LaTeX tex
+   (its own, or an island argument's) that is not math the TeX import reads. The sandbox kernel reads all their LaTeX in
+   one call (sandboxTeXBoxes): an island stands in its formula's LaTeX as \text{ZqnqZ}, which the import gives back as
+   the string "ZqnqZ", and the island's text, its arguments' boxes put in, replaces that string. *)
+texBoxesTexts // beginDefinition;
+
+texBoxesTexts[ { }, _String ] := { };
+
+texBoxesTexts[ texs: { __String }, what_String ] := Module[ { sources, boxes },
+    sources = DeleteDuplicates @ Flatten[ texSources[ #, what ] & /@ texs ];
+    boxes   = sandboxTeXBoxes[ texImportSource[ #, what ] & /@ sources, $texSeconds ];
+    If[ FailureQ @ boxes,
+        toolError[ "`1` has LaTeX formulas that could not be read now (`2`). Write them as boxes instead.", what, boxes[ "Tag" ] ]
+    ];
+    Block[ { $texImports = AssociationThread[ sources, boxes ] }, Catch[ texBoxesText[ #, what ], $unreadTeXTag ] & /@ texs ]
+];
+
+texBoxesTexts // endDefinition;
+
+
+(* The LaTeX for the TeX import of a formula and of its islands' arguments *)
+texSources // beginDefinition;
+
+texSources[ tex_String, what_String ] := With[ { parts = texParts[ tex, what ] },
+    { First @ parts, Cases[ wrapperPieces @ #, texWrapper[ arg_ ] :> texSources[ arg, what ] ] & /@ Values @ Last @ parts }
+];
+
+texSources // endDefinition;
+
+
+(* A formula's boxes from what the sandbox kernel read ($texImports) *)
+texBoxesText // beginDefinition;
+
+texBoxesText[ tex_String, what_String ] := Module[ { source, islands, boxes },
+    { source, islands } = texParts[ tex, what ];
+    boxes = $texImports @ source;
+    If[ ! StringQ @ boxes || ! AllTrue[ Keys @ islands, StringContainsQ[ boxes, "\"" <> # <> "\"" ] & ],
+        Throw[ unreadTeX @ tex, $unreadTeXTag ]
+    ];
+    StringReplace[ boxes, KeyValueMap[
+        ("StyleBox[\"" <> #1 <> "\", FontSlant -> \"Plain\"]" | "\"" <> #1 <> "\"") -> islandBoxesText[ #2, what ] &,
+        islands
+    ] ]
+];
+
+texBoxesText // endDefinition;
+
+
+islandBoxesText // beginDefinition;
+
+islandBoxesText[ island_String, what_String ] :=
+    StringJoin @ Replace[ wrapperPieces @ island, texWrapper[ arg_ ] :> texBoxesText[ arg, what ], { 1 } ];
+
+islandBoxesText // endDefinition;
+
+
+(* A formula's LaTeX for the TeX import, each island replaced by \text{ZqnqZ}, and its islands by their keys *)
+texParts // beginDefinition;
+
+texParts[ tex_String, what_String ] := Module[ { n = 0, islands = <| |>, source },
+    source = StringJoin @ Replace[
+        wrapperPieces @ tex,
+        texWrapper[ c_ ] :> With[ { key = "Zq" <> ToString[ ++n ] <> "qZ" },
+            islands[ key ] = island[ c, what ];
+            " \\text{" <> key <> "} "
+        ],
+        { 1 }
+    ];
+    { source, islands }
+];
+
+texParts // endDefinition;
+
+
+island // beginDefinition;
+
+island[ c_String, what_String ] := Module[ { latex },
+    If[ ! StringMatchQ[ c, RegularExpression[ "[A-Z][A-Za-z]*Box\\[(?s).*\\]" ] ],
+        toolError[
+            "`1` has \:3014`2`\:3015 inside a LaTeX formula, where \:3014 \:3015 holds an island of boxes such as \
+\:3014TemplateBox[...]\:3015.",
+            what,
+            StringTake[ c, UpTo[ 60 ] ]
+        ]
+    ];
+    (* a quoted string is a Wolfram Language string, where "\nu" is a newline and a u: LaTeX there is a slip *)
+    latex = Select[
+        Flatten[ StringCases[ #, RegularExpression[ "\"(?:[^\"\\\\]|\\\\.)*\"" ] ] & /@ Cases[ wrapperPieces @ c, _String ] ],
+        StringContainsQ[ #, RegularExpression[ "\\\\[A-Za-z]{2,}" ] ] &
+    ];
+    If[ latex =!= { },
+        toolError[
+            "`1` has LaTeX in a quoted string of an island, `2`: a quoted string is plain text, and a box argument in \
+LaTeX goes in its own \:3014 \:3015, e.g. \:3014`3`\:3015.",
+            what,
+            First @ latex,
+            StringTake[ First @ latex, { 2, -2 } ]
+        ]
+    ];
+    c
+];
+
+island // endDefinition;
+
+$unreadTeXTag = "Wolfram`Chatbook`ACP`NotebookTools`UnreadTeX";
 
 
 (* A formula as the kernel's TeX import reads it right: it misreads \tfrac and \dfrac (what comes before one ends up in
@@ -892,6 +1032,186 @@ $texCharacters = KeyValueMap[ #1 -> "\\" <> #2 <> " " &, <|
     "\[ScriptL]" -> "ell", "\[HBar]" -> "hbar", "\[TildeTilde]" -> "approx", "\[Element]" -> "in", "\[Sum]" -> "sum",
     "\[Integral]" -> "int"
 |> ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*texReadTexts*)
+
+(* The front end's texts of cells as the agent reads them: each formula (\:3014$boxes\:3015 an inline formula cell,
+   \:3014FormBox[boxes, TraditionalForm]\:3015 a DisplayFormula cell's content) as LaTeX with islands where texFormulas
+   reads that LaTeX back to the same boxes (up to RowBox grouping, spaces and how = and - are written), else as it is.
+   A read's new formulas are read back in one call of the sandbox kernel; if it can't read them now, they stay boxes
+   this time. Each formula's result is kept ($texReads), and so is the front end's text of each formula shown as LaTeX
+   ($texOriginals). Non-strings are left as they are. *)
+texReadTexts // beginDefinition;
+
+texReadTexts[ texts_List ] := Module[ { new },
+    new = Complement[
+        Union @ Cases[ wrapperPieces /@ Select[ texts, formulaTextQ ], texWrapper[ c_String /; StringMatchQ[ c, $$frontEndFormula ] ] :> c, { 2 } ],
+        Keys @ $texReads
+    ];
+    If[ new =!= { }, texReadFormulas @ new ];
+    If[ formulaTextQ @ #,
+        StringJoin @ Replace[ wrapperPieces @ #, texWrapper[ c_ ] :> "\:3014" <> Lookup[ $texReads, c, c ] <> "\:3015", { 1 } ],
+        #
+    ] & /@ texts
+];
+
+texReadTexts // endDefinition;
+
+
+formulaTextQ // beginDefinition;
+formulaTextQ[ text_ ] := StringQ @ text && StringContainsQ[ text, "\:3014$" | "\:3014FormBox[" ];
+formulaTextQ // endDefinition;
+
+
+texReadFormulas // beginDefinition;
+
+texReadFormulas[ contents: { __String } ] := Module[ { boxes, texs, shown, back },
+    boxes = frontEndFormulaBoxes /@ contents;
+    texs  = Replace[ boxes, { $Failed -> $Failed, b_ :> Catch[ boxesTeX @ b, boxesTeX ] }, { 1 } ];
+    shown = Flatten @ Position[ texs, _String, { 1 }, Heads -> False ];
+    back  = Quiet @ Catch[ texBoxesTexts[ texs[[ shown ]], "A formula" ], $toolErrorTag, $Failed & ];
+    If[ back === $Failed, Return[ Null, Module ] ];
+    $texReads = Join[ $texReads, AssociationThread[ contents, contents ] ];
+    MapThread[
+        Function[ { i, b },
+            If[ StringQ @ b && formulaNormal @ frontEndFormulaBoxes[ "$" <> b ] === formulaNormal @ boxes[[ i ]],
+                With[ { read = If[ StringStartsQ[ contents[[ i ]], "$" ], "tex:", "display-tex:" ] <> texs[[ i ]] },
+                    $texReads[ contents[[ i ]] ] = read;
+                    $texOriginals[ read ] = If[ MatchQ[ Lookup[ $texOriginals, read, contents[[ i ]] ], contents[[ i ]] ],
+                        contents[[ i ]],
+                        None
+                    ]
+                ]
+            ]
+        ],
+        { shown, back }
+    ];
+];
+
+texReadFormulas // endDefinition;
+
+
+(* The boxes of a formula in the front end's text (its wrapper's content), or $Failed: they are parsed held, and given
+   only when every symbol in them is a System` one and every head a box, a list, a rule or a color, so that nothing in
+   them evaluates *)
+frontEndFormulaBoxes // beginDefinition;
+
+frontEndFormulaBoxes[ content_String ] := Module[ { held },
+    held = Quiet @ Check[ ToExpression[ StringDelete[ content, StartOfString ~~ "$" ], InputForm, HoldComplete ], $Failed ];
+    Which[
+        ! MatchQ[ held, HoldComplete[ _ ] ], $Failed,
+        ! FreeQ[ held, s_Symbol /; Context @ Unevaluated @ s =!= "System`", { 1, Infinity }, Heads -> True ], $Failed,
+        ! FreeQ[ held, h_[ ___ ] /; ! MatchQ[ Unevaluated @ h, $$inertHead ], { 1, Infinity } ], $Failed,
+        StringStartsQ[ content, "$" ], First @ held,
+        True, Replace[ First @ held, { FormBox[ b_, TraditionalForm ] :> b, _ -> $Failed } ]
+    ]
+];
+
+frontEndFormulaBoxes // endDefinition;
+
+$$inertHead = Alternatives[
+    _Symbol? (Function[ s, StringEndsQ[ SymbolName @ Unevaluated @ s, "Box" ], HoldAllComplete ]),
+    List, Rule, RuleDelayed, RGBColor, GrayLevel, Hue, CMYKColor, Directive
+];
+
+
+(* Boxes compared as LaTeX writes them: without RowBox grouping and spaces, with = and - as such *)
+formulaNormal // beginDefinition;
+
+formulaNormal[ boxes_ ] := (boxes /. s_String :> StringReplace[ s, { "\[LongEqual]" | "\[Equal]" -> "=", "\[Minus]" -> "-" } ]) //. {
+    StyleBox[ s_, "TI" ] :> s,
+    RowBox[ { a___, RowBox[ { l___ } ], c___ } ] :> RowBox[ { a, l, c } ],
+    RowBox[ { a___, w_String /; StringMatchQ[ w, Whitespace ], c___ } ] :> RowBox[ { a, c } ],
+    RowBox[ { a___, x_String, y_String, c___ } ] :> RowBox[ { a, x <> y, c } ],
+    RowBox[ { x_ } ] :> x
+};
+
+formulaNormal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*boxesTeX*)
+
+(* Boxes as LaTeX, a box LaTeX has no form for as an island \:3014Head[...]\:3015 whose box arguments are LaTeX in their
+   own \:3014 \:3015; Throw[ $Failed, boxesTeX ] for a string that LaTeX can't write *)
+boxesTeX // beginDefinition;
+
+boxesTeX[ s_String ] := teXString @ s;
+boxesTeX[ RowBox[ l_List ] ] := StringRiffle[ boxesTeX /@ DeleteCases[ l, w_String /; StringMatchQ[ w, Whitespace ] ], " " ];
+boxesTeX[ StyleBox[ b_, "TI" ] ] := boxesTeX @ b;
+boxesTeX[ SuperscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "^{" <> boxesTeX @ b <> "}";
+boxesTeX[ SubscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}";
+boxesTeX[ SubsuperscriptBox[ a_, b_, c_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}^{" <> boxesTeX @ c <> "}";
+boxesTeX[ UnderoverscriptBox[ a_, b_, c_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}^{" <> boxesTeX @ c <> "}";
+boxesTeX[ UnderscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}";
+boxesTeX[ FractionBox[ a_, b_ ] ] := "\\frac{" <> boxesTeX @ a <> "}{" <> boxesTeX @ b <> "}";
+boxesTeX[ SqrtBox[ a_ ] ] := "\\sqrt{" <> boxesTeX @ a <> "}";
+boxesTeX[ RadicalBox[ a_, n_ ] ] := "\\sqrt[" <> boxesTeX @ n <> "]{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "." ] ] := "\\dot{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, ".." ] ] := "\\ddot{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "^" ] ] := "\\hat{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "_" | "\:00af" | "\[HorizontalLine]" ] ] := "\\bar{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "\[RightVector]" | "\[RightArrow]" ] ] := "\\vec{" <> boxesTeX @ a <> "}";
+boxesTeX[ b: h_Symbol[ args___ ] ] /; StringEndsQ[ SymbolName @ h, "Box" ] :=
+    "\:3014" <> SymbolName @ h <> "[" <> StringRiffle[ islandArgument /@ { args }, "," ] <> "]\:3015";
+boxesTeX[ _ ] := Throw[ $Failed, boxesTeX ];
+
+boxesTeX // endDefinition;
+
+
+teXString // beginDefinition;
+
+teXString[ s_String ] := Which[
+    KeyExistsQ[ $teXCharacters, s ], $teXCharacters @ s,
+    MemberQ[ $teXFunctions, s ], "\\" <> s,
+    StringMatchQ[ s, RegularExpression[ "[A-Za-z]|[0-9]+(\\.[0-9]+)?|[-+=<>(),./|!' ]" ] ], s,
+    StringMatchQ[ s, Whitespace ], " ",
+    StringLength @ s > 1, StringRiffle[ teXString /@ Characters @ s, " " ],
+    True, Throw[ $Failed, boxesTeX ]
+];
+
+teXString // endDefinition;
+
+
+(* A base of a script: braced unless it is one character or one command *)
+teXGroup // beginDefinition;
+teXGroup[ s_String ] := If[ StringLength @ s === 1 || StringMatchQ[ s, RegularExpression[ "\\\\[a-zA-Z]+" ] ], s, "{" <> s <> "}" ];
+teXGroup // endDefinition;
+
+
+(* An argument of an island: a box as LaTeX in its own \:3014 \:3015, anything else (strings, options) as InputForm *)
+islandArgument // beginDefinition;
+islandArgument[ s_String ] := agentEscaped @ ToString[ s, InputForm ];
+islandArgument[ l_List ] := "{" <> StringRiffle[ islandArgument /@ l, "," ] <> "}";
+islandArgument[ b: h_Symbol[ ___ ] ] /; StringEndsQ[ SymbolName @ h, "Box" ] := "\:3014" <> boxesTeX @ b <> "\:3015";
+islandArgument[ other_ ] := agentEscaped @ ToString[ other, InputForm ];
+islandArgument // endDefinition;
+
+
+(* Text with Wolfram's named characters as \[Name] and the agent text form's own characters escaped *)
+agentEscaped // beginDefinition;
+
+agentEscaped[ s_String ] := StringReplace[
+    s,
+    c: RegularExpression[ "[\\x{E000}-\\x{F8FF}\\x{3014}\\x{3015}\\x{02C4}\\x{02C5}\\x{2044}]" ] :>
+        StringTake[ ToString[ c, InputForm, CharacterEncoding -> "PrintableASCII" ], { 2, -2 } ]
+];
+
+agentEscaped // endDefinition;
+
+
+$teXCharacters = Join[
+    Association[ #1 -> StringTrim @ #2 & @@@ $texCharacters ],
+    <|
+        "\[Rule]" -> "\\to", "\[LongEqual]" -> "=", "\[Equal]" -> "=", "\[Minus]" -> "-", "\[DifferentialD]" -> "\\,d",
+        "\[Product]" -> "\\prod"
+    |>
+];
+
+$teXFunctions = { "sin", "cos", "tan", "cot", "sec", "csc", "sinh", "cosh", "tanh", "arcsin", "arccos", "arctan", "exp",
+    "log", "ln", "det", "lim", "max", "min" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -938,9 +1258,9 @@ requireInertText[ text_String, what_String ] := Module[ { found },
         ]
     ];
     found = First[
-        (* an inline formula's wrapper, \:2e22$boxes\:2e23, holds its boxes after the $ *)
+        (* an inline formula's wrapper, \:3014$boxes\:3015, holds its boxes after the $ *)
         Flatten @ StringCases[
-            withoutStrings @ StringReplace[ #, StartOfString ~~ "\:2e22$" -> "\:2e22" ] & /@ StringCases[ text, $$wrapper ],
+            withoutStrings @ StringReplace[ #, StartOfString ~~ "\:3014$" -> "\:3014" ] & /@ StringCases[ text, $$wrapper ],
             $$codeInWrapper,
             1
         ],
@@ -1464,8 +1784,8 @@ sameCellQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellTexts*)
 
-(* The text of a snapshot's cells (All, or a list of CellObjects) from the front end, each with its id ("ID"); cells
-   without an id get one *)
+(* The text of a snapshot's cells (All, or a list of CellObjects) from the front end as the agent reads it (formulas as
+   LaTeX where they read back exactly, texReadTexts), each with its id ("ID"); cells without an id get one *)
 cellTexts // beginDefinition;
 
 cellTexts[ handle_String, cells_, preview_, elide_ ] := Module[ { result, ids },
@@ -1474,7 +1794,7 @@ cellTexts[ handle_String, cells_, preview_, elide_ ] := Module[ { result, ids },
         toolError[ "The front end could not read the cells of `1`.", snapshotLabel @ handle ]
     ];
     ids = numberCells[ handle, Lookup[ result, "Cell", { } ] ];
-    MapThread[ <| #1, "ID" -> #2 |> &, { result, ids } ]
+    MapThread[ <| #1, "Text" -> #2, "ID" -> #3 |> &, { result, texReadTexts[ Lookup[ #, "Text", None ] & /@ result ], ids } ]
 ];
 
 cellTexts // endDefinition;
@@ -1580,9 +1900,9 @@ failureMessage // endDefinition;
 (* :!CodeAnalysis::Disable::UnrecognizedLongName:: *)
 $editFailureHints = <|
     "CellNotFound"    -> "Call GetOutline for the current cell ids.",
-    "NoMatch"         -> "Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:2e22 \:2e23 wrappers and \\[Name] characters.",
+    "NoMatch"         -> "Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
     "AmbiguousMatch"  -> "Make oldText longer, so that it occurs as often as count says, or give count.",
-    "ParseError"      -> "The cell's new content must parse: check brackets, quotes and \:2e22 \:2e23 wrappers.",
+    "ParseError"      -> "The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
     "CellNotEditable" -> "This cell can't be changed.",
     "NotASnapshot"    -> "Open the notebook with OpenNotebook and edit its snapshot."
 |>;
@@ -1995,7 +2315,7 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
     handle = resolveSnapshot @ args[ "notebook" ];
     cell   = cellArgument[ handle, args[ "cell" ] ];
     edits  = editsArgument @ args[ "edits" ];
-    result = applyEdit[ handle, { { "Edit", cell, edits } } ];
+    result = applyEdit[ handle, { cellEditOperation[ handle, cell, edits ] } ];
     cell   = First @ changedCells[ handle, { cell }, result ];
     StringJoin[
         "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
@@ -2006,6 +2326,50 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
 ];
 
 editInCell // endDefinition;
+
+
+(* The edit packet's operation for edits of a cell: the front end's own edit when the agent reads the cell as the front
+   end writes it; else (a formula of it reads as LaTeX) the edits are applied here to the text the agent reads, failing
+   as the front end's would, and the cell is set to the result *)
+cellEditOperation // beginDefinition;
+
+cellEditOperation[ handle_String, cell_, edits_List ] := Module[ { entry, text, read },
+    entry = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], { cell }, All, True ];
+    (* a cell that can't be read is the front end's to report *)
+    If[ ! MatchQ[ entry, { KeyValuePattern[ "Text" -> _String ] } ], Return[ { "Edit", cell, edits }, Module ] ];
+    text = First[ entry ][ "Text" ];
+    read = First @ texReadTexts @ { text };
+    If[ read === text, Return[ { "Edit", cell, edits }, Module ] ];
+    Do[ read = editedText[ handle, read, edits[[ i ]], If[ Length @ edits > 1, i, None ] ], { i, Length @ edits } ];
+    read = texFormulas[ read, "The edited cell" ];
+    requireCellText[ read, "The edited cell" ];
+    { "Set", cell, Automatic, read }
+];
+
+cellEditOperation // endDefinition;
+
+
+(* Text with an edit { oldText, newText, count } (the i-th of several, or None) applied *)
+editedText // beginDefinition;
+
+editedText[ handle_String, text_String, { old_String, new_String, count_Integer }, i_ ] := With[
+    { n = StringCount[ text, old ], prefix = If[ IntegerQ @ i, "Edit " <> ToString @ i <> ": ", "" ] },
+    Which[
+        n === 0,
+            toolError @ editFailureText[ handle, Failure[ "NoMatch", <|
+                "MessageTemplate" -> prefix <> "The text \"`1`\" does not occur in the cell.", "MessageParameters" -> { old }
+            |> ] ],
+        n =!= count,
+            toolError @ editFailureText[ handle, Failure[ "AmbiguousMatch", <|
+                "MessageTemplate"   -> prefix <> "The text \"`1`\" occurs `2` times in the cell, not `3`.",
+                "MessageParameters" -> { old, n, count }
+            |> ] ],
+        True,
+            StringReplace[ text, old -> new ]
+    ]
+];
+
+editedText // endDefinition;
 
 
 (* ::**************************************************************************************************************:: *)
