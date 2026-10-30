@@ -1854,7 +1854,7 @@ applyEdit[ handle_String, ops: { __List } ] := Module[ { result },
     result = notebookFrontEnd[ "Edit", $snapshots[ handle, "Notebook" ], ops ];
     Which[
         FailureQ @ result && result =!= $Failed,
-            toolError @ editFailureText[ handle, result ],
+            toolError @ editFailureText[ handle, result, ops ],
         ! AssociationQ @ result,
             toolError[ "The front end could not edit `1`. Nothing was changed.", snapshotLabel @ handle ]
     ];
@@ -1867,8 +1867,11 @@ applyEdit // endDefinition;
 
 editFailureText // beginDefinition;
 
-editFailureText[ _String, failure: Failure[ tag_, _Association ] ] := StringJoin[
+editFailureText[ handle_String, failure_Failure ] := editFailureText[ handle, failure, { } ];
+
+editFailureText[ handle_String, failure: Failure[ tag_, data_Association ], ops_List ] := StringJoin[
     ToString @ tag, ": ",
+    failurePlace[ handle, Lookup[ data, "Operation", None ], ops, failureMessage @ failure ],
     failureMessage @ failure,
     " Nothing was changed.",
     Replace[ Lookup[ $editFailureHints, tag, None ], { hint_String :> " " <> hint, _ -> "" } ]
@@ -1877,6 +1880,38 @@ editFailureText[ _String, failure: Failure[ tag_, _Association ] ] := StringJoin
 editFailureText[ handle_String, _ ] := "The front end could not edit " <> snapshotLabel @ handle <> ". Nothing was changed.";
 
 editFailureText // endDefinition;
+
+
+(* Where the failed operation of a batch was, so that the agent can fix it without searching the batch: the cell of a
+   Set or Edit, and for a Set the new content around the character that the front end's message names *)
+failurePlace // beginDefinition;
+
+failurePlace[ handle_String, k_Integer, ops_List, message_String ] /; 1 <= k <= Length @ ops := Replace[ ops[[ k ]], {
+    { "Set" | "Edit", cell_CellObject, rest___ } :> StringJoin[
+        "In #", Lookup[ $snapshots[ handle, "IDs" ], cell, "?" ],
+        Replace[ { rest }, { { _, text_String } :> nearCharacter[ text, message ], _ -> "" } ],
+        ": "
+    ],
+    _ -> ""
+} ];
+
+failurePlace[ _String, _, _List, _String ] := "";
+
+failurePlace // endDefinition;
+
+
+nearCharacter // beginDefinition;
+
+nearCharacter[ text_String, message_String ] := Replace[
+    StringCases[ message, "character " ~~ n: DigitCharacter.. :> FromDigits @ n, 1 ],
+    {
+        { n_ } /; n <= StringLength @ text + 1 :>
+            " near " <> quoted @ StringTake[ text, { Max[ 1, n - 15 ], Min[ StringLength @ text, n + 15 ] } ],
+        _ -> ""
+    }
+];
+
+nearCharacter // endDefinition;
 
 
 failureMessage // beginDefinition;

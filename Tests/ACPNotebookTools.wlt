@@ -193,6 +193,13 @@ VerificationTest[
                             ],
                         "Set",
                             With[ { pos = fakePosition[ cells, op[[ 2 ]], i ] },
+                                If[ StringContainsQ[ op[[ 4 ]], "PARSEERROR" ],
+                                    Throw[ Failure[ "ParseError", <|
+                                        "MessageTemplate" -> "The short form at character `1` has no simple token before it.",
+                                        "MessageParameters" -> { First @ First @ StringPosition[ op[[ 4 ]], "PARSEERROR" ] },
+                                        "Operation" -> i
+                                    |> ], $fakeTag ]
+                                ];
                                 cells[[ pos, "Text" ]] = op[[ 4 ]];
                                 If[ op[[ 3 ]] =!= Automatic, cells[[ pos, "Style" ]] = op[[ 3 ]] ];
                                 AppendTo[ changed, op[[ 2 ]] ]
@@ -1011,12 +1018,12 @@ VerificationTest[
     ],
     {
         {
-            "NoMatch: \"+ V[q]\" does not occur in the cell. Nothing was changed. Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
-            "AmbiguousMatch: \"l\" occurs 2 times in the cell. Nothing was changed. Make oldText longer, so that it occurs as often as count says, or give count.",
-            "ParseError: The new content of the cell does not parse. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
+            "NoMatch: In #c4: \"+ V[q]\" does not occur in the cell. Nothing was changed. Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
+            "AmbiguousMatch: In #c4: \"l\" occurs 2 times in the cell. Nothing was changed. Make oldText longer, so that it occurs as often as count says, or give count.",
+            "ParseError: In #c4: The new content of the cell does not parse. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
             "Edit 1 has no newText (use \"\" to delete oldText).",
             "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
-            "CellNotFound: The cell does not exist. Nothing was changed. Call GetOutline for the current cell ids."
+            "CellNotFound: In #c3: The cell does not exist. Nothing was changed. Call GetOutline for the current cell ids."
         },
         4,
         "H = p\:02c42/(2 m l\:02c42) - m g l Cos[\[Theta]]",
@@ -1052,7 +1059,7 @@ VerificationTest[
 ]
 
 (* SetCells replaces the content of cells, and their styles where given, and deletes the cells of delete, in one edit
-   packet; a bad item changes nothing *)
+   packet; a bad item changes nothing, and a parse error names the cell and the text near it *)
 VerificationTest[
     withFakeFE @ (
         nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
@@ -1060,6 +1067,7 @@ VerificationTest[
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |>, <| "cell" -> "c3", "text" -> "(*The Lagrangian:*)" |> } |> ],
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*Lagrangian*)", "style" -> "Subsection" |> } |> ],
             nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c4", "text" -> "L = T - V" |> }, "delete" -> "c5, c7" |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*Text*)" |>, <| "cell" -> "c4", "text" -> "Lcentral = r'[t]PARSEERROR + V[r]" |> } |> ],
             nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c3, c4" |> ],
             nbtText @ nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c5" |> ],
             nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*x*)" |>, <| "cell" -> "c4", "text" -> "(* ::Text:: #c4 *)\n(*x*)" |> } |> ],
@@ -1074,6 +1082,7 @@ VerificationTest[
         "Set 2 cells of s1: #c4, #c3. ReadCells shows their new content.",
         "Set 1 cell of s1: #c3. ReadCells shows their new content.",
         "Set 1 cell of s1: #c4; deleted #c5, #c7. ReadCells shows their new content.",
+        "ParseError: In #c4 near \"central = r'[t]PARSEERROR + V[r\": The short form at character 17 has no simple token before it. Nothing was changed. The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
         "(* ::Subsection:: #c3 *)\n(*Lagrangian*)\n(* ::Input:: #c4 *)\nL = T - V",
         "s1 has no cell \"c5\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
         "The text of item 2 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
@@ -1084,7 +1093,8 @@ VerificationTest[
         {
             { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" } },
             { { "Set", CellObject[ "fake-1-3" ], "Subsection", "(*Lagrangian*)" } },
-            { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Delete", { CellObject[ "fake-1-5" ], CellObject[ "fake-1-7" ] } } }
+            { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Delete", { CellObject[ "fake-1-5" ], CellObject[ "fake-1-7" ] } } },
+            { { "Set", CellObject[ "fake-1-3" ], Automatic, "(*Text*)" }, { "Set", CellObject[ "fake-1-4" ], Automatic, "Lcentral = r'[t]PARSEERROR + V[r]" } }
         }
     },
     SameTest -> MatchQ,
