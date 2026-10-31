@@ -217,11 +217,10 @@ releaseSidebarSelections // endDefinition;
 (*Sidebar Agent*)
 
 (* The sidebar's conversation while its Notebook editing switch is on: the notebook agent of the ACP window, run as the
-   speed trials run it (opencode, $sidebarAgentModel at $sidebarAgentEffort, the notebook tools over MCP, the notebook
-   attached), with that window hidden as the engine. The sidebar draws each turn from the window's turn record in its
-   own chat cells, and the window shows the turn's changes in the notebook as a diff when the turn ends. *)
-$sidebarAgentModel   = "openai/gpt-6.1-sol";
-$sidebarAgentEffort  = "medium";
+   speed trials run it (opencode, the model and effort of the sidebar's NotebookEditingModel and NotebookEditingEffort
+   settings, the notebook tools over MCP, the notebook attached), with that window hidden as the engine. The sidebar
+   draws each turn from the window's turn record in its own chat cells, and the window shows the turn's changes in the
+   notebook as a diff when the turn ends. *)
 $sidebarAgentCommand = { "/opt/homebrew/bin/opencode", "acp" };
 $sidebarAgentTimeout = 1800;
 (* the development checkouts the speed trials use: AgentTools (the notebook tools' MCP server), ACPLink, and the folder
@@ -237,7 +236,7 @@ If[ ! AssociationQ @ $sidebarAgentMessages, $sidebarAgentMessages = <| |> ]; (* 
 evaluateSidebarAgent // beginDefinition;
 
 evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := Enclose[
-    Module[ { text, uuid, prompt, window, id },
+    Module[ { text, uuid, prompt, model, window, id },
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
         appendCellToSidebarChat[
@@ -254,12 +253,16 @@ evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := En
             uuid
         ];
         prompt = ConfirmBy[ CellToString @ Cell[ text, "Text" ], StringQ, "Prompt" ];
-        window = ConfirmMatch[ sidebarAgentWindow @ nbo, _NotebookObject, "Window" ];
+        model  = CurrentChatSettings[ sidebarCell, "NotebookEditingModel" ];
+        window = ConfirmMatch[ sidebarAgentWindow[ nbo, model ], _NotebookObject, "Window" ];
         id     = ConfirmBy[ createUUID[ ], StringQ, "AgentCellUUID" ];
         $sidebarAgentMessages[ id ] = <|
             "Window"     -> window,
             "Notebook"   -> nbo,
             "Prompt"     -> prompt,
+            "Model"      -> model,
+            "Effort"     -> CurrentChatSettings[ sidebarCell, "NotebookEditingEffort" ],
+            "ConfigSent" -> { },
             "ReEvaluate" -> CurrentChatSettings[ sidebarCell, "NotebookReEvaluate" ] =!= False,
             "State"      -> "Starting the agent\[Ellipsis]",
             "TurnID"     -> None,
@@ -278,16 +281,16 @@ evaluateSidebarAgent // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sidebarAgentWindow*)
 
-(* The notebook's hidden ACP window, made the first time: its agent works in the notebook's folder *)
+(* The notebook's hidden ACP window, made the first time with the given model: its agent works in the notebook's folder *)
 sidebarAgentWindow // beginDefinition;
 
-sidebarAgentWindow[ nbo_NotebookObject ] := Replace[
+sidebarAgentWindow[ nbo_NotebookObject, model_ ] := Replace[
     Lookup[ $sidebarAgentWindows, nbo, None ],
     Except[ w_NotebookObject /; MemberQ[ Notebooks[ ], w ] ] :> Module[ { window },
         sidebarAgentSetup[ ];
         window = ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <|
             "ProjectDirectory"    -> $sidebarAgentLLMEditing,
-            "ACPModel"            -> $sidebarAgentModel,
+            "ACPModel"            -> model,
             "ACPAgentCommandLine" -> $sidebarAgentCommand,
             "ACPMCPServer"        -> True
         |> ];
@@ -322,12 +325,12 @@ sidebarAgentSetup // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sidebarAgentStep*)
 
-(* One step of an agent message, every 0.25 s until its turn is over: once the window's agent is ready, its effort is
-   set and the prompt is sent with the notebook attached; when the turn has ended and the window's show job (the diff) is
-   done, the message's cell is written once more without its live view. *)
+(* One step of an agent message, every 0.25 s until its turn is over: once the window's agent is ready, its model and
+   then its effort are set, one per step, and the prompt is sent with the notebook attached; when the turn has ended and
+   the window's show job (the diff) is done, the message's cell is written once more without its live view. *)
 sidebarAgentStep // beginDefinition;
 
-sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], window, status, effort, turn },
+sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], window, status, change, turn },
     window = msg[ "Window" ];
     status = acpWindowGet[ window, "Status", None ];
     Which[
@@ -338,12 +341,12 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
         msg[ "TurnID" ] === None && status =!= "Ready",
             $sidebarAgentMessages[ id, "State" ] = "Starting the agent\[Ellipsis]",
         msg[ "TurnID" ] === None,
-            effort = sidebarAgentEffortOption @ window;
+            change = sidebarAgentConfigChange @ msg;
             Which[
-                MatchQ[ effort, { _String, e_ /; e =!= $sidebarAgentEffort } ] && ! TrueQ @ msg[ "EffortSent" ],
-                    $sidebarAgentMessages[ id, "EffortSent" ] = True;
-                    acpSetConfigOption[ window, First @ effort, $sidebarAgentEffort ],
-                MatchQ[ effort, { _String, e_ /; e =!= $sidebarAgentEffort } ],
+                MatchQ[ change, { optionID_, _ } /; ! MemberQ[ msg[ "ConfigSent" ], optionID ] ],
+                    $sidebarAgentMessages[ id, "ConfigSent" ] = Append[ msg[ "ConfigSent" ], First @ change ];
+                    acpSetConfigOption[ window, Sequence @@ change ],
+                change =!= None,
                     Null,
                 True,
                     $acpNotebookReEvaluate = msg[ "ReEvaluate" ];
@@ -380,13 +383,21 @@ give them, with InsertCells (style Output) after their Input cell, and delete th
 sidebarAgentPrompt // endDefinition;
 
 
-(* The agent's reasoning effort option: { id, current value }, or None *)
-sidebarAgentEffortOption // beginDefinition;
-sidebarAgentEffortOption[ window_NotebookObject ] := Replace[
-    acpFindConfigOption[ Replace[ acpWindowGet[ window, "ConfigOptions", { } ], Except[ _List ] -> { } ], "thought_level" ],
-    { o_Association :> { o[ "id" ], Lookup[ o, "currentValue", None ] }, _ -> None }
+(* The first of the agent's model and reasoning effort options that the message wants changed, as { option id, value },
+   or None; a value the agent doesn't offer is left as the agent has it *)
+sidebarAgentConfigChange // beginDefinition;
+sidebarAgentConfigChange[ msg_Association ] := With[
+    { options = Replace[ acpWindowGet[ msg[ "Window" ], "ConfigOptions", { } ], Except[ _List ] -> { } ] },
+    FirstCase[
+        { { "model", msg[ "Model" ] }, { "thought_level", msg[ "Effort" ] } },
+        { category_, value_ } :> With[ { option = acpFindConfigOption[ options, category ] },
+            { option[ "id" ], value } /;
+                AssociationQ @ option && Lookup[ option, "currentValue", None ] =!= value && MemberQ[ acpOptionValues @ option, value ]
+        ],
+        None
+    ]
 ];
-sidebarAgentEffortOption // endDefinition;
+sidebarAgentConfigChange // endDefinition;
 
 
 sidebarAgentFinish // beginDefinition;
