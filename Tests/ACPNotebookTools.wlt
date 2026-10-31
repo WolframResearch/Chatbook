@@ -212,9 +212,17 @@ VerificationTest[
                                     op[[ 3 ]] === "Before"                       , fakePosition[ cells, op[[ 2 ]], i ],
                                     True                                         , fakePosition[ cells, op[[ 2 ]], i ] + 1
                                 ];
-                                new = fakeCell[ "fake-new-" <> ToString[ ++$fakeCount ], First @ Flatten @ { #[[ 1 ]] }, #[[ 2 ]], 2 ] & /@ op[[ 4 ]];
+                                new = Append[
+                                    fakeCell[ "fake-new-" <> ToString[ ++$fakeCount ], First @ Flatten @ { #[[ 1 ]] }, #[[ 2 ]], 2 ],
+                                    "Tags" -> If[ Length @ # === 3, #[[ 3 ]], { } ]
+                                ] & /@ op[[ 4 ]];
                                 cells = Join[ Take[ cells, at - 1 ], new, Drop[ cells, at - 1 ] ];
                                 inserted = Join[ inserted, Lookup[ new, "Cell" ] ]
+                            ],
+                        "Tags",
+                            With[ { pos = fakePosition[ cells, op[[ 2 ]], i ] },
+                                cells[[ pos ]] = Append[ cells[[ pos ]], "Tags" -> op[[ 3 ]] ];
+                                AppendTo[ changed, op[[ 2 ]] ]
                             ],
                         "Delete",
                             With[ { positions = fakePosition[ cells, #, i ] & /@ op[[ 2 ]] },
@@ -343,7 +351,7 @@ VerificationTest[
                 "count"   -> KeyValuePattern[ "type" -> "integer" ]
             }
         },
-        { "style", "text" },
+        { "style", "text", "tags" },
         "boolean"
     },
     SameTest -> MatchQ,
@@ -1088,7 +1096,7 @@ VerificationTest[
         "The text of item 2 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
         "Item 1 of cells has no text.",
         "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
-        "The parameter cells must be a list of cells {cell, text, style}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}].",
+        "The parameter cells must be a list of cells {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}].",
         _Failure, (* LLMTool refuses a call without a required parameter *)
         {
             { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" } },
@@ -1346,6 +1354,40 @@ VerificationTest[
     { "fake-1-3", "fake-1-4" },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-EditedCells"
+]
+
+(* Tags: the marker lines and the outline show a cell's tags; SetCells sets them with or without the text, and new cells
+   may have them, for links to the cells (Hyperlink ButtonBoxes whose ButtonData is a tag) *)
+VerificationTest[
+    withFakeFE @ (
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        {
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c2", "tags" -> "pendulum, start" |>, <| "cell" -> "c6", "tags" -> "[\"motion\"]" |> } |> ],
+            nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c3", "text" -> "(*See \:3014ButtonBox[\"Equations of motion\", BaseStyle->\"Hyperlink\", ButtonData->\"motion\"]\:3015.*)", "tags" -> "" |> } |> ],
+            nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Section", "text" -> "(*Waves*)", "tags" -> "waves" |>, <| "style" -> "Text", "text" -> "(*x*)" |> } |> ],
+            nbtCall[ "ReadCells", <| "notebook" -> "s1", "cells" -> "c2, c6" |> ],
+            StringCases[ nbtCall[ "GetOutline", <| "notebook" -> "s1" |> ], "(* ::Section" ~~ Except[ "\n" ].. ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c2", "style" -> "Text", "tags" -> "x" |> } |> ],
+            nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c2", "text" -> "(* ::Section:: #c2 tags: x *)\n(*x*)" |> } |> ],
+            Cases[ $fakeCalls, { "Edit", _, ops_ } :> ops ]
+        }
+    ),
+    {
+        "Set 2 cells of s1: #c2, #c6. ReadCells shows their new content.",
+        "Set 1 cell of s1: #c3. ReadCells shows their new content.",
+        "Inserted 2 cells at the end of s1:\n(* ::Section:: #c8 tags: waves *)\n(*Waves*)\n(* ::Text:: #c9 *)\n(*x*)",
+        "(* ::Section:: #c2 tags: pendulum, start *)\n(*The simple pendulum*)\n(* ::Section::Closed:: #c6 tags: motion *)\n(*Equations of motion*)",
+        { "(* ::Section:: #c2 tags: pendulum, start *)", "(* ::Section::Closed:: #c6 tags: motion *)", "(* ::Section:: #c8 tags: waves *)" },
+        "Item 1 of cells changes the style without the text: give its text too.",
+        "The text of item 1 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
+        {
+            { { "Tags", CellObject[ "fake-1-2" ], { "pendulum", "start" } }, { "Tags", CellObject[ "fake-1-6" ], { "motion" } } },
+            { { "Set", CellObject[ "fake-1-3" ], Automatic, _String }, { "Tags", CellObject[ "fake-1-3" ], { } } },
+            { { "Insert", None, "After", { { "Section", "(*Waves*)", { "waves" } }, { "Text", "(*x*)" } } } }
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-Tags"
 ]
 
 (* InsertCells after or before a cell, or at the end; the new cells get the next ids and are shown *)

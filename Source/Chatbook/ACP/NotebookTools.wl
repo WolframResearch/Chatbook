@@ -82,8 +82,8 @@ $acpNotebookEditTools = { "ShowChanges" };
 $defaultNotebookDiffFile = "/System/Volumes/Data/Development/WRI/FE_diff2/FrontEnd_diff2/docs/CellDiff/CellDiffNotebookDiff.wl";
 $notebookDiffFunction    = "CellDiffNotebookDiff`ShowNotebookDiff";
 
-(* The marker line of a cell, with or without an id: an edit or a cell's text never holds one *)
-$$markerLine = RegularExpression[ "(?m)^[ \\t]*\\(\\* ::[^\\n]*::[ \\t]*(?:#\\S+[ \\t]*)?\\*\\)[ \\t]*$" ];
+(* The marker line of a cell, with or without an id and tags: an edit or a cell's text never holds one *)
+$$markerLine = RegularExpression[ "(?m)^[ \\t]*\\(\\* ::[^\\n]*::[^\\n]*\\*\\)[ \\t]*$" ];
 
 (* Agent text that would run code when the front end shows it. Linear syntax: its characters, their escapes, and the
    \! and \* escapes (a backslash that is not itself escaped); \* is the box constructor, which evaluates boxes. *)
@@ -185,7 +185,8 @@ acpNotebookTools // endDefinition;
 (* :!CodeAnalysis::Disable::UnrecognizedLongName:: *)
 $acpNotebookNotation = "\
 Cell text notation: a cell is a marker line (* ::Style:: #id *) followed by its content. #id (e.g. #c3) names the \
-cell in the other tools; marker lines are not content, and no edit includes one.
+cell in the other tools; marker lines are not content, and no edit includes one. A cell's tags follow its id, e.g. \
+(* ::Section:: #c4 tags: laguerre *); SetCells and InsertCells set them.
 
 Math is typeset and written as LaTeX. In a text cell \:3014tex:...\:3015 is an inline formula, e.g. \
 \:3014tex:\\frac{\\partial L}{\\partial \\dot{q}}\:3015, and \:3014display-tex:...\:3015 is the whole content of a \
@@ -204,7 +205,11 @@ e.g. \:3014SqrtBox[\"x\"]\:3015, with no short forms or other \:3014 \:3015 insi
 size]\:3015 stands for graphics or a large box: keep it unchanged.
 
 Text cells are wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:3014\"*)\"\:3015, and styled text \
-is \:3014StyleBox[...]\:3015. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]), \
+is \:3014StyleBox[...]\:3015. A hyperlink to another cell of the notebook is \
+\:3014ButtonBox[\"link text\", BaseStyle->\"Hyperlink\", ButtonData->\"tag\"]\:3015 in a text cell, where tag is a tag of \
+the target cell: give the target a short tag with SetCells (tags alone keep its content) if it has none. A link to a \
+web page is \:3014ButtonBox[\"link text\", BaseStyle->\"Hyperlink\", ButtonData->{URL[\"https://...\"], None}]\:3015. \
+Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]), \
 never as raw characters; other Unicode characters (Greek letters, \:2192) as they are. Content that would run code \
 when shown (dynamic boxes, button functions) is refused. Keep a notebook's typesetting when you rewrite it: write new \
 math as formulas, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells. Spend the \
@@ -300,17 +305,18 @@ newText. Copy oldText exactly from ReadCells or SearchNotebook; it never include
 content.";
 
 $setCellsDescription = "\
-Replaces the whole content of cells of a snapshot, and optionally their styles, in one call: each item is {cell, \
-text, style}, text in the cell text notation without the marker line (text cells wrapped in (* *)). The items are \
-applied in order, all or none. Use one SetCells call for all the cells you rewrite, with delete for the cells to \
-delete with them (such as outputs that the new cells make stale). Rewriting a whole cell is slow: for a cell that \
+Replaces the whole content of cells of a snapshot, and optionally their styles and tags, in one call: each item is \
+{cell, text, style, tags}, text in the cell text notation without the marker line (text cells wrapped in (* *)); an \
+item with tags and no text changes only the cell's tags. The items are applied in order, all or none. Use one \
+SetCells call for all the cells you rewrite, with delete for the cells to delete with them (such as outputs that the \
+new cells make stale). Rewriting a whole cell is slow: for a cell that \
 changes only in part, EditInCell is much faster. Gives the ids of the cells it set and deleted, and after an edit of \
 code a code check of the notebook's Input cells.";
 
 $insertCellsDescription = "\
 Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
-position \"before\": at the beginning). Each new cell is {style, text}, its text in the cell text notation without a \
-marker line (text cells wrapped in (* *)). Gives the new cells with their ids.";
+position \"before\": at the beginning). Each new cell is {style, text, tags}, its text in the cell text notation \
+without a marker line (text cells wrapped in (* *)), tags optional. Gives the new cells with their ids.";
 
 $deleteCellsDescription = "Deletes cells from a snapshot.";
 
@@ -434,9 +440,12 @@ The edits, applied in order: {oldText, newText, count}; oldText must occur exact
             $snapshotParameter,
             parameter[
                 "cells",
-                RepeatingElement @ CompoundElement @ <| "cell" -> "String", "text" -> "String", "style" -> "String" |>,
+                RepeatingElement @ CompoundElement @ <|
+                    "cell" -> "String", "text" -> "String", "style" -> "String", "tags" -> "String"
+                |>,
                 "\
-The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New words*)\"}; omit style to keep the style",
+The cells, in order: {cell, text, style, tags}, e.g. {cell: \"c3\", text: \"(*New words*)\"}; omit style to keep the \
+style, and tags to keep the tags; tags are separated by commas, and \"\" removes them",
                 True
             ],
             parameter[
@@ -461,8 +470,8 @@ The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New word
             $snapshotParameter,
             parameter[
                 "newCells",
-                RepeatingElement @ CompoundElement @ <| "style" -> "String", "text" -> "String" |>,
-                "The new cells, in order: {style, text}, e.g. {style: \"Input\", text: \"x = 1\"}",
+                RepeatingElement @ CompoundElement @ <| "style" -> "String", "text" -> "String", "tags" -> "String" |>,
+                "The new cells, in order: {style, text, tags}, e.g. {style: \"Input\", text: \"x = 1\"}; tags (optional) are separated by commas",
                 True
             ],
             parameter[ "cell", "String", "The id of the cell to insert after or before; omit it for the end", False ],
@@ -796,6 +805,14 @@ stylesArgument[ spec_ ] := Replace[ listArgument[ spec, "," | ";" ], { } -> None
 stylesArgument // endDefinition;
 
 
+(* A cell's tags, separated by commas: a list of tags, { } to remove them ("") or None if it is not given *)
+tagsArgument // beginDefinition;
+tagsArgument[ Missing[ ___ ] | Null ] := None;
+tagsArgument[ spec: _String | { ___String } ] := listArgument[ spec, "," | ";" ];
+tagsArgument[ other_ ] := toolError[ "The tags must be a string of tags separated by commas, not `1`.", quoted @ other ];
+tagsArgument // endDefinition;
+
+
 (* A cell style (a set cell's style, a new cell's style), or Automatic if it is not given *)
 styleArgument // beginDefinition;
 styleArgument[ Missing[ ___ ] | Null, _String ] := Automatic;
@@ -852,7 +869,7 @@ editArgument // endDefinition;
 (* ::Subsection::Closed:: *)
 (*newCellsArgument*)
 
-(* InsertCells' new cells as { { style, text }, ... } *)
+(* InsertCells' new cells as { { style, text } or { style, text, tags }, ... } *)
 newCellsArgument // beginDefinition;
 
 newCellsArgument[ cells: { __Association } ] := MapIndexed[ newCellArgument[ #1, First @ #2 ] &, cells ];
@@ -874,7 +891,10 @@ newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
     If[ outputStyleQ @ StringTrim @ style && ! handWrittenOutputQ @ StringTrim @ style, toolError @ $outputCellText ];
     text = texFormulas[ text, "The text of new cell " <> ToString @ i ];
     requireCellText[ text, "The text of new cell " <> ToString @ i ];
-    { If[ handWrittenOutputQ @ StringTrim @ style, $evaluatedOutputStyles, StringTrim @ style ], text }
+    Join[
+        { If[ handWrittenOutputQ @ StringTrim @ style, $evaluatedOutputStyles, StringTrim @ style ], text },
+        Replace[ tagsArgument @ Lookup[ cell, "tags", Missing[ "NoInput" ] ], { None | { } -> { }, tags_ :> { tags } } ]
+    ]
 ];
 
 newCellArgument // endDefinition;
@@ -883,29 +903,40 @@ newCellArgument // endDefinition;
 (* ::Subsection::Closed:: *)
 (*setCellsArgument*)
 
-(* SetCells' cells as "Set" operations of the edit packet: { { "Set", cell, style, text }, ... } *)
+(* SetCells' cells as "Set" and "Tags" operations of the edit packet: { { "Set", cell, style, text }, { "Tags", cell,
+   tags }, ... } *)
 setCellsArgument // beginDefinition;
 
-setCellsArgument[ handle_String, cells: { __Association } ] := MapIndexed[ setCellArgument[ handle, #1, First @ #2 ] &, cells ];
+setCellsArgument[ handle_String, cells: { __Association } ] :=
+    Join @@ MapIndexed[ setCellArgument[ handle, #1, First @ #2 ] &, cells ];
 setCellsArgument[ _String, { } | Missing[ ___ ] | Null ] := missingArgument[ "cells" ];
 
 setCellsArgument[ _String, _ ] :=
-    toolError[ "The parameter cells must be a list of cells {cell, text, style}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}]." ];
+    toolError[ "The parameter cells must be a list of cells {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}]." ];
 
 setCellsArgument // endDefinition;
 
 
 setCellArgument // beginDefinition;
 
-setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell, text },
-    cell = cellArgument[ handle, Lookup[ item, "cell", Missing[ "NoInput" ] ] ];
-    text = Lookup[ item, "text", Missing[ "NoInput" ] ];
-    If[ ! StringQ @ text, toolError[ "Item `1` of cells has no text.", i ] ];
-    text = texFormulas[ text, "The text of item " <> ToString @ i ];
-    requireCellText[ text, "The text of item " <> ToString @ i ];
-    With[ { style = styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ] },
-        If[ outputStyleQ @ style, toolError @ $outputCellText ];
-        { "Set", cell, style, text }
+setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell, text, style, tags },
+    cell  = cellArgument[ handle, Lookup[ item, "cell", Missing[ "NoInput" ] ] ];
+    text  = Lookup[ item, "text", Missing[ "NoInput" ] ];
+    style = styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ];
+    tags  = tagsArgument @ Lookup[ item, "tags", Missing[ "NoInput" ] ];
+    Which[
+        StringQ @ text, Null,
+        tags === None, toolError[ "Item `1` of cells has no text.", i ],
+        style =!= Automatic, toolError[ "Item `1` of cells changes the style without the text: give its text too.", i ]
+    ];
+    If[ outputStyleQ @ style, toolError @ $outputCellText ];
+    If[ StringQ @ text,
+        text = texFormulas[ text, "The text of item " <> ToString @ i ];
+        requireCellText[ text, "The text of item " <> ToString @ i ]
+    ];
+    Join[
+        If[ StringQ @ text, { { "Set", cell, style, text } }, { } ],
+        If[ tags === None, { }, { { "Tags", cell, tags } } ]
     ]
 ];
 
@@ -1362,7 +1393,7 @@ withoutStrings // endDefinition;
 (* Every front end operation of the tools (tests replace this function with a made-up front end):
      notebookFrontEnd[ "Snapshot", source ]                      the hidden snapshot's NotebookObject, or $Failed;
                                                                  source: a NotebookObject, a file or None
-     notebookFrontEnd[ "CellText", nb, cells, preview, elide ]   { <| "Cell", "Style", "Text", "GroupDepth", "Open" |>,
+     notebookFrontEnd[ "CellText", nb, cells, preview, elide ]   { <| "Cell", "Style", "Text", "GroupDepth", "Open", "Tags" |>,
                                                                  ... } or $Failed; cells: All or { CellObject, ... },
                                                                  preview: n or All, elide: True or False
      notebookFrontEnd[ "Edit", nb, ops ]                         <| "Changed", "Inserted", "Deleted" |> or a Failure
@@ -1886,10 +1917,17 @@ cellMarker[ entry_Association ] := StringJoin[
     If[ Lookup[ entry, "Open", True ] === False, "::Closed", "" ],
     ":: #",
     entry[ "ID" ],
+    tagsText @ entry,
     " *)"
 ];
 
 cellMarker // endDefinition;
+
+
+(* A cell's tags as its marker line and outline show them, or "" *)
+tagsText // beginDefinition;
+tagsText[ entry_Association ] := Replace[ Lookup[ entry, "Tags", { } ], { tags: { __String } :> " tags: " <> StringRiffle[ tags, ", " ], _ -> "" } ];
+tagsText // endDefinition;
 
 
 styleName // beginDefinition;
@@ -2137,7 +2175,7 @@ outlineHeading // beginDefinition;
 
 outlineHeading[ entry_Association, last_String ] := StringJoin[
     StringRepeat[ "  ", Max[ 0, Replace[ Lookup[ entry, "GroupDepth", 0 ], Except[ _Integer ] -> 0 ] - 1 ] ],
-    "#", entry[ "ID" ], If[ last =!= entry[ "ID" ], "-#" <> last, "" ], " (", styleName @ entry[ "Style" ], ") ",
+    "#", entry[ "ID" ], If[ last =!= entry[ "ID" ], "-#" <> last, "" ], " (", styleName @ entry[ "Style" ], tagsText @ entry, ") ",
     StringTrim @ StringReplace[ cellContent @ entry, { "(*" -> "", "*)" -> "", ("\r\n" | "\n" | "\r") -> " " } ]
 ];
 
