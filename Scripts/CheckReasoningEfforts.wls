@@ -14,7 +14,7 @@
 
    Usage:
        wolframscript -f Scripts/CheckReasoningEfforts.wls [all] [out=<file>] [compare=<dir>] [from=<file>]
-                                                         [developer=<file>] [<model> ...]
+                                                         [developer=<file>] [cloud=<file>] [<model> ...]
        (no arguments)    check the models in $models below
        all               also check every gpt-5*/gpt-6* alias the key can list at /v1/models
        out=<file>        Put the per-model results (a list of associations) into <file>
@@ -25,6 +25,8 @@
                          after a change to Chatbook. Checks the models in <file>, or the named ones in it.
        developer=<file>  Also write the results to <file> as a human-readable data file, normally
                          Developer/OpenAIReasoningEfforts.wl (see "Developer data file" below)
+       cloud=<file>      Also write the cloud data file that LLMConnections reads to <file> (see "Cloud
+                         data file" below). It is only written locally, never uploaded.
        <model>           check only the named models, e.g. gpt-5.4 gpt-5.5-pro
    Arguments are plain words: wolframscript consumes --flags before the script sees them. Relative file
    names are relative to the current directory.
@@ -74,6 +76,13 @@
    paclet versions and Responses gate, and per model OpenAI's levels and default in Chatbook's spellings,
    Chatbook's side, and where the two differ. Its header comment explains every key; it is filled in from
    Scripts/Resources/OpenAIReasoningEffortsHeader.wl. Nothing in Source/ reads the file.
+
+   Cloud data file (cloud=<file>): one Association with "SchemaVersion", "Updated", "ProbeDate",
+   "ChatbookCommit", "Scale", and under "OpenAI" one entry per model that has data, keyed by API model name.
+   Each request method's entry holds "ReasoningEfforts" and "ProviderDefault" from the probe, in Chatbook's
+   spellings, and "ChatbookDefault", the "Reasoning" value this checkout resolves on that request method;
+   a request method without data is its Missing[ ... ] status. Its header comment, filled in from
+   Scripts/Resources/LLMReasoningEffortSpecificationDataHeader.wl, explains every key.
 *)
 
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
@@ -476,6 +485,66 @@ writeDeveloperFile[ file_String, results_List, side_Association, date_String ] :
                 CharacterEncoding -> "UTF-8" ]
     ];
 
+(* ::**************************************************************************************************************:: *)
+(* Cloud data file *)
+
+(* One request method's entry. A request method the probe could not check is just its Missing status, so that callers
+   find no data for it and use their own settings. "ChatbookDefault" is the "Reasoning" value this checkout resolves on
+   that request method: *)
+cloudEntry[ scale_ ][ api_, chatbook_, method_String ] :=
+    With[ { o = openAISide[ scale ][ api ] },
+        Which[
+            MissingQ @ o, o,
+            ! ListQ @ o[ "ReasoningEfforts" ], Missing[ "ProbeFailed" ],
+            True, <|
+                "ReasoningEfforts" -> o[ "ReasoningEfforts" ],
+                "ProviderDefault"  -> Replace[
+                                          o[ "DefaultReasoning" ],
+                                          Except[ _String | _Missing ] -> Missing[ "ProbeFailed" ]
+                                      ],
+                "ChatbookDefault"  -> chatbookDefault[ chatbook, method ]
+            |>
+        ]
+    ];
+
+chatbookDefault[ chatbook_Association, method_String ] :=
+    Replace[ chatbook[ method ], { KeyValuePattern[ "Reasoning" -> r_ ] :> r, _ -> Missing[ "NotDeclared" ] } ];
+
+chatbookDefault[ _, _ ] := Missing[ "NotDeclared" ];
+
+cloudModel[ scale_ ][ r_Association ] :=
+    r[ "Name" ] -> AssociationMap[ cloudEntry[ scale ][ r[ # ], r[ "Chatbook" ], # ] &, $endpoints ];
+
+writeCloudFile[ file_String, results_List, side_Association, date_String ] :=
+    Module[ { scale, commit, template, header, data },
+        scale    = Replace[ side[ "ReasoningEffortScale" ], Except[ { __String } ] ->
+                       { "None", "Minimal", "Low", "Medium", "High", "XHigh", "Max" } ];
+        commit   = Replace[ side[ "Checkout", "Commit" ], Except[ _String ] -> Missing[ "NotAGitCheckout" ] ];
+        template = Import[
+            FileNameJoin @ {
+                DirectoryName @ $InputFileName,
+                "Resources",
+                "LLMReasoningEffortSpecificationDataHeader.wl"
+            },
+            "Text"
+        ];
+        header = StringReplace[ template, {
+            "{date}"      -> date,
+            "{commit}"    -> Replace[ commit, { c_String :> StringTake[ c, UpTo[ 8 ] ], _ -> "unknown" } ],
+            "{gate}"      -> If[ TrueQ @ side[ "Gate" ], "open", "shut" ]
+        } ];
+        data = <|
+            "SchemaVersion"  -> 1,
+            "Updated"        -> DateString[ "ISODate" ],
+            "ProbeDate"      -> date,
+            "ChatbookCommit" -> commit,
+            "Scale"          -> scale,
+            "OpenAI"         -> Association[ cloudModel[ scale ] /@ results ]
+        |>;
+        Export[ file, StringTrim[ header, "\n".. ] <> "\n" <> pretty[ data, 0, 0 ] <> "\n", "Text",
+                CharacterEncoding -> "UTF-8" ]
+    ];
+
 End[ ];
 
 EndPackage[ ];
@@ -594,6 +663,19 @@ Replace[
             Wolfram`ChatbookScripts`Private`$probeDate
         ];
         Print[ "\nDeveloper data file written to ", file ]
+    )
+];
+
+Replace[
+    Wolfram`ChatbookScripts`Private`argument[ "cloud" ],
+    file_String :> (
+        Wolfram`ChatbookScripts`Private`writeCloudFile[
+            ExpandFileName @ file,
+            Wolfram`ChatbookScripts`Private`$results,
+            Wolfram`ChatbookScripts`Private`$thisSide,
+            Wolfram`ChatbookScripts`Private`$probeDate
+        ];
+        Print[ "\nCloud data file written to ", file, " (not uploaded)" ]
     )
 ];
 
