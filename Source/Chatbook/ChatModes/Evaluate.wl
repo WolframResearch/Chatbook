@@ -6,6 +6,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
+Needs[ "Wolfram`Chatbook`ACP`Common`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -144,6 +145,11 @@ appendCellToSidebarChat // endDefinition;
 (*evaluateSidebarChat*)
 evaluateSidebarChat // beginDefinition;
 
+(* With the sidebar's Notebook editing switch on, the conversation is the notebook agent's *)
+evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ], field_: None ] /;
+    TrueQ @ CurrentChatSettings[ sidebarCell, "NotebookEditing" ] :=
+        WithCleanup[ evaluateSidebarAgent[ nbo, sidebarCell, input ], releaseSidebarSelections @ sidebarCell ];
+
 (* The input field is optional, since the sidebar input cell of a front end session that started with an older version
    of Chatbook doesn't give it.
    The sidebar input cell calls this directly, not through ChatbookAction like the workspace chat, so failures in the
@@ -177,10 +183,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
 
             result
         ],
-        With[ { selections = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] },
-            If[ AssociationQ @ selections, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ selections ];
-            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
-        ]
+        releaseSidebarSelections @ sidebarCell
     ],
     throwInternalFailure
 ];
@@ -194,6 +197,297 @@ restoreSidebarChatInput // beginDefinition;
 restoreSidebarChatInput[ Dynamic[ field_ ], input_ ] := If[ ! validInputStringQ @ field, field = input ];
 restoreSidebarChatInput[ None, _ ] := Null;
 restoreSidebarChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*releaseSidebarSelections*)
+(* The selections the sidebar took for a message are released once it has been answered: *)
+releaseSidebarSelections // beginDefinition;
+
+releaseSidebarSelections[ sidebarCell_CellObject ] :=
+    With[ { selections = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] },
+        If[ AssociationQ @ selections, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ selections ];
+        setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
+    ];
+
+releaseSidebarSelections // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Sidebar Agent*)
+
+(* The sidebar's conversation while its Notebook editing switch is on: the notebook agent of the ACP window, run as the
+   speed trials run it (opencode, $sidebarAgentModel at $sidebarAgentEffort, the notebook tools over MCP, the notebook
+   attached), with that window hidden as the engine. The sidebar draws each turn from the window's turn record in its
+   own chat cells, and the window shows the turn's changes in the notebook as a diff when the turn ends. *)
+$sidebarAgentModel   = "openai/gpt-6.1-sol";
+$sidebarAgentEffort  = "medium";
+$sidebarAgentCommand = { "/opt/homebrew/bin/opencode", "acp" };
+$sidebarAgentTimeout = 1800;
+(* the development checkouts the speed trials use: AgentTools (the notebook tools' MCP server), ACPLink, and the folder
+   the agent works in *)
+$sidebarAgentLLMEditing = "/System/Volumes/Data/Development/WRI/LLMEditing";
+
+If[ ! AssociationQ @ $sidebarAgentWindows , $sidebarAgentWindows  = <| |> ]; (* user notebook -> hidden ACP window *)
+If[ ! AssociationQ @ $sidebarAgentMessages, $sidebarAgentMessages = <| |> ]; (* agent cell UUID -> its turn's state *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*evaluateSidebarAgent*)
+evaluateSidebarAgent // beginDefinition;
+
+evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := Enclose[
+    Module[ { text, uuid, prompt, window, id },
+        text = makeBoxesInputMoreTextLike @ input;
+        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
+        appendCellToSidebarChat[
+            nbo,
+            sidebarCell,
+            Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
+                    "NotebookAssistant`Sidebar`UserMessageBox"
+                ],
+                "NotebookAssistant`Sidebar`ChatInput",
+                CellTags -> uuid
+            ],
+            uuid
+        ];
+        prompt = ConfirmBy[ CellToString @ Cell[ text, "Text" ], StringQ, "Prompt" ];
+        window = ConfirmMatch[ sidebarAgentWindow @ nbo, _NotebookObject, "Window" ];
+        id     = ConfirmBy[ createUUID[ ], StringQ, "AgentCellUUID" ];
+        $sidebarAgentMessages[ id ] = <|
+            "Window"     -> window,
+            "Notebook"   -> nbo,
+            "Prompt"     -> prompt,
+            "ReEvaluate" -> CurrentChatSettings[ sidebarCell, "NotebookReEvaluate" ] =!= False,
+            "State"      -> "Starting the agent\[Ellipsis]",
+            "TurnID"     -> None,
+            "Created"    -> AbsoluteTime[ ]
+        |>;
+        $sidebarAgentMessages[ id, "Cell" ] = appendCellToSidebarChat[ nbo, sidebarCell, sidebarAgentCell @ id, id ];
+        $sidebarAgentMessages[ id, "Task" ] = SessionSubmit @ ScheduledTask[ sidebarAgentStep @ id, 0.25 ];
+        id
+    ],
+    throwInternalFailure
+];
+
+evaluateSidebarAgent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sidebarAgentWindow*)
+
+(* The notebook's hidden ACP window, made the first time: its agent works in the notebook's folder *)
+sidebarAgentWindow // beginDefinition;
+
+sidebarAgentWindow[ nbo_NotebookObject ] := Replace[
+    Lookup[ $sidebarAgentWindows, nbo, None ],
+    Except[ w_NotebookObject /; MemberQ[ Notebooks[ ], w ] ] :> Module[ { window },
+        sidebarAgentSetup[ ];
+        window = ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <|
+            "ProjectDirectory"    -> $sidebarAgentLLMEditing,
+            "ACPModel"            -> $sidebarAgentModel,
+            "ACPAgentCommandLine" -> $sidebarAgentCommand,
+            "ACPMCPServer"        -> True
+        |> ];
+        If[ MatchQ[ window, _NotebookObject ],
+            SetOptions[ window, Visible -> False ];
+            SetSelectedNotebook @ nbo;
+            $sidebarAgentWindows[ nbo ] = window
+        ];
+        window
+    ]
+];
+
+sidebarAgentWindow // endDefinition;
+
+
+(* What the speed trials set up before an agent window (Speed/harness/KernelRun.wl): AgentTools for the notebook tools'
+   MCP server, loaded, and the server started; once per session *)
+sidebarAgentSetup // beginDefinition;
+
+sidebarAgentSetup[ ] := sidebarAgentSetup[ ] = (
+    SetEnvironment @ {
+        "AGENTTOOLS_DIRECTORY" -> FileNameJoin @ { $sidebarAgentLLMEditing, "agenttools" },
+        "ACPLINK_DIRECTORY"    -> FileNameJoin @ { $sidebarAgentLLMEditing, "acplink", "ACPLink" }
+    };
+    acpMCPAvailableQ[ ];
+    NotebookMCPServer[ ];
+);
+
+sidebarAgentSetup // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sidebarAgentStep*)
+
+(* One step of an agent message, every 0.25 s until its turn is over: once the window's agent is ready, its effort is
+   set and the prompt is sent with the notebook attached; when the turn has ended and the window's show job (the diff) is
+   done, the message's cell is written once more without its live view. *)
+sidebarAgentStep // beginDefinition;
+
+sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], window, status, effort, turn },
+    window = msg[ "Window" ];
+    status = acpWindowGet[ window, "Status", None ];
+    Which[
+        AbsoluteTime[ ] - msg[ "Created" ] > $sidebarAgentTimeout,
+            sidebarAgentFinish[ id, "The agent did not finish in time." ],
+        ! MemberQ[ Notebooks[ ], window ],
+            sidebarAgentFinish[ id, "The agent's connection closed." ],
+        msg[ "TurnID" ] === None && status =!= "Ready",
+            $sidebarAgentMessages[ id, "State" ] = "Starting the agent\[Ellipsis]",
+        msg[ "TurnID" ] === None,
+            effort = sidebarAgentEffortOption @ window;
+            Which[
+                MatchQ[ effort, { _String, e_ /; e =!= $sidebarAgentEffort } ] && ! TrueQ @ msg[ "EffortSent" ],
+                    $sidebarAgentMessages[ id, "EffortSent" ] = True;
+                    acpSetConfigOption[ window, First @ effort, $sidebarAgentEffort ],
+                MatchQ[ effort, { _String, e_ /; e =!= $sidebarAgentEffort } ],
+                    Null,
+                True,
+                    $acpNotebookReEvaluate = msg[ "ReEvaluate" ];
+                    acpSetDraftAttachments[ window, { acpNotebookAttachmentRef @ msg[ "Notebook" ] } ];
+                    CurrentValue[ window, { TaggingRules, "ACP", "Input" } ] = sidebarAgentPrompt @ msg;
+                    evaluateACPChat @ window;
+                    $sidebarAgentMessages[ id, "TurnID" ] = Replace[ acpWindowGet[ window, "CurrentTurn", None ], Except[ _String ] -> "pending" ];
+                    $sidebarAgentMessages[ id, "State" ] = "Working\[Ellipsis]"
+            ],
+        msg[ "TurnID" ] === "pending",
+            $sidebarAgentMessages[ id, "TurnID" ] = Replace[ acpWindowGet[ window, "CurrentTurn", None ], Except[ _String ] -> "pending" ],
+        True,
+            (* the window drops a turn's record once the turn is finalized: the last one seen is kept for the view *)
+            turn = acpTurnGet @ msg[ "TurnID" ];
+            If[ AssociationQ @ turn, $sidebarAgentMessages[ id, "Turn" ] = turn ];
+            If[ (! AssociationQ @ turn || turn[ "Status" ] =!= "Running") &&
+                    acpWindowGet[ window, "CurrentTurn", None ] === None &&
+                    Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs === { },
+                sidebarAgentFinish[ id, None ]
+            ]
+    ]
+];
+
+sidebarAgentStep // endDefinition;
+
+
+(* The prompt as the agent gets it: with Re-evaluate off it is told to write the outputs itself *)
+sidebarAgentPrompt // beginDefinition;
+sidebarAgentPrompt[ msg_Association ] := If[ TrueQ @ msg[ "ReEvaluate" ],
+    msg[ "Prompt" ],
+    msg[ "Prompt" ] <> "\n\n(Nothing is evaluated: write the outputs your edits change yourself, exactly as the code would \
+give them, with InsertCells (style Output) after their Input cell, and delete the old ones.)"
+];
+sidebarAgentPrompt // endDefinition;
+
+
+(* The agent's reasoning effort option: { id, current value }, or None *)
+sidebarAgentEffortOption // beginDefinition;
+sidebarAgentEffortOption[ window_NotebookObject ] := Replace[
+    acpFindConfigOption[ Replace[ acpWindowGet[ window, "ConfigOptions", { } ], Except[ _List ] -> { } ], "thought_level" ],
+    { o_Association :> { o[ "id" ], Lookup[ o, "currentValue", None ] }, _ -> None }
+];
+sidebarAgentEffortOption // endDefinition;
+
+
+sidebarAgentFinish // beginDefinition;
+
+sidebarAgentFinish[ id_String, failure_ ] := With[ { cell = $sidebarAgentMessages[ id, "Cell" ] },
+    Quiet @ TaskRemove @ $sidebarAgentMessages[ id, "Task" ];
+    $sidebarAgentMessages[ id, "State" ] = Replace[ failure, None -> "Done" ];
+    $sidebarAgentMessages[ id, "Failure" ] = failure;
+    If[ MatchQ[ cell, _CellObject ], NotebookWrite[ cell, sidebarAgentCell[ "SidebarTopCell", sidebarAgentView @ id ] ] ]
+];
+
+sidebarAgentFinish // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sidebarAgentCell*)
+
+(* An agent message in the sidebar: its live view while the turn runs, then a static one *)
+sidebarAgentCell // beginDefinition;
+
+sidebarAgentCell[ id_String ] :=
+    sidebarAgentCell[ id, Dynamic[ Refresh[ sidebarAgentView @ id, UpdateInterval -> 0.3, TrackedSymbols :> { } ] ] ];
+
+(* tag: the message's id when it is appended, then the sidebar's own tag for its messages.
+   ACPWindow marks it as an agent message, whose hover buttons have no Regenerate. *)
+sidebarAgentCell[ tag_String, content_ ] := Cell[
+    BoxData @ TemplateBox[
+        { Cell[ BoxData @ ToBoxes @ content, Background -> None, Selectable -> True ] },
+        "NotebookAssistant`Sidebar`AssistantMessageBox"
+    ],
+    "NotebookAssistant`Sidebar`ChatOutput",
+    CellTags     -> tag,
+    Editable     -> False,
+    TaggingRules -> <| "ChatNotebookSettings" -> <| "ACPWindow" -> True |> |>
+];
+
+sidebarAgentCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sidebarAgentView*)
+
+(* A turn as the sidebar shows it: the agent's text, its tool calls with their status, permission requests to answer,
+   and where the turn stands *)
+sidebarAgentView // beginDefinition;
+
+sidebarAgentView[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], turn, rows },
+    turn = Replace[ If[ StringQ @ msg[ "TurnID" ], acpTurnGet @ msg[ "TurnID" ], None ], Except[ _Association ] :> Lookup[ msg, "Turn", None ] ];
+    rows = If[ AssociationQ @ turn,
+        DeleteCases[ sidebarAgentEntityView[ msg[ "Window" ], turn[ "Entities", # ] ] & /@ turn[ "Order" ], None ],
+        { }
+    ];
+    Column[
+        Append[ rows, Style[ sidebarAgentStatus[ msg, turn ], "Text", FontSize -> 11, FontColor -> GrayLevel[ 0.5 ] ] ],
+        BaseStyle -> { "Text", FontSize -> 13 },
+        Spacings  -> 0.6
+    ]
+];
+
+sidebarAgentView // endDefinition;
+
+
+sidebarAgentStatus // beginDefinition;
+sidebarAgentStatus[ msg_, turn_Association ] /; msg[ "State" ] === "Done" := Replace[
+    turn[ "Error" ],
+    { None -> "Done: the changes are shown in the notebook.", e_ :> "The agent stopped: " <> ToString @ Short[ e, 2 ] }
+];
+sidebarAgentStatus[ msg_, turn_Association ] := msg[ "State" ] <> " " <> ToString @ Round[ AbsoluteTime[ ] - msg[ "Created" ] ] <> " s";
+sidebarAgentStatus[ msg_, _ ] := msg[ "State" ];
+sidebarAgentStatus // endDefinition;
+
+
+sidebarAgentEntityView // beginDefinition;
+
+sidebarAgentEntityView[ _, KeyValuePattern @ { "Type" -> "Message", "Text" -> text_String, "Child" -> None } ] /;
+    StringTrim @ text =!= "" := StringTrim @ text;
+
+sidebarAgentEntityView[ _, entity: KeyValuePattern[ "Type" -> "Tool" ] ] := Row[
+    {
+        Style[ Replace[ entity[ "Status" ], { "completed" -> "\[Checkmark] ", "failed" -> "\[Times] ", _ -> "\[Ellipsis] " } ],
+            FontColor -> Replace[ entity[ "Status" ], { "completed" -> RGBColor[ 0.2, 0.55, 0.3 ], "failed" -> RGBColor[ 0.75, 0.2, 0.2 ], _ -> GrayLevel[ 0.5 ] } ] ],
+        Style[ StringDelete[ ToString @ FirstCase[ entity /@ { "Title", "Name", "RawName" }, _String, "tool" ], "WolframNotebooks_" ], FontSize -> 12, FontColor -> GrayLevel[ 0.35 ] ]
+    }
+];
+
+sidebarAgentEntityView[ window_, entity: KeyValuePattern @ { "Type" -> "Permission", "Outcome" -> None } ] := Column[ {
+    Style[ "The agent asks to: " <> ToString @ Replace[ entity[ "Title" ], Except[ _String ] -> "use a tool" ], FontSize -> 12 ],
+    Row[
+        With[ { w = window, request = entity[ "RequestID" ], option = Lookup[ #, "optionId", None ] },
+            Button[ Lookup[ #, "name", Lookup[ #, "kind", "?" ] ], acpAnswerPermission[ w, request, option ], Method -> "Queued" ]
+        ] & /@ entity[ "Options" ],
+        " "
+    ]
+} ];
+
+sidebarAgentEntityView[ _, KeyValuePattern @ { "Type" -> "Notice", "Text" -> text_String } ] :=
+    Style[ text, FontSize -> 11, FontColor -> GrayLevel[ 0.5 ] ];
+
+sidebarAgentEntityView[ _, _ ] := None;
+
+sidebarAgentEntityView // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
